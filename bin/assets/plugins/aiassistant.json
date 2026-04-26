@@ -5,74 +5,40 @@
       "api_url": "https://api.anthropic.com/v1/messages",
       "models": [
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
+          "display_name": "Claude Opus 4.6",
+          "name": "claude-opus-4-6"
+        },
+        {
+          "display_name": "Claude Opus 4.7",
+          "name": "claude-opus-4-7"
+        },
+        {
           "display_name": "Claude Opus 4.5",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-opus-4-5-20251101"
         },
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
           "display_name": "Claude Haiku 4.5",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-haiku-4-5-20251001"
         },
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
           "display_name": "Claude Sonnet 4.5",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-sonnet-4-5-20250929"
         },
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
           "display_name": "Claude Opus 4.1",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-opus-4-1-20250805"
         },
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
           "display_name": "Claude Opus 4",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-opus-4-20250514"
         },
         {
-          "cache_configuration": {
-            "max_cache_anchors": 4,
-            "min_total_token": 2048,
-            "should_speculate": true
-          },
-          "default_temperature": 1.0,
           "display_name": "Claude Sonnet 4",
-          "max_output_tokens": 8192,
           "max_tokens": 200000,
           "name": "claude-sonnet-4-20250514"
         }
@@ -84,17 +50,13 @@
       "display_name": "DeepSeek",
       "models": [
         {
-          "display_name": "DeepSeek Chat",
-          "max_output_tokens": 8192,
-          "max_tokens": 64000,
-          "name": "deepseek-chat",
+          "display_name": "DeepSeek V4 Flash",
+          "name": "deepseek-v4-flash",
           "cheapest": true
         },
         {
-          "display_name": "DeepSeek Reasoner",
-          "max_output_tokens": 8192,
-          "max_tokens": 64000,
-          "name": "deepseek-reasoner"
+          "display_name": "DeepSeek V4 Pro",
+          "name": "deepseek-v4-pro"
         }
       ],
       "version": 1
@@ -109,6 +71,11 @@
           "cheapest": true
         },
         {
+          "name": "gemini-3.1-flash-lite-preview",
+          "display_name": "Gemini 3.1 Flash Lite Preview",
+          "max_tokens": 1000000
+        },
+        {
           "name": "gemini-2.5-pro",
           "display_name": "Gemini 2.5 Pro",
           "max_tokens": 1000000
@@ -119,8 +86,13 @@
           "max_tokens": 1000000
         },
         {
-          "name": "gemini-3-pro-preview",
-          "display_name": "Gemini 3 Pro Preview",
+          "name": "gemini-3-flash-preview",
+          "display_name": "Gemini 3 Flash Preview",
+          "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-3.1-pro-preview",
+          "display_name": "Gemini 3.1 Pro Preview",
           "max_tokens": 1000000
         }
       ]
@@ -233,6 +205,18 @@
           "name": "gpt-5.2"
         },
         {
+          "name": "gpt-5.3"
+        },
+        {
+          "name": "gpt-5.4"
+        },
+        {
+          "name": "gpt-5.5"
+        },
+        {
+          "name": "gpt-5.5-pro"
+        },
+        {
           "name": "gpt-5.2-pro"
         },
         {
@@ -240,6 +224,12 @@
         },
         {
           "name": "gpt-5.1-codex"
+        },
+        {
+          "name": "gpt-5.2-codex"
+        },
+        {
+          "name": "gpt-5.3-codex"
         }
       ],
       "version": 1
@@ -349,13 +339,13 @@
       "display_name": "Perplexity",
       "models": [
         {
-          "name": "sonar-reasoning",
-          "display_name": "Sonar Reasoning",
+          "name": "sonar-reasoning-pro",
+          "display_name": "Sonar Reasoning Pro",
           "tool_calling": true
         },
         {
-          "name": "sonar-deep-research",
-          "display_name": "Sonar Deep Research",
+          "name": "sonar-pro",
+          "display_name": "Sonar Pro",
           "tool_calling": true
         },
         {
@@ -390,12 +380,24 @@
           "display_name": "Google: Gemini 2.5 Flash"
         },
         {
+          "name": "google/gemini-3-flash-preview",
+          "display_name": "Google: Gemini 3 Flash Preview"
+        },
+        {
           "name": "deepseek/deepseek-chat-v3-0324",
           "display_name": "DeepSeek: DeepSeek V3 0324"
         },
         {
           "name": "google/gemini-2.5-pro",
           "display_name": "Google: Gemini 2.5 Pro"
+        },
+        {
+          "name": "google/gemini-3-pro-preview",
+          "display_name": "Google: Gemini 3 Pro Preview"
+        },
+        {
+          "name": "google/gemini-3.1-pro-preview",
+          "display_name": "Google: Gemini 3.1 Pro Preview"
         },
         {
           "name": "openai/gpt-5",
@@ -412,8 +414,155 @@
         {
           "name": "openai/gpt-5.2-pro",
           "display_name": "OpenAI: GPT-5 Pro"
+        },
+        {
+          "name": "moonshotai/kimi-k2.5",
+          "display_name": "kimi-k2.5"
+        },
+        {
+          "name": "stepfun/step-3.5-flash",
+          "display_name": "StepFun: Step 3.5 Flash"
+        },
+        {
+          "name": "z-ai/glm-4.7",
+          "display_name": "GLM 4.7"
+        },
+        {
+          "name": "z-ai/glm-5",
+          "display_name": "GLM 5"
+        },
+        {
+          "name": "qwen/qwen3-coder:free",
+          "display_name": "Qwen3 Coder 480B A35B (free)"
+        },
+        {
+          "name": "arcee-ai/trinity-large-preview:free",
+          "display_name": "Arcee AI: Trinity Large Preview (free)",
+          "cheapest": true
+        },
+        {
+          "name": "nvidia/nemotron-3-super-120b-a12b:free",
+          "display_name": "NVIDIA: Nemotron 3 Super (free)"
+        },
+        {
+          "name": "minimax/minimax-m2.5:free",
+          "display_name": "MiniMax: MiniMax M2.5 (free)"
         }
       ]
+    },
+    "moonshot": {
+      "api_url": "https://api.moonshot.ai/v1/chat/completions",
+      "display_name": "Moonshot",
+      "models": [
+        {
+          "name": "kimi-k2.5"
+        },
+        {
+          "name": "kimi-k2.6"
+        }
+      ]
+    },
+    "nvidia": {
+      "api_url": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "display_name": "NVIDIA",
+      "models": [
+        {
+          "name": "moonshotai/kimi-k2.5",
+          "display_name": "kimi-k2.5"
+        },
+        {
+          "name": "z-ai/glm4.7",
+          "display_name": "GLM-4.7"
+        },
+        {
+          "name": "minimaxai/minimax-m2.7",
+          "display_name": "MiniMax M2.7"
+        },
+        {
+          "name": "stepfun-ai/step-3.5-flash",
+          "display_name": "Step 3.5 Flash"
+        },
+        {
+          "name": "deepseek-ai/deepseek-v3.2",
+          "display_name": "DeepSeek-V3.2"
+        }
+      ]
+    },
+    "llama.cpp": {
+      "api_url": "http://localhost:8080/api/chat",
+      "fetch_models_url": "http://localhost:8080/api/tags",
+      "open_api": true
+    },
+    "together": {
+      "api_url": "https://api.together.xyz/v1/chat/completions",
+      "display_name": "Together AI",
+      "models": [
+        {
+          "name": "deepseek-ai/DeepSeek-V4-Pro",
+          "display_name": "Deepseek V4 Pro"
+        },
+        {
+          "name": "zai-org/GLM-5.1",
+          "display_name": "GLM 5.1 FP4"
+        },
+        {
+          "name": "moonshotai/Kimi-K2.5",
+          "display_name": "Kimi K2.5"
+        },
+        {
+          "name": "moonshotai/Kimi-K2.6",
+          "display_name": "Kimi K2.6 Fp4"
+        },
+        {
+          "name": "MiniMaxAI/MiniMax-M2.7",
+          "display_name": "MiniMax M2.7 FP4"
+        },
+        {
+          "name": "MiniMaxAI/MiniMax-M2.5",
+          "display_name": "MiniMax M2.5 FP4"
+        },
+        {
+          "name": "Qwen/Qwen3.5-9B",
+          "display_name": "Qwen3.5 9B FP8",
+          "cheapest": true
+        }
+      ]
+    }
+  },
+  "agents": {
+    "gemini-cli": {
+      "enabled": true,
+      "command": "gemini",
+      "args": ["--acp"]
+    },
+    "opencode": {
+      "enabled": true,
+      "command": "opencode",
+      "args": ["acp"]
+    },
+    "claude-agent": {
+      "enabled": true,
+      "command": "claude-agent-acp"
+    },
+    "cursor": {
+      "enabled": true,
+      "command": "cursor",
+      "args": ["acp"]
+    },
+    "pi-acp": {
+      "enabled": true,
+      "command": "pi-acp",
+      "args": []
+    },
+    "codex-acp": {
+      "enabled": true,
+      "command": "codex-acp",
+      "args": []
+    },
+    "qwen-code": {
+      "enabled": true,
+      "command": "qwen",
+      "args": ["--acp"]
     }
   }
 }

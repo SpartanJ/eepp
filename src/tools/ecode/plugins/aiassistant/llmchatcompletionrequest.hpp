@@ -36,7 +36,7 @@ class LLMChatCompletionRequest {
 
 	void requestAsync();
 
-	void cancel();
+	void cancel( bool resetCancelCallback = false );
 
 	bool isCancelled() const;
 
@@ -60,6 +60,7 @@ class LLMChatCompletionRequest {
 	bool mReasoning{ false };
 	bool mHadProgress{ false };
 	Uint64 mRequestId{ 0 };
+	std::string mBuffer;
 
 	void onCancel();
 };

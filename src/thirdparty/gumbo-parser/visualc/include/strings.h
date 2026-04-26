@@ -1,0 +1,5 @@
+#ifndef MICROSOFT_WINDOWS_STRINGS_H_WORKAROUND
+#define MICROSOFT_WINDOWS_STRINGS_H_WORKAROUND
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif // MICROSOFT_WINDOWS_STRINGS_H_WORKAROUND

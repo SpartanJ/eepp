@@ -58,6 +58,10 @@ class TerminalManager {
 
 	void configureTerminalScrollback();
 
+	void configureTerminalWorkingDir();
+
+	std::string getSelectedWorkingDir() const;
+
 	const std::string& getTerminalCurrentColorScheme() { return mTerminalCurrentColorScheme; }
 
 	void setKeybindings( UITerminal* term );

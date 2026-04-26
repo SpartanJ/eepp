@@ -177,6 +177,13 @@ void ActionManager::update( const Time& time ) {
 			std::copy( mActions.begin(), mActions.end(), actions );
 		}
 		update( time, actions, size );
+	} else if ( size <= 32 ) {
+		Action* actions[32];
+		{
+			Lock l( mMutex );
+			std::copy( mActions.begin(), mActions.end(), actions );
+		}
+		update( time, actions, size );
 	} else {
 		// Actions can be added during action updates, we need to only iterate the current actions
 		std::vector<Action*> actions;

@@ -7,12 +7,14 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -562,8 +564,8 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 									  blame.commitMessage.c_str() )
 					: blame.error );
 
-	Text::wrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
-					editor->getTabWidth() );
+	Text::hardWrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
+						editor->getTabWidth() );
 
 	editor->setTooltipText( str );
 
@@ -1086,8 +1088,6 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 
 		std::string repoName = this->repoName( repoPath );
 		getUISceneNode()->runOnMainThread( [this, mode, res, repoName] {
-			auto ret = mManager->getSplitter()->createEditorInNewTab();
-			auto doc = ret.second->getDocumentRef();
 			std::string modeName;
 			switch ( mode ) {
 				case Git::DiffHead: {
@@ -1098,32 +1098,31 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					modeName = "staged";
 					break;
 			}
-			doc->setDefaultFileName( repoName + "-" + modeName + ".diff" );
-			ret.second->setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
-			doc->textInput( res.result, false );
-			doc->moveToStartOfDoc();
-			doc->resetUndoRedo();
+			getPluginContext()->loadDiffFromMemory(
+				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "" );
 		} );
 	} );
 }
 
-void GitPlugin::diff( const std::string& file, bool isStaged ) {
-	mThreadPool->run( [this, file, isStaged] {
-		auto res = mGit->diff( fixFilePath( file ), isStaged, mGit->repoPath( file ) );
+void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
+	mThreadPool->run( [this, file, status] {
+		auto filePath = fixFilePath( file );
+		if ( status == Git::GitStatusType::Untracked ) {
+			getUISceneNode()->runOnMainThread( [this, filePath = std::move( filePath )] {
+				getPluginContext()->loadDiffFromPaths( "", filePath );
+			} );
+			return;
+		}
+		auto res =
+			mGit->diff( filePath, status == Git::GitStatusType::Staged, mGit->repoPath( file ) );
 		if ( res.fail() )
 			return;
 
-		getUISceneNode()->runOnMainThread( [this, file, res] {
-			auto ret = mManager->getSplitter()->createEditorInNewTab();
-			auto doc = ret.second->getDocumentRef();
-			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
-			doc->textInput( res.result, false );
-			doc->moveToStartOfDoc();
-			doc->resetUndoRedo();
-			ret.second->setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
-		} );
+		auto result = std::move( res.result );
+		getUISceneNode()->runOnMainThread(
+			[this, result = std::move( result ), filePath = std::move( filePath )] {
+				getPluginContext()->loadDiffFromMemory( result, filePath );
+			} );
 	} );
 }
 
@@ -1444,20 +1443,20 @@ void GitPlugin::buildSidePanelTab() {
 	#git_status_tree ScrollBar:focus-within {
 		opacity: 1;
 	}
-	.git_highlight_style > treeview::cell::text {
+	treeview::cell.git_highlight_style {
 		color: %s;
 	}
-	treeview::row treeview::cell.git_highlight_style_clear,
-	treeview::row:selected .git_highlight_style > treeview::cell::text,
-	treeview::row:selected .git_highlight_style > treeview::cell::text {
-		color: var(--font);
+	treeview::row:selected treeview::cell.git_highlight_style,
+	treeview::row:selected treeview::cell.git_highlight_style {
+		color: var(--font-selected-pressed);
+		tint: var(--font-selected-pressed);
 	}
-	.git_highlight_style > treeview::cell::icon {
+	treeview::cell.git_highlight_style > treeview::cell::icon {
 		foreground-image: icon(circle, 8dpru), icon(circle-filled, 8dpru);
 		foreground-position: 80%% 80%%, 80%% 80%%;
 		foreground-tint: black, %s;
 	}
-	.git_highlight_style_clear > treeview::cell::icon {
+	treeview::cell.git_highlight_style_clear > treeview::cell::icon {
 		foreground-image: none, none;
 	}
 	</style>
@@ -1467,7 +1466,7 @@ void GitPlugin::buildSidePanelTab() {
 			<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
 				<vbox id="git_branches" lw="mp" lh="wc">
 					<hbox lw="mp" lh="wc" padding="4dp">
-						<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" />
+						<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" menu-width-mode="expand-if-needed" />
 						<PushButton id="branch_pull" text="@string(git_pull, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
 						<PushButton id="branch_push" text="@string(git_push, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
 						<PushButton id="branch_add" text="@string(git_add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
@@ -1488,7 +1487,10 @@ void GitPlugin::buildSidePanelTab() {
 		!mHighlightStyleColor.empty() && Color::isColorString( mHighlightStyleColor )
 			? mHighlightStyleColor
 			: std::string{ DEFAULT_HIGHLIGHT_COLOR };
-	mTabContents = getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
+
+	mTabContents = getUISceneNode()->loadLayoutFromString(
+		String::format( STYLE, color, color ), nullptr, String::hash( "git_plugin_style" ) );
+
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control_tab" );
@@ -1604,7 +1606,7 @@ void GitPlugin::buildSidePanelTab() {
 					break;
 				}
 				case ModelEventType::Open: {
-					diff( file->file, file->report.type == Git::GitStatusType::Staged );
+					diff( file->file, file->report.type );
 					break;
 				}
 				default:
@@ -1868,7 +1870,7 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 		} else if ( id == "git-open-file" ) {
 			openFile( file.file );
 		} else if ( id == "git-diff" ) {
-			diff( file.file, file.report.type == Git::GitStatusType::Staged );
+			diff( file.file, file.report.type );
 		}
 	} );
 

@@ -10,12 +10,12 @@ UIThemeManager* UIThemeManager::New() {
 UIThemeManager::UIThemeManager() :
 	ResourceManager<UITheme>(),
 	mFont( NULL ),
-	mFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
+	mFontSize( PixelDensity::dpToPx( 12 ) ),
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
-	mFadeInTime( Milliseconds( 100.f ) ),
-	mFadeOutTime( Milliseconds( 100.f ) ),
+	mFadeInTime( Milliseconds( 25.f ) ),
+	mFadeOutTime( Milliseconds( 25.f ) ),
 	mTooltipTimeToShow( Milliseconds( 400 ) ),
 	mTooltipFollowMouse( false ),
 	mCursorSize( 16, 16 ) {}

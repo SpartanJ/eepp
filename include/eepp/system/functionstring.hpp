@@ -2,31 +2,47 @@
 #define EE_SYSTEM_FUNCTIONSTRING_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/small_vector.hpp>
+#include <eepp/core/string.hpp>
+
+#include <concepts>
 #include <string>
-#include <vector>
+
+template <typename T>
+concept AllowedFunctionString =
+	std::same_as<T, std::string_view> || std::same_as<T, EE::String::View>;
 
 namespace EE { namespace System {
 
 class EE_API FunctionString {
   public:
-	static FunctionString parse( const std::string& function );
+	using Parameters = SmallVector<std::string, 4>;
+	using TypeStringVector = SmallVector<bool, 4>;
 
-	FunctionString( const std::string& name, const std::vector<std::string>& parameters,
-					const std::vector<bool>& typeStringData );
+	static FunctionString parse( std::string_view function );
+
+	static FunctionString parse( String::View function );
+
+	FunctionString( const std::string& name, const Parameters& parameters,
+					const TypeStringVector& typeStringData );
+
+	FunctionString( const std::string& name, Parameters&& parameters,
+					TypeStringVector&& typeStringData );
 
 	const std::string& getName() const;
 
-	const std::vector<std::string>& getParameters() const;
+	const Parameters& getParameters() const;
 
-	bool parameterWasString( const Uint32& index ) const;
+	bool parameterWasString( Uint32 index ) const;
 
 	bool isEmpty() const;
 
   protected:
 	std::string name;
+	Parameters parameters;
+	TypeStringVector typeStringData;
 
-	std::vector<std::string> parameters;
-	std::vector<bool> typeStringData;
+	template <AllowedFunctionString StringType> static FunctionString parse( StringType function );
 };
 
 }} // namespace EE::System

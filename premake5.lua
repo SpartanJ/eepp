@@ -29,7 +29,7 @@ newoption {
 newoption {
     trigger     = "sharedir",
     value       = "PATH",
-    description = "Set the shared data directory (default: /usr/share/ecode)",
+    description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
@@ -394,6 +394,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		linkoptions { "-static-libgcc -static-libstdc++" }
 	end
 
+	if _OPTIONS["sharedir"] then
+		defines { 'ECODE_SHAREDIR="' .. _OPTIONS["sharedir"] .. '"' }
+	end
+
 	cppdialect "C++20"
 	set_ios_config()
 	set_apple_config()
@@ -406,7 +410,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
-			flags { "RelativeLinks" }
+			if type(userelativelinks) == "function" then
+				userelativelinks "On"
+			else
+				flags { "RelativeLinks" }
+			end
 		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
@@ -491,10 +499,6 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++20" }
 
-	filter { "options:sharedir" }
-		if _OPTIONS["sharedir"] then
-			defines { "ECODE_SHAREDIR='\"" .. _OPTIONS["sharedir"] .. "\"'" }
-		end
 	filter {}
 end
 
@@ -599,6 +603,9 @@ function add_static_links()
 			"oniguruma-static",
 			"libwebp-static",
 			"libpng-static",
+			"md4c-static",
+			"gumbo-parser-static",
+			"brotli-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -797,6 +804,7 @@ function build_eepp( build_name )
 		"src/thirdparty/libwebp/src",
 		"src/thirdparty/SheenBidi/Headers",
 		"src/thirdparty/SheenBidi/Headers/SheenBidi",
+		"src/thirdparty/brotli/include",
 	}
 
 	add_static_links()
@@ -875,7 +883,7 @@ function target_dir_lib(path)
 		targetdir("libs/" .. os.target() .. "/x86_64/" .. path .. "/")
 	filter "architecture:ARM"
 		targetdir("libs/" .. os.target() .. "/arm/" .. path .. "/")
-	filter "architecture:ARM64"
+	filter "architecture:ARM64 or AARCH64"
 		targetdir("libs/" .. os.target() .. "/arm64/" .. path .. "/")
 	filter "architecture:universal"
 		targetdir("libs/" .. os.target() .. "/universal/" .. path .. "/")
@@ -890,14 +898,14 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:x86" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:x86_64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
-	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM64" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:AARCH64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=arm64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
 	if name == "eepp" then
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86_64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
-		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:AARCH64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "options:arch=arm64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:universal" )
 	end
@@ -957,7 +965,11 @@ workspace "eepp"
 		symbols "On"
 
 	filter { "system:windows", "action:vs*" }
-		flags { "MultiProcessorCompile" }
+		if type(multiprocessorcompile) == "function" then
+			multiprocessorcompile "On"
+		else
+			flags { "MultiProcessorCompile" }
+		end
 		disablewarnings{ "4305", "4146", "4996", "4244", "4267" }
 
 	filter "system:bsd"
@@ -1045,7 +1057,7 @@ workspace "eepp"
 		language "C"
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng", "src/thirdparty/brotli/include" }
 		build_base_configuration( "freetype" )
 		target_dir_thirdparty()
 
@@ -1216,6 +1228,39 @@ workspace "eepp"
 			end
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
 			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
+
+	project "brotli-static"
+		kind "StaticLib"
+		language "C"
+		incdirs { "src/thirdparty/brotli/include", "src/thirdparty/brotli/include/brotli" }
+		files { "src/thirdparty/brotli/**.c" }
+		build_base_configuration( "brotli" )
+		target_dir_thirdparty()
+
+	project "md4c-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/md4c/**.c" }
+		build_base_configuration( "md4c" )
+		target_dir_thirdparty()
+
+	project "libyaml-static"
+		kind "StaticLib"
+		language "C"
+		defines { "HAVE_CONFIG_H", "YAML_DECLARE_STATIC" }
+		files { "src/thirdparty/libyaml/**.c" }
+		incdirs { "src/thirdparty/libyaml/include" }
+		build_base_configuration( "libyaml" )
+		target_dir_thirdparty()
+
+	project "gumbo-parser-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/gumbo-parser/**.c" }
+		build_base_configuration( "gumbo-parser" )
+		target_dir_thirdparty()
+		filter "action:vs*"
+			incdirs { "src/thirdparty/gumbo-parser/visualc/include/" }
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1435,6 +1480,43 @@ workspace "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
+	project "eepp-ui-application-hello-world"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_hello_world/*.cpp" }
+		build_link_configuration( "eepp-ui-application-hello-world", true )
+
+	project "eepp-ui-dropdownmodellist"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_dropdownmodellist/*.cpp" }
+		build_link_configuration( "eepp-ui-dropdownmodellist", true )
+
+	project "eepp-ui-richtext"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_richtext/*.cpp" }
+		build_link_configuration( "eepp-ui-richtext", true )
+
+	project "eepp-ui-html"
+		set_kind()
+		language "C++"
+		incdirs { "src/thirdparty" }
+		files { "src/examples/ui_html/*.cpp" }
+		build_link_configuration( "eepp-ui-html", true )
+
+	project "eepp-ui-markdownview"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_markdownview/*.cpp" }
+		build_link_configuration( "eepp-ui-markdownview", true )
+
+	project "eepp-richtext"
+		set_kind()
+		language "C++"
+		files { "src/examples/richtext/*.cpp" }
+		build_link_configuration( "eepp-richtext", true )
+
 	project "eepp-7guis-counter"
 		set_kind()
 		language "C++"
@@ -1476,6 +1558,12 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/7guis/cells/*.cpp" }
 		build_link_configuration( "eepp-7guis-cells", true )
+
+	project "eepp-treeviewmodel"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_treeview_model/*.cpp" }
+		build_link_configuration( "eepp-treeviewmodel", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -1528,10 +1616,13 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
 		build_link_configuration( "ecode", false )
+		filter { "system:windows" }
+			links { "gumbo-parser-static" }
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }
+			linkoptions { "-Wl,--export-all-symbols" }
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }
@@ -1608,6 +1699,8 @@ workspace "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+		links { "eterm-static", "languages-syntax-highlighting-static" }
+		incdirs { "src/modules/eterm/include/" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
 		build_link_configuration( "eepp-unit_tests", true )

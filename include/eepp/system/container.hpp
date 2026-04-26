@@ -3,7 +3,6 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/containers.hpp>
-#include <unordered_set>
 
 namespace EE { namespace System {
 

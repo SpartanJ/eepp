@@ -11,157 +11,18 @@
 
 namespace EE { namespace UI { namespace Doc {
 
-LineWrapMode DocumentView::toLineWrapMode( std::string mode ) {
-	String::toLowerInPlace( mode );
-	if ( mode == "word" )
-		return LineWrapMode::Word;
-	if ( mode == "letter" )
-		return LineWrapMode::Letter;
-	return LineWrapMode::NoWrap;
-}
-
-std::string DocumentView::fromLineWrapMode( LineWrapMode mode ) {
-	switch ( mode ) {
-		case LineWrapMode::Letter:
-			return "letter";
-		case LineWrapMode::Word:
-			return "word";
-		case LineWrapMode::NoWrap:
-		default:
-			return "nowrap";
-	}
-}
-
-LineWrapType DocumentView::toLineWrapType( std::string type ) {
-	String::toLowerInPlace( type );
-	if ( "line_breaking_column" == type )
-		return LineWrapType::LineBreakingColumn;
-	return LineWrapType::Viewport;
-}
-
-std::string DocumentView::fromLineWrapType( LineWrapType type ) {
-	switch ( type ) {
-		case LineWrapType::LineBreakingColumn:
-			return "line_breaking_column";
-		case LineWrapType::Viewport:
-		default:
-			return "viewport";
-	}
-}
-
-Float DocumentView::computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-									Uint32 tabWidth, Float maxWidth, bool tabStops ) {
-	static const String sepSpaces = " \t\n\v\f\r";
-	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
-	if ( nonIndentPos != String::View::npos ) {
-		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth,
-									  TextHints::AllAscii, TextDirection::LeftToRight,
-									  tabStops ? 0 : std::optional<Float>{} );
-		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
-	}
-	return 0.f;
-}
-
-DocumentView::LineWrapInfo
-DocumentView::computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle,
-								 Float maxWidth, LineWrapMode mode, bool keepIndentation,
-								 Uint32 tabWidth, Float whiteSpaceWidth, Uint32 textDrawHints,
-								 bool tabStops, Float initialXOffset ) {
-	LineWrapInfo info;
-	info.wraps.push_back( 0 );
-	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
-		return info;
-
-	bool bold = ( fontStyle.Style & Text::Style::Bold ) != 0;
-	bool italic = ( fontStyle.Style & Text::Style::Italic ) != 0;
-	Float outlineThickness = fontStyle.OutlineThickness;
-	Float hspace = whiteSpaceWidth == 0.f ? fontStyle.Font
-												->getGlyph( L' ', fontStyle.CharacterSize, bold,
-															italic, outlineThickness )
-												.advance
-										  : whiteSpaceWidth;
-
-	if ( keepIndentation ) {
-		info.paddingStart = computeOffsets( string, fontStyle, tabWidth,
-											eemax( maxWidth - hspace, hspace ), tabStops );
-	}
-
-	Float xoffset = initialXOffset;
-	Float lastWidth = 0.f;
-	bool isMonospace =
-		fontStyle.Font &&
-		( fontStyle.Font->isMonospace() ||
-		  ( fontStyle.Font->getType() == FontType::TTF &&
-			static_cast<FontTrueType*>( fontStyle.Font )->isIdentifiedAsMonospace() &&
-			Text::canSkipShaping( textDrawHints ) ) );
-
-	size_t lastSpace = 0;
-	Uint32 prevChar = 0;
-	size_t idx = 0;
-
-	for ( const auto& curChar : string ) {
-		Float w = !isMonospace ? fontStyle.Font
-									 ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
-												 outlineThickness )
-									 .advance
-							   : hspace;
-
-		if ( curChar == '\t' )
-			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
-
-		if ( !isMonospace && curChar != '\r' ) {
-			if ( !( textDrawHints & TextHints::NoKerning ) ) {
-				w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
-												 italic, outlineThickness );
-			}
-			prevChar = curChar;
-		}
-
-		xoffset += w;
-
-		if ( xoffset > maxWidth ) {
-			if ( mode == LineWrapMode::Word && lastSpace ) {
-				info.wraps.push_back( lastSpace + 1 );
-				xoffset = w + info.paddingStart + ( xoffset - lastWidth );
-			} else {
-				info.wraps.push_back( idx );
-				xoffset = w + info.paddingStart;
-			}
-			lastSpace = 0;
-		} else if ( curChar == ' ' || curChar == '.' || curChar == '-' || curChar == ',' ) {
-			lastSpace = idx;
-			lastWidth = xoffset;
-		}
-
-		idx++;
-	}
-
-	return info;
-}
-
-DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string,
-															const FontStyleConfig& fontStyle,
-															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth, Uint32 textHints,
-															bool tabStops, Float initialXOffset ) {
-	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth,
-							  whiteSpaceWidth, textHints, tabStops, initialXOffset );
-}
-
-DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
-															const FontStyleConfig& fontStyle,
-															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth, bool tabStops,
-															Float initialXOffset ) {
+LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
+											  const FontStyleConfig& fontStyle, Float maxWidth,
+											  LineWrapMode mode, bool keepIndentation,
+											  Uint32 tabWidth, Float whiteSpaceWidth, bool tabStops,
+											  Float initialXOffset ) {
 	if ( line >= doc.linesCount() )
 		return {};
 	const auto& docLine = doc.line( line );
 	const auto& text = docLine.getText();
-	return computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
-							  keepIndentation, tabWidth, whiteSpaceWidth, docLine.getTextHints(),
-							  tabStops, initialXOffset );
+	return LineWrap::computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle,
+										maxWidth, mode, keepIndentation, tabWidth, whiteSpaceWidth,
+										docLine.getTextHints(), tabStops, initialXOffset );
 }
 
 DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
@@ -255,9 +116,9 @@ void DocumentView::invalidateCache() {
 	for ( auto i = 0; i < linesCount; i++ ) {
 		if ( isFolded( i, true ) ) {
 			mVisibleLinesOffset.emplace_back(
-				wrap ? computeOffsets( mDoc->line( i ).getText().view(), mFontStyle,
-									   mConfig.tabWidth,
-									   eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) )
+				wrap ? LineWrap::computeOffsets(
+						   mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
+						   eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) )
 					 : 0 );
 			mDocLineToVisibleIndex.push_back( static_cast<Int64>( VisibleIndex::invalid ) );
 		} else {
@@ -411,7 +272,8 @@ TextRange DocumentView::getVisibleIndexRange( VisibleIndex visibleIndex ) const 
 	Int64 idx = static_cast<Int64>( visibleIndex );
 	auto start = getVisibleIndexPosition( visibleIndex );
 	auto end = start;
-	if ( idx + 1 < static_cast<Int64>( mVisibleLines.size() ) &&
+	eeASSERT( visibleIndex >= static_cast<VisibleIndex>( 0 ) );
+	if ( idx >= 0 && idx + 1 < static_cast<Int64>( mVisibleLines.size() ) &&
 		 mVisibleLines[idx + 1].line() == start.line() ) {
 		end.setColumn( mVisibleLines[idx + 1].column() );
 	} else {
@@ -483,8 +345,15 @@ Float DocumentView::getWhiteSpaceWidth() const {
 }
 
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
-	if ( 0 == mMaxWidth || isOneToOne() )
+	if ( 0 == mMaxWidth || isOneToOne() || !mDoc )
 		return;
+
+	// Safety check: ensure fromLine and toLine are within bounds of the old state
+	if ( fromLine < 0 || fromLine >= (Int64)mVisibleLinesOffset.size() ||
+		 toLine < 0 || toLine >= (Int64)mVisibleLinesOffset.size() || fromLine > toLine ) {
+		invalidateCache();
+		return;
+	}
 
 	// Unfold ANY modification over a folded range
 	if ( numLines < 0 ) {
@@ -499,6 +368,15 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	// Get affected visible range
 	Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromLine, false ) );
 	Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toLine, true ) );
+
+	if ( oldIdxFrom == static_cast<Int64>( VisibleIndex::invalid ) ||
+		 oldIdxTo == static_cast<Int64>( VisibleIndex::invalid ) ||
+		 oldIdxFrom > oldIdxTo ||
+		 oldIdxFrom >= (Int64)mVisibleLines.size() ||
+		 oldIdxTo >= (Int64)mVisibleLines.size() ) {
+		invalidateCache();
+		return;
+	}
 
 	auto visibleLinesCount = mVisibleLines.size();
 
@@ -521,12 +399,17 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	// Recompute line breaks
 	auto netLines = toLine + numLines;
 	auto idxOffset = oldIdxFrom;
+
+	if ( netLines >= (Int64)mDocLineToVisibleIndex.size() )
+		mDocLineToVisibleIndex.resize( netLines + 1, static_cast<Int64>( VisibleIndex::invalid ) );
+
 	for ( auto i = fromLine; i <= netLines; i++ ) {
 		if ( isFolded( i ) ) {
 			mVisibleLinesOffset.insert(
 				mVisibleLinesOffset.begin() + i,
-				computeOffsets( mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
-								eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) ) );
+				LineWrap::computeOffsets(
+					mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
+					eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) ) );
 			mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
 		} else {
 			auto lb = computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
@@ -560,18 +443,25 @@ void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool 
 	Int64 visibleLinesCount = mVisibleLines.size();
 	if ( ensureDocSize )
 		mDocLineToVisibleIndex.resize( mDoc->linesCount() );
+
+	if ( fromVisibleIndex < 0 || fromVisibleIndex >= visibleLinesCount )
+		return;
+
 	Int64 previousLineIdx = mVisibleLines[fromVisibleIndex].line();
 	for ( Int64 visibleIdx = fromVisibleIndex; visibleIdx < visibleLinesCount; visibleIdx++ ) {
 		const auto& visibleLine = mVisibleLines[visibleIdx];
 		if ( visibleLine.column() == 0 ) {
 			// Non-contiguous lines means hidden lines
 			if ( visibleLine.line() - previousLineIdx > 1 ) {
-				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ )
-					mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
+				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ ) {
+					if ( i < (Int64)mDocLineToVisibleIndex.size() )
+						mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
+				}
 			}
-			mDocLineToVisibleIndex[visibleLine.line()] =
-				isFolded( visibleLine.line(), true ) ? static_cast<Int64>( VisibleIndex::invalid )
-													 : visibleIdx;
+			if ( visibleLine.line() < (Int64)mDocLineToVisibleIndex.size() )
+				mDocLineToVisibleIndex[visibleLine.line()] =
+					isFolded( visibleLine.line(), true ) ? static_cast<Int64>( VisibleIndex::invalid )
+														 : visibleIdx;
 			previousLineIdx = visibleLine.line();
 		}
 	}
@@ -585,7 +475,8 @@ void DocumentView::foldRegion( Int64 foldDocIdx ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
-	if ( isOneToOne() && mDocLineToVisibleIndex.empty() )
+	if ( isOneToOne() || mDocLineToVisibleIndex.empty() || mVisibleLines.empty() ||
+		 mVisibleLinesOffset.empty() )
 		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
 	changeVisibility( foldDocIdx + 1, toDocIdx, false );
@@ -604,6 +495,8 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool 
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
+	if ( mDocLineToVisibleIndex.empty() || mVisibleLines.empty() || mVisibleLinesOffset.empty() )
+		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
 	removeFoldedRegion( *foldRegion );
 	changeVisibility( foldDocIdx + 1, toDocIdx, true, recomputeOffset,
@@ -696,8 +589,8 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		auto idxOffset = oldIdxFrom;
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
 			if ( isFolded( i, true ) ) {
-				if ( recomputeOffset ) {
-					mVisibleLinesOffset[i] = computeOffsets(
+				if ( recomputeOffset && i < (Int64)mVisibleLinesOffset.size() ) {
+					mVisibleLinesOffset[i] = LineWrap::computeOffsets(
 						mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
 						eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) );
 				}
@@ -708,11 +601,13 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 											   mConfig.keepIndentation, mConfig.tabWidth,
 											   mWhiteSpaceWidth, mConfig.tabStops )
 						  : LineWrapInfo{ { 0 }, 0 };
-			if ( recomputeOffset )
+			if ( recomputeOffset && i < (Int64)mVisibleLinesOffset.size() )
 				mVisibleLinesOffset[i] = lb.paddingStart;
 			for ( const auto& col : lb.wraps ) {
-				mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
-				idxOffset++;
+				if ( idxOffset >= 0 && idxOffset <= (Int64)mVisibleLines.size() ) {
+					mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
+					idxOffset++;
+				}
 			}
 		}
 
@@ -722,17 +617,22 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		auto oldIdxToVI = toVisibleIndex( toDocIdx, true );
 		Int64 oldIdxFrom = static_cast<Int64>( oldIdxFromVI );
 		Int64 oldIdxTo = static_cast<Int64>( oldIdxToVI );
-		if ( VisibleIndex::invalid == oldIdxFromVI || VisibleIndex::invalid == oldIdxToVI )
+		if ( VisibleIndex::invalid == oldIdxFromVI || VisibleIndex::invalid == oldIdxToVI ||
+			 oldIdxFrom < 0 || oldIdxTo < 0 ||
+			 oldIdxFrom > oldIdxTo || oldIdxFrom >= (Int64)mVisibleLines.size() ||
+			 oldIdxTo >= (Int64)mVisibleLines.size() )
 			return;
 		mVisibleLines.erase( mVisibleLines.begin() + oldIdxFrom,
 							 mVisibleLines.begin() + oldIdxTo + 1 );
 		for ( Int64 idx = fromDocIdx; idx <= toDocIdx; idx++ ) {
-			mDocLineToVisibleIndex[idx] = static_cast<Int64>( VisibleIndex::invalid );
+			if ( idx < (Int64)mDocLineToVisibleIndex.size() )
+				mDocLineToVisibleIndex[idx] = static_cast<Int64>( VisibleIndex::invalid );
 		}
 		Int64 linesCount = mDoc->linesCount();
 		Int64 idxOffset = oldIdxTo - oldIdxFrom + 1;
 		for ( Int64 idx = toDocIdx + 1; idx < linesCount; idx++ ) {
-			if ( mDocLineToVisibleIndex[idx] != static_cast<Int64>( VisibleIndex::invalid ) )
+			if ( idx < (Int64)mDocLineToVisibleIndex.size() &&
+				 mDocLineToVisibleIndex[idx] != static_cast<Int64>( VisibleIndex::invalid ) )
 				mDocLineToVisibleIndex[idx] -= idxOffset;
 		}
 	}

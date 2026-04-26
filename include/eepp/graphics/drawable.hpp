@@ -31,6 +31,7 @@ class EE_API Drawable {
 		UINODEDRAWABLE_LAYERDRAWABLE,
 		UIBORDERDRAWABLE,
 		UIBACKGROUNDDRAWABLE,
+		RICHTEXT,
 		CUSTOM
 	};
 
@@ -39,6 +40,10 @@ class EE_API Drawable {
 	virtual Sizef getSize() = 0;
 
 	virtual Sizef getPixelsSize() = 0;
+
+	virtual Float getMinIntrinsicWidth() { return getPixelsSize().getWidth(); }
+
+	virtual Float getMaxIntrinsicWidth() { return getPixelsSize().getWidth(); }
 
 	virtual void draw() = 0;
 

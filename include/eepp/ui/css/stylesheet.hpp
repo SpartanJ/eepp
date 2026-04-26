@@ -58,9 +58,13 @@ class EE_API StyleSheet {
 
 	void removeAllWithMarker( const Uint32& marker );
 
+	void removeAllWithoutMarker( const Uint32& marker );
+
 	bool markerExists( const Uint32& marker ) const;
 
 	StyleSheet getAllWithMarker( const Uint32& marker ) const;
+
+	StyleSheet getAllWithMarkers() const;
 
 	std::vector<std::shared_ptr<StyleSheetStyle>>
 	findStyleFromSelectorName( const std::string& selector ) const;

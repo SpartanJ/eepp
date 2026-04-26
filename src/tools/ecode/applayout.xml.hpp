@@ -90,10 +90,19 @@ TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 }
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
-	color: var(--font);
+	color: var(--font-selected-pressed)
 }
 .search_tree treeview::cell {
 	font-family: monospace;
+}
+.search_tree treeview::row:selected treeview::cell {
+	color: var(--font);
+}
+.search_tree treeview::row:selected treeview::cell::expander {
+	tint: var(--font);
+}
+.search_tree treeview::row:selected {
+	background-color: var(--tab-hover);
 }
 #global_search_history {
 	padding-top: 0dp;
@@ -171,6 +180,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 #status_bar > .status_but {
 	padding: 0dp 5dp 0dp 4dp;
 	background-color: var(--list-back);
+	color: var(--font);
+	tint: var(--font);
 	border-radius: 0dp;
 	border-left-color: transparent;
 	border-top-color: transparent;
@@ -185,6 +196,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 #status_bar > .status_but:last-child {
 	border-right-color: transparent;
@@ -304,10 +317,18 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	background-color: rgba(0,0,0, 0.1);
 }
 .settings_panel .advanced_options .title {
-	padding-bottom: 4dp;
+	padding-right: 4dp;
 	border-radius: 4dp;
 	background-color: transparent;
 	transition: background-color 100ms;
+}
+.settings_panel .advanced_options .title > * {
+	color: var(--font);
+	tint: var(--font);
+}
+.settings_panel .advanced_options .title:hover > * {
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .settings_panel .advanced_options .title:hover {
 	background-color: var(--primary);
@@ -376,30 +397,30 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .custom_output_parser_cont > .capture_positions_cont > * {
 	padding: 2dp;
 }
-.theme-error > tableview::cell::text,
-.theme-error > treeview::cell::text,
-.theme-error > listview::cell::text,
+tableview::cell.theme-error,
+treeview::cell.theme-error,
+listview::cell.theme-error,
 .error {
 	color: var(--theme-error);
 }
 
-.theme-warning > tableview::cell::text,
-.theme-warning > treeview::cell::text,
-.theme-warning > listview::cell::text,
+tableview::cell.theme-warning,
+treeview::cell.theme-warning,
+listview::cell.theme-warning,
 .warning {
 	color: var(--theme-warning);
 }
 
-.theme-success > tableview::cell::text,
-.theme-success > treeview::cell::text,
-.theme-success > listview::cell::text,
+tableview::cell.theme-success,
+treeview::cell.theme-success,
+listview::cell.theme-success,
 .success {
 	color: var(--theme-success);
 }
 
-.theme-none > tableview::cell::text,
-.theme-none > treeview::cell::text,
-.theme-none > listview::cell::text,
+tableview::cell.theme-none,
+treeview::cell.theme-none,
+listview::cell.theme-none,
 .none {
 	color: #d48838;
 }
@@ -420,17 +441,17 @@ Anchor.error:hover {
 	border-width: 1dp;
 	border-color: var(--primary);
 }
-#build_output_issues TableView::cell.theme-warning > TableView::cell::icon {
+#build_output_issues TableView::row TableView::cell.theme-warning {
 	tint: var(--theme-warning);
+	color: var(--theme-warning);
 }
-#build_output_issues TableView::cell.theme-error > TableView::cell::icon {
+#build_output_issues TableView::row TableView::cell.theme-error {
 	tint: var(--theme-error);
+	color: var(--theme-error);
 }
-#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::text {
-	color: var(--font);
-}
-#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::icon {
-	tint: var(--font);
+#build_output_issues TableView::row:selected TableView::cell.theme-error {
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .texture-preview {
 	border: 1dp solid var(--list-back);
@@ -495,6 +516,9 @@ Anchor.error:hover {
 .tab_widget_cont TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
+.tab_widget_cont MarkdownView {
+	padding: 8dp;
+}
 .notbold {
 	font-style: normal;
 }
@@ -507,6 +531,7 @@ Anchor.error:hover {
 	border-top-color: var(--button-border);
 	padding: 4dp 16dp 4dp 16dp;
 	border-top-left-radius: 12dp;
+	border-width: 1dp;
 	margin-bottom: 16dp;
 	margin-right: 2dp;
 	font-style: shadow;
@@ -564,7 +589,7 @@ TabWidget::container > ImageViewer > TextView {
 </style>
 )html"
 
-R"html(
+	R"html(
 <vbox id="" lw="mp" lh="mp">
 <MenuBar id="main_menubar" visible="false">
 	<Menu id="menubar_file" text="@string(file, File)" nomenu="true" />

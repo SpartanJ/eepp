@@ -317,7 +317,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  mApp->getSettingsMenu()->updateCurrentFileType();
 				  mLocateBarLayout->execute( "close-locatebar" );
 			  }
-		  } } );
+		  },
+		  nullptr, false } );
 
 	mApp->getPluginManager()->subscribeMessages(
 		"universallocator", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
@@ -778,8 +779,7 @@ UniversalLocator::openBuildModel( const std::string& pattern ) {
 		return ItemListOwnerModel<std::string>::create( {} );
 	buildNames.reserve( builds.size() );
 	for ( const auto& build : builds ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( build.first ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( build.first, pattern ) )
 			buildNames.push_back( build.first );
 	}
 	std::sort( buildNames.begin(), buildNames.end() );
@@ -839,8 +839,7 @@ UniversalLocator::openBuildTypeModel( const std::string& pattern ) {
 	std::vector<std::string> buildTypeNames;
 	buildTypeNames.reserve( buildTypes.size() );
 	for ( const auto& build : buildTypes ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( build ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( build, pattern ) )
 			buildTypeNames.push_back( build );
 	}
 	std::sort( buildTypeNames.begin(), buildTypeNames.end() );
@@ -864,8 +863,7 @@ UniversalLocator::openRunTargetModel( const std::string& pattern ) {
 	std::vector<std::string> runTargetNames;
 	runTargetNames.reserve( runs.size() );
 	for ( const auto& run : runs ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( run->name ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( run->name, pattern ) )
 			runTargetNames.push_back( run->name );
 	}
 	std::sort( runTargetNames.begin(), runTargetNames.end() );
@@ -914,21 +912,20 @@ std::shared_ptr<ItemListOwnerModel<std::string>>
 UniversalLocator::openFileTypeModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getSplitter()->getCurEditor() )
 		return ItemListOwnerModel<std::string>::create( {} );
-	const auto& preDefs = SyntaxDefinitionManager::instance()->getPreDefinitions();
-	const auto& defs = SyntaxDefinitionManager::instance()->getDefinitions();
+	auto sdm = SyntaxDefinitionManager::instance();
 	std::set<std::string> fileTypeNames;
-	for ( const auto& def : preDefs ) {
+	sdm->forEachPreDefinition( [&fileTypeNames, &pattern]( auto def ) {
 		if ( pattern.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
 													String::toLower( pattern ) ) )
 			fileTypeNames.insert( def.getLanguageName() );
-	}
-	for ( const auto& def : defs ) {
+	} );
+	sdm->forEachDefinition( [&fileTypeNames, &pattern]( auto def ) {
 		if ( !def->isVisible() )
-			continue;
+			return;
 		if ( pattern.empty() || String::startsWith( String::toLower( def->getLanguageName() ),
 													String::toLower( pattern ) ) )
 			fileTypeNames.insert( def->getLanguageName() );
-	}
+	} );
 	return ItemListOwnerModel<std::string>::create(
 		std::vector<std::string>( std::make_move_iterator( fileTypeNames.begin() ),
 								  std::make_move_iterator( fileTypeNames.end() ) ) );

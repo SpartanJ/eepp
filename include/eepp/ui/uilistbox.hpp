@@ -13,8 +13,6 @@ class EE_API UIListBox : public UITouchDraggableWidget {
   public:
 	static UIListBox* New();
 
-	UIListBox();
-
 	static UIListBox* NewWithTag( const std::string& tag );
 
 	explicit UIListBox( const std::string& tag );
@@ -27,19 +25,15 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	void clear();
 
-	void addListBoxItems( std::vector<String> texts );
+	void addListBoxItems( const std::vector<String>& texts );
 
 	Uint32 addListBoxItem( const String& Text );
 
-	Uint32 addListBoxItem( UIListBoxItem* Item );
-
 	Uint32 removeListBoxItem( const String& Text );
-
-	Uint32 removeListBoxItem( UIListBoxItem* Item );
 
 	Uint32 removeListBoxItem( Uint32 ItemIndex );
 
-	void removeListBoxItems( std::vector<Uint32> ItemsIndex );
+	void removeListBoxItems( const std::vector<Uint32>& ItemsIndex );
 
 	virtual void setTheme( UITheme* Theme );
 
@@ -52,8 +46,6 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	UIListBoxItem* getItem( const Uint32& Index ) const;
 
 	const String& getItemText( const Uint32& Index ) const;
-
-	Uint32 getItemIndex( UIListBoxItem* Item );
 
 	Uint32 getItemIndex( const String& Text );
 
@@ -81,7 +73,7 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	const Uint32& getRowHeight() const;
 
-	Uint32 getCount() const;
+	Uint32 getItemsCount() const;
 
 	bool isEmpty() const;
 
@@ -143,6 +135,10 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	std::vector<Uint32> mSelected;
 	std::vector<UIListBoxItem*> mItems;
 	std::vector<String> mTexts;
+
+	UIListBox();
+
+	Uint32 getItemIndex( UIListBoxItem* Item );
 
 	void updateScroll( bool fromScrollChange = false );
 

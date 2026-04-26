@@ -2,7 +2,10 @@
 #define EE_UI_DOC_TEXTRANGE_HPP
 
 #include <algorithm>
+#include <eepp/graphics/textselectionrange.hpp>
 #include <eepp/ui/doc/textposition.hpp>
+
+using namespace EE::Graphics;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -120,7 +123,12 @@ class EE_API TextRange {
 	static TextRange convertToLineColumn( const std::string_view& text, Int64 startOffset,
 										  Int64 endOffset );
 
-    Int64 minimumDistance(const TextRange& other) const;
+	Int64 minimumDistance( const TextRange& other ) const;
+
+	static TextSelectionRange convertToOffset( const String::View& text, const TextRange& range );
+
+	static TextSelectionRange convertToOffset( const std::string_view& text,
+											   const TextRange& range );
 
   private:
 	TextPosition mStart;
@@ -133,6 +141,9 @@ class EE_API TextRange {
 	template <typename StringType>
 	static TextRange convertToLineColumn( const StringType& text, Int64 startOffset,
 										  Int64 endOffset );
+
+	template <typename StringType>
+	static TextSelectionRange convertToOffset( const StringType& text, const TextRange& range );
 };
 
 class EE_API TextRanges : public std::vector<TextRange> {

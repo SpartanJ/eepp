@@ -32,6 +32,7 @@ class AutoCompletePlugin;
 class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
+class UITreeViewFS;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
@@ -43,24 +44,25 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	struct InitParameters {
 		LogLevel logLevel{ LogLevel::Info };
-		std::string file;
+		std::vector<std::string> files;
 		Float pidelDensity{ 0.f };
 		std::string colorScheme;
+		std::string css;
+		std::string fileToOpen;
+		std::string language;
+		std::string profile;
 		bool terminal{ false };
 		bool frameBuffer{ false };
 		bool benchmarkMode{ false };
-		std::string css;
-		std::string fileToOpen;
 		bool stdOutLogs{ false };
 		bool disableFileLogs{ false };
 		bool openClean{ false };
 		bool portable{ false };
-		std::string language;
 		bool incognito{ false };
 		bool prematureExit{ false };
-		std::string profile;
 		bool disablePlugins{ false };
 		bool redirectToFirstInstance{ false };
+		bool diff{ false };
 	};
 
 	void init( InitParameters& );
@@ -69,7 +71,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setAppTitle( const std::string& title );
 
-	void openFileDialog();
+	UIFileDialog* openFileDialog( bool registerEvents = true );
 
 	std::string getDefaultFileDialogFolder() const;
 
@@ -161,6 +163,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string getCurrentWorkingDir() const;
 
+	std::string getCurrentFileDir() const;
+
 	Drawable* findIcon( const std::string& name );
 
 	Drawable* findIcon( const std::string& name, const size_t iconSize );
@@ -225,6 +229,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					[this] { runCommand( "plugin-manager-open" ); }, Seconds( 10 ) );
 			}
 		} );
+		t.setCommand( "close-folder", [this] { closeFolder(); } );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
 		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
 		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );
@@ -368,6 +373,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalScrollback();
 		} );
+		t.setCommand( "configure-terminal-working-dir", [this] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalWorkingDir();
+		} );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
 		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
@@ -503,7 +512,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	UITextView* getDocInfo() const;
 
-	UITreeView* getProjectTreeView() const;
+	UITreeViewFS* getProjectTreeView() const;
 
 	void loadCurrentDirectory();
 
@@ -555,6 +564,14 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void loadImageFromMemory( const std::string& content );
 
 	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
+
+	void loadDiffFromPath( const std::string& path );
+
+	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
+
+	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+
+	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
 
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
@@ -628,6 +645,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		return !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath();
 	}
 
+	const SyntaxColorScheme* getCurrentColorScheme() const;
+
+	size_t getMenuIconSize() const { return mMenuIconSize; }
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -674,7 +695,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
-	UITreeView* mProjectTreeView{ nullptr };
+	UITreeViewFS* mProjectTreeView{ nullptr };
 	UILinearLayout* mProjectViewEmptyCont{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;
@@ -726,7 +747,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UITheme* mTheme{ nullptr };
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
-	StyleSheet mAppStyleSheet;
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;
@@ -752,7 +772,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void initProjectTreeViewUI();
 
-	void initProjectTreeView( std::string path, bool openClean );
+	void initProjectTreeView( std::vector<std::string>&& paths, bool openClean );
 
 	void initImageView();
 
@@ -861,6 +881,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::string firstInstanceIndicatorPath() const;
 
 	void tintTitleBar();
+
+	void discardEmptyTab();
 };
 
 } // namespace ecode

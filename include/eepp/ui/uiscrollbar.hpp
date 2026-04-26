@@ -84,9 +84,9 @@ class EE_API UIScrollBar : public UIWidget {
 
   protected:
 	ScrollBarType mScrollBarStyle;
-	UISlider* mSlider;
-	UIWidget* mBtnUp;
-	UIWidget* mBtnDown;
+	UISlider* mSlider{ nullptr };
+	UIWidget* mBtnUp{ nullptr };
+	UIWidget* mBtnDown{ nullptr };
 
 	virtual void onSizeChange();
 

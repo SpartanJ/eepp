@@ -70,9 +70,10 @@ void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& o
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
+	auto syntaxDef = std::make_shared<SyntaxDefinition>( "custom_build", std::vector<std::string>{},
+														 std::move( patterns ) );
 
-	mAppOutput->getDocument().setSyntaxDefinition( synDef );
+	mAppOutput->getDocument().setSyntaxDefinition( syntaxDef );
 	mAppOutput->getVScrollBar()->setValue( 1.f );
 	mAppOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
 	mAppOutput->setLineWrapMode( LineWrapMode::Word );

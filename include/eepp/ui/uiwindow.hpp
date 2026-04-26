@@ -71,10 +71,6 @@ class EE_API UIWindow : public UIWidget {
 
 	static UIWindow* NewRelLay();
 
-	explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
-
-	explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
-
 	virtual ~UIWindow();
 
 	virtual Uint32 getType() const;
@@ -239,7 +235,11 @@ class EE_API UIWindow : public UIWidget {
 	UI_RESIZE_TYPE mResizeType;
 	Vector2f mResizePos;
 
-	bool mFrameBufferBound;
+	Color mShadowColor{ 0, 0, 0, 25 };
+	CSS::StyleSheetLength mShadowSize{ "16dp" };
+	Vector2f mShadowOffset{ 0, PixelDensity::dpToPx( 16.f ) };
+
+	bool mFrameBufferBound{ false };
 	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
 	bool mStealFocusOnShow{ true };
@@ -249,6 +249,10 @@ class EE_API UIWindow : public UIWidget {
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	std::function<bool( Node* focusNode )> mCheckEphemeralCloseFn;
+
+	explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
+
+	explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
 	virtual void onSizeChange();
 

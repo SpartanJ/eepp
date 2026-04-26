@@ -11,8 +11,6 @@ class EE_API UIGridLayout : public UILayout {
 
 	static UIGridLayout* New();
 
-	UIGridLayout();
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -62,6 +60,8 @@ class EE_API UIGridLayout : public UILayout {
 	int mColumnWidth;
 	Float mRowWeight;
 	int mRowHeight;
+
+	UIGridLayout();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

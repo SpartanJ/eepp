@@ -57,54 +57,40 @@ void StyleSheet::setMarker( const Uint32& marker ) {
 }
 
 void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
-	std::vector<std::shared_ptr<StyleSheetStyle>> removeNodes;
+	std::erase_if( mNodeIndex, [marker]( auto& pair ) {
+		std::erase_if( pair.second,
+					   [marker]( const auto& node ) { return node->getMarker() == marker; } );
+		return pair.second.empty(); // If true, the map entry is erased
+	} );
 
-	for ( auto& node : mNodes )
-		if ( node->getMarker() == marker )
-			removeNodes.emplace_back( node );
+	std::erase_if( mNodes, [marker]( const auto& node ) { return node->getMarker() == marker; } );
 
-	std::vector<size_t> deprecatedNodeIndex;
-	for ( auto& nodeIndex : mNodeIndex ) {
-		std::vector<StyleSheetStyle*> removeNodesIndex;
-		for ( auto node : nodeIndex.second ) {
-			if ( node->getMarker() == marker ) {
-				removeNodesIndex.emplace_back( node );
-			}
-		}
-		for ( auto removeNodeIndex : removeNodesIndex ) {
-			auto found =
-				std::find( nodeIndex.second.begin(), nodeIndex.second.end(), removeNodeIndex );
-			if ( found != nodeIndex.second.end() )
-				nodeIndex.second.erase( found );
-		}
-		if ( nodeIndex.second.empty() )
-			deprecatedNodeIndex.emplace_back( nodeIndex.first );
-	}
+	std::erase_if( mMediaQueryList, [marker]( const auto& mediaQueryList ) {
+		return mediaQueryList->getMarker() == marker;
+	} );
 
-	for ( auto removeIndex : deprecatedNodeIndex )
-		mNodeIndex.erase( removeIndex );
+	std::erase_if( mKeyframesMap,
+				   [marker]( const auto& pair ) { return pair.second.getMarker() == marker; } );
 
-	std::vector<MediaQueryList::ptr> removeMediaQueries;
-	for ( auto& mediaQueryList : mMediaQueryList ) {
-		if ( mediaQueryList->getMarker() == marker )
-			removeMediaQueries.emplace_back( mediaQueryList );
-	}
-	if ( !removeMediaQueries.empty() ) {
-		for ( auto& removeMediaQuery : removeMediaQueries ) {
-			auto found =
-				std::find( mMediaQueryList.begin(), mMediaQueryList.end(), removeMediaQuery );
-			if ( found != mMediaQueryList.end() )
-				mMediaQueryList.erase( found );
-		}
-	}
+	invalidateCache();
+}
 
-	std::vector<std::string> removeKeys;
-	for ( auto& keyFrame : mKeyframesMap ) {
-		if ( keyFrame.second.getMarker() == marker )
-			removeKeys.emplace_back( keyFrame.first );
-	}
-	for ( auto& removeKey : removeKeys )
-		mKeyframesMap.erase( removeKey );
+void StyleSheet::removeAllWithoutMarker( const Uint32& marker ) {
+	std::erase_if( mNodeIndex, [marker]( auto& pair ) {
+		std::erase_if( pair.second, [marker]( const auto& node ) {
+			return node->getMarker() != marker; // Notice the !=
+		} );
+		return pair.second.empty();
+	} );
+
+	std::erase_if( mNodes, [marker]( const auto& node ) { return node->getMarker() != marker; } );
+
+	std::erase_if( mMediaQueryList, [marker]( const auto& mediaQueryList ) {
+		return mediaQueryList->getMarker() != marker;
+	} );
+
+	std::erase_if( mKeyframesMap,
+				   [marker]( const auto& pair ) { return pair.second.getMarker() != marker; } );
 
 	invalidateCache();
 }
@@ -114,6 +100,16 @@ StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
 	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
 	for ( auto node : mNodes ) {
 		if ( node->getMarker() == marker )
+			style.addStyle( node );
+	}
+	return style;
+}
+
+StyleSheet StyleSheet::getAllWithMarkers() const {
+	StyleSheet style;
+	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
+	for ( auto node : mNodes ) {
+		if ( node->getMarker() != 0 )
 			style.addStyle( node );
 	}
 	return style;
@@ -361,16 +357,11 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 		if ( node->getAtRuleType() == atRuleType )
 			vector.push_back( node.get() );
 
-	std::sort( vector.begin(), vector.end(),
-			   []( const StyleSheetStyle* left, const StyleSheetStyle* right ) {
-				   bool leftHasIt = left->hasProperty( PropertyId::FontStyle );
-				   bool rightHasIt = right->hasProperty( PropertyId::FontStyle );
-				   if ( leftHasIt && !rightHasIt )
-					   return false;
-				   if ( !leftHasIt && rightHasIt )
-					   return true;
-				   return leftHasIt && rightHasIt;
-			   } );
+	std::sort( vector.begin(), vector.end(), []( const auto& left, const auto& right ) {
+		bool leftHasIt = left->hasProperty( PropertyId::FontStyle );
+		bool rightHasIt = right->hasProperty( PropertyId::FontStyle );
+		return leftHasIt < rightHasIt;
+	} );
 
 	return vector;
 }

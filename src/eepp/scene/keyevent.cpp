@@ -1,5 +1,6 @@
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace Scene {
 
@@ -37,18 +38,33 @@ const Uint32& KeyEvent::getMod() const {
 }
 
 Uint32 KeyEvent::getSanitizedMod() const {
-	Uint32 mod = 0;
-	if ( mMod & KEYMOD_CTRL )
-		mod |= KEYMOD_CTRL;
-	if ( mMod & KEYMOD_SHIFT )
-		mod |= KEYMOD_SHIFT;
-	if ( mMod & KEYMOD_META )
-		mod |= KEYMOD_META;
-	if ( mMod & KEYMOD_LALT )
-		mod |= KEYMOD_LALT;
-	if ( mMod & KEYMOD_RALT )
-		mod |= KEYMOD_RALT;
-	return mod;
+	return mMod & KEYMOD_CTRL_SHIFT_ALT_META;
+}
+
+bool TextInputEvent::isValidTextInputEvent( Input* input, const TextInputEvent& event ) {
+	// Meta/Command key shortcuts do not generate text
+	if ( input->isMetaPressed() )
+		return false;
+
+	// Ctrl shortcuts (without Alt/AltGr) do not generate text
+	if ( input->isLeftControlPressed() && !input->isLeftAltPressed() && !input->isAltGrPressed() )
+		return false;
+
+	// Alt+Tab should not insert a tab character
+	if ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
+		return false;
+
+#if EE_PLATFORM != EE_PLATFORM_MACOS
+	// On non-macOS platforms, Alt key combinations (without Ctrl) do not generate text
+	if ( input->isLeftAltPressed() && !input->isLeftControlPressed() )
+		return false;
+#endif
+
+	return true;
+}
+
+bool TextInputEvent::isValid( Input* input ) const {
+	return isValidTextInputEvent( input, *this );
 }
 
 TextInputEvent::TextInputEvent( Node* node, const Uint32& eventNum, const Uint32& chr,

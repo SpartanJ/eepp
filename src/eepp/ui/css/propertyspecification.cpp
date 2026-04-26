@@ -22,7 +22,10 @@ PropertyDefinition& PropertySpecification::registerProperty( const std::string& 
 
 	mProperties[propDef->getId()] = std::shared_ptr<PropertyDefinition>( propDef );
 
-	for ( auto& sep : {"-", "_"} ) {
+	if ( inherited )
+		mInheritableProperties.push_back( propDef->getPropertyId() );
+
+	for ( auto& sep : { "-", "_" } ) {
 		if ( propDef->getName().find( sep ) != std::string::npos ) {
 			std::string alias( propDef->getName() );
 			String::replaceAll( alias, sep, "" );
@@ -31,6 +34,14 @@ PropertyDefinition& PropertySpecification::registerProperty( const std::string& 
 	}
 
 	return *propDef;
+}
+
+const SmallVector<PropertyId>& PropertySpecification::getInheritableProperties() const {
+	return mInheritableProperties;
+}
+
+const PropertyDefinition* PropertySpecification::getProperty( const PropertyId& id ) const {
+	return getProperty( static_cast<std::underlying_type_t<PropertyId>>( id ) );
 }
 
 const PropertyDefinition* PropertySpecification::getProperty( const Uint32& id ) const {

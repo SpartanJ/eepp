@@ -125,7 +125,9 @@ class EE_API StyleSheetProperty {
 
 	Rect asRect( const Rect& defaultValue = Rect() ) const;
 
-	Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
+	Rectf asRectf( const Rectf& defaultValue = Rectf::Zero ) const;
+
+	Uint32 asTextDecoration() const;
 
 	Uint32 asFontStyle() const;
 
@@ -183,6 +185,8 @@ class EE_API StyleSheetProperty {
 	StyleSheetProperty& setCachedProperty( bool cached );
 
 	bool isCachedProperty() const;
+
+	void setImportant( bool important );
 
   protected:
 	std::string mName;

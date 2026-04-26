@@ -32,7 +32,16 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 		std::string chunk =
 			mReadBytes ? mStream.getStream().substr( mReadBytes ) : mStream.getStream();
 		mReadBytes = mStream.getStream().size();
-		String::readBySeparator( chunk, [this]( std::string_view subchunk ) {
+
+		mBuffer += chunk;
+		auto lastNL = mBuffer.find_last_of( '\n' );
+
+		if ( lastNL == std::string::npos )
+			return true;
+
+		std::string_view processChunk = std::string_view{ mBuffer }.substr( 0, lastNL );
+
+		String::readBySeparator( processChunk, [this]( std::string_view subchunk ) {
 			if ( subchunk.empty() )
 				return;
 			// OpenAI format?
@@ -78,38 +87,66 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 
 				for ( const auto& choice : choices ) {
 					if ( choice["delta"].contains( "reasoning_content" ) ) {
-						std::string delta = choice["delta"]["reasoning_content"];
-						if ( streamedResponseCb )
-							streamedResponseCb( delta, true );
-						mReasoningResponse += std::move( delta );
+						const auto& reasoningContent = choice["delta"]["reasoning_content"];
+						if ( reasoningContent.is_string() ) {
+							std::string delta = choice["delta"]["reasoning_content"];
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, true );
+								mReasoningResponse += std::move( delta );
+							}
+						}
+					} else if ( choice["delta"].contains( "reasoning" ) ) {
+						const auto& reasoningContent = choice["delta"]["reasoning"];
+						if ( reasoningContent.is_string() ) {
+							std::string delta = choice["delta"]["reasoning"];
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, true );
+								mReasoningResponse += std::move( delta );
+							}
+						}
 					} else if ( choice["delta"].contains( "content" ) ) {
-						std::string delta = choice["delta"]["content"];
-						if ( streamedResponseCb )
-							streamedResponseCb( delta, false );
-						mResponse += std::move( delta );
+						const auto& content = choice["delta"]["content"];
+						if ( content.is_string() ) {
+							std::string delta = choice["delta"]["content"];
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, false );
+								mResponse += std::move( delta );
+							}
+						}
 					}
 				}
 				// Anthropic
 			} else if ( data.contains( "delta" ) &&
 						data["delta"].value( "type", "" ) == "text_delta" ) {
 				std::string delta = data["delta"]["text"];
-				if ( streamedResponseCb )
-					streamedResponseCb( delta, false );
-				mResponse += std::move( delta );
+				if ( !delta.empty() ) {
+					if ( streamedResponseCb )
+						streamedResponseCb( delta, false );
+					mResponse += std::move( delta );
+				}
 			}
 		} );
+
+		mBuffer.erase( 0, lastNL + 1 );
 		return true;
 	} );
 }
 
 LLMChatCompletionRequest::~LLMChatCompletionRequest() {
-	cancel();
+	cancelCb = nullptr;
+	doneCb = nullptr;
+	streamedResponseCb = nullptr;
+	cancel( true );
 }
 
 void LLMChatCompletionRequest::request() {
 	mCancel = false;
 	mCancelled = false;
 	mHadProgress = false;
+	mBuffer.clear();
 	Http::Response res = mHttp->downloadRequest( mRequest, mStream, Seconds( 5 ) );
 	if ( doneCb )
 		doneCb( *this, res );
@@ -119,6 +156,7 @@ void LLMChatCompletionRequest::requestAsync() {
 	mCancel = false;
 	mCancelled = false;
 	mHadProgress = false;
+	mBuffer.clear();
 	mRequestId = mHttp->downloadAsyncRequest(
 		[this]( const Http&, Http::Request&, Http::Response& res ) {
 			if ( doneCb )
@@ -127,10 +165,10 @@ void LLMChatCompletionRequest::requestAsync() {
 		mRequest, mStream, Seconds( 5 ) );
 }
 
-void LLMChatCompletionRequest::cancel() {
+void LLMChatCompletionRequest::cancel(bool resetCancelCallback ) {
 	mCancel = true;
 	if ( mRequestId )
-		mHttp->setCancelRequest( mRequestId );
+		mHttp->setCancelRequest( mRequestId, resetCancelCallback );
 	if ( !mHadProgress )
 		onCancel();
 }

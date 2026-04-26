@@ -120,7 +120,7 @@ void UITooltip::setTheme( UITheme* Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf::Zero ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -159,7 +159,7 @@ void UITooltip::draw() {
 		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
-			mTextCache->setAlign( getFlags() );
+			mTextCache->setAlign( getHorizontalAlign() | getVerticalAlign() );
 			mTextCache->draw( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x,
 							  std::trunc( mScreenPos.y ) + (int)mAlignOffset.y, Vector2f::One, 0.f,
 							  getBlendMode() );
@@ -376,6 +376,24 @@ UITooltip* UITooltip::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
+Uint32 UITooltip::getTextDecoration() const {
+	Uint32 flags = mStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UITooltip* UITooltip::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mStyleConfig.Style != textDecoration ) {
+		mStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mStyleConfig.Style |= textDecoration;
+		mTextCache->setStyle( mStyleConfig.Style );
+		onAutoSize();
+		autoAlign();
+		invalidateDraw();
+	}
+	return this;
+}
+
 const Uint32& UITooltip::getFontStyle() const {
 	return mStyleConfig.Style;
 }
@@ -440,7 +458,9 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getCharacterSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getCharacterSize() ), "dp" );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -465,7 +485,7 @@ std::vector<PropertyId> UITooltip::getPropertiesImplemented() const {
 		PropertyId::TextTransform,	  PropertyId::Color,		   PropertyId::TextShadowColor,
 		PropertyId::TextShadowOffset, PropertyId::FontFamily,	   PropertyId::FontSize,
 		PropertyId::FontStyle,		  PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
-		PropertyId::TextAlign,		  PropertyId::Wordwrap };
+		PropertyId::TextAlign,		  PropertyId::Wordwrap,		   PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -546,6 +566,17 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
+			if ( !mUsingCustomStyling )
+				setFontSize( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::Wordwrap:
+			if ( attribute.asBool() )
+				mFlags |= UI_WORD_WRAP;
+			else
+				mFlags &= ~UI_WORD_WRAP;
+			autoWrap();
+			break;
+		case PropertyId::FontStyle: {
 			if ( !mUsingCustomStyling ) {
 				Uint32 flags = attribute.asFontStyle();
 
@@ -558,16 +589,10 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontStyle( flags );
 			}
 			break;
-		case PropertyId::Wordwrap:
-			if ( attribute.asBool() )
-				mFlags |= UI_WORD_WRAP;
-			else
-				mFlags &= ~UI_WORD_WRAP;
-			autoWrap();
-			break;
-		case PropertyId::FontStyle:
+		}
+		case PropertyId::TextDecoration:
 			if ( !mUsingCustomStyling )
-				setFontStyle( attribute.asFontStyle() );
+				setTextDecoration( attribute.asTextDecoration() );
 			break;
 		case PropertyId::TextStrokeWidth:
 			if ( !mUsingCustomStyling )
@@ -615,6 +640,9 @@ void UITooltip::onAlphaChange() {
 }
 
 void UITooltip::autoWrap() {
+	mTextCache->setLineWrapMode( mFlags & UI_WORD_WRAP ? LineWrapMode::Word
+													   : LineWrapMode::NoWrap );
+
 	if ( mFlags & UI_WORD_WRAP && !mMaxWidthEq.empty() ) {
 		Float length =
 			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
@@ -627,7 +655,8 @@ void UITooltip::wrapText( const Uint32& maxWidth ) {
 		mTextCache->setString( mStringBuffer );
 	}
 
-	mTextCache->wrapText( maxWidth );
+	mTextCache->setLineWrapMode( LineWrapMode::Word );
+	mTextCache->setMaxWrapWidth( maxWidth );
 	invalidateDraw();
 }
 

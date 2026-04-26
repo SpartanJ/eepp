@@ -14,9 +14,10 @@ Uint32 Version::getVersionNum() {
 	return EEPP_VERSIONNUM( ver.major, ver.minor, ver.patch );
 }
 
-std::string Version::getVersionName() {
+std::string Version::getVersionName( bool fullName ) {
 	Version ver = getVersion();
-	return String::format( "eepp version %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return fullName ? String::format( "eepp version %d.%d.%d", ver.major, ver.minor, ver.patch )
+					: String::format( "%d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 std::string Version::getCodename() {

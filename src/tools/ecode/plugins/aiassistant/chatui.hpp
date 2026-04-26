@@ -1,12 +1,14 @@
 #pragma once
 
 #include "../pluginmanager.hpp"
+#include "acp/agentsession.hpp"
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
+#include <eepp/core/containers.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 namespace EE { namespace UI {
@@ -89,6 +91,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void setManager( PluginManager* manager ) { mManager = manager; }
 
+	bool chatExistsInDisk() const;
+
+	const std::string& getCurAgent() const { return mCurAgent; }
+
   protected:
 	UUID mUUID;
 	std::string mSummary;
@@ -107,21 +113,55 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIPushButton* mRefreshModels{ nullptr };
 	UIPushButton* mChatAttach{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
+	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
-	UIDropDownList* mModelDDL{ nullptr };
+	UIPushButton* mModelBtn{ nullptr };
+	UIPushButton* mAgentBtn{ nullptr };
+	UIPushButton* mAgentConfigBtn{ nullptr };
+
+	// Locate file
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITableView* mLocateTable{ nullptr };
+
+	// Select model
+	UIVLinearLayoutCommandExecuter* mLocateModelBarLayout{ nullptr };
+	UITextInput* mLocateModelInput{ nullptr };
+	UITableView* mLocateModelTable{ nullptr };
+
+	// Select agent
+	UIVLinearLayoutCommandExecuter* mLocateAgentBarLayout{ nullptr };
+	UITextInput* mLocateAgentInput{ nullptr };
+	UITableView* mLocateAgentTable{ nullptr };
 
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
 	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
 	LLMProviders mProviders;
 	LLMModel mCurModel;
-	std::unordered_map<String::HashType, LLMModel> mModelsMap;
+	std::vector<LLMModel> mModels;
+
+	std::map<std::string, ACPAgent> mAgents;
+	std::string mCurAgent;
+
+	struct SlashCommand {
+		std::string name;
+		std::string description;
+	};
+	std::vector<SlashCommand> mAvailableCommands;
+
+	UnorderedMap<std::string, UIWidget*> mToolCallBubbles;
+	UnorderedMap<std::string, UIWidget*> mTerminalBubbles;
+	std::unique_ptr<acp::AgentSession> mAgentSession;
+	UIWidget* mThinkingBubble{ nullptr };
+	std::string mCurThinking;
+	std::string mCurToolCall;
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
+	bool mIsAgentMode{ false };
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
+	bool mDisplayReasoning{ false };
+	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -141,6 +181,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void doRequest();
 
+	void doAgentRequest();
+
+	void sendAgentPrompt();
+
 	void toggleEnableChat( UIWidget* chat, bool enabled );
 
 	void toggleEnableChats( bool enabled );
@@ -149,17 +193,56 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	UIWidget* addChatUI( LLMChat::Role role );
 
-	void fillApiModels( UIDropDownList* modelDDL );
+	UIWidget* addMarkdownBubble( const std::string& layout, const std::string& markdown );
+
+	void addPlanBubble( const std::string& markdown );
+
+	void addPlanUpdate( const nlohmann::json& msg );
+
+	void addToolCallBubble( const std::string& markdown );
+
+	void addToolCallUpdate( const nlohmann::json& msg );
+
+	void addThinkingBubble();
+
+	void updateThinkingBubble( const std::string& chunk );
+
+	void addPermissionUI( const acp::RequestPermissionRequest& req,
+						  std::function<void( const acp::RequestPermissionResponse& )> cb );
+
+	void fillApiModels();
 
 	String getModelDisplayName( const LLMModel& model ) const;
 
-	bool selectModel( UIDropDownList* modelDDL, const LLMModel& model );
+	bool selectModel( std::optional<LLMModel> model );
 
-	void fillModelDropDownList( UIDropDownList* modelDDL );
+	bool selectAgent( const std::string& agent );
+
+	void fillModelDropDownList();
+
+	void loadSelectAgent();
+
+	void showSelectAgent();
+
+	void initSelectAgent();
+
+	void hideSelectAgent();
+
+	void updateLocateAgentBarColumns();
+
+	void updateAgentModeUI();
+
+	void setupAgentSession();
 
 	void resizeToFit( UICodeEditor* editor );
 
-	void addChat( LLMChat::Role role, std::string conversation );
+	void showSlashCommands();
+
+	void addChat( LLMChat::Role role, const std::string& conversation );
+
+	void addChat( LLMChat::Role role, const String& conversation );
+
+	void writeToLastChat( const std::string& text );
 
 	void removeLastChat();
 
@@ -170,6 +253,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	const LLMModel& getCheapestModelFromCurrentProvider() const;
 
 	std::optional<LLMModel> getModel( const std::string& provider, const std::string& modelName );
+
+	std::optional<LLMModel> getModel( Uint64 hash );
 
 	void saveChat();
 
@@ -186,15 +271,37 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void initAttachFile();
 
+	void initSelectModel();
+
 	void updateLocateBarColumns();
 
 	void showAttachFile();
 
 	void hideAttachFile();
 
+	void updateLocateModelBarColumns();
+
+	void loadSelectModel();
+
+	void showSelectModel();
+
+	void hideSelectModel();
+
+	void showAgentConfigWindow();
+
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 
 	void replaceFileLinksToContents( std::string& text );
+
+	nlohmann::json promptToContentBlocks( std::string text );
+
+	void generateChatName( bool isRenaming );
+
+	void regenerateChatName();
+
+	void removeWaitingBubble();
+
+	UIWidget* getLastConversation( bool skipEmpty = false ) const;
 };
 
 } // namespace ecode

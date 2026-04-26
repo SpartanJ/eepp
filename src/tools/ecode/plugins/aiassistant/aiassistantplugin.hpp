@@ -14,11 +14,12 @@ class AIAssistantPlugin : public PluginBase {
 		StyleSheetLength partition;
 		std::string modelProvider;
 		std::string modelName;
+		std::string agentName;
 	};
 
 	static PluginDefinition Definition() {
 		return { "aiassistant",			 "AI Assistant", "Chat with your favorite AI assistant",
-				 AIAssistantPlugin::New, { 0, 0, 3 },	 AIAssistantPlugin::NewSync };
+				 AIAssistantPlugin::New, { 0, 1, 0 },	 AIAssistantPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -37,6 +38,7 @@ class AIAssistantPlugin : public PluginBase {
 	std::string getDescription() override { return Definition().description; }
 
 	const LLMProviders& getProviders() { return mProviders; }
+	const ACPAgents& getAgents() { return mAgents; }
 
 	std::string getPluginStatePath() const;
 
@@ -48,14 +50,20 @@ class AIAssistantPlugin : public PluginBase {
 
 	void setConfig( AIAssistantConfig&& config ) { mConfig = std::move( config ); }
 
+	bool displayReasoning() const { return mDisplayReasoning; }
+
   protected:
 	LLMProviders mProviders;
+	ACPAgents mAgents;
 	bool mUIInit{ false };
+	bool mBrokenUserConfigFile{ false };
+	bool mDisplayReasoning{ false };
 	UIWidget* mStatusBar{ nullptr };
 	UIPushButton* mAIChatButton{ nullptr };
 	UnorderedMap<std::string, std::string> mApiKeys;
 	AIAssistantConfig mConfig;
 	Uint32 mAIChatButtonPosCbId{ 0 };
+	std::string mConfigFileError;
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
@@ -72,6 +80,8 @@ class AIAssistantPlugin : public PluginBase {
 	void onRegisterDocument( TextDocument* doc ) override;
 
 	void initUI();
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

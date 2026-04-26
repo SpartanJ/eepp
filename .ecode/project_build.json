@@ -223,7 +223,6 @@
         "args": "",
         "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
         "name": "eepp-unit_tests-debug",
-        "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests/"
       },
       {
@@ -327,6 +326,60 @@
         "args": "",
         "command": "${project_root}/bin/eepp-ui-perf-test-debug",
         "name": "eepp-ui-perf-test-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-MapEditor-debug",
+        "name": "eepp-MapEditor-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-richtext-debug",
+        "name": "eepp-richtext-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-treeviewmodel-debug",
+        "name": "eepp-treeviewmodel-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-hello-world",
+        "name": "eepp-ui-hello-world-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-application-hello-world",
+        "name": "eepp-ui-application-hello-world-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-richtext-debug",
+        "name": "eepp-ui-richtext-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-markdownview-debug",
+        "name": "eepp-ui-markdownview-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-dropdownmodellist-debug",
+        "name": "eepp-ui-dropdownmodellist-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-c system --hn-dark",
+        "command": "${project_root}/bin/eepp-ui-html-debug",
+        "name": "eepp-ui-html-debug",
         "working_dir": "${project_root}/bin"
       }
     ],
@@ -550,6 +603,18 @@
         "args": "",
         "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
         "name": "eepp-unit_test-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-html-debug",
+        "name": "eepp-ui-html-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-markdownview-debug",
+        "name": "eepp-ui-markdownview-debug",
         "working_dir": "${project_root}/bin/"
       }
     ],

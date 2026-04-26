@@ -2,6 +2,7 @@
 
 #ifdef EE_MBEDTLS
 
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
@@ -108,11 +109,18 @@ int MbedTLSSocket::bio_recv( void* ctx, unsigned char* buf, size_t len ) {
 }
 
 Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
-									   unsigned short /*remotePort*/, Time /*timeout*/ ) {
+									   unsigned short /*remotePort*/, Time timeout ) {
 	if ( mConnected ) {
 		disconnect();
 	}
 
+	bool isBlocking = mSSLSocket->isBlocking();
+	if ( isBlocking && timeout != Time::Zero ) {
+		mSSLSocket->setReceiveTimeout( timeout );
+		mSSLSocket->setSendTimeout( timeout );
+	}
+
+	Clock clock;
 	int ret = 0;
 	int authmode =
 		mSSLSocket->mValidateCertificate ? MBEDTLS_SSL_VERIFY_REQUIRED : MBEDTLS_SSL_VERIFY_NONE;
@@ -144,9 +152,23 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 		while ( ( ret = mbedtls_ssl_handshake( &mSSLContext ) ) != 0 ) {
 			if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
 				mStatus = Socket::Error;
-				return mStatus;
+				break;
+			} else if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) {
+				mStatus = Socket::Error;
+				break;
 			}
+
+			if ( !isBlocking )
+				Sys::sleep( Milliseconds( 1 ) );
 		}
+
+		if ( isBlocking && timeout != Time::Zero ) {
+			mSSLSocket->setReceiveTimeout( Time::Zero );
+			mSSLSocket->setSendTimeout( Time::Zero );
+		}
+
+		if ( mStatus == Socket::Error )
+			return mStatus;
 
 		mSSLSession = (mbedtls_ssl_session*)eeMalloc( sizeof( mbedtls_ssl_session ) );
 		mbedtls_ssl_session_init( mSSLSession );

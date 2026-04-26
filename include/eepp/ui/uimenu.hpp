@@ -18,8 +18,6 @@ class EE_API UIMenu : public UIWidget {
 	static void findBestMenuPos( Vector2f& position, UIWidget* menu, UIMenu* parent = NULL,
 								 UIMenuSubMenu* subMenu = NULL, Node* trigger = NULL );
 
-	UIMenu();
-
 	virtual ~UIMenu();
 
 	virtual Uint32 getType() const;
@@ -94,6 +92,8 @@ class EE_API UIMenu : public UIWidget {
 	friend class UIMenuCheckBox;
 	friend class UIMenuRadioButton;
 	friend class UIMenuSubMenu;
+
+	UIMenu();
 
 	std::deque<UIWidget*> mItems;
 	Uint32 mMaxWidth;

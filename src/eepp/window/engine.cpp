@@ -4,6 +4,7 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
@@ -117,6 +118,8 @@ Engine::~Engine() {
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
+
+	TextLayout::clearLayoutCache();
 }
 
 void Engine::destroy() {
@@ -183,7 +186,8 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	PixelDensity::setPixelDensity( Settings.PixelDensity );
+	if ( Settings.PixelDensity > 0 )
+		PixelDensity::setPixelDensity( Settings.PixelDensity );
 
 	return window;
 }
@@ -241,7 +245,7 @@ Uint32 Engine::getWindowCount() const {
 }
 
 bool Engine::isEngineRunning() {
-	return existsSingleton() && Engine::instance()->isRunning();
+	return existsSingleton() && !isShuttingDown() && Engine::instance()->isRunning();
 }
 
 bool Engine::isRunning() const {
@@ -334,13 +338,14 @@ ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyN
 	int depthBufferSize = ini->getValueI( iniKeyName, "depthbuffersize", 24 );
 	int stencilBufferSize = ini->getValueI( iniKeyName, "stencilbuffersize", 1 );
 	int multisamples = ini->getValueI( iniKeyName, "multisamples", 0 );
-	int frameRateLimit = ini->getValueI( iniKeyName, "frameratelimit", 0 );
+	int frameRateLimit = ini->getValueI( iniKeyName, "frameratelimit",
+										 ContextSettings::FrameRateLimitScreenRefreshRate );
 	bool doubleBuffering = ini->getValueB( iniKeyName, "doublebuffering", true );
 	bool sharedGLContext = ini->getValueB( iniKeyName, "sharedglcontext", false );
 
-	return ContextSettings( VSync, Renderer::glVersionFromString( GLVersion ), doubleBuffering,
-							depthBufferSize, stencilBufferSize, multisamples, sharedGLContext,
-							frameRateLimit );
+	return ContextSettings( VSync, frameRateLimit, multisamples,
+							Renderer::glVersionFromString( GLVersion ), sharedGLContext,
+							doubleBuffering, depthBufferSize, stencilBufferSize );
 }
 
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {

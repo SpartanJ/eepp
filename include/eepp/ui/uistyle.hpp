@@ -27,8 +27,6 @@ class EE_API UIStyle : public UIState {
   public:
 	static UIStyle* New( UIWidget* widget );
 
-	explicit UIStyle( UIWidget* widget );
-
 	virtual ~UIStyle();
 
 	bool stateExists( const Uint32& state ) const;
@@ -73,7 +71,13 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
+	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id );
+
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
+
+	bool hasLocalProperty( CSS::PropertyId propId ) const;
+
+	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId ) const;
 
 	void resetGlobalDefinition();
 
@@ -96,6 +100,8 @@ class EE_API UIStyle : public UIState {
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
 	bool mFirstState;
+
+	explicit UIStyle( UIWidget* widget );
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
@@ -121,6 +127,8 @@ class EE_API UIStyle : public UIState {
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+
+	void applyInheritedProperties();
 
 	void updateAnimationsPlayState();
 

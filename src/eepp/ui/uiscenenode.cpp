@@ -9,6 +9,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -17,17 +18,23 @@
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 using namespace EE::Network;
 
 namespace EE { namespace UI {
+
+static constexpr std::string_view VOIDTAG_REGEX =
+	"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>";
 
 UISceneNode* UISceneNode::New( EE::Window::Window* window ) {
 	return eeNew( UISceneNode, ( window ) );
@@ -159,6 +166,10 @@ void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
 
+void UISceneNode::setTranslator( Translator&& translator ) {
+	mTranslator = std::move( translator );
+}
+
 const Translator& UISceneNode::getTranslator() const {
 	return mTranslator;
 }
@@ -261,6 +272,32 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
 		clock.restart();
 
+		if ( String::iequals( widget.name(), "style" ) ) {
+			CSS::StyleSheetParser parser;
+			std::string styleContent;
+			for ( pugi::xml_node child = widget.first_child(); child;
+				  child = child.next_sibling() ) {
+				if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
+					styleContent += child.value();
+				}
+			}
+
+			if ( parser.loadFromString( std::string_view{ styleContent } ) ) {
+				parser.getStyleSheet().setMarker( marker );
+				combineStyleSheet( parser.getStyleSheet(), false );
+			}
+			continue;
+		} else if ( String::iequals( widget.name(), "link" ) ) {
+			auto type = widget.attribute( "type" );
+			auto href = widget.attribute( "href" );
+			auto rel = widget.attribute( "rel" );
+			if ( !href.empty() && ( String::iequals( type.value(), "text/css" ) ||
+									String::iequals( rel.value(), "stylesheet" ) ) ) {
+				loadCSS( href.as_string() );
+			}
+			continue;
+		}
+
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
@@ -288,18 +325,11 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 					clock.getElapsedTime().asMilliseconds(), std::string( name ) ) );
 			}
 
-			if ( widget.first_child() ) {
+			if ( widget.first_child() && !uiwidget->loadsItsChildren() ) {
 				loadNode( widget.first_child(), uiwidget, marker );
 			}
 
 			uiwidget->onWidgetCreated();
-		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
-			CSS::StyleSheetParser parser;
-
-			if ( parser.loadFromString( std::string_view{ widget.text().as_string() } ) ) {
-				parser.getStyleSheet().setMarker( marker );
-				combineStyleSheet( parser.getStyleSheet(), false );
-			}
 		}
 	}
 
@@ -367,23 +397,36 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 		setStyleSheet( parser.getStyleSheet() );
 }
 
-void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
-									 const bool& forceReloadStyle ) {
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
+									 URI baseURI ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
-	processStyleSheetAtRules( styleSheet );
-	onMediaChanged();
+
+	bool mediaChanged = false;
+	if ( !mStyleSheet.isMediaQueryListEmpty() &&
+		 mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
+		mediaChanged = true;
+	}
+
+	processStyleSheetAtRules( styleSheet, baseURI );
+
+	if ( mRoot && mRoot->getUIStyle() )
+		mRoot->getUIStyle()->resetGlobalDefinition();
+
+	if ( mRoot && mediaChanged )
+		mRoot->reportStyleStateChangeRecursive( false, false );
+
 	if ( forceReloadStyle )
 		reloadStyle();
 }
 
-void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet,
-									 const bool& forceReloadStyle, const Uint32& marker ) {
+void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle,
+									 const Uint32& marker, URI baseURI ) {
 	CSS::StyleSheetParser parser;
 
 	if ( parser.loadFromString( inlineStyleSheet ) ) {
 		parser.getStyleSheet().setMarker( marker );
 
-		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle );
+		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle, baseURI );
 	}
 }
 
@@ -423,11 +466,21 @@ void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool )
 	mThreadPool = threadPool;
 }
 
+static std::string getErrorContext( size_t offset, std::string_view content ) {
+	static constexpr std::size_t CONTEXT_LENGTH = 50;
+	std::size_t minVal = offset >= CONTEXT_LENGTH ? offset - CONTEXT_LENGTH : 0;
+	std::size_t maxVal = offset + CONTEXT_LENGTH;
+	std::size_t left = std::max( static_cast<std::size_t>( 0ul ), minVal );
+	std::size_t right = std::min( content.size(), maxVal );
+	return std::string{ content.substr( left, right - left ) };
+}
+
 UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent,
 										   const Uint32& marker ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
+		pugi::xml_parse_result result =
+			doc.load_file( layoutPath.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
 
 		if ( result ) {
 			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
@@ -435,6 +488,9 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 			Log::error( "Couldn't load UI Layout: %s", layoutPath.c_str() );
 			Log::error( "Error description: %s", result.description() );
 			Log::error( "Error offset: %d", result.offset );
+			std::string data;
+			FileSystem::fileGet( layoutPath, data );
+			Log::error( "Error context: %s", getErrorContext( result.offset, data ) );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( layoutPath );
@@ -450,15 +506,29 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 
 UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_string( layoutString );
+	pugi::xml_parse_result result;
+	std::string fixedLayout;
+	bool needsReplacements = voidTagsRegex.matches( layoutString );
+
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString, "%1 />" );
+		result =
+			doc.load_string( fixedLayout.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
+	} else {
+		result = doc.load_string( layoutString, pugi::parse_default | pugi::parse_ws_pcdata );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from string: %s", layoutString );
+		Log::error( "Couldn't load UI Layout from string: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s", getErrorContext( result.offset, layoutString ) );
 	}
 
 	return NULL;
@@ -471,15 +541,34 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
 											 const Uint32& marker ) {
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize );
+	pugi::xml_parse_result result;
+	std::string_view layoutString( static_cast<const char*>( buffer ), bufferSize );
+	std::string fixedLayout;
+	bool needsReplacements =
+		voidTagsRegex.matches( static_cast<const char*>( buffer ), 0, nullptr, bufferSize );
+
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString.data(), "%1 />" );
+		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+	} else {
+		result = doc.load_buffer( buffer, bufferSize, pugi::parse_default | pugi::parse_ws_pcdata );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from buffer" );
+		Log::error( "Couldn't load UI Layout from memory: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s",
+					getErrorContext( result.offset,
+									 std::string_view{ static_cast<const char*>( buffer ),
+													   static_cast<std::size_t>( bufferSize ) } ) );
 	}
 
 	return NULL;
@@ -494,15 +583,35 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	TScopedBuffer<char> scopedBuffer( bufferSize );
 	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
+	pugi::xml_parse_result result;
+	std::string_view layoutString( scopedBuffer.get(), scopedBuffer.length() );
+	std::string fixedLayout;
+	bool needsReplacements =
+		voidTagsRegex.matches( scopedBuffer.get(), 0, nullptr, scopedBuffer.length() );
+	std::string_view contents;
+
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString.data(), "%1 />" );
+		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+		contents = fixedLayout;
+	} else {
+		result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+		contents = std::string_view( scopedBuffer.get(), scopedBuffer.length() );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from stream" );
+		Log::error( "Couldn't load UI Layout from stream: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s", getErrorContext( result.offset, contents ) );
 	}
 
 	return NULL;
@@ -639,7 +748,7 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 	}
 }
 
-const bool& UISceneNode::isLoading() const {
+bool UISceneNode::isLoading() const {
 	return mIsLoading;
 }
 
@@ -669,13 +778,9 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
-	// Already invalidated?
-	if ( mDirtyStyle.count( node ) > 0 ) {
-		if ( !tryReinsert )
-			return;
-		else
-			mDirtyStyle.erase( node );
-	}
+	bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
+	if ( alreadyExists && !tryReinsert )
+		return;
 
 	// Any parent dirty?
 	Node* parent = node->getParent();
@@ -685,7 +790,11 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 		parent = parent->getParent();
 	}
 
-	std::vector<UIWidget*> eraseList;
+	// Now that we know we aren't early-outing, handle the reinsertion erase
+	if ( alreadyExists && tryReinsert )
+		mDirtyStyle.erase( node );
+
+	SmallVector<UIWidget*> eraseList;
 
 	// Any child in list? remove it
 	for ( auto widget : mDirtyStyle )
@@ -721,15 +830,17 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 		parent = parent->getParent();
 	}
 
-	std::vector<UIWidget*> eraseList;
+	SmallVector<UIWidget*> eraseList;
 
 	// Any child in list? remove it
 	for ( auto widget : mDirtyStyleState )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
 
-	for ( auto widget : eraseList )
+	for ( auto widget : eraseList ) {
 		mDirtyStyleState.erase( widget );
+		mDirtyStyleStateCSSAnimations.erase( widget );
+	}
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -744,23 +855,57 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 	if ( mDirtyLayouts.count( node ) > 0 )
 		return;
 
-	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts ) {
-			if ( NULL != dirtyNode && dirtyNode == node->getParent() ) {
-				return;
-			}
+	// 1. Walk UP the tree.
+	// If any ancestor is already dirty AND the path to it is entirely layouts,
+	// we can early-out because that ancestor will naturally update this node.
+	Node* ancestorIt = node->getParent();
+	while ( ancestorIt != nullptr ) {
+		if ( !ancestorIt->isLayout() ) {
+			// The invalidation path is broken by a non-layout node.
+			// Any dirty layouts above this won't automatically trickle down to 'node'.
+			break;
 		}
 
-		std::vector<UILayout*> eraseList;
+		if ( mDirtyLayouts.count( ancestorIt->asType<UILayout>() ) > 0 )
+			return; // A valid ancestor is already dirty! Skip adding this node.
 
-		for ( auto layout : mDirtyLayouts )
-			if ( NULL == layout ||
-				 ( node->isParentOf( layout ) && layout->getParent()->isLayout() ) )
-				eraseList.push_back( layout );
-
-		for ( auto layout : eraseList )
-			mDirtyLayouts.erase( layout );
+		ancestorIt = ancestorIt->getParent();
 	}
+
+	// 2. Walk DOWN the dirty list.
+	// Remove any already-dirty layouts that will be naturally updated by THIS node.
+	SmallVector<UILayout*> eraseList;
+
+	for ( auto layout : mDirtyLayouts ) {
+		if ( NULL == layout ) {
+			eraseList.push_back( layout );
+			continue;
+		}
+
+		// Traverse up from 'layout' to 'node'.
+		Node* it = layout->getParent();
+		bool isValidPath = false;
+
+		while ( it != nullptr ) {
+			if ( it == node ) {
+				// We reached 'node', and every node in between was a layout!
+				isValidPath = true;
+				break;
+			}
+			if ( !it->isLayout() ) {
+				// The invalidation path is broken, or 'node' isn't an ancestor.
+				break;
+			}
+			it = it->getParent();
+		}
+
+		if ( isValidPath )
+			eraseList.push_back( layout );
+	}
+
+	// 3. Clean up and insert
+	for ( auto layout : eraseList )
+		mDirtyLayouts.erase( layout );
 
 	mDirtyLayouts.insert( node );
 }
@@ -814,7 +959,7 @@ void UISceneNode::updateDirtyStyleStates() {
 	}
 }
 
-const bool& UISceneNode::isUpdatingLayouts() const {
+bool UISceneNode::isUpdatingLayouts() const {
 	return mUpdatingLayouts;
 }
 
@@ -872,8 +1017,8 @@ void UISceneNode::onSizeChange() {
 	mRoot->setPixelsSize( getPixelsSize() );
 }
 
-void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
-	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ) );
+void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet, URI baseURI ) {
+	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ), baseURI );
 	loadGlyphIcon( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::GlyphIcon ) );
 }
 
@@ -915,9 +1060,10 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 	}
 }
 
-void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
-	auto loadFont = [this]( const std::string& familyName, const CSS::StyleSheetProperty& srcProp,
-							Font* fontFamily, Uint32 fontStyle ) {
+void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseURI ) {
+	auto loadFont = [this, baseURI]( const std::string& familyName,
+									 const CSS::StyleSheetProperty& srcProp, Font* fontFamily,
+									 Uint32 fontStyle ) {
 		auto trySetFontFamily = []( Font* fontFamily, Uint32 fontStyle, FontTrueType* font ) {
 			if ( fontFamily && fontFamily->getType() == FontType::TTF && fontStyle ) {
 				FontTrueType* ttf = static_cast<FontTrueType*>( fontFamily );
@@ -934,8 +1080,16 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 		std::string path( srcProp.getValue() );
 		FunctionString func( FunctionString::parse( path ) );
 
-		if ( !func.getParameters().empty() && func.getName() == "url" )
+		if ( !func.getParameters().empty() && func.getName() == "url" ) {
 			path = func.getParameters().at( 0 );
+
+			if ( !path.empty() && path.front() == '\'' && path.back() == '\'' )
+				String::trimInPlace( path, '\'' );
+			else if ( !path.empty() && path.front() == '"' && path.back() == '"' )
+				String::trimInPlace( path, '"' );
+		}
+
+		path = solveRelativePath( path, baseURI ).toString();
 
 		if ( String::startsWith( path, "file://" ) ) {
 			std::string filePath( path.substr( 7 ) );
@@ -998,6 +1152,58 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 		} else if ( fontSearch->isRegular() && fontSearch->getFontStyle() != fontStyle ) {
 			loadFont( fontFamily, srcProp, fontSearch, fontStyle );
 		}
+	}
+}
+
+URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
+	URI base = baseURI.empty() ? mURI : baseURI;
+
+	// Automatically handles absolute URLs, protocol-relative URLs,
+	// directory merging, and ".." segment collapsing!
+	base.resolve( uri );
+
+	return base;
+}
+
+void UISceneNode::loadCSS( URI uri ) {
+	uri = solveRelativePath( uri );
+	std::string url = uri.toString();
+	Log::debug( "UISceneNode::loadCSS: %s", url );
+
+	if ( "file" == uri.getScheme() ||
+		 ( uri.getScheme().empty() && FileSystem::fileExists( uri.getFSPath() ) ) ) {
+		std::string filePath( uri.getFSPath() );
+		std::string css;
+		if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
+			combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
+			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
+		}
+	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
+		Http::getAsync(
+			[this, url]( const Http&, Http::Request&, Http::Response& response ) {
+				if ( !response.getBody().empty() &&
+					 response.getStatus() == Http::Response::Status::Ok ) {
+					std::string css( response.getBody() );
+					runOnMainThread( [css = std::move( css ), url = std::move( url ), this] {
+						combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
+						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
+					} );
+				} else {
+					Log::debug( "UISceneNode::loadCSS: Failed to load %s - %s", url,
+								response.getStatusDescription() );
+				}
+			},
+			uri, Seconds( 5 ) );
+	} else if ( VFS::instance()->fileExists( uri.getPath() ) ) {
+		IOStream* stream = VFS::instance()->getFileFromPath( uri.getPath() );
+		CSS::StyleSheetParser parser;
+		if ( parser.loadFromStream( *stream ) ) {
+			parser.getStyleSheet().setMarker( String::hash( url ) );
+			combineStyleSheet( parser.getStyleSheet() );
+			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
+		}
+	} else {
+		Log::debug( "UISceneNode::loadCSS: Failed to load %s - Unknown scheme", url );
 	}
 }
 
@@ -1113,6 +1319,47 @@ const Uint32& UISceneNode::getMaxInvalidationDepth() const {
 
 void UISceneNode::setMaxInvalidationDepth( const Uint32& maxInvalidationDepth ) {
 	mMaxInvalidationDepth = maxInvalidationDepth;
+}
+
+void UISceneNode::setURI( const URI& uri ) {
+	mURI = uri;
+}
+
+URI UISceneNode::getURIFromURL( const URI& url ) const {
+	URI baseURI( url );
+	std::string path = baseURI.getPath();
+
+	// If the path isn't empty and doesn't end with a directory slash...
+	if ( !path.empty() && path.back() != '/' ) {
+		size_t lastSlash = path.find_last_of( '/' );
+
+		if ( lastSlash != std::string::npos ) {
+			// Keep everything up to and including the last '/'
+			// Example: "/assets/css/styles.html" -> "/assets/css/"
+			baseURI.setPath( path.substr( 0, lastSlash + 1 ) );
+		} else {
+			// Fallback if there are no slashes in the path at all
+			baseURI.setPath( "/" );
+		}
+	}
+
+	// Clear any query strings (?foo=bar) or fragments (#section) from the base URI,
+	// as they shouldn't be inherited by relative paths.
+	baseURI.setQuery( "" );
+	baseURI.setFragment( "" );
+
+	return baseURI;
+}
+
+void UISceneNode::setURIFromURL( const URI& url ) {
+	setURI( getURIFromURL( url ) );
+	mReferer = url;
+}
+
+void UISceneNode::openURL( URI uri ) {
+	if ( mURLInterceptorCb && mURLInterceptorCb( uri ) )
+		return;
+	Engine::instance()->openURI( uri.toString() );
 }
 
 }} // namespace EE::UI

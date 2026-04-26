@@ -152,10 +152,13 @@ enum class PropertyId : Uint32 {
 	WindowTitlebarSize = String::hash( "window-titlebar-size" ),
 	WindowBorderSize = String::hash( "window-border-size" ),
 	WindowMinSize = String::hash( "window-min-size" ),
+	WindowBorderAutoSize = String::hash( "window-border-auto-size" ),
 	WindowButtonsSeparation = String::hash( "window-buttons-separation" ),
 	WindowCornerDistance = String::hash( "window-corner-distance" ),
 	WindowTitlebarAutoSize = String::hash( "window-decoration-auto-size" ),
-	WindowBorderAutoSize = String::hash( "window-border-auto-size" ),
+	WindowShadowColor = String::hash( "window-shadow-color" ),
+	WindowShadowOffset = String::hash( "window-shadow-offset" ),
+	WindowShadowSize = String::hash( "window-shadow-size" ),
 	Hint = String::hash( "hint" ),
 	HintColor = String::hash( "hint-color" ),
 	HintShadowColor = String::hash( "hint-shadow-color" ),
@@ -227,6 +230,24 @@ enum class PropertyId : Uint32 {
 	DisplayOptions = String::hash( "display-options" ),
 	MenuWidthMode = String::hash( "menu-width-mode" ),
 	ExpandText = String::hash( "expand-text" ),
+	Colspan = String::hash( "colspan" ),
+	TableLayout = String::hash( "table-layout" ),
+	Cellpadding = String::hash( "cellpadding" ),
+	Cellspacing = String::hash( "cellspacing" ),
+	Size = String::hash( "size" ),
+	Type = String::hash( "type" ),
+	Rows = String::hash( "rows" ),
+	Cols = String::hash( "cols" ),
+	InputMode = String::hash( "input-mode" ),
+	Hidden = String::hash( "hidden" ),
+	Display = String::hash( "display" ),
+	Position = String::hash( "position" ),
+	Top = String::hash( "top" ),
+	Right = String::hash( "right" ),
+	Bottom = String::hash( "bottom" ),
+	Left = String::hash( "left" ),
+	ZIndex = String::hash( "z-index" ),
+	DataLanguage = String::hash( "data-language" ), // Minor hack
 };
 
 enum class PropertyType : Uint32 {
@@ -277,7 +298,7 @@ class EE_API PropertyDefinition {
 
 	const std::string& getDefaultValue() const;
 
-	bool getInherited() const;
+	bool isInherited() const;
 
 	const PropertyRelativeTarget& getRelativeTarget() const;
 

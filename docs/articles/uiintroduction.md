@@ -263,3 +263,5 @@ uiSceneNode->setStyleSheet( parser.getStyleSheet() );
 
 For a complete example of this introduction you can look into:
 [src/examples/ui_hello_world/ui_hello_world.cpp](https://github.com/SpartanJ/eepp/blob/develop/src/examples/ui_hello_world/ui_hello_world.cpp).
+
+Also is important to notice that for applications that wants to use the default eepp UI theme and fonts you can simply take advantage of the EE::UI::UIApplication class which controls the initialization and loading of the core components of the UI. You can look at the simplest example at [src/examples/ui_application_hello_world/ui_application_hello_world.cpp](https://github.com/SpartanJ/eepp/blob/develop/src/examples/ui_application_hello_world/ui_application_hello_world.cpp).

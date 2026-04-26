@@ -1,7 +1,7 @@
-#include <eepp/system/luapattern.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/math/math.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 
 using namespace EE::Graphics;
@@ -30,6 +30,7 @@ enum UnitHashes : String::HashType {
 	Dprd = String::hash( "dprd" ),
 	Dpru = String::hash( "dpru" ),
 	Dpr = String::hash( "dpr" ),
+	Ch = String::hash( "ch" ),
 };
 
 enum PercentagePositions : String::HashType {
@@ -116,8 +117,10 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 			return Unit::Dpru;
 		case UnitHashes::Dpr:
 			return Unit::Dpr;
+		case UnitHashes::Ch:
+			return Unit::Ch;
 	}
-	return Unit::Px;
+	return Unit::Dp;
 }
 
 std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit ) {
@@ -162,6 +165,8 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 			return "dpru";
 		case Unit::Dpr:
 			return "dpr";
+		case Unit::Ch:
+			return "ch";
 	}
 	return "px";
 }
@@ -213,6 +218,11 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 								  const Float& displayDpi, const Float& elFontSize,
 								  const Float& globalFontSize ) const {
 	Float ret = 0;
+
+	// CSS dictates a base 96 DPI for logical pixels.
+	// We multiply by the device pixel ratio to get actual physical pixels on screen.
+	const Float CSS_DPI = 96.f * PixelDensity::getPixelDensity();
+
 	switch ( mUnit ) {
 		case Unit::Percentage:
 			ret = parentSize * mValue / 100.f;
@@ -229,22 +239,23 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			ret = Math::roundUp( PixelDensity::dpToPx( mValue ) );
 			break;
 		case Unit::Em:
+		case Unit::Ch: // Using Em for Ch is incorrect but not that incorrect, close enough
 			ret = Math::round( mValue * elFontSize );
 			break;
 		case Unit::Pt:
-			ret = ( mValue * displayDpi / 72.f );
+			ret = mValue * CSS_DPI / 72.f;
 			break;
 		case Unit::Pc:
-			ret = ( mValue * displayDpi / 72.f ) * 12.f;
+			ret = ( mValue * CSS_DPI / 72.f ) * 12.f;
 			break;
 		case Unit::In:
-			ret = mValue * displayDpi;
+			ret = mValue * CSS_DPI;
 			break;
 		case Unit::Cm:
-			ret = mValue * displayDpi * 0.3937f;
+			ret = ( mValue * CSS_DPI ) / 2.54f;
 			break;
 		case Unit::Mm:
-			ret = mValue * displayDpi * 0.3937f / 10.f;
+			ret = ( mValue * CSS_DPI ) / 25.4f;
 			break;
 		case Unit::Vw:
 			ret = viewSize.getWidth() * mValue / 100.f;
@@ -261,6 +272,11 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 		case Unit::Rem:
 			ret = globalFontSize * mValue;
 			break;
+		case Unit::Dpi:
+		case Unit::Dpcm:
+			ret = (int)( mValue * 2.54 );
+			break;
+		case Unit::Px:
 		default:
 			ret = mValue;
 			break;
@@ -295,7 +311,8 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val ) {
 	return *this;
 }
 
-StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue ) {
+StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue,
+											   bool pxAsDp ) {
 	PercentagePositions isPercentage = isPercentagePosition( String::hash( str ) );
 	if ( PercentagePositions::None != isPercentage )
 		return fromString( positionToPercentage( isPercentage ), defaultValue );
@@ -320,6 +337,9 @@ StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Flo
 		if ( String::fromString( val, num ) )
 			length.setValue( val, unitFromString( unit ) );
 	}
+
+	if ( pxAsDp && length.getUnit() == Unit::Px )
+		length.mUnit = Unit::Dp;
 
 	return length;
 }

@@ -17,8 +17,6 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-static BatchRenderer* sBR = NULL;
-
 Uint32 Texture::getMaximumSize() {
 	static bool checked = false;
 	static GLint size = 0;
@@ -42,9 +40,6 @@ Texture::Texture() :
 	mClampMode( ClampMode::ClampToEdge ),
 	mFilter( Filter::Linear ),
 	mCoordinateType( CoordinateType::Normalized ) {
-	if ( NULL == sBR ) {
-		sBR = GlobalBatchRenderer::instance();
-	}
 }
 
 Texture::Texture( const Texture& Copy ) :
@@ -665,6 +660,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	Float w = 0.f != width ? width : (Float)getImageWidth();
 	Float h = 0.f != height ? height : (Float)getImageHeight();
 
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( this );
 	sBR->setBlendMode( Blend );
 
@@ -706,6 +702,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float& 
 	renderSector =
 		!( Sector.Left == 0 && Sector.Top == 0 && Sector.Right == w && Sector.Bottom == h );
 
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( this );
 	sBR->setBlendMode( Blend );
 
@@ -898,6 +895,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float& Angle,
 	renderSector = !( texSector.Left == 0 && texSector.Top == 0 && texSector.Right == w &&
 					  texSector.Bottom == h );
 
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( this );
 	sBR->setBlendMode( Blend );
 

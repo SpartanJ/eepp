@@ -313,8 +313,12 @@ void PluginManager::subscribeFileSystemListener() {
 
 	mFileSystemListenerCb =
 		mFileSystemListener->addListener( [this]( const FileEvent& ev, const FileInfo& file ) {
-			Lock l( mPluginsFSSubsMutex );
-			for ( Plugin* plugin : mPluginsFSSubs )
+			UnorderedSet<Plugin*> plugins;
+			{
+				Lock l( mPluginsFSSubsMutex );
+				plugins = mPluginsFSSubs;
+			}
+			for ( Plugin* plugin : plugins )
 				plugin->onFileSystemEvent( ev, file );
 		} );
 }

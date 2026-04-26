@@ -180,6 +180,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		auto tokens = SyntaxTokenizer::tokenize( styleDef, text, SyntaxState{}, to ).first;
 
 		size_t start = to;
+		mTextBox->setUsingCustomStyling( true );
 		for ( const auto& token : tokens ) {
 			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
 										start, start + token.len );

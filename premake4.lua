@@ -468,9 +468,7 @@ function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
-		elseif os.is("linux") or os.is("freebsd") then
-			linkoptions { "-Wl,-soname=\"" .. libname .. "\"" }
-		elseif os.is("haiku") then
+		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
@@ -597,7 +595,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if _OPTIONS["sharedir"] then
-	    defines { "ECODE_SHAREDIR='\"" .. _OPTIONS["sharedir"] .. "\"'" }
+	    defines { 'ECODE_SHAREDIR="' .. _OPTIONS["sharedir"] .. '"' }
 	end
 
 	set_ios_config()
@@ -763,6 +761,9 @@ function add_static_links()
 			"oniguruma-static",
 			"libwebp-static",
 			"libpng-static",
+			"md4c-static",
+			"gumbo-parser-static",
+			"brotli-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -968,6 +969,7 @@ function build_eepp( build_name )
 		"src/thirdparty/libwebp/src",
 		"src/thirdparty/SheenBidi/Headers",
 		"src/thirdparty/SheenBidi/Headers/SheenBidi",
+		"src/thirdparty/brotli/include",
 	}
 
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
@@ -1155,7 +1157,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
+		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng", "src/thirdparty/brotli/include" }
 		build_base_configuration( "freetype" )
 
 	project "pcre2-8-static"
@@ -1320,6 +1322,40 @@ solution "eepp"
 			files { "src/thirdparty/mojoAL/*.c" }
 			build_base_configuration( "mojoal" )
 	end
+
+	project "brotli-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/brotli/include", "src/thirdparty/brotli/include/brotli" }
+		files { "src/thirdparty/brotli/**.c" }
+		build_base_configuration( "brotli" )
+
+	project "md4c-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/md4c/**.c" }
+		build_base_configuration( "md4c" )
+
+	project "libyaml-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		defines { "HAVE_CONFIG_H", "YAML_DECLARE_STATIC" }
+		files { "src/thirdparty/libyaml/**.c" }
+		includedirs { "src/thirdparty/libyaml/include" }
+		build_base_configuration( "libyaml" )
+
+	project "gumbo-parser-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/gumbo-parser/**.c" }
+		if is_vs() then
+			includedirs { "src/thirdparty/gumbo-parser/visualc/include/" }
+		end
+		build_base_configuration( "gumbo-parser" )
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1559,6 +1595,43 @@ solution "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
+	project "eepp-ui-application-hello-world"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_hello_world/*.cpp" }
+		build_link_configuration( "eepp-ui-application-hello-world", true )
+
+	project "eepp-ui-dropdownmodellist"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_dropdownmodellist/*.cpp" }
+		build_link_configuration( "eepp-ui-dropdownmodellist", true )
+
+	project "eepp-ui-richtext"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_richtext/*.cpp" }
+		build_link_configuration( "eepp-ui-richtext", true )
+
+	project "eepp-ui-markdownview"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_markdownview/*.cpp" }
+		build_link_configuration( "eepp-ui-markdownview", true )
+
+	project "eepp-ui-html"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty" }
+		files { "src/examples/ui_html/*.cpp" }
+		build_link_configuration( "eepp-ui-html", true )
+
+	project "eepp-richtext"
+		set_kind()
+		language "C++"
+		files { "src/examples/richtext/*.cpp" }
+		build_link_configuration( "eepp-richtext", true )
+
 	project "eepp-7guis-counter"
 		set_kind()
 		language "C++"
@@ -1600,6 +1673,12 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/7guis/cells/*.cpp" }
 		build_link_configuration( "eepp-7guis-cells", true )
+
+	project "eepp-treeviewmodel"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_treeview_model/*.cpp" }
+		build_link_configuration( "eepp-treeviewmodel", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -1658,7 +1737,10 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		if os.is("windows") then
+			links { "gumbo-parser-static" }
+		end
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
@@ -1687,6 +1769,7 @@ solution "eepp"
 				linkoptions { "../../bin/assets/icon/ecode.res" }
 			end
 			buildoptions{ "-Wa,-mbig-obj" }
+			linkoptions { "-Wl,--export-all-symbols" }
 		end
 		build_link_configuration( "ecode", false )
 		configuration { "release", "windows" }
@@ -1748,6 +1831,8 @@ solution "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
+		links { "eterm-static", "languages-syntax-highlighting-static" }
+		includedirs { "src/modules/eterm/include/" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
 		build_link_configuration( "eepp-unit_tests", true )

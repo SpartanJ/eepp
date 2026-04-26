@@ -161,6 +161,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void resetColors();
 	virtual int resetColor( const Uint32& index, const char* name );
+	virtual bool getColor( const Uint32& index, unsigned char* r, unsigned char* g,
+						   unsigned char* b );
 
 	virtual void setTitle( const char* title );
 	virtual void setIconTitle( const char* title );
@@ -374,7 +376,6 @@ class TerminalDisplay : public ITerminalDisplay {
 	void drawBg( bool toFBO = false );
 
 	void sanitizeInput( std::string& input );
-
 };
 
 }} // namespace eterm::Terminal

@@ -107,7 +107,8 @@ static Drawable* parseDataURI( const std::string& name ) {
 	return drawable;
 }
 
-Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite ) {
+Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite,
+										  Network::URI referer ) {
 	Drawable* drawable = NULL;
 
 	if ( name.size() ) {
@@ -147,6 +148,13 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 		} else if ( String::startsWith( name, "file://" ) ) {
 			std::string filePath( name.substr( 7 ) );
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
+				 filePath[2] == ':' ) {
+				filePath = filePath.substr( 1 );
+			}
+#endif
+
 			drawable = TextureFactory::instance()->getByName( filePath );
 
 			if ( NULL == drawable ) {
@@ -164,17 +172,25 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 					1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false,
 					false, name );
 
+				std::map<std::string, std::string> headers;
+				if ( !referer.empty() )
+					headers["referer"] = referer.toString();
+
 				Http::getAsync(
-					[texture]( const Http&, Http::Request&, Http::Response& response ) {
-						if ( !response.getBody().empty() ) {
+					[texture, name]( const Http&, Http::Request&, Http::Response& response ) {
+						if ( response.isOK() && !response.getBody().empty() ) {
 							Image image( (const Uint8*)&response.getBody()[0],
 										 response.getBody().size() );
 
 							if ( image.getPixels() != NULL )
 								texture->replace( &image );
+						} else {
+							Log::debug( "DrawableSearcher::searchByName: could not download image: "
+										"%s. Error: %d\n%s",
+										name, response.getStatus(), response.getBody() );
 						}
 					},
-					URI( name ), Seconds( 5 ) );
+					URI( name ), Seconds( 5 ), {}, headers );
 			}
 
 			drawable = texture;

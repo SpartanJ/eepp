@@ -277,7 +277,7 @@ std::string URI::getQuery() const {
 	return query;
 }
 
-void URI::getFragment( const std::string& fragment ) {
+void URI::setFragment( const std::string& fragment ) {
 	mFragment.clear();
 	decode( fragment, mFragment );
 }

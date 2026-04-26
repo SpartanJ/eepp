@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace ecode {
 
@@ -14,6 +15,7 @@ struct LLMCacheConfiguration {
 };
 
 struct LLMModel {
+	std::size_t hash{ 0 };
 	std::string name;
 	std::string provider;
 	std::optional<std::string> displayName;
@@ -39,5 +41,15 @@ struct LLMProvider {
 };
 
 using LLMProviders = std::map<std::string, LLMProvider>;
+
+struct ACPAgent {
+	bool enabled{ true };
+	std::string name;
+	std::string command;
+	std::vector<std::string> args;
+	std::unordered_map<std::string, std::string> environment;
+};
+
+using ACPAgents = std::map<std::string, ACPAgent>;
 
 } // namespace ecode

@@ -68,64 +68,6 @@ void UILayout::setLayoutDirty() {
 	}
 }
 
-Sizef UILayout::getSizeFromLayoutPolicy() {
-	Sizef size( getPixelsSize() );
-
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Float w = getMatchParentWidth();
-
-		if ( (int)w != (int)getPixelsSize().getWidth() )
-			size.setWidth( w );
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h = getMatchParentHeight();
-
-		if ( (int)h != (int)getPixelsSize().getHeight() )
-			size.setHeight( h );
-	}
-
-	return size;
-}
-
-Float UILayout::getMatchParentWidth() const {
-	Rectf padding = Rectf();
-
-	if ( getParent()->isWidget() )
-		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
-
-	Float width = getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left -
-				  mLayoutMarginPx.Right - padding.Left - padding.Right;
-
-	if ( !mMaxWidthEq.empty() ) {
-		Float maxWidth( getMaxSizePx().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
-						padding.Left - padding.Right );
-		if ( maxWidth > 0 && maxWidth < width )
-			width = maxWidth;
-	}
-
-	return eemax( 0.f, width );
-}
-
-Float UILayout::getMatchParentHeight() const {
-	Rectf padding = Rectf();
-
-	if ( getParent()->isWidget() )
-		padding = static_cast<UIWidget*>( getParent() )->getPadding();
-
-	Float height = getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top -
-				   mLayoutMarginPx.Bottom - padding.Top - padding.Bottom;
-
-	if ( !mMaxHeightEq.empty() ) {
-		Float maxHeight( getMaxSizePx().getHeight() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
-						 padding.Left - padding.Right );
-		if ( maxHeight > 0 && maxHeight < height )
-			height = maxHeight;
-	}
-
-	return eemax( 0.f, height );
-}
-
 bool UILayout::isGravityOwner() const {
 	return mGravityOwner;
 }
@@ -150,6 +92,56 @@ void UILayout::updateLayoutTree() {
 	}
 
 	onLayoutUpdate();
+}
+
+bool UILayout::setMatchParentIfNeededVerticalGrowth() {
+	bool sizeChanged = false;
+	Sizef size( getPixelsSize() );
+
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
+		Float w = getMatchParentWidth();
+
+		if ( (int)w != (int)getPixelsSize().getWidth() ) {
+			sizeChanged = true;
+			size.setWidth( w );
+		}
+	}
+
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		Float h = getMatchParentHeight();
+
+		if ( (int)h != (int)getPixelsSize().getHeight() ) {
+			sizeChanged = true;
+			size.setHeight( h );
+		}
+	}
+
+	if ( sizeChanged )
+		setInternalPixelsSize( size );
+
+	return sizeChanged;
+}
+
+void UILayout::updateLayoutWrappingContents() {
+	auto oldWidthPolicy = mWidthPolicy;
+	auto oldHeightPolicy = mHeightPolicy;
+
+	if ( mWidthPolicy == SizePolicy::MatchParent )
+		mWidthPolicy = SizePolicy::WrapContent;
+	if ( mHeightPolicy == SizePolicy::MatchParent )
+		mHeightPolicy = SizePolicy::WrapContent;
+
+	updateLayout();
+
+	mWidthPolicy = oldWidthPolicy;
+	mHeightPolicy = oldHeightPolicy;
+}
+
+void UILayout::onAutoSizeChild( UIWidget* child ) {
+	if ( child->isLayout() ) {
+		child->asType<UILayout>()->updateLayoutWrappingContents();
+	} else
+		child->onAutoSize();
 }
 
 }} // namespace EE::UI

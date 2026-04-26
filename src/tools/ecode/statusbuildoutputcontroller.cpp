@@ -158,9 +158,10 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
+	auto syntaxDef = std::make_shared<SyntaxDefinition>( "custom_build", std::vector<std::string>{},
+														 std::move( patterns ) );
 
-	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
+	mBuildOutput->getDocument().setSyntaxDefinition( syntaxDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
 	mBuildOutput->setLineWrapMode( LineWrapMode::Word );
@@ -216,14 +217,20 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		}
 
 		if ( enableBuildButton && buildButton )
-			buildButton->setEnabled( true );
+			buildButton->ensureMainThread( [buildButton] { buildButton->setEnabled( true ); } );
 
 		if ( enableCleanButton && cleanButton )
-			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
+			cleanButton->ensureMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 
-		buildAndRunButton->setEnabled( true );
-		mBuildButton->setEnabled( true );
-		mStopButton->setEnabled( false );
+		if ( buildAndRunButton ) {
+			buildAndRunButton->ensureMainThread(
+				[buildAndRunButton] { buildAndRunButton->setEnabled( true ); } );
+		}
+
+		mBuildButton->ensureMainThread( [this] {
+			mBuildButton->setEnabled( true );
+			mStopButton->setEnabled( false );
+		} );
 	};
 
 	auto res = pbm->build(
@@ -584,19 +591,23 @@ void StatusBuildOutputController::createContainer() {
 
 	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
 	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
-	mContainer->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-output" );
-	mContainer->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-issues" );
+	mContainer->getKeyBindings().addKeybind(
+		{ KEY_1, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-output" );
+	mContainer->getKeyBindings().addKeybind(
+		{ KEY_2, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-issues" );
 
 	mBuildOutput->getDocument().setCommand( "build-output-show-build-output",
 											[this]() { showBuildOutput(); } );
 	mBuildOutput->getDocument().setCommand( "build-output-show-build-issues",
 											[this]() { showIssues(); } );
-	mBuildOutput->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											   "build-output-show-build-output" );
-	mBuildOutput->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											   "build-output-show-build-issues" );
+	mBuildOutput->getKeyBindings().addKeybind(
+		{ KEY_1, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-output" );
+	mBuildOutput->getKeyBindings().addKeybind(
+		{ KEY_2, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-issues" );
 	mButOutput->onClick( [this]( auto ) { showBuildOutput(); } );
 	mButIssues->onClick( [this]( auto ) { showIssues(); } );
 	mButOutput->setTooltipText(

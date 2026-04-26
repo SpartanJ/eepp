@@ -35,16 +35,16 @@ std::string_view LuaPattern::getURIPattern() {
 	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*"sv;
 }
 
-std::string LuaPattern::match( const std::string& string, const std::string_view& pattern ) {
+std::string LuaPattern::match( std::string_view string, std::string_view pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
-	if ( matcher.find( string, start, end ) )
-		return string.substr( start, end - start );
+	if ( matcher.find( string.data(), start, end, 0, string.size() ) )
+		return std::string{ string.substr( start, end - start ) };
 	return "";
 }
 
 std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
-									const std::string_view& pattern ) {
+									std::string_view pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	for ( const auto& str : stringvec ) {
@@ -55,16 +55,15 @@ std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
 	return "";
 }
 
-PatternMatcher::Range LuaPattern::firstMatch( const std::string& string,
-											  const std::string_view& pattern ) {
+PatternMatcher::Range LuaPattern::firstMatch( std::string_view string, std::string_view pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
-	if ( matcher.find( string, start, end ) )
+	if ( matcher.find( string.data(), start, end, 0, string.size() ) )
 		return { start, end };
 	return { -1, -1 };
 }
 
-bool LuaPattern::hasMatches( const std::string& string, const std::string_view& pattern ) {
+bool LuaPattern::hasMatches( std::string_view string, std::string_view pattern ) {
 	return LuaPattern::firstMatch( string, pattern ).isValid();
 }
 

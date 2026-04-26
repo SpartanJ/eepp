@@ -18,8 +18,6 @@ class EE_API UITooltip : public UIWidget {
 
 	static Vector2f getTooltipPosition( UIWidget* toolip, const Vector2f& requestedPosition );
 
-	UITooltip();
-
 	virtual ~UITooltip();
 
 	virtual Uint32 getType() const;
@@ -82,6 +80,10 @@ class EE_API UITooltip : public UIWidget {
 
 	const Uint32& getFontStyle() const;
 
+	Uint32 getTextDecoration() const;
+
+	UITooltip* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UITooltip* setOutlineThickness( const Float& outlineThickness );
@@ -139,6 +141,8 @@ class EE_API UITooltip : public UIWidget {
 	TextTransform::Value mTextTransform{ TextTransform::None };
 	bool mDontAutoHideOnMouseMove{ false };
 	bool mUsingCustomStyling{ false };
+
+	UITooltip();
 
 	virtual void onAlignChange();
 

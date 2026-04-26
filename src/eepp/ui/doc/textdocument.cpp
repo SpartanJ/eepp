@@ -1,4 +1,5 @@
-﻿#include <eepp/core/utf.hpp>
+﻿#include <eepp/core/small_vector.hpp>
+#include <eepp/core/utf.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -15,6 +16,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <set>
+
 using namespace std::literals;
 
 using namespace EE::Network;
@@ -27,8 +30,6 @@ namespace EE { namespace UI { namespace Doc {
 static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
-
-#include <string_view> // Ensure this is included for std::string_view
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
@@ -314,8 +315,8 @@ TextDocument::TextDocument( bool verbose ) :
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
 	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ),
 	mFoldRangeService( this ) {
-	initializeCommands();
 	reset();
+	initializeCommands();
 }
 
 TextDocument::~TextDocument() {
@@ -380,7 +381,7 @@ void TextDocument::reset() {
 
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinitionPtr();
 	}
 	mUndoStack.clear();
 	cleanChangeId();
@@ -661,14 +662,14 @@ void TextDocument::guessIndentType() {
 		int guessCountdown = 10;
 		for ( size_t i = start; i < end; i++ ) {
 			const String& text = mLines[i].getText();
-			std::string match =
-				LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
+			std::string match = LuaPattern::match(
+				text.size() > 128 ? text.substr( 0, 128 ).toUtf8() : text.toUtf8(), "^  +" );
 			if ( !match.empty() ) {
 				guessSpaces++;
 				guessWidth[match.size()]++;
 				guessCountdown--;
 			} else {
-				match = LuaPattern::match( mLines[i].getText(), "^\t+" );
+				match = LuaPattern::match( mLines[i].getText().toUtf8(), "^\t+" );
 				if ( !match.empty() ) {
 					guessTabs++;
 					guessCountdown--;
@@ -713,7 +714,7 @@ void TextDocument::mergeSelection() {
 
 bool TextDocument::hasSyntaxDefinition() const {
 	Lock l( mSyntaxDefinitionMutex );
-	return !mSyntaxDefinition.getPatterns().empty();
+	return mSyntaxDefinition && !mSyntaxDefinition->getPatterns().empty();
 }
 
 const SyntaxDefinition& TextDocument::guessSyntax() const {
@@ -730,13 +731,13 @@ void TextDocument::resetSyntax() {
 		{ { 0, 0 },
 		  positionOffset( { 0, 0 },
 						  FileSystem::fileExtension( mFilePath ) == "h" ? 5 * 1024 : 128 ) } ) );
-	std::string oldDef = mSyntaxDefinition.getLSPName();
+	auto oldDef = mSyntaxDefinition ? mSyntaxDefinition->getLanguageIndex() : 0;
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header.toUtf8(),
-																	   mHExtLanguageType );
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->findPtr(
+			mFilePath, header.toUtf8(), mHExtLanguageType );
 	}
-	if ( mSyntaxDefinition.getLSPName() != oldDef )
+	if ( mSyntaxDefinition->getLanguageIndex() != oldDef )
 		notifySyntaxDefinitionChange();
 }
 
@@ -1042,8 +1043,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	}
 
 	size_t lastLine = linesCount() - 1;
+	std::string text;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		std::string text( getLineTextUtf8( i ) );
+		text = getLineTextUtf8( i );
 
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
@@ -1286,6 +1288,15 @@ TextRange TextDocument::addSelection( TextRange selection ) {
 	return selection;
 }
 
+int TextDocument::selectionIndex( TextRange selection ) const {
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	selection = sanitizeRange( selection );
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	return -1;
+}
+
 void TextDocument::popSelection() {
 	mSelection.pop_back();
 	if ( mLastSelection >= mSelection.size() )
@@ -1356,18 +1367,47 @@ std::string TextDocument::getHashHexString() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
-	TextRange nrange = sanitizeRange( range.normalized() );
 	Lock l( mLinesMutex );
-	if ( nrange.start().line() == nrange.end().line() ) {
-		return mLines[nrange.start().line()].substr(
-			nrange.start().column(), nrange.end().column() - nrange.start().column() );
+	Lock l2( *mDocumentMutex );
+
+	TextRange nrange = sanitizeRange( range.normalized() );
+	if ( !nrange.hasSelection() )
+		return String();
+
+	Int64 startLine = nrange.start().line();
+	Int64 endLine = nrange.end().line();
+	Int64 startCol = nrange.start().column();
+	Int64 endCol = nrange.end().column();
+
+	std::size_t totalSize = 0;
+	if ( startLine == endLine ) {
+		totalSize = endCol - startCol;
+	} else {
+		totalSize += ( mLines[startLine].size() - startCol );
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			totalSize += mLines[i].size();
+		}
+		totalSize += endCol;
 	}
-	std::vector<String> lines = { mLines[nrange.start().line()].substr( nrange.start().column() ) };
-	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
-		lines.emplace_back( mLines[i].getText() );
+
+	String result;
+	result.reserve( totalSize );
+
+	if ( startLine == endLine ) {
+		result.append( mLines[startLine].getText(), startCol, endCol - startCol );
+	} else {
+		result.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
+
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			result.append( mLines[i].getText() );
+		}
+
+		if ( endCol > 0 ) {
+			result.append( mLines[endLine].getText(), 0, endCol );
+		}
 	}
-	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
-	return String::join( lines, -1 );
+
+	return result;
 }
 
 String TextDocument::getText() const {
@@ -1385,6 +1425,38 @@ String TextDocument::getAllSelectedText() const {
 		}
 	}
 	return text;
+}
+
+String TextDocument::toString() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	String stream;
+	std::size_t totalSize = 0;
+	for ( const auto& line : mLines )
+		totalSize += line.size();
+	stream.reserve( totalSize );
+	for ( const auto& line : mLines )
+		stream.append( line.getText() );
+	return stream;
+}
+
+std::string TextDocument::toUtf8String() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	std::string stream;
+	std::size_t totalCodepoints = 0;
+	for ( const auto& line : mLines )
+		totalCodepoints += line.size();
+
+	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
+	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+
+	for ( const auto& line : mLines ) {
+		const String& text = line.getText();
+		// Low-level conversion directly into the stream buffer
+		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
+	}
+	return stream;
 }
 
 std::vector<std::string> TextDocument::getCommandList() const {
@@ -1747,9 +1819,13 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 
 			// As long as we are not at a grapheme boundary yet, keep
 			// moving the cursor position until we arrive at one
-			while ( cursorIndex > 0 && cursorIndex < lineLen - 1 &&
-					!getLineText( position.line() ).isGraphemeBoundary( cursorIndex ) ) {
-				cursorIndex += direction;
+			if ( position.line() >= 0 && position.line() < static_cast<Int64>( mLines.size() ) ) {
+				Lock l( mLinesMutex );
+				const auto& text = mLines[position.line()].getText();
+				while ( cursorIndex > 0 && cursorIndex < lineLen - 1 &&
+						!text.isGraphemeBoundary( cursorIndex ) ) {
+					cursorIndex += direction;
+				}
 			}
 
 			if ( position.column() != cursorIndex )
@@ -2142,27 +2218,67 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 					continue;
 				}
 
-				if ( isClose && !isSame )
+				if ( isClose && !isSame ) {
+					mustClose = false;
+				} else if ( !isClose && !isNonWord( ch ) ) {
+					mustClose = false;
+				}
+			}
+
+			if ( mustClose && isSame ) {
+				Int64 left = sel.start().column() - 1;
+				Int64 right = sel.start().column();
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0ll, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				int unclosedQuotes = 0;
+				while ( left >= limitLeft || right < limitRight ) {
+					bool matchLeft = left >= limitLeft && lineText[left] == text[0];
+					bool matchRight = right < limitRight && lineText[right] == text[0];
+					if ( matchLeft && matchRight ) {
+						left--;
+						right++;
+					} else if ( matchLeft ) {
+						unclosedQuotes++;
+						left--;
+					} else if ( matchRight ) {
+						unclosedQuotes++;
+						right++;
+					} else {
+						if ( left >= limitLeft )
+							left--;
+						if ( right < limitRight )
+							right++;
+					}
+				}
+				if ( unclosedQuotes % 2 != 0 )
+					mustClose = false;
+			}
+
+			if ( mustClose && !isSame && !isClose ) {
+				int balance = 0;
+				int unmatchedRight = 0;
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				for ( Int64 k = limitLeft; k < limitRight; ++k ) {
+					if ( lineText[k] == text[0] ) {
+						balance++;
+					} else if ( lineText[k] == closeChar ) {
+						if ( balance > 0 ) {
+							balance--;
+						} else if ( k >= sel.start().column() ) {
+							unmatchedRight++;
+						}
+					}
+				}
+				if ( unmatchedRight > 0 )
 					mustClose = false;
 			}
 
 			if ( mustClose ) {
-				/* // I'm not entirely convinced about this
-				TextPosition openStart = positionOffset( sel.start(), 1 );
-				if ( openStart != sel.start() ) {
-					int maxIt = 100;
-					while ( maxIt-- > 0 && openStart < endOfDoc() &&
-							isSpace( getChar( openStart ) ) ) {
-						openStart = nextChar( openStart );
-					}
-					if ( openStart < endOfDoc() && maxIt > 0 &&
-						 getChar( openStart ) == closeChar ) {
-						inserted.push_back( false );
-						continue;
-					}
-				}
-				*/
-
 				setSelection(
 					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );
 				inserted.push_back( true );
@@ -2644,21 +2760,65 @@ void TextDocument::selectAll() {
 }
 
 void TextDocument::newLine() {
-	String input( "\n" );
-	TextPosition start = getSelection().start();
-	TextPosition indent = startOfContent( getSelection().start() );
-	if ( indent.column() != 0 )
-		input.append( line( start.line() ).getText().substr( 0, indent.column() ) );
-	textInput( input );
+	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOp op2( mInsertingText, true );
+	AtomicBoolScopedOp op3( mRunningTransaction, true );
+	mUndoStack.clearRedoStack();
+	Time time = mTimer.getElapsedTime();
+
+	for ( int i = (int)mSelection.size() - 1; i >= 0; --i ) {
+		TextPosition start = getSelectionIndex( i ).start();
+		String indentStr;
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indentPos = startOfContent( start );
+			if ( indentPos.column() != 0 )
+				indentStr = line( start.line() ).getText().substr( 0, indentPos.column() );
+		}
+
+		String input( "\n" );
+		input.append( indentStr );
+
+		bool isPair = false;
+		if ( mAutoIndent == AutoIndentConfig::Smart && start > startOfDoc() &&
+			 start < endOfDoc() ) {
+			String::StringBaseType curChar = getChar( start );
+			String::StringBaseType prevChar = getPrevChar( start );
+			for ( const auto& pair : mAutoCloseBracketsPairs ) {
+				if ( prevChar == pair.first && curChar == pair.second &&
+					 pair.first != pair.second ) {
+					isPair = true;
+					break;
+				}
+			}
+		}
+
+		if ( mSelection[i].hasSelection() )
+			deleteTo( i, 0 );
+
+		if ( isPair ) {
+			String extraIndent = input + getIndentString();
+			String closingLine = "\n" + indentStr;
+
+			insert( i, getSelectionIndex( i ).start(), extraIndent + closingLine,
+					mUndoStack.getUndoStackContainer(), time );
+			setSelection( i, positionOffset( getSelectionIndex( i ).start(), extraIndent.size() ) );
+		} else {
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), input,
+									 mUndoStack.getUndoStackContainer(), time ) );
+		}
+	}
+	mLastCursorChangeWasInteresting = true;
 }
 
 void TextDocument::newLineAbove() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		String input( "\n" );
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
-		if ( indent.column() != 0 )
-			input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
+			if ( indent.column() != 0 )
+				input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		}
 		insert( i, { start.line(), 0 }, input );
 		setSelection( i, { start.line(), (Int64)input.size() } );
 	}
@@ -2898,6 +3058,14 @@ void TextDocument::setIndentType( const IndentType& indentType ) {
 	mIndentType = indentType;
 }
 
+const TextDocument::AutoIndentConfig& TextDocument::getAutoIndent() const {
+	return mAutoIndent;
+}
+
+void TextDocument::setAutoIndent( const AutoIndentConfig& autoIndent ) {
+	mAutoIndent = autoIndent;
+}
+
 void TextDocument::undo() {
 	setRunningTransaction( true );
 	bool stackWasFull = mUndoStack.getMaxStackSize() == mUndoStack.getUndoStackContainer().size();
@@ -2917,14 +3085,24 @@ void TextDocument::redo() {
 
 const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 	Lock l( mSyntaxDefinitionMutex );
-	return mSyntaxDefinition;
+	return mSyntaxDefinition ? *mSyntaxDefinition.get()
+							 : SyntaxDefinitionManager::instance()->getPlainDefinition();
+}
+
+void TextDocument::setSyntaxDefinition( std::shared_ptr<SyntaxDefinition> definition ) {
+	{
+		Lock l( mSyntaxDefinitionMutex );
+		mSyntaxDefinition = definition;
+	}
+	notifySyntaxDefinitionChange();
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	if ( mSyntaxDefinition.getLSPName() != definition.getLSPName() ) {
+	if ( mSyntaxDefinition->getLanguageIndex() != definition.getLanguageIndex() ) {
 		{
 			Lock l( mSyntaxDefinitionMutex );
-			mSyntaxDefinition = definition;
+			mSyntaxDefinition = SyntaxDefinitionManager::instance()->getLanguageDefinition(
+				definition.getLanguageIndex() );
 		}
 		notifySyntaxDefinitionChange();
 	}
@@ -3709,10 +3887,11 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
 											   const String::StringBaseType& closeBracket,
-											   MatchDirection dir, bool allowDepth ) {
+											   MatchDirection dir, bool allowDepth, Time timeout ) {
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
-	while ( sp.isValid() ) {
+	Clock c;
+	while ( sp.isValid() && ( timeout == Time::Zero || c.getElapsedTime() < timeout ) ) {
 		auto byte = getCharFromUnsanitizedPosition( sp );
 		if ( byte == openBracket ) {
 			changeDepth( highlighter, depth, sp, 1 );
@@ -3914,7 +4093,7 @@ const String& TextDocument::getNonWordChars() const {
 }
 
 void TextDocument::toggleLineComments() {
-	std::string comment = mSyntaxDefinition.getComment();
+	std::string comment = mSyntaxDefinition ? mSyntaxDefinition->getComment() : "";
 	if ( comment.empty() )
 		return;
 	const std::string commentText = comment + " ";
@@ -3966,7 +4145,8 @@ void TextDocument::toggleLineComments() {
 }
 
 void TextDocument::toggleBlockComments() {
-	const auto& blockComment = mSyntaxDefinition.getBlockComment();
+	const auto& blockComment =
+		mSyntaxDefinition ? mSyntaxDefinition->getBlockComment() : SyntaxDefinition::BlockComment{};
 	if ( blockComment.open.empty() || blockComment.close.empty() )
 		return;
 
@@ -4154,8 +4334,13 @@ void TextDocument::notifyDocumentSaved() {
 }
 
 void TextDocument::notifyDocumentClosed() {
-	Lock l( mClientsMutex );
-	for ( auto& client : mClients ) {
+	SmallVector<Client*> clientsCopy;
+	{
+		Lock l( mClientsMutex );
+		for ( auto& client : mClients )
+			clientsCopy.push_back( client );
+	}
+	for ( auto& client : clientsCopy ) {
 		client->onDocumentClosed( this );
 	}
 }
@@ -4196,9 +4381,11 @@ void TextDocument::notifyDocumentMoved() {
 }
 
 void TextDocument::notifySyntaxDefinitionChange() {
+	if ( !mSyntaxDefinition )
+		return;
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentSyntaxDefinitionChange( mSyntaxDefinition );
+		client->onDocumentSyntaxDefinitionChange( *mSyntaxDefinition.get() );
 	}
 }
 
@@ -4595,6 +4782,35 @@ void TextDocument::convertIndentationToSpaces() {
 	}
 }
 
+void TextDocument::clearIndentation() {
+	TextRanges oldSelections = mSelection;
+	std::set<Int64> linesToClear;
+
+	if ( !hasSelection() ) {
+		linesToClear.insert( getSelection().start().line() );
+	} else {
+		for ( const auto& sel : mSelection ) {
+			TextRange normalizedSel = sel.normalized();
+			for ( Int64 lineNum = normalizedSel.start().line();
+				  lineNum <= normalizedSel.end().line(); ++lineNum ) {
+				linesToClear.insert( lineNum );
+			}
+		}
+	}
+
+	for ( Int64 lineNum : linesToClear ) {
+		TextRange lineRange = getLineRange( lineNum );
+		replace( "^%s+", "", lineRange.start(), true, false, FindReplaceType::LuaPattern,
+				 lineRange );
+	}
+
+	if ( !linesToClear.empty() ) {
+		setSelection( oldSelections );
+		notifySelectionChanged();
+		notifyCursorChanged();
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset-document"] = [this] { reset(); };
 	mCommands["save-doc"] = [this] { save(); };
@@ -4668,6 +4884,7 @@ void TextDocument::initializeCommands() {
 	mCommands["duplicate-line-or-selection"] = [this] { duplicateLineOrSelection(); };
 	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
 	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
+	mCommands["clear-indentation"] = [this] { clearIndentation(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )

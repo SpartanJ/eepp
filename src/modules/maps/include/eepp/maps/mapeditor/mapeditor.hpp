@@ -96,7 +96,6 @@ class EE_MAPS_API MapEditor {
 	UISpinBox* mLightRadius;
 	UICheckBox* mLightTypeChk;
 	UITextView* mTileBox;
-	Int32 mLastSelButtonY;
 	bool mMouseScrolling;
 
 	std::vector<UISelectButton*> mObjContButton;

@@ -20,6 +20,8 @@ class EE_API UIState {
 		StateDisabled,
 		StateChecked,
 		StateFocusWithin,
+		StateLink,
+		StateVisited,
 		StateCount
 	};
 
@@ -34,6 +36,8 @@ class EE_API UIState {
 		StateFlagDisabled = 1 << StateDisabled,
 		StateFlagChecked = 1 << StateChecked,
 		StateFlagFocusWithin = 1 << StateFocusWithin,
+		StateFlagLink = 1 << StateLink,
+		StateFlagVisited = 1 << StateVisited,
 		StateFlagCount = StateCount
 	};
 

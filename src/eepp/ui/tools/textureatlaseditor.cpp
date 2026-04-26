@@ -378,7 +378,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 	}
 
 	mTextureRegionList->getVerticalScrollBar()->setClickStep(
-		8.f / (Float)mTextureRegionList->getCount() );
+		8.f / (Float)mTextureRegionList->getItemsCount() );
 
 	if ( !res.empty() ) {
 		mTextureRegionGrid->closeAllChildren();

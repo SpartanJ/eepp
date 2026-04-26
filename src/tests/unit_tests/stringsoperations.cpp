@@ -1,9 +1,49 @@
 #include "utest.h"
 #include <eepp/core/string.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 
 using namespace std::literals;
 
 using namespace EE;
+using namespace EE::System;
+
+UTEST( String, countLines ) {
+	EXPECT_EQ( static_cast<size_t>( 0 ), String::countLines( "" ) );
+	EXPECT_EQ( static_cast<size_t>( 1 ), String::countLines( "A" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), String::countLines( "A\n" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), String::countLines( "A\nB" ) );
+	EXPECT_EQ( static_cast<size_t>( 3 ), String::countLines( "A\nB\n" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), String::countLines( "\n" ) );
+	EXPECT_EQ( static_cast<size_t>( 3 ), String::countLines( "\n\n" ) );
+}
+
+UTEST( FileSystem, fileCountLines ) {
+	std::string path = Sys::getTempPath() + "eepp_test_count_lines.txt";
+	FileSystem::fileWrite( path, "A\nB\nC" );
+	bool isBinary = false;
+	EXPECT_EQ( static_cast<size_t>( 3 ), FileSystem::fileCountLines( path, &isBinary ) );
+	EXPECT_FALSE( isBinary );
+
+	FileSystem::fileWrite( path, "A\nB\nC\n" );
+	EXPECT_EQ( static_cast<size_t>( 4 ), FileSystem::fileCountLines( path, &isBinary ) );
+	EXPECT_FALSE( isBinary );
+
+	// Empty file
+	FileSystem::fileWrite( path, "" );
+	EXPECT_EQ( static_cast<size_t>( 0 ), FileSystem::fileCountLines( path, &isBinary ) );
+	EXPECT_FALSE( isBinary );
+
+	// Binary test
+	std::string binaryData = "A\n";
+	binaryData += '\0';
+	binaryData += "B\n";
+	FileSystem::fileWrite( path, (const Uint8*)binaryData.data(), (Uint32)binaryData.size() );
+	EXPECT_EQ( static_cast<size_t>( 0 ), FileSystem::fileCountLines( path, &isBinary ) );
+	EXPECT_TRUE( isBinary );
+
+	FileSystem::fileRemove( path );
+}
 
 UTEST( String, isAscii ) {
 	// Empty string

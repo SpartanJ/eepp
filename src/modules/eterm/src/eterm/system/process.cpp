@@ -23,6 +23,7 @@
 #ifndef _WIN32
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/version.hpp>
 #include <eterm/system/process.hpp>
 #include <poll.h>
 #include <pwd.h>
@@ -140,6 +141,8 @@ static void execshell( const char* cmd, const char* const* args, std::string wor
 	setenv( "SHELL", sh, 1 );
 	setenv( "HOME", pw->pw_dir, 1 );
 	setenv( "TERM", "xterm-256color", 1 );
+	setenv( "TERM_PROGRAM", "eterm", 1 );
+	setenv( "TERM_PROGRAM_VERSION", EE::Version::getVersionName( false ).c_str(), 1 );
 	setenv( "COLORTERM", "24bit", 1 );
 
 	for ( const auto& e : env )
@@ -213,6 +216,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 #else
 
 #include <assert.h>
+#include <eepp/version.hpp>
 #include <eterm/system/pipe.hpp>
 #include <eterm/system/process.hpp>
 #include <eterm/terminal/windowserrors.hpp>
@@ -247,42 +251,6 @@ static std::wstring stringToWideString( const std::string& str ) {
 }
 
 #define HANDLE_WIN_ERR( err ) HRESULT_FROM_WIN32( err ), PrintWinApiError( err )
-
-static HRESULT InitializeStartupInfoAttachedToPseudoConsole( STARTUPINFOEXW* pStartupInfo,
-															 HPCON hpc ) {
-	// Prepare Startup Information structure
-	STARTUPINFOEXW si;
-	ZeroMemory( &si, sizeof( si ) );
-	si.StartupInfo.cb = sizeof( STARTUPINFOEXW );
-
-	// Discover the size required for the list
-	SIZE_T bytesRequired;
-	InitializeProcThreadAttributeList( NULL, 1, 0, &bytesRequired );
-
-	// Allocate memory to represent the list
-	si.lpAttributeList =
-		(PPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc( GetProcessHeap(), 0, bytesRequired );
-	if ( !si.lpAttributeList ) {
-		return E_OUTOFMEMORY;
-	}
-
-	// Initialize the list memory location
-	if ( !InitializeProcThreadAttributeList( si.lpAttributeList, 1, 0, &bytesRequired ) ) {
-		HeapFree( GetProcessHeap(), 0, si.lpAttributeList );
-		return HRESULT_FROM_WIN32( GetLastError() );
-	}
-
-	// Set the pseudoconsole information into the list
-	if ( !UpdateProcThreadAttribute( si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-									 hpc, sizeof( hpc ), NULL, NULL ) ) {
-		HeapFree( GetProcessHeap(), 0, si.lpAttributeList );
-		return HRESULT_FROM_WIN32( GetLastError() );
-	}
-
-	*pStartupInfo = si;
-
-	return S_OK;
-}
 
 Process::Process( AutoHandle&& hProcess, void* lpAttributeList, int pid ) :
 	mStatus( ProcessStatus::RUNNING ),
@@ -393,11 +361,13 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 		oss << ' ' << arg;
 	}
 	std::wstring commandLine = stringToWideString( oss.str() );
-	// TODO: If workingDirectory is relative, make it absolute (relative to the
-	// current process working directory)
+
+	std::vector<wchar_t> cmdLineMutable( commandLine.begin(), commandLine.end() );
+	cmdLineMutable.push_back( 0 );
+
 	std::wstring workingDir = stringToWideString( workingDirectory );
 
-	if ( CreateProcessW( NULL, (LPWSTR)commandLine.c_str(), NULL, NULL, TRUE, 0, NULL,
+	if ( CreateProcessW( NULL, (LPWSTR)cmdLineMutable.data(), NULL, NULL, TRUE, 0, NULL,
 						 workingDir.empty() ? NULL : workingDir.c_str(), &siStartInfo,
 						 &piProcInfo ) ) {
 		std::unique_ptr<Pipe> pipe = std::unique_ptr<Pipe>(
@@ -424,6 +394,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	SetEnvironmentVariableA( "WSLENV", "TERM/u" );
 	SetEnvironmentVariableA( "TERM", "xterm-256color" );
 	SetEnvironmentVariableA( "COLORTERM", "24bit" );
+	SetEnvironmentVariableA( "TERM_PROGRAM", "eterm" );
+	SetEnvironmentVariableA( "TERM_PROGRAM_VERSION", EE::Version::getVersionName( false ).c_str() );
 
 	for ( const auto& e : env )
 		SetEnvironmentVariableA( e.first.c_str(), e.second.c_str() );
@@ -434,6 +406,12 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	AutoHandle hThread{};
 
 	STARTUPINFOEXW startupInfo{};
+	startupInfo.StartupInfo.cb = sizeof( STARTUPINFOEXW );
+	startupInfo.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+	startupInfo.StartupInfo.hStdInput = INVALID_HANDLE_VALUE;
+	startupInfo.StartupInfo.hStdOutput = INVALID_HANDLE_VALUE;
+	startupInfo.StartupInfo.hStdError = INVALID_HANDLE_VALUE;
+
 	PROCESS_INFORMATION piClient{};
 
 	std::ostringstream oss;
@@ -442,28 +420,42 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		oss << ' ' << arg;
 	}
 	std::wstring commandLine = stringToWideString( oss.str() );
-	// TODO: If workingDirectory is relative, make it absolute (relative to the
-	// current process working directory)
 	std::wstring workingDir = stringToWideString( workingDirectory );
 
-	if ( ( hr = InitializeStartupInfoAttachedToPseudoConsole( &startupInfo,
-															  pseudoTerminal.mPHPC ) ) != S_OK ) {
-		Log::error( "InitializeStartupInfoAttachedToPseudoConsole failed." );
-		PrintErrorResult( hr );
+	SIZE_T bytesRequired = 0;
+	InitializeProcThreadAttributeList( NULL, 1, 0, &bytesRequired );
+
+	startupInfo.lpAttributeList =
+		(PPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc( GetProcessHeap(), 0, bytesRequired );
+
+	if ( !startupInfo.lpAttributeList ) {
+		Log::error( "HeapAlloc failed for attribute list." );
 		goto fail;
 	}
 
-	hr = CreateProcessW( NULL,							// No module name - use Command Line
-						 (wchar_t*)commandLine.c_str(), // Command Line
-						 NULL,							// Process handle not inheritable
-						 NULL,							// Thread handle not inheritable
-						 FALSE,							// Inherit handles
-						 EXTENDED_STARTUPINFO_PRESENT,	// Creation flags
-						 NULL,							// Use parent's environment block
-						 workingDir.empty() ? NULL
-											: workingDir.c_str(), // Use parent's starting directory
-						 &startupInfo.StartupInfo,				  // Pointer to STARTUPINFO
-						 &piClient )							  // Pointer to PROCESS_INFORMATION
+	if ( !InitializeProcThreadAttributeList( startupInfo.lpAttributeList, 1, 0, &bytesRequired ) ) {
+		Log::error( "InitializeProcThreadAttributeList failed." );
+		goto fail;
+	}
+
+	if ( !UpdateProcThreadAttribute( startupInfo.lpAttributeList, 0,
+									 PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoTerminal.mPHPC,
+									 sizeof( HPCON ), NULL, NULL ) ) {
+		Log::error( "UpdateProcThreadAttribute failed." );
+		goto fail;
+	}
+
+	hr = CreateProcessW(
+			 NULL,				 // No module name - use Command Line
+			 commandLine.data(), // Must be a mutable buffer to prevent ERROR_INSUFFICIENT_BUFFER
+			 NULL,				 // Process handle not inheritable
+			 NULL,				 // Thread handle not inheritable
+			 FALSE,				 // Inherit handles
+			 EXTENDED_STARTUPINFO_PRESENT,					 // Creation flags
+			 NULL,											 // Use parent's environment block
+			 workingDir.empty() ? NULL : workingDir.c_str(), // Use parent's starting directory
+			 &startupInfo.StartupInfo,						 // Pointer to STARTUPINFO
+			 &piClient )									 // Pointer to PROCESS_INFORMATION
 			 ? S_OK
 			 : HANDLE_WIN_ERR( GetLastError() );
 
@@ -480,6 +472,10 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	return std::unique_ptr<Process>(
 		new Process( std::move( hProcess ), startupInfo.lpAttributeList, piClient.dwProcessId ) );
 fail:
+	if ( startupInfo.lpAttributeList ) {
+		DeleteProcThreadAttributeList( startupInfo.lpAttributeList );
+		HeapFree( GetProcessHeap(), 0, startupInfo.lpAttributeList );
+	}
 	return std::unique_ptr<Process>();
 }
 

@@ -15,13 +15,13 @@ class UIMenuItem;
 
 class EE_API UITextInput : public UITextView, public TextDocument::Client {
   public:
+	enum class TextInputMode { Normal, Password };
+
 	static UITextInput* New();
 
+	static UITextInput* NewPassword();
+
 	static UITextInput* NewWithTag( const std::string& tag );
-
-	UITextInput();
-
-	explicit UITextInput( const std::string& tag );
 
 	virtual ~UITextInput();
 
@@ -123,6 +123,14 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void setSelectAllDocOnTabNavigate( bool selectAllDocOnTabNavigate );
 
+	UITextInput* setMode( TextInputMode mode );
+
+	TextInputMode getMode() const;
+
+	const String& getBulletCharacter() const;
+
+	void setBulletCharacter( const String& bulletCharacter );
+
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
@@ -149,6 +157,13 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Uint64 mLastExecuteEventId{ 0 };
 	String::HashType mLastCmdHash{ 0 };
 	HintDisplay mHintDisplay{ HintDisplay::Always };
+	TextInputMode mMode{ TextInputMode::Normal };
+	Text* mPassCache{ nullptr };
+	String mBulletCharacter{ "●" };
+
+	UITextInput();
+
+	explicit UITextInput( const std::string& tag );
 
 	void resetWaitCursor();
 
@@ -180,6 +195,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onFontChanged();
 
+	virtual void onFontStyleChanged();
+
 	void onThemeLoaded();
 
 	virtual void onCursorPosChange();
@@ -189,6 +206,12 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	void updateWaitingCursor( const Time& time );
 
 	virtual void updateText();
+
+	virtual void updatePass();
+
+	virtual void updateFontStyleConfig();
+
+	virtual Text& getVisibleTextCache();
 
 	virtual void selCurInit( const Int32& init );
 

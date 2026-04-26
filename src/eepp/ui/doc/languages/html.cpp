@@ -9,7 +9,7 @@ void addHTML() {
 		->add(
 
 			{ "HTML",
-			  { "%.[mp]?html?$", "%.handlebars$" },
+			  { "%.[mpx]?html?$", "%.handlebars$" },
 			  {
 				  { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
 					  "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
@@ -50,7 +50,8 @@ void addHTML() {
 
 			} )
 		.setAutoCloseXMLTags( true )
-		.setBlockComment( { "<!--", "-->" } );
+		.setBlockComment( { "<!--", "-->" } )
+		.setFoldRangeType( FoldRangeType::Tag );
 }
 
 }}}} // namespace EE::UI::Doc::Language

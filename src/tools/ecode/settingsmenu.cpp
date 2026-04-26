@@ -1,4 +1,5 @@
 #include "settingsmenu.hpp"
+#include "uitreeviewfs.hpp"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -343,6 +344,53 @@ UITerminal* SettingsMenu::getCurrentTerminal() const {
 UIMenu* SettingsMenu::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
+	auto setupAutoIndentMenu = [this](
+								   UIPopUpMenu* parentMenu, const std::string& menuId,
+								   std::function<TextDocument::AutoIndentConfig()> getConfig,
+								   std::function<void( TextDocument::AutoIndentConfig )> onClick ) {
+		UIPopUpMenu* autoIndentMenu = UIPopUpMenu::New();
+		auto subMenu =
+			parentMenu->addSubMenu( i18n( "auto_indent", "Auto-Indent" ), nullptr, autoIndentMenu );
+		subMenu
+			->setTooltipText(
+				i18n( "auto_indent_tooltip",
+					  "Configures the automatic indentation behavior when pressing Enter.\n"
+					  "None: No automatic indentation.\n"
+					  "Preserve: Preserves the indentation level of the previous line.\n"
+					  "Smart: Preserves indentation and automatically indents between auto-closed "
+					  "brackets." ) )
+			->setId( menuId );
+		subMenu->on( Event::OnMenuShow, [this, autoIndentMenu, getConfig, onClick]( const Event* ) {
+			if ( autoIndentMenu->getCount() == 0 ) {
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_none", "None" ) )
+					->setId( "auto_indent_none" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_preserve", "Preserve" ) )
+					->setId( "auto_indent_preserve" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_smart", "Smart" ) )
+					->setId( "auto_indent_smart" );
+				autoIndentMenu->on( Event::OnItemClicked, [onClick]( const Event* event ) {
+					const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+					TextDocument::AutoIndentConfig autoIndent =
+						text == "auto_indent_none"		 ? TextDocument::AutoIndentConfig::None
+						: text == "auto_indent_preserve" ? TextDocument::AutoIndentConfig::Preserve
+														 : TextDocument::AutoIndentConfig::Smart;
+					onClick( autoIndent );
+				} );
+			}
+			TextDocument::AutoIndentConfig currentConfig = getConfig();
+			autoIndentMenu->getItemId( "auto_indent_none" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::None );
+			autoIndentMenu->getItemId( "auto_indent_preserve" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Preserve );
+			autoIndentMenu->getItemId( "auto_indent_smart" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Smart );
+		} );
+		return subMenu;
+	};
+
 	mDocMenu = UIPopUpMenu::New();
 
 	// **** CURRENT DOCUMENT ****
@@ -354,6 +402,18 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
+
+	setupAutoIndentMenu(
+		mDocMenu, "auto_indent_menu_cur",
+		[this]() {
+			return mSplitter->curEditorExistsAndFocused()
+					   ? mSplitter->getCurEditor()->getDocument().getAutoIndent()
+					   : TextDocument::AutoIndentConfig::Smart;
+		},
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			if ( mSplitter->curEditorExistsAndFocused() )
+				mSplitter->getCurEditor()->getDocument().setAutoIndent( autoIndent );
+		} );
 
 	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
@@ -542,6 +602,15 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" );
+
+	setupAutoIndentMenu(
+		mGlobalMenu, "auto_indent_menu", [this]() { return mApp->getConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getConfig().doc.autoIndent = autoIndent;
+			mSplitter->forEachEditor( [autoIndent]( UICodeEditor* editor ) {
+				editor->getDocument().setAutoIndent( autoIndent );
+			} );
+		} );
 
 	UIPopUpMenu* tabTypeMenuGlobal = UIPopUpMenu::New();
 	tabTypeMenuGlobal->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -802,6 +871,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" )
 		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
+
+	auto autoIndentProjectSubMenu = setupAutoIndentMenu(
+		mProjectDocMenu, "auto_indent_menu_project",
+		[this]() { return mApp->getProjectConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getProjectConfig().doc.autoIndent = autoIndent;
+		} );
+	autoIndentProjectSubMenu->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
 	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -1172,6 +1249,12 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		->add( i18n( "configure_terminal_scrollback", "Configure Terminal Scrollback" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
 		->setId( "configure-terminal-scrollback" );
+
+	mTerminalMenu
+		->add( i18n( "configure_terminal_working_dir",
+					 "Configure Terminal Default Working Directory" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-working-dir" ) )
+		->setId( "configure-terminal-working-dir" );
 
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
@@ -1644,17 +1727,17 @@ UIMenu* SettingsMenu::createViewMenu() {
 			if ( mLineWrapMenu->getCount() == 0 ) {
 				UIPopUpMenu* wrapModeMenu = UIPopUpMenu::New();
 				wrapModeMenu->addRadioButton( i18n( "no_wrap", "No Wrap" ) )
-					->setId( DocumentView::fromLineWrapMode( LineWrapMode::NoWrap ) );
+					->setId( LineWrap::fromLineWrapMode( LineWrapMode::NoWrap ) );
 				wrapModeMenu->addRadioButton( i18n( "wrap_word", "Word wrap" ) )
-					->setId( DocumentView::fromLineWrapMode( LineWrapMode::Word ) );
+					->setId( LineWrap::fromLineWrapMode( LineWrapMode::Word ) );
 				wrapModeMenu->addRadioButton( i18n( "wrap_letter", "Letter wrap" ) )
-					->setId( DocumentView::fromLineWrapMode( LineWrapMode::Letter ) );
+					->setId( LineWrap::fromLineWrapMode( LineWrapMode::Letter ) );
 
 				wrapModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 						return;
 					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-					LineWrapMode mode = DocumentView::toLineWrapMode( item->getId() );
+					LineWrapMode mode = LineWrap::toLineWrapMode( item->getId() );
 					mApp->getConfig().editor.wrapMode = mode;
 					mApp->getSplitter()->forEachEditor(
 						[mode]( UICodeEditor* editor ) { editor->setLineWrapMode( mode ); } );
@@ -1665,16 +1748,16 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 				UIPopUpMenu* wrapTypeMenu = UIPopUpMenu::New();
 				wrapTypeMenu->addRadioButton( i18n( "viewport", "Viewport" ) )
-					->setId( DocumentView::fromLineWrapType( LineWrapType::Viewport ) );
+					->setId( LineWrap::fromLineWrapType( LineWrapType::Viewport ) );
 				wrapTypeMenu
 					->addRadioButton( i18n( "line_breaking_column", "Line Breaking Column" ) )
-					->setId( DocumentView::fromLineWrapType( LineWrapType::LineBreakingColumn ) );
+					->setId( LineWrap::fromLineWrapType( LineWrapType::LineBreakingColumn ) );
 
 				wrapTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 						return;
 					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-					LineWrapType type = DocumentView::toLineWrapType( item->getId() );
+					LineWrapType type = LineWrap::toLineWrapType( item->getId() );
 					mApp->getConfig().editor.wrapType = type;
 					mApp->getSplitter()->forEachEditor(
 						[type]( UICodeEditor* editor ) { editor->setLineWrapType( type ); } );
@@ -1712,11 +1795,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 			const auto& cfg = mApp->getConfig();
 
-			wrapModeMenu->find( DocumentView::fromLineWrapMode( cfg.editor.wrapMode ) )
+			wrapModeMenu->find( LineWrap::fromLineWrapMode( cfg.editor.wrapMode ) )
 				->asType<UIMenuRadioButton>()
 				->setActive( true );
 
-			wrapTypeMenu->find( DocumentView::fromLineWrapType( cfg.editor.wrapType ) )
+			wrapTypeMenu->find( LineWrap::fromLineWrapType( cfg.editor.wrapType ) )
 				->asType<UIMenuRadioButton>()
 				->setActive( true );
 
@@ -1928,6 +2011,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "enable_horizontal_scrollbar", "Enable Horizontal ScrollBar" ) )
 		->setActive( mApp->getConfig().editor.horizontalScrollbar )
 		->setId( "enable-horizontal-scrollbar" );
+	mViewMenu->addCheckBox( i18n( "enable_inline_color_boxes", "Enable Color Boxes" ) )
+		->setActive( mApp->getConfig().editor.inlineColorBoxes )
+		->setTooltipText( i18n( "enable_inline_color_boxes_tooltip",
+								"Renders a background box of the parsed color directly behind the\n"
+								"text itself." ) )
+		->setId( "enable-inline-color-boxes" );
 	mViewMenu->addCheckBox( i18n( "enable_color_preview", "Enable Color Preview" ) )
 		->setActive( mApp->getConfig().editor.colorPreview )
 		->setTooltipText( i18n( "enable_color_preview_tooltip",
@@ -2055,6 +2144,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 				editor->setHorizontalScrollBarEnabled(
 					mApp->getConfig().editor.horizontalScrollbar );
+			} );
+		} else if ( item->getId() == "enable-inline-color-boxes" ) {
+			mApp->getConfig().editor.inlineColorBoxes = item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->setEnableInlineColorBoxes( mApp->getConfig().editor.inlineColorBoxes );
 			} );
 		} else if ( item->getId() == "enable-color-preview" ) {
 			mApp->getConfig().editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
@@ -2186,7 +2280,17 @@ UIMenu* SettingsMenu::createThemesMenu() {
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "default_theme" );
 
+	menu->addRadioButton( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
+						  "syntax_color_scheme" == curTheme )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setTooltipText( i18n( "syntax_color_scheme_tool",
+								"Uses the editor color scheme colors to create a UI theme." ) )
+		->setId( "syntax_color_scheme" );
+
 	auto files = FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true );
+
+	if ( !files.empty() )
+		menu->addSeparator();
 
 	for ( const auto& file : files ) {
 		if ( file.getExtension() != "css" )
@@ -2198,11 +2302,14 @@ UIMenu* SettingsMenu::createThemesMenu() {
 	}
 
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) )
+			return;
 		auto id = event->getNode()->getId();
 		mApp->getConfig().ui.theme = "default_theme" != id ? id : "";
-		std::string path( mApp->getConfig().ui.theme.empty()
-							  ? mApp->getDefaultThemePath()
-							  : mApp->getThemesPath() + id + ".css" );
+		std::string path(
+			mApp->getConfig().ui.theme.empty()
+				? mApp->getDefaultThemePath()
+				: ( "syntax_color_scheme" == id ? id : mApp->getThemesPath() + id + ".css" ) );
 		mApp->setTheme( path );
 	} );
 
@@ -2567,12 +2674,20 @@ static void fsRemoveAll( const std::string& fpath ) {
 #endif
 }
 
-void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
+void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
 	mProjectTreeMenu = UIPopUpMenu::New();
 
-	if ( file.isDirectory() ) {
+	bool allFiles = true;
+	for ( const auto& file : files ) {
+		if ( file.isDirectory() ) {
+			allFiles = false;
+			break;
+		}
+	}
+
+	if ( files.size() == 1 && files[0].isDirectory() ) {
 		mProjectTreeMenu->add( i18n( "new_file_ellipsis", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
 		mProjectTreeMenu
@@ -2596,7 +2711,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->add( i18n( "find_in_folder_ellipsis", "Find in Folder..." ),
 				   findIcon( "file-search" ) )
 			->setId( "find_in_folder" );
-	} else {
+	} else if ( files.size() == 1 ) {
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
@@ -2608,28 +2723,43 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 				   findIcon( "file-add" ) )
 			->setId( "new_file_in_place" );
 		mProjectTreeMenu
+			->add( i18n( "new_folder_in_directory_ellipsis", "New Folder in directory..." ),
+				   findIcon( "folder-add" ) )
+			->setId( "new_folder_in_place" );
+		mProjectTreeMenu
 			->add( i18n( "duplicate_file_ellipsis", "Duplicate File..." ), findIcon( "file-copy" ) )
 			->setId( "duplicate_file" );
+	} else if ( allFiles && files.size() > 1 ) {
+		mProjectTreeMenu->add( i18n( "open_files", "Open Files" ), findIcon( "document-open" ) )
+			->setId( "open_files" );
 	}
-	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
-		->setId( "rename" );
+
+	if ( files.size() == 1 ) {
+		mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
+			->setId( "rename" );
+	}
+
 	mProjectTreeMenu
 		->add( i18n( "remove_ellipsis", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
 		->setId( "remove" );
 
-	if ( file.isDirectory() || file.isExecutable() ) {
-		mProjectTreeMenu->addSeparator();
+	if ( files.size() == 1 ) {
+		auto& file = files[0];
 
-		if ( file.isDirectory() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_dir_in_terminal" );
-		} else if ( file.isExecutable() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_in_terminal", "Execute in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_in_terminal" );
+		if ( file.isDirectory() || file.isExecutable() ) {
+			mProjectTreeMenu->addSeparator();
+
+			if ( file.isDirectory() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_dir_in_terminal" );
+			} else if ( file.isExecutable() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_in_terminal", "Execute in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_in_terminal" );
+			}
 		}
 	}
 
@@ -2656,26 +2786,37 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->setId( "configure-ignore-files" );
 	}
 
-	mProjectTreeMenu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+	mProjectTreeMenu->on( Event::OnItemClicked, [this, files]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) || files.empty() )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
+		auto file = files[0];
 
 		if ( "new_file" == id || "new_file_in_place" == id ) {
 			mApp->newFile( file );
-		} else if ( "new_folder" == id ) {
+		} else if ( "new_folder" == id || "new_folder_in_place" == id ) {
 			mApp->newFolder( file );
 		} else if ( "open_file" == id ) {
 			mApp->openFileFromPath( file.getFilepath() );
+		} else if ( "open_files" == id ) {
+			for ( const auto& file : files )
+				mApp->openFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
-			deleteFileDialog( file );
+			mApp->getProjectTreeView()->deleteSelectedFiles();
 		} else if ( "duplicate_file" == id ) {
 			UIMessageBox* msgBox = mApp->newInputMsgBox(
 				String::format( "%s \"%s\"",
 								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
 								file.getFileName().c_str() ),
 				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
+			std::string newFileName( file.getFileName() );
+			std::string ext( file.getExtension( false ) );
+			newFileName = FileSystem::fileRemoveExtension( newFileName );
+			newFileName += " (" + i18n( "filename_copy", "Copy" ) + ")";
+			if ( !ext.empty() )
+				newFileName += "." + ext;
+			msgBox->getTextInput()->setText( newFileName );
 			msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 				auto newFilePath( mApp->getNewFilePath( file, msgBox ) );
 				if ( !FileSystem::fileExists( newFilePath ) ) {

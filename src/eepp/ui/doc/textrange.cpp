@@ -164,6 +164,75 @@ TextRange TextRange::convertToLineColumn( const std::string_view& text, Int64 st
 	return convertToLineColumn<std::string_view>( text, startOffset, endOffset );
 }
 
+template <typename StringType>
+TextSelectionRange TextRange::convertToOffset( const StringType& text, const TextRange& range ) {
+	if ( !range.isValid() )
+		return { -1, -1 };
+
+	Int64 startOffset = -1;
+	Int64 endOffset = -1;
+	Int64 currentLine = 0;
+	Int64 currentCol = 0;
+	Int64 currentPos = 0;
+	size_t len = text.length();
+
+	const TextPosition& start = range.start();
+	const TextPosition& end = range.end();
+
+	for ( size_t i = 0; i <= len; i++ ) {
+		// Exact match for line and column
+		if ( startOffset == -1 && currentLine == start.line() && currentCol == start.column() ) {
+			startOffset = currentPos;
+		}
+
+		if ( endOffset == -1 && currentLine == end.line() && currentCol == end.column() ) {
+			endOffset = currentPos;
+		}
+
+		if ( startOffset != -1 && endOffset != -1 )
+			break;
+
+		if ( i == len )
+			break;
+
+		if ( text[i] == '\n' ) {
+			// If the requested column is virtually out of bounds for this line, clamp to the line's
+			// end (the newline character's pos)
+			if ( startOffset == -1 && currentLine == start.line() && start.column() > currentCol ) {
+				startOffset = currentPos;
+			}
+			if ( endOffset == -1 && currentLine == end.line() && end.column() > currentCol ) {
+				endOffset = currentPos;
+			}
+
+			currentLine++;
+			currentCol = 0;
+		} else {
+			currentCol++;
+		}
+
+		currentPos++;
+	}
+
+	// If the range requested lines beyond the text entirely, clamp to the very end of the text
+	if ( startOffset == -1 )
+		startOffset = currentPos;
+
+	if ( endOffset == -1 )
+		endOffset = currentPos;
+
+	return { startOffset, endOffset };
+}
+
+TextSelectionRange TextRange::convertToOffset( const String::View& text, const TextRange& range ) {
+	return convertToOffset<String::View>( text, range );
+}
+
+TextSelectionRange TextRange::convertToOffset( const std::string_view& text,
+											   const TextRange& range ) {
+	return convertToOffset<std::string_view>( text, range );
+}
+
 Int64 TextRange::minimumDistance( const TextRange& other ) const {
 	if ( intersects( other ) )
 		return 0;

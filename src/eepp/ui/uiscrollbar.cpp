@@ -121,6 +121,9 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 }
 
 void UIScrollBar::onAutoSize() {
+	if ( mSlider == nullptr )
+		return;
+
 	Sizef size;
 	UISkin* tSkin = mSlider->getBackSlider()->getSkin();
 

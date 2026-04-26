@@ -5,6 +5,7 @@
 	--font: #eff0f1;
 	--font-highlight: #8bdcfd;
 	--font-hint: #898b8d;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -12,9 +13,8 @@
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #232629;
-	--separator: #383a3d;
+	--separator: #31363b;
 	--item-hover: #284150;
-	--scroll-button: #6b6d6f;
 	--slider-back: #676a6e;
 	--slider-button: #31363b;
 	--slider-border: #787b80;
@@ -27,18 +27,19 @@
 	--tab-hover: #334e5e;
 	--tab-close: #909396;
 	--tab-close-hover: #863d47;
+	--tab-font-active: white;
 	--tab-font-inactive: #c0c5cc;
 	--icon: #b6bbc2;
 	--icon-active: white;
 	--icon-back-hover: #eff0f1;
-	--icon-line-hover: #3d4246;
 	--icon-back-alert: #e49aa2;
+	--icon-line: #dbdbdd;
+	--icon-line-hover: #3d4246;
 	--menu-back: #2d3136;
 	--menu-font: #eff0f1;
 	--menu-border: #616569;
 	--menu-font-active: white;
 	--menu-font-disabled: #6e7275;
-	--win-icon: #dbdbdd;
 	--floating-icon: #96999c;
 	--term-back-color: #1e2127;
 	--term-font-color: #abb2bf;
@@ -51,54 +52,256 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
-pushbutton::icon,
-selectbutton::icon,
-tableview::cell::icon,
-treeview::cell::icon,
+MarkdownView > *,
+body {
+	color: var(--font);
+}
+
+b,
+strong {
+	font-style: bold;
+}
+
+small {
+	font-size: smaller;
+}
+
+u,
+ins {
+	text-decoration: underline;
+}
+
+s,
+del {
+	text-decoration: strikethrough;
+}
+
+i,
+em {
+	font-style: italic;
+}
+
+h1 {
+	font-size: 2em;
+	margin: 0.67em 0;
+	font-weight: bold;
+}
+
+h2 {
+	font-size: 1.5em;
+	margin: 0.83em 0;
+	font-weight: bold;
+}
+
+h3 {
+	font-size: 1.17em;
+	margin: 1em 0;
+	font-weight: bold;
+}
+
+h4 {
+	font-size: 1em;
+	margin: 1.33em 0;
+	font-weight: bold;
+}
+
+h5 {
+	font-size: 0.83em;
+	margin: 1.67em 0;
+	font-weight: bold;
+}
+
+h6 {
+	font-size: 0.67em;
+	margin: 2.33em 0;
+	font-weight: bold;
+}
+
+table, td {
+	text-align: left;
+}
+
+hr {
+	min-height: 1dp;
+	background-color: gray;
+	margin: 0.5em 0;
+}
+
+center {
+	text-align: center;
+}
+
+p, ol, ul, pre, blockquote {
+	margin: 1em 0;
+}
+
+li > p {
+	margin: 0;
+}
+
+ol, ul {
+	margin: 0.67em 0;
+}
+
+ul > li,
+ol > li {
+	padding-left: 2em;
+}
+
+ol > li {
+  background-tint: var(--font);
+  background-position: 0.6em 0.3em;
+}
+
+ol > li:nth-child(1) {
+	background-image: glyph("monospace", 1em, "1");
+}
+
+ol > li:nth-child(2) {
+	background-image: glyph("monospace", 1em, "2");
+}
+
+ol > li:nth-child(3) {
+	background-image: glyph("monospace", 1em, "3");
+}
+
+ol > li:nth-child(4) {
+	background-image: glyph("monospace", 1em, "4");
+}
+
+ol > li:nth-child(5) {
+	background-image: glyph("monospace", 1em, "5");
+}
+
+ol > li:nth-child(6) {
+	background-image: glyph("monospace", 1em, "6");
+}
+
+ol > li:nth-child(7) {
+	background-image: glyph("monospace", 1em, "7");
+}
+
+ol > li:nth-child(8) {
+	background-image: glyph("monospace", 1em, "8");
+}
+
+ol > li:nth-child(9) {
+	background-image: glyph("monospace", 1em, "9");
+}
+
+ul > li {
+  background-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
+  background-tint: var(--font);
+  background-position: 0.6em 0.45em;
+  background-size: 0.5em 0.5em;
+}
+
+a {
+	cursor: arrow;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+	cursor: hand;
+}
+
+img {
+	scale-type: fit-inside;
+	layout-width: wrap_content;
+	layout-height: wrap_content;
+}
+
+body img {
+	scale-type: expand;
+}
+
+blockquote {
+	padding-left: 8dp;
+	background-color: var(--list-back);
+	border-left: 2dp solid var(--tab-line);
+}
+
+blockquote > *:first-child {
+	margin-top: 0dp;
+}
+
+blockquote > *:last-child {
+	margin-bottom: 0dp;
+}
+
+MarkdownView p,
+MarkdownView ol,
+MarkdownView ul,
+MarkdownView pre,
+MarkdownView blockquote {
+	margin-top: 0;
+}
+
+MarkdownView a {
+	color: var(--primary);
+	selection-color: var(--font-selected-pressed);
+	selection-back-color: var(--primary);
+	gravity: bottom;
+}
+
+MarkdownView a:hover {
+	color: var(--font-highlight);
+}
+
+MarkdownView {
+	background-color: var(--list-back);
+	padding: 4dp;
+}
+
+MarkdownView h1,
+MarkdownView h2 {
+	border-bottom: 1dp solid var(--tab-line);
+}
+
+MarkdownView img {
+	scale-type: fit-inside;
+	max-width: 100%;
+	max-height: 100vh;
+}
+
+MarkdownView table > thead > tr > th {
+	font-style: bold;
+}
+
+MarkdownView CodeEditor {
+	padding: 4dp;
+}
+
+MarkdownView code {
+	font-family: monospace;
+	background-color: var(--button-back);
+}
+
+pushbutton,
+selectbutton,
+tableview::cell,
+treeview::cell,
 treeview::cell::expander,
-listview::cell::icon,
-Menu::Item:selected,
-Menu::CheckBox:selected,
-Menu::SubMenu:selected,
-Menu::RadioButton:selected,
-Menu::Item:hover > Menu::Item::text,
-Menu::Item:hover > Menu::Item::shortcut,
-Menu::CheckBox:hover > Menu::CheckBox::text,
-Menu::CheckBox:hover > Menu::CheckBox::shortcut,
-Menu::RadioButton:hover > Menu::RadioButton::text,
-Menu::RadioButton:hover > Menu::RadioButton::shortcut,
-Menu::SubMenu:hover > Menu::SubMenu::text,
-Menu::item:hover > Menu::Item::icon,
-Menu::SubMenu:hover > Menu::SubMenu::icon,
-Menu::item:hover > Menu::CheckBox::icon,
-Menu::item:hover > Menu::RadioButton::icon,
-PushButton:pressed > PushButton::icon,
-SelectButton:pressed > SelectButton::icon,
-SelectButton:selected > SelectButton::icon,
-SelectButton:selected:pressed > SelectButton::icon,
-tableview::row:selected tableview::cell::text,
-treeview::row:selected treeview::cell::text,
-listview::row:selected listview::cell::text,
-tableview::row:selected tableview::cell::icon,
-treeview::row:selected treeview::cell::icon,
-listview::row:selected listview::cell::icon,
-tableview::row:selected tableview::cell::expander,
-treeview::row:selected treeview::cell::expander,
-listview::row:selected listview::cell::expander,
-tableview::row:hover tableview::cell::text,
-treeview::row:hover treeview::cell::text,
-listview::row:hover listview::cell::text,
-tableview::row:hover tableview::cell::icon,
-treeview::row:hover treeview::cell::icon,
-listview::row:hover listview::cell::icon,
-tableview::row:hover tableview::cell::expander,
-treeview::row:hover treeview::cell::expander,
-listview::row:hover listview::cell::expander,
+listview::cell,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {
 	color: var(--font);
 	tint: var(--font);
+}
+
+tableview::row:selected tableview::cell,
+treeview::row:selected treeview::cell,
+listview::row:selected listview::cell,
+tableview::row:selected tableview::cell,
+treeview::row:selected treeview::cell,
+listview::row:selected listview::cell,
+tableview::row:selected tableview::cell::expander,
+treeview::row:selected treeview::cell::expander,
+listview::row:selected listview::cell::expander {
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 CheckBox,
@@ -116,27 +319,28 @@ SpinBox::input,
 Tab,
 TextEdit,
 TextInput,
-TextInputPassword,
+TextArea,
 TextView,
 Anchor,
 Tooltip,
 MenuBar::button,
 Window::title,
 ListView::cell,
-table::cell::text,
-tableview::cell::text,
-treeview::cell::text,
-listview::cell::text {
+table::cell,
+tableview::cell,
+treeview::cell,
+listview::cell {
 	color: var(--font);
 }
 
 TextView,
 Anchor,
 TextEdit,
+TextArea,
 TextInput,
-TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
+	selection-color: var(--font-selected-pressed);
 	selection-back-color: var(--primary);
 }
 
@@ -151,7 +355,8 @@ Anchor:hover {
 
 PushButton,
 SelectButton,
-DropDownList {
+DropDownList,
+DropDownModelList {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -161,9 +366,12 @@ DropDownList {
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
 	transition: all 0.125s cubic-bezier(0.77, 0.77, 0.38, 0.38);
+	color: var(--font);
+	tint: var(--font);
 }
 
 DropDownList,
+DropDownModelList,
 ComboBox::DropDownList {
 	max-visible-items: 6;
 }
@@ -172,6 +380,8 @@ PushButton:hover,
 PushButton:focus,
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 SelectButton:hover,
 SelectButton:focus,
 ComboBox:hover,
@@ -184,12 +394,15 @@ SelectButton:pressed,
 SelectButton:selected,
 SelectButton:selected:pressed {
 	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 pushbutton:disabled,
 selectbutton:disabled,
 textinput:disabled,
-textedit:disabled {
+textedit:disabled,
+textarea:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }
@@ -274,7 +487,7 @@ RadioButton::active {
 ListBox,
 DropDownList::ListBox,
 ComboBox::DropDownList::ListBox,
-Table,
+MarkdownView Table,
 ListView {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
@@ -324,6 +537,8 @@ DropDownList::ListBox::item,
 ComboBox::DropDownList::ListBox::item {
 	padding-left: 4dp;
 	background-color: transparent;
+	color: var(--font);
+	tint: var(--font);
 }
 
 DropDownList::ListBox::item:hover,
@@ -331,10 +546,11 @@ DropDownList::ListBox::item:selected,
 ComboBox::DropDownList::ListBox::item:hover,
 ComboBox::DropDownList::ListBox::item:selected {
 	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
-TextInput,
-TextInputPassword {
+TextInput {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -362,8 +578,6 @@ ComboBox::DropDownList {
 	padding-bottom: var(--base-vertical-padding);
 }
 
-TextInputPassword:hover,
-TextInputPassword:focus,
 TextInput:hover,
 TextInput:focus,
 SpinBox:hover,
@@ -399,7 +613,8 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit,
+TextArea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -412,7 +627,9 @@ TextEdit {
 }
 
 TextEdit:focus,
-TextEdit:hover {
+TextEdit:hover,
+TextArea:focus,
+TextArea:hover {
 	border-color: var(--primary);
 }
 
@@ -650,7 +867,7 @@ Window::maximize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp", 1dp);
+	foreground-image: poly(line, var(--icon-line), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--icon-line), "4dp 0dp, 8dp 4dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
@@ -665,7 +882,7 @@ Window::minimize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp", 1dp);
+	foreground-image: poly(line, var(--icon-line), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--icon-line), "4dp 4dp, 8dp 0dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
@@ -682,22 +899,31 @@ Window {
 	window-buttons-offset: -6dp 0dp;
 	window-buttons-separation: 8dp;
 	window-flags: default|shadow;
+	window-shadow-offset: 0dp 0dp;
+	window-shadow-size: 16dp;
 }
 
 Window::decoration {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Window::border::left,
 Window::border::right {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Window::border::bottom {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 DropDownList,
+DropDownModelList {
+	padding-right: 16dp;
+	text-overflow: ellipsis;
+}
+
+DropDownList,
+DropDownModelList,
 ComboBox::Button {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
 	foreground-position-x: right 6dp;
@@ -708,6 +934,8 @@ ComboBox::Button {
 
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 ComboBox::Button:focus,
 ComboBox::Button:hover {
 	foreground-tint: var(--icon-active);
@@ -759,6 +987,7 @@ PopUpMenu {
 }
 
 MenuBar::Button {
+	background-color: transparent;
 	padding-left: 6dp;
 	padding-right: 6dp;
 	min-height: 18dp;
@@ -767,6 +996,8 @@ MenuBar::Button {
 MenuBar::Button:selected,
 MenuBar::Button:hover {
 	background-color: var(--primary);
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
 }
 
 Menu::Item,
@@ -819,12 +1050,21 @@ Menu::SubMenu:disabled > Menu::SubMenu::icon {
 	tint: var(--menu-font-disabled);
 }
 
-Menu::Item:hover > Menu::Item::text,
-Menu::CheckBox:hover > Menu::Item::text,
-Menu::RadioButton:hover > Menu::Item::text,
-Menu::SubMenu:hover > Menu::Item::text,
+Menu::Item:selected > Menu::Item::text,
+Menu::CheckBox:selected > Menu::CheckBox::text,
+Menu::RadioButton:selected > Menu::RadioButton::text,
+Menu::SubMenu:selected > Menu::SubMenu::text,
+Menu::Item:selected > Menu::Item::icon,
+Menu::CheckBox:selected > Menu::CheckBox::icon,
+Menu::RadioButton:selected > Menu::RadioButton::icon,
+Menu::SubMenu:selected > Menu::SubMenu::icon,
+Menu::Item:selected > Menu::Item::shortcut,
+Menu::CheckBox:selected > Menu::CheckBox::shortcut,
+Menu::RadioButton:selected > Menu::RadioButton::shortcut,
+Menu::SubMenu:selected > Menu::SubMenu::shortcut,
 ListBox::item:hover {
 	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
 }
 
 Menu::Separator {
@@ -840,6 +1080,10 @@ Menu::SubMenu::Arrow {
 	height: 16dp;
 	margin-right: 1dp;
 	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--icon), "5dp 13dp, 10dp 8dp", 1dp);
+}
+
+Menu::SubMenu:hover > Menu::SubMenu::arrow {
+	foreground-image: poly(line, var(--menu-font-active), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--menu-font-active), "5dp 13dp, 10dp 8dp", 1dp);
 }
 
 Menu::Item::icon,
@@ -886,12 +1130,13 @@ Menu::RadioButton::icon:selected {
 
 ListBox > ScrollBar,
 TextEdit > ScrollBar,
+TextArea > ScrollBar,
 Table > ScrollBar {
 	background-color: var(--list-back);
 }
 
 Splitter::separator {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Splitter::separator:selected,
@@ -939,7 +1184,7 @@ listview::header::column:hover,
 tableview::rowheader::row:hover,
 treeview::rowheader::row:hover,
 listview::rowheader::row:hover {
-	background-color: var(--tab-hover);
+	background-color: var(--item-hover);
 }
 
 tableview::row,
@@ -949,7 +1194,7 @@ treeview::row {
 
 tableview::row:hover,
 treeview::row:hover {
-	background-color: var(--tab-hover);
+	background-color: var(--item-hover);
 }
 
 tableview::row:selected,
@@ -1070,7 +1315,7 @@ tab::icon {
 
 tab:selected > tab::icon,
 tab:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
+	tint: var(--tab-font-active);
 }
 
 console {
@@ -1080,6 +1325,11 @@ console {
 	font-size: 11dp;
 	border-bottom-color: var(--separator);
 	border-bottom-width: var(--border-width);
+}
+
+ImageViewer > TextView {
+	text-stroke-width: 1dp;
+	text-stroke-color: var(--back);
 }
 
 /* Reserved classes used by themes */
@@ -1092,9 +1342,15 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
-ImageViewer > TextView {
-	text-stroke-width: 1dp;
-	text-stroke-color: var(--back);
+DiffView > SelectButton {
+	border-color: transparent;
+	padding: 0dp 4dp 0dp 4dp;
+	font-size: 10dp;
+}
+
+DiffView > SelectButton:hover,
+DiffView > SelectButton:focus {
+	border-color: var(--primary);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1105,6 +1361,7 @@ ImageViewer > TextView {
 	--font: #232627;
 	--font-highlight: #3daee9;
 	--font-hint: #232627;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;
 	--button-radius: 2dp;
@@ -1114,7 +1371,6 @@ ImageViewer > TextView {
 	--list-back: #ffffff;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
-	--scroll-button: #cbcdcd;
 	--slider-back: #e9e9e9;
 	--slider-button: #cbcdcd;
 	--slider-border: #e6e6e6;
@@ -1127,6 +1383,7 @@ ImageViewer > TextView {
 	--tab-hover: #93cee9;
 	--tab-close: #e6e6e6;
 	--tab-close-hover: #e49aa2;
+	--tab-font-active: white;
 	--tab-font-inactive: #444;
 	--icon: #232627;
 	--icon-active: #3daee9;
@@ -1138,7 +1395,7 @@ ImageViewer > TextView {
 	--menu-border: #b3b4b5;
 	--menu-font-active: #fcfcfc;
 	--menu-font-disabled: #a8a9aa;
-	--win-icon: #232627;
+	--icon-line: #232627;
 	--floating-icon: #666666;
 	--term-back-color: #eff0f1;
 	--term-font-color: #232627;
@@ -1150,55 +1407,6 @@ ImageViewer > TextView {
 	droppable-hovering-color: #00000020;
 }
 
-Menu::Item:selected,
-Menu::CheckBox:selected,
-Menu::SubMenu:selected,
-Menu::RadioButton:selected,
-Menu::Item:hover > Menu::Item::text,
-Menu::Item:hover > Menu::Item::shortcut,
-Menu::CheckBox:hover > Menu::CheckBox::text,
-Menu::CheckBox:hover > Menu::CheckBox::shortcut,
-Menu::RadioButton:hover > Menu::RadioButton::text,
-Menu::RadioButton:hover > Menu::RadioButton::shortcut,
-Menu::SubMenu:hover > Menu::SubMenu::text,
-Menu::item:hover > Menu::Item::icon,
-Menu::SubMenu:hover > Menu::SubMenu::icon,
-Menu::item:hover > Menu::CheckBox::icon,
-Menu::item:hover > Menu::RadioButton::icon,
-PushButton:pressed > PushButton::icon,
-SelectButton:pressed > SelectButton::icon,
-SelectButton:selected > SelectButton::icon,
-SelectButton:selected:pressed > SelectButton::icon,
-tableview::row:selected tableview::cell::text,
-treeview::row:selected treeview::cell::text,
-listview::row:selected listview::cell::text,
-tableview::row:selected tableview::cell::icon,
-treeview::row:selected treeview::cell::icon,
-listview::row:selected listview::cell::icon,
-tableview::row:selected tableview::cell::expander,
-treeview::row:selected treeview::cell::expander,
-listview::row:selected listview::cell::expander,
-tableview::row:selected tableview::cell checkbox,
-treeview::row:selected treeview::cell checkbox,
-listview::row:selected listview::cell checkbox,
-tableview::row:hover tableview::cell::text,
-treeview::row:hover treeview::cell::text,
-listview::row:hover listview::cell::text,
-tableview::row:hover tableview::cell::icon,
-treeview::row:hover treeview::cell::icon,
-listview::row:hover listview::cell::icon,
-tableview::row:hover tableview::cell::expander,
-treeview::row:hover treeview::cell::expander,
-listview::row:hover listview::cell::expander,
-tableview::row:hover tableview::cell checkbox,
-treeview::row:hover treeview::cell checkbox,
-listview::row:hover listview::cell checkbox,
-tableview::header::column:hover,
-treeview::header::column:hover,
-listview::header::column:hover {
-	tint: var(--menu-font-active);
-}
-
 Tab:selected,
 Tab:hover,
 Tab:pressed {
@@ -1206,7 +1414,7 @@ Tab:pressed {
 }
 
 Tab:not(:selected):hover {
-	color: var(--menu-font-active);
+	color: var(--tab-font-active);
 }
 
 tab::icon,
@@ -1215,7 +1423,7 @@ tab:selected > tab::icon, {
 }
 
 tab:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
+	tint: var(--tab-font-active);
 }
 
 }

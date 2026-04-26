@@ -10,8 +10,6 @@ class EE_API UISpinBox : public UIWidget {
   public:
 	static UISpinBox* New();
 
-	UISpinBox();
-
 	virtual ~UISpinBox();
 
 	virtual Uint32 getType() const;
@@ -70,6 +68,8 @@ class EE_API UISpinBox : public UIWidget {
 	double mValue;
 	double mClickStep;
 	bool mModifyingVal;
+
+	UISpinBox();
 
 	void adjustChildren();
 

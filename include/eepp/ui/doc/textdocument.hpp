@@ -48,6 +48,8 @@ class EE_API TextDocument {
 
 	enum class IndentType { IndentSpaces, IndentTabs };
 
+	enum class AutoIndentConfig { None, Preserve, Smart };
+
 	enum class FindReplaceType { Normal, LuaPattern, RegEx };
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
@@ -477,7 +479,13 @@ class EE_API TextDocument {
 
 	void setIndentType( const IndentType& indentType );
 
+	const AutoIndentConfig& getAutoIndent() const;
+
+	void setAutoIndent( const AutoIndentConfig& autoIndent );
+
 	const SyntaxDefinition& getSyntaxDefinition() const;
+
+	void setSyntaxDefinition( std::shared_ptr<SyntaxDefinition> definition );
 
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
@@ -618,6 +626,9 @@ class EE_API TextDocument {
 
 	TextRange addSelections( TextRanges&& selections );
 
+	/* @return returns the selection index otherwise -1 */
+	int selectionIndex( TextRange selection ) const;
+
 	void popSelection();
 
 	bool deleteSelection( const size_t& cursorIdx );
@@ -647,7 +658,7 @@ class EE_API TextDocument {
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
 									 const String::StringBaseType& closeBracket, MatchDirection dir,
-									 bool allowDepth = true );
+									 bool allowDepth = true, Time timeout = Time::Zero );
 
 	TextRange getMatchingBracket( TextPosition startPosition, const String& openBracket,
 								  const String& closeBracket, MatchDirection dir,
@@ -731,6 +742,12 @@ class EE_API TextDocument {
 
 	void convertIndentationToSpaces();
 
+	void clearIndentation();
+
+	String toString();
+
+	std::string toUtf8String();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;
@@ -772,8 +789,9 @@ class EE_API TextDocument {
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
+	AutoIndentConfig mAutoIndent{ AutoIndentConfig::Smart };
 	Clock mTimer;
-	SyntaxDefinition mSyntaxDefinition;
+	std::shared_ptr<SyntaxDefinition> mSyntaxDefinition;
 	std::string mDefaultFileName;
 	Uint64 mCleanChangeId{ 0 };
 	Uint32 mPageSize{ 10 };
@@ -865,7 +883,6 @@ class EE_API TextDocument {
 	TextPosition findPreviousEmptyLines( size_t selIdx );
 
 	TextPosition findNextEmptyLines( size_t selIdx );
-
 };
 
 struct TextSearchParams {

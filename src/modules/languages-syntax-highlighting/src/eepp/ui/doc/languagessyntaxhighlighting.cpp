@@ -127,6 +127,8 @@
 #include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/viml.hpp>
 #include <eepp/ui/doc/languages/vue.hpp>
+#include <eepp/ui/doc/languages/webassemblyinterfacetypes.hpp>
+#include <eepp/ui/doc/languages/webassemblytextformat.hpp>
 #include <eepp/ui/doc/languages/wren.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/languages/xit.hpp>
@@ -544,17 +546,18 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition(
 		{ "Objeck", []() -> SyntaxDefinition& { return addObjeck(); }, { "%.obs$" } } );
 
-	sdm->addPreDefinition( {
-		"Objective-C",
-		[]() -> SyntaxDefinition& { return addObjectiveC(); },
-		{ "%.m$" },
-	} );
+	sdm->addPreDefinition( { "Objective-C",
+							 []() -> SyntaxDefinition& { return addObjectiveC(); },
+							 { "%.m$" },
+							 {},
+							 { "objc" } } );
 
 	sdm->addPreDefinition( { "Objective-C++",
 							 []() -> SyntaxDefinition& { return addObjectiveCPP(); },
 							 { "%.mm$" },
 							 {},
-							 "objective-cpp" } );
+							 "objective-cpp",
+							 { "objc++", "objcpp" } } );
 
 	sdm->addPreDefinition( {
 		"OCaml",
@@ -814,6 +817,14 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 
 	sdm->addPreDefinition(
 		{ "Vue", []() -> SyntaxDefinition& { return addVue(); }, { "%.vue?$" } } );
+
+	sdm->addPreDefinition( { "WebAssembly Text Format",
+							 []() -> SyntaxDefinition& { return addWebAssemblyTextFormat(); },
+							 { "%.wat$" } } );
+
+	sdm->addPreDefinition( { "WebAssembly Interface Types",
+							 []() -> SyntaxDefinition& { return addWebAssemblyInterfaceTypes(); },
+							 { "%.wit$" } } );
 
 	sdm->addPreDefinition(
 		{ "Wren", []() -> SyntaxDefinition& { return addWren(); }, { "%.wren$" } } );

@@ -2,6 +2,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
+#include <algorithm>
+
 namespace ecode {
 
 std::vector<ChatHistory> ChatHistory::getHistory( const std::string& historyFolder ) {

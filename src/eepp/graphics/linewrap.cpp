@@ -1,0 +1,339 @@
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/linewrap.hpp>
+#include <eepp/graphics/text.hpp>
+
+#include <algorithm>
+
+namespace EE::Graphics {
+
+LineWrapMode LineWrap::toLineWrapMode( std::string mode ) {
+	String::toLowerInPlace( mode );
+	if ( mode == "word" )
+		return LineWrapMode::Word;
+	if ( mode == "letter" )
+		return LineWrapMode::Letter;
+	return LineWrapMode::NoWrap;
+}
+
+std::string LineWrap::fromLineWrapMode( LineWrapMode mode ) {
+	switch ( mode ) {
+		case LineWrapMode::Letter:
+			return "letter";
+		case LineWrapMode::Word:
+			return "word";
+		case LineWrapMode::NoWrap:
+		default:
+			return "nowrap";
+	}
+}
+
+LineWrapType LineWrap::toLineWrapType( std::string type ) {
+	String::toLowerInPlace( type );
+	if ( "line_breaking_column" == type )
+		return LineWrapType::LineBreakingColumn;
+	return LineWrapType::Viewport;
+}
+
+std::string LineWrap::fromLineWrapType( LineWrapType type ) {
+	switch ( type ) {
+		case LineWrapType::LineBreakingColumn:
+			return "line_breaking_column";
+		case LineWrapType::Viewport:
+		default:
+			return "viewport";
+	}
+}
+
+Float LineWrap::computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
+								Uint32 tabWidth, Float maxWidth, bool tabStops ) {
+	return LineWrap::computeOffsets( string, fontStyle.Font, fontStyle.CharacterSize,
+									 fontStyle.Style, fontStyle.OutlineThickness, tabWidth,
+									 maxWidth, tabStops );
+}
+
+Float LineWrap::computeOffsets( const String::View& string, Font* font, Uint32 characterSize,
+								Uint32 fontStyle, Float outlineThickness, Uint32 tabWidth,
+								Float maxWidth, bool tabStops ) {
+	static const String sepSpaces = " \t\n\v\f\r";
+	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
+	if ( nonIndentPos != String::View::npos ) {
+		Float w =
+			Text::getTextWidth( font, characterSize, string.substr( 0, nonIndentPos ), fontStyle,
+								tabWidth, outlineThickness, TextHints::AllAscii,
+								TextDirection::LeftToRight, tabStops ? 0 : std::optional<Float>{} );
+		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
+	}
+	return 0.f;
+}
+
+template <typename LineWrapType>
+LineWrapType
+LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uint32 characterSize,
+									 Float maxWidth, LineWrapMode mode, Uint32 fontStyle,
+									 Float outlineThickness, bool keepIndentation, Uint32 tabWidth,
+									 Float whiteSpaceWidth /* 0 = should calculate it */,
+									 Uint32 textDrawHints, bool tabStops, Float initialXOffset ) {
+	LineWrapType info;
+	info.wraps.push_back( 0 );
+
+	if ( string.empty() || nullptr == font ) {
+		if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+			info.wrapsWidth.push_back( 0 );
+		}
+		return info;
+	}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF &&
+		 !Text::canSkipShaping( textDrawHints ) ) {
+		auto layout = TextLayout::layout(
+			string, font, characterSize, fontStyle, tabWidth, outlineThickness,
+			tabStops ? initialXOffset : std::optional<Float>{}, textDrawHints,
+			TextDirection::LeftToRight, mode, maxWidth, keepIndentation, initialXOffset );
+		LineWrapType info;
+		if ( layout->paragraphs.empty() )
+			return info;
+
+		info.paddingStart = layout->paragraphs.front().wrapInfo.paddingStart;
+
+		std::size_t reserve = 0;
+		for ( auto& paragraph : layout->paragraphs )
+			reserve += paragraph.wrapInfo.wraps.size();
+		info.wraps.reserve( reserve );
+
+		for ( auto& paragraph : layout->paragraphs ) {
+			for ( const auto& wrap : paragraph.wrapInfo.wraps ) {
+				info.wraps.push_back( wrap );
+			}
+		}
+
+		if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+			for ( auto& paragraph : layout->paragraphs ) {
+				for ( const auto& wrapWidth : paragraph.wrapInfo.wrapsWidth ) {
+					info.wrapsWidth.push_back( wrapWidth );
+				}
+			}
+		}
+
+		std::sort( info.wraps.begin(), info.wraps.end() );
+
+		return info;
+	}
+#endif
+
+	bool bold = ( fontStyle & Text::Style::Bold ) != 0;
+	bool italic = ( fontStyle & Text::Style::Italic ) != 0;
+	Float hspace =
+		whiteSpaceWidth == 0.f
+			? font->getGlyph( L' ', characterSize, bold, italic, outlineThickness ).advance
+			: whiteSpaceWidth;
+
+	if ( keepIndentation ) {
+		// paddingStart is the offset added to the wrapped lines based on the initial intendation of
+		// the line. This is to keep the indented wrapped lines aligned with the line indentation.
+		// Useful for code editors.
+		info.paddingStart =
+			LineWrap::computeOffsets( string, font, characterSize, fontStyle, outlineThickness,
+									  tabWidth, eemax( maxWidth - hspace, hspace ), tabStops );
+	}
+
+	Float xoffset = initialXOffset;
+	Float lastWidth = 0.f;
+	Float lastWordWrapWidth = 0.f;
+	bool isMonospace = font && ( font->isMonospace() ||
+								 ( font->getType() == FontType::TTF &&
+								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   Text::canSkipShaping( textDrawHints ) ) );
+
+	size_t lastSpace = std::string::npos;
+	Uint32 prevChar = 0;
+	size_t idx = 0;
+	bool hasWrap = maxWidth > 0 && mode != LineWrapMode::NoWrap;
+
+	for ( const auto& curChar : string ) {
+		if ( curChar == '\n' ) {
+			if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+				info.wrapsWidth.push_back( std::ceil( xoffset ) );
+			}
+			xoffset = 0;
+			lastSpace = idx;
+			info.wraps.push_back( lastSpace );
+			idx++;
+			prevChar = 0;
+			continue;
+		}
+
+		Float w =
+			!isMonospace
+				? font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance
+				: hspace;
+
+		Float kerning = 0;
+		if ( curChar == '\t' ) {
+			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
+			prevChar = 0;
+		} else if ( !isMonospace && curChar != '\r' ) {
+			if ( !( textDrawHints & TextHints::NoKerning ) ) {
+				kerning = font->getKerning( prevChar, curChar, characterSize, bold, italic,
+											outlineThickness );
+			}
+			prevChar = curChar;
+		}
+
+		Float xpos = xoffset + kerning;
+		xoffset = xpos + w;
+
+		if ( hasWrap && xoffset > maxWidth ) {
+			if ( mode == LineWrapMode::Word && lastSpace != std::string::npos ) {
+				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+					info.wrapsWidth.push_back( std::ceil( lastWordWrapWidth ) );
+				}
+
+				info.wraps.push_back( lastSpace + 1 );
+
+				Float startKerning = 0;
+				if ( !( textDrawHints & TextHints::NoKerning ) && !isMonospace &&
+					 lastSpace + 1 < string.size() ) {
+					startKerning = font->getKerning( string[lastSpace], string[lastSpace + 1],
+													characterSize, bold, italic, outlineThickness );
+				}
+
+				xoffset = info.paddingStart + ( xoffset - lastWidth - startKerning );
+			} else {
+				// If we are about to split a word, check if we can move it to the next line
+				if ( mode == LineWrapMode::Word && info.wraps.size() == 1 &&
+					 xoffset - initialXOffset <= maxWidth ) {
+					// We can move it to the next line
+					if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+						info.wrapsWidth.push_back( 0 ); // Empty line width
+					}
+
+					// Wrap at the beginning of the line
+					size_t splitIdx = info.wraps.back();
+					info.wraps.push_back( splitIdx );
+
+					// xoffset on next line = paddingStart + (width of content from splitIdx to
+					// idx). width of content from splitIdx to idx = (xoffset - initialXOffset)
+					Float pendingWidth = xoffset - initialXOffset;
+					xoffset = info.paddingStart + pendingWidth;
+				} else {
+					if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+						info.wrapsWidth.push_back( std::ceil( xoffset - w ) );
+					}
+
+					info.wraps.push_back( idx );
+					xoffset = info.paddingStart;
+					prevChar = 0;
+				}
+			}
+			lastSpace = std::string::npos;
+			lastWordWrapWidth = 0.f;
+		} else if ( isWrapChar( curChar ) ) {
+			lastSpace = idx;
+			lastWidth = xoffset;
+			lastWordWrapWidth = xoffset;
+		}
+
+		idx++;
+	}
+
+	if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+		if ( !string.empty() && string[string.size() - 1] != '\n' )
+			info.wrapsWidth.push_back( std::ceil( xoffset ) );
+	}
+
+	return info;
+}
+
+bool LineWrap::isWrapChar( String::StringBaseType ch ) {
+	return ch == ' ' || ch == '.' || ch == '-' || ch == ',';
+}
+
+LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font,
+										  Uint32 characterSize, Float maxWidth, LineWrapMode mode,
+										  Uint32 fontStyle, Float outlineThickness,
+										  bool keepIndentation, Uint32 tabWidth,
+										  Float whiteSpaceWidth /* 0 = should calculate it */,
+										  Uint32 textDrawHints, bool tabStops,
+										  Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfo>(
+		string, font, characterSize, maxWidth, mode, fontStyle, outlineThickness, keepIndentation,
+		tabWidth, whiteSpaceWidth, textDrawHints, tabStops, initialXOffset );
+}
+
+LineWrapInfo LineWrap::computeLineBreaks( const String& string, Font* font, Uint32 characterSize,
+										  Float maxWidth, LineWrapMode mode, Uint32 fontStyle,
+										  Float outlineThickness, bool keepIndentation,
+										  Uint32 tabWidth,
+										  Float whiteSpaceWidth /* 0 = should calculate it */,
+										  Uint32 textDrawHints, bool tabStops,
+										  Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfo>(
+		string.view(), font, characterSize, maxWidth, mode, fontStyle, outlineThickness,
+		keepIndentation, tabWidth, whiteSpaceWidth, textDrawHints, tabStops, initialXOffset );
+}
+
+LineWrapInfo LineWrap::computeLineBreaks( const String::View& string,
+										  const FontStyleConfig& fontStyle, Float maxWidth,
+										  LineWrapMode mode, bool keepIndentation, Uint32 tabWidth,
+										  Float whiteSpaceWidth, Uint32 textDrawHints,
+										  bool tabStops, Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfo>(
+		string, fontStyle.Font, fontStyle.CharacterSize, maxWidth, mode, fontStyle.Style,
+		fontStyle.OutlineThickness, keepIndentation, tabWidth, whiteSpaceWidth, textDrawHints,
+		tabStops, initialXOffset );
+}
+
+LineWrapInfo LineWrap::computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
+										  Float maxWidth, LineWrapMode mode, bool keepIndentation,
+										  Uint32 tabWidth, Float whiteSpaceWidth, Uint32 textHints,
+										  bool tabStops, Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfo>(
+		string.view(), fontStyle.Font, fontStyle.CharacterSize, maxWidth, mode, fontStyle.Style,
+		fontStyle.OutlineThickness, keepIndentation, tabWidth, whiteSpaceWidth, textHints, tabStops,
+		initialXOffset );
+}
+
+LineWrapInfoEx LineWrap::computeLineBreaksEx(
+	const String::View& string, Font* font, Uint32 characterSize, Float maxWidth, LineWrapMode mode,
+	Uint32 fontStyle, Float outlineThickness, bool keepIndentation, Uint32 tabWidth,
+	Float whiteSpaceWidth, Uint32 textDrawHints, bool tabStops, Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfoEx>(
+		string, font, characterSize, maxWidth, mode, fontStyle, outlineThickness, keepIndentation,
+		tabWidth, whiteSpaceWidth, textDrawHints, tabStops, initialXOffset );
+}
+
+LineWrapInfoEx LineWrap::computeLineBreaksEx(
+	const String& string, Font* font, Uint32 characterSize, Float maxWidth, LineWrapMode mode,
+	Uint32 fontStyle, Float outlineThickness, bool keepIndentation, Uint32 tabWidth,
+	Float whiteSpaceWidth, Uint32 textDrawHints, bool tabStops, Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfoEx>(
+		string.view(), font, characterSize, maxWidth, mode, fontStyle, outlineThickness,
+		keepIndentation, tabWidth, whiteSpaceWidth, textDrawHints, tabStops, initialXOffset );
+}
+
+LineWrapInfoEx LineWrap::computeLineBreaksEx( const String::View& string,
+											  const FontStyleConfig& fontStyle, Float maxWidth,
+											  LineWrapMode mode, bool keepIndentation,
+											  Uint32 tabWidth, Float whiteSpaceWidth,
+											  Uint32 textDrawHints, bool tabStops,
+											  Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfoEx>(
+		string, fontStyle.Font, fontStyle.CharacterSize, maxWidth, mode, fontStyle.Style,
+		fontStyle.OutlineThickness, keepIndentation, tabWidth, whiteSpaceWidth, textDrawHints,
+		tabStops, initialXOffset );
+}
+
+LineWrapInfoEx LineWrap::computeLineBreaksEx( const String& string,
+											  const FontStyleConfig& fontStyle, Float maxWidth,
+											  LineWrapMode mode, bool keepIndentation,
+											  Uint32 tabWidth, Float whiteSpaceWidth,
+											  Uint32 textHints, bool tabStops,
+											  Float initialXOffset ) {
+	return computeLineBreaksInternal<LineWrapInfoEx>(
+		string.view(), fontStyle.Font, fontStyle.CharacterSize, maxWidth, mode, fontStyle.Style,
+		fontStyle.OutlineThickness, keepIndentation, tabWidth, whiteSpaceWidth, textHints, tabStops,
+		initialXOffset );
+}
+
+} // namespace EE::Graphics

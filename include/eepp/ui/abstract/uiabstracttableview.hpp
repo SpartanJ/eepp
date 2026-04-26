@@ -13,6 +13,7 @@ using namespace EE::Math;
 namespace EE { namespace UI {
 class UIPushButton;
 class UILinearLayout;
+class UIDropDownModelList;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace Abstract {
@@ -40,6 +41,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );
 
 	virtual void selectAll();
+
+	virtual std::vector<ModelIndex> getSelectionRange( const ModelIndex& start,
+													   const ModelIndex& end ) const;
 
 	const Float& getDragBorderDistance() const;
 
@@ -146,6 +150,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
+	friend class EE::UI::UIDropDownModelList;
 
 	struct ColumnData {
 		Float minWidth{ 0 };

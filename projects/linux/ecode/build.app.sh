@@ -41,14 +41,17 @@ if [ "$ARCH" = "aarch64" ]; then
 fi
 
 CONFIG_NAME=
+SO_LIB_PATH=
 if command -v premake4 &> /dev/null
 then
     premake4 $DEBUG_SYMBOLS $STATIC_CPP gmake || exit
     CONFIG_NAME=release
+    SO_LIB_PATH=../../../libs/linux/libeepp.so
 elif command -v premake5 &> /dev/null
 then
     premake5 $DEBUG_SYMBOLS $STATIC_CPP gmake || exit
     CONFIG_NAME=release_"$ARCH"
+    SO_LIB_PATH=../../../libs/linux/$ARCH/libeepp.so
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
     exit 1
@@ -63,7 +66,7 @@ chmod +x AppRun
 cp AppRun ecode.app/
 cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
-cp ../../../libs/linux/libeepp.so ecode.app/libs/
+cp "$SO_LIB_PATH" ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
 cp -L "$(bash ../scripts/find_most_recent_sdl2.sh --arch="$ARCH")" ecode.app/libs/ || exit
 ${STRIP:-strip} ecode.app/libs/libSDL2-2.0.so.0

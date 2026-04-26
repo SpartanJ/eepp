@@ -19,6 +19,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 
 using namespace EE::System;
 using namespace EE::UI::Doc::Language;
@@ -201,15 +202,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager( std::size_t reserveSpaceForLan
 	addXML();
 }
 
-const std::vector<std::shared_ptr<SyntaxDefinition>>&
-SyntaxDefinitionManager::getDefinitions() const {
-	return mDefinitions;
-}
-
-const std::vector<SyntaxPreDefinition>& SyntaxDefinitionManager::getPreDefinitions() const {
-	return mPreDefinitions;
-}
-
 static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn,
 													   const SyntaxDefinition& def ) {
 	json pattern;
@@ -262,6 +254,9 @@ static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn
 
 	if ( !ptrn.contentTypeName.empty() )
 		pattern["contentName"] = ptrn.contentTypeName;
+
+	if ( ptrn.isApplyEndPatternLast() )
+		pattern["applyEndPatternLast"] = 1;
 
 	return pattern;
 }
@@ -345,6 +340,7 @@ bool SyntaxDefinitionManager::save( const std::string& path,
 		return FileSystem::fileWrite( path, j.dump( 2 ) );
 	} else {
 		json j = json::array();
+		Lock l( mMutex );
 		for ( const auto& d : mDefinitions )
 			j.emplace_back( toJson( *d.get() ) );
 		return FileSystem::fileWrite( path, j.dump( 2 ) );
@@ -406,11 +402,12 @@ static std::string funcName( std::string name ) {
 
 static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 						  const SyntaxDefinition& def ) {
-	bool allowReduce = ( pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
-						 pattern.endTypesNames.empty() ) ||
-					   ( pattern.patterns.size() <= 3 && pattern.typesNames.size() <= 1 &&
-						 pattern.endTypesNames.empty() &&
-						 pattern.matchType == SyntaxPatternMatchType::LuaPattern );
+	bool allowReduce = ( ( pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
+						   pattern.endTypesNames.empty() ) ||
+						 ( pattern.patterns.size() <= 3 && pattern.typesNames.size() <= 1 &&
+						   pattern.endTypesNames.empty() &&
+						   pattern.matchType == SyntaxPatternMatchType::LuaPattern ) ) &&
+					   !pattern.isApplyEndPatternLast();
 	bool setType = allowReduce && pattern.matchType != SyntaxPatternMatchType::LuaPattern;
 	bool addPatternType = pattern.matchType != SyntaxPatternMatchType::LuaPattern ||
 						  ( pattern.patterns.size() == 2 && pattern.patterns[0] == "include" );
@@ -441,6 +438,13 @@ static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 			patternToCPP( buf, ptrn, def );
 		buf += "\n}";
 	}
+
+	if ( pattern.isApplyEndPatternLast() ) {
+		if ( !pattern.hasContentScope() )
+			buf = ", {}";
+		buf += ", SyntaxPattern::IsApplyEndPatternLast";
+	}
+
 	buf += " },\n";
 }
 
@@ -558,14 +562,19 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	return *mDefinitions.back().get();
 }
 
-SyntaxPreDefinition&
-SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
+void SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
+	Lock l( mMutex );
 	mPreDefinitions.emplace_back( std::move( preDefinition ) );
-	return mPreDefinitions.back();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
+	Lock l( mMutex );
 	return *mDefinitions[0].get();
+}
+
+std::shared_ptr<SyntaxDefinition> SyntaxDefinitionManager::getPlainDefinitionPtr() const {
+	Lock l( mMutex );
+	return mDefinitions[0];
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::getByExtensionRef( const std::string& filePath ) {
@@ -595,6 +604,13 @@ SyntaxDefinitionManager::getByLanguageName( const std::string_view& name ) const
 	}
 
 	return *mDefinitions[0].get();
+}
+
+std::shared_ptr<SyntaxDefinition>
+SyntaxDefinitionManager::getLanguageDefinition( const Uint32& index ) const {
+	Lock l( mMutex );
+	eeASSERT( index < mDefinitions.size() );
+	return mDefinitions[index];
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint32& index ) const {
@@ -702,6 +718,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	std::string contentTypeName;
 	SyntaxStyleType contentType{ SyntaxStyleEmpty() };
 	std::string syntax;
+	bool applyEndPatternLast{ false };
 
 	const auto fillTypes = []( const nlohmann::json& captures, std::vector<std::string>& type,
 							   const nlohmann::json& parent ) {
@@ -753,7 +770,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		if ( pattern.contains( "endCaptures" ) )
 			fillTypes( pattern["endCaptures"], endType, pattern );
 
-		if ( type.empty() && pattern.contains( "captures" ) )
+		if ( pattern.contains( "captures" ) )
 			fillTypes( pattern["captures"], type, pattern );
 
 		if ( pattern.contains( "match" ) && pattern["match"].is_string() ) {
@@ -766,9 +783,12 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		if ( pattern.contains( "begin" ) )
 			ptrns.emplace_back( pattern.value( "begin", "" ) );
 
-		if ( pattern.contains( "end" ) )
+		if ( pattern.contains( "end" ) ) {
 			ptrns.emplace_back( pattern.value( "end", "" ) );
 
+			if ( pattern.contains( "applyEndPatternLast" ) )
+				applyEndPatternLast = true;
+		}
 		// Sub-languages / Sub patterns?
 		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() &&
 			 pattern["patterns"].is_array() ) {
@@ -869,6 +889,9 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	SyntaxPattern ptrn( std::move( ptrns ), std::move( type ), std::move( endType ), syntax, ctype,
 						std::move( subPatterns ) );
 
+	if ( applyEndPatternLast )
+		ptrn.flags |= SyntaxPattern::Flags::IsApplyEndPatternLast;
+
 	if ( contentType != SyntaxStyleEmpty() ) {
 		ptrn.contentTypeName = std::move( contentTypeName );
 		ptrn.contentType = contentType;
@@ -912,7 +935,17 @@ static void parseRepositoryItem( SyntaxDefinition& def, const std::string& name,
 		for ( const auto& pattern : patterns ) {
 			if ( pattern.size() == 1 && pattern.contains( "comment" ) )
 				continue;
-			ptrns.emplace_back( parsePattern( pattern ) );
+			if ( !( pattern.contains( "match" ) || pattern.contains( "begin" ) ) &&
+				 pattern.contains( "patterns" ) && pattern["patterns"].is_array() ) {
+				// Maybe do this recursive later, not a very common pattern
+				const auto& subPatterns = pattern["patterns"];
+				for ( const auto& subPattern : subPatterns ) {
+					if ( subPattern.size() == 1 && subPattern.contains( "comment" ) )
+						continue;
+					ptrns.emplace_back( parsePattern( subPattern ) );
+				}
+			} else
+				ptrns.emplace_back( parsePattern( pattern ) );
 		}
 	} else if ( item.is_array() ) {
 		for ( const auto& pattern : item )
@@ -1066,8 +1099,8 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					} else {
 						if ( addedLangs )
 							addedLangs->push_back( res.getLanguageName() );
-						res.mLanguageIndex = mDefinitions.size();
 						Lock l( mMutex );
+						res.mLanguageIndex = mDefinitions.size();
 						mDefinitions.emplace_back(
 							std::make_shared<SyntaxDefinition>( std::move( res ) ) );
 					}
@@ -1087,8 +1120,8 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
-					res.mLanguageIndex = mDefinitions.size();
 					Lock l( mMutex );
+					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back(
 						std::make_shared<SyntaxDefinition>( std::move( res ) ) );
 				}
@@ -1178,25 +1211,29 @@ SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) 
 		}
 	}
 
-	for ( const auto& preDefinition : mPreDefinitions ) {
-		for ( const auto& ext : preDefinition.getFiles() ) {
-			if ( std::find_if( langs.begin(), langs.end(),
-							   [&preDefinition]( const SyntaxDefinition* sdf ) {
-								   return preDefinition.getLanguageName() == sdf->getLanguageName();
-							   } ) != langs.end() )
-				continue;
+	{
+		Lock l( mMutex );
+		for ( const auto& preDefinition : mPreDefinitions ) {
+			for ( const auto& ext : preDefinition.getFiles() ) {
+				if ( std::find_if( langs.begin(), langs.end(),
+								   [&preDefinition]( const SyntaxDefinition* sdf ) {
+									   return preDefinition.getLanguageName() ==
+											  sdf->getLanguageName();
+								   } ) != langs.end() )
+					continue;
 
-			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-				 String::endsWith( ext, "$" ) ) {
-				LuaPattern words( ext );
-				int start, end;
-				if ( words.find( extension, start, end ) ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( extension, start, end ) ) {
+						langs.insert( &preDefinition.load() );
+						break;
+					}
+				} else if ( extension == ext ) {
 					langs.insert( &preDefinition.load() );
 					break;
 				}
-			} else if ( extension == ext ) {
-				langs.insert( &preDefinition.load() );
-				break;
 			}
 		}
 	}
@@ -1239,23 +1276,26 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 		}
 	}
 
-	for ( const auto& preDefinition : mPreDefinitions ) {
-		for ( const auto& ext : preDefinition.getFiles() ) {
-			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-				 String::endsWith( ext, "$" ) ) {
-				LuaPattern words( ext );
-				int start, end;
-				if ( words.find( extension, start, end ) ) {
+	{
+		Lock l( mMutex );
+		for ( const auto& preDefinition : mPreDefinitions ) {
+			for ( const auto& ext : preDefinition.getFiles() ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( extension, start, end ) ) {
+						count.insert( preDefinition.getLanguageName() );
+						if ( count.size() > 1 )
+							return true;
+						break;
+					}
+				} else if ( extension == ext ) {
 					count.insert( preDefinition.getLanguageName() );
 					if ( count.size() > 1 )
 						return true;
 					break;
 				}
-			} else if ( extension == ext ) {
-				count.insert( preDefinition.getLanguageName() );
-				if ( count.size() > 1 )
-					return true;
-				break;
 			}
 		}
 	}
@@ -1308,27 +1348,18 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 
 	const SyntaxDefinition* def = nullptr;
 
+	Lock l( mMutex );
 	if ( !extension.empty() ) {
-		{
-			Lock l( mMutex );
-			for ( const auto& definition : mDefinitions ) {
-				if ( &definition == &mDefinitions[0] ) // Ignore Plain text
-					continue;
+		for ( const auto& definition : mDefinitions ) {
+			if ( &definition == &mDefinitions[0] ) // Ignore Plain text
+				continue;
 
-				for ( const auto& ext : definition->getFiles() ) {
-					if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-						 String::endsWith( ext, "$" ) ) {
-						LuaPattern words( ext );
-						int start, end;
-						if ( words.find( fileName, start, end ) ) {
-							if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
-								def = definition.get();
-								continue;
-							}
-
-							return *definition.get();
-						}
-					} else if ( extension == ext ) {
+			for ( const auto& ext : definition->getFiles() ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( fileName, start, end ) ) {
 						if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
 							def = definition.get();
 							continue;
@@ -1336,6 +1367,13 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 
 						return *definition.get();
 					}
+				} else if ( extension == ext ) {
+					if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
+						def = definition.get();
+						continue;
+					}
+
+					return *definition.get();
 				}
 			}
 		}
@@ -1372,23 +1410,20 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view header,
 															  const std::string& filePath,
 															  HExtLanguageType langType ) const {
+	Lock l( mMutex );
 	if ( !header.empty() ) {
+		for ( auto definition = mDefinitions.rbegin(); definition != mDefinitions.rend();
+			  ++definition ) {
+			auto needsHDef = needsHFallback( langType, definition->get()->getLSPName(),
+											 FileSystem::fileExtension( filePath ), header );
+			if ( needsHDef )
+				return *needsHDef;
 
-		{
-			Lock l( mMutex );
-			for ( auto definition = mDefinitions.rbegin(); definition != mDefinitions.rend();
-				  ++definition ) {
-				auto needsHDef = needsHFallback( langType, definition->get()->getLSPName(),
-												 FileSystem::fileExtension( filePath ), header );
-				if ( needsHDef )
-					return *needsHDef;
-
-				for ( const auto& hdr : definition->get()->getHeaders() ) {
-					LuaPattern words( hdr );
-					int start, end;
-					if ( words.find( header.data(), start, end, 0, header.size(), 0 ) ) {
-						return *definition->get();
-					}
+			for ( const auto& hdr : definition->get()->getHeaders() ) {
+				LuaPattern words( hdr );
+				int start, end;
+				if ( words.find( header.data(), start, end, 0, header.size(), 0 ) ) {
+					return *definition->get();
 				}
 			}
 		}
@@ -1409,6 +1444,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 			}
 		}
 	}
+
 	return *mDefinitions[0].get();
 }
 
@@ -1421,6 +1457,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByPath( const std::string& f
 		if ( String::globMatch( filePath, path, true ) )
 			return findFromString( "cpp" );
 
+	Lock l( mMutex );
 	return *mDefinitions[0].get();
 }
 
@@ -1462,6 +1499,13 @@ const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePa
 	return *def;
 }
 
+std::shared_ptr<SyntaxDefinition> SyntaxDefinitionManager::findPtr( const std::string& filePath,
+																	std::string_view header,
+																	HExtLanguageType hLangType ) {
+	auto def = find( filePath, header, hLangType );
+	return mDefinitions[def.getLanguageIndex()];
+}
+
 const SyntaxDefinition&
 SyntaxDefinitionManager::findFromString( const std::string_view& lang ) const {
 	const SyntaxDefinition* syn = &getByLSPName( lang );
@@ -1483,12 +1527,18 @@ const std::map<std::string, std::string>& SyntaxDefinitionManager::getLanguageEx
 }
 
 std::size_t SyntaxDefinitionManager::count() const {
+	Lock l( mMutex );
 	return mDefinitions.size();
 }
 
 bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath,
 													 std::string_view header ) {
-	return &find( filePath, header ) != mDefinitions[0].get() ||
+	SyntaxDefinition* plainTextPtr = nullptr;
+	{
+		Lock l( mMutex );
+		plainTextPtr = mDefinitions[0].get();
+	}
+	return &find( filePath, header ) != plainTextPtr ||
 		   FileSystem::fileExtension( filePath ) == "txt";
 }
 

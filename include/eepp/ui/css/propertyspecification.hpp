@@ -15,6 +15,8 @@ class EE_API PropertySpecification {
 	PropertyDefinition& registerProperty( const std::string& propertyVame,
 										  const std::string& defaultValue, bool inherited );
 
+	const PropertyDefinition* getProperty( const PropertyId& id ) const;
+
 	const PropertyDefinition* getProperty( const Uint32& id ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
@@ -31,11 +33,14 @@ class EE_API PropertySpecification {
 
 	bool isShorthand( const Uint32& id ) const;
 
+	const SmallVector<PropertyId>& getInheritableProperties() const;
+
   protected:
 	friend class PropertyDefinition;
 
 	std::unordered_map<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
 	std::unordered_map<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
+	SmallVector<PropertyId> mInheritableProperties;
 
 	const PropertyDefinition* addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef );
 };

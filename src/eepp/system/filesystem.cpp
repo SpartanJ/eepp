@@ -3,8 +3,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
-#include <sys/stat.h>
 #include <filesystem>
+#include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN
@@ -211,8 +211,11 @@ bool FileSystem::fileHide( const std::string& filepath ) {
 
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	struct _stat st;
-	int res = _wstat( String( filepath ).toWideString().c_str(), &st );
+	std::string_view fp( filepath );
+	if ( fp.size() > 3 && ( fp.back() == '/' || fp.back() == '\\' ) )
+		fp.remove_suffix( 1 );
+	struct __stat64 st;
+	int res = _wstat64( String( fp ).toWideString().c_str(), &st );
 #else
 	struct stat st;
 	int res = stat( filepath.c_str(), &st );
@@ -222,6 +225,31 @@ Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 		return (Uint32)st.st_mtime;
 
 	return 0;
+}
+
+size_t FileSystem::fileCountLines( const std::string& path, bool* isBinary ) {
+	if ( !fileExists( path ) )
+		return 0;
+	IOStreamFile fs( path );
+	if ( !fs.isOpen() || fs.getSize() == 0 )
+		return 0;
+	size_t count = 1;
+	char buffer[65536];
+	ios_size read;
+	if ( isBinary )
+		*isBinary = false;
+	while ( ( read = fs.read( buffer, sizeof( buffer ) ) ) > 0 ) {
+		for ( ios_size i = 0; i < read; ++i ) {
+			if ( buffer[i] == '\0' ) {
+				if ( isBinary )
+					*isBinary = true;
+				return 0;
+			}
+			if ( buffer[i] == '\n' )
+				count++;
+		}
+	}
+	return count;
 }
 
 bool FileSystem::fileCanWrite( const std::string& filepath ) {
@@ -540,8 +568,11 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 
 Uint64 FileSystem::fileSize( const std::string& Filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	struct _stat st;
-	int res = _wstat( String( Filepath ).toWideString().c_str(), &st );
+	std::string_view fp( Filepath );
+	if ( fp.size() > 3 && ( fp.back() == '/' || fp.back() == '\\' ) )
+		fp.remove_suffix( 1 );
+	struct __stat64 st;
+	int res = _wstat64( String( fp ).toWideString().c_str(), &st );
 #else
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );
@@ -555,8 +586,11 @@ Uint64 FileSystem::fileSize( const std::string& Filepath ) {
 
 bool FileSystem::fileExists( const std::string& Filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	struct _stat st;
-	return ( _wstat( String( Filepath ).toWideString().c_str(), &st ) == 0 );
+	std::string_view fp( Filepath );
+	if ( fp.size() > 3 && ( fp.back() == '/' || fp.back() == '\\' ) )
+		fp.remove_suffix( 1 );
+	struct __stat64 st;
+	return ( _wstat64( String( fp ).toWideString().c_str(), &st ) == 0 );
 #else
 	struct stat st;
 	return ( stat( Filepath.c_str(), &st ) == 0 );
@@ -718,6 +752,40 @@ bool FileSystem::fileMove( const std::string& fpath, const std::string& newFileP
 	}
 
 	return true;
+}
+
+std::string FileSystem::expandTilde( const std::string& path ) {
+	if ( path.empty() || path.front() != '~' )
+		return path;
+
+	static const std::string home = []() -> std::string {
+		const char* h = std::getenv( "HOME" );
+		if ( h && h[0] != '\0' ) {
+			return h;
+		}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		h = std::getenv( "USERPROFILE" );
+		if ( h && h[0] != '\0' ) {
+			return h;
+		}
+#endif
+		return {};
+	}();
+
+	if ( home.empty() )
+		return path;
+
+	// "~" alone
+	if ( path.size() == 1 )
+		return home;
+
+	// "~/..." or "~\..." (both separators accepted everywhere)
+	const char next = path[1];
+	if ( next == '/' || next == '\\' )
+		return home + path.substr( 1 );
+
+	return path;
 }
 
 }} // namespace EE::System

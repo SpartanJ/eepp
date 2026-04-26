@@ -84,7 +84,7 @@ class UpdateListener : public efsw::FileWatchListener {
 	virtual ~UpdateListener() {}
 
 	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
-						   efsw::Action action, std::string ) {
+						   efsw::Action action, const std::string& ) {
 		if ( action == efsw::Actions::Modified ) {
 			if ( dir + filename == mApp->getCurrentLayout() ) {
 				mApp->updateLayoutFunc( InvalidationType::FileSystem );
@@ -102,7 +102,8 @@ class UpdateListener : public efsw::FileWatchListener {
 
 static bool isFont( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
-	return ext == "ttf" || ext == "otf" || ext == "wolff";
+	return ext == "ttf" || ext == "otf" || ext == "woff" || ext == "woff2" || ext == "otb" ||
+		   ext == "bdf" || ext == "ttc";
 }
 
 static bool isXML( const std::string& path ) {
@@ -1236,7 +1237,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 	mWindow = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
 						32, mResPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( false, GLv_default, true, 24, 1, 4, true ) );
+		ContextSettings( false, ContextSettings::FrameRateLimitScreenRefreshRate, 4 ) );
 
 	if ( mWindow->isOpen() ) {
 		mWindow->setFrameRateLimit( displayManager->getDisplayIndex( 0 )->getRefreshRate() );

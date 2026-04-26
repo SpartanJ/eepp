@@ -48,6 +48,7 @@ LSPClientServerManager::runLSPServer( const String::HashType& id, const LSPDefin
 									  const std::string& rootPath,
 									  std::vector<std::string> languagesSupported ) {
 	Log::info( "Starting LSP server: %s", lsp.name );
+	Log::info( "LSP command: %s %s", lsp.command, lsp.commandParameters );
 	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath, languagesSupported );
 	server->start();
 	return server;

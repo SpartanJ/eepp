@@ -131,6 +131,7 @@ void SettingsActions::aboutEcode() {
 	image->setSize( { 128, 128 } );
 	image->toBack();
 	msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 }
 
@@ -380,7 +381,7 @@ void SettingsActions::setUIPanelFontSize() {
 
 		// Update the CSS
 		auto selsFound = mApp->getUISceneNode()->getStyleSheet().findStyleFromSelectorName(
-			"#project_view > treeview::row > treeview::cell > treeview::cell::text" );
+			"#project_view > treeview::row > treeview::cell" );
 		if ( !selsFound.empty() ) {
 			for ( auto sel : selsFound )
 				sel->updatePropertyValue( "font-size",

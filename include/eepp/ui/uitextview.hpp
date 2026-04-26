@@ -13,8 +13,6 @@ class EE_API UITextView : public UIWidget {
 
 	static UITextView* NewWithTag( const std::string& tag );
 
-	UITextView();
-
 	explicit UITextView( const std::string& tag );
 
 	virtual ~UITextView();
@@ -36,6 +34,10 @@ class EE_API UITextView : public UIWidget {
 	const Uint32& getFontStyle() const;
 
 	UITextView* setFontStyle( const Uint32& fontStyle );
+
+	Uint32 getTextDecoration() const;
+
+	UITextView* setTextDecoration( const Uint32& textDecoration );
 
 	const Float& getOutlineThickness() const;
 
@@ -81,7 +83,7 @@ class EE_API UITextView : public UIWidget {
 
 	bool isTextSelectionEnabled() const;
 
-	void setTextSelection( const bool& active );
+	void setTextSelectionEnabled( bool active );
 
 	const UIFontStyleConfig& getFontStyleConfig() const;
 
@@ -124,21 +126,19 @@ class EE_API UITextView : public UIWidget {
 
 	bool isWordWrap() const;
 
+	std::pair<int, int> getTextSelectionRange() const;
+
+	void setTextSelectionRange( TextSelectionRange range );
+
   protected:
-	Text* mTextCache;
+	Text mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;
 	Vector2f mRealAlignOffset;
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
 	Uint32 mTextDrawHints{ 0 };
-	struct SelPosCache {
-		SelPosCache( Vector2f ip, Vector2f ep ) : initPos( ip ), endPos( ep ) {}
-
-		Vector2f initPos;
-		Vector2f endPos;
-	};
-	std::vector<SelPosCache> mSelPosCache;
+	SmallVector<Rectf> mSelRectsCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;
 	bool mSelecting;
@@ -147,7 +147,9 @@ class EE_API UITextView : public UIWidget {
 	Float mTextOverflowWidth{ 0 };
 	TextTransform::Value mTextTransform{ TextTransform::None };
 
-	virtual void drawSelection( Text* textCache );
+	UITextView();
+
+	virtual void drawSelection( Text& textCache );
 
 	virtual void onSizeChange();
 
@@ -187,7 +189,7 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onSelectionChange();
 
-	virtual Text* getVisibleTextCache() const;
+	virtual Text& getVisibleTextCache();
 
 	void transformText();
 
@@ -202,7 +204,7 @@ class EE_API UIAnchor : public UITextView {
   public:
 	static UIAnchor* New();
 
-	UIAnchor();
+	static UIAnchor* NewA();
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -216,6 +218,8 @@ class EE_API UIAnchor : public UITextView {
 	const std::string& getHref() const;
 
   protected:
+	UIAnchor( const std::string& tag = "anchor" );
+
 	std::string mHref;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );

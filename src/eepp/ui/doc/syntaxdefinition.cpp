@@ -5,6 +5,8 @@
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
+#include <algorithm>
+
 using namespace std::literals;
 
 namespace EE { namespace UI { namespace Doc {
@@ -420,7 +422,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 							  std::vector<std::string>&& _types,
 							  std::vector<std::string>&& _endTypes, const std::string& _syntax,
 							  SyntaxPatternMatchType matchType,
-							  std::vector<SyntaxPattern>&& _subPatterns ) :
+							  std::vector<SyntaxPattern>&& _subPatterns, Uint16 flags ) :
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( _types ) ),
 	endTypes( toSyntaxStyleTypeV( _endTypes ) ),
@@ -428,6 +430,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	endTypesNames( std::move( _endTypes ) ),
 	syntax( _syntax ),
 	matchType( matchType ),
+	flags( flags ),
 	contentPatterns( std::move( _subPatterns ) ) {
 	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
@@ -578,7 +581,8 @@ std::string SyntaxDefinition::getRepositoryName( String::HashType hash ) const {
 	return it != mRepositoryNames.end() ? it->second : "";
 }
 
-SyntaxDefinition& SyntaxDefinition::setBlockComment( SyntaxDefinition::BlockComment&& commentBlock ) {
+SyntaxDefinition&
+SyntaxDefinition::setBlockComment( SyntaxDefinition::BlockComment&& commentBlock ) {
 	mBlockComment = std::move( commentBlock );
 	return *this;
 }

@@ -512,6 +512,12 @@ Rectf StyleSheetProperty::asRectf( const Rectf& defaultValue ) const {
 	return rect;
 }
 
+Uint32 StyleSheetProperty::asTextDecoration() const {
+	Uint32 flag = Text::stringToStyleFlag( getValue() );
+	flag &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flag;
+}
+
 Uint32 StyleSheetProperty::asFontStyle() const {
 	return Text::stringToStyleFlag( getValue() );
 }
@@ -677,6 +683,11 @@ StyleSheetProperty& StyleSheetProperty::setCachedProperty( bool cached ) {
 
 bool StyleSheetProperty::isCachedProperty() const {
 	return mCachedProperty;
+}
+
+void StyleSheetProperty::setImportant( bool important ) {
+	mImportant = important;
+	mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
 }
 
 }}} // namespace EE::UI::CSS

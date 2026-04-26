@@ -1,0 +1,65 @@
+<style>
+.main TextView,
+.main PushButton {
+	margin: 4dp;
+	layout-height: wrap_content;
+	layout-width: 0;
+	layout-weight: 0.5;
+}
+.main > .singleline TextView,
+.main > .singleline PushButton {
+	text: "Example Text";
+}
+.main > .multiline TextView,
+.main > .multiline PushButton {
+	text-selection: true;
+	word-wrap: true;
+	text: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. 😀";
+}
+.main TextView {
+	border: 1dp var(--button-border);
+}
+</style>
+<vbox class="main" lw="mp" lh="mp" padding="4dp">
+	<vbox class="singleline" lw="mp" lh="wc">
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="left" />
+			<TextView text-align="right" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="center" />
+			<TextView text-align="center" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="left" />
+			<TextView text-align="right" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<PushButton text-align="left" />
+			<PushButton text-align="right" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<PushButton text-align="center" />
+			<PushButton text-align="center" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<PushButton text-align="left" />
+			<PushButton text-align="right" />
+		</hbox>
+	</vbox>
+	
+	<vbox class="multiline" lw="mp" lh="wc">
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="left" />
+			<TextView text-align="right" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="center" />
+			<TextView text-align="center" />
+		</hbox>
+		<hbox lw="mp" lh="wc">
+			<TextView text-align="left" />
+			<TextView text-align="right" />
+		</hbox>
+	</vbox>
+</vbox>

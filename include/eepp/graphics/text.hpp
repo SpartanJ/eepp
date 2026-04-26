@@ -3,10 +3,13 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/textlayout.hpp>
+#include <eepp/graphics/textselectionrange.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
+#include <functional>
 #include <optional>
 
 namespace EE { namespace Graphics {
@@ -116,15 +119,14 @@ class EE_API Text {
 									   const Uint32& style, const Uint32& tabWidth = 4,
 									   const Float& outlineThickness = 0.f,
 									   std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
-									   TextDirection direction = TextDirection::Unspecified );
+									   TextDirection direction = TextDirection::Unspecified,
+									   const Vector2f& initialOffset = {} );
 
-	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
-									  const String& string, const Uint32& style,
-									  const Uint32& tabWidth = 4,
-									  const Float& outlineThickness = 0.f,
-									  std::optional<Float> tabOffset = {}, bool allowNewLine = true,
-									  Uint32 textHints = 0,
-									  TextDirection direction = TextDirection::Unspecified );
+	static Vector2f findCharacterPos(
+		std::size_t index, Font* font, const Uint32& fontSize, const String& string,
+		const Uint32& style, const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
+		std::optional<Float> tabOffset = {}, bool allowNewLine = true, Uint32 textHints = 0,
+		TextDirection direction = TextDirection::Unspecified, const Vector2f& initialOffset = {} );
 
 	static std::size_t
 	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const String& string,
@@ -152,13 +154,14 @@ class EE_API Text {
 								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
 								 TextDirection direction = TextDirection::Unspecified );
 
-	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
-						  const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f,
-						  std::optional<Float> tabOffset = {} );
+	static bool hardWrapText( Font* font, const Uint32& fontSize, String& string,
+							  const Float& maxWidth, const Uint32& style,
+							  const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
+							  std::optional<Float> tabOffset = {}, Uint32 textHints = 0 );
 
-	static bool wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
+	static bool hardWrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
+							  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {},
+							  Uint32 textHints = 0 );
 
 	static Text* New();
 
@@ -240,7 +243,7 @@ class EE_API Text {
 	Float getTextHeight();
 
 	/** @return The line spacing */
-	Float getLineSpacing();
+	Float getLineSpacing() const;
 
 	/** Draw the cached text on screen */
 	void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
@@ -256,6 +259,9 @@ class EE_API Text {
 
 	/** @return Every cached text line width */
 	const std::vector<Float>& getLinesWidth();
+
+	/** @return The last line width */
+	Float getLastLineWidth();
 
 	/** Set the text draw align */
 	void setAlign( const Uint32& align );
@@ -278,7 +284,7 @@ class EE_API Text {
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width
 	 */
-	void wrapText( const Uint32& maxWidth );
+	void hardWrapText( const Uint32& maxWidth );
 
 	/** Invalidates the color cache */
 	void invalidateColors();
@@ -325,6 +331,60 @@ class EE_API Text {
 
 	TextDirection getDirection() const;
 
+	/** Sets the initial position offset for this text.
+	 * This is useful for RichText where spans continue from a previous text segment.
+	 * @param offset The initial X/Y offset to apply to all position calculations
+	 */
+	void setInitialOffset( const Vector2f& offset );
+
+	/** @return The current initial position offset */
+	const Vector2f& getInitialOffset() const { return mInitialOffset; }
+
+	/** Sets the line wrap mode for soft wrapping.
+	 * When enabled, text will wrap at the specified max width without modifying the string.
+	 * @param mode The wrap mode (NoWrap, Letter, or Word)
+	 */
+	void setLineWrapMode( LineWrapMode mode );
+
+	/** @return The current line wrap mode */
+	LineWrapMode getLineWrapMode() const { return mLineWrapMode; }
+
+	/** Sets the maximum width for line wrapping.
+	 * Only used when line wrap mode is not NoWrap.
+	 * @param maxWidth The maximum width in pixels before wrapping
+	 */
+	void setMaxWrapWidth( Float maxWidth );
+
+	/** @return The current max wrap width */
+	Float getMaxWrapWidth() const { return mMaxWrapWidth; }
+
+	/** Sets whether to preserve indentation on wrapped lines. */
+	void setLineWrapKeepIndentation( bool keep );
+
+	/** @return Whether indentation is preserved on wrapped lines */
+	bool getLineWrapKeepIndentation() const { return mLineWrapKeepIndentation; }
+
+	/** @return The number of visual lines (considering soft wraps) */
+	Uint32 getVisualLineCount();
+
+	/** Callback type for iterating over visual lines.
+	 * Parameters: visual line index, start char index, end char index (exclusive), line width
+	 */
+	using VisualLineCallback = std::function<void( size_t, size_t, size_t, Float )>;
+
+	/** Iterates over each visual line, calling the callback with line info.
+	 * This is useful for selection drawing and other operations that need visual line info.
+	 */
+	void forEachVisualLine( const VisualLineCallback& callback );
+
+	/** Finds the visual line index that contains the given character index. */
+	size_t findVisualLineFromCharIndex( size_t charIndex );
+
+	/** @return A list of rectangles that cover the selection of the string, each rectangle
+	 * has the line spacing height and covers the width of the selection.
+	 */
+	SmallVector<Rectf> getSelectionRects( TextSelectionRange range );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -333,27 +393,33 @@ class EE_API Text {
 
 	String mString; ///< String to display
 	FontStyleConfig mFontStyleConfig;
-	Color mBackgroundColor{ Color::Transparent };
 
 	mutable Rectf mBounds; ///< Bounding rectangle of the text (in local coordinates)
 	mutable bool mGeometryNeedUpdate : 1 { false }; ///< Does the geometry need to be recomputed?
-	mutable bool mCachedWidthNeedUpdate : 1 { false };
 	mutable bool mColorsNeedUpdate : 1 { false };
 	mutable bool mContainsColorEmoji : 1 { false };
+	mutable bool mVisualLinesNeedUpdate : 1 { true };
+	mutable bool mCachedWidthNeedUpdate : 1 { true };
 	bool mTabStops : 1 { false };
+	bool mLineWrapKeepIndentation : 1 { false };
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
 	Uint32 mInvalidationId{ 0 };
 	Uint32 mTextHints{ 0 };
+	Float mMaxWrapWidth{ 0 };
+	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
+	TextDirection mDirection{ TextDirection::Unspecified };
+	Vector2f mInitialOffset{ 0.f, 0.f };
+
+	mutable std::vector<Int64> mVisualLines;
+	mutable std::vector<Float> mLinesWidth;
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
-	std::vector<Float> mLinesWidth;
-	TextDirection mDirection{ TextDirection::Unspecified };
 
 	void ensureGeometryUpdate();
 
@@ -411,15 +477,31 @@ class EE_API Text {
 								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
 								 TextDirection direction = TextDirection::Unspecified );
 
-	template <typename StringType>
-	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,
-						  const Float& maxWidth, const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f,
-						  std::optional<Float> tabOffset = {} );
+	/** Computes visual line info for soft wrapping.
+	 * Populates mVisualLines with start/end indices and widths.
+	 */
+	void computeVisualLines();
 
-	template <typename StringType>
-	static bool wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
+	/** Ensures visual line info is up to date. */
+	void ensureVisualLinesUpdate();
+
+	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+									  const String& string, const Uint32& style,
+									  const Uint32& tabWidth, const Float& outlineThickness,
+									  std::optional<Float> tabOffset, bool allowNewLine,
+									  Uint32 textHints, TextDirection direction,
+									  LineWrapMode lineWrapMode, Float maxWrapWidth,
+									  const Vector2f& initialOffset = {} );
+
+	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+									   const Uint32& fontSize, const String& string,
+									   const Uint32& style, const Uint32& tabWidth,
+									   const Float& outlineThickness,
+									   std::optional<Float> tabOffset, Uint32 textHints,
+									   TextDirection direction, LineWrapMode lineWrapMode,
+									   Float maxWrapWidth, const Vector2f& initialOffset = {} );
+
+	void checkColorEmojis();
 };
 
 }} // namespace EE::Graphics

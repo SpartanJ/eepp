@@ -88,7 +88,8 @@ UIAudioPlayer* UIAudioPlayer::New() {
 }
 
 UIAudioPlayer::UIAudioPlayer() : UIRelativeLayout( "audioplayer" ) {
-	getUISceneNode()->loadLayoutFromString( AUDIO_PLAYER_LAYOUT, this );
+	getUISceneNode()->loadLayoutFromString( AUDIO_PLAYER_LAYOUT, this,
+											String::hash( "audioplayer" ) );
 	mProgressBar = findByClass<UIProgressBar>( "progressbar" );
 	mStatusBtn = findByClass( "status_btn" );
 	mVolumeBtn = findByClass( "volume_btn" );

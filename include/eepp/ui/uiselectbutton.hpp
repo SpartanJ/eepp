@@ -11,10 +11,6 @@ class EE_API UISelectButton : public UIPushButton {
 
 	static UISelectButton* NewWithTag( const std::string& tag );
 
-	UISelectButton();
-
-	explicit UISelectButton( const std::string& tag );
-
 	virtual ~UISelectButton();
 
 	virtual Uint32 getType() const;
@@ -43,6 +39,10 @@ class EE_API UISelectButton : public UIPushButton {
 	bool hasSelectOnClick() const;
   protected:
 	Uint32 mSelectOnClickCbId{ 0 };
+
+	UISelectButton();
+
+	explicit UISelectButton( const std::string& tag );
 
 	virtual void onStateChange();
 };

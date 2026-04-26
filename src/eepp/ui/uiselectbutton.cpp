@@ -131,8 +131,7 @@ void UISelectButton::setSelected( bool set ) {
 void UISelectButton::setSelectOnClick( bool set ) {
 	if ( set ) {
 		if ( mSelectOnClickCbId == 0 )
-			mSelectOnClickCbId =
-				on( Event::MouseClick, [this]( const Event* ) { toggleSelection(); } );
+			mSelectOnClickCbId = onClick( [this]( const Event* ) { toggleSelection(); } );
 	} else {
 		if ( mSelectOnClickCbId != 0 )
 			removeEventListener( mSelectOnClickCbId );

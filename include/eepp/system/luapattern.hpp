@@ -15,13 +15,13 @@ class EE_API LuaPattern : public PatternMatcher {
 	static std::string_view getURIPattern();
 
 	static std::string matchesAny( const std::vector<std::string>& stringvec,
-								   const std::string_view& pattern );
+								   std::string_view pattern );
 
-	static std::string match( const std::string& string, const std::string_view& pattern );
+	static std::string match( std::string_view string, std::string_view pattern );
 
-	static Range firstMatch( const std::string& string, const std::string_view& pattern );
+	static Range firstMatch( std::string_view string, std::string_view pattern );
 
-	static bool hasMatches( const std::string& string, const std::string_view& pattern );
+	static bool hasMatches( std::string_view string, std::string_view pattern );
 
 	LuaPattern( std::string_view pattern, Uint32 options = Options::None );
 

@@ -7,6 +7,10 @@
 
 using namespace EE::Window;
 
+namespace EE::Window {
+class Input;
+}
+
 namespace EE { namespace Scene {
 
 class EE_API KeyEvent : public Event {
@@ -38,6 +42,10 @@ class EE_API KeyEvent : public Event {
 
 class EE_API TextInputEvent : public Event {
   public:
+	/* This verification checks if the user is not pressing any key modifier that should invalidate
+	 * the text input event. */
+	static bool isValidTextInputEvent( Input* input, const TextInputEvent& event );
+
 	TextInputEvent( Node* node, const Uint32& eventNum, const Uint32& chr,
 					const Uint32& timestamp );
 
@@ -46,6 +54,9 @@ class EE_API TextInputEvent : public Event {
 	const Uint32& getTimestamp() const;
 
 	String getText() const;
+
+	/* @see isValidTextInputEvent */
+	bool isValid( Input* input ) const;
 
   protected:
 	String::StringBaseType mChar;

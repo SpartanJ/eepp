@@ -218,29 +218,46 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 
 #endif
 
-template <typename StringType>
-static inline Uint64 textLayoutHash( const StringType& string, Font* font,
+static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
-									 std::optional<Float> tabOffset, TextDirection direction ) {
-	return hashCombine( std::hash<StringType>()( string ), std::hash<Font*>()( font ),
+									 std::optional<Float> tabOffset, TextDirection direction,
+									 LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									 Float initialXOffset ) {
+	return hashCombine( std::hash<String::View>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
 						std::hash<std::optional<Float>>()( tabOffset ),
 						std::hash<std::underlying_type_t<TextDirection>>()(
-							static_cast<std::underlying_type_t<TextDirection>>( direction ) ) );
+							static_cast<std::underlying_type_t<TextDirection>>( direction ) ),
+						std::hash<std::underlying_type_t<LineWrapMode>>()(
+							static_cast<std::underlying_type_t<LineWrapMode>>( wrapMode ) ),
+						std::hash<Uint32>()( wrapWidth ), std::hash<bool>()( keepIndentation ),
+						std::hash<Float>()( initialXOffset ) );
 }
 
-template <typename StringType>
-TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
+static LRULayoutCache& getLayoutCache( bool invalidate = false ) {
+	static LRULayoutCache sLayoutCache;
+	if ( invalidate )
+		sLayoutCache.clear();
+	return sLayoutCache;
+}
+
+void TextLayout::clearLayoutCache() {
+	getLayoutCache( true );
+}
+
+TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 									  const Uint32& characterSize, const Uint32& style,
 									  const Uint32& tabWidth, const Float& outlineThickness,
 									  std::optional<Float> tabOffset, Uint32 textDrawHints,
-									  TextDirection baseDirection ) {
-	static LRULayoutCache sLayoutCache;
+									  TextDirection baseDirection, LineWrapMode wrapMode,
+									  Uint32 wrapWidth, bool keepIndentation,
+									  Float initialXOffset ) {
 
 	if ( !font || string.empty() ) {
 		auto layout = std::make_shared<TextLayout>();
+		layout->paragraphs.push_back( {} );
 		layout->size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
 		return layout;
 	}
@@ -248,9 +265,10 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset, baseDirection );
+							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation,
+							   initialXOffset );
 
-		auto cacheHit = sLayoutCache.get( hash );
+		auto cacheHit = getLayoutCache().get( hash );
 		if ( cacheHit.has_value() )
 			return *cacheHit;
 	}
@@ -260,11 +278,14 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	Uint32 spaceGlyphIndex = 0;
 	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
 	Float vspace = font->getLineSpacing( characterSize );
-	Vector2f pen;
+	Vector2f pen{ initialXOffset, 0 };
 	Float maxWidth = 0;
 
 	auto resultPtr = std::make_shared<TextLayout>();
 	TextLayout& result = *resultPtr;
+	result.paragraphs.push_back( {} );
+	ShapedTextParagraph* curParagraph = &result.paragraphs.back();
+	curParagraph->wrapInfo.wraps.push_back( 0 );
 	struct GlyphDirCounter {
 		int ltr{ 0 };
 		int rtl{ 0 };
@@ -286,7 +307,9 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				FontTrueType* currentRunFont = run.font();
 				if ( !currentRunFont )
 					return true;
-				result.shapedGlyphs.reserve( result.shapedGlyphs.size() + glyphCount );
+
+				curParagraph->shapedGlyphs.reserve( curParagraph->shapedGlyphs.size() +
+													glyphCount );
 				Uint32 prevGlyphIndex = 0;
 
 				if ( isSimpleScript( props.script ) ) {
@@ -309,8 +332,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.position = pen;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
-							sg.script = (LangScript)segment.script;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
+							sg.script = (LangScript)props.script;
+							curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
 							prevGlyphIndex = 0; // Reset kerning after a tab
@@ -334,10 +357,10 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { currentGlyph.advance, 0 };
 						sg.direction = (TextDirection)segment.direction;
-						sg.script = (LangScript)segment.script;
+						sg.script = (LangScript)props.script;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
 						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
+						curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 						pen.x += currentGlyph.advance;
 						prevGlyphIndex = glyphInfo[i].codepoint;
@@ -375,9 +398,9 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
-							sg.script = (LangScript)segment.script;
+							sg.script = (LangScript)props.script;
 							sg.position = pen;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
+							curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
 							prevGlyphIndex = 0; // Reset kerning after a tab
@@ -388,28 +411,36 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
-						sg.advance = { glyphPos[i].x_advance / 64.f, glyphPos[i].y_advance / 64.f };
+						sg.advance = {
+							Font::isEmojiCodePoint( ch )
+								? currentRunFont
+									  ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
+														 bold, italic, outlineThickness,
+														 rFont->getPage( characterSize ) )
+									  .advance
+								: glyphPos[i].x_advance / 64.f,
+							glyphPos[i].y_advance / 64.f };
 						sg.direction = (TextDirection)segment.direction;
-						sg.script = (LangScript)segment.script;
+						sg.script = (LangScript)props.script;
 						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
 						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += Font::isEmojiCodePoint( ch )
-									 ? currentRunFont
-										   ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
-															  bold, italic, outlineThickness,
-															  rFont->getPage( characterSize ) )
-										   .advance
-									 : sg.advance.x;
+						curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
+						pen.x += sg.advance.x;
 						pen.y += sg.advance.y;
 					}
 				}
 
 				if ( run.runIsNewLine() ) {
-					result.linesWidth.push_back( std::ceil( pen.x ) );
-					maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
+					curParagraph->size.x = std::ceil( pen.x );
+					curParagraph->wrapInfo.wrapsWidth.push_back(
+						std::ceil( curParagraph->size.x ) );
+					maxWidth = eemax( maxWidth, curParagraph->size.x );
 					pen.x = 0;
 					pen.y += vspace;
+					curParagraph->size.y = pen.y;
+					result.paragraphs.push_back( {} );
+					curParagraph = &result.paragraphs.back();
+					curParagraph->wrapInfo.wraps.push_back( segment.offset + segment.length - 1 );
 				}
 				return true;
 			} );
@@ -421,11 +452,16 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 		for ( size_t i = 0; i < string.size(); ++i ) {
 			Uint32 curChar = string[i];
 			if ( curChar == '\n' ) {
-				result.linesWidth.push_back( pen.x );
+				curParagraph->size.x = std::ceil( pen.x );
+				curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( curParagraph->size.x ) );
 				maxWidth = eemax( maxWidth, pen.x );
 				pen.x = 0;
 				pen.y += vspace;
+				curParagraph->size.y = pen.y;
 				prevChar = 0;
+				result.paragraphs.push_back( {} );
+				curParagraph = &result.paragraphs.back();
+				curParagraph->wrapInfo.wraps.push_back( i );
 				continue;
 			}
 			if ( curChar == '\r' ) {
@@ -440,7 +476,6 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 			prevChar = curChar;
 
 			if ( curChar == '\t' ) {
-
 				ShapedGlyph sg;
 				sg.stringIndex = i;
 				sg.advance = { Text::tabAdvance( hspace, tabWidth,
@@ -452,7 +487,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				sg.script = LangScript::LATIN;
 				sg.position = pen;
 				pen.x += sg.advance.x;
-				result.shapedGlyphs.emplace_back( std::move( sg ) );
+				curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
+				prevChar = 0;
 				continue;
 			}
 
@@ -467,39 +503,177 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 			sg.script = LangScript::LATIN;
 			sg.position = pen;
 			pen.x += sg.advance.x;
-			result.shapedGlyphs.emplace_back( std::move( sg ) );
+			curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 		}
 	}
 
 	// pen.y doesn't have the last line height counted unless the last run ended with a new line
-	if ( string[string.size() - 1] != '\n' )
+	if ( string[string.size() - 1] != '\n' ) {
 		pen.y += vspace;
-
-	result.linesWidth.push_back( std::ceil( pen.x ) );
-	maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
+		curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( pen.x ) );
+	}
+	curParagraph->size.x = std::ceil( pen.x );
+	curParagraph->size.y = pen.y;
+	maxWidth = eemax( maxWidth, curParagraph->size.x );
 	result.size = { maxWidth, std::ceil( pen.y ) };
 	result.hasMixedDirection = !!gdc.ltr + !!gdc.rtl + !!gdc.ttb + !!gdc.btt + !!gdc.other > 1;
 
-	sLayoutCache.put( hash, resultPtr );
+	if ( wrapMode != LineWrapMode::NoWrap && wrapWidth ) {
+		wrapLayout( string, result, wrapMode, wrapWidth, vspace, keepIndentation, font,
+					characterSize, style, tabWidth, outlineThickness, hspace );
+	}
+
+	getLayoutCache().put( hash, resultPtr );
 	return resultPtr;
 }
 
 TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Uint32& fontSize,
 									  const Uint32& style, const Uint32& tabWidth,
 									  const Float& outlineThickness, std::optional<Float> tabOffset,
-									  Uint32 textDrawHints, TextDirection baseDirection ) {
-	return TextLayout::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
-									   tabOffset, textDrawHints, baseDirection );
+									  Uint32 textDrawHints, TextDirection baseDirection,
+									  LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									  Float initialXOffset ) {
+	return TextLayout::layout( string.view(), font, fontSize, style, tabWidth, outlineThickness,
+							   tabOffset, textDrawHints, baseDirection, wrapMode, wrapWidth,
+							   keepIndentation, initialXOffset );
 }
 
-TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
-									  const Uint32& fontSize, const Uint32& style,
-									  const Uint32& tabWidth, const Float& outlineThickness,
-									  std::optional<Float> tabOffset, Uint32 textDrawHints,
-									  TextDirection baseDirection ) {
-	return TextLayout::layout<String::View>( string, font, fontSize, style, tabWidth,
-											 outlineThickness, tabOffset, textDrawHints,
-											 baseDirection );
+std::vector<Float> TextLayout::getLinesWidth() const {
+	std::vector<Float> lw;
+	std::size_t total = 0;
+	for ( const auto& sp : paragraphs )
+		total += sp.wrapInfo.wrapsWidth.size();
+	lw.reserve( total );
+	for ( const auto& sp : paragraphs )
+		for ( const auto& ww : sp.wrapInfo.wrapsWidth )
+			lw.push_back( ww );
+	return lw;
+}
+
+void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
+							 LineWrapMode lineWrapMode, Float wrapWidth, Float vspace,
+							 bool keepIndentation, Font* font, const Uint32& characterSize,
+							 const Uint32& fontStyle, const Uint32& tabWidth,
+							 const Float& outlineThickness, Float hspace ) {
+	std::size_t paragraphCount = result.paragraphs.size();
+
+	result.size = Sizef::Zero;
+
+	Float yShift = 0.f;
+
+	for ( std::size_t paragraphIdx = 0; paragraphIdx < paragraphCount; paragraphIdx++ ) {
+		ShapedTextParagraph& sp = result.paragraphs[paragraphIdx];
+		std::size_t shapedGlyphCount = sp.shapedGlyphs.size();
+		std::size_t lastSpace = std::string::npos;
+		std::size_t lastSpaceStringIdx = std::string::npos;
+		Vector2f currentOffset( 0.f, 0.f );
+		Sizef maxSize{ 0, vspace + yShift };
+		std::size_t startWrapsCount = sp.wrapInfo.wraps.size();
+
+		std::vector<Float> wrapsWidth = std::move( sp.wrapInfo.wrapsWidth );
+		sp.wrapInfo.wrapsWidth.clear();
+
+		if ( keepIndentation && shapedGlyphCount ) {
+			sp.wrapInfo.paddingStart = LineWrap::computeOffsets(
+				string.substr( sp.shapedGlyphs[0].stringIndex ), font, characterSize, fontStyle,
+				outlineThickness, tabWidth, eemax( wrapWidth - hspace, hspace ) );
+		}
+
+		if ( yShift != 0.f ) {
+			for ( auto& sg : sp.shapedGlyphs )
+				sg.position.y += yShift;
+		}
+
+		for ( std::size_t idx = 0; idx < shapedGlyphCount; idx++ ) {
+			ShapedGlyph& sg = sp.shapedGlyphs[idx];
+			auto curChar = string[sg.stringIndex];
+
+			sg.position += currentOffset;
+
+			if ( sg.position.x + sg.advance.x > wrapWidth ) {
+				std::size_t breakIndex = idx;
+				std::size_t breakStringIdx = sg.stringIndex;
+
+				bool performWordWrap =
+					( lineWrapMode == LineWrapMode::Word && lastSpace != std::string::npos );
+				bool forceNextLine = false;
+
+				if ( !performWordWrap && lineWrapMode == LineWrapMode::Word &&
+					 sp.wrapInfo.wraps.size() == 1 ) {
+					// Check if fits in next line
+					Float currentWordWidth =
+						sg.position.x + sg.advance.x - sp.shapedGlyphs[0].position.x;
+					if ( currentWordWidth <= wrapWidth - sp.wrapInfo.paddingStart ) {
+						forceNextLine = true;
+					}
+				}
+
+				if ( performWordWrap ) {
+					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[lastSpace];
+					maxSize.x =
+						std::max( prevBreakGlyph.position.x + prevBreakGlyph.advance.x, maxSize.x );
+				}
+
+				// Break after the last space (start of the current word)
+				if ( performWordWrap ) {
+					breakIndex = lastSpace + 1;
+					breakStringIdx = lastSpaceStringIdx + 1;
+				} else if ( forceNextLine ) {
+					breakIndex = 0;
+					breakStringIdx = sp.shapedGlyphs[0].stringIndex;
+				}
+
+				if ( breakIndex > idx )
+					breakIndex = idx;
+
+				if ( breakStringIdx > string.size() )
+					breakStringIdx = string.size();
+
+				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
+				Float breakPos = breakGlyph.position.x;
+				Float kerning = 0;
+				if ( breakIndex > 0 ) {
+					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[breakIndex - 1];
+					kerning = ( prevBreakGlyph.position.x + prevBreakGlyph.advance.x ) -
+							  breakGlyph.position.x;
+				}
+
+				sp.wrapInfo.wraps.push_back( breakStringIdx );
+				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakPos + kerning ) );
+
+				Vector2f adjustment( sp.wrapInfo.paddingStart - breakGlyph.position.x, vspace );
+				for ( std::size_t k = breakIndex; k <= idx; ++k )
+					sp.shapedGlyphs[k].position += adjustment;
+
+				maxSize.y = std::max( breakGlyph.position.y + vspace, maxSize.y );
+
+				currentOffset += adjustment;
+				lastSpace = std::string::npos;
+				lastSpaceStringIdx = std::string::npos;
+			} else if ( LineWrap::isWrapChar( curChar ) ) {
+				lastSpace = idx;
+				lastSpaceStringIdx = sg.stringIndex;
+			}
+		}
+
+		if ( sp.wrapInfo.wrapsWidth.empty() ) {
+			if ( shapedGlyphCount )
+				maxSize = sp.shapedGlyphs.back().position + sp.shapedGlyphs.back().advance;
+
+			// Restore the original wraps which are the paragraph wraps (no wrapping occurred)
+			sp.wrapInfo.wrapsWidth = std::move( wrapsWidth );
+		} else if ( !sp.shapedGlyphs.empty() ) {
+			sp.wrapInfo.wrapsWidth.push_back(
+				std::ceil( sp.shapedGlyphs.back().position.x + sp.shapedGlyphs.back().advance.x ) );
+		}
+
+		sp.size = maxSize;
+
+		result.size = { std::max( sp.size.x, result.size.x ),
+						std::max( sp.size.y, result.size.y ) };
+
+		yShift += ( sp.wrapInfo.wraps.size() - startWrapsCount ) * vspace;
+	}
 }
 
 } // namespace EE::Graphics

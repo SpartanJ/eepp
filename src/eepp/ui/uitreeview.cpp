@@ -105,6 +105,36 @@ size_t UITreeView::getItemCount() const {
 	return count;
 }
 
+std::vector<ModelIndex> UITreeView::getSelectionRange( const ModelIndex& start,
+													   const ModelIndex& end ) const {
+	std::vector<ModelIndex> range;
+	if ( !getModel() )
+		return range;
+
+	bool foundStart = false;
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		bool isStart = index == start;
+		bool isEnd = index == end;
+
+		if ( isStart || isEnd ) {
+			if ( !foundStart ) {
+				foundStart = true;
+				range.push_back( index );
+				if ( start == end )
+					return IterationDecision::Stop;
+			} else {
+				range.push_back( index );
+				return IterationDecision::Stop;
+			}
+		} else if ( foundStart ) {
+			range.push_back( index );
+		}
+		return IterationDecision::Continue;
+	} );
+
+	return range;
+}
+
 void UITreeView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {
 	UIAbstractTableView::onColumnSizeChange( colIndex, fromUserInteraction );
 	updateContentSize();
@@ -762,7 +792,7 @@ void UITreeView::onSortColumn( const size_t& ) {
 }
 
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
-										const bool& exactMatch ) const {
+										FindRowWithTextMatchKind matchKind ) const {
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
@@ -771,13 +801,27 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
 		Variant var = model->data( index );
-		if ( var.isValid() &&
-			 ( exactMatch ? var.toString() == text
-						  : String::startsWith(
-								caseSensitive ? var.toString() : String::toLower( var.toString() ),
-								caseSensitive ? text : String::toLower( text ) ) ) ) {
-			foundIndex = index;
-			return IterationDecision::Stop;
+		if ( var.isValid() ) {
+			bool matches = false;
+			switch ( matchKind ) {
+				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Equals:
+					matches = var.toString() == text;
+					break;
+				case Abstract::UIAbstractView::FindRowWithTextMatchKind::StartsWith:
+					matches = String::startsWith( caseSensitive ? var.toString()
+																: String::toLower( var.toString() ),
+												  caseSensitive ? text : String::toLower( text ) );
+					break;
+				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Contains:
+					matches = caseSensitive ? String::contains( var.toString(), text )
+											: String::icontains( var.toString(), text );
+					break;
+			}
+
+			if ( matches ) {
+				foundIndex = index;
+				return IterationDecision::Stop;
+			}
 		}
 		return IterationDecision::Continue;
 	} );
@@ -915,7 +959,7 @@ Rectf UITreeViewCell::calculatePadding() const {
 	Rectf autoPadding;
 	if ( mFlags & UI_AUTO_PADDING ) {
 		autoPadding = makePadding( true, true, true, true );
-		if ( autoPadding != Rectf() )
+		if ( autoPadding != Rectf::Zero )
 			autoPadding = PixelDensity::dpToPx( autoPadding );
 	}
 	if ( mPaddingPx.Top > autoPadding.Top )

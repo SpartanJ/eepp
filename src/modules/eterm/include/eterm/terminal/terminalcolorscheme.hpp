@@ -52,6 +52,14 @@ class TerminalColorScheme {
 
 	size_t getPaletteSize() const;
 
+	void setForeground( const Color& foreground );
+
+	void setBackground( const Color& background );
+
+	void setCursor( const Color& cursor );
+
+	void setPaletteIndex( const size_t& index, const Color& color );
+
   protected:
 	std::string mName;
 	Color mForeground;

@@ -10,8 +10,6 @@ class EE_API UIRadioButton : public UITextView {
   public:
 	static UIRadioButton* New();
 
-	UIRadioButton();
-
 	virtual ~UIRadioButton();
 
 	virtual Uint32 getType() const;
@@ -45,6 +43,8 @@ class EE_API UIRadioButton : public UITextView {
 	bool mActive;
 	Uint32 mLastTick;
 	Int32 mTextSeparation;
+
+	UIRadioButton();
 
 	virtual void onSizeChange();
 

@@ -16,8 +16,8 @@
 	license: 'MIT (respective)'
 
 ?-->
-<resources language="en" title="简体中文（粗翻）">
-	<string name="about_ecode">关于Ecode</string>
+<resources language="zh_CN" title="简体中文">
+	<string name="about_ecode">关于 Ecode</string>
 	<string name="add_branch">新增分支</string>
 	<string name="add_build">新增构建</string>
 	<string name="add_build_step">新增构建步骤</string>
@@ -61,29 +61,27 @@
 	<string name="build_type_name_del">删除构建名称 %s?</string>
 	<string name="build_type_required">构建类型必填！</string>
 	<string name="build_types">构建类型</string>
-	<string name="build_types_desc">Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.</string>
+	<string name="build_types_desc">构建类型可用作由特殊键 ${build_type} 表示的动态构建选项。可以在编辑器中轻松切换构建类型。</string>
 	<string name="camsg_box_cancel">取消</string>
 	<string name="cancel_build">取消构建</string>
 	<string name="cancel_clean">取消清理</string>
-	<string name="capture_positions">Capture Positions</string>
-	<string name="case_sensitive">Case sensitive</string>
-	<string name="change_case">Change Case</string>
-	<string name="change_escape_sequence">Change Escape Sequence</string>
-	<string name="change_whole_word">Change Whole Word</string>
-	<string name="check_for_new_updates_at_startup">Always check for new updates at startup.</string>
-	<string name="check_for_updates">Check For Updates</string>
-	<string name="check_languages_health">Check Languages Health</string>
-	<string name="clean">Clean</string>
-	<string name="clean_failed">Clean run with errors
-</string>
+	<string name="capture_positions">捕捉位置</string>
+	<string name="case_sensitive">区分大小写</string>
+	<string name="change_case">切换大小写</string>
+	<string name="change_escape_sequence">更改转义序列</string>
+	<string name="change_whole_word">更改全词匹配</string>
+	<string name="check_for_new_updates_at_startup">启动时总是检查更新。</string>
+	<string name="check_for_updates">检查更新</string>
+	<string name="check_languages_health">检查语言健康状况</string>
+	<string name="clean">清理</string>
+	<string name="clean_failed">清理运行时出错&#10;</string>
 	<string name="clean_steps">清理步骤</string>
-	<string name="clean_successful">成功清理run
-</string>
+	<string name="clean_successful">成功清理运行&#10;</string>
 	<string name="clear_history">清理历史</string>
 	<string name="clear_menu">清空菜单</string>
-	<string name="clear_system_environment">Clear System Environment</string>
-	<string name="clone_setting">Clone Setting</string>
-	<string name="cloned_name_must_be_different">Cloned name must be different from any existing build name.</string>
+	<string name="clear_system_environment">清除系统环境</string>
+	<string name="clone_setting">克隆设置</string>
+	<string name="cloned_name_must_be_different">克隆名称必须与任何现有构建名称不同。</string>
 	<string name="close">关闭</string>
 	<string name="close_all_tabs">关闭所有标签页</string>
 	<string name="close_app">关闭Ecode</string>
@@ -151,21 +149,21 @@
 	<string name="custom_environment_variables">自定义环境变量</string>
 	<string name="custom_output_parser">自定义输出解析器</string>
 	<string name="custom_variables">自定义环境变量</string>
-	<string name="custom_variables_desc">Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.</string>
-	<string name="custom_variables_desc_2">Custom Variables can be invoked using ${variable_name} in any of the commands.</string>
-	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&amp;#10;${project_root}: The folder / project root directory.&amp;#10;${build_type}: The build type selected to build the project.&amp;#10;${os}: The current operating system name.&amp;#10;${nproc}: The number of logical processing units.</string>
+	<string name="custom_variables_desc">自定义变量允许通过添加自定义变量来简化构建命令步骤，这些变量可以在构建设置的命令、参数和工作目录中使用。</string>
+	<string name="custom_variables_desc_2">可以在任何命令中使用 ${variable_name} 来调用自定义变量。</string>
+	<string name="custom_variables_desc_3">有以下预定义的自定义变量可用：&#10;${project_root}: 项目根目录。&#10;${build_type}: 当前选中的构建类型。&#10;${os}: 当前操作系统名称。&#10;${arch}: 当前操作系统架构。&#10;${nproc}: 逻辑处理器核心数。&#10;${current_doc}: 当前选中的文档路径。&#10;${current_doc_name}: 当前选中的文档名称（不含扩展名）。&#10;${current_doc_dir}: 当前选中的文档所在目录。&#10;${relative_dir}: ${project_root} 与 ${current_doc_dir} 之间的相对目录路径。</string>
 	<string name="cut">剪切</string>
-	<string name="dark">Dark</string>
+	<string name="dark">深色</string>
 	<string name="date">日期</string>
-	<string name="debug_draw_boxes">Draw Boxes</string>
-	<string name="debug_draw_boxes_toggle">Debug Draw Boxes Toggle</string>
-	<string name="debug_draw_debug_data">Debug Draw Debug Data</string>
-	<string name="debug_draw_highlight">Highlight Focus &amp; Hover</string>
-	<string name="debug_draw_highlight_toggle">Debug Draw Highlight Toggle</string>
-	<string name="debug_widget_tree_view">Debug Widget Tree View</string>
-	<string name="default_theme">Default Theme</string>
-	<string name="del_custom_output_parser">Delete Selected Custom Output Parser</string>
-	<string name="del_custom_variable">Delete Selected Environment Variable</string>
+	<string name="debug_draw_boxes">绘制框</string>
+	<string name="debug_draw_boxes_toggle">调试绘制框切换</string>
+	<string name="debug_draw_debug_data">调试绘制调试数据</string>
+	<string name="debug_draw_highlight">高亮焦点和悬停</string>
+	<string name="debug_draw_highlight_toggle">调试绘制高亮切换</string>
+	<string name="debug_widget_tree_view">调试组件树视图</string>
+	<string name="default_theme">默认主题</string>
+	<string name="del_custom_output_parser">删除选定的自定义输出解析器</string>
+	<string name="del_custom_variable">删除选定的环境变量</string>
 	<string name="delete">删除</string>
 	<string name="delete_selected">删除已选</string>
 	<string name="delete_setting">删除设置</string>
@@ -197,6 +195,8 @@
 	<string name="enable_color_picker">开启颜色选择器</string>
 	<string name="enable_color_picker_tooltip">开启颜色选择工具
 当光标悬浮在颜色字符串上时</string>
+	<string name="enable_inline_color_boxes">启用色框</string>
+	<string name="enable_inline_color_boxes_tooltip">直接在文本后面呈现已解析颜色的背景框。</string>
 	<string name="enable_color_preview">开启颜色预览</string>
 	<string name="enable_color_preview_tooltip">允许颜色预览
 当鼠标悬停在颜色字符串上时</string>
@@ -445,8 +445,8 @@ Restart ecode to see the changes.</string>
 	<string name="open_workspace_symbol_search">打开工作区符号搜索</string>
 	<string name="output">输出</string>
 	<string name="output_parser">输出解析器</string>
-	<string name="output_parser_desc">Custom output parsers scan command line output for user-provided error patterns to create entries in Build Issues and highlight those errors on the Build Output</string>
-	<string name="output_parser_preset">Presets are provided as generic output parsers, you can select one below, by default a "generic" preset will be selected:</string>
+	<string name="output_parser_desc">自定义输出解析器扫描命令行输出，查找用户提供的错误模式，以在构建问题中创建条目并在构建输出上突出显示这些错误。</string>
+	<string name="output_parser_preset">预设提供为通用输出解析器，您可以在下面选择一个，默认情况下将选择“通用”预设：</string>
 	<string name="overwrite">覆盖</string>
 	<string name="owner">主人</string>
 	<string name="paste">粘贴</string>
@@ -574,7 +574,7 @@ Restart ecode to see the changes.</string>
 </string>
 	<string name="status">状态</string>
 	<string name="supported_platforms">支持的平台</string>
-	<string name="supported_platforms_desc">Selecting none means that the build settings will work and be available on any Operating System</string>
+	<string name="supported_platforms_desc">不选择任何内容表示构建设置将在任何操作系统上工作并可用。</string>
 	<string name="switch_build">选择构建</string>
 	<string name="switch_build_type">选择构建类型</string>
 	<string name="switch_side_panel">选择侧栏</string>
@@ -630,21 +630,21 @@ file in the directory tree.</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_size">Ui字体大小</string>
-	<string name="ui_language">UI语言 Language</string>
-	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>
-	<string name="ui_panel_font_size">Ui板字体大小</string>
-	<string name="ui_prefes_color_scheme">UI配色方案</string>
+	<string name="ui_language">界面语言</string>
+	<string name="ui_multisamples_level">多重采样抗锯齿级别</string>
+	<string name="ui_panel_font_size">界面面板字体大小</string>
+	<string name="ui_prefes_color_scheme">界面偏好配色方案</string>
 	<string name="ui_renderer">渲染器</string>
 	<string name="ui_renderer_version">渲染器版本</string>
-	<string name="ui_scale_factor">Ui缩放</string>
-	<string name="ui_thene">UI主题</string>
-	<string name="uicodeeditor_copy">Copy</string>
-	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
-	<string name="uicodeeditor_copy_file_path">Copy File Path</string>
-	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
-	<string name="uicodeeditor_cut">Paste</string>
-	<string name="uicodeeditor_delete">Delete</string>
-	<string name="uicodeeditor_open_containing_folder_in_fm">Open Containing Folder in File Manager</string>
+	<string name="ui_scale_factor">界面缩放比例</string>
+	<string name="ui_thene">界面主题</string>
+	<string name="uicodeeditor_copy">复制</string>
+	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">复制所在文件夹路径...</string>
+	<string name="uicodeeditor_copy_file_path">复制文件路径</string>
+	<string name="uicodeeditor_copy_file_path_and_position">复制文件路径和位置</string>
+	<string name="uicodeeditor_cut">剪切</string>
+	<string name="uicodeeditor_delete">删除</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">在文件管理器中打开所在文件夹</string>
 	<string name="uicodeeditor_paste">粘贴</string>
 	<string name="uicodeeditor_redo">重做</string>
 	<string name="uicodeeditor_select_all">全选</string>

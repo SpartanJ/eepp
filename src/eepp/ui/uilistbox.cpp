@@ -39,7 +39,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVisibleFirst( 0 ),
 	mVisibleLast( 0 ),
 	mSmoothScroll( true ) {
-	setFlags( UI_AUTO_PADDING );
+	setFlags( UI_AUTO_PADDING | UI_LOADS_ITS_CHILDREN );
 
 	auto cb = [this]( const Event* ) { containerResize(); };
 
@@ -123,7 +123,7 @@ UIScrollBar* UIListBox::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-void UIListBox::addListBoxItems( std::vector<String> texts ) {
+void UIListBox::addListBoxItems( const std::vector<String>& texts ) {
 	mItems.reserve( mItems.size() + texts.size() );
 	mTexts.reserve( mTexts.size() + texts.size() );
 
@@ -135,29 +135,6 @@ void UIListBox::addListBoxItems( std::vector<String> texts ) {
 	findMaxWidth();
 	updatePageStep();
 	updateScroll();
-}
-
-Uint32 UIListBox::addListBoxItem( UIListBoxItem* item ) {
-	mItems.push_back( item );
-	mTexts.push_back( item->getText() );
-
-	if ( item->getParent() != mContainer )
-		item->setParent( mContainer );
-
-	updateScroll();
-
-	Uint32 tMaxTextWidth = mMaxTextWidth;
-
-	itemUpdateSize( item );
-
-	if ( tMaxTextWidth != mMaxTextWidth ) {
-		updateListBoxItemsSize();
-		updateScroll();
-	}
-
-	updatePageStep();
-
-	return (Uint32)( mItems.size() - 1 );
 }
 
 Uint32 UIListBox::addListBoxItem( const String& text ) {
@@ -184,11 +161,7 @@ Uint32 UIListBox::removeListBoxItem( const String& Text ) {
 	return removeListBoxItem( getListBoxItemIndex( Text ) );
 }
 
-Uint32 UIListBox::removeListBoxItem( UIListBoxItem* Item ) {
-	return removeListBoxItem( getListBoxItemIndex( Item ) );
-}
-
-void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
+void UIListBox::removeListBoxItems( const std::vector<Uint32>& ItemsIndex ) {
 	if ( ItemsIndex.empty() || eeINDEX_NOT_FOUND == ItemsIndex[0] )
 		return;
 
@@ -803,7 +776,7 @@ const Uint32& UIListBox::getRowHeight() const {
 	return mRowHeight;
 }
 
-Uint32 UIListBox::getCount() const {
+Uint32 UIListBox::getItemsCount() const {
 	return (Uint32)mItems.size();
 }
 
@@ -931,10 +904,10 @@ Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
 			}
 			break;
 		case KEY_END:
-			if ( mSelected.front() != getCount() - 1 ) {
+			if ( mSelected.front() != getItemsCount() - 1 ) {
 				mVScrollBar->setValue( 1 );
-				mItems[getCount() - 1]->setFocus();
-				setSelected( getCount() - 1 );
+				mItems[getItemsCount() - 1]->setFocus();
+				setSelected( getItemsCount() - 1 );
 			}
 			break;
 		case KEY_PAGEUP: {
@@ -953,7 +926,7 @@ Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
 			if ( eeINDEX_NOT_FOUND == (Uint32)index )
 				index = 0;
 			Int32 pageSize = eefloor( mDpSize.getHeight() / mRowHeight );
-			index = eemin( getCount() ? (Int32)getCount() - 1 : 0, index + pageSize );
+			index = eemin( getItemsCount() ? (Int32)getItemsCount() - 1 : 0, index + pageSize );
 			setSelected( index );
 			mVScrollBar->setValue( (Float)( index * mRowHeight ) /
 								   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );

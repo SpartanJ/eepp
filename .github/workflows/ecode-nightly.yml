@@ -18,28 +18,26 @@ jobs:
       version: ${{ steps.tag.outputs.version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Tag
         id: tag
         run: |
           echo "version=nightly" >> "$GITHUB_OUTPUT"
       - name: Update Tag
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: ${{ steps.tag.outputs.version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag -f ${{ steps.tag.outputs.version }}
+          git push -f origin ${{ steps.tag.outputs.version }}
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.version }}
           name: ecode ${{ steps.tag.outputs.version }}
           draft: false
           prerelease: true
-          generate_release_notes: true
-          body: >
+          generate_release_notes: false
+          body: |
             Builds that include most recent changes as they happen. For stable releases check the whole list of [releases](https://github.com/SpartanJ/ecode/releases).
 
   build_linux_x86_64:
@@ -63,7 +61,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends software-properties-common build-essential git ca-certificates
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive', set-safe-directory: true }
       - name: Set Environment Variables
         run: |
@@ -99,7 +97,7 @@ jobs:
         run: |
           bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -122,7 +120,7 @@ jobs:
       CXX: g++
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -158,7 +156,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -182,7 +180,7 @@ jobs:
       CXX: g++
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -212,7 +210,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -232,7 +230,7 @@ jobs:
     runs-on: ${{ matrix.config.container }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -253,7 +251,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --arch=arm64 --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -278,7 +276,7 @@ jobs:
       MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: System Information
         run: |
@@ -293,7 +291,7 @@ jobs:
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
-          brew install bash sdl2 create-dmg premake p7zip
+          brew install bash sdl2 create-dmg premake
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -313,7 +311,7 @@ jobs:
           DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg"
           bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -338,7 +336,7 @@ jobs:
       MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: System Information
         run: |
@@ -377,7 +375,7 @@ jobs:
           DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg"
           bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -391,7 +389,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -406,7 +404,9 @@ jobs:
           sync: sshfs
           usesh: true
           mem: 8192
+          disable-cache: true
           prepare: |
+            pkg upgrade -y
             pkg install -y bash git sdl2 curl premake5 gsed gmake
           run: |
             export CC=clang
@@ -415,13 +415,48 @@ jobs:
             bash projects/scripts/patch_commit_number.sh
             sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
           prerelease: true
           files: |
             projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
+
+  build_haiku_x86_64:
+    name: Haiku x86_64 Nightly
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with: { fetch-depth: 0, submodules: 'recursive' }
+      - name: Set Environment Variables
+        run: |
+          echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
+          echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
+      - uses: vmactions/haiku-vm@v1
+        env:
+          INSTALL_REF: ${{ needs.release.outputs.version }}
+        with:
+          envs: 'INSTALL_REF'
+          usesh: true
+          mem: 8192
+          disable-cache: true
+          prepare: |
+            pkgman install -y libsdl2 libsdl2_devel git gcc premake5
+          run: |
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
+            bash projects/scripts/patch_commit_number.sh
+            sh projects/haiku/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+      - name: Upload Files
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: false
+          prerelease: true
+          files: |
+            projects/haiku/ecode/ecode-haiku-${{ env.INSTALL_REF }}-x86_64.tar.gz
 
   build_windows_msvc:
     name: Windows x86_64 MSVC Nightly
@@ -435,7 +470,7 @@ jobs:
       run: |
         git config --system core.autocrlf false
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
@@ -443,7 +478,7 @@ jobs:
         .\projects\scripts\patch_commit_number.ps1
         .\projects\windows\ecode\build.app.ps1
     - name: Upload Files
-      uses: softprops/action-gh-release@v2.2.2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.release.outputs.version }}
         draft: false
@@ -464,7 +499,7 @@ jobs:
       run: |
         git config --system core.autocrlf false
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
@@ -472,7 +507,7 @@ jobs:
         .\projects\scripts\patch_commit_number.ps1
         .\projects\windows\ecode\build.app.ps1 -arch arm64
     - name: Upload Files
-      uses: softprops/action-gh-release@v2.2.2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.release.outputs.version }}
         draft: false

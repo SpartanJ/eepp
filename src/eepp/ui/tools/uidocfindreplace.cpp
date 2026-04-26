@@ -109,11 +109,11 @@ const char DOC_FIND_REPLACE_CSS[] = R"css(
 const char DOC_FIND_REPLACE_XML[] = R"xml(
 <hbox class="ce_find_replace_box" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="right|top" layout-margin-right="32dp">
 	<Widget class="expander" layout_width="2dp" layout_height="match_parent" />
-	<button class="find_replace_toggle" layout_width="16dp" layout_height="wrap_content" padding="2dp" layout_gravity="center" />
+	<PushButton class="find_replace_toggle" layout_width="16dp" layout_height="wrap_content" padding="2dp" layout_gravity="center" />
 	<vbox layout_width="wrap_content" layout_height="wrap_content">
 		<hbox layout_width="340dp" layout_height="wrap_content" paddingRight="1dp" min-width="200dp" clip="border-box">
 			<RelativeLayout layout_width="0dp" layout_weight="1" layout_height="25dp" marginRight="1dp">
-				<input class="input-find" layout_width="match_parent" layout_height="wrap_content" hint="Find" />
+				<TextInput class="input-find" layout_width="match_parent" layout_height="wrap_content" hint="Find" />
 				<selectbutton id="ce_find_replace_box-escape-sequences"
 							  layout_width="wrap_content" layout_height="wrap_content" class="escape-sequences"
 							  layout_gravity="right|center_vertical" tooltip="@string(escape_sequences, Escape Sequences)"
@@ -135,16 +135,16 @@ const char DOC_FIND_REPLACE_XML[] = R"xml(
 							  tooltip="@string(lua_pattern_match, Lua Pattern Match)" layout_to_left_of="ce_find_replace_box-regex"
 							  marginRight="2dp" />
 			</RelativeLayout>
-			<button class="prev-button" layout_width="wrap_content" layout_height="24dp" text="Prev." icon="icon(arrow-up, 16dp)" />
-			<button class="next-button" layout_width="wrap_content" layout_height="24dp" text="Next" icon="icon(arrow-down, 16dp)" />
-			<button class="exit-button" layout_width="wrap_content" layout_height="24dp" text="Close" icon="icon(cancel, 16dp)" />
+			<PushButton class="prev-button" layout_width="wrap_content" layout_height="24dp" text="Prev." icon="icon(arrow-up, 16dp)" />
+			<PushButton class="next-button" layout_width="wrap_content" layout_height="24dp" text="Next" icon="icon(arrow-down, 16dp)" />
+			<PushButton class="exit-button" layout_width="wrap_content" layout_height="24dp" text="Close" icon="icon(cancel, 16dp)" />
 		</hbox>
 		<hbox class="replace_box" layout_width="match_parent" layout_height="wrap_content">
-			<input class="input-replace" layout_width="200dp" layout_height="wrap_content" hint="Replace" marginRight="1dp" />
+			<TextInput class="input-replace" layout_width="200dp" layout_height="wrap_content" hint="Replace" marginRight="1dp" />
 
-			<button class="replace-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace, Replace)" />
+			<PushButton class="replace-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace, Replace)" />
 
-			<button class="replace-all-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace_all, Replace All)" />
+			<PushButton class="replace-all-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace_all, Replace All)" />
 		</hbox>
 	</vbox>
 </hbox>

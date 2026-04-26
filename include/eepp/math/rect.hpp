@@ -46,6 +46,8 @@ template <typename T> class tRECT {
 
 	tRECT<T>& expand( const Vector2<T>& Vect );
 
+	tRECT<T>& enlarge( const Vector2<T>& Vect );
+
 	T area() const;
 
 	T mergedArea( const tRECT<T>& rect ) const;
@@ -350,6 +352,12 @@ template <typename T> tRECT<T>& tRECT<T>::expand( const Vector2<T>& Vect ) {
 	Bottom = eemax( Bottom, Vect.y );
 	Right = eemax( Right, Vect.x );
 	Top = eemin( Top, Vect.y );
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::enlarge( const Vector2<T>& Vect ) {
+	Right += Vect.x;
+	Bottom += Vect.y;
 	return *this;
 }
 

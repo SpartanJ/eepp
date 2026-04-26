@@ -35,7 +35,7 @@ class FormatterPlugin : public Plugin {
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 7 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 3, 0 },		FormatterPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -90,6 +90,8 @@ class FormatterPlugin : public Plugin {
 	PluginManager* mPluginManager{ nullptr };
 
 	bool mAutoFormatOnSave{ false };
+	bool mBrokenUserConfigFile{ false };
+	std::string mConfigFileError;
 
 	FormatterPlugin( PluginManager* pluginManager, bool sync );
 
@@ -116,6 +118,8 @@ class FormatterPlugin : public Plugin {
 	bool tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc );
 
 	PluginRequestHandle processMessage( const PluginMessage& msg );
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

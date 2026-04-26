@@ -14,8 +14,9 @@ static int numberOfSetBits( Uint32 i ) {
 					// than uint32_t)
 }
 
-static const char* StatePseudoClasses[] = { "focus",	"selected",		"hover", "pressed",
-											"disabled", "focus-within", "active" };
+static const char* StatePseudoClasses[] = { "focus",   "selected", "hover",
+											"pressed", "disabled", "focus-within",
+											"active",  "link",	   "visited" };
 
 static bool isPseudoClassState( const std::string& pseudoClass ) {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( StatePseudoClasses ); i++ ) {
@@ -54,7 +55,11 @@ StyleSheetSelectorRule::toPseudoClass( std::string_view cls ) {
 		return StyleSheetSelectorRule::PseudoClasses::Disabled;
 	if ( "focus-within" == cls )
 		return StyleSheetSelectorRule::PseudoClasses::FocusWithin;
-	eeASSERT( false );
+	if ( "link" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Link;
+	if ( "visited" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Visited;
+	// eeASSERT( false );
 	return StyleSheetSelectorRule::PseudoClasses::None;
 }
 
