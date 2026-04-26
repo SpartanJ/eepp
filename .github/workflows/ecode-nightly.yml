@@ -407,7 +407,7 @@ jobs:
           disable-cache: true
           prepare: |
             pkg upgrade -y
-            pkg install -y bash git sdl2 curl premake5 gsed gmake
+            pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake
           run: |
             export CC=clang
             export CXX=clang++
