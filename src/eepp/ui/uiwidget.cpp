@@ -1837,24 +1837,32 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Width:
-			if ( mStyle ) {
-				mStyle->setStyleSheetProperty(
-					StyleSheetProperty( "layout-width", attribute.value(), true,
-										StyleSheetSelectorRule::SpecificityImportant ) );
+			if ( attribute.value() == "auto" ) {
+				setLayoutWidthPolicy( SizePolicy::WrapContent );
+			} else {
+				if ( mStyle ) {
+					mStyle->setStyleSheetProperty(
+						StyleSheetProperty( "layout-width", attribute.value(), true,
+											StyleSheetSelectorRule::SpecificityImportant ) );
+				}
+				setLayoutWidthPolicy( SizePolicy::Fixed );
+				setSize( eefloor( lengthFromValueAsDp( attribute ) ), getSize().getHeight() );
+				notifyLayoutAttrChange();
 			}
-			setLayoutWidthPolicy( SizePolicy::Fixed );
-			setSize( eefloor( lengthFromValueAsDp( attribute ) ), getSize().getHeight() );
-			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Height:
-			if ( mStyle ) {
-				mStyle->setStyleSheetProperty(
-					StyleSheetProperty( "layout-height", attribute.value(), true,
-										StyleSheetSelectorRule::SpecificityImportant ) );
+			if ( attribute.value() == "auto" ) {
+				setLayoutHeightPolicy( SizePolicy::WrapContent );
+			} else {
+				if ( mStyle ) {
+					mStyle->setStyleSheetProperty(
+						StyleSheetProperty( "layout-height", attribute.value(), true,
+											StyleSheetSelectorRule::SpecificityImportant ) );
+				}
+				setLayoutHeightPolicy( SizePolicy::Fixed );
+				setSize( getSize().getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
+				notifyLayoutAttrChange();
 			}
-			setLayoutHeightPolicy( SizePolicy::Fixed );
-			setSize( getSize().getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
-			notifyLayoutAttrChange();
 			break;
 		case PropertyId::BackgroundColor:
 			setBackgroundColor( attribute.asColor() );

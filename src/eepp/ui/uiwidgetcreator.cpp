@@ -13,6 +13,8 @@
 #include <eepp/ui/uihtmllistitem.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistview.hpp>
@@ -162,9 +164,14 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["li"] = UIHTMLListItem::New;
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] {
-			auto img = UIImage::NewWithTag( "img" );
+			auto img = UIHTMLImage::New();
 			img->setFlags( UI_HTML_ELEMENT );
 			return img;
+		};
+		registeredWidget["svg"] = [] {
+			auto svg = UISvg::New();
+			svg->setFlags( UI_HTML_ELEMENT );
+			return svg;
 		};
 		registeredWidget["input"] = [] { return HTMLInput::New(); };
 		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
