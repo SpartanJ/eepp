@@ -296,6 +296,15 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 				loadCSS( href.as_string() );
 			}
 			continue;
+		} else if ( String::iequals( widget.name(), "meta" ) ) {
+			// Ignored for now
+			continue;
+		} else if ( String::iequals( widget.name(), "title" ) ) {
+			// Ignored for now
+			continue;
+		} else if ( String::iequals( widget.name(), "script" ) ) {
+			// No plans to support it
+			continue;
 		}
 
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );

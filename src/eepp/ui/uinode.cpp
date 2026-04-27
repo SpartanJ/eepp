@@ -1671,9 +1671,15 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			}
 			return convertLength( res, 0 );
 		} else if ( property.getValue() == "inherit" ) {
-			// TODO: FIX inherit value
+			Node* parentNode = getParent();
+			if ( parentNode && parentNode->isWidget() ) {
+				Float parentPxSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+				StyleSheetLength res;
+				res.setValue( PixelDensity::pxToDp( parentPxSize ), StyleSheetLength::Unit::Dp );
+				return convertLength( res, 0 );
+			}
 			StyleSheetLength res;
-			res.setValue( 1, StyleSheetLength::Unit::Em );
+			res.setValue( 12, StyleSheetLength::Unit::Dp );
 			return convertLength( res, 0 );
 		}
 	}

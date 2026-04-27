@@ -494,6 +494,9 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 						editor->applyProperty( langIt->second );
 					}
 				}
+			} else if ( String::iequals( child.name(), "script" ) ) {
+				// No plans to support it
+				continue;
 			} else {
 				// Let parent logic load standard child widget
 				UIWidget* uiwidget = UIWidgetCreator::createFromName( child.name() );
