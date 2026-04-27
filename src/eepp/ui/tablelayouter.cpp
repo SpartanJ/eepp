@@ -76,6 +76,8 @@ void TableLayouter::computeIntrinsicWidths() {
 	auto getRecursiveSpecifiedWidth = [&]( auto&& self, Node* node ) -> Float {
 		if ( !node->isWidget() )
 			return 0.f;
+		if ( node->isType( UI_TYPE_HTML_WIDGET ) && node->asType<UIHTMLWidget>()->isOutOfFlow() )
+			return 0.f;
 		UIWidget* widget = node->asType<UIWidget>();
 		Float spec = 0.f;
 		if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed )

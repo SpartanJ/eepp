@@ -149,10 +149,78 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	return UILayout::applyProperty( attribute );
 }
 
+void UIHTMLWidget::updateLayout() {
+	if ( getLayouter() )
+		getLayouter()->updateLayout();
+	else
+		UILayout::updateLayout();
+
+	positionOutOfFlowChildren();
+}
+
+UIWidget* UIHTMLWidget::getContainingBlock() {
+	if ( mPosition == CSSPosition::Fixed ) {
+		Node* parent = getParent();
+		UIWidget* lastWidget = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+		while ( parent ) {
+			if ( parent->isWidget() )
+				lastWidget = parent->asType<UIWidget>();
+			parent = parent->getParent();
+		}
+		return lastWidget;
+	}
+
+	Node* parent = getParent();
+	UIWidget* lastWidget = nullptr;
+	while ( parent ) {
+		if ( parent->isWidget() ) {
+			lastWidget = parent->asType<UIWidget>();
+			if ( lastWidget->isType( UI_TYPE_HTML_WIDGET ) ) {
+				if ( lastWidget->asType<UIHTMLWidget>()->getCSSPosition() != CSSPosition::Static ) {
+					return lastWidget;
+				}
+			}
+		}
+		parent = parent->getParent();
+	}
+	return lastWidget;
+}
+
+void UIHTMLWidget::positionOutOfFlowChildren() {
+	Node* child = mChild;
+	while ( child ) {
+		if ( child->isWidget() && child->isType( UI_TYPE_HTML_WIDGET ) ) {
+			UIHTMLWidget* htmlChild = static_cast<UIHTMLWidget*>( child );
+			CSSPosition pos = htmlChild->getCSSPosition();
+			if ( pos == CSSPosition::Absolute || pos == CSSPosition::Fixed ) {
+				UIWidget* cb = htmlChild->getContainingBlock();
+				if ( cb ) {
+					Rectf offsets = htmlChild->getOffsets();
+					Float top = PixelDensity::dpToPx( offsets.Top );
+					Float left = PixelDensity::dpToPx( offsets.Left );
+
+					Vector2f cbPos( cb->getPixelsPadding().Left, cb->getPixelsPadding().Top );
+					cbPos.x += left;
+					cbPos.y += top;
+
+					Vector2f worldPos = cb->convertToWorldSpace( cbPos );
+					Vector2f localPos = convertToNodeSpace( worldPos );
+					htmlChild->setPixelsPosition( localPos );
+				}
+			}
+		}
+		child = child->getNextNode();
+	}
+}
+
 void UIHTMLWidget::invalidateIntrinsicSize() {
 	if ( mLayouter )
 		mLayouter->invalidateIntrinsicWidths();
 	UIWidget::invalidateIntrinsicSize();
+}
+
+bool UIHTMLWidget::isOutOfFlow() const {
+	return mPosition == CSSPosition::Absolute || mPosition == CSSPosition::Fixed;
 }
 
 }} // namespace EE::UI

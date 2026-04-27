@@ -46,9 +46,17 @@ class EE_API UIHTMLWidget : public UILayout {
 										   const Uint32& state = 0 ) const;
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	virtual void updateLayout();
+
+	UIWidget* getContainingBlock();
+
+	void positionOutOfFlowChildren();
+
 	virtual RichText* getRichTextPtr() { return nullptr; }
 
 	virtual void invalidateIntrinsicSize();
+
+	bool isOutOfFlow() const;
 
   protected:
 	CSSDisplay mDisplay{ CSSDisplay::Block };

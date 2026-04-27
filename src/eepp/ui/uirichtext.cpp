@@ -593,9 +593,10 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			}
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
-				if ( spanChild->isWidget() ) {
+				bool isOutOfFlow = spanChild->isType( UI_TYPE_HTML_WIDGET ) &&
+								   spanChild->asType<UIHTMLWidget>()->isOutOfFlow();
+				if ( !isOutOfFlow )
 					processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef );
-				}
 				spanChild = spanChild->getNextNode();
 			}
 		} else if ( widget->isType( UI_TYPE_BR ) ) {
@@ -649,9 +650,10 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 	Node* child = container->getFirstChild();
 	while ( NULL != child ) {
-		if ( child->isWidget() ) {
+		bool isOutOfFlow =
+			child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow();
+		if ( !isOutOfFlow )
 			processWidget( child->asType<UIWidget>(), processWidget );
-		}
 		child = child->getNextNode();
 	}
 }

@@ -238,7 +238,10 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 	child = mContainer->getFirstChild();
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			processWidget( child->asType<UIWidget>(), processWidget );
+			bool isOutOfFlow = child->isType( UI_TYPE_HTML_WIDGET ) &&
+							   child->asType<UIHTMLWidget>()->isOutOfFlow();
+			if ( !isOutOfFlow )
+				processWidget( child->asType<UIWidget>(), processWidget );
 		}
 		child = child->getNextNode();
 	}

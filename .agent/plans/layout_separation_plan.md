@@ -2,7 +2,7 @@
 
 This document outlines the architectural plan for decoupling layout logic from specific widgets (like `UIRichText` and `UIHTMLTable`), introducing a robust generic layouter system, and supporting standard CSS `display` and `position` properties.
 
-**AGENT DIRECTIVE (CRITICAL):** You are Negen. Fulfill this plan iteratively. You MUST compile and run the unit tests (`bin/unit_tests/eepp-unit_tests-debug`) after EVERY step. Do NOT proceed to the next step if there is even a 1-pixel difference in visual layout tests. Take a git stash snapshot (`git stash push -m "Phase X.Y passed"`) upon passing a step.
+**AGENT DIRECTIVE (CRITICAL):** You are Negen. Fulfill this plan iteratively. You MUST compile and run the unit tests (`bin/unit_tests/eepp-unit_tests-debug`) after EVERY step. Do NOT proceed to the next step if there is even a 1-pixel difference in visual layout tests. Take a git stash snapshot (`git stash push -m "Phase X.Y passed" && git stash apply`) upon passing a step to keep a checkpoint while continuing to work. **If you need to restore a stash, use `git stash apply` instead of `git stash pop` so the stable snapshot is never lost.**
 
 ---
 
