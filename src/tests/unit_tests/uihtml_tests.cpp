@@ -8,6 +8,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/htmlinput.hpp>
 #include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/htmltextinput.hpp>
@@ -567,6 +568,160 @@ UTEST( UILayout, marginAuto ) {
 
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleTypeDecimal ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ol>
+				<li id="li1" style="list-style-type: decimal;">First item</li>
+				<li id="li2" style="list-style-type: decimal;">Second item</li>
+				<li id="li3" style="list-style-type: decimal;">Third item</li>
+			</ol>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* propDef =
+		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	ASSERT_TRUE( propDef != nullptr );
+
+	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
+	auto* li2 = sceneNode->getRoot()->find( "li2" )->asType<UIRichText>();
+	auto* li3 = sceneNode->getRoot()->find( "li3" )->asType<UIRichText>();
+
+	ASSERT_TRUE( li1 != nullptr );
+	ASSERT_TRUE( li2 != nullptr );
+	ASSERT_TRUE( li3 != nullptr );
+
+	EXPECT_TRUE( li1->getPropertyString( propDef ) == "decimal" );
+	EXPECT_TRUE( li2->getPropertyString( propDef ) == "decimal" );
+	EXPECT_TRUE( li3->getPropertyString( propDef ) == "decimal" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleTypeDisc ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ul>
+				<li id="li1" style="list-style-type: disc;">Bullet item</li>
+			</ul>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* propDef =
+		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	ASSERT_TRUE( propDef != nullptr );
+
+	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
+	ASSERT_TRUE( li1 != nullptr );
+
+	EXPECT_TRUE( li1->getPropertyString( propDef ) == "disc" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleShorthand ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ol>
+				<li id="li1" style="list-style: decimal outside;">First</li>
+				<li id="li2" style="list-style: lower-alpha inside;">Second</li>
+				<li id="li3" style="list-style: none;">Third</li>
+			</ol>
+			<ul>
+				<li id="li4" style="list-style: disc;">Bullet</li>
+				<li id="li5" style="list-style: square outside;">Square</li>
+				<li id="li6" style="list-style: circle;">Circle</li>
+			</ul>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* typeDef =
+		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* posDef =
+		StyleSheetSpecification::instance()->getProperty( "list-style-position" );
+
+	for ( const char* id : { "li1", "li2", "li3", "li4", "li5", "li6" } ) {
+		auto* li = sceneNode->getRoot()->find( id )->asType<UIWidget>();
+		ASSERT_TRUE( li != nullptr );
+		EXPECT_TRUE( li->isType( UI_TYPE_HTML_LIST_ITEM ) );
+	}
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "decimal" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString( posDef ) == "outside" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString( typeDef ) == "lower-alpha" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString( posDef ) == "inside" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li3" )->asType<UIRichText>()->getPropertyString( typeDef ) == "none" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li4" )->asType<UIRichText>()->getPropertyString( typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString( typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString( posDef ) == "outside" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li6" )->asType<UIRichText>()->getPropertyString( typeDef ) == "circle" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleInheritanceFromUl ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<head>
+				<style>
+					ul.a { list-style-type: circle; }
+					ul.b { list-style-type: disc; }
+					ul.c { list-style-type: square; }
+					ol.d { list-style-type: decimal; }
+					ol.h { list-style-type: upper-roman; }
+				</style>
+			</head>
+			<body>
+				<ol class="h">
+					<li id="h1">Coffee</li>
+				</ol>
+				<ul class="a">
+					<li id="a1">Coffee</li>
+				</ul>
+				<ul class="b">
+					<li id="b1">Coffee</li>
+				</ul>
+				<ul class="c">
+					<li id="c1">Coffee</li>
+				</ul>
+				<ol class="d">
+					<li id="d1">Coffee</li>
+				</ol>
+			</body>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* typeDef =
+		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "h1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "upper-roman" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "a1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "circle" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "b1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "c1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "d1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "decimal" );
 
 	Engine::destroySingleton();
 }

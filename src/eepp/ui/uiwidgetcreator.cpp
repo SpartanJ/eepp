@@ -10,6 +10,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uihtmllistitem.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
@@ -158,7 +159,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["hr"] = UIRichText::NewHr;
 		registeredWidget["ul"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ul" ); };
 		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
-		registeredWidget["li"] = UIRichText::NewListItem;
+		registeredWidget["li"] = UIHTMLListItem::New;
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] {
 			auto img = UIImage::NewWithTag( "img" );

@@ -247,6 +247,9 @@ enum class PropertyId : Uint32 {
 	Bottom = String::hash( "bottom" ),
 	Left = String::hash( "left" ),
 	ZIndex = String::hash( "z-index" ),
+	ListStyleType = String::hash( "list-style-type" ),
+	ListStylePosition = String::hash( "list-style-position" ),
+	ListStyleImage = String::hash( "list-style-image" ),
 	DataLanguage = String::hash( "data-language" ), // Minor hack
 };
 

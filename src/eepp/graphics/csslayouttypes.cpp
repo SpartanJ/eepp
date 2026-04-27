@@ -85,4 +85,58 @@ CSSPosition CSSPositionHelper::fromString( std::string_view val ) {
 	return position;
 }
 
+std::string CSSListStyleTypeHelper::toString( CSSListStyleType type ) {
+	switch ( type ) {
+		case CSSListStyleType::Disc:
+			return "disc";
+		case CSSListStyleType::Circle:
+			return "circle";
+		case CSSListStyleType::Square:
+			return "square";
+		case CSSListStyleType::Decimal:
+			return "decimal";
+		case CSSListStyleType::LowerAlpha:
+			return "lower-alpha";
+		case CSSListStyleType::UpperAlpha:
+			return "upper-alpha";
+		case CSSListStyleType::LowerRoman:
+			return "lower-roman";
+		case CSSListStyleType::UpperRoman:
+			return "upper-roman";
+		case CSSListStyleType::None:
+		default:
+			return "none";
+	}
+}
+
+CSSListStyleType CSSListStyleTypeHelper::fromString( std::string_view val ) {
+	if ( val == "disc" )
+		return CSSListStyleType::Disc;
+	if ( val == "circle" )
+		return CSSListStyleType::Circle;
+	if ( val == "square" )
+		return CSSListStyleType::Square;
+	if ( val == "decimal" )
+		return CSSListStyleType::Decimal;
+	if ( val == "lower-alpha" )
+		return CSSListStyleType::LowerAlpha;
+	if ( val == "upper-alpha" )
+		return CSSListStyleType::UpperAlpha;
+	if ( val == "lower-roman" )
+		return CSSListStyleType::LowerRoman;
+	if ( val == "upper-roman" )
+		return CSSListStyleType::UpperRoman;
+	return CSSListStyleType::None;
+}
+
+std::string CSSListStylePositionHelper::toString( CSSListStylePosition pos ) {
+	return pos == CSSListStylePosition::Inside ? "inside" : "outside";
+}
+
+CSSListStylePosition CSSListStylePositionHelper::fromString( std::string_view val ) {
+	if ( val == "inside" )
+		return CSSListStylePosition::Inside;
+	return CSSListStylePosition::Outside;
+}
+
 }} // namespace EE::UI

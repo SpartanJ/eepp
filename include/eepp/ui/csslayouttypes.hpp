@@ -34,6 +34,32 @@ struct CSSPositionHelper {
 	static CSSPosition fromString( std::string_view val );
 };
 
+enum class CSSListStyleType {
+	None,
+	Disc,
+	Circle,
+	Square,
+	Decimal,
+	LowerAlpha,
+	UpperAlpha,
+	LowerRoman,
+	UpperRoman
+};
+
+struct CSSListStyleTypeHelper {
+	static std::string toString( CSSListStyleType type );
+
+	static CSSListStyleType fromString( std::string_view val );
+};
+
+enum class CSSListStylePosition { Outside, Inside };
+
+struct CSSListStylePositionHelper {
+	static std::string toString( CSSListStylePosition pos );
+
+	static CSSListStylePosition fromString( std::string_view val );
+};
+
 }} // namespace EE::UI
 
 #endif

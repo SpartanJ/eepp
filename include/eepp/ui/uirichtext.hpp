@@ -44,8 +44,6 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };
 
-	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
-
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
 	virtual Uint32 getType() const;

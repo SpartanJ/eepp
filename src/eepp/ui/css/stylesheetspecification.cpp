@@ -428,6 +428,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hidden", "" ).setType( PropertyType::Bool );
 	registerProperty( "display", "inline" ).setType( PropertyType::String );
 	registerProperty( "position", "static" ).setType( PropertyType::String );
+	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
+	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
+	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
 	registerProperty( "top", "auto" ).setType( PropertyType::NumberLength );
 	registerProperty( "right", "auto" ).setType( PropertyType::NumberLength );
 	registerProperty( "bottom", "auto" ).setType( PropertyType::NumberLength );
@@ -516,6 +519,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "border-bottom",
 					   { "border-bottom-width", "border-bottom-style", "border-bottom-color" },
 					   "border-side" );
+	registerShorthand( "list-style",
+					   { "list-style-type", "list-style-position", "list-style-image" },
+					   "list-style" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -1133,6 +1139,40 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 					StyleSheetProperty( propNames[pos], String::join( vec, ' ' ) ) );
 		}
 
+		return properties;
+	};
+
+	mShorthandParsers["list-style"] = []( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.empty() )
+			return {};
+		auto tokens = String::split( value, " ", "", "(" );
+		int typePos = getIndexEndingWith( propNames, "-type" );
+		int posPos = getIndexEndingWith( propNames, "-position" );
+		int imagePos = getIndexEndingWith( propNames, "-image" );
+		for ( auto& tok : tokens ) {
+			String::trimInPlace( tok );
+			if ( tok == "inside" || tok == "outside" ) {
+				if ( posPos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[posPos], tok ) );
+			} else if ( String::startsWith( tok, "url(" ) ) {
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else if ( tok == "none" ) {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+			}
+		}
 		return properties;
 	};
 }
