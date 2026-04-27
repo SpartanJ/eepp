@@ -4,7 +4,9 @@
 #include <pugixml/pugixml.hpp>
 
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
@@ -49,7 +51,20 @@ void UIHTMLImage::draw() {
 		FontStyleConfig fontStyleConfig;
 		fontStyleConfig.Font = themeManager->getDefaultFont();
 		fontStyleConfig.CharacterSize = themeManager->getDefaultFontSize();
-		fontStyleConfig.FontColor = Color( 128, 128, 128, mAlpha );
+
+		Color fontColor = Color::White;
+		Node* parent = mParentNode;
+		while ( parent ) {
+			if ( parent->isWidget() ) {
+				auto* w = parent->asType<UIWidget>();
+				if ( w->isType( UI_TYPE_RICHTEXT ) ) {
+					fontColor = static_cast<UIRichText*>( w )->getFontColor();
+					break;
+				}
+			}
+			parent = parent->getParent();
+		}
+		fontStyleConfig.FontColor = Color( fontColor.r, fontColor.g, fontColor.b, mAlpha );
 
 		Float textWidth = Text::getTextWidth( mAlt, fontStyleConfig );
 		Float availableWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
