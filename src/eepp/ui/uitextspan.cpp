@@ -2,6 +2,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -48,6 +49,16 @@ Uint32 UITextSpan::getType() const {
 
 bool UITextSpan::isType( const Uint32& type ) const {
 	return UITextSpan::getType() == type ? true : UIWidget::isType( type );
+}
+
+void UITextSpan::drawBorder() {
+	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
+		mBorder->setAlpha( mAlpha );
+		mBorder->draw( { std::trunc( mScreenPos.x - mPaddingPx.Left ),
+						 std::trunc( mScreenPos.y - mPaddingPx.Top ) },
+					   { std::floor( mSize.x + mPaddingPx.Left + mPaddingPx.Right ),
+						 std::floor( mSize.y + mPaddingPx.Top + mPaddingPx.Bottom ) } );
+	}
 }
 
 void UITextSpan::draw() {

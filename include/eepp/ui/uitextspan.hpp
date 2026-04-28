@@ -142,6 +142,8 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	explicit UITextSpan( const std::string& tag = "span" );
 
+	virtual void drawBorder();
+
 	virtual void onTextChanged();
 
 	virtual void onFontChanged();
