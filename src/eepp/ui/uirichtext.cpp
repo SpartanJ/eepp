@@ -10,6 +10,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <unordered_map>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -104,8 +105,26 @@ UIRichText* UIRichText::NewBr() {
 	return UILineBreak::New( "br" );
 };
 
+static void applyDefaultBlockMargins( UIWidget* widget, const std::string& tag ) {
+	static const UnorderedMap<std::string, std::pair<Float, Float>> defaults = {
+		{ "h1", { 0.67f, 0.67f } }, { "h2", { 0.83f, 0.83f } },	 { "h3", { 1.00f, 1.00f } },
+		{ "h4", { 1.33f, 1.33f } }, { "h5", { 1.67f, 1.67f } },	 { "h6", { 2.33f, 2.33f } },
+		{ "p", { 1.00f, 1.00f } },	{ "pre", { 1.00f, 1.00f } }, { "blockquote", { 1.00f, 1.00f } },
+		{ "hr", { 0.50f, 0.50f } },
+	};
+	auto it = defaults.find( tag );
+	if ( it != defaults.end() ) {
+		widget->applyProperty(
+			StyleSheetProperty( "margin-top", String::format( "%gem", it->second.first ) ) );
+		widget->applyProperty(
+			StyleSheetProperty( "margin-bottom", String::format( "%gem", it->second.second ) ) );
+	}
+}
+
 UIRichText* UIRichText::NewHr() {
-	return UILineBreak::New( "hr" );
+	auto* w = UILineBreak::New( "hr" );
+	applyDefaultBlockMargins( w, "hr" );
+	return w;
 };
 
 UIRichText* UIRichText::New() {
@@ -113,7 +132,9 @@ UIRichText* UIRichText::New() {
 }
 
 UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
-	return eeNew( UIRichText, ( tag ) );
+	auto* w = eeNew( UIRichText, ( tag ) );
+	applyDefaultBlockMargins( w, tag );
+	return w;
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {

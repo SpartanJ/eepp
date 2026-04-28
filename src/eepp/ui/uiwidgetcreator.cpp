@@ -10,11 +10,10 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmllistitem.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
-#include <eepp/ui/uihtmlimage.hpp>
-#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistview.hpp>
@@ -36,6 +35,7 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -159,8 +159,18 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["h6"] = UIRichText::NewH6;
 		registeredWidget["br"] = UIRichText::NewBr;
 		registeredWidget["hr"] = UIRichText::NewHr;
-		registeredWidget["ul"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ul" ); };
-		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
+		registeredWidget["ul"] = [] {
+			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ul" );
+			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
+			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			return w;
+		};
+		registeredWidget["ol"] = [] {
+			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ol" );
+			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
+			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			return w;
+		};
 		registeredWidget["li"] = UIHTMLListItem::New;
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] {

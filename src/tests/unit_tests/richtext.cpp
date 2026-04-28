@@ -12,6 +12,7 @@
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
@@ -24,6 +25,30 @@ using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
+
+static UI::UISceneNode* createRichTextScene() {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+									  WindowStyle::Default, WindowBackend::Default,
+									  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	if ( !font->loaded() ) {
+		Engine::destroySingleton();
+		return nullptr;
+	}
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	return sceneNode;
+}
+
+static void destroyRichTextScene( UI::UISceneNode* sceneNode ) {
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
 
 UTEST( RichText, basicFunctionality ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
@@ -329,20 +354,8 @@ UTEST( RichText, RichTextTest ) {
 }
 
 UTEST( UIRichText, IntegrationAndLayoutVerification ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt" layout_width="300dp" layout_height="wrap_content">Hello <span color="#FF0000">Red</span><Widget id="placeholder" layout_width="50dp" layout_height="50dp"/>World</RichText>
@@ -379,24 +392,12 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
 	EXPECT_NEAR( pos.x, expectedX, 2.0f );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, selection ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt" layout_width="300dp" layout_height="wrap_content" text-selection="true">Hello <span color="#FF0000">Red</span> World</RichText>
@@ -425,25 +426,12 @@ UTEST( UIRichText, selection ) {
 	rt->setTextSelectionRange( { 0, 11 } );
 	EXPECT_STRINGEQ( rt->getSelectionString(), "Hello Red W" );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, NestedWidgetsIntegration ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt" layout_width="300dp" layout_height="wrap_content">Hello <strong id="strong"><span>Beautiful </span><Widget id="placeholder" layout_width="50dp" layout_height="50dp"/> World</strong></RichText>
@@ -489,25 +477,12 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	// Determine if strong got its bounds correctly
 	EXPECT_GT( strongNode->getPixelsSize().getWidth(), 0 );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, DefaultStyleInheritance ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt" font-size="24dp" color="#FF0000" layout_width="300dp" layout_height="wrap_content">Default size<span font-size="16dp" color="#00FF00">Small</span></RichText>
@@ -539,8 +514,7 @@ UTEST( UIRichText, DefaultStyleInheritance ) {
 	EXPECT_EQ( text1->getCharacterSize(), (unsigned int)PixelDensity::dpToPxI( 16 ) );
 	EXPECT_EQ( text1->getFillColor().getValue(), Color::fromString( "#00FF00" ).getValue() );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, RichTextTest ) {
@@ -592,20 +566,8 @@ UTEST( UIRichText, RichTextTest ) {
 }
 
 UTEST( UIRichText, UIAnchorTest ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt" font-size="24dp" color="#FF0000" layout_width="300dp" layout_height="wrap_content">Default size <a id="anchor1" href="https://example.com" color="#00FF00">Link text</a> and <a id="anchor2" href="https://example.org">Another link</a></RichText>
@@ -637,25 +599,12 @@ UTEST( UIRichText, UIAnchorTest ) {
 		EXPECT_EQ( hitNode, anchor1 );
 	}
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, WhitespaceCollapseTest ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <RichText id="rt">
@@ -693,25 +642,12 @@ UTEST( UIRichText, WhitespaceCollapseTest ) {
 	// both sides.
 	EXPECT_EQ( spanCount, 1 );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, WhitespaceCollapseCodeTest ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 	    <vbox lw="mp" lh="mp">
@@ -741,24 +677,12 @@ UTEST( UIRichText, WhitespaceCollapseCodeTest ) {
 
 	EXPECT_TRUE( foundDotSpace );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIHTMLTable, basicLayout ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "HTML Table Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font != nullptr && font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<table id="table" layout_width="400dp" layout_height="wrap_content">
@@ -838,25 +762,12 @@ UTEST( UIHTMLTable, basicLayout ) {
 		}
 	}
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, WhitespaceCollapseBRTest ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 <h1 align="center" id="rt">
@@ -891,25 +802,12 @@ UTEST( UIRichText, WhitespaceCollapseBRTest ) {
 	checkSpansRecursive( rt, checkSpansRecursive );
 	EXPECT_FALSE( foundEcodeWithLeadingSpace );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, MarginsTest ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 <richtext id="rt" layout-width="wrap_content" layout-height="wrap_content">
@@ -958,25 +856,12 @@ UTEST( UIRichText, MarginsTest ) {
 	EXPECT_EQ( 170.f, rt->getPixelsSize().getWidth() );
 	EXPECT_EQ( 90.f, rt->getPixelsSize().getHeight() );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, ForcedLineBreak ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
-													  WindowBackend::Default, 32, {}, 1, false,
-													  true ) );
-
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UISceneNode* sceneNode = UISceneNode::New();
-	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(<richtext id="rt">Line 1<br/>Line 2</richtext>)xml";
 
@@ -989,23 +874,12 @@ UTEST( UIRichText, ForcedLineBreak ) {
 	const auto& richText = rt->getRichText();
 	EXPECT_EQ( richText.getLines().size(), (size_t)3 );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, CustomBRHeight ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
-													  WindowBackend::Default, 32, {}, 1, false,
-													  true ) );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UISceneNode* sceneNode = UISceneNode::New();
-	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(<richtext id="rt">Line 1<br font-size="50px"/>Line 2</richtext>)xml";
 
@@ -1024,24 +898,12 @@ UTEST( UIRichText, CustomBRHeight ) {
 		EXPECT_GT( lines[2].height, 0.f );
 	}
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, MinMaxWidth ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Min/Max Width Test",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
@@ -1069,24 +931,12 @@ UTEST( UIRichText, MinMaxWidth ) {
 	EXPECT_GT( rtMaxFixed->getSize().getHeight(),
 			   PixelDensity::dpToPx( 30 ) ); // should wrap to multiple lines
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, MinMaxWidthChildren ) {
-	Engine::instance()->createWindow(
-		WindowSettings( 800, 600, "RichText Min/Max Width Children Test", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
@@ -1114,24 +964,12 @@ UTEST( UIRichText, MinMaxWidthChildren ) {
 	EXPECT_LE( childWidget->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
 	EXPECT_GT( childWidget->getSize().getWidth(), 0 ); // Assert it's not 0
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, MatchParentChildPadding ) {
-	Engine::instance()->createWindow(
-		WindowSettings( 800, 600, "RichText MatchParent Child Padding Test", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
@@ -1155,24 +993,12 @@ UTEST( UIRichText, MatchParentChildPadding ) {
 
 	EXPECT_EQ( childWidth, expectedChildWidth );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UILayout, MinMaxWidthChildren ) {
-	Engine::instance()->createWindow(
-		WindowSettings( 800, 600, "Layout Min/Max Width Children Test", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
-	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
@@ -1199,24 +1025,12 @@ UTEST( UILayout, MinMaxWidthChildren ) {
 	EXPECT_LE( childWidget2->getSize().getWidth(), PixelDensity::dpToPx( 150 ) );
 	EXPECT_GT( childWidget2->getSize().getWidth(), 0 ); // Assert it's not 0
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, InvalidWidthLengthComputation ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UISceneNode* sceneNode = UISceneNode::New();
-	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
@@ -1258,24 +1072,12 @@ UTEST( UIRichText, InvalidWidthLengthComputation ) {
 
 	EXPECT_LE( anchor->getSize().getWidth(), parent->getSize().getWidth() );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, InvalidWidthLengthComputation2 ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width 2",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UISceneNode* sceneNode = UISceneNode::New();
-	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
@@ -1323,24 +1125,12 @@ UTEST( UIRichText, InvalidWidthLengthComputation2 ) {
 	EXPECT_GT( anchorSpan->getSize().getWidth(), 0 );
 	EXPECT_LE( anchor->getSize().getWidth(), parent->getSize().getWidth() );
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, InvalidWidthLengthComputation3 ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width 3",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
-	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	ASSERT_TRUE( font->loaded() );
-	FontFamily::loadFromRegular( font );
-
-	UISceneNode* sceneNode = UISceneNode::New();
-	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
-	themeManager->setDefaultFont( font );
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
 
 	String xml = R"xml(
 		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
@@ -1376,8 +1166,7 @@ UTEST( UIRichText, InvalidWidthLengthComputation3 ) {
 		EXPECT_LE( title->getPixelsSize().getWidth(), item->getPixelsSize().getWidth() );
 	}
 
-	eeDelete( sceneNode );
-	Engine::destroySingleton();
+	destroyRichTextScene( sceneNode );
 }
 
 UTEST( UIRichText, InvalidWidthLengthComputation4 ) {
@@ -1442,4 +1231,160 @@ UTEST( UIRichText, InvalidWidthLengthComputation4 ) {
 		EXPECT_LE( item->getPixelsSize().getWidth(), anchor->getPixelsSize().getWidth() );
 		EXPECT_LE( title->getPixelsSize().getWidth(), item->getPixelsSize().getWidth() );
 	}
+}
+
+UTEST( UIRichText, DefaultBlockMarginsFromHTML ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String html = R"html(
+		<!doctype html>
+		<html><body>
+			<p id="p">Paragraph</p>
+			<h1 id="h1">H1</h1>
+			<h2 id="h2">H2</h2>
+			<h3 id="h3">H3</h3>
+			<h4 id="h4">H4</h4>
+			<h5 id="h5">H5</h5>
+			<h6 id="h6">H6</h6>
+			<pre id="pre">Pre</pre>
+			<blockquote id="bq">BQ</blockquote>
+			<hr id="hr" />
+			<div id="div">Div</div>
+		</body></html>
+	)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Time::Zero );
+
+	auto checkMargin = [&]( UIWidget* w, const char* name, bool expectNonZero ) {
+		ASSERT_TRUE_MSG( w != nullptr, String::format( "%s not found", name ).c_str() );
+		Rectf margin = w->getLayoutPixelsMargin();
+		if ( expectNonZero ) {
+			EXPECT_GT_MSG( margin.Top, 0.f,
+						   String::format( "%s margin-top should be > 0", name ).c_str() );
+			EXPECT_GT_MSG( margin.Bottom, 0.f,
+						   String::format( "%s margin-bottom should be > 0", name ).c_str() );
+		} else {
+			EXPECT_EQ_MSG( margin.Top, 0.f,
+						   String::format( "%s margin-top should be 0", name ).c_str() );
+			EXPECT_EQ_MSG( margin.Bottom, 0.f,
+						   String::format( "%s margin-bottom should be 0", name ).c_str() );
+		}
+	};
+
+	checkMargin( sceneNode->find<UIWidget>( "p" ), "p", true );
+	checkMargin( sceneNode->find<UIWidget>( "h1" ), "h1", true );
+	checkMargin( sceneNode->find<UIWidget>( "h2" ), "h2", true );
+	checkMargin( sceneNode->find<UIWidget>( "h3" ), "h3", true );
+	checkMargin( sceneNode->find<UIWidget>( "h4" ), "h4", true );
+	checkMargin( sceneNode->find<UIWidget>( "h5" ), "h5", true );
+	checkMargin( sceneNode->find<UIWidget>( "h6" ), "h6", true );
+	checkMargin( sceneNode->find<UIWidget>( "pre" ), "pre", true );
+	checkMargin( sceneNode->find<UIWidget>( "bq" ), "blockquote", true );
+	checkMargin( sceneNode->find<UIWidget>( "hr" ), "hr", true );
+	checkMargin( sceneNode->find<UIWidget>( "div" ), "div", false );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, DefaultBlockMarginsCssReset ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String html = R"html(
+		<!doctype html>
+		<html><body>
+			<p id="p">Paragraph</p>
+			<h1 id="h1">H1</h1>
+			<h2 id="h2">H2</h2>
+			<blockquote id="bq">BQ</blockquote>
+			<hr id="hr" />
+		</body></html>
+	)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->combineStyleSheet( "* { margin: 0; }" );
+	sceneNode->update( Time::Zero );
+
+	auto checkZeroMargin = [&]( UIWidget* w, const char* name ) {
+		ASSERT_TRUE_MSG( w != nullptr, String::format( "%s not found", name ).c_str() );
+		Rectf margin = w->getLayoutPixelsMargin();
+		EXPECT_EQ_MSG( margin.Top, 0.f,
+					   String::format( "%s margin-top should be 0 after reset", name ).c_str() );
+		EXPECT_EQ_MSG( margin.Bottom, 0.f,
+					   String::format( "%s margin-bottom should be 0 after reset", name ).c_str() );
+	};
+
+	checkZeroMargin( sceneNode->find<UIWidget>( "p" ), "p" );
+	checkZeroMargin( sceneNode->find<UIWidget>( "h1" ), "h1" );
+	checkZeroMargin( sceneNode->find<UIWidget>( "h2" ), "h2" );
+	checkZeroMargin( sceneNode->find<UIWidget>( "bq" ), "blockquote" );
+	checkZeroMargin( sceneNode->find<UIWidget>( "hr" ), "hr" );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, DefaultBlockMarginsOlUl ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String html = R"html(
+		<!doctype html>
+		<html><body>
+			<ol id="ol"><li>Ordered item</li></ol>
+			<ul id="ul"><li>Unordered item</li></ul>
+		</body></html>
+	)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Time::Zero );
+
+	UIWidget* ol = sceneNode->find<UIWidget>( "ol" );
+	ASSERT_TRUE( ol != nullptr );
+	Rectf olMargin = ol->getLayoutPixelsMargin();
+	EXPECT_GT( olMargin.Top, 0.f );
+	EXPECT_GT( olMargin.Bottom, 0.f );
+
+	UIWidget* ul = sceneNode->find<UIWidget>( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	Rectf ulMargin = ul->getLayoutPixelsMargin();
+	EXPECT_GT( ulMargin.Top, 0.f );
+	EXPECT_GT( ulMargin.Bottom, 0.f );
+
+	EXPECT_EQ( olMargin.Top, ulMargin.Top );
+	EXPECT_EQ( olMargin.Bottom, ulMargin.Bottom );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, DefaultBlockMarginsOlUlCssReset ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String html = R"html(
+		<!doctype html>
+		<html><body>
+			<ol id="ol"><li>Item</li></ol>
+			<ul id="ul"><li>Item</li></ul>
+		</body></html>
+	)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->combineStyleSheet( "* { margin: 0; }" );
+	sceneNode->update( Time::Zero );
+
+	UIWidget* ol = sceneNode->find<UIWidget>( "ol" );
+	ASSERT_TRUE( ol != nullptr );
+	Rectf olMargin = ol->getLayoutPixelsMargin();
+	EXPECT_EQ( olMargin.Top, 0.f );
+	EXPECT_EQ( olMargin.Bottom, 0.f );
+
+	UIWidget* ul = sceneNode->find<UIWidget>( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	Rectf ulMargin = ul->getLayoutPixelsMargin();
+	EXPECT_EQ( ulMargin.Top, 0.f );
+	EXPECT_EQ( ulMargin.Bottom, 0.f );
+
+	destroyRichTextScene( sceneNode );
 }

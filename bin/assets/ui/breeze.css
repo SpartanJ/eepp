@@ -83,37 +83,31 @@ em {
 
 h1 {
 	font-size: 2em;
-	margin: 0.67em 0;
 	font-weight: bold;
 }
 
 h2 {
 	font-size: 1.5em;
-	margin: 0.83em 0;
 	font-weight: bold;
 }
 
 h3 {
 	font-size: 1.17em;
-	margin: 1em 0;
 	font-weight: bold;
 }
 
 h4 {
 	font-size: 1em;
-	margin: 1.33em 0;
 	font-weight: bold;
 }
 
 h5 {
 	font-size: 0.83em;
-	margin: 1.67em 0;
 	font-weight: bold;
 }
 
 h6 {
 	font-size: 0.67em;
-	margin: 2.33em 0;
 	font-weight: bold;
 }
 
@@ -124,23 +118,10 @@ table, td {
 hr {
 	min-height: 1dp;
 	background-color: gray;
-	margin: 0.5em 0;
 }
 
 center {
 	text-align: center;
-}
-
-p, ol, ul, pre, blockquote {
-	margin: 1em 0;
-}
-
-li > p {
-	margin: 0;
-}
-
-ol, ul {
-	margin: 0.67em 0;
 }
 
 ul > li,
@@ -182,14 +163,6 @@ blockquote {
 	border-left: 2dp solid var(--tab-line);
 }
 
-blockquote > *:first-child {
-	margin-top: 0dp;
-}
-
-blockquote > *:last-child {
-	margin-bottom: 0dp;
-}
-
 MarkdownView p,
 MarkdownView ol,
 MarkdownView ul,
@@ -213,6 +186,10 @@ MarkdownView {
 	background-color: var(--list-back);
 	padding: 4dp;
 }
+
+MarkdownView li > p { margin: 0; }
+MarkdownView blockquote > *:first-child { margin-top: 0dp; }
+MarkdownView blockquote > *:last-child { margin-bottom: 0dp; }
 
 MarkdownView h1,
 MarkdownView h2 {

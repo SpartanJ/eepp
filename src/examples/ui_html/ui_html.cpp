@@ -39,8 +39,9 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	UIApplication app(
 		WindowSettings{ 1280, 720, "eepp - UI HTML Example" },
 		UIApplication::Settings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f ),
-		ContextSettings(
-			false, benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate ) );
+		ContextSettings( false,
+						 benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate,
+						 4 ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
 	Log::instance()->setLogToStdOut( true );
