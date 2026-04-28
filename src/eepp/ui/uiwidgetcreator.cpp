@@ -138,7 +138,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["span"] = UITextSpan::New;
 		registeredWidget["em"] = UITextSpan::NewEmphasis;
 		registeredWidget["b"] = UITextSpan::NewBold;
-		registeredWidget["strong"] = UITextSpan::NewBold;
+		registeredWidget["strong"] = UITextSpan::NewStrong;
 		registeredWidget["small"] = UITextSpan::NewSmall;
 		registeredWidget["i"] = UITextSpan::NewItalics;
 		registeredWidget["u"] = UITextSpan::NewUnderline;
