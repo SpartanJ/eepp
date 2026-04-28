@@ -362,8 +362,8 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	ASSERT_EQ( blocks.size(), (size_t)4 );
 
 	// Check Text block
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
-	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[1] ) );
+	auto text1 = std::get<RichText::SpanBlock>( blocks[1] ).text;
 	EXPECT_TRUE( text1->getFillColor() == Color::fromString( "#FF0000" ) );
 
 	// Check CustomSize block
@@ -374,7 +374,7 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
 	ASSERT_TRUE( placeholder != nullptr );
 
-	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
+	auto text0 = std::get<RichText::SpanBlock>( blocks[0] ).text;
 	Vector2f pos = placeholder->getPixelsPosition();
 	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
 	EXPECT_NEAR( pos.x, expectedX, 2.0f );
@@ -464,10 +464,10 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	ASSERT_EQ( blocks.size(), (size_t)4 );
 
 	// Check block types
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[0] ) );
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[0] ) );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[1] ) );
 	EXPECT_TRUE( std::holds_alternative<RichText::CustomBlock>( blocks[2] ) );
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[3] ) );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[3] ) );
 
 	EXPECT_EQ( std::get<RichText::CustomBlock>( blocks[2] ).size.getWidth(),
 			   PixelDensity::dpToPx( 50 ) );
@@ -478,8 +478,8 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
 	ASSERT_TRUE( placeholder != nullptr );
 
-	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
-	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+	auto text0 = std::get<RichText::SpanBlock>( blocks[0] ).text;
+	auto text1 = std::get<RichText::SpanBlock>( blocks[1] ).text;
 
 	Vector2f pos = placeholder->getScreenPos();
 	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
@@ -528,14 +528,14 @@ UTEST( UIRichText, DefaultStyleInheritance ) {
 	// blocks[1] should be "Small" with overridden size and color
 	ASSERT_TRUE( blocks.size() >= 2 );
 
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[0] ) );
-	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[0] ) );
+	auto text0 = std::get<RichText::SpanBlock>( blocks[0] ).text;
 	EXPECT_EQ( text0->getCharacterSize(), rt->getFontSize() );
 	EXPECT_EQ( text0->getFillColor().getValue(), rt->getFontColor().getValue() );
 	EXPECT_EQ( text0->getFillColor().getValue(), Color::fromString( "#FF0000" ).getValue() );
 
-	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
-	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+	EXPECT_TRUE( std::holds_alternative<RichText::SpanBlock>( blocks[1] ) );
+	auto text1 = std::get<RichText::SpanBlock>( blocks[1] ).text;
 	EXPECT_EQ( text1->getCharacterSize(), (unsigned int)PixelDensity::dpToPxI( 16 ) );
 	EXPECT_EQ( text1->getFillColor().getValue(), Color::fromString( "#00FF00" ).getValue() );
 

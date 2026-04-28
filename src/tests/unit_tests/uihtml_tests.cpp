@@ -140,6 +140,74 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIRichText, anchorMargins ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "Anchor Margins Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/anchor_margins.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-anchor-margins", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, spanPadding ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "Span Padding Test", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/span_padding.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-span-padding", "html" );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLTable, complexLayout3 ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "HTML Tables Test 3", WindowStyle::Default,
@@ -587,8 +655,7 @@ UTEST( UILayout, listStyleTypeDecimal ) {
 
 	sceneNode->updateDirtyLayouts();
 
-	const auto* propDef =
-		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* propDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
 	ASSERT_TRUE( propDef != nullptr );
 
 	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
@@ -619,8 +686,7 @@ UTEST( UILayout, listStyleTypeDisc ) {
 
 	sceneNode->updateDirtyLayouts();
 
-	const auto* propDef =
-		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* propDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
 	ASSERT_TRUE( propDef != nullptr );
 
 	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
@@ -651,10 +717,8 @@ UTEST( UILayout, listStyleShorthand ) {
 
 	sceneNode->updateDirtyLayouts();
 
-	const auto* typeDef =
-		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
-	const auto* posDef =
-		StyleSheetSpecification::instance()->getProperty( "list-style-position" );
+	const auto* typeDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* posDef = StyleSheetSpecification::instance()->getProperty( "list-style-position" );
 
 	for ( const char* id : { "li1", "li2", "li3", "li4", "li5", "li6" } ) {
 		auto* li = sceneNode->getRoot()->find( id )->asType<UIWidget>();
@@ -662,18 +726,27 @@ UTEST( UILayout, listStyleShorthand ) {
 		EXPECT_TRUE( li->isType( UI_TYPE_HTML_LIST_ITEM ) );
 	}
 
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "decimal" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString( posDef ) == "outside" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "decimal" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "outside" );
 
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString( typeDef ) == "lower-alpha" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString( posDef ) == "inside" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "lower-alpha" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "inside" );
 
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li3" )->asType<UIRichText>()->getPropertyString( typeDef ) == "none" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li3" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "none" );
 
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li4" )->asType<UIRichText>()->getPropertyString( typeDef ) == "disc" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString( typeDef ) == "square" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString( posDef ) == "outside" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "li6" )->asType<UIRichText>()->getPropertyString( typeDef ) == "circle" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li4" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "outside" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li6" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "circle" );
 
 	Engine::destroySingleton();
 }
@@ -714,14 +787,18 @@ UTEST( UILayout, listStyleInheritanceFromUl ) {
 
 	sceneNode->updateDirtyLayouts();
 
-	const auto* typeDef =
-		StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* typeDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
 
-	EXPECT_TRUE( sceneNode->getRoot()->find( "h1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "upper-roman" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "a1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "circle" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "b1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "disc" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "c1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "square" );
-	EXPECT_TRUE( sceneNode->getRoot()->find( "d1" )->asType<UIRichText>()->getPropertyString( typeDef ) == "decimal" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "h1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "upper-roman" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "a1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "circle" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "b1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "c1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "d1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "decimal" );
 
 	Engine::destroySingleton();
 }

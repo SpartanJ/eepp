@@ -592,7 +592,9 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
 			if ( !span->getText().empty() ) {
-				richText.addSpan( span->getText(), span->getFontStyleConfig() );
+				Rectf margin = span->getLayoutPixelsMargin();
+				Rectf padding = span->getPixelsPadding();
+				richText.addSpan( span->getText(), span->getFontStyleConfig(), margin, padding );
 			}
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
