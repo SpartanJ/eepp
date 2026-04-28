@@ -522,6 +522,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "list-style",
 					   { "list-style-type", "list-style-position", "list-style-image" },
 					   "list-style" );
+	registerShorthand( "font", { "font-style", "font-size", "line-spacing", "font-family" },
+					   "font" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -1173,6 +1175,152 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
 			}
 		}
+		return properties;
+	};
+
+	mShorthandParsers["font"] = []( const ShorthandDefinition* shorthand,
+									std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+
+		std::string lowerVal = String::toLower( value );
+		static const std::string systemFonts[] = { "caption",	  "icon",		   "menu",
+												   "message-box", "small-caption", "status-bar" };
+		for ( const auto& sysFont : systemFonts ) {
+			if ( lowerVal == sysFont )
+				return {};
+		}
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+
+		int stylePos = getIndexEndingWith( propNames, "-style" );
+		int sizePos = getIndexEndingWith( propNames, "-size" );
+		int linePos = getIndexEndingWith( propNames, "-spacing" );
+		int familyPos = getIndexEndingWith( propNames, "-family" );
+
+		static const std::string sizeKeywords[] = {
+			"xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large", "xxx-large" };
+
+		auto isSizeKeyword = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			for ( const auto& kw : sizeKeywords ) {
+				if ( lt == kw )
+					return true;
+			}
+			return false;
+		};
+
+		auto isStyleWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "italic" || lt == "oblique" || lt == "normal";
+		};
+
+		auto isWeightWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "bold" || lt == "bolder" || lt == "lighter" || lt == "100" ||
+				   lt == "200" || lt == "300" || lt == "400" || lt == "500" || lt == "600" ||
+				   lt == "700" || lt == "800" || lt == "900";
+		};
+
+		auto isNumberOrLength = []( const std::string& t ) {
+			if ( t.empty() )
+				return false;
+			return ( t[0] >= '0' && t[0] <= '9' ) || t[0] == '.' || t[0] == '-';
+		};
+
+		std::vector<std::string> tokens = String::split( value, " ", "", "(", "\"" );
+		std::string styleStr;
+		std::string sizeStr;
+		std::string lineStr;
+		std::string familyStr;
+		bool inLineHeight = false;
+
+		for ( size_t i = 0; i < tokens.size(); i++ ) {
+			std::string tok = tokens[i];
+			String::trimInPlace( tok );
+			if ( tok.empty() )
+				continue;
+
+			if ( tok == "/" ) {
+				inLineHeight = true;
+				continue;
+			}
+
+			if ( !inLineHeight ) {
+				size_t slashPos = tok.find( '/' );
+				if ( slashPos != std::string::npos ) {
+					if ( slashPos == 0 ) {
+						lineStr = tok.substr( 1 );
+						String::trimInPlace( lineStr );
+						continue;
+					}
+					sizeStr = tok.substr( 0, slashPos );
+					lineStr = tok.substr( slashPos + 1 );
+					String::trimInPlace( lineStr );
+					continue;
+				}
+			}
+
+			if ( inLineHeight ) {
+				lineStr += ( lineStr.empty() ? "" : " " ) + tok;
+				inLineHeight = false;
+				continue;
+			}
+
+			if ( !sizeStr.empty() && familyStr.empty() && !isStyleWord( tok ) &&
+				 !isWeightWord( tok ) ) {
+				familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+				continue;
+			}
+
+			if ( isStyleWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( !styleStr.empty() )
+						styleStr += "|";
+					styleStr += lt;
+				}
+				continue;
+			}
+
+			if ( isWeightWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( !styleStr.empty() )
+						styleStr += "|";
+					styleStr += "bold";
+				}
+				continue;
+			}
+
+			if ( sizeStr.empty() && ( isNumberOrLength( tok ) || isSizeKeyword( tok ) ) ) {
+				sizeStr = tok;
+				continue;
+			}
+
+			familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+		}
+
+		if ( !sizeStr.empty() ) {
+			if ( stylePos != -1 && !styleStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[stylePos], styleStr ) );
+			if ( sizePos != -1 )
+				properties.emplace_back( StyleSheetProperty( propNames[sizePos], sizeStr ) );
+			if ( linePos != -1 && !lineStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[linePos], lineStr ) );
+			if ( familyPos != -1 && !familyStr.empty() ) {
+				String::trimInPlace( familyStr );
+				if ( familyStr.size() >= 2 &&
+					 ( ( familyStr[0] == '"' && familyStr.back() == '"' ) ||
+					   ( familyStr[0] == '\'' && familyStr.back() == '\'' ) ) ) {
+					familyStr = familyStr.substr( 1, familyStr.size() - 2 );
+				}
+				properties.emplace_back( StyleSheetProperty( propNames[familyPos], familyStr ) );
+			}
+		}
+
 		return properties;
 	};
 }
