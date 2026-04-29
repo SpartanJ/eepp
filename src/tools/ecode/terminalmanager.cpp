@@ -50,14 +50,14 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	} else if ( splitter ) {
 		switch ( config.term.newTerminalOrientation ) {
 			case NewTerminalOrientation::Vertical: {
-				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
+				auto cwd = workingDir.empty() ? getSelectedWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
 				term =
 					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
-				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
+				auto cwd = workingDir.empty() ? getSelectedWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
 				term =
 					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
@@ -261,6 +261,100 @@ void TerminalManager::configureTerminalScrollback() {
 			msgBox->closeWindow();
 		}
 	} );
+}
+
+void TerminalManager::configureTerminalWorkingDir() {
+	static const auto layout( R"xml(
+	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow"
+		window-title='@string(terminal_working_dir_configuration, "Terminal Default Working Directory Configuration")'>
+		<vbox lw="mp" lh="wrap_content" padding="4dp">
+			<TextView text='@string(configure_terminal_default_working_dir, "Configure Terminal default working directory:")' font-size="14dp" margin-bottom="8dp" />
+			<DropDownList id="working_dir_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true" />
+			<hbox id="other_dir_container" lw="mp" lh="wrap_content" margin-top="8dp" visible="false">
+				<TextInput id="other_dir_input" lw="0" lw8="1" lh="wrap_content" hint="@string(other_working_directory, Other Working Directory)" />
+				<PushButton id="other_dir_browse" lw="wrap_content" lh="wrap_content" text="..." margin-left="4dp" />
+			</hbox>
+			<hbox layout_gravity="right" margin-top="8dp">
+				<PushButton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
+				<PushButton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
+			</hbox>
+		</vbox>
+	</window>
+	)xml" );
+	UIWindow* window = mApp->getUISceneNode()->loadLayoutFromString( layout )->asType<UIWindow>();
+	UIDropDownList* workingDirCombo = window->find<UIDropDownList>( "working_dir_combo" );
+	UIWidget* otherDirContainer = window->find<UIWidget>( "other_dir_container" );
+	UITextInput* otherDirInput = window->find<UITextInput>( "other_dir_input" );
+	UIPushButton* otherDirBrowse = window->find<UIPushButton>( "other_dir_browse" );
+	UIPushButton* ok = window->find<UIPushButton>( "ok" );
+	UIPushButton* cancel = window->find<UIPushButton>( "cancel" );
+
+	const std::vector<EE::String> options = {
+		mApp->i18n( "project_root_directory", "Project Root Directory" ),
+		mApp->i18n( "current_file_directory", "Current File Directory" ),
+		mApp->i18n( "user_home_directory", "User Home" ),
+		mApp->i18n( "other_directory", "Other" ) };
+
+	workingDirCombo->getListBox()->addListBoxItems( options );
+	workingDirCombo->getListBox()->setSelected(
+		static_cast<Uint32>( mApp->getConfig().term.workingDir ) );
+	otherDirInput->setText( mApp->getConfig().term.workingDirOther );
+
+	const auto updateOtherVisible = [otherDirContainer]( TerminalWorkingDir::Mode mode ) {
+		otherDirContainer->setVisible( mode == TerminalWorkingDir::Other );
+	};
+
+	updateOtherVisible( mApp->getConfig().term.workingDir );
+
+	workingDirCombo->on( Event::OnValueChange, [updateOtherVisible, workingDirCombo]( auto ) {
+		updateOtherVisible( static_cast<TerminalWorkingDir::Mode>(
+			workingDirCombo->getListBox()->getItemSelectedIndex() ) );
+	} );
+
+	otherDirBrowse->onClick( [this, otherDirInput]( auto ) {
+		UIFileDialog* dialog = mApp->openFileDialog( false );
+		dialog->setTitle( mApp->i18n( "select_working_directory", "Select Working Directory" ) );
+		dialog->addFilePattern( "*", true );
+		dialog->setAllowFolderSelect( true );
+		dialog->on( Event::OpenFile, [otherDirInput, dialog]( const Event* ) {
+			otherDirInput->setText( dialog->getFullPath() );
+		} );
+	} );
+
+	ok->onClick( [this, window, workingDirCombo, otherDirInput]( auto ) {
+		mApp->getConfig().term.workingDir = static_cast<TerminalWorkingDir::Mode>(
+			workingDirCombo->getListBox()->getItemSelectedIndex() );
+		mApp->getConfig().term.workingDirOther = otherDirInput->getText().toUtf8();
+		mApp->saveConfig();
+		window->closeWindow();
+	} );
+
+	cancel->onClick( [window]( auto ) { window->closeWindow(); } );
+
+	window->on( Event::KeyDown, [window]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+			window->closeWindow();
+	} );
+
+	window->center();
+	window->show();
+}
+
+std::string TerminalManager::getSelectedWorkingDir() const {
+	const auto& config = mApp->getConfig().term;
+	switch ( config.workingDir ) {
+		case TerminalWorkingDir::ProjectRoot:
+			return !mApp->getCurrentProject().empty() ? mApp->getCurrentProject()
+													  : mApp->getCurrentWorkingDir();
+		case TerminalWorkingDir::CurrentFileDir:
+			return mApp->getCurrentFileDir();
+		case TerminalWorkingDir::UserHome:
+			return Sys::getUserDirectory();
+		case TerminalWorkingDir::Other:
+			return config.workingDirOther;
+		default:
+			return mApp->getCurrentWorkingDir();
+	}
 }
 
 UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
@@ -536,7 +630,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, env, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
+		program, args, env, !workingDir.empty() ? workingDir : getSelectedWorkingDir(),
 		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer, keepAlive );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
@@ -555,6 +649,11 @@ UITerminal* TerminalManager::createNewTerminal(
 	ret.first->setIcon( mApp->findIcon( "filetype-bash" ) );
 	mApp->getSplitter()->removeUnusedTab( tabWidget, true, false );
 
+	term->removeEventsOfType( Event::OnFocus );
+	term->on( Event::OnFocus, [this, term]( const Event* ) {
+		mApp->getSplitter()->setCurrentWidget(
+			mApp->getSplitter()->getBaseLayout()->inParentTreeOf( term ) ? term : nullptr );
+	} );
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );

@@ -37,7 +37,7 @@ static constexpr const char* GIT_STASH_TOOLTIP_CLASS = "git-stash-tooltip";
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
-		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 4 }, GitPlugin::NewSync };
+		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 5 }, GitPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -182,7 +182,7 @@ class GitPlugin : public PluginBase {
 
 	void diff( const Git::DiffMode mode, const std::string& repoPath );
 
-	void diff( const std::string& file, bool isStaged );
+	void diff( const std::string& file, Git::GitStatusType status );
 
 	void openFile( const std::string& file );
 

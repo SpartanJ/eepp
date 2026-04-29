@@ -1,4 +1,5 @@
 #include "settingsmenu.hpp"
+#include "uitreeviewfs.hpp"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -343,6 +344,53 @@ UITerminal* SettingsMenu::getCurrentTerminal() const {
 UIMenu* SettingsMenu::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
+	auto setupAutoIndentMenu = [this](
+								   UIPopUpMenu* parentMenu, const std::string& menuId,
+								   std::function<TextDocument::AutoIndentConfig()> getConfig,
+								   std::function<void( TextDocument::AutoIndentConfig )> onClick ) {
+		UIPopUpMenu* autoIndentMenu = UIPopUpMenu::New();
+		auto subMenu =
+			parentMenu->addSubMenu( i18n( "auto_indent", "Auto-Indent" ), nullptr, autoIndentMenu );
+		subMenu
+			->setTooltipText(
+				i18n( "auto_indent_tooltip",
+					  "Configures the automatic indentation behavior when pressing Enter.\n"
+					  "None: No automatic indentation.\n"
+					  "Preserve: Preserves the indentation level of the previous line.\n"
+					  "Smart: Preserves indentation and automatically indents between auto-closed "
+					  "brackets." ) )
+			->setId( menuId );
+		subMenu->on( Event::OnMenuShow, [this, autoIndentMenu, getConfig, onClick]( const Event* ) {
+			if ( autoIndentMenu->getCount() == 0 ) {
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_none", "None" ) )
+					->setId( "auto_indent_none" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_preserve", "Preserve" ) )
+					->setId( "auto_indent_preserve" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_smart", "Smart" ) )
+					->setId( "auto_indent_smart" );
+				autoIndentMenu->on( Event::OnItemClicked, [onClick]( const Event* event ) {
+					const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+					TextDocument::AutoIndentConfig autoIndent =
+						text == "auto_indent_none"		 ? TextDocument::AutoIndentConfig::None
+						: text == "auto_indent_preserve" ? TextDocument::AutoIndentConfig::Preserve
+														 : TextDocument::AutoIndentConfig::Smart;
+					onClick( autoIndent );
+				} );
+			}
+			TextDocument::AutoIndentConfig currentConfig = getConfig();
+			autoIndentMenu->getItemId( "auto_indent_none" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::None );
+			autoIndentMenu->getItemId( "auto_indent_preserve" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Preserve );
+			autoIndentMenu->getItemId( "auto_indent_smart" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Smart );
+		} );
+		return subMenu;
+	};
+
 	mDocMenu = UIPopUpMenu::New();
 
 	// **** CURRENT DOCUMENT ****
@@ -354,6 +402,18 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
+
+	setupAutoIndentMenu(
+		mDocMenu, "auto_indent_menu_cur",
+		[this]() {
+			return mSplitter->curEditorExistsAndFocused()
+					   ? mSplitter->getCurEditor()->getDocument().getAutoIndent()
+					   : TextDocument::AutoIndentConfig::Smart;
+		},
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			if ( mSplitter->curEditorExistsAndFocused() )
+				mSplitter->getCurEditor()->getDocument().setAutoIndent( autoIndent );
+		} );
 
 	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
@@ -542,6 +602,15 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" );
+
+	setupAutoIndentMenu(
+		mGlobalMenu, "auto_indent_menu", [this]() { return mApp->getConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getConfig().doc.autoIndent = autoIndent;
+			mSplitter->forEachEditor( [autoIndent]( UICodeEditor* editor ) {
+				editor->getDocument().setAutoIndent( autoIndent );
+			} );
+		} );
 
 	UIPopUpMenu* tabTypeMenuGlobal = UIPopUpMenu::New();
 	tabTypeMenuGlobal->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -802,6 +871,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" )
 		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
+
+	auto autoIndentProjectSubMenu = setupAutoIndentMenu(
+		mProjectDocMenu, "auto_indent_menu_project",
+		[this]() { return mApp->getProjectConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getProjectConfig().doc.autoIndent = autoIndent;
+		} );
+	autoIndentProjectSubMenu->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
 	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -1173,6 +1250,12 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
 		->setId( "configure-terminal-scrollback" );
 
+	mTerminalMenu
+		->add( i18n( "configure_terminal_working_dir",
+					 "Configure Terminal Default Working Directory" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-working-dir" ) )
+		->setId( "configure-terminal-working-dir" );
+
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
 		if ( "close-terminal-tab-on-exit" == id ) {
@@ -1238,7 +1321,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	mEditMenu
-		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
+		->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path" ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
 	mEditMenu
@@ -1681,8 +1764,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 				} );
 
 				mLineWrapMenu
-					->addSubMenu( i18n( "wrap_type_ellipsis", "Wrap Against..." ), nullptr,
-								  wrapTypeMenu )
+					->addSubMenu( i18n( "wrap_type", "Wrap Against" ), nullptr, wrapTypeMenu )
 					->setId( "wrap_type" );
 
 				mLineWrapMenu->addCheckBox( i18n( "keep_indentation", "Keep Indentation" ) )
@@ -1928,6 +2010,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "enable_horizontal_scrollbar", "Enable Horizontal ScrollBar" ) )
 		->setActive( mApp->getConfig().editor.horizontalScrollbar )
 		->setId( "enable-horizontal-scrollbar" );
+	mViewMenu->addCheckBox( i18n( "enable_inline_color_boxes", "Enable Color Boxes" ) )
+		->setActive( mApp->getConfig().editor.inlineColorBoxes )
+		->setTooltipText( i18n( "enable_inline_color_boxes_tooltip",
+								"Renders a background box of the parsed color directly behind the\n"
+								"text itself." ) )
+		->setId( "enable-inline-color-boxes" );
 	mViewMenu->addCheckBox( i18n( "enable_color_preview", "Enable Color Preview" ) )
 		->setActive( mApp->getConfig().editor.colorPreview )
 		->setTooltipText( i18n( "enable_color_preview_tooltip",
@@ -1972,13 +2060,13 @@ UIMenu* SettingsMenu::createViewMenu() {
 					   getKeybind( "toggle-menu-bar" ) )
 		->setId( "toggle-menu-bar" );
 	mViewMenu
-		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
-			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
+		->add( i18n( "move_panel_to_left", "Move Panel To Left" ), findIcon( "layout-left" ),
+			   getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
 	mViewMenu
-		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-right" ) )
+		->add( i18n( "move_panel_to_right", "Move Panel To Right" ), findIcon( "layout-right" ),
+			   getKeybind( "layout-right" ) )
 		->setId( "move-panel-right" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
 
@@ -2055,6 +2143,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 				editor->setHorizontalScrollBarEnabled(
 					mApp->getConfig().editor.horizontalScrollbar );
+			} );
+		} else if ( item->getId() == "enable-inline-color-boxes" ) {
+			mApp->getConfig().editor.inlineColorBoxes = item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->setEnableInlineColorBoxes( mApp->getConfig().editor.inlineColorBoxes );
 			} );
 		} else if ( item->getId() == "enable-color-preview" ) {
 			mApp->getConfig().editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
@@ -2163,12 +2256,11 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 
 UIMenu* SettingsMenu::createHelpMenu() {
 	mHelpMenu = UIPopUpMenu::New();
-	mHelpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
+	mHelpMenu->add( i18n( "ecode_source", "ecode Source Code" ), findIcon( "github" ) )
 		->setId( "ecode-source" );
-	mHelpMenu
-		->add( i18n( "check_for_updates_ellipsis", "Check for Updates..." ), findIcon( "refresh" ) )
+	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
-	mHelpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
+	mHelpMenu->add( i18n( "about_ecode", "About ecode" ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
 	mHelpMenu->on( Event::OnItemClicked,
 				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
@@ -2519,8 +2611,7 @@ void SettingsMenu::createProjectTreeMenu() {
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
 			->setId( "show-hidden-files" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu
-			->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 			->setId( "refresh-view" );
 		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
@@ -2580,12 +2671,20 @@ static void fsRemoveAll( const std::string& fpath ) {
 #endif
 }
 
-void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
+void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
 	mProjectTreeMenu = UIPopUpMenu::New();
 
-	if ( file.isDirectory() ) {
+	bool allFiles = true;
+	for ( const auto& file : files ) {
+		if ( file.isDirectory() ) {
+			allFiles = false;
+			break;
+		}
+	}
+
+	if ( files.size() == 1 && files[0].isDirectory() ) {
 		mProjectTreeMenu->add( i18n( "new_file_ellipsis", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
 		mProjectTreeMenu
@@ -2609,7 +2708,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->add( i18n( "find_in_folder_ellipsis", "Find in Folder..." ),
 				   findIcon( "file-search" ) )
 			->setId( "find_in_folder" );
-	} else {
+	} else if ( files.size() == 1 ) {
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
@@ -2621,28 +2720,43 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 				   findIcon( "file-add" ) )
 			->setId( "new_file_in_place" );
 		mProjectTreeMenu
+			->add( i18n( "new_folder_in_directory_ellipsis", "New Folder in directory..." ),
+				   findIcon( "folder-add" ) )
+			->setId( "new_folder_in_place" );
+		mProjectTreeMenu
 			->add( i18n( "duplicate_file_ellipsis", "Duplicate File..." ), findIcon( "file-copy" ) )
 			->setId( "duplicate_file" );
+	} else if ( allFiles && files.size() > 1 ) {
+		mProjectTreeMenu->add( i18n( "open_files", "Open Files" ), findIcon( "document-open" ) )
+			->setId( "open_files" );
 	}
-	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
-		->setId( "rename" );
+
+	if ( files.size() == 1 ) {
+		mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
+			->setId( "rename" );
+	}
+
 	mProjectTreeMenu
 		->add( i18n( "remove_ellipsis", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
 		->setId( "remove" );
 
-	if ( file.isDirectory() || file.isExecutable() ) {
-		mProjectTreeMenu->addSeparator();
+	if ( files.size() == 1 ) {
+		auto& file = files[0];
 
-		if ( file.isDirectory() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_dir_in_terminal" );
-		} else if ( file.isExecutable() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_in_terminal", "Execute in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_in_terminal" );
+		if ( file.isDirectory() || file.isExecutable() ) {
+			mProjectTreeMenu->addSeparator();
+
+			if ( file.isDirectory() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_dir_in_terminal" );
+			} else if ( file.isExecutable() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_in_terminal", "Execute in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_in_terminal" );
+			}
 		}
 	}
 
@@ -2658,8 +2772,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
 		->setId( "expand-all" );
 	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 		->setId( "refresh-view" );
 
 	if ( !mApp->getCurrentProject().empty() ) {
@@ -2669,26 +2782,37 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->setId( "configure-ignore-files" );
 	}
 
-	mProjectTreeMenu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+	mProjectTreeMenu->on( Event::OnItemClicked, [this, files]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) || files.empty() )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
+		auto file = files[0];
 
 		if ( "new_file" == id || "new_file_in_place" == id ) {
 			mApp->newFile( file );
-		} else if ( "new_folder" == id ) {
+		} else if ( "new_folder" == id || "new_folder_in_place" == id ) {
 			mApp->newFolder( file );
 		} else if ( "open_file" == id ) {
 			mApp->openFileFromPath( file.getFilepath() );
+		} else if ( "open_files" == id ) {
+			for ( const auto& file : files )
+				mApp->openFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
-			deleteFileDialog( file );
+			mApp->getProjectTreeView()->deleteSelectedFiles();
 		} else if ( "duplicate_file" == id ) {
 			UIMessageBox* msgBox = mApp->newInputMsgBox(
 				String::format( "%s \"%s\"",
 								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
 								file.getFileName().c_str() ),
 				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
+			std::string newFileName( file.getFileName() );
+			std::string ext( file.getExtension( false ) );
+			newFileName = FileSystem::fileRemoveExtension( newFileName );
+			newFileName += " (" + i18n( "filename_copy", "Copy" ) + ")";
+			if ( !ext.empty() )
+				newFileName += "." + ext;
+			msgBox->getTextInput()->setText( newFileName );
 			msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 				auto newFilePath( mApp->getNewFilePath( file, msgBox ) );
 				if ( !FileSystem::fileExists( newFilePath ) ) {
@@ -2867,7 +2991,7 @@ void SettingsMenu::createProjectMenu() {
 		->addRadioButton( "Objective-C++", hExtLanguageType == HExtLanguageType::ObjectiveCPP )
 		->setId( "objective-cpp" );
 
-	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
+	mProjectMenu->addSubMenu( i18n( "treat_h_files_as", "Treat .h files as" ), nullptr,
 							  mHExtLanguageTypeMenu );
 
 	mProjectMenu->addSeparator();

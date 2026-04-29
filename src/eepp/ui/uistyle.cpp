@@ -82,6 +82,19 @@ void UIStyle::load() {
 	subscribeNonCacheableStyles();
 
 	addStructurallyVolatileWidgetFromParent();
+
+	// applyInheritedProperties();
+}
+
+void UIStyle::applyInheritedProperties() {
+	const auto& props = StyleSheetSpecification::instance()->getInheritableProperties();
+	for ( const auto& propId : props ) {
+		if ( !hasLocalProperty( propId ) ) {
+			auto inheritedProp = getInheritedProperty( propId );
+			if ( inheritedProp )
+				mWidget->applyProperty( *inheritedProp );
+		}
+	}
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -196,9 +209,37 @@ UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChildren() {
 	return mStructurallyVolatileChildren;
 }
 
+const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id ) {
+	const auto* gProp = mGlobalDefinition ? mGlobalDefinition->getProperty( (Uint32)id ) : nullptr;
+	const auto* elProp = mElementStyle ? mElementStyle->getPropertyById( id ) : nullptr;
+	if ( elProp && gProp )
+		return elProp->getSpecificity() > gProp->getSpecificity() ? elProp : gProp;
+	return elProp ? elProp : gProp;
+}
+
 bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {
 	return ( mGlobalDefinition && mGlobalDefinition->getProperty( (Uint32)propertyId ) ) ||
 		   ( mElementStyle && mElementStyle->getPropertyById( propertyId ) );
+}
+
+bool UIStyle::hasLocalProperty( PropertyId propId ) const {
+	return ( mElementStyle && mElementStyle->getPropertyById( propId ) ) ||
+		   ( mDefinition && mDefinition->getProperty( (Uint32)propId ) );
+}
+
+CSS::StyleSheetProperty* UIStyle::getInheritedProperty( CSS::PropertyId propId ) const {
+	Node* parentNode = mWidget->getParent();
+	while ( parentNode && parentNode->isWidget() ) {
+		UIWidget* parent = parentNode->asType<UIWidget>();
+		UIStyle* parentStyle = parent->getUIStyle();
+		if ( parentStyle ) {
+			auto prop = parentStyle->getLocalProperty( (Uint32)propId );
+			if ( prop )
+				return prop;
+		}
+		parentNode = parent->getParent();
+	}
+	return nullptr;
 }
 
 void UIStyle::subscribeRelated( UIWidget* widget ) {
@@ -218,7 +259,7 @@ void UIStyle::applyLightDarkValue( std::string& value ) {
 		if ( tokenStart != std::string::npos ) {
 			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
 			if ( tokenEnd != std::string::npos ) {
-				auto fn( value.substr( tokenStart, tokenEnd + 1 ) );
+				auto fn( value.substr( tokenStart, tokenEnd - tokenStart + 1 ) );
 				auto function( FunctionString::parse( fn ) );
 				auto size = function.getParameters().size();
 				if ( size > 0 ) {
@@ -327,19 +368,58 @@ void UIStyle::onStateChange() {
 		for ( auto prop : changedProperties ) {
 			StyleSheetProperty* property = getLocalProperty( prop );
 
-			if ( nullptr == property || NULL == property->getPropertyDefinition() )
+			if ( nullptr == property || NULL == property->getPropertyDefinition() ) {
+				const auto def = StyleSheetSpecification::instance()->getProperty( prop );
+				if ( def && def->isInherited() ) {
+					StyleSheetProperty* inheritedProp =
+						getInheritedProperty( static_cast<PropertyId>( prop ) );
+					if ( inheritedProp ) {
+						mWidget->applyProperty( *inheritedProp );
+						mWidget->propagateInheritedProperty( *inheritedProp );
+					}
+				}
 				continue;
+			}
 
 			applyVarValues( property );
 
-			if ( property->getPropertyDefinition()->isIndexed() ) {
-				for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-					applyVarValues( property->getPropertyIndexRef( i ) );
-
-					applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+			// Resolve "inherit" keyword to parent's value
+			if ( property->getValue() == "inherit" &&
+				 !property->getPropertyDefinition()->isIndexed() ) {
+				StyleSheetProperty* inheritedProp =
+					getInheritedProperty( static_cast<PropertyId>( prop ) );
+				if ( inheritedProp ) {
+					if ( property->getPropertyDefinition()->getPropertyId() ==
+						 PropertyId::FontSize ) {
+						Node* parentNode = mWidget->getParent();
+						if ( parentNode && parentNode->isWidget() ) {
+							Float parentPxSize =
+								mWidget->getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+							StyleSheetProperty resolved(
+								property->getPropertyDefinition(),
+								String::fromFloat( PixelDensity::pxToDp( parentPxSize ), "dp" ),
+								property->getIndex() );
+							mWidget->applyProperty( resolved );
+							mWidget->propagateInheritedProperty( resolved );
+						}
+					} else {
+						mWidget->applyProperty( *inheritedProp );
+						mWidget->propagateInheritedProperty( *inheritedProp );
+					}
 				}
 			} else {
-				applyStyleSheetProperty( *property, prevDefinition );
+				if ( property->getPropertyDefinition()->isIndexed() ) {
+					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+						applyVarValues( property->getPropertyIndexRef( i ) );
+
+						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+					}
+				} else {
+					applyStyleSheetProperty( *property, prevDefinition );
+				}
+
+				if ( property->getPropertyDefinition()->isInherited() )
+					mWidget->propagateInheritedProperty( *property );
 			}
 		}
 

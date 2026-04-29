@@ -33,6 +33,10 @@ class EE_API UIImage : public UIWidget {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	virtual Float getMinIntrinsicWidth() const;
+
+	virtual Float getMaxIntrinsicWidth() const;
+
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
@@ -58,6 +62,8 @@ class EE_API UIImage : public UIWidget {
 	explicit UIImage( const std::string& tag );
 
 	virtual void onSizeChange();
+
+	virtual void onSizePolicyChange();
 
 	virtual void onAlignChange();
 

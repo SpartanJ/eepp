@@ -37,7 +37,8 @@ void addXML() {
 
 			} )
 		.setAutoCloseXMLTags( true )
-		.setBlockComment( { "<!--", "-->" } );
+		.setBlockComment( { "<!--", "-->" } )
+		.setFoldRangeType( FoldRangeType::Tag );
 }
 
 }}}} // namespace EE::UI::Doc::Language

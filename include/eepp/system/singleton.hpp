@@ -13,6 +13,8 @@
 	static T* createSingleton();       \
                                        \
 	static T* existsSingleton();       \
+	                                   \
+	static bool isShuttingDown();      \
                                        \
 	static T* instance();              \
                                        \
@@ -23,6 +25,7 @@
 #define SINGLETON_DECLARE_IMPLEMENTATION( T ) \
                                               \
 	static T* ms_singleton = NULL;            \
+	static bool ms_is_shutting_down = false;  \
 	static Mutex ms_mutex;                    \
                                               \
 	T* T::createSingleton() {                 \
@@ -33,8 +36,11 @@
 	}                                         \
                                               \
 	T* T::existsSingleton() {                 \
-		Lock l( ms_mutex );                   \
 		return ms_singleton;                  \
+	}                                         \
+	                                          \
+	bool T::isShuttingDown() {                \
+		return ms_is_shutting_down;           \
 	}                                         \
                                               \
 	T* T::instance() {                        \
@@ -42,8 +48,10 @@
 	}                                         \
                                               \
 	void T::destroySingleton() {              \
+		ms_is_shutting_down = true;           \
 		Lock l( ms_mutex );                   \
 		eeSAFE_DELETE( ms_singleton );        \
+		ms_is_shutting_down = false;          \
 	}                                         \
                                               \
 	void T::detachSingleton() {               \
@@ -62,7 +70,6 @@ template <typename T> class Singleton {
   public:
 	/** Get the singleton pointer (without instance verification) */
 	static T* existsSingleton() {
-		Lock l( ms_mutex );
 		return ms_singleton;
 	}
 

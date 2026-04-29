@@ -21,6 +21,12 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 	return ( eeNew( UILinearLayout, () ) )->setOrientation( UIOrientation::Horizontal );
 }
 
+UILinearLayout* UILinearLayout::NewVerticalWidthMatchParent( const std::string& tag ) {
+	return ( eeNew( UILinearLayout, ( tag, UIOrientation::Vertical ) ) )
+		->setLayoutWidthPolicy( SizePolicy::MatchParent )
+		->asType<UILinearLayout>();
+}
+
 UILinearLayout::UILinearLayout() :
 	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;
@@ -168,29 +174,7 @@ void UILinearLayout::packVertical() {
 	if ( mPacking )
 		return;
 	mPacking = true;
-	bool sizeChanged = false;
-	Sizef size( getPixelsSize() );
-
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float w = getMatchParentWidth();
-
-		if ( (int)w != (int)getPixelsSize().getWidth() ) {
-			sizeChanged = true;
-			size.setWidth( w );
-		}
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h = getMatchParentHeight();
-
-		if ( (int)h != (int)getPixelsSize().getHeight() ) {
-			sizeChanged = true;
-			size.setHeight( h );
-		}
-	}
-
-	if ( sizeChanged )
-		setInternalPixelsSize( size );
+	setMatchParentIfNeededVerticalGrowth();
 
 	applyWidthPolicyOnChildren();
 
@@ -275,15 +259,18 @@ void UILinearLayout::packVertical() {
 			setInternalPixelsHeight( h );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && getPixelsSize().getWidth() != maxX ) {
-		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-				getParent()->asType<UILinearLayout>()->getOrientation() ==
-					UIOrientation::Horizontal ) ) {
-			if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
-				setInternalPixelsWidth( maxX );
-				mPacking = false;
-				packVertical();
-				notifyLayoutAttrChangeParent();
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		Float w = fitMinMaxSizePx( Sizef( maxX, 0 ) ).getWidth();
+		if ( getPixelsSize().getWidth() != w ) {
+			if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+					getParent()->asType<UILinearLayout>()->getOrientation() ==
+						UIOrientation::Horizontal ) ) {
+				if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
+					setInternalPixelsWidth( maxX );
+					mPacking = false;
+					packVertical();
+					notifyLayoutAttrChangeParent();
+				}
 			}
 		}
 	}
@@ -399,16 +386,18 @@ void UILinearLayout::packHorizontal() {
 			setInternalPixelsWidth( w );
 	}
 
-	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent &&
-		 getPixelsSize().getHeight() != maxY ) {
-		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-				getParent()->asType<UILinearLayout>()->getOrientation() ==
-					UIOrientation::Vertical ) ) {
-			if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
-				setInternalPixelsHeight( maxY );
-				mPacking = false;
-				packHorizontal();
-				notifyLayoutAttrChangeParent();
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+		Float h = fitMinMaxSizePx( Sizef( 0, maxY ) ).getHeight();
+		if ( getPixelsSize().getHeight() != h ) {
+			if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+					getParent()->asType<UILinearLayout>()->getOrientation() ==
+						UIOrientation::Vertical ) ) {
+				if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
+					setInternalPixelsHeight( maxY );
+					mPacking = false;
+					packHorizontal();
+					notifyLayoutAttrChangeParent();
+				}
 			}
 		}
 	}

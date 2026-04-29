@@ -232,6 +232,7 @@ SyntaxDefinition& addObjectiveC() {
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 	sd.setBlockComment( { "/*", "*/" } );
+	sd.addAlternativeName( "objc" );
 	return sd;
 }
 

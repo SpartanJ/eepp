@@ -230,6 +230,27 @@ enum class PropertyId : Uint32 {
 	DisplayOptions = String::hash( "display-options" ),
 	MenuWidthMode = String::hash( "menu-width-mode" ),
 	ExpandText = String::hash( "expand-text" ),
+	ColSpan = String::hash( "colspan" ),
+	TableLayout = String::hash( "table-layout" ),
+	CellPadding = String::hash( "cellpadding" ),
+	CellSpacing = String::hash( "cellspacing" ),
+	Size = String::hash( "size" ),
+	Type = String::hash( "type" ),
+	Rows = String::hash( "rows" ),
+	Cols = String::hash( "cols" ),
+	InputMode = String::hash( "input-mode" ),
+	Hidden = String::hash( "hidden" ),
+	Display = String::hash( "display" ),
+	Position = String::hash( "position" ),
+	Top = String::hash( "top" ),
+	Right = String::hash( "right" ),
+	Bottom = String::hash( "bottom" ),
+	Left = String::hash( "left" ),
+	ZIndex = String::hash( "z-index" ),
+	ListStyleType = String::hash( "list-style-type" ),
+	ListStylePosition = String::hash( "list-style-position" ),
+	ListStyleImage = String::hash( "list-style-image" ),
+	DataLanguage = String::hash( "data-language" ), // Minor hack
 };
 
 enum class PropertyType : Uint32 {
@@ -280,7 +301,7 @@ class EE_API PropertyDefinition {
 
 	const std::string& getDefaultValue() const;
 
-	bool getInherited() const;
+	bool isInherited() const;
 
 	const PropertyRelativeTarget& getRelativeTarget() const;
 

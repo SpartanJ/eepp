@@ -6,15 +6,8 @@ using namespace EE::UI;
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetPropertiesParser::StyleSheetPropertiesParser() : mPrevRs( ReadingPropertyName ) {}
-
-StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& propsstr ) :
-	mPrevRs( ReadingPropertyName ) {
-	std::vector<std::string> props = String::split( propsstr, ';' );
-
-	if ( !props.empty() ) {
-		parse( propsstr );
-	}
+StyleSheetPropertiesParser::StyleSheetPropertiesParser( std::string_view propsstr ) {
+	parse( propsstr );
 }
 
 const StyleSheetProperties& StyleSheetPropertiesParser::getProperties() const {
@@ -25,7 +18,7 @@ const StyleSheetVariables& StyleSheetPropertiesParser::getVariables() const {
 	return mVariables;
 }
 
-void StyleSheetPropertiesParser::parse( const std::string& propsstr ) {
+void StyleSheetPropertiesParser::parse( std::string_view propsstr ) {
 	mProperties.clear();
 	mVariables.clear();
 	ReadState rs = ReadingPropertyName;
@@ -54,7 +47,7 @@ void StyleSheetPropertiesParser::parse( const std::string& propsstr ) {
 
 int StyleSheetPropertiesParser::readPropertyName( StyleSheetPropertiesParser::ReadState& rs,
 												  std::size_t pos, std::string& buffer,
-												  const std::string& str ) {
+												  std::string_view str ) {
 	mPrevRs = rs;
 	buffer.clear();
 
@@ -80,7 +73,7 @@ int StyleSheetPropertiesParser::readPropertyName( StyleSheetPropertiesParser::Re
 
 int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::ReadState& rs,
 												   std::size_t pos, std::string& buffer,
-												   const std::string& str ) {
+												   std::string_view str ) {
 	std::string propName( buffer );
 
 	buffer.clear();
@@ -128,7 +121,7 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 int StyleSheetPropertiesParser::readComment( StyleSheetPropertiesParser::ReadState& rs,
 											 std::size_t pos, std::string& buffer,
-											 const std::string& str ) {
+											 std::string_view str ) {
 	buffer.clear();
 
 	while ( pos < str.size() ) {
@@ -154,13 +147,13 @@ void StyleSheetPropertiesParser::addProperty( std::string name, std::string valu
 			StyleSheetSpecification::instance()->getShorthand( name )->parse( value );
 
 		for ( auto& property : properties )
-			mProperties.emplace( std::make_pair( property.getId(), std::move( property ) ) );
+			mProperties[property.getId()] = std::move( property );
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
 			mVariables[String::hash( name )] = StyleSheetVariable( name, value );
 		} else {
 			StyleSheetProperty property( name, value );
-			mProperties.emplace( std::make_pair( property.getId(), std::move( property ) ) );
+			mProperties[property.getId()] = std::move( property );
 		}
 	}
 }

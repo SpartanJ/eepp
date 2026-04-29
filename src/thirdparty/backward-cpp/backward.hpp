@@ -332,6 +332,10 @@
 
 #if defined(BACKWARD_SYSTEM_WINDOWS)
 
+#ifdef __GNUC__
+#include <cxxabi.h>
+#endif
+
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -612,14 +616,20 @@ template <typename TAG> struct demangler_impl {
   static std::string demangle(const char *funcname) { return funcname; }
 };
 
-#if defined(BACKWARD_SYSTEM_LINUX) || defined(BACKWARD_SYSTEM_DARWIN)
+#if defined(BACKWARD_SYSTEM_LINUX) || defined(BACKWARD_SYSTEM_DARWIN) || (defined(BACKWARD_SYSTEM_WINDOWS) && defined(__GNUC__))
 
 template <> struct demangler_impl<system_tag::current_tag> {
   demangler_impl() : _demangle_buffer_length(0) {}
 
   std::string demangle(const char *funcname) {
     using namespace details;
-    char *result = abi::__cxa_demangle(funcname, _demangle_buffer.get(),
+    const char* target = funcname;
+    std::string mangled;
+    if (target && target[0] == 'Z') {
+        mangled = "_" + std::string(target);
+        target = mangled.c_str();
+    }
+    char *result = abi::__cxa_demangle(target, _demangle_buffer.get(),
                                        &_demangle_buffer_length, nullptr);
     if (result) {
       _demangle_buffer.update(result);
@@ -3674,41 +3684,38 @@ public:
   ResolvedTrace resolve(ResolvedTrace t) override {
     HANDLE process = GetCurrentProcess();
 
-    char name[256];
-
     memset(&sym, 0, sizeof(sym));
     sym.sym.SizeOfStruct = sizeof(SYMBOL_INFO);
     sym.sym.MaxNameLen = max_sym_len;
 
     if (!SymFromAddr(process, (ULONG64)t.addr, &displacement, &sym.sym)) {
-      // TODO:  error handling everywhere
-      char* lpMsgBuf;
-      DWORD dw = GetLastError();
-
-      if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                             FORMAT_MESSAGE_FROM_SYSTEM |
-                             FORMAT_MESSAGE_IGNORE_INSERTS,
-                         NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                         (char*)&lpMsgBuf, 0, NULL)) {
-        std::fprintf(stderr, "%s\n", lpMsgBuf);
-        LocalFree(lpMsgBuf);
-      }
-
-      // abort();
+      t.object_function = "??";
+      return t;
     }
-    UnDecorateSymbolName(sym.sym.Name, (PSTR)name, 256, UNDNAME_COMPLETE);
+    std::string name = demangle(sym.sym.Name);
+    if (name == sym.sym.Name) {
+      char undecorated[256];
+      if (UnDecorateSymbolName(sym.sym.Name, undecorated, 256, UNDNAME_COMPLETE)) {
+        name = undecorated;
+      }
+    }
 
     DWORD offset = 0;
     IMAGEHLP_LINE line;
     if (SymGetLineFromAddr(process, (ULONG64)t.addr, &offset, &line)) {
-      t.object_filename = line.FileName;
       t.source.filename = line.FileName;
       t.source.line = line.LineNumber;
       t.source.col = offset;
     }
 
+    IMAGEHLP_MODULE64 module;
+    memset(&module, 0, sizeof(module));
+    module.SizeOfStruct = sizeof(module);
+    if (SymGetModuleInfo64(process, (ULONG64)t.addr, &module)) {
+        t.object_filename = module.ModuleName;
+    }
+
     t.source.function = name;
-    t.object_filename = "";
     t.object_function = name;
 
     return t;

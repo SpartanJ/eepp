@@ -6,7 +6,11 @@ UIListView* UIListView::New() {
 	return eeNew( UIListView, () );
 }
 
-UIListView::UIListView() : UITableView( "listview" ) {
+UIListView* UIListView::NewWithTag( const std::string& tag ) {
+	return eeNew( UIListView, () );
+}
+
+UIListView::UIListView( const std::string& tag ) : UITableView( tag ) {
 	setHeadersVisible( false );
 	setAutoExpandOnSingleColumn( true );
 	applyDefaultTheme();

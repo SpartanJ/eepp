@@ -73,6 +73,13 @@ class EE_API ModelSelection {
 		return *mIndexes.begin();
 	}
 
+	ModelIndex last() const {
+		Lock l( mMutex );
+		if ( mIndexes.empty() )
+			return {};
+		return mIndexes.back();
+	}
+
 	void removeAllMatching( std::function<bool( ModelIndex const& )> filter );
 
 	template <typename Function> void changeFromModel( Function f ) {

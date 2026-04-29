@@ -6,6 +6,9 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
+
 namespace EE { namespace UI {
 
 InnerWidgetOrientation UIPushButton::innerWidgetOrientationFromString( std::string iwo ) {
@@ -88,7 +91,7 @@ Rectf UIPushButton::calculatePadding() const {
 	Rectf autoPadding;
 	if ( mFlags & UI_AUTO_PADDING ) {
 		autoPadding = makePadding( true, true, true, true );
-		if ( autoPadding != Rectf() )
+		if ( autoPadding != Rectf::Zero )
 			autoPadding = PixelDensity::dpToPx( autoPadding );
 	}
 	if ( mPaddingPx.Top > autoPadding.Top )
@@ -618,6 +621,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
@@ -646,6 +650,7 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::FontFamily,
 				   PropertyId::FontSize,
 				   PropertyId::FontStyle,
+				   PropertyId::TextDecoration,
 				   PropertyId::Wordwrap,
 				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,
@@ -669,6 +674,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.value() ) );
 			break;
 		case PropertyId::Text:
+		case PropertyId::Value:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( getUISceneNode()->getTranslatorString( attribute.value() ) );
 			break;
@@ -719,6 +725,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
@@ -733,6 +740,12 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	return attributeSet;
+}
+
+void UIPushButton::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIWidget::loadFromXmlNode( node );
+	if ( !node.text().empty() )
+		setText( node.text().as_string() );
 }
 
 }} // namespace EE::UI

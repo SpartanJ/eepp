@@ -1,4 +1,5 @@
 #include "formatterplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
@@ -153,6 +154,18 @@ size_t FormatterPlugin::formatterFilePatternPosition( const std::vector<std::str
 	return std::string::npos;
 }
 
+void FormatterPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_formatter_config_parsing",
+							  "Formatter Plugin - Error parsing Formatter config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
@@ -161,6 +174,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 
 	if ( updateConfigFile ) {
 		mConfigHash = String::hash( data );
+		mBrokenUserConfigFile = false;
 	}
 
 	try {
@@ -171,6 +185,14 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n",
 						 nullptr, true, true );
@@ -184,8 +206,14 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 			config["auto_format_on_save"] = getAutoFormatOnSave();
 	}
 
-	if ( mKeyBindings.empty() )
+	if ( mKeyBindings.empty() ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["format-doc"] = "mod+alt+f";
+#else
 		mKeyBindings["format-doc"] = "alt+f";
+#endif
+	}
+
 	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "format-doc" ) )
 		mKeyBindings["format-doc"] = j["keybindings"]["format-doc"];
 	else if ( updateConfigFile )
@@ -597,6 +625,9 @@ PluginRequestHandle FormatterPlugin::processMessage( const PluginMessage& msg ) 
 			for ( const auto& lang : cap.languages )
 				mCapabilities[lang] = cap;
 		}
+	} else if ( msg.type == PluginMessageType::UIReady ) {
+		if ( mBrokenUserConfigFile )
+			displayBrokenUserConfigFileWarning();
 	}
 	return {};
 }

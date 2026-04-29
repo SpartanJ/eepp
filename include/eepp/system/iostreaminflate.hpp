@@ -7,7 +7,7 @@
 
 namespace EE { namespace System {
 
-struct LocalStreamData;
+struct LocalInflateStreamData;
 
 /** @brief Implementation of a inflating stream */
 class EE_API IOStreamInflate : public IOStream {
@@ -41,7 +41,7 @@ class EE_API IOStreamInflate : public IOStream {
 	IOStream& mStream;
 	Compression::Mode mMode;
 	ScopedBuffer mBuffer;
-	LocalStreamData* mLocalStream;
+	LocalInflateStreamData* mLocalStream;
 };
 
 }} // namespace EE::System

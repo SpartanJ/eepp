@@ -60,7 +60,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 9 },
+				 { 0, 3, 0 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -151,6 +151,8 @@ class LinterPlugin : public Plugin {
 	bool mErrorLens{ true };
 	bool mGoToIgnoreWarnings{ false };
 	bool mOldWordWrap{ false };
+	bool mBrokenUserConfigFile{ false };
+	std::string mConfigFileError;
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
@@ -201,6 +203,8 @@ class LinterPlugin : public Plugin {
 	void goToPrevError( UICodeEditor* editor );
 
 	void registerNativeLinters();
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

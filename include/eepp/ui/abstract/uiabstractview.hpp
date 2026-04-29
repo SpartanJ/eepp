@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIABSTRACTVIEW_HPP
 #define EE_UI_UIABSTRACTVIEW_HPP
 
+#include <atomic>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modeleditingdelegate.hpp>
@@ -53,6 +54,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	enum SelectionKind { Single, Multiple };
 
+	enum class FindRowWithTextMatchKind { Equals, StartsWith, Contains };
+
 	bool isCellSelection() const;
 
 	bool isRowSelection() const;
@@ -85,8 +88,9 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setOnSelection( const std::function<void( const ModelIndex& )>& onSelection );
 
-	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
-										const bool& exactMatch = false ) const;
+	virtual ModelIndex findRowWithText(
+		const std::string& text, const bool& caseSensitive = false,
+		FindRowWithTextMatchKind matchKind = FindRowWithTextMatchKind::StartsWith ) const;
 
 	bool isEditable() const;
 
@@ -147,6 +151,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	std::vector<KeyBindings::Shortcut> mEditShortcuts{ { KEY_F2 } };
 	SelectionType mSelectionType{ SelectionType::Row };
 	SelectionKind mSelectionKind{ SelectionKind::Single };
+	std::atomic<unsigned> mPendingUpdateFlags{ 0 };
 
 	virtual void editingWidgetDidChange( const ModelIndex& ) {}
 };

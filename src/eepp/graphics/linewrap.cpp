@@ -168,18 +168,20 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 				? font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance
 				: hspace;
 
+		Float kerning = 0;
 		if ( curChar == '\t' ) {
 			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
 			prevChar = 0;
 		} else if ( !isMonospace && curChar != '\r' ) {
 			if ( !( textDrawHints & TextHints::NoKerning ) ) {
-				w += font->getKerning( prevChar, curChar, characterSize, bold, italic,
-									   outlineThickness );
+				kerning = font->getKerning( prevChar, curChar, characterSize, bold, italic,
+											outlineThickness );
 			}
 			prevChar = curChar;
 		}
 
-		xoffset += w;
+		Float xpos = xoffset + kerning;
+		xoffset = xpos + w;
 
 		if ( hasWrap && xoffset > maxWidth ) {
 			if ( mode == LineWrapMode::Word && lastSpace != std::string::npos ) {
@@ -188,7 +190,15 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 				}
 
 				info.wraps.push_back( lastSpace + 1 );
-				xoffset = info.paddingStart + ( xoffset - lastWidth );
+
+				Float startKerning = 0;
+				if ( !( textDrawHints & TextHints::NoKerning ) && !isMonospace &&
+					 lastSpace + 1 < string.size() ) {
+					startKerning = font->getKerning( string[lastSpace], string[lastSpace + 1],
+													characterSize, bold, italic, outlineThickness );
+				}
+
+				xoffset = info.paddingStart + ( xoffset - lastWidth - startKerning );
 			} else {
 				// If we are about to split a word, check if we can move it to the next line
 				if ( mode == LineWrapMode::Word && info.wraps.size() == 1 &&
@@ -213,6 +223,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 
 					info.wraps.push_back( idx );
 					xoffset = info.paddingStart;
+					prevChar = 0;
 				}
 			}
 			lastSpace = std::string::npos;

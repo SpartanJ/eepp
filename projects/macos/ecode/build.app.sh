@@ -23,14 +23,17 @@ done
 SDL2_CONFIG=$(which sdl2-config)
 CONFIG_NAME=
 ARCH_PATH=
+DYLIB_PATH=
 
 if command -v premake4 &> /dev/null
 then
 	CONFIG_NAME=release
+	DYLIB_PATH=../../../libs/macosx/libeepp.dylib
 elif command -v premake5 &> /dev/null
 then
     CONFIG_NAME=release_arm64
     ARCH_PATH="arm64/"
+    DYLIB_PATH=../../../libs/macosx/"$ARCH_PATH"libeepp.dylib
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
     exit 1
@@ -66,7 +69,7 @@ fi
 cat Info.plist.tpl | sed "s/ECODE_VERSION_STRING/${ECODE_VERSION}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
 cp Info.plist ecode.app/Contents/
 rm Info.plist
-cp ../../../libs/macosx/"$ARCH_PATH"libeepp.dylib ecode.app/Contents/MacOS
+cp $DYLIB_PATH ecode.app/Contents/MacOS
 cp ../../../bin/ecode ecode.app/Contents/MacOS
 
 if [ -z "$SDL2_CONFIG" ]; then

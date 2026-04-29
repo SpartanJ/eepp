@@ -14,7 +14,8 @@ using namespace EE::Window;
 
 static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Window::Window* win,
 						   const std::string& imageName,
-						   const std::string& imagesFolder = "fontrendering" ) {
+						   const std::string& imagesFolder = "fontrendering",
+						   int allowedNumDifferentPixels = 0 ) {
 	auto saveType = Image::SaveType::WEBP;
 	auto saveExt( Image::saveTypeToExtension( saveType ) );
 	std::string expectedImagePath( "assets/" + imagesFolder + "/" + imageName + "." + saveExt );
@@ -34,8 +35,8 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 	EXPECT_EQ_MSG( expectedImage.getHeight(), actualImage.getHeight(), "Images height not equal" );
 
 	Image::DiffResult result = actualImage.diff( expectedImage );
-	EXPECT_TRUE( result.areSame() );
-	if ( !result.areSame() ) {
+	EXPECT_LE( result.numDifferentPixels, allowedNumDifferentPixels );
+	if ( result.numDifferentPixels > allowedNumDifferentPixels ) {
 		auto saveExt( Image::saveTypeToExtension( saveType ) );
 		std::string withTextShaper =
 			Text::TextShaperEnabled

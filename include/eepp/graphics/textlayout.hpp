@@ -48,6 +48,7 @@ class EE_API TextLayout {
 						 LineWrapMode lineWrapMode = LineWrapMode::NoWrap, Uint32 wrapWidth = 0,
 						 bool keepIndentation = false, Float initialXOffset = 0 );
 
+	static void clearLayoutCache();
   protected:
 	static void wrapLayout( const String::View& string, TextLayout&, LineWrapMode lineWrapMode,
 							Float wrapWidth, Float vspace, bool keepIndentation, Font* font,

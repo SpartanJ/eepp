@@ -36,7 +36,7 @@ class LLMChatCompletionRequest {
 
 	void requestAsync();
 
-	void cancel();
+	void cancel( bool resetCancelCallback = false );
 
 	bool isCancelled() const;
 

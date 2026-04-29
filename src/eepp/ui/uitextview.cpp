@@ -11,7 +11,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
-#include <eepp/window/engine.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -181,6 +181,26 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 		invalidateDraw();
 	}
 
+	return this;
+}
+
+Uint32 UITextView::getTextDecoration() const {
+	Uint32 flags = mFontStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UITextView* UITextView::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mFontStyleConfig.Style != textDecoration ) {
+		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mFontStyleConfig.Style |= textDecoration;
+		mTextCache.setStyle( mFontStyleConfig.Style );
+
+		recalculate();
+		onFontStyleChanged();
+		notifyLayoutAttrChange();
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -406,8 +426,9 @@ void UITextView::alignFix() {
 			break;
 		}
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
-								   (Float)mTextCache.getTextHeight() );
+			mRealAlignOffset.y =
+				( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
+				  (Float)mTextCache.getFont()->getAscent( mTextCache.getCharacterSize() ) );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0;
@@ -721,16 +742,22 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			if ( attribute.value() != "inherit" ) {
+				Font* font = FontManager::instance()->getByName( attribute.value() );
 
-			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
-				setFont( font );
+				if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
+					setFont( font );
+				}
 			}
 			break;
 		}
 		case PropertyId::FontSize:
-			if ( !mUsingCustomStyling )
+			if ( !mUsingCustomStyling && attribute.value() != "inherit" )
 				setFontSize( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::TextDecoration:
+			if ( !mUsingCustomStyling )
+				setTextDecoration( attribute.asTextDecoration() );
 			break;
 		case PropertyId::FontStyle: {
 			if ( !mUsingCustomStyling ) {
@@ -810,7 +837,9 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getFontSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -843,7 +872,7 @@ std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 				   PropertyId::FontStyle,		PropertyId::Wordwrap,
 				   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,	PropertyId::TextAlign,
-				   PropertyId::TextOverflow };
+				   PropertyId::TextOverflow,	PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -859,7 +888,7 @@ void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	if ( !node.text().empty() ) {
+	if ( node.first_child().empty() && !node.text().empty() ) {
 		setText( getTranslatorString( node.text().as_string() ) );
 	}
 
@@ -950,11 +979,15 @@ UIAnchor* UIAnchor::New() {
 	return eeNew( UIAnchor, () );
 }
 
-UIAnchor::UIAnchor() : UITextView( "anchor" ) {
+UIAnchor* UIAnchor::NewA() {
+	return eeNew( UIAnchor, ( "a" ) );
+}
+
+UIAnchor::UIAnchor( const std::string& tag ) : UITextView( tag ) {
 	onClick(
 		[this]( const MouseEvent* ) {
 			if ( !mHref.empty() )
-				Engine::instance()->openURI( mHref );
+				getUISceneNode()->openURL( mHref );
 		},
 		EE_BUTTON_LEFT );
 }
@@ -988,7 +1021,7 @@ const std::string& UIAnchor::getHref() const {
 Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
 		if ( !mHref.empty() ) {
-			Engine::instance()->openURI( mHref );
+			getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}

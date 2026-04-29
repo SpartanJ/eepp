@@ -82,6 +82,7 @@ struct CodeEditorConfig {
 	bool highlightSelectionMatch{ true };
 	bool colorPickerSelection{ false };
 	bool colorPreview{ false };
+	bool inlineColorBoxes{ false };
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };
@@ -115,6 +116,7 @@ struct DocumentConfig {
 	bool indentSpaces{ false };
 	bool tabStops{ true };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
+	TextDocument::AutoIndentConfig autoIndent{ TextDocument::AutoIndentConfig::Smart };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };
@@ -185,6 +187,35 @@ class NewTerminalOrientation {
 	}
 };
 
+class TerminalWorkingDir {
+  public:
+	enum Mode { ProjectRoot, CurrentFileDir, UserHome, Other };
+
+	static Mode fromString( const std::string& mode ) {
+		if ( "current" == mode )
+			return Mode::CurrentFileDir;
+		if ( "home" == mode )
+			return Mode::UserHome;
+		if ( "other" == mode )
+			return Mode::Other;
+		return Mode::ProjectRoot;
+	}
+
+	static std::string toString( const Mode& mode ) {
+		switch ( mode ) {
+			case Mode::CurrentFileDir:
+				return "current";
+			case Mode::UserHome:
+				return "home";
+			case Mode::Other:
+				return "other";
+			case Mode::ProjectRoot:
+			default:
+				return "project";
+		}
+	}
+};
+
 struct TerminalConfig {
 	std::string shell;
 	std::string shellArgs;
@@ -192,6 +223,8 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
+	TerminalWorkingDir::Mode workingDir{ TerminalWorkingDir::ProjectRoot };
+	std::string workingDirOther;
 	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };

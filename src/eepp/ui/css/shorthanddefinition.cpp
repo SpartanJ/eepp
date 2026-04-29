@@ -21,7 +21,7 @@ ShorthandDefinition::ShorthandDefinition( const std::string& name,
 	mFuncName( shorthandParserName ),
 	mId( String::hash( name ) ),
 	mProperties( properties ) {
-	for ( auto& sep : {"-", "_"} ) {
+	for ( auto& sep : { "-", "_" } ) {
 		if ( mName.find( sep ) != std::string::npos ) {
 			std::string alias( name );
 			String::replaceAll( alias, sep, "" );

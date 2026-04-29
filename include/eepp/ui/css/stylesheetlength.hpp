@@ -33,6 +33,7 @@ class EE_API StyleSheetLength {
 		Dprd,
 		Dpru,
 		Dpr,
+		Ch,
 	};
 
 	static Unit unitFromString( std::string unitStr );
@@ -41,7 +42,8 @@ class EE_API StyleSheetLength {
 
 	static bool isLength( const std::string& unitStr );
 
-	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0 );
+	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0,
+										bool pxAsDp = false );
 
 	StyleSheetLength();
 

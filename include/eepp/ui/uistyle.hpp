@@ -71,7 +71,13 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
+	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id );
+
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
+
+	bool hasLocalProperty( CSS::PropertyId propId ) const;
+
+	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId ) const;
 
 	void resetGlobalDefinition();
 
@@ -121,6 +127,8 @@ class EE_API UIStyle : public UIState {
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+
+	void applyInheritedProperties();
 
 	void updateAnimationsPlayState();
 

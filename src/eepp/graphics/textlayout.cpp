@@ -236,6 +236,17 @@ static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 						std::hash<Float>()( initialXOffset ) );
 }
 
+static LRULayoutCache& getLayoutCache( bool invalidate = false ) {
+	static LRULayoutCache sLayoutCache;
+	if ( invalidate )
+		sLayoutCache.clear();
+	return sLayoutCache;
+}
+
+void TextLayout::clearLayoutCache() {
+	getLayoutCache( true );
+}
+
 TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 									  const Uint32& characterSize, const Uint32& style,
 									  const Uint32& tabWidth, const Float& outlineThickness,
@@ -243,7 +254,6 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 									  TextDirection baseDirection, LineWrapMode wrapMode,
 									  Uint32 wrapWidth, bool keepIndentation,
 									  Float initialXOffset ) {
-	static LRULayoutCache sLayoutCache;
 
 	if ( !font || string.empty() ) {
 		auto layout = std::make_shared<TextLayout>();
@@ -258,7 +268,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation,
 							   initialXOffset );
 
-		auto cacheHit = sLayoutCache.get( hash );
+		auto cacheHit = getLayoutCache().get( hash );
 		if ( cacheHit.has_value() )
 			return *cacheHit;
 	}
@@ -513,7 +523,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 					characterSize, style, tabWidth, outlineThickness, hspace );
 	}
 
-	sLayoutCache.put( hash, resultPtr );
+	getLayoutCache().put( hash, resultPtr );
 	return resultPtr;
 }
 
@@ -620,11 +630,18 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 					breakStringIdx = string.size();
 
 				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
+				Float breakPos = breakGlyph.position.x;
+				Float kerning = 0;
+				if ( breakIndex > 0 ) {
+					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[breakIndex - 1];
+					kerning = ( prevBreakGlyph.position.x + prevBreakGlyph.advance.x ) -
+							  breakGlyph.position.x;
+				}
 
 				sp.wrapInfo.wraps.push_back( breakStringIdx );
-				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakGlyph.position.x ) );
+				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakPos + kerning ) );
 
-				Vector2f adjustment( -breakGlyph.position.x + sp.wrapInfo.paddingStart, vspace );
+				Vector2f adjustment( sp.wrapInfo.paddingStart - breakGlyph.position.x, vspace );
 				for ( std::size_t k = breakIndex; k <= idx; ++k )
 					sp.shapedGlyphs[k].position += adjustment;
 

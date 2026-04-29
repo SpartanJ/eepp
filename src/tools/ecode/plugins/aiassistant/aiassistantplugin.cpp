@@ -3,6 +3,7 @@
 #include "protocol.hpp"
 
 #include "../../appconfig.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../widgetcommandexecuter.hpp"
 
 #include <eepp/system/filesystem.hpp>
@@ -20,9 +21,10 @@ static std::initializer_list<std::string> AIAssistantUnlockedCommandList = {
 
 static std::initializer_list<std::string> AIAssistantCommandList = {
 
-	"ai-prompt",	   "ai-add-chat",  "ai-chat-history",		 "ai-attach-file",
-	"ai-clone-chat",   "ai-settings",  "ai-toggle-private-chat", "ai-save-chat",
-	"ai-rename-chat",  "ai-show-menu", "ai-chat-toggle-role",	 "ai-refresh-local-models",
+	"ai-prompt",	   "ai-chat-history", "ai-attach-file",			"ai-link-file",
+	"ai-clone-chat",   "ai-settings",	  "ai-toggle-private-chat", "ai-save-chat",
+	"ai-rename-chat",  "ai-show-menu",	  "ai-chat-toggle-role",	"ai-refresh-local-models",
+	"ai-add-chat",	   "ai-select-model", "ai-toggle-agent-mode",	"ai-agent-config",
 	"new-ai-assistant"
 
 };
@@ -97,7 +99,10 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 					model.cacheConfiguration = cache;
 				}
 
-				provider.models.push_back( model );
+				model.hash = hashCombine( std::hash<std::string>()( model.name ),
+										  std::hash<std::string>()( model.provider ) );
+
+				provider.models.emplace_back( std::move( model ) );
 			}
 		}
 
@@ -105,6 +110,34 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 	}
 
 	return providers;
+}
+
+static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j ) {
+	std::map<std::string, ACPAgent> agents;
+	for ( const auto& item : j.items() ) {
+		std::string agentName = item.key();
+		const auto& agentJson = item.value();
+
+		ACPAgent agent;
+		agent.name = agentName;
+		agent.enabled = agentJson.value( "enabled", true );
+		agent.command = agentJson.value( "command", "" );
+
+		if ( agentJson.contains( "args" ) && agentJson["args"].is_array() ) {
+			for ( const auto& arg : agentJson["args"] ) {
+				agent.args.push_back( arg.get<std::string>() );
+			}
+		}
+
+		if ( agentJson.contains( "environment" ) && agentJson["environment"].is_object() ) {
+			for ( const auto& envItem : agentJson["environment"].items() ) {
+				agent.environment[envItem.key()] = envItem.value().get<std::string>();
+			}
+		}
+
+		agents[agentName] = agent;
+	}
+	return agents;
 }
 
 Plugin* AIAssistantPlugin::New( PluginManager* pluginManager ) {
@@ -177,7 +210,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	path = pluginManager->getPluginsPath() + "aiassistant.json";
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite(
-			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n" ) ) {
+			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":{}\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}
@@ -257,10 +290,24 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	}
 }
 
+void AIAssistantPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_aiassistant_config_parsing",
+							  "AI Assistant Plugin - Error parsing AI Assistant config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
@@ -271,6 +318,14 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n", nullptr,
 						 true, true );
@@ -282,6 +337,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+
+		if ( config.contains( "display_reasoning" ) && config["display_reasoning"].is_boolean() )
+			mDisplayReasoning = config.value( "display_reasoning", false );
+		else if ( updateConfigFile )
+			config["display_reasoning"] = mDisplayReasoning;
 
 		if ( config.contains( "openai_api_key" ) )
 			mApiKeys["openai"] = config.value( "openai_api_key", "" );
@@ -337,12 +397,16 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["nvidia"] = config.value( "nvidia_api_key", "" );
 		else if ( updateConfigFile )
 			config["nvidia_api_key"] = mApiKeys["nvidia"];
+
+		if ( config.contains( "together_api_key" ) )
+			mApiKeys["together"] = config.value( "together_api_key", "" );
+		else if ( updateConfigFile )
+			config["together_api_key"] = mApiKeys["together"];
 	}
 
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["new-ai-assistant"] = "mod+shift+m";
 		mKeyBindings["ai-prompt"] = "mod+return";
-		mKeyBindings["ai-add-chat"] = "mod+shift+return";
 		mKeyBindings["ai-chat-history"] = "mod+h";
 		mKeyBindings["ai-clone-chat"] = "mod+shift+c";
 		mKeyBindings["ai-settings"] = "mod+shift+s";
@@ -353,6 +417,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
 		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
 		mKeyBindings["ai-attach-file"] = "mod+shift+a";
+		mKeyBindings["ai-link-file"] = "mod+shift+z";
+		mKeyBindings["ai-select-model"] = "mod+shift+x";
+		mKeyBindings["ai-toggle-agent-mode"] = "mod+shift+d";
+		mKeyBindings["ai-agent-config"] = "shift+alt+c";
+		mKeyBindings["ai-add-chat"] = "mod+shift+return";
 	}
 
 	auto& kb = j["keybindings"];
@@ -369,6 +438,13 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		if ( newData != data ) {
 			FileSystem::fileWrite( path, newData );
 			mConfigHash = String::hash( newData );
+		}
+	}
+
+	if ( j.contains( "agents" ) ) {
+		auto agents = parseACPAgents( j["agents"] );
+		for ( const auto& [key, value] : agents ) {
+			mAgents[key] = value;
 		}
 	}
 
@@ -458,6 +534,9 @@ PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg 
 			if ( !mUIInit )
 				initUI();
 
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
+
 			break;
 		}
 		default:
@@ -533,6 +612,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "MOONSHOT_API_KEY" );
 	} else if ( provider == "nvidia" ) {
 		ret = getenv( "NVIDIA_API_KEY" );
+	} else if ( provider == "together" ) {
+		ret = getenv( "TOGETHER_API_KEY" );
 	} else {
 		const auto& providerModelIt = instance->mProviders.find( provider );
 		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )
@@ -572,6 +653,7 @@ void AIAssistantPlugin::onSaveState( IniFile* state ) {
 		config.partition = mainChat->getSplitter()->getSplitPartition();
 		config.modelProvider = mainChat->getCurModel().provider;
 		config.modelName = mainChat->getCurModel().name;
+		config.agentName = mainChat->getCurAgent();
 	} else {
 		config = mConfig;
 	}
@@ -584,6 +666,7 @@ void AIAssistantPlugin::onSaveState( IniFile* state ) {
 	state->setValue( keyname, "split_partition", config.partition.toString() );
 	state->setValue( keyname, "default_provider", config.modelProvider );
 	state->setValue( keyname, "default_model", config.modelName );
+	state->setValue( keyname, "default_agent", config.agentName );
 }
 
 } // namespace ecode

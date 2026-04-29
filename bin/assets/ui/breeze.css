@@ -5,6 +5,7 @@
 	--font: #eff0f1;
 	--font-highlight: #8bdcfd;
 	--font-hint: #898b8d;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -14,7 +15,6 @@
 	--list-back: #232629;
 	--separator: #31363b;
 	--item-hover: #284150;
-	--list-row-active: #eff0f1;
 	--slider-back: #676a6e;
 	--slider-button: #31363b;
 	--slider-border: #787b80;
@@ -52,6 +52,169 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
+MarkdownView > *,
+body {
+	color: var(--font);
+}
+
+b,
+strong {
+	font-style: bold;
+}
+
+small {
+	font-size: smaller;
+}
+
+u,
+ins {
+	text-decoration: underline;
+}
+
+s,
+del {
+	text-decoration: strikethrough;
+}
+
+i,
+em {
+	font-style: italic;
+}
+
+h1 {
+	font-size: 2em;
+	font-weight: bold;
+}
+
+h2 {
+	font-size: 1.5em;
+	font-weight: bold;
+}
+
+h3 {
+	font-size: 1.17em;
+	font-weight: bold;
+}
+
+h4 {
+	font-size: 1em;
+	font-weight: bold;
+}
+
+h5 {
+	font-size: 0.83em;
+	font-weight: bold;
+}
+
+h6 {
+	font-size: 0.67em;
+	font-weight: bold;
+}
+
+table, td {
+	text-align: left;
+}
+
+hr {
+	min-height: 1dp;
+	background-color: gray;
+}
+
+center {
+	text-align: center;
+}
+
+ul > li,
+ol > li {
+	padding-left: 2em;
+}
+
+ul {
+	list-style-type: disc;
+}
+
+ol {
+	list-style-type: decimal;
+}
+
+a {
+	cursor: arrow;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+	cursor: hand;
+}
+
+img {
+	scale-type: fit-inside;
+	layout-width: wrap_content;
+	layout-height: wrap_content;
+}
+
+body img {
+	scale-type: expand;
+}
+
+blockquote {
+	padding-left: 8dp;
+	background-color: var(--list-back);
+	border-left: 2dp solid var(--tab-line);
+}
+
+MarkdownView p,
+MarkdownView ol,
+MarkdownView ul,
+MarkdownView pre,
+MarkdownView blockquote {
+	margin-top: 0;
+}
+
+MarkdownView a {
+	color: var(--primary);
+	selection-color: var(--font-selected-pressed);
+	selection-back-color: var(--primary);
+	gravity: bottom;
+}
+
+MarkdownView a:hover {
+	color: var(--font-highlight);
+}
+
+MarkdownView {
+	background-color: var(--list-back);
+	padding: 4dp;
+}
+
+MarkdownView li > p { margin: 0; }
+MarkdownView blockquote > *:first-child { margin-top: 0dp; }
+MarkdownView blockquote > *:last-child { margin-bottom: 0dp; }
+
+MarkdownView h1,
+MarkdownView h2 {
+	border-bottom: 1dp solid var(--tab-line);
+}
+
+MarkdownView img {
+	scale-type: fit-inside;
+	max-width: 100%;
+	max-height: 100vh;
+}
+
+MarkdownView table > thead > tr > th {
+	font-style: bold;
+}
+
+MarkdownView CodeEditor {
+	padding: 4dp;
+}
+
+MarkdownView code {
+	font-family: monospace;
+	background-color: var(--button-back);
+}
+
 pushbutton,
 selectbutton,
 tableview::cell,
@@ -65,10 +228,6 @@ listview::header::column:hover {
 	tint: var(--font);
 }
 
-PushButton:pressed > PushButton,
-SelectButton:pressed > SelectButton,
-SelectButton:selected > SelectButton,
-SelectButton:selected:pressed > SelectButton,
 tableview::row:selected tableview::cell,
 treeview::row:selected treeview::cell,
 listview::row:selected listview::cell,
@@ -78,8 +237,8 @@ listview::row:selected listview::cell,
 tableview::row:selected tableview::cell::expander,
 treeview::row:selected treeview::cell::expander,
 listview::row:selected listview::cell::expander {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 CheckBox,
@@ -97,7 +256,7 @@ SpinBox::input,
 Tab,
 TextEdit,
 TextInput,
-TextInputPassword,
+TextArea,
 TextView,
 Anchor,
 Tooltip,
@@ -114,11 +273,11 @@ listview::cell {
 TextView,
 Anchor,
 TextEdit,
+TextArea,
 TextInput,
-TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
-	selection-color: var(--list-row-active);
+	selection-color: var(--font-selected-pressed);
 	selection-back-color: var(--primary);
 }
 
@@ -133,7 +292,8 @@ Anchor:hover {
 
 PushButton,
 SelectButton,
-DropDownList {
+DropDownList,
+DropDownModelList {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -148,6 +308,7 @@ DropDownList {
 }
 
 DropDownList,
+DropDownModelList,
 ComboBox::DropDownList {
 	max-visible-items: 6;
 }
@@ -156,6 +317,8 @@ PushButton:hover,
 PushButton:focus,
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 SelectButton:hover,
 SelectButton:focus,
 ComboBox:hover,
@@ -168,14 +331,15 @@ SelectButton:pressed,
 SelectButton:selected,
 SelectButton:selected:pressed {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 pushbutton:disabled,
 selectbutton:disabled,
 textinput:disabled,
-textedit:disabled {
+textedit:disabled,
+textarea:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }
@@ -260,7 +424,7 @@ RadioButton::active {
 ListBox,
 DropDownList::ListBox,
 ComboBox::DropDownList::ListBox,
-Table,
+MarkdownView Table,
 ListView {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
@@ -319,12 +483,11 @@ DropDownList::ListBox::item:selected,
 ComboBox::DropDownList::ListBox::item:hover,
 ComboBox::DropDownList::ListBox::item:selected {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
-TextInput,
-TextInputPassword {
+TextInput {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -352,8 +515,6 @@ ComboBox::DropDownList {
 	padding-bottom: var(--base-vertical-padding);
 }
 
-TextInputPassword:hover,
-TextInputPassword:focus,
 TextInput:hover,
 TextInput:focus,
 SpinBox:hover,
@@ -389,7 +550,8 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit,
+TextArea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -402,7 +564,9 @@ TextEdit {
 }
 
 TextEdit:focus,
-TextEdit:hover {
+TextEdit:hover,
+TextArea:focus,
+TextArea:hover {
 	border-color: var(--primary);
 }
 
@@ -689,12 +853,14 @@ Window::border::bottom {
 	background-color: var(--separator);
 }
 
-DropDownList {
+DropDownList,
+DropDownModelList {
 	padding-right: 16dp;
 	text-overflow: ellipsis;
 }
 
 DropDownList,
+DropDownModelList,
 ComboBox::Button {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
 	foreground-position-x: right 6dp;
@@ -705,6 +871,8 @@ ComboBox::Button {
 
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 ComboBox::Button:focus,
 ComboBox::Button:hover {
 	foreground-tint: var(--icon-active);
@@ -899,6 +1067,7 @@ Menu::RadioButton::icon:selected {
 
 ListBox > ScrollBar,
 TextEdit > ScrollBar,
+TextArea > ScrollBar,
 Table > ScrollBar {
 	background-color: var(--list-back);
 }
@@ -1110,6 +1279,17 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
+DiffView > SelectButton {
+	border-color: transparent;
+	padding: 0dp 4dp 0dp 4dp;
+	font-size: 10dp;
+}
+
+DiffView > SelectButton:hover,
+DiffView > SelectButton:focus {
+	border-color: var(--primary);
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {
@@ -1118,6 +1298,7 @@ TextInput.table_cell_edit {
 	--font: #232627;
 	--font-highlight: #3daee9;
 	--font-hint: #232627;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;
 	--button-radius: 2dp;
@@ -1127,7 +1308,6 @@ TextInput.table_cell_edit {
 	--list-back: #ffffff;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
-	--list-row-active: #eff0f1;
 	--slider-back: #e9e9e9;
 	--slider-button: #cbcdcd;
 	--slider-border: #e6e6e6;

@@ -1,5 +1,6 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/functionstring.hpp>
+#include <eepp/system/luapattern.hpp>
 
 #include <cmath>
 #include <cstdlib>
@@ -18,6 +19,7 @@ template <typename T> inline T _round( T r ) {
 } // namespace
 
 UnorderedMap<std::string, Color> Color::sColors;
+UnorderedMap<String::HashType, Color> Color::sColorHash;
 UnorderedMap<String::HashType, Color> Color::sColorMap;
 
 // Keep the old defined colors
@@ -686,10 +688,10 @@ Color Color::fromString( std::string str ) {
 			return Color::Transparent;
 		}
 	} else if ( String::startsWith( str, "@color/" ) ) {
-		std::string colorName( String::toLower( str.substr( 7 ) ) );
-		const auto& it = sColors.find( colorName );
+		std::string_view colorName( std::string_view( str ).substr( 7 ) );
+		const auto& it = sColorHash.find( String::hashToLower( colorName ) );
 
-		if ( it != sColors.end() ) {
+		if ( it != sColorHash.end() ) {
 			return it->second;
 		} else {
 			return Color::Transparent;
@@ -701,10 +703,9 @@ Color Color::fromString( std::string str ) {
 		if ( it != sColorMap.end() )
 			return it->second;
 	} else {
-		String::toLowerInPlace( str );
-		const auto& it = sColors.find( str );
+		const auto& it = sColorHash.find( String::hashToLower( str ) );
 
-		if ( it != sColors.end() ) {
+		if ( it != sColorHash.end() ) {
 			return it->second;
 		} else {
 			return Color::Transparent;
@@ -714,48 +715,122 @@ Color Color::fromString( std::string str ) {
 	return Color::Transparent;
 }
 
-bool Color::isColorString( std::string str ) {
+template <AllowedFunctionString StringType>
+bool Color::isColorStringT( StringType str, bool searchColorNames ) {
 	if ( str.empty() )
 		return false;
 
 	if ( str[0] == '#' )
-		return true;
+		return validHexColorString( str );
 
-	String::toLowerInPlace( str );
+	if ( searchColorNames && str.size() <= 32 ) {
+		initColorMap();
 
-	initColorMap();
-	auto it = sColorMap.find( String::hash( str ) );
-	if ( it != sColorMap.end() )
-		return true;
-	if ( String::startsWith( str, "rgb(" ) )
-		return true;
-	else if ( String::startsWith( str, "rgba(" ) )
-		return true;
-	else if ( String::startsWith( str, "hsl(" ) )
-		return true;
-	else if ( String::startsWith( str, "hsla(" ) )
-		return true;
-	else if ( String::startsWith( str, "hsv(" ) )
-		return true;
-	else if ( String::startsWith( str, "hsva(" ) )
-		return true;
-	else if ( String::startsWith( str, "@color/" ) )
-		return true;
-	else if ( sColors.find( str ) != sColors.end() )
-		return true;
+		String::HashType hash = String::hashToLower( str );
+		if ( sColorMap.find( hash ) != sColorMap.end() )
+			return true;
+
+		if ( sColorHash.find( hash ) != sColorHash.end() )
+			return true;
+	}
+
+	if ( String::istartsWith( str, "@color/" ) ) {
+		std::string utf8Str;
+		if constexpr ( std::is_same_v<StringType, String::View> ) {
+			if ( LuaPattern::hasMatches( String( str ).toUtf8(), "@color/[%w_][%w_-]+" ) ) {
+				return true;
+			}
+		} else {
+			if ( LuaPattern::hasMatches( str, "@color/[%w_][%w_-]+" ) ) {
+				return true;
+			}
+		}
+	}
+
+	if ( str.back() == ')' ) {
+		FunctionString func = FunctionString::parse( str );
+
+		if ( !func.isEmpty() ) {
+			std::string name = func.getName();
+			String::toLowerInPlace( name );
+
+			if ( name == "rgb" || name == "rgba" || name == "hsl" || name == "hsla" ||
+				 name == "hsv" || name == "hsva" ) {
+
+				const auto& params = func.getParameters();
+				if ( params.empty() || params.size() > 4 )
+					return false;
+
+				for ( const auto& param : params ) {
+					if ( param.empty() )
+						return false;
+
+					bool hasFunc = false;
+					static const char* allowedFuncs[] = {
+						"var(", "calc(", "min(", "max(", "clamp(", "env(", "color-mix(", "color(" };
+
+					for ( const char* f : allowedFuncs ) {
+						if ( param.find( f ) != std::string::npos ) {
+							hasFunc = true;
+							break;
+						}
+					}
+
+					if ( hasFunc )
+						continue;
+
+					for ( auto c : param ) {
+						if ( !( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) ||
+								( c >= '0' && c <= '9' ) || c == '.' || c == '%' || c == '-' ||
+								c == '+' || c == ' ' || c == '/' ) ) {
+							return false;
+						}
+					}
+				}
+
+				return true;
+			}
+		}
+	}
 
 	return false;
 }
 
+bool Color::isColorString( std::string_view str, bool searchColorNames ) {
+	return isColorStringT<std::string_view>( str, searchColorNames );
+}
+
+bool Color::isColorString( String::View str, bool searchColorNames ) {
+	return isColorStringT<String::View>( str, searchColorNames );
+}
+
 void Color::registerColor( const std::string& name, const Color& color ) {
-	sColors[String::toLower( name )] = color;
+	std::string lowerName( String::toLower( name ) );
+	sColors[lowerName] = color;
+	sColorHash[String::hash( lowerName )] = color;
 }
 
 bool Color::unregisterColor( const std::string& name ) {
-	return sColors.erase( String::toLower( name ) ) > 0;
+	std::string lowerName( String::toLower( name ) );
+	sColorHash.erase( String::hash( lowerName ) );
+	return sColors.erase( lowerName ) > 0;
 }
 
-bool Color::validHexColorString( const std::string& hexColor ) {
+bool Color::validHexColorString( String::View hexColor ) {
+	if ( hexColor.size() < 2 || hexColor[0] != '#' )
+		return false;
+
+	for ( size_t i = 1; i < hexColor.size(); i++ ) {
+		if ( !( String::isNumber( hexColor[i] ) || ( hexColor[i] >= 'a' && hexColor[i] <= 'f' ) ||
+				( hexColor[i] >= 'A' && hexColor[i] <= 'F' ) ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Color::validHexColorString( std::string_view hexColor ) {
 	if ( hexColor.size() < 2 || hexColor[0] != '#' )
 		return false;
 

@@ -63,7 +63,7 @@ class EE_API DocumentView {
 
 	void updateCache( Int64 fromLine, Int64 toLine, Int64 numLines );
 
-	Config getConfig() const { return mConfig; }
+	const Config& getConfig() const { return mConfig; }
 
 	void setConfig( Config config );
 
@@ -138,6 +138,10 @@ class EE_API DocumentView {
 	void setTabStops( bool enabled );
 
 	bool usesTabStops() const { return mConfig.tabStops; }
+
+	const std::vector<Int64> getDocLineToVisibleIndex() const { return mDocLineToVisibleIndex; }
+
+	const std::vector<Float> getVisibleLinesOffset() const { return mVisibleLinesOffset; }
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

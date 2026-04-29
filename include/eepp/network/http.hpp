@@ -52,6 +52,9 @@ class EE_API Http : NonCopyable {
 			NotModified = 304,		///< For conditional requests, means the requested page hasn't
 									///< changed and doesn't need to be refreshed
 
+			TemporaryRedirect = 307, ///< The requested page has temporarily moved to a new location
+			PermanentRedirect = 308, ///< The requested page has permanently moved to a new location
+
 			// 4xx: client error
 			BadRequest = 400,	///< The server couldn't understand the request (syntax error)
 			Unauthorized = 401, ///< The requested page needs an authentication to be accessed
@@ -111,6 +114,9 @@ class EE_API Http : NonCopyable {
 		**  enumeration).
 		**  @return Status code of the response */
 		Status getStatus() const;
+
+		/** @return True if the response status is successful (2XX status) */
+		bool isOK() const;
 
 		/** @brief Get the response status description */
 		const char* getStatusDescription() const;
@@ -334,7 +340,7 @@ class EE_API Http : NonCopyable {
 		const CancelCallback& getCancelCallback() const;
 
 		/** Cancels the current request if being processed */
-		void cancel();
+		void cancel( bool resetCancelCallback = false );
 
 		/** @return True if the current request was cancelled */
 		const bool& isCancelled() const;
@@ -395,6 +401,10 @@ class EE_API Http : NonCopyable {
 		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request
 		URI mProxy;								///< Proxy information
 	};
+
+	static void setDefaultUserAgent( const std::string& userAgent );
+
+	static std::string getDefaultUserAgent();
 
 	/** @brief Default constructor */
 	Http();
@@ -536,7 +546,7 @@ class EE_API Http : NonCopyable {
 	bool isProxied() const;
 
 	/** @return If request has been found and canceled */
-	bool setCancelRequest( Uint64 reqId );
+	bool setCancelRequest( Uint64 reqId, bool resetCancelCallback = false );
 
 	/** Helper class to build the body of a multipart/form-data request. */
 	class EE_API MultipartEntitiesBuilder {
@@ -711,7 +721,7 @@ class EE_API Http : NonCopyable {
 
 		Uint64 id() const { return mId; }
 
-		void cancel();
+		void cancel( bool resetCancelCallback = false );
 
 	  protected:
 		friend class Http;
@@ -774,6 +784,7 @@ class EE_API Http : NonCopyable {
 	Mutex mThreadsMutex;
 	bool mIsSSL;
 	bool mHostSolved;
+	std::atomic<bool> mShuttingDown{ false };
 	URI mProxy;
 	Mutex mCurRequestsMutex;
 	std::unordered_map<Uint64, AsyncRequest*> mCurRequests;

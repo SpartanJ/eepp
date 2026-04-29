@@ -34,6 +34,64 @@ UIScrollView::UIScrollView() :
 	mHScroll->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
 
 	applyDefaultTheme();
+	listenParent();
+}
+
+UIScrollView::~UIScrollView() {
+	clearListeners();
+}
+
+void UIScrollView::updateInternalSize() {
+	Sizef size( getSizeFromLayoutPolicy() );
+	if ( size != getPixelsSize() )
+		setInternalPixelsSize( size );
+}
+
+void UIScrollView::listenParent() {
+	clearListeners();
+
+	mParentRef = getParent();
+
+	if ( !mParentRef->isLayout() ) {
+		mParentSizeChangeCb = mParentRef->on( Event::OnSizeChange, [this]( const Event* ) {
+			if ( !getParent()->isLayout() &&
+				 ( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+				   getLayoutHeightPolicy() == SizePolicy::MatchParent ) &&
+				 getParent()->getPixelsSize() != Sizef::Zero &&
+				 getParent()->getPixelsSize() != mSize ) {
+				runOnMainThread( [this]() { updateInternalSize(); } );
+			}
+		} );
+
+		mParentCloseCb =
+			mParentRef->on( Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
+
+		updateInternalSize();
+	}
+}
+
+void UIScrollView::onParentChange() {
+	listenParent();
+}
+
+void UIScrollView::clearListeners() {
+	if ( mParentRef ) {
+		if ( mParentSizeChangeCb > 0 ) {
+			mParentRef->removeEventListener( mParentSizeChangeCb );
+			mParentSizeChangeCb = 0;
+		}
+		if ( mParentCloseCb > 0 ) {
+			mParentRef->removeEventListener( mParentCloseCb );
+			mParentCloseCb = 0;
+		}
+	}
+}
+
+void UIScrollView::onSizePolicyChange() {
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+		 getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		updateInternalSize();
+	}
 }
 
 Uint32 UIScrollView::getType() const {
@@ -283,7 +341,8 @@ bool UIScrollView::isTouchOverAllowedChildren() {
 	bool ret = mViewType == ScrollViewType::Outside
 				   ? !mVScroll->isMouseOverMeOrChildren() && !mHScroll->isMouseOverMeOrChildren()
 				   : true;
-	return isMouseOverMeOrChildren() && mScrollView->isMouseOverMeOrChildren() && ret;
+	return isMouseOverMeOrChildren() && mScrollView && mScrollView->isMouseOverMeOrChildren() &&
+		   ret;
 }
 
 std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef,
@@ -379,7 +438,7 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp: {
-			if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
+			if ( mScrollView && mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
 				 isTouchOverAllowedChildren() && Msg->getSender()->isUINode() &&
 				 !Msg->getSender()->asType<UINode>()->isScrollable() ) {
 				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
@@ -409,6 +468,33 @@ bool UIScrollView::isScrollAnchored() const {
 
 void UIScrollView::setAnchorScroll( bool anchor ) {
 	mAnchorScroll = anchor;
+}
+
+Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
+	if ( !mDefaultKeybindings || event.getSanitizedMod() )
+		return UITouchDraggableWidget::onKeyDown( event );
+
+	if ( event.getKeyCode() == Window::KEY_UP ) {
+		mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+		mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+		mVScroll->setValue( mVScroll->getValue() + mVScroll->getPageStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+		mVScroll->setValue( mVScroll->getValue() - mVScroll->getPageStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+		mVScroll->setValue( mVScroll->getMinValue() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_END ) {
+		mVScroll->setValue( mVScroll->getMaxValue() );
+		return 1;
+	}
+
+	return UITouchDraggableWidget::onKeyDown( event );
 }
 
 }} // namespace EE::UI

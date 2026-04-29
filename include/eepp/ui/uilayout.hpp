@@ -19,10 +19,17 @@ class EE_API UILayout : public UIWidget {
 
 	void setGravityOwner( bool gravityOwner );
 
-	bool isPacking() const { return mPacking; }
+	virtual bool isPacking() const { return mPacking; }
+
+	bool isLayoutDirty() const { return mDirtyLayout; }
+
+	void onAutoSizeChild( UIWidget* child );
+
+	void setLayoutDirty();
 
   protected:
 	friend class UISceneNode;
+	friend class UILayouter;
 
 	UnorderedSet<UILayout*> mLayouts;
 	bool mDirtyLayout{ false };
@@ -45,13 +52,9 @@ class EE_API UILayout : public UIWidget {
 
 	virtual void updateLayoutTree();
 
-	void setLayoutDirty();
+	virtual void updateLayoutWrappingContents();
 
-	Sizef getSizeFromLayoutPolicy();
-
-	Float getMatchParentWidth() const;
-
-	Float getMatchParentHeight() const;
+	bool setMatchParentIfNeededVerticalGrowth();
 };
 
 }} // namespace EE::UI

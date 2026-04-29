@@ -1,5 +1,6 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
@@ -20,6 +21,10 @@ namespace EE { namespace UI {
 
 UITextInput* UITextInput::New() {
 	return eeNew( UITextInput, () );
+}
+
+UITextInput* UITextInput::NewPassword() {
+	return ( eeNew( UITextInput, () ) )->setMode( TextInputMode::Password );
 }
 
 UITextInput* UITextInput::NewWithTag( const std::string& tag ) {
@@ -73,6 +78,7 @@ UITextInput::UITextInput() : UITextInput( "textinput" ) {}
 
 UITextInput::~UITextInput() {
 	eeSAFE_DELETE( mHintCache );
+	eeSAFE_DELETE( mPassCache );
 }
 
 Uint32 UITextInput::getType() const {
@@ -132,19 +138,41 @@ void UITextInput::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		if ( mTextCache.getTextWidth() ) {
-			drawSelection( mTextCache );
-			mTextCache.setAlign( getFlags() );
-			mTextCache.draw(
+		Text& textCache = getVisibleTextCache();
+		if ( textCache.getTextWidth() ) {
+			drawSelection( textCache );
+
+			if ( mMode == TextInputMode::Password && isClipped() ) {
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+			}
+
+			textCache.setAlign( getFlags() );
+			textCache.draw(
 				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
+
+			if ( mMode == TextInputMode::Password && isClipped() ) {
+				clipSmartDisable();
+			}
 		} else if ( !mHintCache->getString().empty() &&
 					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
+			if ( mMode == TextInputMode::Password && isClipped() ) {
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+			}
+
 			mHintCache->draw(
 				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
+
+			if ( mMode == TextInputMode::Password && isClipped() ) {
+				clipSmartDisable();
+			}
 		}
 	}
 
@@ -200,7 +228,7 @@ void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
-	if ( mAllowEditing && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( mAllowEditing /* && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT */ ) {
 		Float tW = getVisibleTextCache().findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
@@ -256,7 +284,7 @@ void UITextInput::onSizeChange() {
 
 void UITextInput::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		setPadding( Rectf() );
+		setPadding( Rectf::Zero );
 	}
 }
 
@@ -287,7 +315,90 @@ const String& UITextInput::getText() const {
 
 void UITextInput::wrapText( const Uint32& ) {}
 
-void UITextInput::updateText() {}
+UITextInput* UITextInput::setMode( TextInputMode mode ) {
+	if ( mMode != mode ) {
+		mMode = mode;
+		if ( mMode == TextInputMode::Password ) {
+			if ( !mPassCache ) {
+				mPassCache = Text::New();
+				updateFontStyleConfig();
+			}
+			updatePass();
+		}
+		invalidateDraw();
+	}
+	return this;
+}
+
+UITextInput::TextInputMode UITextInput::getMode() const {
+	return mMode;
+}
+
+const String& UITextInput::getBulletCharacter() const {
+	return mBulletCharacter;
+}
+
+void UITextInput::setBulletCharacter( const String& bulletCharacter ) {
+	mBulletCharacter = bulletCharacter;
+	updatePass();
+}
+
+void UITextInput::updateText() {
+	if ( mMode == TextInputMode::Password )
+		updatePass();
+}
+
+void UITextInput::updatePass() {
+	if ( !mPassCache )
+		return;
+
+	const String& pass = mTextCache.getString();
+
+	if ( mBulletCharacter.size() == 1 && mPassCache->getFont() &&
+		 mPassCache->getFont()->getType() == FontType::TTF &&
+		 !static_cast<FontTrueType*>( mPassCache->getFont() )
+			  ->hasGlyph( mBulletCharacter.front() ) ) {
+		mBulletCharacter = "•";
+	}
+
+	String newTxt;
+	newTxt.reserve( pass.size() );
+	for ( size_t i = 0; i < pass.size(); i++ )
+		newTxt += mBulletCharacter;
+
+	mPassCache->setString( newTxt );
+}
+
+void UITextInput::updateFontStyleConfig() {
+	if ( mPassCache ) {
+		mPassCache->setFontSize( mFontStyleConfig.CharacterSize );
+		mPassCache->setFont( mFontStyleConfig.getFont() );
+		mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
+		mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
+		mPassCache->setOutlineColor( mFontStyleConfig.getOutlineColor() );
+		mPassCache->setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
+	}
+}
+
+void UITextInput::onFontChanged() {
+	UITextView::onFontChanged();
+	if ( getHintFont() == NULL ) {
+		setHintFont( getFont() );
+	}
+	updateFontStyleConfig();
+	invalidateDraw();
+}
+
+void UITextInput::onFontStyleChanged() {
+	updateFontStyleConfig();
+	invalidateDraw();
+}
+
+Text& UITextInput::getVisibleTextCache() {
+	if ( mMode == TextInputMode::Password && mPassCache )
+		return *mPassCache;
+	return mTextCache;
+}
 
 Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	int endPos = selCurEnd();
@@ -440,6 +551,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
+		case PropertyId::Value:
 			return getText().toUtf8();
 		case PropertyId::AllowEditing:
 			return isEditingAllowed() ? "true" : "false";
@@ -470,6 +582,8 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return getHintOutlineColor().toHexString();
 		case PropertyId::HintDisplay:
 			return mHintDisplay == HintDisplay::Always ? "always" : "focus";
+		case PropertyId::InputMode:
+			return mMode == TextInputMode::Password ? "password" : "normal";
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -491,7 +605,8 @@ std::vector<PropertyId> UITextInput::getPropertiesImplemented() const {
 				   PropertyId::HintFontStyle,
 				   PropertyId::HintStrokeWidth,
 				   PropertyId::HintStrokeColor,
-				   PropertyId::HintDisplay };
+				   PropertyId::HintDisplay,
+				   PropertyId::InputMode };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -548,6 +663,10 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 								? HintDisplay::Focus
 								: HintDisplay::Always );
 			break;
+		case PropertyId::InputMode:
+			setMode( String::iequals( "password", attribute.asString() ) ? TextInputMode::Password
+																		 : TextInputMode::Normal );
+			break;
 		default:
 			return UITextView::applyProperty( attribute );
 	}
@@ -565,12 +684,6 @@ UIWidget* UITextInput::setPadding( const Rectf& padding ) {
 	UITextView::setPadding( autoPadding + padding );
 
 	return this;
-}
-
-void UITextInput::onFontChanged() {
-	if ( getHintFont() == NULL ) {
-		setHintFont( getFont() );
-	}
 }
 
 const String& UITextInput::getHint() const {
@@ -785,10 +898,7 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 		return 0;
 	Input* input = getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
-		   !input->isAltGrPressed() ) ||
-		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
+	if ( !event.isValid( input ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&

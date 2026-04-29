@@ -263,6 +263,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Uint32& getFontStyle() const;
 
+	Uint32 getTextDecoration() const;
+
+	UICodeEditor* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UICodeEditor* setOutlineThickness( const Float& outlineThickness );
@@ -418,6 +422,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const bool& getEnableColorPickerOnSelection() const;
 
 	void setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection );
+
+	const bool& getEnableInlineColorBoxes() const;
+
+	void setEnableInlineColorBoxes( const bool& enableInlineColorBoxes );
 
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
@@ -828,6 +836,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	TextDirection getTextDirection() const;
 
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+	void disableEditorFeatures( bool useDefaultStyle = true );
+
+	void setDisableScrollInvalidation( bool disable ) { mDisableScrollInvalidation = disable; }
+
+	size_t getTotalVisibleLines() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -850,6 +866,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightMatchingBracket{ true };
 	bool mHighlightSelectionMatch{ true };
 	bool mEnableColorPickerOnSelection{ false };
+	bool mEnableInlineColorBoxes{ false };
 	bool mVerticalScrollBarEnabled{ true };
 	bool mHorizontalScrollBarEnabled{ true };
 	bool mLongestLineWidthDirty{ true };
@@ -875,6 +892,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
+	bool mDisableScrollInvalidation{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
@@ -936,6 +954,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	MinimapConfig mMinimapConfig;
 	Int64 mMinimapScrollOffset{ 0 };
 	std::unordered_map<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
+
+	struct ColorBoxData {
+		Int64 startColumn;
+		Int64 endColumn;
+		Color color;
+	};
+	std::unordered_map<Int64, std::pair<String::HashType, std::vector<ColorBoxData>>>
+		mColorBoxesCache;
+
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
@@ -1109,8 +1136,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void resetPreviewColor();
 
-	void disableEditorFeatures();
-
 	void updateGlyphWidth();
 
 	Drawable* findIcon( const std::string& name );
@@ -1130,6 +1155,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool checkAutoCloseXMLTag( const String& text );
 
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
+
+	Float getTotalTopSpace() const;
 
 	bool topSpaceExists( UICodeEditorPlugin* plugin ) const;
 
@@ -1158,8 +1185,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateIMELocation();
 
 	void drawLockedIcon( const Vector2f start );
-
-	size_t getTotalVisibleLines() const;
 
 	void invalidateLineWrapMaxWidth( bool force );
 
@@ -1190,6 +1215,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	}
 
 	bool setInternalFontSize( const Float& size );
+
+	virtual void onAutoSize();
+
+	virtual void onClassChange();
+
+	inline bool needsHorizontalLength() const;
 };
 
 }} // namespace EE::UI

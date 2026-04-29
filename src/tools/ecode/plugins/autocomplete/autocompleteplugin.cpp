@@ -7,6 +7,7 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiplacementutils.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -169,6 +170,41 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			mMaxLabelCharacters = config.value( "max_label_characters", 100 );
 		else {
 			config["max_label_characters"] = mMaxLabelCharacters;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "max_suggestion_documentation_width" ) )
+			mMaxSuggestionDocumentationWidth =
+				config.value( "max_suggestion_documentation_width", "100%" );
+		else {
+			config["max_suggestion_documentation_width"] = "100%";
+			updateConfigFile = true;
+		}
+
+		if ( mMaxSuggestionDocumentationWidth.empty() )
+			mMaxSuggestionDocumentationWidth = "100%";
+
+		if ( config.contains( "max_signature_helper_width" ) )
+			mMaxSignatureHelperWidth = config.value( "max_signature_helper_width", "90%" );
+		else {
+			config["max_signature_helper_width"] = "90%";
+			updateConfigFile = true;
+		}
+
+		if ( mMaxSignatureHelperWidth.empty() )
+			mMaxSignatureHelperWidth = "90%";
+
+		if ( config.contains( "signature_help_multi_line" ) )
+			mSignatureHelpMultiLine = config.value( "signature_help_multi_line", true );
+		else {
+			config["signature_help_multi_line"] = mSignatureHelpMultiLine;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "suggestion_documentation" ) )
+			mSuggestionDocumentation = config.value( "suggestion_documentation", true );
+		else {
+			config["suggestion_documentation"] = mSuggestionDocumentation;
 			updateConfigFile = true;
 		}
 	}
@@ -841,7 +877,8 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 
 	// Convert the LSP Signature Help into our own object:
 	// We will convert the UTF-8 label to UTF-32, then we will remove any new lines and extra spaces
-	// This guarantees that we always display a single line signature help
+	// This guarantees that we always display a single line signature help when requested (this is
+	// optional)
 	SignatureHelp signatures;
 	signatures.activeSignature = signatureHelp.activeSignature;
 	signatures.activeParameter = signatureHelp.activeParameter;
@@ -857,44 +894,52 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		doc.textInput( initialLabel );
 		std::vector<String> parameters;
 		parameters.reserve( sig.parameters.size() );
+		nsig.parameters.reserve( sig.parameters.size() );
 
+		int skippedSelections = 0;
 		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
 			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
 			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
 			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
 
-			if ( i == 0 )
-				doc.setSelection( i, sel );
-			else
-				doc.addSelection( sel );
+			nsig.parameters.emplace_back(
+				TextSelectionRange{ static_cast<Int64>( start ), static_cast<Int64>( end ) } );
 
-			parameters.emplace_back( doc.getSelectedText( i ) );
+			size_t index = i - skippedSelections;
+
+			if ( i == 0 ) {
+				doc.setSelection( i, sel );
+			} else {
+				if ( !doc.addSelection( sel ).isValid() ) {
+					skippedSelections++;
+					continue;
+				}
+			}
+
+			parameters.emplace_back( doc.getSelectedText( index ) );
 		}
 
 		auto selections( doc.getSelections() );
-		nsig.parameters.reserve( selections.size() );
 
-		if ( 0 != doc.replaceAll( "\n", "" ) ) {
+		if ( !mSignatureHelpMultiLine && 0 != doc.replaceAll( "\n", "" ) ) {
 			while ( 0 != doc.replaceAll( "  ", " " ) )
 				;
 
 			nsig.label = doc.getLineTextWithoutNewLine( 0 );
+			nsig.parameters.clear();
 
 			for ( const auto& param : parameters ) {
 				auto res = doc.find( param );
-				if ( res.isValid() )
-					nsig.parameters.emplace_back( res.result );
+				if ( res.isValid() ) {
+					nsig.parameters.push_back(
+						TextRange::convertToOffset( nsig.label.view(), res.result ) );
+				}
 			}
 		} else {
 			nsig.label = std::move( initialLabel );
-
-			if ( !sig.parameters.empty() ) {
-				for ( auto& sel : selections )
-					nsig.parameters.emplace_back( sel );
-			}
 		}
 
-		signatures.signatures.emplace_back( nsig );
+		signatures.signatures.emplace_back( std::move( nsig ) );
 	}
 
 	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
@@ -1000,7 +1045,6 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 
 void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
 											const Float& /*lineHeight*/, bool drawUp ) {
-
 	TextDocument& doc = editor->getDocument();
 	Primitives primitives;
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
@@ -1013,9 +1057,6 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	if ( curSigIdx >= (int)mSignatureHelp.signatures.size() )
 		return;
 	auto curSig = mSignatureHelp.signatures[curSigIdx];
-	Float vdiff = drawUp ? -mRowHeight : mRowHeight;
-	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
 	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 	String str;
 	if ( mSignatureHelp.signatures.size() > 1 ) {
@@ -1026,66 +1067,74 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 		str = curSig.label;
 	}
 
-	Rectf boxRect( pos, Sizef( editor->getTextWidth( str ) + mBoxPadding.Left + mBoxPadding.Right,
-							   mRowHeight ) );
-	if ( boxRect.getPosition().x + boxRect.getSize().getWidth() >
-		 editor->getScreenPos().x + editor->getPixelsSize().getWidth() ) {
-		boxRect.setPosition(
-			{ eefloor( editor->getScreenPos().x + editor->getPixelsSize().getWidth() -
-					   boxRect.getSize().getWidth() ),
-			  boxRect.getPosition().y } );
+	mSignatureHelpText.setFont( editor->getFont() );
+	mSignatureHelpText.setFontSize( editor->getFontSize() );
+	mSignatureHelpText.setFillColor( normalStyle.color );
+	mSignatureHelpText.setStyle( normalStyle.style );
+	if ( mSignatureHelpText.setString( str ) ) {
+		SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(),
+									   &mSignatureHelpText );
+	}
+
+	if ( mSignatureHelpMultiLine ) {
+		mSignatureHelpText.setLineWrapMode( LineWrapMode::Word );
+		mSignatureHelpText.setLineWrapKeepIndentation( true );
+		mSignatureHelpText.setMaxWrapWidth( editor->convertLength(
+			StyleSheetLength( mMaxSignatureHelperWidth ), editor->getPixelsSize().getWidth() ) );
+	}
+
+	Float boxWidth = mSignatureHelpText.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right;
+	Float boxHeight =
+		mSignatureHelpText.getVisualLineCount() * mSignatureHelpText.getLineSpacing() +
+		mBoxPadding.Top + mBoxPadding.Bottom;
+
+	Float vdiff = drawUp ? -boxHeight : mRowHeight;
+	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
+
+	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
+	Rectf boxRect( pos, Sizef( boxWidth, boxHeight ) );
+
+	Float screenRight = editor->getScreenPos().x + editor->getPixelsSize().getWidth();
+	if ( boxRect.Right > screenRight ) {
+		boxRect.setPosition( { eefloor( screenRight - boxWidth ), boxRect.getPosition().y } );
 		if ( boxRect.getPosition().x < editor->getScreenPos().x )
 			boxRect.setPosition( { eefloor( editor->getScreenPos().x ), boxRect.getPosition().y } );
 	}
 
 	bool hasParams = !curSig.parameters.empty();
-	TextRange curParam =
+
+	auto curParam =
 		hasParams ? curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()]
-				  : TextRange{};
-	Rectf curParamRect;
+				  : TextSelectionRange{};
+
+	SmallVector<Rectf> paramRects;
 	if ( hasParams ) {
-		curParamRect = Rectf(
-			{ { boxRect.getPosition().x + mBoxPadding.Left +
-					curParam.start().column() * editor->getGlyphWidth(),
-				boxRect.getPosition().y },
-			  { ( curParam.end().column() - curParam.start().column() ) * editor->getGlyphWidth(),
-				mRowHeight } } );
+		paramRects = mSignatureHelpText.getSelectionRects( curParam );
 
-		if ( !editor->getScreenRect().contains(
-				 Rectf{ { curParamRect.getPosition().x +
-							  ( curParam.end().column() - curParam.start().column() ) *
-								  editor->getGlyphWidth(),
-						  curParamRect.getPosition().y },
-						curParamRect.getSize() } ) ) {
-			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-			pos = { static_cast<Float>( startScroll.x -
-										curParam.start().column() * editor->getGlyphWidth() +
-										offset.x ),
-					static_cast<Float>( startScroll.y + offset.y + vdiff ) };
+		if ( !paramRects.empty() ) {
+			for ( auto& r : paramRects )
+				r.move( { boxRect.Left + mBoxPadding.Left, boxRect.Top + mBoxPadding.Top } );
 
-			boxRect.setPosition( pos );
-
-			curParamRect.setPosition( { boxRect.getPosition().x + mBoxPadding.Left +
-											curParam.start().column() * editor->getGlyphWidth(),
-										boxRect.getPosition().y } );
+			if ( !mSignatureHelpMultiLine && !editor->getScreenRect().contains( paramRects[0] ) ) {
+				paramRects[0].move(
+					{ -( boxRect.Left + mBoxPadding.Left ), -( boxRect.Top + mBoxPadding.Top ) } );
+				pos = { static_cast<Float>( startScroll.x + offset.x - paramRects[0].Left ),
+						static_cast<Float>( startScroll.y + offset.y + vdiff ) };
+				boxRect.setPosition( pos );
+				paramRects[0].setPosition( { boxRect.Left + mBoxPadding.Left + paramRects[0].Left,
+											 boxRect.getPosition().y } );
+			}
 		}
 	}
 
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
-	if ( hasParams && curParam.end() != curParam.start() &&
-		 curParam.end().column() < (int)str.size() ) {
-		primitives.setColor( matchingSelection.color );
-		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
-	}
+	primitives.setColor( matchingSelection.color );
+	for ( const auto& rect : paramRects )
+		primitives.drawRoundedRectangle( rect, 0.f, Vector2f::One, 6 );
 
-	Text text( "", editor->getFont(), editor->getFontSize() );
-	text.setFillColor( normalStyle.color );
-	text.setStyle( normalStyle.style );
-	text.setString( str );
-	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), &text );
-	text.draw( boxRect.getPosition().x + mBoxPadding.Left,
-			   boxRect.getPosition().y + mBoxPadding.Top );
+	mSignatureHelpText.draw( boxRect.getPosition().x + mBoxPadding.Left,
+							 boxRect.getPosition().y + mBoxPadding.Top );
 }
 
 void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
@@ -1202,34 +1251,35 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			icon->setColor( iconColor );
 		}
 
-		if ( mSuggestionIndex == (int)i && !suggestion.documentation.value.empty() ) {
-			mSuggestionDoc.setFont( editor->getFont() );
-			mSuggestionDoc.setFontSize( editor->getFontSize() );
+		if ( mSuggestionDocumentation && mSuggestionIndex == (int)i &&
+			 !suggestion.documentation.value.empty() ) {
 			mSuggestionDoc.setFillColor( normalStyle.color );
 			mSuggestionDoc.setStyle( normalStyle.style );
-			bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
+			mSuggestionDoc.setFont( editor->getFont() );
+			mSuggestionDoc.setFontSize( editor->getFontSize() );
+			mSuggestionDoc.setLineWrapMode( LineWrapMode::Word );
+			mSuggestionDoc.setLineWrapKeepIndentation( true );
 
-			Vector2f boxPos = { cursorPos.x + mBoxRect.getWidth(),
-								cursorPos.y + mRowHeight * count };
-			Sizef boxSize = { mSuggestionDoc.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
-							  mSuggestionDoc.getTextHeight() + mBoxPadding.Top +
-								  mBoxPadding.Bottom };
-			primitives.setColor(
-				Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
-			primitives.drawRoundedRectangle( { boxPos, boxSize }, 0.f, Vector2f::One, 6 );
+			Rectf docRect =
+				findBestDocumentationPlacement( editor, suggestion, boxRect,
+												{ { cursorPos.x, cursorPos.y + mRowHeight * count },
+												  { mBoxRect.getWidth(), mRowHeight } },
+												drawUp, lineHeight );
 
-			if ( changed ) {
-				bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
-				if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
-					const auto& syntaxDef =
-						forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
-								  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
-					SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(),
-												   &mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
-				}
+			if ( docRect.getSize().getWidth() > 0 && docRect.getSize().getHeight() > 0 ) {
+				primitives.setColor(
+					Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
+
+				editor->clipSmartEnable( docRect.Left, docRect.Top, docRect.getWidth(),
+										 docRect.getHeight() );
+
+				primitives.drawRoundedRectangle( docRect, 0.f, Vector2f::One, 6 );
+
+				mSuggestionDoc.draw( docRect.Left + mBoxPadding.Left,
+									 docRect.Top + mBoxPadding.Top );
+
+				editor->clipSmartDisable();
 			}
-
-			mSuggestionDoc.draw( boxPos.x + mBoxPadding.Left, boxPos.y + mBoxPadding.Top );
 		}
 		count++;
 		visibleStrIndex++;
@@ -1251,6 +1301,48 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 					 bar } );
 	primitives.drawRoundedRectangle( barRect, 0, Vector2f::One,
 									 (int)eefloor( bar.getWidth() * 0.5f ) );
+}
+
+Rectf AutoCompletePlugin::findBestDocumentationPlacement( UICodeEditor* editor,
+														  const Suggestion& suggestion,
+														  const Rectf& anchorBox,
+														  const Rectf& rowRect, bool drawUp,
+														  Float lineHeight ) {
+	PopupPlacementConfig config;
+	config.areaRect = editor->getScreenRect();
+	config.targetRect = anchorBox;
+	config.alignRect = rowRect;
+	// The avoidRect is the user's cursor line. This ensures Top/Bottom placement skips the line
+	// being typed.
+	Float cursorLineTop =
+		rowRect.Top - lineHeight; // Approximating cursor location based on the suggestion row
+	config.avoidRect =
+		Rectf( anchorBox.Left, cursorLineTop, editor->getPixelsSize().getWidth(), lineHeight );
+	config.userMaxWidth = editor->convertLength(
+		StyleSheetLength( mMaxSuggestionDocumentationWidth ), editor->getPixelsSize().getWidth() );
+	config.minHorizontalSpace = PixelDensity::dpToPx( 200.f );
+	config.margin = PixelDensity::dpToPx( 2.f );
+	config.minScoreHeight = mRowHeight * 2;
+	config.maxScoreHeight = mRowHeight * 10;
+	auto measureContent = [&]( Float availableMaxWidth ) -> Sizef {
+		Float textWrapWidth =
+			std::max( 0.f, availableMaxWidth - mBoxPadding.Left - mBoxPadding.Right );
+		mSuggestionDoc.setMaxWrapWidth( textWrapWidth );
+		bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
+		if ( changed ) {
+			bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
+			if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
+				const auto& syntaxDef =
+					forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
+							  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+				SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), &mSuggestionDoc,
+											   0, 0xFFFFFFFF, true, "\n\t " );
+			}
+		}
+		return { mSuggestionDoc.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
+				 mSuggestionDoc.getTextHeight() + mBoxPadding.Top + mBoxPadding.Bottom };
+	};
+	return UIPlacementUtils::findBestPopupPlacement( config, measureContent ).rect.round();
 }
 
 bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,

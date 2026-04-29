@@ -77,6 +77,8 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	const CSS::StyleSheet& getStyleSheet() const;
 
+	void setStyleSheet( CSS::StyleSheet&& styleSheet );
+
 	void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
 	const Float& getDefaultFontSize() const;

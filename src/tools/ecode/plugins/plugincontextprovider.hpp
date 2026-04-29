@@ -23,6 +23,10 @@ class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
 
+namespace Doc {
+class SyntaxColorScheme;
+}
+
 namespace Tools {
 class UICodeEditorSplitter;
 }
@@ -52,12 +56,15 @@ class NotificationCenter;
 class ProjectDirectoryTree;
 struct TerminalConfig;
 class UIMainLayout;
+class UITreeViewFS;
 
 class PluginContextProvider {
   public:
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
+
+	virtual UITreeViewFS* getProjectTreeView() const = 0;
 
 	virtual void hideGlobalSearchBar() = 0;
 
@@ -121,6 +128,8 @@ class PluginContextProvider {
 
 	virtual std::string getCurrentWorkingDir() const = 0;
 
+	virtual std::string getCurrentFileDir() const = 0;
+
 	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {},
 								  bool searchInSameContext = false ) = 0;
 
@@ -144,6 +153,13 @@ class PluginContextProvider {
 
 	virtual void loadImageFromPath( const std::string& path ) = 0;
 
+	virtual void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) = 0;
+
+	virtual void loadDiffFromPath( const std::string& path ) = 0;
+
+	virtual void loadDiffFromMemory( const std::string& content,
+									 const std::string& originalFilePath = "" ) = 0;
+
 	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
 
 	virtual void showGlobalSearch( bool searchAndReplace,
@@ -152,6 +168,12 @@ class PluginContextProvider {
 	virtual const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const = 0;
 
 	virtual bool projectIsOpen() const = 0;
+
+	virtual size_t getMenuIconSize() const = 0;
+
+	virtual const SyntaxColorScheme* getCurrentColorScheme() const = 0;
+
+	virtual void setAppTitle( const std::string& title ) = 0;
 };
 
 } // namespace ecode

@@ -445,11 +445,11 @@ bool SceneNode::usesInvalidation() const {
 	return mUseInvalidation;
 }
 
-void SceneNode::setUseGlobalCursors( const bool& use ) {
+void SceneNode::setUseGlobalCursors( bool use ) {
 	mUseGlobalCursors = use;
 }
 
-const bool& SceneNode::getUseGlobalCursors() {
+bool SceneNode::getUseGlobalCursors() {
 	return mUseGlobalCursors;
 }
 
@@ -496,7 +496,7 @@ void SceneNode::removeMouseOverNode( Node* node ) {
 	mMouseOverNodes.erase( node );
 }
 
-const bool& SceneNode::getUpdateAllChildren() const {
+bool SceneNode::getUpdateAllChildren() const {
 	return mUpdateAllChildren;
 }
 

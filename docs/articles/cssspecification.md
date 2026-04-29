@@ -701,7 +701,7 @@ Multiple flags can be set, flags are separated by `|`.
   * `clip`: Enables clipping of the element box.
   * `multiselect`: Enables multiple selection on elements that support selection. EE::UI::UIListBox (ListBox) for the moment.
   * `autopadding`: Enables the element to calculate the padding based on the skin size.
-  * `reportsizechangetochilds`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
+  * `reportsizechangetochildren`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
 * Default value: _No value_
 
 ---
@@ -906,7 +906,7 @@ Sets the hint font shadow offset.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
   (Tooltip)
 * Data Type: [vector2-length](#vector2-length-data-type)
 * Default offset: `1dp 1dp`
@@ -987,6 +987,19 @@ in which these items are displayed/sorted inside the button.
   * `textboxwidgeticon`: TextBox | Widget | Icon
 
 * Default value: `widgeticontextbox`
+
+---
+
+### input-mode
+
+Sets the input mode of the element.
+
+* Applicable to: EE::UI::UITextInput (TextInput)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `normal`: Normal text input.
+  * `password`: Password text input (bullets).
+* Default value: `normal`
 
 ---
 
@@ -1742,8 +1755,7 @@ Sets the text selection background color on a text element that supports text se
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
-  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword)
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList)
 * Data Type: [color](#color-data-type)
 * Default color: `#323232`
 
@@ -1756,7 +1768,7 @@ Sets the text selection color on a text element that supports text selection.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton)
+  EE::UI::UIPushButton (PushButton)
 * Data Type: [color](#color-data-type)
 * Default color: `white`
 
@@ -1918,8 +1930,7 @@ code implementation, but it's available as an option.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
-  EE::UI::UITextEdit (TextEdit)
+  EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab), EE::UI::UITextEdit (TextEdit)
 * Data Type: [string](#string-data-type)
 * Default value: _No value_
 
@@ -1954,8 +1965,7 @@ Enables/disables text selection in any element that contains text.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
-  EE::UI::UITextEdit (TextEdit)
+  EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab), EE::UI::UITextEdit (TextEdit)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true` for TextEdit, TextInput. `false` for any other element.
 
@@ -1968,8 +1978,7 @@ Sets the text shadow color.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
-  (Tooltip)
+  EE::UI::UIPushButton (PushButton), EE::UI::UITooltip (Tooltip)
 * Data Type: [color](#color-data-type)
 * Default color: `#323232E6`
 
@@ -1982,8 +1991,7 @@ Sets the text shadow offset.
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
-  (Tooltip)
+  EE::UI::UIPushButton (PushButton), EE::UI::UITooltip (Tooltip)
 * Data Type: [vector2-length](#vector2-length-data-type)
 * Default offset: `1dp 1dp`
 
@@ -2355,8 +2363,7 @@ Enables/disables word-wrap in the text view element.
 
 * Applicable to: EE::UI::UITextVIew (TextView), EE::UI::UITextInput (TextInput),
   EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton),
-  EE::UI::UIListBoxItem (ListBox::item), EE::UI::UITextInputPassword (TextInputPassword),
-  EE::UI::UIDropDownList (DropDownList).
+  EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList).
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 

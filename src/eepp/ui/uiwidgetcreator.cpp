@@ -1,3 +1,6 @@
+#include <eepp/ui/htmlinput.hpp>
+#include <eepp/ui/htmltextarea.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
 #include <eepp/ui/uicheckbox.hpp>
@@ -5,18 +8,24 @@
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
+#include <eepp/ui/uihtmllistitem.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uinodelink.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
@@ -26,12 +35,13 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitooltip.hpp>
@@ -40,7 +50,6 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
-#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 namespace EE { namespace UI {
@@ -64,6 +73,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["radiobutton"] = UIRadioButton::New;
 		registeredWidget["combobox"] = UIComboBox::New;
 		registeredWidget["dropdownlist"] = UIDropDownList::New;
+		registeredWidget["dropdownmodellist"] = UIDropDownModelList::New;
 		registeredWidget["image"] = UIImage::New;
 		registeredWidget["listbox"] = UIListBox::New;
 		registeredWidget["menubar"] = UIMenuBar::New;
@@ -78,7 +88,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
-		registeredWidget["textinputpassword"] = UITextInputPassword::New;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -92,6 +101,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["stacklayout"] = UIStackLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
+		registeredWidget["diffview"] = Tools::UIDiffView::New;
 		registeredWidget["splitter"] = UISplitter::New;
 		registeredWidget["treeview"] = UITreeView::New;
 		registeredWidget["tableview"] = UITableView::New;
@@ -106,22 +116,100 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["nodelink"] = UINodeLink::New;
 		registeredWidget["textureviewer"] = Tools::UITextureViewer::New;
 		registeredWidget["imageviewer"] = Tools::UIImageViewer::New;
+		registeredWidget["richtext"] = UIRichText::New;
+		registeredWidget["textspan"] = UITextSpan::New;
+		registeredWidget["markdownview"] = UIMarkdownView::New;
 
+		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
-		registeredWidget["input"] = UITextInput::New;
-		registeredWidget["inputpassword"] = UITextInputPassword::New;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
 		registeredWidget["vslider"] = UISlider::NewHorizontal;
 		registeredWidget["hslider"] = UISlider::NewHorizontal;
 		registeredWidget["vscrollbar"] = UIScrollBar::NewVertical;
 		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
-		registeredWidget["button"] = UIPushButton::New;
 		registeredWidget["rlay"] = UIRelativeLayout::New;
 		registeredWidget["tooltip"] = UITooltip::New;
 		registeredWidget["tv"] = UITextView::New;
-		registeredWidget["a"] = UIAnchor::New;
+
+		// HTML elements
+		registeredWidget["a"] = UIAnchorSpan::New;
+		registeredWidget["span"] = UITextSpan::New;
+		registeredWidget["em"] = UITextSpan::NewEmphasis;
+		registeredWidget["b"] = UITextSpan::NewBold;
+		registeredWidget["strong"] = UITextSpan::NewStrong;
+		registeredWidget["small"] = UITextSpan::NewSmall;
+		registeredWidget["i"] = UITextSpan::NewItalics;
+		registeredWidget["u"] = UITextSpan::NewUnderline;
+		registeredWidget["ins"] = UITextSpan::NewUnderline;
+		registeredWidget["s"] = UITextSpan::NewStrikethrough;
+		registeredWidget["del"] = UITextSpan::NewStrikethrough;
+		registeredWidget["font"] = UITextSpan::NewFont;
+		registeredWidget["code"] = UITextSpan::NewCode;
+		registeredWidget["mark"] = UITextSpan::NewMark;
+		registeredWidget["div"] = UIRichText::NewDiv;
+		registeredWidget["p"] = UIRichText::NewParagraph;
+		registeredWidget["blockquote"] = UIRichText::NewBlockquote;
+		registeredWidget["h1"] = UIRichText::NewH1;
+		registeredWidget["h2"] = UIRichText::NewH2;
+		registeredWidget["h3"] = UIRichText::NewH3;
+		registeredWidget["h4"] = UIRichText::NewH4;
+		registeredWidget["h5"] = UIRichText::NewH5;
+		registeredWidget["h6"] = UIRichText::NewH6;
+		registeredWidget["br"] = UIRichText::NewBr;
+		registeredWidget["hr"] = UIRichText::NewHr;
+		registeredWidget["ul"] = [] {
+			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ul" );
+			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
+			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			return w;
+		};
+		registeredWidget["ol"] = [] {
+			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ol" );
+			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
+			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			return w;
+		};
+		registeredWidget["li"] = UIHTMLListItem::New;
+		registeredWidget["pre"] = UIRichText::NewPre;
+		registeredWidget["img"] = [] {
+			auto img = UIHTMLImage::New();
+			img->setFlags( UI_HTML_ELEMENT );
+			return img;
+		};
+		registeredWidget["svg"] = [] {
+			auto svg = UISvg::New();
+			svg->setFlags( UI_HTML_ELEMENT );
+			return svg;
+		};
+		registeredWidget["input"] = [] { return HTMLInput::New(); };
+		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
+		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
+		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
+		registeredWidget["main"] = [] { return UIRichText::NewWithTag( "main" ); };
+		registeredWidget["section"] = [] { return UIRichText::NewWithTag( "section" ); };
+		registeredWidget["nav"] = [] { return UIRichText::NewWithTag( "nav" ); };
+		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
+		registeredWidget["html"] = UIRichText::NewHtml;
+		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
+		registeredWidget["body"] = UIRichText::NewBody;
+		registeredWidget["form"] = [] { return UIRichText::NewWithTag( "form" ); };
+		registeredWidget["table"] = UIHTMLTable::New;
+		registeredWidget["tr"] = UIHTMLTableRow::New;
+		registeredWidget["thead"] = UIHTMLTableHead::New;
+		registeredWidget["tbody"] = UIHTMLTableBody::New;
+		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
+		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
+		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
+		registeredWidget["input"] = HTMLInput::New;
+		registeredWidget["textarea"] = HTMLTextArea::New;
+		registeredWidget["button"] = [] {
+			auto but = UIPushButton::NewWithTag( "button" );
+			but->setFlags( UI_HTML_ELEMENT );
+			but->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+			return but;
+		};
 
 		sBaseListCreated = true;
 	}
@@ -129,6 +217,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 
 UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 	createBaseWidgetList();
+
+	if ( widgetName.empty() )
+		return nullptr;
 
 	std::string lwidgetName( String::toLower( widgetName ) );
 
@@ -140,7 +231,9 @@ UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 		return widgetCallback[lwidgetName]( lwidgetName );
 	}
 
-	return NULL;
+	eePRINTL( "UIWidgetCreator::createFromName: \"%s\" not found", widgetName.c_str() );
+
+	return nullptr;
 }
 
 void UIWidgetCreator::addCustomWidgetCallback( const std::string& widgetName,

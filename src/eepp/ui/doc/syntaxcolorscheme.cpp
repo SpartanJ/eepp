@@ -112,7 +112,7 @@ SyntaxColorScheme::Style parseStyle(
 				style.style |= Text::Italic;
 			else if ( "underline" == val || "underlined" == val )
 				style.style |= Text::Underlined;
-			else if ( "strikethrough" == val )
+			else if ( "strikethrough" == val || "line-through" == val )
 				style.style |= Text::StrikeThrough;
 			else if ( "shadow" == val )
 				style.style |= Text::Shadow;

@@ -61,8 +61,10 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 				lastModelIndex = row->getCurIndex();
 			}
 		} );
-		row->on( Event::MouseLeave, [row]( const Event* ) {
-			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() )
+		row->on( Event::MouseLeave, [row, sceneNode]( const Event* ) {
+			if ( row->getCurIndex().internalData() &&
+				 sceneNode->getRoot()->inNodeTree( row->getCurIndex().ref<UINode>() ) &&
+				 row->getCurIndex().ref<Node>()->isUINode() )
 				row->getCurIndex().ref<UINode>()->unsetFlags( UI_HIGHLIGHT );
 		} );
 	} );

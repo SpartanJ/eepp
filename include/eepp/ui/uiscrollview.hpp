@@ -11,6 +11,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
   public:
 	static UIScrollView* New();
 
+	virtual ~UIScrollView();
+
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -50,6 +52,10 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void setAnchorScroll( bool anchor );
 
+	void setEnableDefaultKeybindings( bool enable );
+
+	bool areDefaultKeybindingsEnabled() const { return mDefaultKeybindings; }
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;
@@ -62,7 +68,11 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	Uint32 mPosChangeCb;
 	bool mAutoSetClipStep{ true };
 	bool mAnchorScroll{ false };
+	bool mDefaultKeybindings{ true };
 	Sizef mLastScrollViewSize;
+	Node* mParentRef{ nullptr };
+	Uint32 mParentSizeChangeCb{ 0 };
+	Uint32 mParentCloseCb{ 0 };
 
 	UIScrollView();
 
@@ -75,6 +85,10 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onPaddingChange();
+
+	virtual void onSizePolicyChange();
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onValueChangeCb( const Event* Event );
 
@@ -89,6 +103,15 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	virtual void onTouchDragValueChange( Vector2f diff );
 
 	virtual bool isTouchOverAllowedChildren();
+
+	virtual void onParentChange();
+
+	void listenParent();
+
+	void clearListeners();
+
+	void updateInternalSize();
+
 };
 
 }} // namespace EE::UI

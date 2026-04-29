@@ -56,6 +56,10 @@ static const auto LAYOUT = R"xml(
 #welcome_ecode PushButton:hover {
 	border-color: var(--primary);
 }
+#welcome_ecode PushButton:pressed {
+	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+}
 #welcome_ecode .separator {
 	focusable: false;
 	background-image: rectangle(solid, var(--tab-line));
@@ -152,31 +156,31 @@ static const auto LAYOUT = R"xml(
 			</vbox>
 		</vbox>
 		<vbox class="right" lw="0" lh="wc" lw8="0.5" lg="center">
-			<button id="create-new" text="@string(new_file, New File)" />
-			<button id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
-			<button id="open-folder" text="@string(open_a_folder, Open a Folder)" />
-			<button id="open-file" text="@string(open_a_file, Open a File)" />
-			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
-			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
-			<button id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
-			<button id="keybindings" text="@string(keybindings, Keybindings)" />
+			<PushButton id="create-new" text="@string(new_file, New File)" />
+			<PushButton id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
+			<PushButton id="open-folder" text="@string(open_a_folder, Open a Folder)" />
+			<PushButton id="open-file" text="@string(open_a_file, Open a File)" />
+			<PushButton id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
+			<PushButton id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
+			<PushButton id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
+			<PushButton id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />
 			<tv class="bold" text="@string(for_help_please_visit, For help, please visit:)" lg="center" />
 			<vbox lw="wc" lh="wc" lg="center">
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_doc" text="@string(documentation, documentation)" href="https://github.com/SpartanJ/ecode" />
+					<Anchor id="home_doc" text="@string(documentation, documentation)" href="https://github.com/SpartanJ/ecode" />
 				</hbox>
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_forum" text="@string(forum, forum)" href="https://github.com/SpartanJ/ecode/discussions" />
+					<Anchor id="home_forum" text="@string(forum, forum)" href="https://github.com/SpartanJ/ecode/discussions" />
 				</hbox>
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_issues" text="@string(issues, issues)" href="https://github.com/SpartanJ/ecode/issues" />
+					<Anchor id="home_issues" text="@string(issues, issues)" href="https://github.com/SpartanJ/ecode/issues" />
 				</hbox>
 				<hbox>
-					<a id="check-for-updates" text="@string(check_for_updates, Check for Updates)" />
+					<Anchor id="check-for-updates" text="@string(check_for_updates, Check for Updates)" />
 				</hbox>
 			</vbox>
 		</vbox>

@@ -1,4 +1,5 @@
 ﻿#include "linterplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -12,9 +13,18 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
+
 #include <nlohmann/json.hpp>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
+
+#define YAML_DECLARE_STATIC
+#include <libyaml/include/yaml.h>
+
+#include <gumbo-parser/error.h>
+#include <gumbo-parser/gumbo.h>
+#include <gumbo-parser/parser.h>
+#include <gumbo-parser/string_buffer.h>
 
 using json = nlohmann::json;
 
@@ -78,10 +88,26 @@ size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& 
 	return std::string::npos;
 }
 
+void LinterPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_linter_config_parsing",
+							  "Linter Plugin - Error parsing Linter config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
+
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
+
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
@@ -91,6 +117,14 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"linters\":[]\n}\n", nullptr,
 						 true, true );
@@ -410,6 +444,12 @@ static json toJson( const LSPDiagnostic& diagnostic ) {
 }
 
 PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
+	if ( notification.type == PluginMessageType::UIReady ) {
+		if ( mBrokenUserConfigFile )
+			displayBrokenUserConfigFileWarning();
+		return {};
+	}
+
 	if ( notification.type == PluginMessageType::FileSystemListenerReady ) {
 		subscribeFileSystemListener();
 		return {};
@@ -779,13 +819,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( linter.command.empty() )
 		return;
 
-	bool binaryFound = false;
-	auto parts = String::split( linter.command, ' ' );
-	if ( !parts.empty() ) {
-		if ( parts[0].find_first_of( "\\/" ) != std::string::npos ) {
-			binaryFound = FileSystem::fileExists( parts[0] );
-		} else {
-			binaryFound = !Sys::which( parts[0] ).empty();
+	bool binaryFound = linter.isNative;
+	if ( !linter.isNative ) {
+		auto parts = String::split( linter.command, ' ' );
+		if ( !parts.empty() ) {
+			if ( parts[0].find_first_of( "\\/" ) != std::string::npos ) {
+				binaryFound = FileSystem::fileExists( parts[0] );
+			} else {
+				binaryFound = !Sys::which( parts[0] ).empty();
+			}
 		}
 	}
 	if ( !binaryFound )
@@ -824,15 +866,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
 							  const std::string& path ) {
 	std::string cmd( linter.command );
+	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
+		mNativeLinters[cmd]( doc, path );
+		return;
+	}
 	std::string pathstr( "\"" + path + "\"" );
 	String::replaceAll( cmd, "$FILENAME", pathstr );
 	String::replaceAll( cmd, "${file_path}", pathstr );
 	String::replaceAll( cmd, "$PROJECTPATH", mManager->getWorkspaceFolder() );
 	String::replaceAll( cmd, "${project_root}", mManager->getWorkspaceFolder() );
-	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
-		mNativeLinters[cmd]( doc, path );
-		return;
-	}
 	std::unique_ptr<Process> process = std::make_unique<Process>();
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
@@ -1480,6 +1522,41 @@ void LinterPlugin::unregisterNativeLinter( const std::string& cmd ) {
 	mNativeLinters.erase( cmd );
 }
 
+static bool lint_yaml( const std::string& contents, int& out_line, int& out_col,
+					   std::string& out_msg ) {
+	yaml_parser_t parser;
+	yaml_parser_initialize( &parser );
+	yaml_parser_set_input_string(
+		&parser, reinterpret_cast<const unsigned char*>( contents.data() ), contents.size() );
+
+	yaml_event_t event;
+	bool done = false;
+	bool valid = true;
+
+	while ( !done ) {
+		if ( !yaml_parser_parse( &parser, &event ) ) {
+			valid = false;
+			out_line = parser.problem_mark.line;  // 0-based
+			out_col = parser.problem_mark.column; // 0-based
+			out_msg = std::string( parser.problem ) + " at " + std::to_string( out_line + 1 ) +
+					  ":" + std::to_string( out_col + 1 );
+			break;
+		}
+
+		switch ( event.type ) {
+			case YAML_STREAM_END_EVENT:
+				done = true;
+				break;
+			default:
+				break;
+		}
+		yaml_event_delete( &event );
+	}
+
+	yaml_parser_delete( &parser );
+	return valid;
+}
+
 void LinterPlugin::registerNativeLinters() {
 	if ( !mNativeLinters.empty() )
 		return;
@@ -1507,6 +1584,133 @@ void LinterPlugin::registerNativeLinters() {
 			matches[line] = { match };
 		}
 		setMatches( doc.get(), MatchOrigin::Linter, matches );
+	};
+
+	mNativeLinters["json"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string contents;
+		FileSystem::fileGet( path, contents );
+
+		json j;
+		try {
+			j = json::parse( contents, nullptr, true, true );
+		} catch ( const json::exception& e ) {
+			LuaPattern ptrn( "line%s(%d+),%scolumn%s(%d+)" );
+			PatternMatcher::Range matches[4];
+			std::string_view err( e.what() );
+			if ( ptrn.matches( err.data(), matches ) ) {
+				auto lineStr( err.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				auto offsetStr( err.substr( matches[2].start, matches[2].end - matches[2].start ) );
+				Int64 line;
+				Int64 offset;
+				String::fromString( line, lineStr );
+				String::fromString( offset, offsetStr );
+				if ( line )
+					line--;
+				LinterMatch match;
+				match.range = { { line, offset }, { line, offset } };
+				match.range = { doc->nextWordBoundary( match.range.start(), false ),
+								doc->previousWordBoundary( match.range.start(), false ) };
+				if ( !match.range.hasSelection() )
+					match.range.setEnd( { line, offset + 1 } );
+				match.text = err;
+				match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
+				match.lineHash = doc->getLineHash( match.range.start().line() );
+				match.origin = MatchOrigin::Linter;
+				ret[line] = { match };
+			}
+		}
+
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
+	};
+
+	mNativeLinters["yaml"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string contents;
+		if ( !FileSystem::fileGet( path, contents ) )
+			return;
+
+		int line = 0, column = 0;
+		std::string msg;
+
+		if ( !lint_yaml( contents, line, column, msg ) ) {
+			LinterMatch match;
+			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
+			match.origin = MatchOrigin::Linter;
+			match.text = std::move( msg );
+			match.range = { { line, column }, { line, column } };
+			match.range = { doc->nextWordBoundary( match.range.start(), false ),
+							doc->previousWordBoundary( match.range.start(), false ) };
+			match.lineHash = doc->getLineHash( match.range.start().line() );
+			if ( !match.range.hasSelection() )
+				match.range.setEnd( { line, column + 1 } );
+			ret[line] = { match };
+		}
+
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
+	};
+
+	mNativeLinters["html"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string contents;
+		if ( !FileSystem::fileGet( path, contents ) )
+			return;
+
+		GumboOutput* output = gumbo_parse( contents.c_str() );
+
+		if ( output->errors.length > 0 ) {
+			GumboInternalParser dummy_parser = {};
+			dummy_parser._options = &kGumboDefaultOptions;
+
+			for ( unsigned int i = 0; i < output->errors.length; ++i ) {
+				GumboError* error = static_cast<GumboError*>( output->errors.data[i] );
+
+				Int64 line = static_cast<Int64>( error->position.line ) - 1;
+				Int64 col = static_cast<Int64>( error->position.column ) - 1;
+
+				if ( line < 0 )
+					line = 0;
+				if ( col < 0 )
+					col = 0;
+
+				LinterMatch match;
+				match.range = { { line, col }, { line, col } };
+				match.range = { doc->nextWordBoundary( match.range.start(), false ),
+								doc->previousWordBoundary( match.range.start(), false ) };
+
+				if ( !match.range.hasSelection() )
+					match.range.setEnd( { line, col + 1 } );
+
+				GumboStringBuffer buffer;
+				gumbo_string_buffer_init( &dummy_parser, &buffer );
+				gumbo_error_to_string( &dummy_parser, error, &buffer );
+
+				std::string errorStr( buffer.data, buffer.length );
+				gumbo_string_buffer_destroy( &dummy_parser, &buffer );
+
+				// Gumbo prepends "@line:col: " to the string (e.g., "@12:5: The tag...").
+				// Since ecode visually places the error at the right line/col,
+				// we should strip this prefix out for a cleaner UI tooltip.
+				auto colonPos = errorStr.find( ": " );
+				if ( errorStr[0] == '@' && colonPos != std::string::npos ) {
+					// Also strips the space after the colon
+					errorStr = errorStr.substr( colonPos + 2 );
+				}
+
+				match.text = errorStr;
+				match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Warning );
+				match.lineHash = doc->getLineHash( match.range.start().line() );
+				match.origin = MatchOrigin::Linter;
+
+				ret[line].emplace_back( std::move( match ) );
+			}
+		}
+
+		gumbo_destroy_output( &kGumboDefaultOptions, output );
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
 	};
 }
 

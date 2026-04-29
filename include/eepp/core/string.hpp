@@ -88,6 +88,15 @@ class EE_API String {
 		return hash;
 	}
 
+	static constexpr String::HashType hashToLower( const char* str, Int64 len ) {
+		String::HashType hash = 5381;
+		while ( --len >= 0 ) {
+			int c = *str++;
+			hash = ( ( hash << 5 ) + hash ) + ( c >= 'A' && c <= 'Z' ? c + 32 : c );
+		}
+		return hash;
+	}
+
 	/** Escape string sequence */
 	static String escape( const String& str );
 
@@ -103,6 +112,18 @@ class EE_API String {
 	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
 	 * String( "text" ) ) */
 	static String::HashType hash( const String& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const std::string& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const std::string_view& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const String::View& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const String& str );
 
 	/** @return If the value passed is a character */
 	static bool isCharacter( const int& value );
@@ -317,6 +338,13 @@ class EE_API String {
 	 * @param needle The searched string.
 	 * @return true if string starts with the substring
 	 */
+	static bool startsWith( String::View haystack, String::View needle );
+
+	/** Compare two strings from its beginning.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
 	static bool startsWith( const char* haystack, const char* needle );
 
 	/** Compare two strings from its beginning.
@@ -325,6 +353,41 @@ class EE_API String {
 	 * @return true if string starts with the substring
 	 */
 	static bool startsWith( std::string_view haystack, std::string_view needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const std::string& haystack, const std::string& needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const String& haystack, const String& needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( String::View haystack, String::View needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const char* haystack, const char* needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( std::string_view haystack, std::string_view needle );
 
 	/** Compare two strings from its end.
 	 * @param haystack The string to search in.
@@ -339,6 +402,13 @@ class EE_API String {
 	 * @return true if string starts with the substring
 	 */
 	static bool endsWith( const String& haystack, const String& needle );
+
+	/** Compare two strings from its end.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool endsWith( String::View haystack, String::View needle );
 
 	/** @return True if a string contains a substring.
 	 * @param haystack The string to search in.
@@ -382,7 +452,7 @@ class EE_API String {
 	static int fuzzyMatch( const std::string& pattern, const std::string& string );
 
 	/** Replace all occurrences of the search string with the replacement string. */
-	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
+	static void replaceAll( std::string& target, std::string_view that, std::string_view with );
 
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( String& target, const String& that, const String& with );
@@ -1040,7 +1110,7 @@ class EE_API String {
 
 	static bool isLatin1( String::View str );
 
-	Uint32 getTextHints();
+	Uint32 getTextHints() const;
 
 	static Uint32 getTextHints( String::View str );
 
@@ -1179,6 +1249,8 @@ class EE_API String {
 	 *	@param str The string to strip
 	 */
 	static void stripAnsiCodes( std::string& str );
+
+	static void removeExtraSpaces( std::string& str );
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

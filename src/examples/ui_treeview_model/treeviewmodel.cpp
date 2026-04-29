@@ -1,9 +1,5 @@
 #include <eepp/ee.hpp>
 
-using namespace EE;
-using namespace EE::UI;
-using namespace EE::UI::Models;
-
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 800, 600, "eepp - StringMapModel Example" } );
 

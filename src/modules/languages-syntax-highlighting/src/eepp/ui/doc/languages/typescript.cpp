@@ -11,7 +11,7 @@ SyntaxDefinition& addTypeScript() {
 			->add(
 
 				{ "TypeScript",
-				  { "%.ts$", "%.d%.ts$", "%.cts$" },
+				  { "%.ts$", "%.d%.ts$", "%.cts$", "%.mts$" },
 				  {
 					  { { "//.-\n" }, "comment" },
 					  { { "/%*", "%*/" }, "comment" },

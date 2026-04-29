@@ -97,6 +97,17 @@ class UIVLinearLayoutCommandExecuter : public UILinearLayout, public WidgetComma
 	}
 };
 
+class UIScrollViewCommandExecuter : public UIScrollView, public WidgetCommandExecuter {
+  public:
+	static UIScrollViewCommandExecuter* New() { return eeNew( UIScrollViewCommandExecuter, () ); }
+
+	UIScrollViewCommandExecuter() : UIScrollView(), WidgetCommandExecuter( getInput() ) {}
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event ) || UIScrollView::onKeyDown( event );
+	}
+};
+
 } // namespace ecode
 
 #endif // ECODE_WIDGETCOMMANDEXECUTER_HPP

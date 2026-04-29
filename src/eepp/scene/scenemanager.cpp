@@ -9,15 +9,13 @@ namespace EE { namespace Scene {
 SINGLETON_DECLARE_IMPLEMENTATION( SceneManager )
 
 bool SceneManager::isActive() {
-	return EE::Window::Engine::isEngineRunning() && SceneManager::existsSingleton() &&
-		   !SceneManager::instance()->isShuttingDown();
+	return Engine::isEngineRunning() && SceneManager::existsSingleton() &&
+		   !SceneManager::isShuttingDown();
 }
 
-SceneManager::SceneManager() : mUISceneNode( NULL ), mIsShuttingDown( false ) {}
+SceneManager::SceneManager() : mUISceneNode( NULL ) {}
 
 SceneManager::~SceneManager() {
-	mIsShuttingDown = true;
-
 	for ( auto& it : mSceneNodes ) {
 		SceneNode* node = it;
 		eeSAFE_DELETE( node );
@@ -58,10 +56,6 @@ void SceneManager::update( const Time& elapsed ) {
 
 void SceneManager::update() {
 	update( mClock.getElapsedTimeAndReset() );
-}
-
-bool SceneManager::isShuttingDown() const {
-	return mIsShuttingDown;
 }
 
 UISceneNode* SceneManager::getUISceneNode() {

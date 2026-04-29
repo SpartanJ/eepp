@@ -196,6 +196,9 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontSize:
 			setFontSize( lengthFromValue( attribute ) );
 			break;
+		case PropertyId::TextDecoration:
+			setTextDecoration( attribute.asTextDecoration() );
+			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
 			break;
@@ -233,7 +236,9 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::fromFloat( getFontSize(), "px" );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -251,7 +256,7 @@ std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 		PropertyId::Color,			PropertyId::TextShadowColor,	PropertyId::TextShadowOffset,
 		PropertyId::SelectionColor, PropertyId::SelectionBackColor, PropertyId::FontFamily,
 		PropertyId::FontSize,		PropertyId::FontStyle,			PropertyId::TextStrokeWidth,
-		PropertyId::TextStrokeColor };
+		PropertyId::TextStrokeColor, PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -340,6 +345,21 @@ const Vector2f& UIConsole::getFontShadowOffset() const {
 UIConsole* UIConsole::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
+		onFontStyleChanged();
+	}
+	return this;
+}
+
+Uint32 UIConsole::getTextDecoration() const {
+	Uint32 flags = mFontStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UIConsole* UIConsole::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mFontStyleConfig.Style != textDecoration ) {
+		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mFontStyleConfig.Style |= textDecoration;
 		onFontStyleChanged();
 	}
 	return this;
@@ -930,10 +950,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	Input* input = getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
-		   !input->isAltGrPressed() ) ||
-		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
+	if ( !event.isValid( input ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&

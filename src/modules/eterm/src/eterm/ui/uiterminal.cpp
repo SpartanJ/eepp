@@ -137,9 +137,8 @@ void UITerminal::onContentSizeChange() {
 	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
 							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
-	mVScroll->setPageStep( visibleArea / (Float)contentSize );
-
 	updateScrollPosition();
+	mVScroll->setPageStep( contentSize > 0 ? ( visibleArea / (Float)contentSize ) : 1.f );
 	updateScroll();
 }
 
@@ -182,10 +181,11 @@ int UITerminal::getVisibleArea() const {
 }
 
 void UITerminal::updateScrollPosition() {
-	if ( mTerm && mTerm->getTerminal() )
-		mVScroll->setValue( 1.f - mTerm->getTerminal()->scrollPos() /
-									  (Float)mTerm->getTerminal()->getHistorySize(),
-							false );
+	if ( mTerm && mTerm->getTerminal() ) {
+		int historySize = mTerm->getTerminal()->getHistorySize();
+		Float val = historySize > 0 ? ( 1.f - mTerm->getTerminal()->scrollPos() / (Float)historySize ) : 1.f;
+		mVScroll->setValue( val, false );
+	}
 }
 
 int UITerminal::getScrollableArea() const {
@@ -435,10 +435,7 @@ bool UITerminal::isUsingCustomTitle() const {
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	Input* input = getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
-		   !input->isAltGrPressed() ) ||
-		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
+	if ( !event.isValid( input ) )
 		return 0;
 
 	mTerm->onTextInput( event.getChar() );

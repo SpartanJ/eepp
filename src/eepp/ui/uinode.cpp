@@ -138,16 +138,10 @@ const Vector2f& UINode::getPixelsPosition() const {
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
-	Sizef s( size );
-
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
+	Sizef s( fitMinMaxSizeDp( size ) );
 
 	if ( s != mDpSize ) {
-		mDpSize = size;
+		mDpSize = s;
 		mSize = PixelDensity::dpToPx( s );
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
@@ -158,14 +152,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	Sizef s( size );
-	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
-
-	if ( s.x < pMinSize.x )
-		s.x = pMinSize.x;
-
-	if ( s.y < pMinSize.y )
-		s.y = pMinSize.y;
+	Sizef s( fitMinMaxSizePx( size ) );
 
 	if ( s != mSize ) {
 		mDpSize = PixelDensity::pxToDp( s ).ceil();
@@ -274,13 +261,13 @@ void UINode::setMinSizeEq( const std::string& minWidthEq, const std::string& min
 		mMinHeightEq = minHeightEq;
 
 		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			mMinSize.x =
+				lengthFromValueAsDp( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		}
 
 		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			mMinSize.y =
+				lengthFromValueAsDp( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		}
 
 		setSize( mDpSize );
@@ -292,8 +279,8 @@ void UINode::setMinWidthEq( const std::string& minWidthEq ) {
 		mMinWidthEq = minWidthEq;
 
 		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			mMinSize.x =
+				lengthFromValueAsDp( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		}
 
 		setSize( mDpSize );
@@ -309,8 +296,8 @@ void UINode::setMinHeightEq( const std::string& minHeightEq ) {
 		mMinHeightEq = minHeightEq;
 
 		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			mMinSize.y =
+				lengthFromValueAsDp( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		}
 
 		setSize( mDpSize );
@@ -325,6 +312,10 @@ void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& max
 	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
 		mMaxWidthEq = maxWidthEq;
 		mMaxHeightEq = maxHeightEq;
+		if ( mMaxWidthEq == "none" )
+			mMaxWidthEq.clear();
+		if ( mMaxHeightEq == "none" )
+			mMaxHeightEq.clear();
 		setSize( mDpSize );
 	}
 }
@@ -332,7 +323,9 @@ void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& max
 void UINode::setMaxWidthEq( const std::string& maxWidthEq ) {
 	if ( mMaxWidthEq != maxWidthEq ) {
 		mMaxWidthEq = maxWidthEq;
-		setSize( mDpSize );
+		if ( mMaxWidthEq == "none" )
+			mMaxWidthEq.clear();
+		onSizeChange();
 	}
 }
 
@@ -343,7 +336,9 @@ const std::string& UINode::getMaxHeightEq() const {
 void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
 	if ( mMaxHeightEq != maxHeightEq ) {
 		mMaxHeightEq = maxHeightEq;
-		setSize( mDpSize );
+		if ( mMaxHeightEq == "none" )
+			mMaxHeightEq.clear();
+		onSizeChange();
 	}
 }
 
@@ -352,13 +347,13 @@ Sizef UINode::getMaxSize() const {
 
 	if ( !mMaxWidthEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMaxWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMaxHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
@@ -369,14 +364,13 @@ Sizef UINode::getMaxSizePx() const {
 	Sizef s;
 
 	if ( !mMaxWidthEq.empty() ) {
-		Float length =
-			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		Float length = lengthFromValue( mMaxWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValue( mMaxHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
@@ -388,13 +382,13 @@ Sizef UINode::getMinSize() const {
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMinHeightEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
@@ -405,14 +399,13 @@ Sizef UINode::getMinSizePx() const {
 	Sizef s;
 
 	if ( !mMinWidthEq.empty() ) {
-		Float length =
-			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		Float length = lengthFromValue( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMinHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValue( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
@@ -429,26 +422,24 @@ Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
 		s.y = PixelDensity::pxToDp( mMinSize.y );
 
 	if ( !mMinWidthEq.empty() ) {
-		Float length =
-			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		Float length = lengthFromValue( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMinHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValue( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
 	if ( !mMaxWidthEq.empty() ) {
-		Float length =
-			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		Float length = lengthFromValue( mMaxWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemin( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValue( mMaxHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemin( s.y, length );
 	}
 
@@ -470,25 +461,25 @@ Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMinHeightEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMinHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
 	if ( !mMaxWidthEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMaxWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemin( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
-			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMaxHeightEq, PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemin( s.y, length );
 	}
 
@@ -1181,7 +1172,7 @@ UIBorderDrawable* UINode::getBorder() const {
 	if ( NULL == mBorder ) {
 		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
-		mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
+		// mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
 
 	return mBorder;
@@ -1572,16 +1563,24 @@ Node* UINode::setFocus( NodeFocusReason reason ) {
 }
 
 Float UINode::getPropertyRelativeTargetContainerLength(
-	const CSS::PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
+	const PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
 	const Uint32& propertyIndex ) const {
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
-		case PropertyRelativeTarget::ContainingBlockWidth:
-			containerLength = getParent() ? getParent()->getPixelsSize().getWidth() : 0;
+		case PropertyRelativeTarget::ContainingBlockWidth: {
+			Node* parent = getParent(); // Text spans cannot be considered containing blocks
+			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+				parent = parent->getParent();
+			containerLength = parent ? parent->getPixelsSize().getWidth() : 0;
 			break;
-		case PropertyRelativeTarget::ContainingBlockHeight:
-			containerLength = getParent() ? getParent()->getPixelsSize().getHeight() : 0;
+		}
+		case PropertyRelativeTarget::ContainingBlockHeight: {
+			Node* parent = getParent(); // Text spans cannot be considered containing blocks
+			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+				parent = parent->getParent();
+			containerLength = parent ? parent->getPixelsSize().getHeight() : 0;
 			break;
+		}
 		case PropertyRelativeTarget::LocalBlockWidth:
 			containerLength = getPixelsSize().getWidth();
 			break;
@@ -1626,11 +1625,64 @@ Float UINode::lengthFromValue( const std::string& value,
 							   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+	return convertLength( StyleSheetLength::fromString( value, defaultValue ), containerLength );
 }
 
-Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
-							   const Float& defaultValue ) {
+Float UINode::lengthFromValue( const StyleSheetProperty& property,
+							   const Float& defaultValue ) const {
+	if ( property.getPropertyDefinition() &&
+		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( property.value() );
+		if ( length.getUnit() == StyleSheetLength::Unit::Percentage ) {
+			length.setValue( length.getValue() / 100.f, StyleSheetLength::Unit::Em );
+			return convertLength( length, 0 );
+		}
+
+		static constexpr std::string_view FontSizeNames[] = {
+			"xx-small", "x-small",	"small",	 "medium",	"large",
+			"x-large",	"xx-large", "xxx-large", "smaller", "larger" };
+
+		auto it = std::find( std::begin( FontSizeNames ), std::end( FontSizeNames ),
+							 property.getValue() );
+
+		if ( it != std::end( FontSizeNames ) ) {
+			std::string_view keyword = *it;
+			StyleSheetLength res;
+			if ( keyword == "xx-small" ) {
+				res.setValue( 0.6f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "x-small" ) {
+				res.setValue( 0.75f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "small" ) {
+				res.setValue( 0.89f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "medium" ) {
+				res.setValue( 1.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "large" ) {
+				res.setValue( 1.2f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "x-large" ) {
+				res.setValue( 1.5f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "xx-large" ) {
+				res.setValue( 2.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "xxx-large" ) {
+				res.setValue( 3.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "smaller" ) {
+				res.setValue( 0.85f, StyleSheetLength::Unit::Em );
+			} else if ( keyword == "larger" ) {
+				res.setValue( 1.2f, StyleSheetLength::Unit::Em );
+			}
+			return convertLength( res, 0 );
+		} else if ( property.getValue() == "inherit" ) {
+			Node* parentNode = getParent();
+			if ( parentNode && parentNode->isWidget() ) {
+				Float parentPxSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+				StyleSheetLength res;
+				res.setValue( PixelDensity::pxToDp( parentPxSize ), StyleSheetLength::Unit::Dp );
+				return convertLength( res, 0 );
+			}
+			StyleSheetLength res;
+			res.setValue( 12, StyleSheetLength::Unit::Dp );
+			return convertLength( res, 0 );
+		}
+	}
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
 							property.getIndex() );
@@ -1641,11 +1693,11 @@ Float UINode::lengthFromValueAsDp( const std::string& value,
 								   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
+	return convertLengthAsDp( StyleSheetLength::fromString( value, defaultValue ),
 							  containerLength );
 }
 
-Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+Float UINode::lengthFromValueAsDp( const StyleSheetProperty& property,
 								   const Float& defaultValue ) const {
 	return lengthFromValueAsDp( property.getValue(),
 								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
@@ -1673,85 +1725,35 @@ void UINode::onSceneChange() {
 
 Float UINode::convertLength( const CSS::StyleSheetLength& length,
 							 const Float& containerLength ) const {
-	Float elFontSize = 12;
-	Float rootFontSize = 12;
+	Float rootFontSize = 12.f * PixelDensity::getPixelDensity();
+	Float elFontSize = rootFontSize;
 
-	if ( length.getUnit() == CSS::StyleSheetLength::Unit::Rem ) {
-		if ( getUISceneNode() != NULL ) {
-			std::string fontSizeStr( getUISceneNode()->getRoot()->getPropertyString(
-				CSS::StyleSheetSpecification::instance()->getProperty(
-					(Uint32)PropertyId::FontSize ) ) );
-			if ( !fontSizeStr.empty() ) {
-				Float num;
-				if ( String::fromString( num, fontSizeStr ) ) {
-					rootFontSize = num;
-				}
-			} else if ( NULL != getUISceneNode() &&
-						NULL != getUISceneNode()->getUIThemeManager() ) {
-				UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
-				if ( NULL != themeManager->getDefaultTheme() ) {
-					rootFontSize = getUISceneNode()
-									   ->getUIThemeManager()
-									   ->getDefaultTheme()
-									   ->getDefaultFontSize();
-				} else {
-					rootFontSize = themeManager->getDefaultFontSize();
-				}
+	if ( length.getUnit() == StyleSheetLength::Unit::Rem && getUISceneNode() ) {
+		UIWidget* docRoot = isWidget() ? const_cast<UINode*>( this )->asType<UIWidget>() : nullptr;
+		if ( docRoot ) {
+			while ( docRoot->getParent() && docRoot->getParent()->isWidget() ) {
+				if ( docRoot->getElementTag() == "html" )
+					break;
+				docRoot = docRoot->getParent()->asType<UIWidget>();
 			}
+			rootFontSize = getAbsoluteFontSize( docRoot );
+		} else {
+			rootFontSize = getAbsoluteFontSize( getUISceneNode()->getRoot() );
 		}
-	} else if ( length.getUnit() == CSS::StyleSheetLength::Unit::Em ) {
-		if ( isWidget() ) {
-			std::string fontSizeStr( asConstType<UIWidget>()->getPropertyString(
-				CSS::StyleSheetSpecification::instance()->getProperty(
-					(Uint32)PropertyId::FontSize ) ) );
-			if ( !fontSizeStr.empty() ) {
-				Float num;
-				if ( String::fromString( num, fontSizeStr ) ) {
-					elFontSize = num;
-				}
-			} else {
-				Node* node = getParent();
-
-				while ( NULL != node ) {
-					if ( node->isWidget() ) {
-						fontSizeStr = node->asType<UIWidget>()->getPropertyString(
-							CSS::StyleSheetSpecification::instance()->getProperty(
-								(Uint32)PropertyId::FontSize ) );
-						if ( !fontSizeStr.empty() ) {
-							Float num;
-							if ( String::fromString( num, fontSizeStr ) ) {
-								elFontSize = num;
-								break;
-							}
-						}
-					}
-
-					node = node->getParent();
-				}
-
-				if ( node == NULL ) {
-					if ( NULL != getUISceneNode() &&
-						 NULL != getUISceneNode()->getUIThemeManager() ) {
-						UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
-						if ( NULL != themeManager->getDefaultTheme() ) {
-							elFontSize = getUISceneNode()
-											 ->getUIThemeManager()
-											 ->getDefaultTheme()
-											 ->getDefaultFontSize();
-						} else {
-							elFontSize = themeManager->getDefaultFontSize();
-						}
-					}
-				}
-			}
-		}
+	} else if ( length.getUnit() == StyleSheetLength::Unit::Em && isWidget() ) {
+		elFontSize = getAbsoluteFontSize( asConstType<UIWidget>() );
 	}
 
-	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
-							getSceneNode()->getDPI(), elFontSize, rootFontSize );
+	auto ret = length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
+								getSceneNode()->getDPI(), elFontSize, rootFontSize );
+
+	if ( ( mFlags & UI_HTML_ELEMENT ) && length.getUnit() == StyleSheetLength::Unit::Px )
+		ret = PixelDensity::dpToPx( ret ); // scale px as if where dp in HTML elements
+
+	return ret;
 }
 
-Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
+Float UINode::convertLengthAsDp( const StyleSheetLength& length,
 								 const Float& containerLength ) const {
 	return PixelDensity::pxToDp( convertLength( length, containerLength ) );
 }
@@ -1766,6 +1768,42 @@ Input* UINode::getInput() const {
 
 Rectf UINode::getLocalDpBounds() const {
 	return Rectf( 0, 0, mDpSize.getWidth(), mDpSize.getHeight() );
+}
+
+Float UINode::getAbsoluteFontSize( const UIWidget* widget ) const {
+	std::string pxStr = widget->getPropertyString(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::FontSize ) );
+	if ( pxStr.empty() )
+		return 12.f * PixelDensity::getPixelDensity();
+	StyleSheetLength len( pxStr );
+	if ( len.getUnit() == StyleSheetLength::Unit::Rem ) {
+		Float rootFontSize = 12.f * PixelDensity::getPixelDensity();
+		if ( widget->getUISceneNode() ) {
+			UIWidget* docRoot = const_cast<UIWidget*>( widget );
+			while ( docRoot->getParent() && docRoot->getParent()->isWidget() ) {
+				if ( docRoot->getElementTag() == "html" )
+					break;
+				docRoot = docRoot->getParent()->asType<UIWidget>();
+			}
+			rootFontSize = getAbsoluteFontSize( docRoot );
+		}
+		return len.getValue() * rootFontSize;
+	} else if ( len.getUnit() == StyleSheetLength::Unit::Em ||
+				len.getUnit() == StyleSheetLength::Unit::Percentage ) {
+		Float parentFontSize = 12.f;
+		Node* pNode = widget->getParent();
+		while ( pNode ) {
+			if ( pNode->isWidget() ) {
+				parentFontSize = getAbsoluteFontSize( pNode->asType<UIWidget>() );
+				break;
+			}
+			pNode = pNode->getParent();
+		}
+		if ( len.getUnit() == StyleSheetLength::Unit::Em )
+			return len.getValue() * parentFontSize;
+		return ( len.getValue() / 100.f ) * parentFontSize;
+	}
+	return widget->convertLength( len, 0 );
 }
 
 }} // namespace EE::UI

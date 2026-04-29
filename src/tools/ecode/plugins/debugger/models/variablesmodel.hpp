@@ -125,7 +125,9 @@ class VariablesModel : public Model {
 	ModelVariableNode::NodePtr mRootNode;
 	mutable std::unordered_map<ModelVariableNode*, ModelVariableNode::NodePtr> mChildMap;
 	UISceneNode* mSceneNode;
+	mutable bool mQueuedClear{ false };
 
+	void checkQueuedClear( const ModelIndex& index ) const;
 };
 
 class VariablesHolder {

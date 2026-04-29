@@ -35,6 +35,10 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFontStyle( const Uint32& fontStyle );
 
+	Uint32 getTextDecoration() const;
+
+	UITextView* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UITextView* setOutlineThickness( const Float& outlineThickness );
@@ -134,7 +138,7 @@ class EE_API UITextView : public UIWidget {
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
 	Uint32 mTextDrawHints{ 0 };
-	std::vector<Rectf> mSelRectsCache;
+	SmallVector<Rectf> mSelRectsCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;
 	bool mSelecting;
@@ -200,6 +204,8 @@ class EE_API UIAnchor : public UITextView {
   public:
 	static UIAnchor* New();
 
+	static UIAnchor* NewA();
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
@@ -212,7 +218,7 @@ class EE_API UIAnchor : public UITextView {
 	const std::string& getHref() const;
 
   protected:
-	UIAnchor();
+	UIAnchor( const std::string& tag = "anchor" );
 
 	std::string mHref;
 

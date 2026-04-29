@@ -65,7 +65,7 @@ Rectf UISkin::getBorderSize( const Uint32& state ) {
 		return size;
 	}
 
-	return Rectf();
+	return Rectf::Zero;
 }
 
 }} // namespace EE::UI

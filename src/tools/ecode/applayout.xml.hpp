@@ -90,7 +90,7 @@ TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 }
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
-	color: var(--list-row-active)
+	color: var(--font-selected-pressed)
 }
 .search_tree treeview::cell {
 	font-family: monospace;
@@ -196,8 +196,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 #status_bar > .status_but:last-child {
 	border-right-color: transparent;
@@ -327,8 +327,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	tint: var(--font);
 }
 .settings_panel .advanced_options .title:hover > * {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .settings_panel .advanced_options .title:hover {
 	background-color: var(--primary);
@@ -397,30 +397,30 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .custom_output_parser_cont > .capture_positions_cont > * {
 	padding: 2dp;
 }
-.theme-error > tableview::cell,
-.theme-error > treeview::cell,
-.theme-error > listview::cell,
+tableview::cell.theme-error,
+treeview::cell.theme-error,
+listview::cell.theme-error,
 .error {
 	color: var(--theme-error);
 }
 
-.theme-warning > tableview::cell,
-.theme-warning > treeview::cell,
-.theme-warning > listview::cell,
+tableview::cell.theme-warning,
+treeview::cell.theme-warning,
+listview::cell.theme-warning,
 .warning {
 	color: var(--theme-warning);
 }
 
-.theme-success > tableview::cell,
-.theme-success > treeview::cell,
-.theme-success > listview::cell,
+tableview::cell.theme-success,
+treeview::cell.theme-success,
+listview::cell.theme-success,
 .success {
 	color: var(--theme-success);
 }
 
-.theme-none > tableview::cell,
-.theme-none > treeview::cell,
-.theme-none > listview::cell,
+tableview::cell.theme-none,
+treeview::cell.theme-none,
+listview::cell.theme-none,
 .none {
 	color: #d48838;
 }
@@ -450,8 +450,8 @@ Anchor.error:hover {
 	color: var(--theme-error);
 }
 #build_output_issues TableView::row:selected TableView::cell.theme-error {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .texture-preview {
 	border: 1dp solid var(--list-back);
@@ -516,6 +516,9 @@ Anchor.error:hover {
 .tab_widget_cont TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
+.tab_widget_cont MarkdownView {
+	padding: 8dp;
+}
 .notbold {
 	font-style: normal;
 }
@@ -528,6 +531,7 @@ Anchor.error:hover {
 	border-top-color: var(--button-border);
 	padding: 4dp 16dp 4dp 16dp;
 	border-top-left-radius: 12dp;
+	border-width: 1dp;
 	margin-bottom: 16dp;
 	margin-right: 2dp;
 	font-style: shadow;

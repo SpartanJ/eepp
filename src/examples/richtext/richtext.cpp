@@ -1,18 +1,10 @@
 #include <eepp/ee.hpp>
-#include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/primitives.hpp>
-#include <eepp/graphics/richtext.hpp>
 
-using namespace EE;
-using namespace EE::Graphics;
-using namespace EE::Window;
-
-void runRichTextTest() {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	auto win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "RichText Example" ) );
 
 	if ( !win->isOpen() )
-		return;
+		return EXIT_FAILURE;
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
@@ -20,7 +12,7 @@ void runRichTextTest() {
 		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 
 	if ( !font || !font->loaded() )
-		return;
+		return EXIT_FAILURE;
 
 	FontFamily::loadFromRegular( font );
 
@@ -77,7 +69,7 @@ void runRichTextTest() {
 		}
 	} );
 
-	while ( win->isRunning() ) {
+	win->runMainLoop( [&] {
 		win->getInput()->update();
 
 		if ( win->getInput()->isKeyUp( KEY_ESCAPE ) ) {
@@ -104,12 +96,10 @@ void runRichTextTest() {
 		richText3.draw();
 
 		win->display();
-	}
+	} );
 
 	Engine::destroySingleton();
-}
+	MemoryManager::showResults();
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	runRichTextTest();
-	return 0;
+	return EXIT_SUCCESS;
 }

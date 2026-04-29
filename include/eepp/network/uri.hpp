@@ -179,7 +179,7 @@ class EE_API URI {
 	const std::string& getFragment() const;
 
 	/** Sets the fragment part of the URI. */
-	void getFragment( const std::string& fragment );
+	void setFragment( const std::string& fragment );
 
 	/** Sets the path, query and fragment parts of the URI. */
 	void setPathEtc( const std::string& pathEtc );

@@ -1,4 +1,5 @@
 #include "lspclientplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -872,6 +873,11 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			processWorkspaceDiagnostic( msg );
 			break;
 		}
+		case ecode::PluginMessageType::UIReady: {
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
+			break;
+		}
 		default:
 			break;
 	}
@@ -977,8 +983,22 @@ static void tryAddEnv( const json& obj, LSPDefinition& lsp ) {
 	}
 }
 
+void LSPClientPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format(
+			i18n( "error_lsp_config_parsing", "LSP Client Plugin - Error parsing LSP config:\n%s" )
+				.toUtf8(),
+			mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
 									 bool updateConfigFile ) {
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
@@ -991,6 +1011,14 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"servers\":[]\n}\n",
 						 nullptr, true, true );
@@ -1064,7 +1092,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-go-to-implementation"] = "shift+f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
+		#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["lsp-symbol-code-action"] = "mod+return";
+		#else
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
+		#endif
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
 		mKeyBindings["lsp-format-range"] = "alt+shift+f";
@@ -1123,7 +1155,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		}
 
 		// Allow overriding the command for already defined LSP
-		// And allow adding parameters to the already defined LSP
+		// And overriding parameters to the already defined LSP
 		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
 			 ( obj.contains( "command" ) ||
 			   ( obj.contains( "command_parameters" ) &&
@@ -1148,7 +1180,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
-						lspR.commandParameters += cmdParam;
+						lspR.commandParameters = cmdParam;
 						LSPClientServer::sanitizeCommand( lspR.commandParameters,
 														  mManager->getWorkspaceFolder() );
 					}

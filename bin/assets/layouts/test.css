@@ -309,6 +309,7 @@ CheckBox:checked {
 }
 
 #test_4 > RelativeLayout > TextView {
+	margin-left: 0dp;
 	transition: all 0.2s;
 }
 

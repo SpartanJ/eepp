@@ -416,13 +416,27 @@ static std::initializer_list<std::string> DebuggerCommandList = {
 	"toggle-status-app-debugger",
 };
 
+void DebuggerPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_debugger_config_parsing",
+							  "Debugger Plugin - Error parsing Debugger config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
 
-	if ( updateConfigFile )
+	if ( updateConfigFile ) {
 		mConfigHash = String::hash( data );
+		mBrokenUserConfigFile = false;
+	}
 
 	json j;
 	try {
@@ -431,6 +445,16 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		Log::error( "DebuggerPlugin::load - Error parsing config from path %s, error: %s, config "
 					"file content:\n%s",
 					path.c_str(), e.what(), data.c_str() );
+		if ( !updateConfigFile )
+			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"dap\":{},\n  \"keybindings\":{},\n}\n", nullptr,
 						 true, true );
@@ -550,7 +574,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		mKeyBindings["debugger-step-over"] = "f10";
 		mKeyBindings["debugger-step-into"] = "f11";
 		mKeyBindings["debugger-step-out"] = "shift+f11";
+		#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["toggle-status-app-debugger"] = "mod+6";
+		#else
 		mKeyBindings["toggle-status-app-debugger"] = "alt+6";
+		#endif
 	}
 
 	if ( j.contains( "keybindings" ) ) {
@@ -706,6 +734,9 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			if ( !mInitialized )
 				updateUI();
 
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
+
 			break;
 		}
 		default:
@@ -770,9 +801,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 	<vbox id="debugger_panel" lw="mp" lh="wc" padding="4dp">
 		<vbox id="debugger_config_view" lw="mp" lh="wc">
 			<TextView text="@string(debugger, Debugger)" font-size="15dp" focusable="false" />
-			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
+			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" menu-width-mode="expand-if-needed" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
-			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
+			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" menu-width-mode="expand-if-needed" />
 			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(debug, Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<PushButton id="debugger_build_and_run_button" lw="mp" lh="wc" text="@string(build_and_debug, Build & Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">
@@ -1707,14 +1738,7 @@ bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNu
 	auto breakpointIt = breakpoints.find( sb );
 	if ( breakpointIt != breakpoints.end() ) {
 		if ( enabled != breakpointIt->enabled ) {
-#ifdef EEPP_NO_THIRDPARTY_CONTAINERS
-			SourceBreakpointStateful existingBreakpoint = *breakpointIt;
-			breakpoints.erase( breakpointIt );
-			existingBreakpoint.enabled = enabled;
-			breakpoints.insert( existingBreakpoint );
-#else
 			breakpointIt->enabled = enabled;
-#endif
 			mBreakpointsModel->enable( doc, lineNumber, enabled );
 			mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
 			getUISceneNode()->getRoot()->invalidateDraw();

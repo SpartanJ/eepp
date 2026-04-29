@@ -90,17 +90,31 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 						const auto& reasoningContent = choice["delta"]["reasoning_content"];
 						if ( reasoningContent.is_string() ) {
 							std::string delta = choice["delta"]["reasoning_content"];
-							if ( streamedResponseCb )
-								streamedResponseCb( delta, true );
-							mReasoningResponse += std::move( delta );
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, true );
+								mReasoningResponse += std::move( delta );
+							}
+						}
+					} else if ( choice["delta"].contains( "reasoning" ) ) {
+						const auto& reasoningContent = choice["delta"]["reasoning"];
+						if ( reasoningContent.is_string() ) {
+							std::string delta = choice["delta"]["reasoning"];
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, true );
+								mReasoningResponse += std::move( delta );
+							}
 						}
 					} else if ( choice["delta"].contains( "content" ) ) {
 						const auto& content = choice["delta"]["content"];
 						if ( content.is_string() ) {
 							std::string delta = choice["delta"]["content"];
-							if ( streamedResponseCb )
-								streamedResponseCb( delta, false );
-							mResponse += std::move( delta );
+							if ( !delta.empty() ) {
+								if ( streamedResponseCb )
+									streamedResponseCb( delta, false );
+								mResponse += std::move( delta );
+							}
 						}
 					}
 				}
@@ -108,9 +122,11 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 			} else if ( data.contains( "delta" ) &&
 						data["delta"].value( "type", "" ) == "text_delta" ) {
 				std::string delta = data["delta"]["text"];
-				if ( streamedResponseCb )
-					streamedResponseCb( delta, false );
-				mResponse += std::move( delta );
+				if ( !delta.empty() ) {
+					if ( streamedResponseCb )
+						streamedResponseCb( delta, false );
+					mResponse += std::move( delta );
+				}
 			}
 		} );
 
@@ -120,7 +136,10 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 }
 
 LLMChatCompletionRequest::~LLMChatCompletionRequest() {
-	cancel();
+	cancelCb = nullptr;
+	doneCb = nullptr;
+	streamedResponseCb = nullptr;
+	cancel( true );
 }
 
 void LLMChatCompletionRequest::request() {
@@ -146,10 +165,10 @@ void LLMChatCompletionRequest::requestAsync() {
 		mRequest, mStream, Seconds( 5 ) );
 }
 
-void LLMChatCompletionRequest::cancel() {
+void LLMChatCompletionRequest::cancel(bool resetCancelCallback ) {
 	mCancel = true;
 	if ( mRequestId )
-		mHttp->setCancelRequest( mRequestId );
+		mHttp->setCancelRequest( mRequestId, resetCancelCallback );
 	if ( !mHadProgress )
 		onCancel();
 }

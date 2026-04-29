@@ -174,7 +174,7 @@ struct SourceBreakpoint {
 };
 
 struct SourceBreakpointStateful : public SourceBreakpoint {
-	bool enabled{ true };
+	mutable bool enabled{ true };
 
 	SourceBreakpointStateful() = default;
 	SourceBreakpointStateful( const json& body ) : SourceBreakpoint( body ) {}
