@@ -199,7 +199,7 @@ void UIHTMLWidget::positionOutOfFlowChildren() {
 					Float top = PixelDensity::dpToPx( offsets.Top );
 					Float left = PixelDensity::dpToPx( offsets.Left );
 
-					Vector2f cbPos( cb->getPixelsPadding().Left, cb->getPixelsPadding().Top );
+					Vector2f cbPos( cb->getPixelsContentOffset().Left, cb->getPixelsContentOffset().Top );
 					cbPos.x += left;
 					cbPos.y += top;
 

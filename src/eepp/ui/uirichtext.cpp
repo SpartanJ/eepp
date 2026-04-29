@@ -176,14 +176,16 @@ void UIRichText::draw() {
 		UIWidget::draw();
 
 		if ( mRichText.getSize().getWidth() > 0.f ) {
+			Rectf contentOffset = getPixelsContentOffset();
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
-								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+				clipSmartEnable( mScreenPos.x + contentOffset.Left,
+								 mScreenPos.y + contentOffset.Top,
+								 mSize.getWidth() - contentOffset.Left - contentOffset.Right,
+								 mSize.getHeight() - contentOffset.Top - contentOffset.Bottom );
 			}
 
-			mRichText.draw( std::trunc( mScreenPos.x ) + (int)mPaddingPx.Left,
-							std::trunc( mScreenPos.y ) + (int)mPaddingPx.Top, Vector2f::One, 0.f,
+			mRichText.draw( std::trunc( mScreenPos.x ) + (int)contentOffset.Left,
+							std::trunc( mScreenPos.y ) + (int)contentOffset.Top, Vector2f::One, 0.f,
 							getBlendMode() );
 
 			if ( isClipped() )
@@ -586,15 +588,16 @@ void UIRichText::onAlphaChange() {
 
 void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
-	Float maxWidth = container->getPixelsSize().getWidth() - container->getPixelsPadding().Left -
-					 container->getPixelsPadding().Right;
+	Float maxWidth = container->getPixelsSize().getWidth() -
+					 container->getPixelsContentOffset().Left -
+					 container->getPixelsContentOffset().Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
 
 	Float mw = 0.f;
 	if ( !container->getMaxWidthEq().empty() ) {
-		mw = container->getMaxSizePx().getWidth() - container->getPixelsPadding().Left -
-			 container->getPixelsPadding().Right;
+		mw = container->getMaxSizePx().getWidth() - container->getPixelsContentOffset().Left -
+			 container->getPixelsContentOffset().Right;
 		if ( mw < 0 )
 			mw = 0.f;
 	}
@@ -636,8 +639,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				if ( isBlock ) {
 					if ( container->getPixelsSize().getWidth() != 0 ) {
 						Float maxSize = eemax( 0.f, container->getPixelsSize().getWidth() -
-														container->getPixelsPadding().Left -
-														container->getPixelsPadding().Right -
+														container->getPixelsContentOffset().Left -
+														container->getPixelsContentOffset().Right -
 														margin.Left - margin.Right );
 						widget->setPixelsSize( eemax( 0.f, maxSize ),
 											   widget->getPixelsSize().getHeight() );
@@ -663,8 +666,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			if ( isBlock && mode == IntrinsicMode::None &&
 				 container->getPixelsSize().getWidth() != 0 ) {
 				w = eemax( 0.f, container->getPixelsSize().getWidth() -
-									container->getPixelsPadding().Left -
-									container->getPixelsPadding().Right - margin.Left -
+									container->getPixelsContentOffset().Left -
+									container->getPixelsContentOffset().Right - margin.Left -
 									margin.Right );
 			}
 
@@ -722,10 +725,12 @@ Float UIRichText::getMinIntrinsicWidth() const {
 		RichText richText( mRichText );
 		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
 									 IntrinsicMode::Min );
-		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + getPixelsContentOffset().Left +
+							 getPixelsContentOffset().Right;
 		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
 									 IntrinsicMode::Max );
-		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + getPixelsContentOffset().Left +
+							 getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 	}
 
@@ -749,11 +754,11 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 		if ( mIntrinsicWidthsDirty ) {
 			RichText richText( mRichText );
 			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
-			mMinIntrinsicWidth =
-				richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+			mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + getPixelsContentOffset().Left +
+								 getPixelsContentOffset().Right;
 			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
-			mMaxIntrinsicWidth =
-				richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+			mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + getPixelsContentOffset().Left +
+								 getPixelsContentOffset().Right;
 			mIntrinsicWidthsDirty = false;
 		}
 		maxW = mMaxIntrinsicWidth;

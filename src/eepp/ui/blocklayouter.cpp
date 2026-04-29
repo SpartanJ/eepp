@@ -34,11 +34,13 @@ void BlockLayouter::computeIntrinsicWidths() {
 	if ( mIntrinsicWidthsDirty ) {
 		RichText tmpRt( *rt );
 		UIRichText::rebuildRichText( widget, tmpRt, UIRichText::IntrinsicMode::Min );
-		mMinIntrinsicWidth = tmpRt.getMinIntrinsicWidth() + mContainer->getPixelsPadding().Left +
-							 mContainer->getPixelsPadding().Right;
+		mMinIntrinsicWidth = tmpRt.getMinIntrinsicWidth() +
+							 mContainer->getPixelsContentOffset().Left +
+							 mContainer->getPixelsContentOffset().Right;
 		UIRichText::rebuildRichText( widget, tmpRt, UIRichText::IntrinsicMode::Max );
-		mMaxIntrinsicWidth = tmpRt.getMaxIntrinsicWidth() + mContainer->getPixelsPadding().Left +
-							 mContainer->getPixelsPadding().Right;
+		mMaxIntrinsicWidth = tmpRt.getMaxIntrinsicWidth() +
+							 mContainer->getPixelsContentOffset().Left +
+							 mContainer->getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 	}
 }
@@ -73,8 +75,8 @@ void BlockLayouter::updateLayout() {
 
 	Float totW = mContainer->getPixelsSize().getWidth();
 	if ( mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-		totW = rt->getSize().getWidth() + mContainer->getPixelsPadding().Left +
-			   mContainer->getPixelsPadding().Right;
+		totW = rt->getSize().getWidth() + mContainer->getPixelsContentOffset().Left +
+			   mContainer->getPixelsContentOffset().Right;
 		if ( !mContainer->getMaxWidthEq().empty() && totW > mContainer->getMaxSizePx().getWidth() )
 			mContainer->setClipType( ClipType::ContentBox );
 	}
@@ -85,8 +87,8 @@ void BlockLayouter::updateLayout() {
 
 	Float totH = mContainer->getPixelsSize().getHeight();
 	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-		totH = rt->getSize().getHeight() + mContainer->getPixelsPadding().Top +
-			   mContainer->getPixelsPadding().Bottom;
+		totH = rt->getSize().getHeight() + mContainer->getPixelsContentOffset().Top +
+			   mContainer->getPixelsContentOffset().Bottom;
 		if ( !mContainer->getMaxHeightEq().empty() &&
 			 totH > mContainer->getMaxSizePx().getHeight() )
 			mContainer->setClipType( ClipType::ContentBox );
@@ -158,12 +160,12 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 					bool passedText = false;
 					for ( const auto& rspan : line.spans ) {
 						if ( rspan.startCharIndex >= startChar && rspan.endCharIndex <= endChar ) {
-							Rectf hb( mContainer->getPixelsPadding().Left + rspan.position.x,
-									  mContainer->getPixelsPadding().Top + line.y +
+							Rectf hb( mContainer->getPixelsContentOffset().Left + rspan.position.x,
+									  mContainer->getPixelsContentOffset().Top + line.y +
 										  rspan.position.y,
-									  mContainer->getPixelsPadding().Left + rspan.position.x +
+									  mContainer->getPixelsContentOffset().Left + rspan.position.x +
 										  rspan.size.getWidth(),
-									  mContainer->getPixelsPadding().Top + line.y +
+									  mContainer->getPixelsContentOffset().Top + line.y +
 										  rspan.position.y + rspan.size.getHeight() );
 
 							hitBoxes.push_back( hb );
@@ -212,8 +214,8 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 			}
 			widget->setPixelsPosition( pos );
 			widget->setPixelsSize( { eemax( 0.f, mContainer->getPixelsSize().getWidth() -
-													 mContainer->getPixelsPadding().Left -
-													 mContainer->getPixelsPadding().Right ),
+													 mContainer->getPixelsContentOffset().Left -
+													 mContainer->getPixelsContentOffset().Right ),
 									 0 } );
 		} else {
 			curCharIdx += 1;
@@ -223,9 +225,10 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 				Float lineY = lines[lineIdx].y;
 				Rectf margin = widget->getLayoutPixelsMargin();
 
-				Vector2f targetPos(
-					mContainer->getPixelsPadding().Left + span->position.x + margin.Left,
-					mContainer->getPixelsPadding().Top + lineY + span->position.y + margin.Top );
+				Vector2f targetPos( mContainer->getPixelsContentOffset().Left + span->position.x +
+										margin.Left,
+									mContainer->getPixelsContentOffset().Top + lineY +
+										span->position.y + margin.Top );
 
 				widget->setPixelsPosition( targetPos - offset );
 

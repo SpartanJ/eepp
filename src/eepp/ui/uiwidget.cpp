@@ -593,12 +593,12 @@ void UIWidget::calculateAutoMargin() {
 
 	UIWidget* parent = getParent()->asType<UIWidget>();
 	Sizef parentSize = parent->getPixelsSize();
-	Rectf parentPadding = parent->getPixelsPadding();
+	Rectf parentContentOffset = parent->getPixelsContentOffset();
 
 	bool changed = false;
 	if ( ( mMarginAuto & MarginAutoLeft ) && ( mMarginAuto & MarginAutoRight ) ) {
-		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
-							   getPixelsSize().getWidth();
+		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
+							   parentContentOffset.Right - getPixelsSize().getWidth();
 		Float newMarginLeft = availableWidth > 0 ? availableWidth / 2.f : 0.f;
 		Float newMarginRight = availableWidth > 0 ? availableWidth / 2.f : 0.f;
 		if ( mLayoutMarginPx.Left != newMarginLeft || mLayoutMarginPx.Right != newMarginRight ) {
@@ -607,16 +607,18 @@ void UIWidget::calculateAutoMargin() {
 			changed = true;
 		}
 	} else if ( mMarginAuto & MarginAutoLeft ) {
-		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
-							   getPixelsSize().getWidth() - mLayoutMarginPx.Right;
+		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
+							   parentContentOffset.Right - getPixelsSize().getWidth() -
+							   mLayoutMarginPx.Right;
 		Float newMarginLeft = std::max( 0.f, availableWidth );
 		if ( mLayoutMarginPx.Left != newMarginLeft ) {
 			mLayoutMarginPx.Left = newMarginLeft;
 			changed = true;
 		}
 	} else if ( mMarginAuto & MarginAutoRight ) {
-		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
-							   getPixelsSize().getWidth() - mLayoutMarginPx.Left;
+		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
+							   parentContentOffset.Right - getPixelsSize().getWidth() -
+							   mLayoutMarginPx.Left;
 		Float newMarginRight = std::max( 0.f, availableWidth );
 		if ( mLayoutMarginPx.Right != newMarginRight ) {
 			mLayoutMarginPx.Right = newMarginRight;
@@ -625,8 +627,8 @@ void UIWidget::calculateAutoMargin() {
 	}
 
 	if ( ( mMarginAuto & MarginAutoTop ) && ( mMarginAuto & MarginAutoBottom ) ) {
-		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
-								getPixelsSize().getHeight();
+		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
+								parentContentOffset.Bottom - getPixelsSize().getHeight();
 		Float newMarginTop = availableHeight > 0 ? availableHeight / 2.f : 0.f;
 		Float newMarginBottom = availableHeight > 0 ? availableHeight / 2.f : 0.f;
 		if ( mLayoutMarginPx.Top != newMarginTop || mLayoutMarginPx.Bottom != newMarginBottom ) {
@@ -635,16 +637,18 @@ void UIWidget::calculateAutoMargin() {
 			changed = true;
 		}
 	} else if ( mMarginAuto & MarginAutoTop ) {
-		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
-								getPixelsSize().getHeight() - mLayoutMarginPx.Bottom;
+		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
+								parentContentOffset.Bottom - getPixelsSize().getHeight() -
+								mLayoutMarginPx.Bottom;
 		Float newMarginTop = std::max( 0.f, availableHeight );
 		if ( mLayoutMarginPx.Top != newMarginTop ) {
 			mLayoutMarginPx.Top = newMarginTop;
 			changed = true;
 		}
 	} else if ( mMarginAuto & MarginAutoBottom ) {
-		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
-								getPixelsSize().getHeight() - mLayoutMarginPx.Top;
+		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
+								parentContentOffset.Bottom - getPixelsSize().getHeight() -
+								mLayoutMarginPx.Top;
 		Float newMarginBottom = std::max( 0.f, availableHeight );
 		if ( mLayoutMarginPx.Bottom != newMarginBottom ) {
 			mLayoutMarginPx.Bottom = newMarginBottom;
@@ -835,6 +839,18 @@ const Rectf& UIWidget::getPadding() const {
 
 const Rectf& UIWidget::getPixelsPadding() const {
 	return mPaddingPx;
+}
+
+Rectf UIWidget::getPixelsContentOffset() const {
+	Rectf offset = getPixelsPadding();
+	if ( hasBorder() ) {
+		const auto& b = getBorder()->getBorders();
+		offset.Left += b.left.width;
+		offset.Right += b.right.width;
+		offset.Top += b.top.width;
+		offset.Bottom += b.bottom.width;
+	}
+	return offset;
 }
 
 UIWidget* UIWidget::setPadding( const Rectf& padding ) {
@@ -2578,7 +2594,7 @@ Float UIWidget::getMatchParentWidth() const {
 	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
-		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
+		padding = static_cast<UIWidget*>( getParent() )->getPixelsContentOffset();
 
 	Float marginLeft = ( mMarginAuto & MarginAutoLeft ) ? 0.f : mLayoutMarginPx.Left;
 	Float marginRight = ( mMarginAuto & MarginAutoRight ) ? 0.f : mLayoutMarginPx.Right;
@@ -2599,7 +2615,7 @@ Float UIWidget::getMatchParentHeight() const {
 	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
-		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
+		padding = static_cast<UIWidget*>( getParent() )->getPixelsContentOffset();
 
 	Float marginTop = ( mMarginAuto & MarginAutoTop ) ? 0.f : mLayoutMarginPx.Top;
 	Float marginBottom = ( mMarginAuto & MarginAutoBottom ) ? 0.f : mLayoutMarginPx.Bottom;

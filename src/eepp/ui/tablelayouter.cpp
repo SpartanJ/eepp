@@ -89,7 +89,7 @@ void TableLayouter::computeIntrinsicWidths() {
 
 	if ( mRows.empty() ) {
 		mMinIntrinsicWidth = mMaxIntrinsicWidth =
-			mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+			mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 		return;
 	}
@@ -114,7 +114,7 @@ void TableLayouter::computeIntrinsicWidths() {
 
 	if ( maxCols == 0 ) {
 		mMinIntrinsicWidth = mMaxIntrinsicWidth =
-			mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+			mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 		return;
 	}
@@ -271,10 +271,10 @@ void TableLayouter::computeIntrinsicWidths() {
 		totalMax += mColMaxWidths[i];
 	}
 
-	mMinIntrinsicWidth = totalMin + mContainer->getPixelsPadding().Left +
-						 mContainer->getPixelsPadding().Right + ( maxCols + 1 ) * mCellspacing;
-	mMaxIntrinsicWidth = totalMax + mContainer->getPixelsPadding().Left +
-						 mContainer->getPixelsPadding().Right + ( maxCols + 1 ) * mCellspacing;
+	mMinIntrinsicWidth = totalMin + mContainer->getPixelsContentOffset().Left +
+						 mContainer->getPixelsContentOffset().Right + ( maxCols + 1 ) * mCellspacing;
+	mMaxIntrinsicWidth = totalMax + mContainer->getPixelsContentOffset().Left +
+						 mContainer->getPixelsContentOffset().Right + ( maxCols + 1 ) * mCellspacing;
 
 	mIntrinsicWidthsDirty = false;
 }
@@ -306,7 +306,7 @@ void TableLayouter::updateLayout() {
 
 	size_t maxCols = mColMinWidths.size();
 	mColWidths.assign( maxCols, 0.f );
-	Float paddingH = mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+	Float paddingH = mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 	Float containerWidth = mContainer->getPixelsSize().getWidth();
 	Float availableWidth = sanitizeFloat(
 		std::max( 0.f, containerWidth - paddingH - ( maxCols + 1 ) * mCellspacing ) );
@@ -510,23 +510,23 @@ void TableLayouter::updateLayout() {
 		mFooter->setPixelsSize( { mContainer->getPixelsSize().x, footerHeight } );
 	}
 
-	Float currentY = mContainer->getPixelsPadding().Top + mCellspacing - headHeight;
+	Float currentY = mContainer->getPixelsContentOffset().Top + mCellspacing - headHeight;
 	for ( size_t r = 0; r < rowCount; ++r ) {
 		UIHTMLTableRow* row = mRows[r];
-		row->setPixelsPosition( mContainer->getPixelsPadding().Left, currentY );
+		row->setPixelsPosition( mContainer->getPixelsContentOffset().Left, currentY );
 		currentY += row->getPixelsSize().getHeight() + mCellspacing;
 	}
 
 	if ( mHead && !mRows.empty() )
-		mRows[0]->setPixelsPosition( mContainer->getPixelsPadding().Left, 0 );
+		mRows[0]->setPixelsPosition( mContainer->getPixelsContentOffset().Left, 0 );
 
 	if ( mFooter && !mRows.empty() )
-		mRows[rowCount - 1]->setPixelsPosition( mContainer->getPixelsPadding().Left, 0 );
+		mRows[rowCount - 1]->setPixelsPosition( mContainer->getPixelsContentOffset().Left, 0 );
 
 	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 		mContainer->asType<UINode>()->setInternalPixelsHeight(
-			mContainer->getPixelsPadding().Top + headHeight + bodyHeight + footerHeight +
-			( rowCount + 1 ) * mCellspacing + mContainer->getPixelsPadding().Bottom );
+			mContainer->getPixelsContentOffset().Top + headHeight + bodyHeight + footerHeight +
+			( rowCount + 1 ) * mCellspacing + mContainer->getPixelsContentOffset().Bottom );
 	}
 
 	mPacking = false;

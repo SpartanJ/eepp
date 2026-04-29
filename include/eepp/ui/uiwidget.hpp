@@ -612,6 +612,15 @@ class EE_API UIWidget : public UINode {
 	const Rectf& getPixelsPadding() const;
 
 	/**
+	 * @brief Gets the content offset area (padding + border).
+	 *
+	 * Returns a Rectf containing padding + border for all 4 sides.
+	 *
+	 * @return The content offset as a Rectf.
+	 */
+	Rectf getPixelsContentOffset() const;
+
+	/**
 	 * @brief Sets the padding for all sides.
 	 *
 	 * Sets the padding around the widget's content in density-independent pixels (dp).
