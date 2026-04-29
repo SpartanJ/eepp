@@ -805,7 +805,7 @@ UTEST( UILayout, listStyleInheritanceFromUl ) {
 
 UTEST( UIBorder, renderingVariations ) {
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1200, 650, "Border Rendering Test", WindowStyle::Default,
+		WindowSettings( 1024, 653, "Border Rendering Test", WindowStyle::Default,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -839,7 +839,7 @@ UTEST( UIBorder, renderingVariations ) {
 
 UTEST( UIBorder, renderingVariations2 ) {
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1200, 650, "Border Rendering Test 2", WindowStyle::Default,
+		WindowSettings( 1024, 653, "Border Rendering Test 2", WindowStyle::Default,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
