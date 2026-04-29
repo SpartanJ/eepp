@@ -805,7 +805,7 @@ UTEST( UILayout, listStyleInheritanceFromUl ) {
 
 UTEST( UIBorder, renderingVariations ) {
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1200, 900, "Border Rendering Test", WindowStyle::Default,
+		WindowSettings( 1200, 650, "Border Rendering Test", WindowStyle::Default,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -833,6 +833,40 @@ UTEST( UIBorder, renderingVariations ) {
 	win->display();
 
 	compareImages( utest_state, utest_result, win, "eepp-ui-border-rendering", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIBorder, renderingVariations2 ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1200, 650, "Border Rendering Test 2", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/border_tests_2.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-border-rendering-2", "html" );
 
 	Engine::destroySingleton();
 }
