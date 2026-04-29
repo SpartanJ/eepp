@@ -210,12 +210,11 @@ UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChildren() {
 }
 
 const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id ) {
-	const CSS::StyleSheetProperty* prop = nullptr;
-	if ( mGlobalDefinition && ( prop = mGlobalDefinition->getProperty( (Uint32)id ) ) )
-		return prop;
-	if ( mElementStyle )
-		prop = mElementStyle->getPropertyById( id );
-	return prop;
+	const auto* gProp = mGlobalDefinition ? mGlobalDefinition->getProperty( (Uint32)id ) : nullptr;
+	const auto* elProp = mElementStyle ? mElementStyle->getPropertyById( id ) : nullptr;
+	if ( elProp && gProp )
+		return elProp->getSpecificity() > gProp->getSpecificity() ? elProp : gProp;
+	return elProp ? elProp : gProp;
 }
 
 bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {

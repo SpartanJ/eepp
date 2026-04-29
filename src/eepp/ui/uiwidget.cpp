@@ -1846,7 +1846,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 											StyleSheetSelectorRule::SpecificityImportant ) );
 				}
 				setLayoutWidthPolicy( SizePolicy::Fixed );
-				setSize( eefloor( lengthFromValueAsDp( attribute ) ), getSize().getHeight() );
+				setSize( eefloor( lengthFromValueAsDp( attribute ) ), mDpSize.getHeight() );
 				notifyLayoutAttrChange();
 			}
 			break;
@@ -1860,7 +1860,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 											StyleSheetSelectorRule::SpecificityImportant ) );
 				}
 				setLayoutHeightPolicy( SizePolicy::Fixed );
-				setSize( getSize().getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
+				setSize( mDpSize.getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
 				notifyLayoutAttrChange();
 			}
 			break;
@@ -2276,12 +2276,12 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			StyleSheetPropertiesParser propertiesParser;
 			propertiesParser.parse( std::string_view{ ait->value() } );
 			if ( !propertiesParser.getProperties().empty() ) {
-				for ( auto& [_, property] : propertiesParser.getProperties() ) {
-					auto propertyImportant( property );
-					propertyImportant.setImportant( true );
-					if ( mStyle )
-						mStyle->setStyleSheetProperty( propertyImportant );
-					applyProperty( propertyImportant );
+				for ( auto& [_, prop] : propertiesParser.getProperties() ) {
+					auto property( prop );
+					property.setSpecificity( StyleSheetSelectorRule::SpecificityInline );
+					if ( NULL != mStyle )
+						mStyle->setStyleSheetProperty( property );
+					applyProperty( property );
 				}
 			}
 			continue;
