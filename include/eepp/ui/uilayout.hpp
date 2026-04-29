@@ -24,6 +24,9 @@ class EE_API UILayout : public UIWidget {
 	bool isLayoutDirty() const { return mDirtyLayout; }
 
 	void onAutoSizeChild( UIWidget* child );
+
+	void setLayoutDirty();
+
   protected:
 	friend class UISceneNode;
 	friend class UILayouter;
@@ -50,8 +53,6 @@ class EE_API UILayout : public UIWidget {
 	virtual void updateLayoutTree();
 
 	virtual void updateLayoutWrappingContents();
-
-	void setLayoutDirty();
 
 	bool setMatchParentIfNeededVerticalGrowth();
 };

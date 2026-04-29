@@ -60,6 +60,10 @@ void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 void UIHTMLWidget::setOffsets( const Rectf& offsets ) {
 	if ( mOffsets != offsets ) {
 		mOffsets = offsets;
+		mTopEq = String::fromFloat( offsets.Top, "dp" );
+		mLeftEq = String::fromFloat( offsets.Left, "dp" );
+		mRightEq = String::fromFloat( offsets.Right, "dp" );
+		mBottomEq = String::fromFloat( offsets.Bottom, "dp" );
 		notifyLayoutAttrChange();
 	}
 }
@@ -79,13 +83,13 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::Position:
 			return CSSPositionHelper::toString( mPosition );
 		case PropertyId::Top:
-			return String::fromFloat( mOffsets.Top, "dp" );
+			return mTopEq;
 		case PropertyId::Right:
-			return String::fromFloat( mOffsets.Right, "dp" );
+			return mRightEq;
 		case PropertyId::Bottom:
-			return String::fromFloat( mOffsets.Bottom, "dp" );
+			return mBottomEq;
 		case PropertyId::Left:
-			return String::fromFloat( mOffsets.Left, "dp" );
+			return mLeftEq;
 		case PropertyId::ZIndex:
 			return String::toString( mZIndex );
 		default:
@@ -111,34 +115,22 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			return true;
 		}
 		case PropertyId::Top: {
-			if ( attribute.asString() == "auto" )
-				mOffsets.Top = 0;
-			else
-				mOffsets.Top = lengthFromValueAsDp( attribute );
+			mTopEq = attribute.asString();
 			notifyLayoutAttrChange();
 			return true;
 		}
 		case PropertyId::Right: {
-			if ( attribute.asString() == "auto" )
-				mOffsets.Right = 0;
-			else
-				mOffsets.Right = lengthFromValueAsDp( attribute );
+			mRightEq = attribute.asString();
 			notifyLayoutAttrChange();
 			return true;
 		}
 		case PropertyId::Bottom: {
-			if ( attribute.asString() == "auto" )
-				mOffsets.Bottom = 0;
-			else
-				mOffsets.Bottom = lengthFromValueAsDp( attribute );
+			mBottomEq = attribute.asString();
 			notifyLayoutAttrChange();
 			return true;
 		}
 		case PropertyId::Left: {
-			if ( attribute.asString() == "auto" )
-				mOffsets.Left = 0;
-			else
-				mOffsets.Left = lengthFromValueAsDp( attribute );
+			mLeftEq = attribute.asString();
 			notifyLayoutAttrChange();
 			return true;
 		}
@@ -148,7 +140,6 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 
 	return UILayout::applyProperty( attribute );
 }
-
 void UIHTMLWidget::updateLayout() {
 	if ( getLayouter() )
 		getLayouter()->updateLayout();
@@ -156,6 +147,8 @@ void UIHTMLWidget::updateLayout() {
 		UILayout::updateLayout();
 
 	positionOutOfFlowChildren();
+
+	mDirtyLayout = false;
 }
 
 UIWidget* UIHTMLWidget::getContainingBlock() {
@@ -195,11 +188,22 @@ void UIHTMLWidget::positionOutOfFlowChildren() {
 			if ( pos == CSSPosition::Absolute || pos == CSSPosition::Fixed ) {
 				UIWidget* cb = htmlChild->getContainingBlock();
 				if ( cb ) {
-					Rectf offsets = htmlChild->getOffsets();
-					Float top = PixelDensity::dpToPx( offsets.Top );
-					Float left = PixelDensity::dpToPx( offsets.Left );
+					Float top = htmlChild->mTopEq == "auto"
+									? 0
+									: htmlChild->lengthFromValue(
+										  htmlChild->mTopEq,
+										  CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+					Float left = htmlChild->mLeftEq == "auto"
+									 ? 0
+									 : htmlChild->lengthFromValue(
+										   htmlChild->mLeftEq,
+										   CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
 
-					Vector2f cbPos( cb->getPixelsContentOffset().Left, cb->getPixelsContentOffset().Top );
+					top += htmlChild->getLayoutPixelsMargin().Top;
+					left += htmlChild->getLayoutPixelsMargin().Left;
+
+					Vector2f cbPos( cb->getPixelsContentOffset().Left,
+									cb->getPixelsContentOffset().Top );
 					cbPos.x += left;
 					cbPos.y += top;
 

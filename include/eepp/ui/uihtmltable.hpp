@@ -18,8 +18,6 @@ class EE_API UIHTMLTable : public UIHTMLWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	virtual void updateLayout();
-
 	virtual Float getMinIntrinsicWidth() const;
 
 	virtual Float getMaxIntrinsicWidth() const;

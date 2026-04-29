@@ -129,8 +129,6 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	String getSelectionString() const;
 
-	virtual void updateLayout();
-
 	virtual RichText* getRichTextPtr() { return &mRichText; }
 
   protected:

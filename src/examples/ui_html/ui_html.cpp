@@ -82,6 +82,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	auto urlBar = ui->find( "url_bar" )->asType<UITextInput>();
 	auto mainContainer = ui->find( "html_doc" );
+	mainContainer->asType<UIWidget>()->setClipType( ClipType::None );
 	auto backBtn = ui->find( "backbtn" )->asType<UIPushButton>();
 	auto fwdBtn = ui->find( "fwdbtn" )->asType<UIPushButton>();
 	auto scrollView = ui->find( "html_view" )->asType<UIScrollView>();
@@ -98,13 +99,31 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		if ( data.empty() )
 			return;
 		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app, scrollView, useHNDark] {
+			scrollView->removeEventsOfType( Event::OnSizeChange );
 			mainContainer->closeAllChildren();
+			scrollView->getVerticalScrollBar()->setValue( 0 );
 			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
 			ui->setURIFromURL( url );
 			auto urlStr = url.toString();
 			auto hash = String::hash( urlStr );
-			scrollView->getVerticalScrollBar()->setValue( 0 );
 			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
+			auto htmlNode = ui->findByType( UI_TYPE_HTML_HTML );
+			auto bodyNode = ui->findByType( UI_TYPE_HTML_BODY );
+			if ( htmlNode && bodyNode ) {
+				auto html = htmlNode->asType<UIHTMLHtml>();
+				auto body = bodyNode->asType<UIHTMLBody>();
+				html->setMinHeight( scrollView->getPixelsSize().getHeight() );
+				body->setMinHeight( scrollView->getPixelsSize().getHeight() );
+				scrollView->on( Event::OnSizeChange, [scrollView, html, body]( auto ) {
+					body->setMinHeight( scrollView->getSize().getHeight() );
+					body->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
+					html->setMinHeight( scrollView->getSize().getHeight() );
+					html->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
+				} );
+				body->on( Event::OnClose, [scrollView]( auto ) {
+					scrollView->removeEventsOfType( Event::OnSizeChange );
+				} );
+			}
 			urlBar->setText( urlStr );
 
 			if ( useHNDark && url.getAuthority() == "news.ycombinator.com" ) {

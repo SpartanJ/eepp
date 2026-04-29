@@ -85,16 +85,6 @@ Float UIHTMLTable::getMaxIntrinsicWidth() const {
 	return 0;
 }
 
-void UIHTMLTable::updateLayout() {
-	UILayouter* layouter = const_cast<UIHTMLTable*>( this )->getLayouter();
-	if ( layouter )
-		getLayouter()->updateLayout();
-	else
-		UIHTMLWidget::updateLayout();
-
-	mDirtyLayout = false;
-}
-
 Uint32 UIHTMLTable::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {

@@ -431,10 +431,18 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
 	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
 	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
-	registerProperty( "top", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "right", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "bottom", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "left", "auto" ).setType( PropertyType::NumberLength );
+	registerProperty( "top", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "right", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "bottom", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "left", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "z-index", "auto" ).setType( PropertyType::NumberInt );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )

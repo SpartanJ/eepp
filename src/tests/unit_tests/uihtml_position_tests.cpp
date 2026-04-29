@@ -196,3 +196,70 @@ UTEST( UIHTMLWidget, positionOutOfFlow_DoesNotAffectParentSize ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTMLWidget, positionOutOfFlow_PercentageAndMargin ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIHTMLWidget* rootContainer = UIHTMLWidget::New();
+	rootContainer->setParent( sceneNode->getRoot() );
+	rootContainer->setCSSPosition( CSSPosition::Relative );
+	rootContainer->setPixelsSize( 800, 600 );
+	rootContainer->setPixelsPosition( 0, 0 );
+
+	UIHTMLWidget* absoluteChild = UIHTMLWidget::New();
+	absoluteChild->setParent( rootContainer );
+	absoluteChild->setPixelsSize( 400, 400 );
+
+	// Emulate the CSS parsing via applyProperty
+	absoluteChild->applyProperty( StyleSheetProperty( "position", "absolute" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "left", "50%" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "margin-left", "-200px" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "margin-top", "120px" ) );
+
+	sceneNode->updateDirtyLayouts();
+
+	UIWidget* cb = absoluteChild->getContainingBlock();
+	EXPECT_EQ( cb, rootContainer );
+
+	Vector2f worldPos = absoluteChild->convertToWorldSpace( { 0, 0 } );
+	// left should be 50% of 800 (400) plus margin-left (-200) = 200
+	// top should be 0 + margin-top (120) = 120
+	EXPECT_NEAR( 200.f, worldPos.x, 1.f );
+	EXPECT_NEAR( 120.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+#include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+
+UTEST( UIHTMLWidget, positionOutOfFlow_ComplexHTML ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/absolute_position.html", html );
+	std::string xml = UI::Tools::HTMLFormatter::HTMLtoXML( html );
+	sceneNode->loadLayoutFromString( xml );
+
+	sceneNode->update( Milliseconds( 16 ) );
+	sceneNode->updateDirtyLayouts();
+
+	UIWidget* mainWidget = sceneNode->getRoot()->find<UIWidget>( "main" );
+	ASSERT_TRUE( mainWidget != nullptr );
+	EXPECT_GT( mainWidget->getPixelsSize().getHeight(), 0.f ); // This is not standard in HTML!
+
+	Vector2f worldPos = mainWidget->convertToWorldSpace( { 0, 0 } );
+	// Window size is 1024x650
+	// left: 50% of 1024 = 512
+	// margin-left: -200px
+	// 512 - 200 = 312
+	EXPECT_NEAR( 312.f, worldPos.x, 1.f );
+
+	// top should just be margin-top
+	EXPECT_NEAR( 120.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}

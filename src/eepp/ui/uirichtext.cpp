@@ -10,7 +10,6 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
-#include <unordered_map>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -94,11 +93,15 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 UIRichText* UIRichText::NewHtml() {
-	return UIHTMLHtml::New( "html" );
+	auto* html = UIHTMLHtml::New( "html" );
+	html->setClipType( ClipType::None );
+	return html;
 }
 
 UIRichText* UIRichText::NewBody() {
-	return UIHTMLBody::New( "body" );
+	auto* body = UIHTMLBody::New( "body" );
+	body->setClipType( ClipType::None );
+	return body;
 }
 
 UIRichText* UIRichText::NewBr() {
@@ -261,7 +264,7 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UILayout::applyProperty( attribute );
+			return UIHTMLWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -305,7 +308,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 					   ? "center"
 					   : ( getTextAlign() == TEXT_ALIGN_RIGHT ? "right" : "left" );
 		default:
-			return UILayout::getPropertyString( propertyDef, propertyIndex );
+			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -699,16 +702,6 @@ void UIRichText::updateDefaultSpansStyle() {
 		}
 		child = child->getNextNode();
 	}
-}
-
-void UIRichText::updateLayout() {
-	if ( getLayouter() ) {
-		getLayouter()->updateLayout();
-	} else {
-		UILayout::updateLayout();
-	}
-
-	mDirtyLayout = false;
 }
 
 Float UIRichText::getMinIntrinsicWidth() const {

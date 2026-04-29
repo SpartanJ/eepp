@@ -61,6 +61,10 @@ class EE_API UIHTMLWidget : public UILayout {
   protected:
 	CSSDisplay mDisplay{ CSSDisplay::Block };
 	CSSPosition mPosition{ CSSPosition::Static };
+	std::string mTopEq{ "auto" };
+	std::string mRightEq{ "auto" };
+	std::string mBottomEq{ "auto" };
+	std::string mLeftEq{ "auto" };
 	Rectf mOffsets{ 0, 0, 0, 0 };
 	int mZIndex{ 0 };
 	UILayouter* mLayouter{ nullptr };
