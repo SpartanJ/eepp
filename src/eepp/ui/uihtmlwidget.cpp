@@ -72,6 +72,14 @@ void UIHTMLWidget::setZIndex( int zIndex ) {
 	mZIndex = zIndex;
 }
 
+std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
+	auto props = UILayout::getPropertiesImplemented();
+	auto local = { PropertyId::Display, PropertyId::Position, PropertyId::Top,	 PropertyId::Right,
+				   PropertyId::Bottom,	PropertyId::Left,	  PropertyId::ZIndex };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyDef,
 											 const Uint32& state ) const {
 	if ( NULL == propertyDef )

@@ -18,19 +18,19 @@ TableLayout TableLayouter::getTableLayout() const {
 	return mTableLayout;
 }
 
-void TableLayouter::setCellpadding( Float padding ) {
+void TableLayouter::setCellPadding( Float padding ) {
 	mCellpadding = padding;
 }
 
-Float TableLayouter::getCellpadding() const {
+Float TableLayouter::getCellPadding() const {
 	return mCellpadding;
 }
 
-void TableLayouter::setCellspacing( Float spacing ) {
+void TableLayouter::setCellSpacing( Float spacing ) {
 	mCellspacing = spacing;
 }
 
-Float TableLayouter::getCellspacing() const {
+Float TableLayouter::getCellSpacing() const {
 	return mCellspacing;
 }
 
@@ -102,7 +102,7 @@ void TableLayouter::computeIntrinsicWidths() {
 			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
 				auto* cell = child->asType<UIHTMLTableCell>();
 				mCells.push_back( cell );
-				colCount += cell->getColspan();
+				colCount += cell->getColSpan();
 				if ( mCellpadding > 0 && cell->getPadding() == Rectf::Zero ) {
 					cell->setPadding( { mCellpadding, mCellpadding, mCellpadding, mCellpadding } );
 				}
@@ -135,7 +135,7 @@ void TableLayouter::computeIntrinsicWidths() {
 				Float cellSpecified = sanitizeFloat(
 					std::max( cell->getPropertyWidth(),
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan == 1 && colIndex < maxCols ) {
 					if ( cellSpecified > 0.f ) {
@@ -153,7 +153,7 @@ void TableLayouter::computeIntrinsicWidths() {
 				Float cellSpecified = sanitizeFloat(
 					std::max( cell->getPropertyWidth(),
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan > 1 && cellSpecified > 0.f ) {
 					Float curSpec = 0.f;
@@ -188,7 +188,7 @@ void TableLayouter::computeIntrinsicWidths() {
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
 				cell->mWidthPolicy = widthPolicy;
 
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan == 1 && colIndex < maxCols ) {
 					mColMinWidths[colIndex] = std::max( mColMinWidths[colIndex], cellMin );
@@ -219,7 +219,7 @@ void TableLayouter::computeIntrinsicWidths() {
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
 				cell->mWidthPolicy = widthPolicy;
 
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan > 1 ) {
 					// Min excess
@@ -448,7 +448,7 @@ void TableLayouter::updateLayout() {
 			cell->beginAttributesTransaction();
 			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
 			cell->setLayoutHeightPolicy( SizePolicy::WrapContent );
-			Uint32 cellColspan = cell->getColspan();
+			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];
@@ -469,7 +469,7 @@ void TableLayouter::updateLayout() {
 			UIHTMLTableCell* cell = mCells[start + c];
 			cell->beginAttributesTransaction();
 			cell->setPixelsPosition( currentX, 0 );
-			Uint32 cellColspan = cell->getColspan();
+			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];

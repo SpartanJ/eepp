@@ -48,7 +48,7 @@ Uint32 UITextSpan::getType() const {
 }
 
 bool UITextSpan::isType( const Uint32& type ) const {
-	return UITextSpan::getType() == type ? true : UIWidget::isType( type );
+	return UITextSpan::getType() == type ? true : UIHTMLWidget::isType( type );
 }
 
 void UITextSpan::drawBorder() {
@@ -109,7 +109,7 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 			setTextDecoration( attribute.asTextDecoration() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UIHTMLWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -145,12 +145,12 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UITextSpan::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UIHTMLWidget::getPropertiesImplemented();
 	auto local = { PropertyId::Text,
 				   PropertyId::FontFamily,
 				   PropertyId::FontSize,
@@ -336,7 +336,7 @@ UITextSpan* UITextSpan::setFontShadowOffset( const Vector2f& offset ) {
 }
 
 void UITextSpan::onAlphaChange() {
-	UIWidget::onAlphaChange();
+	UIHTMLWidget::onAlphaChange();
 	notifyLayoutAttrChange();
 }
 
@@ -357,7 +357,7 @@ void UITextSpan::onTextChanged() {
 }
 
 void UITextSpan::onChildCountChange( Node* child, const bool& removed ) {
-	UIWidget::onChildCountChange( child, removed );
+	UIHTMLWidget::onChildCountChange( child, removed );
 	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
 		static_cast<UITextSpan*>( child )->setInheritedStyle( mFontStyleConfig );
 	}
@@ -372,13 +372,13 @@ Uint32 UITextSpan::onMessage( const NodeMessage* Msg ) {
 			return 1;
 		}
 	}
-	return UIWidget::onMessage( Msg );
+	return UIHTMLWidget::onMessage( Msg );
 }
 
 void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	UIWidget::loadFromXmlNode( node );
+	UIHTMLWidget::loadFromXmlNode( node );
 
 	bool hasElements = false;
 	for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
@@ -632,7 +632,7 @@ Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
 		}
 	}
 
-	return UIWidget::onKeyDown( event );
+	return UITextSpan::onKeyDown( event );
 }
 
 std::string UIAnchorSpan::getPropertyString( const PropertyDefinition* propertyDef,

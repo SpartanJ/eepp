@@ -313,7 +313,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 }
 
 std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
-	auto props = UILayout::getPropertiesImplemented();
+	auto props = UIHTMLWidget::getPropertiesImplemented();
 	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,
 				   PropertyId::FontStyle,		 PropertyId::Color,
 				   PropertyId::BackgroundColor,	 PropertyId::TextShadowColor,
@@ -554,19 +554,19 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 void UIRichText::onSizeChange() {
-	UILayout::onSizeChange();
+	UIHTMLWidget::onSizeChange();
 	notifyLayoutAttrChange();
 	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onPaddingChange() {
-	UILayout::onPaddingChange();
+	UIHTMLWidget::onPaddingChange();
 	notifyLayoutAttrChange();
 	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onChildCountChange( Node* child, const bool& removed ) {
-	UILayout::onChildCountChange( child, removed );
+	UIHTMLWidget::onChildCountChange( child, removed );
 	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
 		static_cast<UITextSpan*>( child )->setInheritedStyle( mRichText.getFontStyleConfig() );
 	}
@@ -586,7 +586,7 @@ void UIRichText::onFontStyleChanged() {
 }
 
 void UIRichText::onAlphaChange() {
-	UILayout::onAlphaChange();
+	UIHTMLWidget::onAlphaChange();
 }
 
 void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
@@ -868,7 +868,7 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 		mSelecting = true;
 	}
 
-	return UILayout::onMouseDown( position, flags );
+	return UIHTMLWidget::onMouseDown( position, flags );
 }
 
 Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
@@ -876,15 +876,15 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		mSelecting = false;
 	}
 
-	return UILayout::onMouseClick( position, flags );
+	return UIHTMLWidget::onMouseClick( position, flags );
 }
 
 Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
-	return UILayout::onMouseDoubleClick( position, flags );
+	return UIHTMLWidget::onMouseDoubleClick( position, flags );
 }
 
 Uint32 UIRichText::onFocusLoss() {
-	UILayout::onFocusLoss();
+	UIHTMLWidget::onFocusLoss();
 
 	selCurEnd( selCurInit() );
 	onSelectionChange();

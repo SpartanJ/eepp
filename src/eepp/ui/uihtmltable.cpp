@@ -24,23 +24,59 @@ bool UIHTMLTable::isType( const Uint32& type ) const {
 	return UIHTMLTable::getType() == type || UIHTMLWidget::isType( type );
 }
 
+std::vector<PropertyId> UIHTMLTable::getPropertiesImplemented() const {
+	auto props = UIHTMLWidget::getPropertiesImplemented();
+	auto local = { PropertyId::CellSpacing, PropertyId::CellPadding, PropertyId::TableLayout };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+std::string UIHTMLTable::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& state ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::CellSpacing:
+			if ( const_cast<UIHTMLTable*>( this )->getLayouter() &&
+				 mDisplay == CSSDisplay::Table ) {
+				return String::fromFloat(
+					static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+						->getCellSpacing() );
+			}
+			return "";
+		case PropertyId::CellPadding:
+			if ( const_cast<UIHTMLTable*>( this )->getLayouter() &&
+				 mDisplay == CSSDisplay::Table ) {
+				return String::fromFloat(
+					static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+						->getCellPadding() );
+			}
+			return "";
+		case PropertyId::TableLayout:
+			return mTopEq;
+		default:
+			return UIHTMLWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getPropertyDefinition() == nullptr )
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Cellspacing:
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
-					->setCellspacing( lengthFromValue( attribute ) );
+		case PropertyId::CellSpacing:
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
+					->setCellSpacing( lengthFromValue( attribute ) );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
 			}
 			return true;
-		case PropertyId::Cellpadding:
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
-					->setCellpadding( lengthFromValue( attribute ) );
+		case PropertyId::CellPadding:
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
+					->setCellPadding( lengthFromValue( attribute ) );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
 			}
@@ -48,8 +84,8 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TableLayout: {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
 					->setTableLayout( val == "fixed" ? TableLayout::Fixed : TableLayout::Auto );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
@@ -137,15 +173,35 @@ bool UIHTMLTableCell::isType( const Uint32& type ) const {
 	return UIHTMLTableCell::getType() == type || UIRichText::isType( type );
 }
 
+std::vector<PropertyId> UIHTMLTableCell::getPropertiesImplemented() const {
+	auto props = UIHTMLWidget::getPropertiesImplemented();
+	auto local = { PropertyId::ColSpan };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+std::string UIHTMLTableCell::getPropertyString( const PropertyDefinition* propertyDef,
+												const Uint32& state ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::ColSpan:
+			return String::format( "%lld", mColSpan );
+		default:
+			return UIHTMLWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getPropertyDefinition() == nullptr )
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Colspan: {
-			mColspan = attribute.asUint( 1 );
-			if ( mColspan == 0 )
-				mColspan = 1;
+		case PropertyId::ColSpan: {
+			mColSpan = attribute.asUint( 1 );
+			if ( mColSpan == 0 )
+				mColSpan = 1;
 			notifyLayoutAttrChangeParent();
 			return true;
 		}
@@ -155,8 +211,8 @@ bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
 	return UIRichText::applyProperty( attribute );
 }
 
-Uint32 UIHTMLTableCell::getColspan() const {
-	return mColspan;
+Uint32 UIHTMLTableCell::getColSpan() const {
+	return mColSpan;
 }
 
 void UIHTMLTableCell::onSizeChange() {

@@ -22,6 +22,11 @@ class EE_API UIHTMLTable : public UIHTMLWidget {
 
 	virtual Float getMaxIntrinsicWidth() const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& state = 0 ) const;
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
   protected:
@@ -43,14 +48,19 @@ class EE_API UIHTMLTableCell : public UIRichText {
 
 	virtual bool isType( const Uint32& type ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& state = 0 ) const;
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	Uint32 getColspan() const;
+	Uint32 getColSpan() const;
 
 	virtual void onSizeChange();
 
   protected:
-	Uint32 mColspan{ 1 };
+	Uint32 mColSpan{ 1 };
 };
 
 class EE_API UIHTMLTableRow : public UIHTMLWidget {
