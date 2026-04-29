@@ -187,15 +187,7 @@ Le chemin du fichier est : </string>
 	<string name="custom_variables">Variables personnalisées</string>
 	<string name="custom_variables_desc">Les variables personnalisées permettent de simplifier les étapes des commandes de construction en ajoutant des variables personnalisées qui peuvent être utilisées sur les paramètres de construction dans les commandes, les arguments et les répertoires de travail.</string>
 	<string name="custom_variables_desc_2">Les variables personnalisées peuvent être appelées à l'aide de ${nom_variable} dans n'importe laquelle des commandes.</string>
-	<string name="custom_variables_desc_3">Il existe des variables personnalisées prédéfinies disponibles :
-${project_root} : le dossier / répertoire racine du projet.
-${build_type} : le type de construction sélectionné pour construire le projet.
-${os} : le nom du système d'exploitation courant.
-${arch} : l'architecture d'exploitation courante.
-${nproc} : le nombre de processeurs.
-${current_doc} : le chemin du document courant ou le plus récent.
-${current_doc_name} : le nom du document courant ou le plus récent sans extension.
-${current_doc_dir} : le répertoire du document courant ou le plus récent.</string>
+	<string name="custom_variables_desc_3">Il existe des variables personnalisées prédéfinies disponibles :&#10;${project_root} : le répertoire racine du projet.&#10;${build_type} : le type de construction actuellement sélectionné.&#10;${os} : le nom du système d'exploitation actuel.&#10;${arch} : l'architecture du système d'exploitation actuel.&#10;${nproc} : le nombre de cœurs de processeurs logiques.&#10;${current_doc} : le chemin du document actuellement focalisé.&#10;${current_doc_name} : le nom du document actuellement focalisé (sans extension).&#10;${current_doc_dir} : le répertoire du document actuellement focalisé.&#10;${relative_dir} : le chemin du répertoire relatif entre ${project_root} et ${current_doc_dir}.</string>
 	<string name="cut">Couper</string>
 	<string name="dark">Sombre</string>
 	<string name="date">Date</string>
@@ -272,6 +264,9 @@ Voulez-vous le télécharger maintenant ?</string>
 	<string name="enable_autoreload">Activer le rechargement automatique</string>
 	<string name="enable_color_picker">Activer le sélecteur de couleurs</string>
 	<string name="enable_color_picker_tooltip">Active l'outil de sélection de couleurs lorsqu'un double clic est effectué sur un mot représentant une couleur.</string>
+	<string name="enable_inline_color_boxes">Activer les boîtes de couleur</string>
+	<string name="enable_inline_color_boxes_tooltip">Affiche une zone d'arrière-plan de la couleur analysée directement derrière le
+texte lui-même.</string>
 	<string name="enable_color_preview">Activer l'aperçu des couleurs</string>
 	<string name="enable_color_preview_tooltip">Activer un aperçu rapide d'une couleur lorsque la souris survole un mot qui représente une couleur.</string>
 	<string name="enable_horizontal_scrollbar">Activer la barre de défilement horizontale</string>
@@ -415,7 +410,7 @@ Redémarrez ecode pour voir les changements.</string>
 	<string name="indent">Indenter</string>
 	<string name="indent_tab_alignment">Alignement de l'indentation</string>
 	<string name="indent_tab_character">Caractère à utiliser pour l'indentation</string>
-	<string name="indent_width">Largeur d'indentation</string>
+	<string name="indent_width">Taille d'indentation</string>
 	<string name="indentation_type">Type d'indentation</string>
 	<string name="inode">Nœud-i</string>
 	<string name="insert_search_query">Insérer la requête de recherche</string>
@@ -785,8 +780,8 @@ La valeur minimale est 1 et le maximum est 6. Nécessite un redémarrage.</strin
 dans l'arborescence du répertoire.</string>
 	<string name="syntax_color_scheme">Schéma de couleurs syntaxique</string>
 	<string name="system">Système</string>
-	<string name="tab_width">Largeur des onglets</string>
-	<string name="tabs">Onglets</string>
+	<string name="tab_width">Taille des tabulations</string>
+	<string name="tabs">Tabulations</string>
 	<string name="terminal">Terminal</string>
 	<string name="terminal_color_scheme">Schéma de couleurs du terminal</string>
 	<string name="terminal_color_scheme_set">Schéma de couleurs du terminal : %s</string>
@@ -855,7 +850,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="uicodeeditor_delete">Supprimer</string>
 	<string name="uicodeeditor_open_containing_folder_in_fm">Ouvrir le dossier parent dans l'explorateur de fichiers</string>
 	<string name="uicodeeditor_paste">Coller</string>
-	<string name="uicodeeditor_redo">Refaire/string>
+	<string name="uicodeeditor_redo">Refaire</string>
 	<string name="uicodeeditor_select_all">Sélectionner tout</string>
 	<string name="uicodeeditor_undo">Annuler</string>
 	<string name="uiconsole_copy">Copier</string>
@@ -891,7 +886,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="variable_name">Nom de la variable</string>
 	<string name="variables">Variables</string>
 	<string name="view">Vue</string>
-	<string name="viewport">Viewport</string>
+	<string name="viewport">Fenêtre d'affichage</string>
 	<string name="vsync">VSync</string>
 	<string name="vsync_changed">Vsync : configuration mise à jour.
 Redémarrer ecode pour voir les changements.</string>
@@ -904,17 +899,13 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="working_dir_at">Répertoire de travail %s
 </string>
 	<string name="workspace_symbol_find_ellipsis">Rechercher les symboles dans l'espace de travail...</string>
-	<string name="wrap_letter">Letter wrap</string>
-	<string name="wrap_mode">Wrap Mode</string>
-	<string name="wrap_type_ellipsis">Wrap Against...</string>
-	<string name="wrap_word">Word wrap</string>
+	<string name="wrap_letter">Au caractère</string>
+	<string name="wrap_mode">Mode de retour à la ligne</string>
+	<string name="wrap_type_ellipsis">Retour à la ligne...</string>
+	<string name="wrap_word">Au mot</string>
 	<string name="write_unicode_bom">Écrire le BOM Unicode</string>
 	<string name="you_have_not_yet_opened_a_folder">Vous n'avez pas encore ouvert de dossier.</string>
 	<string name="zoom_in">Zoomer</string>
 	<string name="zoom_out">Dézoomer</string>
 	<string name="zoom_reset">Réinitialisation du zoom</string>
-	<string name="terminal_not_supported_do_not_warn">Toujours ouvrir un terminal externe (ne pas avertir)</string>
-	<string name="terminal_open_link">Ouvrir le lien</string>
-	<string name="terminal_paste">Coller dans le terminal</string>
-	<string name="terminal_rename">Renommer le terminal</string>
 </resources>
