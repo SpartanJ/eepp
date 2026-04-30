@@ -505,7 +505,7 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( child.type() == pugi::node_element ) {
 			if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
 				// Use a UICodeEditor for <pre><code>
-				UICodeEditor* editor = UICodeEditor::New();
+				UICodeEditor* editor = UICodeEditor::NewWithTag( "code" );
 				if ( editor ) {
 					editor->setParent( this );
 					editor->loadFromXmlNode( child );

@@ -81,6 +81,10 @@ em {
 	font-style: italic;
 }
 
+code {
+	font-family: monospace;
+}
+
 h1 {
 	font-size: 2em;
 	font-weight: bold;
@@ -219,7 +223,8 @@ MarkdownView table > thead > tr > th {
 	font-style: bold;
 }
 
-MarkdownView CodeEditor {
+MarkdownView CodeEditor,
+MarkdownView code {
 	padding: 4dp;
 }
 
@@ -792,7 +797,8 @@ Loader {
 	fill-color: var(--primary);
 }
 
-CodeEditor > Loader {
+CodeEditor > Loader,
+code > Loader {
 	background-color: #0000002d;
 	radius: 32dp;
 	outline-thickness: 6dp;

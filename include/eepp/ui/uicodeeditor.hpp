@@ -187,6 +187,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	static UICodeEditor* New();
 
+	static UICodeEditor* NewWithTag( const std::string& tag,
+									 const bool& autoRegisterBaseCommands = true,
+									 const bool& autoRegisterBaseKeybindings = true );
+
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
@@ -843,6 +847,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setDisableScrollInvalidation( bool disable ) { mDisableScrollInvalidation = disable; }
 
 	size_t getTotalVisibleLines() const;
+
+	bool usesDefaultStyle() const { return mUseDefaultStyle; }
+
+	void setUseDefaultStyle( bool use );
 
   protected:
 	struct LastXOffset {

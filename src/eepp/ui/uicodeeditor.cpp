@@ -37,6 +37,12 @@ UICodeEditor* UICodeEditor::New() {
 	return eeNew( UICodeEditor, ( true, true ) );
 }
 
+UICodeEditor* UICodeEditor::NewWithTag( const std::string& tag,
+										const bool& autoRegisterBaseCommands,
+										const bool& autoRegisterBaseKeybindings ) {
+	return eeNew( UICodeEditor, ( tag, autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
+}
+
 UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 									const bool& autoRegisterBaseKeybindings ) {
 	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
@@ -170,11 +176,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHScrollBar->on( Event::OnValueChange, [this]( const Event* ) {
 		setScrollX( mHScrollBar->getValue() * getMaxScroll().x, false );
 	} );
-
-	if ( NULL == mFont && elementTag == "codeeditor" )
-		Log::error(
-			"A monospace font must be loaded to be able to use the code editor.\nTry loading "
-			"a font with the name \"monospace\"" );
 
 	mFontStyleConfig.Font = mFont;
 
@@ -5764,6 +5765,11 @@ void UICodeEditor::onClassChange() {
 
 bool UICodeEditor::needsHorizontalLength() const {
 	return mDocView.getConfig().mode == LineWrapMode::NoWrap;
+}
+
+void UICodeEditor::setUseDefaultStyle( bool use ) {
+	mUseDefaultStyle = use;
+	invalidateDraw();
 }
 
 }} // namespace EE::UI
