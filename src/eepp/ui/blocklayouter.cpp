@@ -143,7 +143,8 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 			p = p->getParent();
 		}
 
-		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
+			 widget->asType<UIHTMLWidget>()->isMergeable() ) {
 			UITextSpan* textSpan = widget->asType<UITextSpan>();
 			Int64 startChar = curCharIdx;
 			Int64 endChar = curCharIdx;

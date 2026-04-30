@@ -150,7 +150,6 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();
-	virtual void onAlphaChange();
 	virtual void onSelectionChange();
 
 	void selCurInit( const Int64& init );

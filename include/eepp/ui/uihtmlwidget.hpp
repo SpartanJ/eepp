@@ -57,6 +57,8 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual RichText* getRichTextPtr() { return nullptr; }
 
+	virtual bool isMergeable() const { return false; }
+
 	virtual void invalidateIntrinsicSize();
 
 	bool isOutOfFlow() const;

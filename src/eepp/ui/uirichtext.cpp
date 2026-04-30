@@ -592,10 +592,6 @@ void UIRichText::onFontStyleChanged() {
 	notifyLayoutAttrChangeParent();
 }
 
-void UIRichText::onAlphaChange() {
-	UIHTMLWidget::onAlphaChange();
-}
-
 void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
 	Float maxWidth = 0;
@@ -630,10 +626,19 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	}
 
+	if ( container->isType( UI_TYPE_TEXTSPAN ) ) {
+		UITextSpan* selfSpan = container->asType<UITextSpan>();
+		if ( !selfSpan->getText().empty() && !selfSpan->isMergeable() &&
+			 NULL != selfSpan->getFontStyleConfig().Font ) {
+			richText.addSpan( selfSpan->getText(), selfSpan->getFontStyleConfig() );
+		}
+	}
+
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
-		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
+			 widget->asType<UIHTMLWidget>()->isMergeable() ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
-			if ( !span->getText().empty() ) {
+			if ( !span->getText().empty() && NULL != span->getFontStyleConfig().Font ) {
 				Rectf margin = span->getLayoutPixelsMargin();
 				Rectf padding = span->getPixelsPadding();
 				richText.addSpan( span->getText(), span->getFontStyleConfig(), margin, padding );

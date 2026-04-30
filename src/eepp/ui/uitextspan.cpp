@@ -1,5 +1,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
@@ -21,23 +22,29 @@ UITextSpan* UITextSpan::NewWithTag( const std::string& tag ) {
 	return eeNew( UITextSpan, ( tag ) );
 }
 
-UITextSpan::UITextSpan( const std::string& tag ) : UIHTMLWidget( tag ) {
+UITextSpan::UITextSpan( const std::string& tag ) : UIRichText( tag ) {
 	mDisplay = CSSDisplay::Inline;
-	mFlags |= UI_HTML_ELEMENT | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
+	setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	mFlags &= ~UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
 
-	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	if ( NULL == mRichText.getFontStyleConfig().Font ) {
+		UISceneNode* sceneNode =
+			getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
+		UITheme* theme = sceneNode ? sceneNode->getUIThemeManager()->getDefaultTheme() : nullptr;
 
-	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
-		mFontStyleConfig.Font = theme->getDefaultFont();
-	} else if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
-		mFontStyleConfig.Font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
-	}
+		if ( NULL != theme && NULL != theme->getDefaultFont() ) {
+			mRichText.getFontStyleConfig().Font = theme->getDefaultFont();
+		} else if ( sceneNode && NULL != sceneNode->getUIThemeManager()->getDefaultFont() ) {
+			mRichText.getFontStyleConfig().Font = sceneNode->getUIThemeManager()->getDefaultFont();
+		}
 
-	if ( NULL != theme ) {
-		mFontStyleConfig.CharacterSize = theme->getDefaultFontSize();
-	} else {
-		mFontStyleConfig.CharacterSize =
-			getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
+		if ( NULL != theme ) {
+			mRichText.getFontStyleConfig().CharacterSize = theme->getDefaultFontSize();
+		} else if ( sceneNode ) {
+			mRichText.getFontStyleConfig().CharacterSize =
+				sceneNode->getUIThemeManager()->getDefaultFontSize();
+		}
 	}
 }
 
@@ -48,7 +55,11 @@ Uint32 UITextSpan::getType() const {
 }
 
 bool UITextSpan::isType( const Uint32& type ) const {
-	return UITextSpan::getType() == type ? true : UIHTMLWidget::isType( type );
+	return UITextSpan::getType() == type ? true : UIRichText::isType( type );
+}
+
+bool UITextSpan::isMergeable() const {
+	return mDisplay == CSSDisplay::Inline;
 }
 
 void UITextSpan::drawBorder() {
@@ -62,7 +73,8 @@ void UITextSpan::drawBorder() {
 }
 
 void UITextSpan::draw() {
-	// Skip native generic rendering because it will be drawn by UIRichText
+	if ( !isMergeable() )
+		UIRichText::draw();
 }
 
 bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
@@ -109,7 +121,7 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 			setTextDecoration( attribute.asTextDecoration() );
 			break;
 		default:
-			return UIHTMLWidget::applyProperty( attribute );
+			return UIRichText::applyProperty( attribute );
 	}
 
 	return true;
@@ -145,12 +157,12 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		default:
-			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
+			return UIRichText::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UITextSpan::getPropertiesImplemented() const {
-	auto props = UIHTMLWidget::getPropertiesImplemented();
+	auto props = UIRichText::getPropertiesImplemented();
 	auto local = { PropertyId::Text,
 				   PropertyId::FontFamily,
 				   PropertyId::FontSize,
@@ -179,26 +191,28 @@ UITextSpan* UITextSpan::setText( const String& text ) {
 	return this;
 }
 
-const UIFontStyleConfig& UITextSpan::getFontStyleConfig() const {
-	return mFontStyleConfig;
+const FontStyleConfig& UITextSpan::getFontStyleConfig() const {
+	return mRichText.getFontStyleConfig();
 }
 
 void UITextSpan::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
-	mFontStyleConfig = fontStyleConfig;
+	mRichText.getFontStyleConfig() = fontStyleConfig;
 	mStyleState = StyleStateAll;
-	onFontStyleChanged();
+	mRichText.invalidate();
 	onFontChanged();
+	onFontStyleChanged();
 	notifyLayoutAttrChange();
 }
 
 Graphics::Font* UITextSpan::getFont() const {
-	return mFontStyleConfig.getFont();
+	return mRichText.getFontStyleConfig().getFont();
 }
 
 UITextSpan* UITextSpan::setFont( Graphics::Font* font ) {
-	if ( mFontStyleConfig.Font != font ) {
-		mFontStyleConfig.Font = font;
+	if ( mRichText.getFontStyleConfig().Font != font ) {
+		mRichText.getFontStyleConfig().Font = font;
 		mStyleState |= StyleStateFont;
+		mRichText.invalidate();
 		onFontChanged();
 		notifyLayoutAttrChange();
 	}
@@ -206,13 +220,14 @@ UITextSpan* UITextSpan::setFont( Graphics::Font* font ) {
 }
 
 Uint32 UITextSpan::getFontSize() const {
-	return mFontStyleConfig.getFontCharacterSize();
+	return mRichText.getFontStyleConfig().getFontCharacterSize();
 }
 
 UITextSpan* UITextSpan::setFontSize( const Uint32& characterSize ) {
-	if ( mFontStyleConfig.CharacterSize != characterSize ) {
-		mFontStyleConfig.CharacterSize = characterSize;
+	if ( mRichText.getFontStyleConfig().CharacterSize != characterSize ) {
+		mRichText.getFontStyleConfig().CharacterSize = characterSize;
 		mStyleState |= StyleStateFontSize;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -220,13 +235,14 @@ UITextSpan* UITextSpan::setFontSize( const Uint32& characterSize ) {
 }
 
 const Uint32& UITextSpan::getFontStyle() const {
-	return mFontStyleConfig.getFontStyle();
+	return mRichText.getFontStyleConfig().getFontStyle();
 }
 
 UITextSpan* UITextSpan::setFontStyle( const Uint32& fontStyle ) {
-	if ( mFontStyleConfig.Style != fontStyle ) {
-		mFontStyleConfig.Style = fontStyle;
+	if ( mRichText.getFontStyleConfig().Style != fontStyle ) {
+		mRichText.getFontStyleConfig().Style = fontStyle;
 		mStyleState |= StyleStateFontStyle;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -234,16 +250,17 @@ UITextSpan* UITextSpan::setFontStyle( const Uint32& fontStyle ) {
 }
 
 Uint32 UITextSpan::getTextDecoration() const {
-	Uint32 flags = mFontStyleConfig.Style;
+	Uint32 flags = mRichText.getFontStyleConfig().Style;
 	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
 	return flags;
 }
 
 UITextSpan* UITextSpan::setTextDecoration( const Uint32& textDecoration ) {
-	if ( mFontStyleConfig.Style != textDecoration ) {
-		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
-		mFontStyleConfig.Style |= textDecoration;
+	if ( mRichText.getFontStyleConfig().Style != textDecoration ) {
+		mRichText.getFontStyleConfig().Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mRichText.getFontStyleConfig().Style |= textDecoration;
 		mStyleState |= StyleStateFontStyle;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -251,13 +268,14 @@ UITextSpan* UITextSpan::setTextDecoration( const Uint32& textDecoration ) {
 }
 
 const Float& UITextSpan::getOutlineThickness() const {
-	return mFontStyleConfig.getOutlineThickness();
+	return mRichText.getFontStyleConfig().getOutlineThickness();
 }
 
 UITextSpan* UITextSpan::setOutlineThickness( const Float& outlineThickness ) {
-	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
-		mFontStyleConfig.OutlineThickness = outlineThickness;
+	if ( mRichText.getFontStyleConfig().OutlineThickness != outlineThickness ) {
+		mRichText.getFontStyleConfig().OutlineThickness = outlineThickness;
 		mStyleState |= StyleStateOutlineThickness;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -265,56 +283,60 @@ UITextSpan* UITextSpan::setOutlineThickness( const Float& outlineThickness ) {
 }
 
 const Color& UITextSpan::getOutlineColor() const {
-	return mFontStyleConfig.getOutlineColor();
+	return mRichText.getFontStyleConfig().getOutlineColor();
 }
 
 UITextSpan* UITextSpan::setOutlineColor( const Color& outlineColor ) {
-	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
-		mFontStyleConfig.OutlineColor = outlineColor;
+	if ( mRichText.getFontStyleConfig().OutlineColor != outlineColor ) {
+		mRichText.getFontStyleConfig().OutlineColor = outlineColor;
 		mStyleState |= StyleStateOutlineColor;
+		mRichText.invalidate();
 		onFontStyleChanged();
 	}
 	return this;
 }
 
 const Color& UITextSpan::getFontColor() const {
-	return mFontStyleConfig.getFontColor();
+	return mRichText.getFontStyleConfig().getFontColor();
 }
 
 UITextSpan* UITextSpan::setFontColor( const Color& color ) {
-	if ( mFontStyleConfig.FontColor != color ) {
-		mFontStyleConfig.FontColor = color;
+	if ( mRichText.getFontStyleConfig().FontColor != color ) {
+		mRichText.getFontStyleConfig().FontColor = color;
 		mStyleState |= StyleStateFontColor;
+		mRichText.invalidate();
 		onFontStyleChanged();
 	}
 	return this;
 }
 
 const Color& UITextSpan::getFontBackgroundColor() const {
-	return mFontStyleConfig.getBackgroundColor();
+	return mRichText.getFontStyleConfig().getBackgroundColor();
 }
 
 UITextSpan* UITextSpan::setFontBackgroundColor( const Color& color ) {
-	if ( mFontStyleConfig.BackgroundColor != color ) {
-		mFontStyleConfig.BackgroundColor = color;
+	if ( mRichText.getFontStyleConfig().BackgroundColor != color ) {
+		mRichText.getFontStyleConfig().BackgroundColor = color;
 		mStyleState |= StyleStateFontBackgroundColor;
+		mRichText.invalidate();
 		onFontStyleChanged();
 	}
 	return this;
 }
 
 const Color& UITextSpan::getFontShadowColor() const {
-	return mFontStyleConfig.getFontShadowColor();
+	return mRichText.getFontStyleConfig().getFontShadowColor();
 }
 
 UITextSpan* UITextSpan::setFontShadowColor( const Color& color ) {
-	if ( mFontStyleConfig.ShadowColor != color ) {
-		mFontStyleConfig.ShadowColor = color;
+	if ( mRichText.getFontStyleConfig().ShadowColor != color ) {
+		mRichText.getFontStyleConfig().ShadowColor = color;
 		if ( color != Color::Transparent )
-			mFontStyleConfig.Style |= Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style |= Graphics::Text::Shadow;
 		else
-			mFontStyleConfig.Style &= ~Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style &= ~Graphics::Text::Shadow;
 		mStyleState |= StyleStateFontShadowColor;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -322,22 +344,18 @@ UITextSpan* UITextSpan::setFontShadowColor( const Color& color ) {
 }
 
 const Vector2f& UITextSpan::getFontShadowOffset() const {
-	return mFontStyleConfig.getFontShadowOffset();
+	return mRichText.getFontStyleConfig().getFontShadowOffset();
 }
 
 UITextSpan* UITextSpan::setFontShadowOffset( const Vector2f& offset ) {
-	if ( mFontStyleConfig.ShadowOffset != offset ) {
-		mFontStyleConfig.ShadowOffset = offset;
+	if ( mRichText.getFontStyleConfig().ShadowOffset != offset ) {
+		mRichText.getFontStyleConfig().ShadowOffset = offset;
 		mStyleState |= StyleStateFontShadowOffset;
+		mRichText.invalidate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
 	return this;
-}
-
-void UITextSpan::onAlphaChange() {
-	UIHTMLWidget::onAlphaChange();
-	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onFontChanged() {
@@ -356,16 +374,10 @@ void UITextSpan::onTextChanged() {
 	notifyLayoutAttrChange();
 }
 
-void UITextSpan::onChildCountChange( Node* child, const bool& removed ) {
-	UIHTMLWidget::onChildCountChange( child, removed );
-	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
-		static_cast<UITextSpan*>( child )->setInheritedStyle( mFontStyleConfig );
-	}
-	notifyLayoutAttrChange();
-	notifyLayoutAttrChangeParent();
-}
-
 Uint32 UITextSpan::onMessage( const NodeMessage* Msg ) {
+	if ( !isMergeable() )
+		return UIRichText::onMessage( Msg );
+
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
 			notifyLayoutAttrChangeParent();
@@ -401,7 +413,7 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 				if ( !text.empty() ) {
 					UITextSpan* span = UITextSpan::New();
 					span->setParent( this );
-					span->setInheritedStyle( mFontStyleConfig );
+					span->setInheritedStyle( mRichText.getFontStyleConfig() );
 					span->setText( text );
 				}
 			}
@@ -417,56 +429,64 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-void UITextSpan::setInheritedStyle( const UIFontStyleConfig& fontStyleConfig ) {
+void UITextSpan::setInheritedStyle( const FontStyleConfig& fontStyleConfig ) {
 	bool fontChanged = false;
 	bool fontStyleChanged = false;
 
-	if ( !hasFont() && mFontStyleConfig.Font != fontStyleConfig.Font ) {
-		mFontStyleConfig.Font = fontStyleConfig.Font;
+	if ( !hasFont() && mRichText.getFontStyleConfig().Font != fontStyleConfig.Font ) {
+		mRichText.getFontStyleConfig().Font = fontStyleConfig.Font;
 		fontChanged = true;
 	}
 
-	if ( !hasFontSize() && mFontStyleConfig.CharacterSize != fontStyleConfig.CharacterSize ) {
-		mFontStyleConfig.CharacterSize = fontStyleConfig.CharacterSize;
+	if ( !hasFontSize() &&
+		 mRichText.getFontStyleConfig().CharacterSize != fontStyleConfig.CharacterSize ) {
+		mRichText.getFontStyleConfig().CharacterSize = fontStyleConfig.CharacterSize;
 		fontStyleChanged = true;
 	}
 
-	if ( !hasFontStyle() && mFontStyleConfig.Style != fontStyleConfig.Style ) {
-		mFontStyleConfig.Style = fontStyleConfig.Style;
+	if ( !hasFontStyle() && mRichText.getFontStyleConfig().Style != fontStyleConfig.Style ) {
+		mRichText.getFontStyleConfig().Style = fontStyleConfig.Style;
 		fontStyleChanged = true;
 	}
 
-	if ( !hasFontColor() && mFontStyleConfig.FontColor != fontStyleConfig.FontColor ) {
-		mFontStyleConfig.FontColor = fontStyleConfig.FontColor;
+	if ( !hasFontColor() &&
+		 mRichText.getFontStyleConfig().FontColor != fontStyleConfig.FontColor ) {
+		mRichText.getFontStyleConfig().FontColor = fontStyleConfig.FontColor;
 		fontStyleChanged = true;
 	}
 
 	if ( !hasOutlineThickness() &&
-		 mFontStyleConfig.OutlineThickness != fontStyleConfig.OutlineThickness ) {
-		mFontStyleConfig.OutlineThickness = fontStyleConfig.OutlineThickness;
+		 mRichText.getFontStyleConfig().OutlineThickness != fontStyleConfig.OutlineThickness ) {
+		mRichText.getFontStyleConfig().OutlineThickness = fontStyleConfig.OutlineThickness;
 		fontStyleChanged = true;
 	}
 
-	if ( !hasOutlineColor() && mFontStyleConfig.OutlineColor != fontStyleConfig.OutlineColor ) {
-		mFontStyleConfig.OutlineColor = fontStyleConfig.OutlineColor;
+	if ( !hasOutlineColor() &&
+		 mRichText.getFontStyleConfig().OutlineColor != fontStyleConfig.OutlineColor ) {
+		mRichText.getFontStyleConfig().OutlineColor = fontStyleConfig.OutlineColor;
 		fontStyleChanged = true;
 	}
 
-	if ( !hasFontShadowColor() && mFontStyleConfig.ShadowColor != fontStyleConfig.ShadowColor ) {
-		mFontStyleConfig.ShadowColor = fontStyleConfig.ShadowColor;
+	if ( !hasFontShadowColor() &&
+		 mRichText.getFontStyleConfig().ShadowColor != fontStyleConfig.ShadowColor ) {
+		mRichText.getFontStyleConfig().ShadowColor = fontStyleConfig.ShadowColor;
 		fontStyleChanged = true;
 	}
 
-	if ( !hasFontShadowOffset() && mFontStyleConfig.ShadowOffset != fontStyleConfig.ShadowOffset ) {
-		mFontStyleConfig.ShadowOffset = fontStyleConfig.ShadowOffset;
+	if ( !hasFontShadowOffset() &&
+		 mRichText.getFontStyleConfig().ShadowOffset != fontStyleConfig.ShadowOffset ) {
+		mRichText.getFontStyleConfig().ShadowOffset = fontStyleConfig.ShadowOffset;
 		fontStyleChanged = true;
 	}
 
 	if ( !hasFontBackgroundColor() &&
-		 mFontStyleConfig.BackgroundColor != fontStyleConfig.BackgroundColor ) {
-		mFontStyleConfig.BackgroundColor = fontStyleConfig.BackgroundColor;
+		 mRichText.getFontStyleConfig().BackgroundColor != fontStyleConfig.BackgroundColor ) {
+		mRichText.getFontStyleConfig().BackgroundColor = fontStyleConfig.BackgroundColor;
 		fontStyleChanged = true;
 	}
+
+	if ( fontChanged || fontStyleChanged )
+		mRichText.invalidate();
 
 	if ( fontChanged )
 		onFontChanged();
@@ -480,7 +500,7 @@ void UITextSpan::setInheritedStyle( const UIFontStyleConfig& fontStyleConfig ) {
 	Node* child = mChild;
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
-			static_cast<UITextSpan*>( child )->setInheritedStyle( mFontStyleConfig );
+			static_cast<UITextSpan*>( child )->setInheritedStyle( mRichText.getFontStyleConfig() );
 		}
 		child = child->getNextNode();
 	}

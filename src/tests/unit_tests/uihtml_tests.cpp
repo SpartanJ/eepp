@@ -1063,7 +1063,7 @@ UTEST( UIHTML, InlineBlockExplicitWidth ) {
 }
 
 UTEST( UIHTML, InlineBlockMixedContent ) {
-	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Mixed Content Test",
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Mixed Content Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
@@ -1093,7 +1093,7 @@ UTEST( UIHTML, InlineBlockMixedContent ) {
 }
 
 UTEST( UIHTML, InlineBlockWrapIssue ) {
-	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Wrap Issue Test",
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Wrap Issue Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
@@ -1112,6 +1112,64 @@ UTEST( UIHTML, InlineBlockWrapIssue ) {
 	auto rt = h2->asType<UIRichText>()->getRichTextPtr();
 
 	EXPECT_EQ( (size_t)1, rt->getLines().size() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockBrowserTest ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Browser Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+  .parent-container {
+    width: 450px;
+  }
+  .target {
+    background-color: #e0f7fa;
+  }
+  .is-inline-block {
+    display: inline-block;
+  }
+  .is-inline {
+    display: inline;
+  }
+</style>
+</head>
+<body>
+  <div class="parent-container" id="parent-ib">
+    <span id="t1">Here is some normal starting text.</span>
+    <span id="ib" class="target is-inline-block">This is the target inline-block element. If the container gets too narrow, this solid block drops to the next line, and its internal text will wrap, making the block taller without breaking.</span>
+    <span id="t2">And here is the text that comes immediately after. It gets pushed down correctly.</span>
+  </div>
+</body>
+</html>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ib = sceneNode->getRoot()->find( "ib" )->asType<UIWidget>();
+	auto t1 = sceneNode->getRoot()->find( "t1" )->asType<UIWidget>();
+	auto t2 = sceneNode->getRoot()->find( "t2" )->asType<UIWidget>();
+
+	ASSERT_TRUE( ib != nullptr && t1 != nullptr && t2 != nullptr );
+
+	// If it drops to the next line:
+	EXPECT_GT( ib->getPixelsPosition().y, t1->getPixelsPosition().y );
+	// And t2 should be AFTER ib (either horizontally or vertically)
+	EXPECT_GE( t2->getPixelsPosition().y, ib->getPixelsPosition().y );
+	if ( t2->getPixelsPosition().y == ib->getPixelsPosition().y ) {
+		EXPECT_GE( t2->getPixelsPosition().x,
+				   ib->getPixelsPosition().x + ib->getPixelsSize().getWidth() );
+	}
 
 	Engine::destroySingleton();
 }

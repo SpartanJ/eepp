@@ -2,14 +2,14 @@
 #define EE_UI_UITEXTSPAN_HPP
 
 #include <eepp/ui/uifontstyleconfig.hpp>
-#include <eepp/ui/uihtmlwidget.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 using SpanHitBoxes = SmallVector<Rectf, 4>;
 
-class EE_API UITextSpan : public UIHTMLWidget {
+class EE_API UITextSpan : public UIRichText {
   public:
 	static UITextSpan* New();
 
@@ -41,6 +41,8 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
+	virtual bool isMergeable() const;
+
 	virtual void draw();
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
@@ -54,7 +56,7 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	UITextSpan* setText( const String& text );
 
-	const UIFontStyleConfig& getFontStyleConfig() const;
+	const FontStyleConfig& getFontStyleConfig() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -100,7 +102,7 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	UITextSpan* setFontShadowOffset( const Vector2f& offset );
 
-	void setInheritedStyle( const UIFontStyleConfig& fontStyleConfig );
+	void setInheritedStyle( const FontStyleConfig& fontStyleConfig );
 
 	enum StyleState {
 		StyleStateNone = 0,
@@ -137,7 +139,6 @@ class EE_API UITextSpan : public UIHTMLWidget {
   protected:
 	Uint32 mStyleState{ StyleStateNone };
 	String mText;
-	UIFontStyleConfig mFontStyleConfig;
 	SpanHitBoxes mHitBoxes;
 
 	explicit UITextSpan( const std::string& tag = "span" );
@@ -149,10 +150,6 @@ class EE_API UITextSpan : public UIHTMLWidget {
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
-
-	virtual void onAlphaChange();
-
-	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
