@@ -1064,6 +1064,10 @@ bool Node::isWidget() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_WIDGET );
 }
 
+bool Node::isTextNode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_TEXTNODE );
+}
+
 bool Node::isWindow() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_WINDOW );
 }

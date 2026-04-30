@@ -553,7 +553,7 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 	};
 	mNodeSelectors["first-child"] = []( const UIWidget* node, int, int,
 										const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
+		return NULL != node->getParent() && node->getElementIndex() == 0;
 	};
 	mNodeSelectors["enabled"] = []( const UIWidget* node, int, int,
 									const FunctionString& ) -> bool { return node->isEnabled(); };
@@ -561,69 +561,69 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 									 const FunctionString& ) -> bool { return !node->isEnabled(); };
 	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int, int,
 										  const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		while ( NULL != child ) {
-			if ( type == child->getType() ) {
-				return child == node;
-			}
-			child = child->getNextNode();
-		};
-		return false;
+		return NULL != node->getParent() && node->getElementOfTypeIndex() == 0;
 	};
 	mNodeSelectors["last-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
+		Node* child = node->getParent()->getLastChild();
+		while ( NULL != child ) {
+			if ( child->isWidget() && !static_cast<UIWidget*>( child )->isTextNode() )
+				return child == node;
+			child = child->getPrevNode();
+		}
+		return false;
 	};
 	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
 		Uint32 type = node->getType();
+		Node* child = node->getParent()->getLastChild();
 		while ( NULL != child ) {
-			if ( type == child->getType() ) {
+			if ( child->getType() == type && child->isWidget() &&
+				 !static_cast<UIWidget*>( child )->isTextNode() )
 				return child == node;
-			}
 			child = child->getPrevNode();
-		};
+		}
 		return false;
 	};
 	mNodeSelectors["only-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() == 1;
 	};
 	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		Uint32 typeCount = 0;
-		while ( NULL != child ) {
-			if ( child->getType() == type ) {
-				typeCount++;
-			}
-			if ( typeCount > 1 )
-				return false;
-			child = child->getNextNode();
-		};
-		return typeCount == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )
+					   ->getChildElementOfTypeCount( node->getType() ) == 1;
 	};
 	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b,
 									  const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeIndex() + 1 );
+		return isNth( a, b, node->getElementIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b,
 										   const FunctionString& ) -> bool {
-		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
+		return node->getParent() != NULL && node->getParent()->isWidget()
+				   ? isNth(
+						 a, b,
+						 static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() -
+							 node->getElementIndex() )
+				   : false;
 	};
 	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b,
 										const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
+		return isNth( a, b, node->getElementOfTypeIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b,
 											 const FunctionString& ) -> bool {
-		return node->getParent() != NULL
+		return node->getParent() != NULL && node->getParent()->isWidget()
 				   ? isNth( a, b,
-							node->getParent()->getChildOfTypeCount( node->getType() ) -
-								node->getNodeOfTypeIndex() )
+							static_cast<const UIWidget*>( node->getParent() )
+									->getChildElementOfTypeCount( node->getType() ) -
+								node->getElementOfTypeIndex() )
 				   : false;
 	};
 	mNodeSelectors["checked"] = []( const UIWidget* node, int, int,

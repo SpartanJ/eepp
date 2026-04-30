@@ -94,7 +94,10 @@ UTEST( CSSInheritance, ComputedFontSize ) {
 		UIWidget* childWidget = child->asType<UIWidget>();
 		std::string pxStr = childWidget->getPropertyString(
 			StyleSheetSpecification::instance()->getProperty( PropertyId::FontSize ) );
-		EXPECT_NEAR( 32u * scale, childWidget->asType<UITextSpan>()->getFontSize(), 1.f );
+		EXPECT_FALSE( pxStr.empty() );
+		EXPECT_NEAR( 32u * scale,
+					 childWidget->lengthFromValue( StyleSheetProperty( "font-size", pxStr ) ),
+					 1.f );
 	}
 }
 

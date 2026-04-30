@@ -3,6 +3,7 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 
 namespace EE { namespace UI {
@@ -131,11 +132,26 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 
 	Int64 curCharIdx = 0;
 
-	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> Rectf {
+	auto processNode = [&]( Node* node, auto& processNodeRef ) -> Rectf {
 		constexpr Float maxF = std::numeric_limits<Float>::max();
 		constexpr Float lowF = std::numeric_limits<Float>::lowest();
 		Rectf bounds( maxF, maxF, lowF, lowF );
 
+		// UITextNode is a logical marker; its text is rendered by the
+		// RichText engine — just advance the character index and return
+		// empty bounds so it does not affect any widget's geometry.
+		if ( node->isTextNode() ) {
+			curCharIdx += static_cast<UITextNode*>( node )->getText().length();
+			return bounds;
+		}
+
+		if ( !node->isWidget() )
+			return bounds;
+
+		UIWidget* widget = node->asType<UIWidget>();
+
+		// Accumulate ancestor positions so the widget can be placed
+		// relative to the container (mContainer).
 		Vector2f offset;
 		Node* p = widget->getParent();
 		while ( p && p != mContainer ) {
@@ -181,12 +197,14 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 				}
 			}
 
+			// Recurse into children.  UITextNode children advance
+			// curCharIdx but contribute no geometry (they are logical
+			// markers only).  Widget children get their own position
+			// and hit-boxes.
 			Node* spanChild = widget->getFirstChild();
 			while ( spanChild != NULL ) {
-				if ( spanChild->isWidget() ) {
-					bounds.expand(
-						processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef ) );
-				}
+				if ( spanChild->isWidget() )
+					bounds.expand( processNodeRef( spanChild, processNodeRef ) );
 				spanChild = spanChild->getNextNode();
 			}
 
@@ -241,12 +259,10 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 
 	child = mContainer->getFirstChild();
 	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			bool isOutOfFlow = child->isType( UI_TYPE_HTML_WIDGET ) &&
-							   child->asType<UIHTMLWidget>()->isOutOfFlow();
-			if ( !isOutOfFlow )
-				processWidget( child->asType<UIWidget>(), processWidget );
-		}
+		bool isOutOfFlow =
+			child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow();
+		if ( !isOutOfFlow )
+			processNode( child, processNode );
 		child = child->getNextNode();
 	}
 }

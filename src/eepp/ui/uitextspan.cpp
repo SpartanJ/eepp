@@ -6,6 +6,7 @@
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
@@ -411,9 +412,8 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 			} else if ( child.type() == pugi::node_pcdata ) {
 				String text = Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 				if ( !text.empty() ) {
-					UITextSpan* span = UITextSpan::New();
+					UITextNode* span = UITextNode::New();
 					span->setParent( this );
-					span->setInheritedStyle( mRichText.getFontStyleConfig() );
 					span->setText( text );
 				}
 			}

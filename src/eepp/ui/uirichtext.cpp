@@ -8,6 +8,7 @@
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -549,9 +550,8 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( child.type() == pugi::node_pcdata ) {
 			String text = Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 			if ( !text.empty() ) {
-				UITextSpan* span = UITextSpan::New();
+				UITextNode* span = UITextNode::New();
 				span->setParent( this );
-				span->setInheritedStyle( mRichText.getFontStyleConfig() );
 				span->setText( text );
 			}
 		}
@@ -596,8 +596,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	richText.clear();
 	Float maxWidth = 0;
 	if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-		maxWidth = container->getMatchParentWidth() -
-				   container->getPixelsContentOffset().Left -
+		maxWidth = container->getMatchParentWidth() - container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
 	} else {
 		maxWidth = container->getPixelsSize().getWidth() -
@@ -634,7 +633,29 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		}
 	}
 
-	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
+	auto processNode = [&]( Node* node, auto& processNodeRef ) -> void {
+		if ( node->isTextNode() ) {
+			UITextNode* textNode = static_cast<UITextNode*>( node );
+			if ( !textNode->getText().empty() ) {
+				FontStyleConfig style;
+				if ( node->getParent()->isType( UI_TYPE_TEXTSPAN ) ) {
+					style = node->getParent()->asType<UITextSpan>()->getFontStyleConfig();
+				} else if ( node->getParent()->isType( UI_TYPE_RICHTEXT ) ) {
+					style =
+						node->getParent()->asType<UIRichText>()->getRichText().getFontStyleConfig();
+				} else {
+					style = richText.getFontStyleConfig();
+				}
+				richText.addSpan( textNode->getText(), style );
+			}
+			return;
+		}
+
+		if ( !node->isWidget() )
+			return;
+
+		UIWidget* widget = node->asType<UIWidget>();
+
 		if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
 			 widget->asType<UIHTMLWidget>()->isMergeable() ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
@@ -648,7 +669,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				bool isOutOfFlow = spanChild->isType( UI_TYPE_HTML_WIDGET ) &&
 								   spanChild->asType<UIHTMLWidget>()->isOutOfFlow();
 				if ( !isOutOfFlow )
-					processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef );
+					processNodeRef( spanChild, processNodeRef );
 				spanChild = spanChild->getNextNode();
 			}
 		} else if ( widget->isType( UI_TYPE_BR ) ) {
@@ -712,7 +733,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		bool isOutOfFlow =
 			child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow();
 		if ( !isOutOfFlow )
-			processWidget( child->asType<UIWidget>(), processWidget );
+			processNode( child, processNode );
 		child = child->getNextNode();
 	}
 }

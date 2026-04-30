@@ -16,6 +16,7 @@
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -666,8 +667,8 @@ UTEST( UIRichText, WhitespaceCollapseCodeTest ) {
 	bool foundDotSpace = false;
 	Node* child = rt->getFirstChild();
 	while ( child ) {
-		if ( child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
-			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( child );
+		if ( child->isTextNode() ) {
+			UI::UITextNode* span = static_cast<UI::UITextNode*>( child );
 			if ( span->getText() == ". " ) {
 				foundDotSpace = true;
 			}

@@ -800,6 +800,21 @@ class EE_API UIWidget : public UINode {
 	 */
 	std::vector<const char*> getStyleSheetPseudoClassesStrings() const;
 
+	/** @return True if the widget is not a text node. */
+	bool isWidgetElement() const;
+
+	/** @return The index of this element among its sibling elements. */
+	Uint32 getElementIndex() const;
+
+	/** @return The index of this element among its sibling elements of the same type. */
+	Uint32 getElementOfTypeIndex() const;
+
+	/** @return The number of child elements. */
+	Uint32 getChildElementCount() const;
+
+	/** @return The number of child elements of the specified type. */
+	Uint32 getChildElementOfTypeCount( const Uint32& type ) const;
+
 	/**
 	 * @brief Resets all CSS classes and removes them.
 	 *

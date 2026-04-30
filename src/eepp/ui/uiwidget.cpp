@@ -997,6 +997,64 @@ std::vector<const char*> UIWidget::getStyleSheetPseudoClassesStrings() const {
 	return StyleSheetSelectorRule::fromPseudoClass( mPseudoClasses );
 }
 
+bool UIWidget::isWidgetElement() const {
+	return !isTextNode();
+}
+
+Uint32 UIWidget::getElementIndex() const {
+	Uint32 index = 0;
+	if ( NULL != mParentNode ) {
+		Node* parentChild = mParentNode->getFirstChild();
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return index;
+			if ( parentChild->isWidget() && !parentChild->isTextNode() )
+				index++;
+			parentChild = parentChild->getNextNode();
+		}
+	}
+	return 0;
+}
+
+Uint32 UIWidget::getElementOfTypeIndex() const {
+	Uint32 index = 0;
+	if ( NULL != mParentNode ) {
+		Node* parentChild = mParentNode->getFirstChild();
+		Uint32 type = getType();
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return index;
+			if ( parentChild->getType() == type && parentChild->isWidget() &&
+				 !parentChild->isTextNode() )
+				index++;
+			parentChild = parentChild->getNextNode();
+		}
+	}
+	return 0;
+}
+
+Uint32 UIWidget::getChildElementCount() const {
+	Uint32 count = 0;
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->isWidget() && !child->isTextNode() )
+			count++;
+		child = child->getNextNode();
+	}
+	return count;
+}
+
+Uint32 UIWidget::getChildElementOfTypeCount( const Uint32& type ) const {
+	Uint32 count = 0;
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->getType() == type && child->isWidget() && !child->isTextNode() )
+			count++;
+		child = child->getNextNode();
+	}
+	return count;
+}
+
 void UIWidget::updatePseudoClasses() {
 	mPseudoClasses = 0;
 
