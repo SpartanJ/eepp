@@ -1091,3 +1091,27 @@ UTEST( UIHTML, InlineBlockMixedContent ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTML, InlineBlockWrapIssue ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Wrap Issue Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	std::string html;
+	FileSystem::fileGet( "assets/html/inline_block_wrap.html", html );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto h2 = sceneNode->getRoot()->find( "h2-wrap" );
+	ASSERT_TRUE( h2 != nullptr );
+
+	auto rt = h2->asType<UIRichText>()->getRichTextPtr();
+
+	EXPECT_EQ( (size_t)1, rt->getLines().size() );
+
+	Engine::destroySingleton();
+}

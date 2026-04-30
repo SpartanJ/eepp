@@ -171,19 +171,19 @@ UIWidget* UIWidget::setLayoutMarginAuto( Uint32 dir, bool isAuto ) {
 }
 
 UIWidget* UIWidget::setLayoutMarginLeftAuto( bool isAuto ) {
-	return setLayoutMarginAuto( MarginAutoLeft, isAuto );
+	return setLayoutMarginAuto( MarginAuto::Left, isAuto );
 }
 
 UIWidget* UIWidget::setLayoutMarginRightAuto( bool isAuto ) {
-	return setLayoutMarginAuto( MarginAutoRight, isAuto );
+	return setLayoutMarginAuto( MarginAuto::Right, isAuto );
 }
 
 UIWidget* UIWidget::setLayoutMarginTopAuto( bool isAuto ) {
-	return setLayoutMarginAuto( MarginAutoTop, isAuto );
+	return setLayoutMarginAuto( MarginAuto::Top, isAuto );
 }
 
 UIWidget* UIWidget::setLayoutMarginBottomAuto( bool isAuto ) {
-	return setLayoutMarginAuto( MarginAutoTop, isAuto );
+	return setLayoutMarginAuto( MarginAuto::Top, isAuto );
 }
 
 UIWidget* UIWidget::setLayoutMarginAuto( bool left, bool right, bool top, bool bottom ) {
@@ -195,19 +195,19 @@ UIWidget* UIWidget::setLayoutMarginAuto( bool left, bool right, bool top, bool b
 }
 
 bool UIWidget::hasLayoutMarginLeftAuto() const {
-	return mMarginAuto & MarginAutoLeft;
+	return mMarginAuto & MarginAuto::Left;
 }
 
 bool UIWidget::hasLayoutMarginRightAuto() const {
-	return mMarginAuto & MarginAutoRight;
+	return mMarginAuto & MarginAuto::Right;
 }
 
 bool UIWidget::hasLayoutMarginTopAuto() const {
-	return mMarginAuto & MarginAutoTop;
+	return mMarginAuto & MarginAuto::Top;
 }
 
 bool UIWidget::hasLayoutMarginBottomAuto() const {
-	return mMarginAuto & MarginAutoBottom;
+	return mMarginAuto & MarginAuto::Bottom;
 }
 
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
@@ -596,7 +596,7 @@ void UIWidget::calculateAutoMargin() {
 	Rectf parentContentOffset = parent->getPixelsContentOffset();
 
 	bool changed = false;
-	if ( ( mMarginAuto & MarginAutoLeft ) && ( mMarginAuto & MarginAutoRight ) ) {
+	if ( ( mMarginAuto & MarginAuto::Left ) && ( mMarginAuto & MarginAuto::Right ) ) {
 		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
 							   parentContentOffset.Right - getPixelsSize().getWidth();
 		Float newMarginLeft = availableWidth > 0 ? availableWidth / 2.f : 0.f;
@@ -606,7 +606,7 @@ void UIWidget::calculateAutoMargin() {
 			mLayoutMarginPx.Right = newMarginRight;
 			changed = true;
 		}
-	} else if ( mMarginAuto & MarginAutoLeft ) {
+	} else if ( mMarginAuto & MarginAuto::Left ) {
 		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
 							   parentContentOffset.Right - getPixelsSize().getWidth() -
 							   mLayoutMarginPx.Right;
@@ -615,7 +615,7 @@ void UIWidget::calculateAutoMargin() {
 			mLayoutMarginPx.Left = newMarginLeft;
 			changed = true;
 		}
-	} else if ( mMarginAuto & MarginAutoRight ) {
+	} else if ( mMarginAuto & MarginAuto::Right ) {
 		Float availableWidth = parentSize.getWidth() - parentContentOffset.Left -
 							   parentContentOffset.Right - getPixelsSize().getWidth() -
 							   mLayoutMarginPx.Left;
@@ -626,7 +626,7 @@ void UIWidget::calculateAutoMargin() {
 		}
 	}
 
-	if ( ( mMarginAuto & MarginAutoTop ) && ( mMarginAuto & MarginAutoBottom ) ) {
+	if ( ( mMarginAuto & MarginAuto::Top ) && ( mMarginAuto & MarginAuto::Bottom ) ) {
 		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
 								parentContentOffset.Bottom - getPixelsSize().getHeight();
 		Float newMarginTop = availableHeight > 0 ? availableHeight / 2.f : 0.f;
@@ -636,7 +636,7 @@ void UIWidget::calculateAutoMargin() {
 			mLayoutMarginPx.Bottom = newMarginBottom;
 			changed = true;
 		}
-	} else if ( mMarginAuto & MarginAutoTop ) {
+	} else if ( mMarginAuto & MarginAuto::Top ) {
 		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
 								parentContentOffset.Bottom - getPixelsSize().getHeight() -
 								mLayoutMarginPx.Bottom;
@@ -645,7 +645,7 @@ void UIWidget::calculateAutoMargin() {
 			mLayoutMarginPx.Top = newMarginTop;
 			changed = true;
 		}
-	} else if ( mMarginAuto & MarginAutoBottom ) {
+	} else if ( mMarginAuto & MarginAuto::Bottom ) {
 		Float availableHeight = parentSize.getHeight() - parentContentOffset.Top -
 								parentContentOffset.Bottom - getPixelsSize().getHeight() -
 								mLayoutMarginPx.Top;
@@ -2002,40 +2002,40 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::MarginLeft: {
 			if ( attribute.asString() == "auto" ) {
-				mMarginAuto |= MarginAutoLeft;
+				mMarginAuto |= MarginAuto::Left;
 				calculateAutoMargin();
 			} else {
-				mMarginAuto &= ~MarginAutoLeft;
+				mMarginAuto &= ~MarginAuto::Left;
 				setLayoutMarginLeft( lengthFromValueAsDp( attribute ) );
 			}
 			break;
 		}
 		case PropertyId::MarginRight: {
 			if ( attribute.asString() == "auto" ) {
-				mMarginAuto |= MarginAutoRight;
+				mMarginAuto |= MarginAuto::Right;
 				calculateAutoMargin();
 			} else {
-				mMarginAuto &= ~MarginAutoRight;
+				mMarginAuto &= ~MarginAuto::Right;
 				setLayoutMarginRight( lengthFromValueAsDp( attribute ) );
 			}
 			break;
 		}
 		case PropertyId::MarginTop: {
 			if ( attribute.asString() == "auto" ) {
-				mMarginAuto |= MarginAutoTop;
+				mMarginAuto |= MarginAuto::Top;
 				calculateAutoMargin();
 			} else {
-				mMarginAuto &= ~MarginAutoTop;
+				mMarginAuto &= ~MarginAuto::Top;
 				setLayoutMarginTop( lengthFromValueAsDp( attribute ) );
 			}
 			break;
 		}
 		case PropertyId::MarginBottom: {
 			if ( attribute.asString() == "auto" ) {
-				mMarginAuto |= MarginAutoBottom;
+				mMarginAuto |= MarginAuto::Bottom;
 				calculateAutoMargin();
 			} else {
-				mMarginAuto &= ~MarginAutoBottom;
+				mMarginAuto &= ~MarginAuto::Bottom;
 				setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			}
 			break;
@@ -2596,8 +2596,8 @@ Float UIWidget::getMatchParentWidth() const {
 	if ( getParent()->isWidget() )
 		padding = static_cast<UIWidget*>( getParent() )->getPixelsContentOffset();
 
-	Float marginLeft = ( mMarginAuto & MarginAutoLeft ) ? 0.f : mLayoutMarginPx.Left;
-	Float marginRight = ( mMarginAuto & MarginAutoRight ) ? 0.f : mLayoutMarginPx.Right;
+	Float marginLeft = ( mMarginAuto & MarginAuto::Left ) ? 0.f : mLayoutMarginPx.Left;
+	Float marginRight = ( mMarginAuto & MarginAuto::Right ) ? 0.f : mLayoutMarginPx.Right;
 
 	Float width = getParent()->getPixelsSize().getWidth() - marginLeft - marginRight -
 				  padding.Left - padding.Right;
@@ -2617,8 +2617,8 @@ Float UIWidget::getMatchParentHeight() const {
 	if ( getParent()->isWidget() )
 		padding = static_cast<UIWidget*>( getParent() )->getPixelsContentOffset();
 
-	Float marginTop = ( mMarginAuto & MarginAutoTop ) ? 0.f : mLayoutMarginPx.Top;
-	Float marginBottom = ( mMarginAuto & MarginAutoBottom ) ? 0.f : mLayoutMarginPx.Bottom;
+	Float marginTop = ( mMarginAuto & MarginAuto::Top ) ? 0.f : mLayoutMarginPx.Top;
+	Float marginBottom = ( mMarginAuto & MarginAuto::Bottom ) ? 0.f : mLayoutMarginPx.Bottom;
 
 	Float height = getParent()->getPixelsSize().getHeight() - marginTop - marginBottom -
 				   padding.Top - padding.Bottom;

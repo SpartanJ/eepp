@@ -598,9 +598,17 @@ void UIRichText::onAlphaChange() {
 
 void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
-	Float maxWidth = container->getPixelsSize().getWidth() -
-					 container->getPixelsContentOffset().Left -
-					 container->getPixelsContentOffset().Right;
+	Float maxWidth = 0;
+	if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		maxWidth = container->getMatchParentWidth() -
+				   container->getPixelsContentOffset().Left -
+				   container->getPixelsContentOffset().Right;
+	} else {
+		maxWidth = container->getPixelsSize().getWidth() -
+				   container->getPixelsContentOffset().Left -
+				   container->getPixelsContentOffset().Right;
+	}
+
 	if ( maxWidth < 0 )
 		maxWidth = 0;
 

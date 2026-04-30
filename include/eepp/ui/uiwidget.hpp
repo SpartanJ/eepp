@@ -21,6 +21,13 @@ namespace EE { namespace UI {
 class UITooltip;
 class UIStyle;
 
+struct MarginAuto {
+	static constexpr auto Left = ( 1 << 0 );
+	static constexpr auto Right = ( 1 << 1 );
+	static constexpr auto Top = ( 1 << 2 );
+	static constexpr auto Bottom = ( 1 << 3 );
+};
+
 /**
  * @brief Base class for all UI widgets in the eepp framework.
  *
@@ -1324,9 +1331,20 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onWidgetCreated();
 
+	/**@return The property `width` converted as length */
 	Float getPropertyWidth() const;
 
+	/**@return The property `height` converted as length */
 	Float getPropertyHeight() const;
+
+	/* @return The width of the widget when size policy is match_parent */
+	Float getMatchParentWidth() const;
+
+	/* @return The height of the widget when size policy is match_parent */
+	Float getMatchParentHeight() const;
+
+	/* @return The size of the widget when size policy is match_parent */
+	Sizef getSizeFromLayoutPolicy();
 
   protected:
 	friend class UIManager;
@@ -1358,11 +1376,6 @@ class EE_API UIWidget : public UINode {
 	mutable Float mMaxIntrinsicWidth{ 0 };
 	mutable bool mIntrinsicWidthsDirty{ true };
 	Uint8 mMarginAuto{ 0 };
-
-	static constexpr Uint8 MarginAutoLeft = ( 1 << 0 );
-	static constexpr Uint8 MarginAutoRight = ( 1 << 1 );
-	static constexpr Uint8 MarginAutoTop = ( 1 << 2 );
-	static constexpr Uint8 MarginAutoBottom = ( 1 << 3 );
 
 	void calculateAutoMargin();
 
@@ -1706,15 +1719,6 @@ class EE_API UIWidget : public UINode {
 	 * Reloads the font family for this widget, typically after a theme change.
 	 */
 	void reloadFontFamily();
-
-	/* @return The width of the widget when size policy is match_parent */
-	Float getMatchParentWidth() const;
-
-	/* @return The height of the widget when size policy is match_parent */
-	Float getMatchParentHeight() const;
-
-	/* @return The size of the widget when size policy is match_parent */
-	Sizef getSizeFromLayoutPolicy();
 
 	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
 };
