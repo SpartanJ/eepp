@@ -1,5 +1,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -110,10 +111,13 @@ UIRichText* UIRichText::NewBr() {
 
 static void applyDefaultBlockMargins( UIWidget* widget, const std::string& tag ) {
 	static const UnorderedMap<std::string, std::pair<Float, Float>> defaults = {
-		{ "h1", { 0.67f, 0.67f } }, { "h2", { 0.83f, 0.83f } },	 { "h3", { 1.00f, 1.00f } },
-		{ "h4", { 1.33f, 1.33f } }, { "h5", { 1.67f, 1.67f } },	 { "h6", { 2.33f, 2.33f } },
-		{ "p", { 1.00f, 1.00f } },	{ "pre", { 1.00f, 1.00f } }, { "blockquote", { 1.00f, 1.00f } },
-		{ "hr", { 0.50f, 0.50f } },
+		{ "h1", { 0.67f, 0.67f } },			{ "h2", { 0.83f, 0.83f } },
+		{ "h3", { 1.00f, 1.00f } },			{ "h4", { 1.33f, 1.33f } },
+		{ "h5", { 1.67f, 1.67f } },			{ "h6", { 2.33f, 2.33f } },
+		{ "p", { 1.00f, 1.00f } },			{ "pre", { 1.00f, 1.00f } },
+		{ "blockquote", { 1.00f, 1.00f } }, { "hr", { 0.50f, 0.50f } },
+		{ "ul", { 1.00f, 1.00f } },			{ "ol", { 1.00f, 1.00f } },
+		{ "dl", { 1.00f, 1.00f } },			{ "body", { 0.67f, 0.67f } },
 	};
 	auto it = defaults.find( tag );
 	if ( it != defaults.end() ) {
@@ -143,20 +147,21 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
-	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode =
+		getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
+	UITheme* theme = sceneNode ? sceneNode->getUIThemeManager()->getDefaultTheme() : nullptr;
 
 	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
 		mRichText.getFontStyleConfig().Font = theme->getDefaultFont();
-	} else if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
-		mRichText.getFontStyleConfig().Font =
-			getUISceneNode()->getUIThemeManager()->getDefaultFont();
+	} else if ( sceneNode && NULL != sceneNode->getUIThemeManager()->getDefaultFont() ) {
+		mRichText.getFontStyleConfig().Font = sceneNode->getUIThemeManager()->getDefaultFont();
 	}
 
 	if ( NULL != theme ) {
 		mRichText.getFontStyleConfig().CharacterSize = theme->getDefaultFontSize();
-	} else {
+	} else if ( sceneNode ) {
 		mRichText.getFontStyleConfig().CharacterSize =
-			getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
+			sceneNode->getUIThemeManager()->getDefaultFontSize();
 	}
 
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
@@ -520,6 +525,8 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 						editor->applyProperty( langIt->second );
 					}
 				}
+			} else if ( String::iequals( child.name(), "style" ) ) {
+				getUISceneNode()->loadNode( child, this, 0 );
 			} else if ( String::iequals( child.name(), "script" ) ) {
 				// No plans to support it
 				continue;
@@ -637,6 +644,13 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 			bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
+			if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+				CSSDisplay display = widget->asType<UIHTMLWidget>()->getDisplay();
+				if ( display == CSSDisplay::Inline || display == CSSDisplay::InlineBlock )
+					isBlock = false;
+				else if ( display == CSSDisplay::ListItem )
+					isBlock = true;
+			}
 
 			if ( mode == IntrinsicMode::None ) {
 				if ( isBlock ) {

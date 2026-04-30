@@ -10,6 +10,7 @@ enum class CSSDisplay {
 	Inline,
 	Block,
 	InlineBlock,
+	ListItem,
 	Flex,
 	None,
 	Table,

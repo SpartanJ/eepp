@@ -171,6 +171,19 @@ MarkdownView blockquote {
 	margin-top: 0;
 }
 
+MarkdownView ul,
+MarkdownView ol {
+	padding-left: 0;
+}
+
+MarkdownView ul ul,
+MarkdownView ul ol,
+MarkdownView ol ul,
+MarkdownView ol ol  {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
 MarkdownView a {
 	color: var(--primary);
 	selection-color: var(--font-selected-pressed);

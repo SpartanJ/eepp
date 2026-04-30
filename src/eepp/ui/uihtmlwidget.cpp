@@ -46,6 +46,13 @@ void UIHTMLWidget::onDisplayChange() {
 void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 	if ( mDisplay != display ) {
 		mDisplay = display;
+		if ( mDisplay == CSSDisplay::InlineBlock || mDisplay == CSSDisplay::Inline ) {
+			if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+				setLayoutWidthPolicy( SizePolicy::WrapContent );
+		} else if ( mDisplay == CSSDisplay::Block || mDisplay == CSSDisplay::ListItem ) {
+			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )
+				setLayoutWidthPolicy( SizePolicy::MatchParent );
+		}
 		onDisplayChange();
 	}
 }

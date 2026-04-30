@@ -870,3 +870,224 @@ UTEST( UIBorder, renderingVariations2 ) {
 
 	Engine::destroySingleton();
 }
+
+static UISceneNode* init_test_inline_block() {
+	FontTrueType* font = nullptr;
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	UITheme* theme = UITheme::New( "default", "default" );
+	theme->setDefaultFont( font );
+	themeManager->setDefaultTheme( theme );
+	themeManager->applyDefaultTheme( sceneNode->getRoot() );
+	return sceneNode;
+}
+
+UTEST( UIHTML, InlineBlock ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+ul > li {
+	display: inline-block;
+	border: 1px solid red;
+}
+</style>
+</head>
+<body>
+	<ul class="flat-list buttons">
+		<li><a href="#">6 comments</a></li>
+		<li><a class="post-sharing-button" href="#">share</a></li>
+		<li><a href="#">save</a></li>
+		<li><span><a href="#">hide</a></span></li>
+		<li><a href="#">report</a></li>
+		<li><a href="#">crosspost</a></li>
+	</ul>
+</body>
+</html>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+
+	// Force layout update
+	sceneNode->update( Seconds( 1 ) );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)6 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( li->getLayoutWidthPolicy(), SizePolicy::WrapContent );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_LT( li->getPixelsSize().getWidth(), ul->getPixelsSize().getWidth() );
+		EXPECT_GT( li->getPixelsSize().getHeight(), 0 );
+	}
+
+	// Check if they are on the same line (inline-block)
+	if ( lis.size() >= 2 ) {
+		EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+		EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BlockList ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Block List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<ul id="block-list">
+	<li style="height: 20px">Item 1</li>
+	<li style="height: 20px">Item 2</li>
+</ul>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	EXPECT_GT( ul->getPixelsSize().getWidth(), 0 );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)2 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::ListItem );
+		EXPECT_GT( li->getChildCount(), (size_t)0 );
+		EXPECT_TRUE( li->asType<UIRichText>()->getRichTextPtr()->getFontStyleConfig().Font !=
+					 nullptr );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getFontStyleConfig().CharacterSize,
+				   0 );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getSize().getWidth(), 0 );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getSize().getHeight(), 0 );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( li->getPixelsSize().getHeight(), 0 );
+	}
+
+	// They should be one above the other (block)
+	EXPECT_LT( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+	EXPECT_EQ( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineList ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<ul style="display: block">
+	<li style="display: inline">Item 1</li>
+	<li style="display: inline">Item 2</li>
+</ul>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	EXPECT_GT( ul->getPixelsSize().getWidth(), 0 );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)2 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::Inline );
+		EXPECT_EQ( li->getLayoutWidthPolicy(), SizePolicy::WrapContent );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_LT( li->getPixelsSize().getWidth(), ul->getPixelsSize().getWidth() );
+	}
+
+	// They should be on the same line (inline)
+	EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+	EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockExplicitWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Explicit Width Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<div style="width: 200px">
+	<div id="d1" style="display: inline-block; width: 150px; height: 50px"></div>
+	<div id="d2" style="display: inline-block; width: 150px; height: 50px"></div>
+</div>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto d1 = sceneNode->getRoot()->find( "d1" )->asType<UIWidget>();
+	auto d2 = sceneNode->getRoot()->find( "d2" )->asType<UIWidget>();
+	ASSERT_TRUE( d1 != nullptr && d2 != nullptr );
+
+	// They should NOT be on the same line because 150 + 150 > 200
+	EXPECT_LT( d1->getPixelsPosition().y, d2->getPixelsPosition().y );
+	EXPECT_EQ( d1->getPixelsPosition().x, d2->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockMixedContent ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Mixed Content Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<div>
+	Some text
+	<div id="ib" style="display: inline-block; width: 50px; height: 50px; background-color: red"></div>
+	more text
+</div>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ib = sceneNode->getRoot()->find( "ib" )->asType<UIWidget>();
+	ASSERT_TRUE( ib != nullptr );
+
+	// The inline-block should have a non-zero position and be somewhat centered vertically if it
+	// follows text flow
+	EXPECT_GT( ib->getPixelsPosition().x, 0 );
+	EXPECT_GT( ib->getPixelsSize().getWidth(), 0 );
+
+	Engine::destroySingleton();
+}

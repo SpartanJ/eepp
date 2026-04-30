@@ -14,6 +14,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 This is a **bold** text and this is an *italic* text.
 
 * Item 1
+	* Sub Item 1
+	* Sub Item 2
 * Item 2
 * Item 3
 

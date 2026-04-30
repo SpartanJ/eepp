@@ -9,7 +9,9 @@ UIHTMLListItem* UIHTMLListItem::New() {
 	return eeNew( UIHTMLListItem, () );
 }
 
-UIHTMLListItem::UIHTMLListItem() : UIRichText( "li" ) {}
+UIHTMLListItem::UIHTMLListItem() : UIRichText( "li" ) {
+	mDisplay = CSSDisplay::ListItem;
+}
 
 void UIHTMLListItem::setListStyleType( CSSListStyleType type ) {
 	if ( mListStyleType != type ) {
@@ -35,7 +37,7 @@ bool UIHTMLListItem::isType( const Uint32& type ) const {
 
 void UIHTMLListItem::draw() {
 	UIRichText::draw();
-	if ( mVisible && 0.f != mAlpha ) {
+	if ( mVisible && 0.f != mAlpha && mDisplay == CSSDisplay::ListItem ) {
 		const FontStyleConfig& style = mRichText.getFontStyleConfig();
 		Float fontSize = style.CharacterSize;
 		Float offset = 0.25f * fontSize;

@@ -1,6 +1,16 @@
 #include "utest.h"
-#include <eepp/ee.hpp>
+#include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
+#include <eepp/ui/uirichtext.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/window.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -230,9 +240,6 @@ UTEST( UIHTMLWidget, positionOutOfFlow_PercentageAndMargin ) {
 
 	Engine::destroySingleton();
 }
-
-#include <eepp/ui/tools/htmlformatter.hpp>
-#include <eepp/ui/css/stylesheetparser.hpp>
 
 UTEST( UIHTMLWidget, positionOutOfFlow_ComplexHTML ) {
 	init_ui_test();

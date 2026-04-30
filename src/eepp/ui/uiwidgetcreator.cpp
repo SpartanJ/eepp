@@ -160,15 +160,20 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["br"] = UIRichText::NewBr;
 		registeredWidget["hr"] = UIRichText::NewHr;
 		registeredWidget["ul"] = [] {
-			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ul" );
-			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
-			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			auto* w = UIRichText::NewWithTag( "ul" );
+			w->applyProperty( StyleSheetProperty( "padding-left", "40dp" ) );
 			return w;
 		};
 		registeredWidget["ol"] = [] {
-			auto* w = UILinearLayout::NewVerticalWidthMatchParent( "ol" );
-			w->applyProperty( StyleSheetProperty( "margin-top", "0.67em" ) );
-			w->applyProperty( StyleSheetProperty( "margin-bottom", "0.67em" ) );
+			auto* w = UIRichText::NewWithTag( "ol" );
+			w->applyProperty( StyleSheetProperty( "padding-left", "40dp" ) );
+			return w;
+		};
+		registeredWidget["dl"] = [] { return UIRichText::NewWithTag( "dl" ); };
+		registeredWidget["dt"] = [] { return UIRichText::NewWithTag( "dt" ); };
+		registeredWidget["dd"] = [] {
+			auto* w = UIRichText::NewWithTag( "dd" );
+			w->applyProperty( StyleSheetProperty( "margin-left", "40dp" ) );
 			return w;
 		};
 		registeredWidget["li"] = UIHTMLListItem::New;

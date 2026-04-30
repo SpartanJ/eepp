@@ -8,6 +8,8 @@ std::string CSSDisplayHelper::toString( CSSDisplay display ) {
 			return "inline";
 		case CSSDisplay::InlineBlock:
 			return "inline-block";
+		case CSSDisplay::ListItem:
+			return "list-item";
 		case CSSDisplay::Flex:
 			return "flex";
 		case CSSDisplay::None:
@@ -36,6 +38,8 @@ CSSDisplay CSSDisplayHelper::fromString( std::string_view val ) {
 		display = CSSDisplay::Inline;
 	else if ( val == "inline-block" )
 		display = CSSDisplay::InlineBlock;
+	else if ( val == "list-item" )
+		display = CSSDisplay::ListItem;
 	else if ( val == "none" )
 		display = CSSDisplay::None;
 	else if ( val == "table" )
