@@ -81,8 +81,27 @@ jobs:
           apt-get install -y nodejs
           add-apt-repository -y universe
           add-apt-repository -y multiverse
-          add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          apt-get update
+
+          SUCCESS=false
+          for i in {1..3}; do
+            echo "Attempt $i: Adding PPA via Launchpad API..."
+            if sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; then
+              SUCCESS=true
+              echo "Successfully added PPA."
+              break
+            fi
+            echo "Launchpad API failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+
+          if [ "$SUCCESS" = false ]; then
+            echo "add-apt-repository failed 3 times. Executing manual fallback..."
+            . /etc/os-release
+            echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $VERSION_CODENAME main" | sudo tee /etc/apt/sources.list.d/ubuntu-toolchain-r-fallback.list
+            sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 60C317803A41BA51845E371A1E9377A2BA9EF27F || true
+          fi
+
+          sudo apt-get update
           apt-get install -y gcc-13 g++-13 libdw-dev
           update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10
           update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 10

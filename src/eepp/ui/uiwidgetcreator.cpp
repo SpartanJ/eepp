@@ -178,6 +178,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		};
 		registeredWidget["li"] = UIHTMLListItem::New;
 		registeredWidget["pre"] = UIRichText::NewPre;
+		registeredWidget["picture"] = [] { return UITextSpan::NewWithTag( "picture" ); };
 		registeredWidget["img"] = [] {
 			auto img = UIHTMLImage::New();
 			img->setFlags( UI_HTML_ELEMENT );
