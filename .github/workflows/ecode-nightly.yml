@@ -75,6 +75,7 @@ jobs:
         run: |
           bash projects/scripts/patch_commit_number.sh
       - name: Install dependencies
+        shell: bash
         run: |
           apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo file appstream
           curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
@@ -85,12 +86,12 @@ jobs:
           SUCCESS=false
           for i in {1..3}; do
             echo "Attempt $i: Adding PPA via Launchpad API..."
-            if sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; then
+            if timeout 30s sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; then
               SUCCESS=true
               echo "Successfully added PPA."
               break
             fi
-            echo "Launchpad API failed. Retrying in 5 seconds..."
+            echo "Launchpad API failed or timed out. Retrying in 5 seconds..."
             sleep 5
           done
 
