@@ -4,6 +4,7 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/blocklayouter.hpp>
 #include <eepp/ui/border.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
@@ -29,6 +30,7 @@
 #include <eepp/ui/css/stylesheetvariable.hpp>
 #include <eepp/ui/css/timingfunction.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/csslayouttypes.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/foldrangetype.hpp>
@@ -45,10 +47,8 @@
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
-#include <eepp/ui/htmlinput.hpp>
-#include <eepp/ui/htmltextarea.hpp>
-#include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/iconmanager.hpp>
+#include <eepp/ui/inlinelayouter.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
@@ -64,7 +64,9 @@
 #include <eepp/ui/models/variant.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
+#include <eepp/ui/nonelayouter.hpp>
 #include <eepp/ui/splitdirection.hpp>
+#include <eepp/ui/tablelayouter.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
@@ -91,13 +93,22 @@
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihelper.hpp>
+#include <eepp/ui/uihtmlform.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
+#include <eepp/ui/uihtmllistitem.hpp>
 #include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/uihtmltextarea.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uilayouter.hpp>
+#include <eepp/ui/uilayoutermanager.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
@@ -140,6 +151,7 @@
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
@@ -148,6 +160,7 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>

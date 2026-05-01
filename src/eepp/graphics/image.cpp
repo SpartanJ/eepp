@@ -784,13 +784,7 @@ Image::Image( const Uint8* imageData, const unsigned int& imageDataSize,
 	} else if ( webp_test_from_memory( imageData, imageDataSize ) ) {
 		webpLoad( imageData, imageDataSize );
 	} else {
-		std::string reason = ".";
-
-		if ( NULL != stbi_failure_reason() ) {
-			reason = ", reason: " + std::string( stbi_failure_reason() );
-		}
-
-		Log::error( "Failed to load image from memory. Reason: %s", reason.c_str() );
+		Log::error( "Failed to load image from memory. Reason: %s", stbi_failure_reason() );
 	}
 }
 
@@ -1438,7 +1432,7 @@ Graphics::Image* Image::copy() {
 }
 
 Graphics::Image& Image::operator=( const Image& right ) {
-	if (this == &right)
+	if ( this == &right )
 		return *this;
 
 	mWidth = right.mWidth;

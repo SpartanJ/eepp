@@ -1,8 +1,8 @@
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uihtmlinput.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uispinbox.hpp>
@@ -126,11 +126,11 @@ void UIHTMLInput::createChildWidget() {
 	} else if ( mInputType == "number" ) {
 		mChildWidget = UISpinBox::New();
 	} else if ( mInputType == "password" ) {
-		mChildWidget = HTMLTextInput::New()->setMode( UITextInput::TextInputMode::Password );
+		mChildWidget = UIHTMLTextInput::New()->setMode( UITextInput::TextInputMode::Password );
 	} else if ( mInputType == "radio" ) {
 		mChildWidget = UIRadioButton::New();
 	} else {
-		mChildWidget = HTMLTextInput::New();
+		mChildWidget = UIHTMLTextInput::New();
 	}
 
 	if ( mChildWidget == nullptr )

@@ -171,6 +171,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
 	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
 	registerProperty( "clip", "" ).setType( PropertyType::String );
+	// TODO: layer implement overflow-x and overflow-y properly
+	registerProperty( "overflow", "visible" )
+		.addAlias( "overflow-x" )
+		.addAlias( "overflow-y" )
+		.setType( PropertyType::String );
 	registerProperty( "rotation", "" ).addAlias( "rotate" ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "rotation-origin-point-x", "50%" )

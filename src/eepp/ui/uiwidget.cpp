@@ -2213,6 +2213,15 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Clip:
 			setClipType( UIClip::fromString( attribute.asString() ) );
 			break;
+		case PropertyId::Overflow: {
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+			if ( val == "hidden" || val == "auto" || val == "scroll" )
+				setClipType( ClipType::ContentBox );
+			else
+				setClipType( ClipType::None );
+			break;
+		}
 		case PropertyId::Rotation:
 			setRotation( attribute.asFloat() );
 			break;

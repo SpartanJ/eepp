@@ -254,6 +254,7 @@ enum class PropertyId : Uint32 {
 	Action = String::hash( "action" ),
 	Method = String::hash( "method" ),
 	Enctype = String::hash( "enctype" ),
+	Overflow = String::hash( "overflow" ),
 };
 
 enum class PropertyType : Uint32 {

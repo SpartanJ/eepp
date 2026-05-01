@@ -9,13 +9,13 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
-#include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmltextarea.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -401,9 +401,9 @@ UTEST( UIHTMLInput, sizeAttribute ) {
 	ASSERT_TRUE( cm != nullptr );
 	ASSERT_TRUE( cc != nullptr );
 
-	auto i1 = c1->getChildWidget()->asType<HTMLTextInput>();
-	auto i2 = c2->getChildWidget()->asType<HTMLTextInput>();
-	auto i3 = c3->getChildWidget()->asType<HTMLTextInput>();
+	auto i1 = c1->getChildWidget()->asType<UIHTMLTextInput>();
+	auto i2 = c2->getChildWidget()->asType<UIHTMLTextInput>();
+	auto i3 = c3->getChildWidget()->asType<UIHTMLTextInput>();
 
 	ASSERT_TRUE( i1 != nullptr );
 	ASSERT_TRUE( i2 != nullptr );
