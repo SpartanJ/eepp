@@ -659,11 +659,18 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
 			 widget->asType<UIHTMLWidget>()->isMergeable() ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
-			if ( !span->getText().empty() && NULL != span->getFontStyleConfig().Font ) {
-				Rectf margin = span->getLayoutPixelsMargin();
-				Rectf padding = span->getPixelsPadding();
+			Rectf margin = span->getLayoutPixelsMargin();
+			Rectf padding = span->getPixelsPadding();
+			bool hasOwnText = !span->getText().empty() && NULL != span->getFontStyleConfig().Font;
+
+			if ( hasOwnText ) {
 				richText.addSpan( span->getText(), span->getFontStyleConfig(), margin, padding );
+			} else if ( margin.Left > 0 || margin.Top > 0 || padding.Left > 0 || padding.Top > 0 ) {
+				Rectf leftOnly( margin.Left, margin.Top, 0, 0 );
+				Rectf padLeftOnly( padding.Left, padding.Top, 0, 0 );
+				richText.addSpan( "", span->getFontStyleConfig(), leftOnly, padLeftOnly );
 			}
+
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
 				bool isOutOfFlow = spanChild->isType( UI_TYPE_HTML_WIDGET ) &&
@@ -671,6 +678,13 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				if ( !isOutOfFlow )
 					processNodeRef( spanChild, processNodeRef );
 				spanChild = spanChild->getNextNode();
+			}
+
+			if ( !hasOwnText && ( margin.Right > 0 || margin.Bottom > 0 || padding.Right > 0 ||
+								  padding.Bottom > 0 ) ) {
+				Rectf rightOnly( 0, 0, margin.Right, margin.Bottom );
+				Rectf padRightOnly( 0, 0, padding.Right, padding.Bottom );
+				richText.addSpan( "", span->getFontStyleConfig(), rightOnly, padRightOnly );
 			}
 		} else if ( widget->isType( UI_TYPE_BR ) ) {
 			richText.addSpan( "\n",

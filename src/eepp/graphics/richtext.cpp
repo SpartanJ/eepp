@@ -289,7 +289,7 @@ Sizef RichText::getPixelsSize() {
 
 void RichText::addSpan( const String& text, const FontStyleConfig& style, const Rectf& margin,
 						const Rectf& padding ) {
-	if ( text.empty() )
+	if ( text.empty() && margin == Rectf::Zero && padding == Rectf::Zero )
 		return;
 
 	auto span = std::make_shared<Text>();
@@ -312,7 +312,7 @@ void RichText::addCustomSize( const Sizef& size, bool isBlock ) {
 }
 
 void RichText::addSpan( const String& text, const FontStyleConfig& style ) {
-	addSpan( text, style, Rectf(), Rectf() );
+	addSpan( text, style, Rectf::Zero, Rectf::Zero );
 }
 
 void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Color color,
@@ -457,8 +457,19 @@ void RichText::updateLayout() {
 	for ( auto& block : mBlocks ) {
 		if ( auto pText = std::get_if<SpanBlock>( &block ) ) {
 			auto& span = pText->text;
-			if ( !span || span->getString().empty() )
+			if ( !span )
 				continue;
+
+			if ( span->getString().empty() ) {
+				Float l = pText->margin.Left + pText->padding.Left;
+				Float r = pText->margin.Right + pText->padding.Right;
+				if ( l <= 0 && r <= 0 )
+					continue;
+				curX += l + r;
+				if ( !mLines.empty() )
+					mLines.back().width += l + r;
+				continue;
+			}
 
 			auto& fontStyle = span->getFontStyleConfig();
 			if ( !fontStyle.Font )
