@@ -407,7 +407,7 @@ Redémarrez ecode pour voir les changements.</string>
 	<string name="indent">Indenter</string>
 	<string name="indent_tab_alignment">Alignement de l'indentation</string>
 	<string name="indent_tab_character">Caractère à utiliser pour l'indentation</string>
-	<string name="indent_width">Largeur d'indentation</string>
+	<string name="indent_width">Taille d'indentation</string>
 	<string name="indentation_type">Type d'indentation</string>
 	<string name="inode">Nœud-i</string>
 	<string name="insert_search_query">Insérer la requête de recherche</string>
@@ -775,8 +775,8 @@ La valeur minimale est 1 et le maximum est 6. Nécessite un redémarrage.</strin
 dans l'arborescence du répertoire.</string>
 	<string name="syntax_color_scheme">Schéma de couleurs syntaxique</string>
 	<string name="system">Système</string>
-	<string name="tab_width">Largeur des onglets</string>
-	<string name="tabs">Onglets</string>
+	<string name="tab_width">Taille des tabulations</string>
+	<string name="tabs">Tabulations</string>
 	<string name="terminal">Terminal</string>
 	<string name="terminal_color_scheme">Schéma de couleurs du terminal</string>
 	<string name="terminal_color_scheme_set">Schéma de couleurs du terminal : %s</string>
@@ -881,7 +881,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="variable_name">Nom de la variable</string>
 	<string name="variables">Variables</string>
 	<string name="view">Vue</string>
-	<string name="viewport">Viewport</string>
+	<string name="viewport">Fenêtre d'affichage</string>
 	<string name="vsync">VSync</string>
 	<string name="vsync_changed">Vsync : configuration mise à jour.
 Redémarrer ecode pour voir les changements.</string>
@@ -894,10 +894,10 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="working_dir_at">Répertoire de travail %s
 </string>
 	<string name="workspace_symbol_find_ellipsis">Rechercher les symboles dans l'espace de travail...</string>
-	<string name="wrap_letter">Letter wrap</string>
-	<string name="wrap_mode">Wrap Mode</string>
-	<string name="wrap_type">Wrap Against</string>
-	<string name="wrap_word">Word wrap</string>
+	<string name="wrap_letter">Au caractère</string>
+	<string name="wrap_mode">Mode de retour à la ligne</string>
+	<string name="wrap_type">Retour à la ligne</string>
+	<string name="wrap_word">Au mot</string>
 	<string name="write_unicode_bom">Écrire le BOM Unicode</string>
 	<string name="you_have_not_yet_opened_a_folder">Vous n'avez pas encore ouvert de dossier.</string>
 	<string name="zoom_in">Zoomer</string>

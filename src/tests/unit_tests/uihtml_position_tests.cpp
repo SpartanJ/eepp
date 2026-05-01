@@ -270,3 +270,84 @@ UTEST( UIHTMLWidget, positionOutOfFlow_ComplexHTML ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTMLWidget, positionOutOfFlow_ShrinkToFit ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIRichText* relContainer = UIRichText::New();
+	relContainer->setParent( sceneNode->getRoot() );
+	relContainer->setCSSPosition( CSSPosition::Relative );
+	relContainer->setPixelsSize( 800, 600 );
+	relContainer->setPixelsPosition( 0, 0 );
+
+	UIRichText* absoluteChild = UIRichText::New();
+	absoluteChild->setParent( relContainer );
+	absoluteChild->applyProperty( StyleSheetProperty( "position", "absolute" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "display", "block" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "padding", "4px" ) );
+
+	sceneNode->updateDirtyLayouts();
+
+	EXPECT_EQ( SizePolicy::WrapContent, absoluteChild->getLayoutWidthPolicy() );
+
+	// With no text content, the element should shrink to just padding
+	Float childWidth = absoluteChild->getPixelsSize().getWidth();
+	EXPECT_LT( childWidth, 20.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLWidget, positionOutOfFlow_RightBottomPositioning ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIHTMLWidget* relContainer = UIHTMLWidget::New();
+	relContainer->setParent( sceneNode->getRoot() );
+	relContainer->setCSSPosition( CSSPosition::Relative );
+	relContainer->setPixelsSize( 800, 600 );
+	relContainer->setPixelsPosition( 0, 0 );
+
+	UIHTMLWidget* absoluteChild = UIHTMLWidget::New();
+	absoluteChild->setParent( relContainer );
+	absoluteChild->setPixelsSize( 100, 50 );
+	absoluteChild->applyProperty( StyleSheetProperty( "position", "absolute" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "right", "0px" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "bottom", "0px" ) );
+
+	sceneNode->updateDirtyLayouts();
+
+	Vector2f worldPos = absoluteChild->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 700.f, worldPos.x, 1.f );
+	EXPECT_NEAR( 550.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLWidget, positionOutOfFlow_RightBottomWithMargin ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIHTMLWidget* relContainer = UIHTMLWidget::New();
+	relContainer->setParent( sceneNode->getRoot() );
+	relContainer->setCSSPosition( CSSPosition::Relative );
+	relContainer->setPixelsSize( 800, 600 );
+	relContainer->setPixelsPosition( 0, 0 );
+
+	UIHTMLWidget* absoluteChild = UIHTMLWidget::New();
+	absoluteChild->setParent( relContainer );
+	absoluteChild->setPixelsSize( 100, 50 );
+	absoluteChild->applyProperty( StyleSheetProperty( "position", "absolute" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "right", "10px" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "bottom", "20px" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "margin-right", "5px" ) );
+	absoluteChild->applyProperty( StyleSheetProperty( "margin-bottom", "5px" ) );
+
+	sceneNode->updateDirtyLayouts();
+
+	Vector2f worldPos = absoluteChild->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 685.f, worldPos.x, 1.f );
+	EXPECT_NEAR( 525.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}

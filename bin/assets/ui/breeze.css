@@ -129,11 +129,6 @@ center {
 	text-align: center;
 }
 
-ul > li,
-ol > li {
-	padding-left: 2em;
-}
-
 ul {
 	list-style-type: disc;
 }
@@ -178,7 +173,7 @@ MarkdownView blockquote {
 
 MarkdownView ul,
 MarkdownView ol {
-	padding-left: 0;
+	padding-left: 21dp;
 }
 
 MarkdownView ul ul,

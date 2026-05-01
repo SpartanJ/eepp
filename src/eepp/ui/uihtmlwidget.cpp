@@ -50,7 +50,8 @@ void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 			if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
 				setLayoutWidthPolicy( SizePolicy::WrapContent );
 		} else if ( mDisplay == CSSDisplay::Block || mDisplay == CSSDisplay::ListItem ) {
-			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )
+			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+				 mPosition != CSSPosition::Absolute && mPosition != CSSPosition::Fixed )
 				setLayoutWidthPolicy( SizePolicy::MatchParent );
 		}
 		onDisplayChange();
@@ -60,6 +61,10 @@ void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 	if ( mPosition != position ) {
 		mPosition = position;
+		if ( position == CSSPosition::Absolute || position == CSSPosition::Fixed ) {
+			if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+				setLayoutWidthPolicy( SizePolicy::WrapContent );
+		}
 		onPositionChange();
 	}
 }
@@ -203,22 +208,51 @@ void UIHTMLWidget::positionOutOfFlowChildren() {
 			if ( pos == CSSPosition::Absolute || pos == CSSPosition::Fixed ) {
 				UIWidget* cb = htmlChild->getContainingBlock();
 				if ( cb ) {
-					Float top = htmlChild->mTopEq == "auto"
-									? 0
-									: htmlChild->lengthFromValue(
-										  htmlChild->mTopEq,
-										  CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
-					Float left = htmlChild->mLeftEq == "auto"
-									 ? 0
-									 : htmlChild->lengthFromValue(
-										   htmlChild->mLeftEq,
-										   CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
+					Rectf cbContentOffset = cb->getPixelsContentOffset();
+					Float cbContentWidth = cb->getPixelsSize().getWidth() - cbContentOffset.Left -
+										   cbContentOffset.Right;
+					Float cbContentHeight = cb->getPixelsSize().getHeight() - cbContentOffset.Top -
+											cbContentOffset.Bottom;
 
-					top += htmlChild->getLayoutPixelsMargin().Top;
-					left += htmlChild->getLayoutPixelsMargin().Left;
+					Rectf margin = htmlChild->getLayoutPixelsMargin();
+					Float childWidth = htmlChild->getPixelsSize().getWidth();
+					Float childHeight = htmlChild->getPixelsSize().getHeight();
 
-					Vector2f cbPos( cb->getPixelsContentOffset().Left,
-									cb->getPixelsContentOffset().Top );
+					Float top = 0;
+					Float left = 0;
+
+					bool useTop = htmlChild->mTopEq != "auto";
+					bool useBottom = htmlChild->mBottomEq != "auto";
+					bool useLeft = htmlChild->mLeftEq != "auto";
+					bool useRight = htmlChild->mRightEq != "auto";
+
+					if ( useLeft ) {
+						left = htmlChild->lengthFromValue(
+							htmlChild->mLeftEq, CSS::PropertyRelativeTarget::ContainingBlockWidth,
+							0 );
+					} else if ( useRight ) {
+						Float rightVal = htmlChild->lengthFromValue(
+							htmlChild->mRightEq, CSS::PropertyRelativeTarget::ContainingBlockWidth,
+							0 );
+						left = cbContentWidth - childWidth - margin.Left - margin.Right - rightVal;
+					}
+
+					if ( useTop ) {
+						top = htmlChild->lengthFromValue(
+							htmlChild->mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight,
+							0 );
+					} else if ( useBottom ) {
+						Float bottomVal = htmlChild->lengthFromValue(
+							htmlChild->mBottomEq,
+							CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+						top =
+							cbContentHeight - childHeight - margin.Top - margin.Bottom - bottomVal;
+					}
+
+					top += margin.Top;
+					left += margin.Left;
+
+					Vector2f cbPos( cbContentOffset.Left, cbContentOffset.Top );
 					cbPos.x += left;
 					cbPos.y += top;
 
