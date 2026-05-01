@@ -1366,9 +1366,13 @@ void UISceneNode::setURIFromURL( const URI& url ) {
 }
 
 void UISceneNode::openURL( URI uri ) {
-	if ( mURLInterceptorCb && mURLInterceptorCb( uri ) )
+	navigate( NavigationRequest{ std::move( uri ) } );
+}
+
+void UISceneNode::navigate( const NavigationRequest& request ) {
+	if ( mNavigationInterceptorCb && mNavigationInterceptorCb( request ) )
 		return;
-	Engine::instance()->openURI( uri.toString() );
+	Engine::instance()->openURI( request.uri.toString() );
 }
 
 }} // namespace EE::UI

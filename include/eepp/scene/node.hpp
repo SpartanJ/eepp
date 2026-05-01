@@ -1778,6 +1778,13 @@ class EE_API Node : public Transformable {
 	bool isClosing() const;
 
 	/**
+	 * @brief Checks if the node is marked for closure or any node in its parent tree.
+	 *
+	 * @return True if node is about to close
+	 */
+	bool inClosingTree() const;
+
+	/**
 	 * @brief Checks if the node is in the process of closing children.
 	 *
 	 * @return True if the closing children flag is set, false otherwise.

@@ -1,5 +1,3 @@
-#include <eepp/ui/htmlinput.hpp>
-#include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
@@ -10,9 +8,12 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uihtmlform.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uihtmllistitem.hpp>
 #include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
@@ -189,7 +190,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 			svg->setFlags( UI_HTML_ELEMENT );
 			return svg;
 		};
-		registeredWidget["input"] = [] { return HTMLInput::New(); };
+		registeredWidget["input"] = [] { return UIHTMLInput::New(); };
 		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
 		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
 		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
@@ -200,7 +201,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["html"] = UIRichText::NewHtml;
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
 		registeredWidget["body"] = UIRichText::NewBody;
-		registeredWidget["form"] = [] { return UIRichText::NewWithTag( "form" ); };
+		registeredWidget["form"] = [] { return UIHTMLForm::New(); };
 		registeredWidget["table"] = UIHTMLTable::New;
 		registeredWidget["tr"] = UIHTMLTableRow::New;
 		registeredWidget["thead"] = UIHTMLTableHead::New;
@@ -208,8 +209,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
 		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
 		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
-		registeredWidget["input"] = HTMLInput::New;
-		registeredWidget["textarea"] = HTMLTextArea::New;
+		registeredWidget["input"] = UIHTMLInput::New;
+		registeredWidget["textarea"] = UIHTMLTextArea::New;
 		registeredWidget["button"] = [] {
 			auto but = UIPushButton::NewWithTag( "button" );
 			but->setFlags( UI_HTML_ELEMENT );

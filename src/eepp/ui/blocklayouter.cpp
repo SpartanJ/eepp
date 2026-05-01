@@ -137,6 +137,9 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 		constexpr Float lowF = std::numeric_limits<Float>::lowest();
 		Rectf bounds( maxF, maxF, lowF, lowF );
 
+		if ( !node->isVisible() )
+			return bounds;
+
 		// UITextNode is a logical marker; its text is rendered by the
 		// RichText engine — just advance the character index and return
 		// empty bounds so it does not affect any widget's geometry.

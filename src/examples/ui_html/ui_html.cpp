@@ -112,16 +112,21 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			if ( htmlNode && bodyNode ) {
 				auto html = htmlNode->asType<UIHTMLHtml>();
 				auto body = bodyNode->asType<UIHTMLBody>();
-				html->setMinHeight( scrollView->getPixelsSize().getHeight() );
-				body->setMinHeight( scrollView->getPixelsSize().getHeight() );
-				scrollView->on( Event::OnSizeChange, [scrollView, html, body]( auto ) {
-					body->setMinHeight( scrollView->getSize().getHeight() );
+				const auto updateMinHeight = []( auto scrollView, auto html, auto body ) {
+					html->setMinHeight(
+						PixelDensity::pxToDp( scrollView->getPixelsSize().getHeight() ) );
+					body->setMinHeight(
+						PixelDensity::pxToDp( scrollView->getPixelsSize().getHeight() ) );
 					body->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
-					html->setMinHeight( scrollView->getSize().getHeight() );
 					html->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
-				} );
-				body->on( Event::OnClose, [scrollView]( auto ) {
-					scrollView->removeEventsOfType( Event::OnSizeChange );
+				};
+				updateMinHeight( scrollView, html, body );
+				auto eventId = scrollView->on( Event::OnSizeChange,
+											   [scrollView, html, body, updateMinHeight]( auto ) {
+												   updateMinHeight( scrollView, html, body );
+											   } );
+				body->on( Event::OnClose, [scrollView, eventId]( auto ) {
+					scrollView->removeEventListener( eventId );
 				} );
 			}
 			urlBar->setText( urlStr );
@@ -168,15 +173,15 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	// We add a default `isHistoryNav` parameter to determine if we are pushing to history or just
 	// navigating back/forth
-	const auto loadDocument = [&]( URI url, bool isHistoryNav = false ) {
+	const auto loadDocument = [&]( URI url, bool isHistoryNav = false,
+								   const std::string& method = "GET", const std::string& body = "",
+								   const Http::Request::FieldTable& headers =
+									   Http::Request::FieldTable() ) {
 		if ( !isHistoryNav ) {
-			// If we navigate to a new URL while in the middle of history, clear out the "forward"
-			// history
 			if ( historyIndex >= 0 && historyIndex < static_cast<int>( history.size() ) - 1 ) {
 				history.resize( historyIndex + 1 );
 			}
 
-			// Don't add to history if we are just reloading the exact same current page manually
 			if ( history.empty() || history.back().toString() != url.toString() ) {
 				history.push_back( url );
 				historyIndex = static_cast<int>( history.size() ) - 1;
@@ -186,12 +191,37 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 		if ( !url.getScheme().empty() ) {
 			if ( url.getScheme() == "https" || url.getScheme() == "http" ) {
-				Http::getAsync(
+				auto reqHeaders = headers;
+				if ( ui->getCookieManager().hasCookie( url.getAuthority() ) ) {
+					std::string cookieHeader =
+						ui->getCookieManager().getCookieHeader( url.getAuthority() );
+					if ( !cookieHeader.empty() )
+						reqHeaders["Cookie"] = cookieHeader;
+				}
+				Http::requestAsync(
 					[=]( const Http&, Http::Request&, Http::Response& response ) {
-						std::string data = response.getBody();
-						loadDocumentData( url, data );
+						if ( response.isOK() ) {
+							std::string data = response.getBody();
+							if ( response.hasField( "set-cookie" ) ) {
+								ui->getCookieManager().storeCookiesFromHeader(
+									url.getAuthority(), response.getField( "set-cookie" ) );
+							}
+							loadDocumentData( url, data );
+						}
 					},
-					url, Seconds( 5 ) );
+					url, Seconds( 5 ),
+					method == "POST" ? Http::Request::Method::Post : Http::Request::Method::Get,
+					[=]( const Http& http, const Http::Request& request,
+						 const Http::Response& response, const Http::Request::Status& status,
+						 std::size_t totalBytes, std::size_t currentBytes ) {
+						if ( status == Http::Request::Status::Redirect &&
+							 response.hasField( "set-cookie" ) ) {
+							ui->getCookieManager().storeCookiesFromHeader(
+								url.getAuthority(), response.getField( "set-cookie" ) );
+						}
+						return true;
+					},
+					reqHeaders, body, true, {} );
 			} else if ( url.getScheme() == "file" ) {
 				std::string data;
 				FileSystem::fileGet( url.getPath(), data );
@@ -226,8 +256,9 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	urlBar->on( Event::OnPressEnter,
 				[&]( auto event ) { loadDocument( urlBar->getText().toUtf8() ); } );
 
-	ui->setURLInterceptorCb( [&]( URI uri ) {
-		loadDocument( ui->solveRelativePath( uri ) );
+	ui->setNavigationInterceptorCb( [&]( const NavigationRequest& request ) {
+		URI uri = ui->solveRelativePath( request.uri );
+		loadDocument( uri, false, request.method, request.body, request.extraHeaders );
 		return true;
 	} );
 

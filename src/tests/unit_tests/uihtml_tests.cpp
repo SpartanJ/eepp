@@ -9,13 +9,13 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
-#include <eepp/ui/htmlinput.hpp>
-#include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -373,7 +373,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 	Engine::destroySingleton();
 }
 
-UTEST( HTMLInput, sizeAttribute ) {
+UTEST( UIHTMLInput, sizeAttribute ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
 	sceneNode->loadLayoutFromString( R"html(
@@ -387,12 +387,12 @@ UTEST( HTMLInput, sizeAttribute ) {
 		</vbox>
 	)html" );
 
-	auto c1 = sceneNode->getRoot()->find( "i1" )->asType<HTMLInput>();
-	auto c2 = sceneNode->getRoot()->find( "i2" )->asType<HTMLInput>();
-	auto c3 = sceneNode->getRoot()->find( "i3" )->asType<HTMLInput>();
-	auto cp = sceneNode->getRoot()->find( "i_pwd" )->asType<HTMLInput>();
-	auto cm = sceneNode->getRoot()->find( "i_mode_pwd" )->asType<HTMLInput>();
-	auto cc = sceneNode->getRoot()->find( "i_chk" )->asType<HTMLInput>();
+	auto c1 = sceneNode->getRoot()->find( "i1" )->asType<UIHTMLInput>();
+	auto c2 = sceneNode->getRoot()->find( "i2" )->asType<UIHTMLInput>();
+	auto c3 = sceneNode->getRoot()->find( "i3" )->asType<UIHTMLInput>();
+	auto cp = sceneNode->getRoot()->find( "i_pwd" )->asType<UIHTMLInput>();
+	auto cm = sceneNode->getRoot()->find( "i_mode_pwd" )->asType<UIHTMLInput>();
+	auto cc = sceneNode->getRoot()->find( "i_chk" )->asType<UIHTMLInput>();
 
 	ASSERT_TRUE( c1 != nullptr );
 	ASSERT_TRUE( c2 != nullptr );
@@ -428,7 +428,7 @@ UTEST( HTMLInput, sizeAttribute ) {
 	Engine::destroySingleton();
 }
 
-UTEST( HTMLTextArea, rowsColsAttribute ) {
+UTEST( UIHTMLTextArea, rowsColsAttribute ) {
 	init_ui_test();
 	auto* scene = SceneManager::instance()->getUISceneNode();
 	auto* c1_raw = scene->loadLayoutFromString( R"html(
@@ -438,8 +438,8 @@ UTEST( HTMLTextArea, rowsColsAttribute ) {
 		</vbox>
 	)html" );
 	ASSERT_TRUE( c1_raw != nullptr );
-	auto* t1 = c1_raw->find( "t1" )->asType<HTMLTextArea>();
-	auto* t2 = c1_raw->find( "t2" )->asType<HTMLTextArea>();
+	auto* t1 = c1_raw->find( "t1" )->asType<UIHTMLTextArea>();
+	auto* t2 = c1_raw->find( "t2" )->asType<UIHTMLTextArea>();
 	ASSERT_TRUE( t1 != nullptr );
 	ASSERT_TRUE( t2 != nullptr );
 	EXPECT_EQ( t1->getRows(), 2u );

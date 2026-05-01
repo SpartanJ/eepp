@@ -1434,7 +1434,7 @@ const Uint32& UIWidget::getStylePreviousState() const {
 std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( !isClosing() && hasClass( className ) ) {
+	if ( !isClosing() && hasClass( className ) && !inClosingTree() ) {
 		widgets.push_back( this );
 	}
 
@@ -1458,7 +1458,7 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( !isClosing() && getElementTag() == tag ) {
+	if ( !isClosing() && getElementTag() == tag && !inClosingTree() ) {
 		widgets.push_back( this );
 	}
 
@@ -1479,7 +1479,7 @@ std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 }
 
 UIWidget* UIWidget::findByClass( const std::string& className ) {
-	if ( !isClosing() && hasClass( className ) ) {
+	if ( !isClosing() && hasClass( className ) && !inClosingTree() ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1500,7 +1500,7 @@ UIWidget* UIWidget::findByClass( const std::string& className ) {
 }
 
 UIWidget* UIWidget::findByTag( const std::string& tag ) {
-	if ( !isClosing() && getElementTag() == tag ) {
+	if ( !isClosing() && getElementTag() == tag && !inClosingTree() ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1521,7 +1521,7 @@ UIWidget* UIWidget::findByTag( const std::string& tag ) {
 }
 
 UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
-	if ( !isClosing() && selector.select( this ) ) {
+	if ( !isClosing() && !inClosingTree() && selector.select( this ) ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1544,7 +1544,7 @@ UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
 std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( !isClosing() && selector.select( this ) ) {
+	if ( !isClosing() && !inClosingTree() && selector.select( this ) ) {
 		widgets.push_back( this );
 	}
 
@@ -1758,11 +1758,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::BlendMode:
 			return "";
 		case PropertyId::MinWidth:
-			return mMinWidthEq;
+			return !mMinWidthEq.empty() ? mMinWidthEq
+										: String::fromFloat( mMinSize.getWidth(), "px" );
 		case PropertyId::MaxWidth:
 			return mMaxWidthEq;
 		case PropertyId::MinHeight:
-			return mMinHeightEq;
+			return !mMinHeightEq.empty() ? mMinHeightEq
+										 : String::fromFloat( mMinSize.getHeight(), "px" );
 		case PropertyId::MaxHeight:
 			return mMaxHeightEq;
 		case PropertyId::BorderLeftColor:

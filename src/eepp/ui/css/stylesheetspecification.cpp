@@ -469,6 +469,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "data-language", "" ).setType( PropertyType::String );
 
+	registerProperty( "action", "" ).setType( PropertyType::String );
+	registerProperty( "method", "GET" ).setType( PropertyType::String );
+	registerProperty( "enctype", "application/x-www-form-urlencoded" )
+		.setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

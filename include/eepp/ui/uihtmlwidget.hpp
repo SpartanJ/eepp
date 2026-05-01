@@ -59,6 +59,8 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual bool isMergeable() const { return false; }
 
+	virtual String getFormValue() const { return String(); }
+
 	virtual void invalidateIntrinsicSize();
 
 	bool isOutOfFlow() const;

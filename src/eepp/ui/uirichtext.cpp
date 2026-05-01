@@ -652,7 +652,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			return;
 		}
 
-		if ( !node->isWidget() )
+		if ( !node->isWidget() || !node->isVisible() )
 			return;
 
 		UIWidget* widget = node->asType<UIWidget>();

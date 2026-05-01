@@ -1,31 +1,31 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/htmltextarea.hpp>
+#include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
-HTMLTextArea* HTMLTextArea::New() {
-	return eeNew( HTMLTextArea, () );
+UIHTMLTextArea* UIHTMLTextArea::New() {
+	return eeNew( UIHTMLTextArea, () );
 }
 
-HTMLTextArea::HTMLTextArea() : UITextEdit( "textarea" ) {
+UIHTMLTextArea::UIHTMLTextArea() : UITextEdit( "textarea" ) {
 	mFlags |= UI_HTML_ELEMENT;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
 	invalidateIntrinsicSize();
 }
 
-Uint32 HTMLTextArea::getType() const {
+Uint32 UIHTMLTextArea::getType() const {
 	return UI_TYPE_HTML_TEXTAREA;
 }
 
-bool HTMLTextArea::isType( const Uint32& type ) const {
-	return HTMLTextArea::getType() == type || UITextEdit::isType( type );
+bool UIHTMLTextArea::isType( const Uint32& type ) const {
+	return UIHTMLTextArea::getType() == type || UITextEdit::isType( type );
 }
 
-bool HTMLTextArea::applyProperty( const StyleSheetProperty& attribute ) {
+bool UIHTMLTextArea::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !attribute.getPropertyDefinition() )
 		return false;
 
@@ -43,8 +43,8 @@ bool HTMLTextArea::applyProperty( const StyleSheetProperty& attribute ) {
 	return UITextEdit::applyProperty( attribute );
 }
 
-std::string HTMLTextArea::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) const {
+std::string UIHTMLTextArea::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) const {
 	if ( !propertyDef )
 		return "";
 
@@ -60,14 +60,14 @@ std::string HTMLTextArea::getPropertyString( const PropertyDefinition* propertyD
 	return UITextEdit::getPropertyString( propertyDef, propertyIndex );
 }
 
-std::vector<PropertyId> HTMLTextArea::getPropertiesImplemented() const {
+std::vector<PropertyId> UIHTMLTextArea::getPropertiesImplemented() const {
 	auto props = UITextEdit::getPropertiesImplemented();
 	props.push_back( PropertyId::Rows );
 	props.push_back( PropertyId::Cols );
 	return props;
 }
 
-Float HTMLTextArea::getMinIntrinsicWidth() const {
+Float UIHTMLTextArea::getMinIntrinsicWidth() const {
 	if ( mCols > 0 && getFont() ) {
 		Float advance = getFont()->getGlyph( 'M', getFontSize(), false, false ).advance;
 		Float sbWidth = getVScrollBar() ? getVScrollBar()->getPixelsSize().getWidth() : 0;
@@ -76,11 +76,11 @@ Float HTMLTextArea::getMinIntrinsicWidth() const {
 	return UITextEdit::getMinIntrinsicWidth();
 }
 
-Float HTMLTextArea::getMaxIntrinsicWidth() const {
+Float UIHTMLTextArea::getMaxIntrinsicWidth() const {
 	return getMinIntrinsicWidth();
 }
 
-Float HTMLTextArea::getMinIntrinsicHeight() const {
+Float UIHTMLTextArea::getMinIntrinsicHeight() const {
 	if ( mRows > 0 && getFont() ) {
 		return mRows * getFont()->getFontHeight( getFontSize() ) + mPaddingPx.Top +
 			   mPaddingPx.Bottom;
@@ -88,11 +88,11 @@ Float HTMLTextArea::getMinIntrinsicHeight() const {
 	return 0;
 }
 
-Float HTMLTextArea::getMaxIntrinsicHeight() const {
+Float UIHTMLTextArea::getMaxIntrinsicHeight() const {
 	return getMinIntrinsicHeight();
 }
 
-void HTMLTextArea::onAutoSize() {
+void UIHTMLTextArea::onAutoSize() {
 	if ( mPacking )
 		return;
 	mPacking = true;
@@ -113,11 +113,11 @@ void HTMLTextArea::onAutoSize() {
 	mPacking = false;
 }
 
-Uint32 HTMLTextArea::getRows() const {
+Uint32 UIHTMLTextArea::getRows() const {
 	return mRows;
 }
 
-void HTMLTextArea::setRows( Uint32 rows ) {
+void UIHTMLTextArea::setRows( Uint32 rows ) {
 	if ( mRows != rows ) {
 		mRows = rows;
 		invalidateIntrinsicSize();
@@ -125,11 +125,11 @@ void HTMLTextArea::setRows( Uint32 rows ) {
 	}
 }
 
-Uint32 HTMLTextArea::getCols() const {
+Uint32 UIHTMLTextArea::getCols() const {
 	return mCols;
 }
 
-void HTMLTextArea::setCols( Uint32 cols ) {
+void UIHTMLTextArea::setCols( Uint32 cols ) {
 	if ( mCols != cols ) {
 		mCols = cols;
 		invalidateIntrinsicSize();

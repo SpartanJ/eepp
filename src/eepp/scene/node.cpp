@@ -775,6 +775,18 @@ bool Node::isClosing() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
 }
 
+bool Node::inClosingTree() const {
+	if ( isClosing() )
+		return true;
+	Node* parent = mParentNode;
+	while ( parent != nullptr ) {
+		if ( parent->isClosing() )
+			return true;
+		parent = parent->mParentNode;
+	}
+	return false;
+}
+
 bool Node::isClosingChildren() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_CLOSING_CHILDREN );
 }
@@ -784,7 +796,7 @@ const String::HashType& Node::getIdHash() const {
 }
 
 Node* Node::findIdHash( const String::HashType& idHash ) const {
-	if ( !isClosing() && mIdHash == idHash ) {
+	if ( !isClosing() && mIdHash == idHash && !inClosingTree() ) {
 		return const_cast<Node*>( this );
 	} else {
 		Node* child = mChild;
@@ -821,7 +833,7 @@ Node* Node::hasChild( const std::string& id ) const {
 }
 
 Node* Node::findByType( const Uint32& type ) const {
-	if ( !isClosing() && isType( type ) ) {
+	if ( !isClosing() && isType( type ) && !inClosingTree() ) {
 		return const_cast<Node*>( this );
 	} else {
 		Node* child = mChild;
@@ -839,7 +851,7 @@ Node* Node::findByType( const Uint32& type ) const {
 std::vector<Node*> Node::findAllByType( const Uint32& type ) const {
 	std::vector<Node*> nodes;
 
-	if ( !isClosing() && isType( type ) )
+	if ( !isClosing() && isType( type ) && !inClosingTree() )
 		nodes.push_back( const_cast<Node*>( this ) );
 
 	Node* child = mChild;

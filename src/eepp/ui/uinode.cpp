@@ -168,12 +168,6 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 Node* UINode::setSize( const Sizef& size ) {
 	Sizef s( fitMinMaxSizeDp( size ) );
 
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
-
 	if ( s != mDpSize ) {
 		Vector2f sizeChange( s.x - mDpSize.x, s.y - mDpSize.y );
 
@@ -415,11 +409,11 @@ Sizef UINode::getMinSizePx() const {
 Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
 	Sizef s( size );
 
-	if ( mMinSize.x != 0.f && s.x < PixelDensity::pxToDp( mMinSize.x ) )
-		s.x = PixelDensity::pxToDp( mMinSize.x );
+	if ( mMinSize.x != 0.f )
+		s.x = std::max( s.x, PixelDensity::dpToPx( mMinSize.x ) );
 
-	if ( mMinSize.y != 0.f && s.y < PixelDensity::pxToDp( mMinSize.y ) )
-		s.y = PixelDensity::pxToDp( mMinSize.y );
+	if ( mMinSize.y != 0.f )
+		s.y = std::max( s.y, PixelDensity::dpToPx( mMinSize.y ) );
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length = lengthFromValue( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
@@ -453,11 +447,8 @@ bool UINode::isScrollable() const {
 Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
 	Sizef s( size );
 
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
+	s.x = std::max( s.x, mMinSize.x );
+	s.y = std::max( s.y, mMinSize.y );
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =

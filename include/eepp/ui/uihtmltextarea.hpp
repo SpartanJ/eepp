@@ -1,15 +1,15 @@
-#ifndef EE_UI_HTMLTEXTAREA_HPP
-#define EE_UI_HTMLTEXTAREA_HPP
+#ifndef EE_UI_UIHTMLTEXTAREA_HPP
+#define EE_UI_UIHTMLTEXTAREA_HPP
 
 #include <eepp/ui/uitextedit.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API HTMLTextArea : public UITextEdit {
+class EE_API UIHTMLTextArea : public UITextEdit {
   public:
-	static HTMLTextArea* New();
+	static UIHTMLTextArea* New();
 
-	HTMLTextArea();
+	UIHTMLTextArea();
 
 	virtual Uint32 getType() const;
 
