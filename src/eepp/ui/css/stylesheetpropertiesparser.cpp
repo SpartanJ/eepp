@@ -80,16 +80,21 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 	mPrevRs = rs;
 
-	bool inString = false;
+	bool inDoubleQuote = false;
+	bool inSingleQuote = false;
+	int nestedParenthesis = 0;
 	int prevChar = -1;
 
 	while ( pos < str.size() ) {
-		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' ) {
+		// Ensure we aren't parsing comments inside strings
+		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' && !inDoubleQuote &&
+			 !inSingleQuote ) {
 			rs = ReadingComment;
 			return pos;
 		}
 
-		if ( str[pos] == ';' && !inString ) {
+		// Only terminate property parsing on ';' if we are outside of quotes and parentheses
+		if ( str[pos] == ';' && !inDoubleQuote && !inSingleQuote && nestedParenthesis == 0 ) {
 			rs = ReadingPropertyName;
 
 			addProperty( propName, buffer );
@@ -97,8 +102,16 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 			return pos + 1;
 		}
 
-		if ( str[pos] == '"' && prevChar != '\\' )
-			inString = !inString;
+		// Keep track of quotes and nested parentheses
+		if ( str[pos] == '"' && prevChar != '\\' && !inSingleQuote ) {
+			inDoubleQuote = !inDoubleQuote;
+		} else if ( str[pos] == '\'' && prevChar != '\\' && !inDoubleQuote ) {
+			inSingleQuote = !inSingleQuote;
+		} else if ( str[pos] == '(' && !inDoubleQuote && !inSingleQuote ) {
+			nestedParenthesis++;
+		} else if ( str[pos] == ')' && !inDoubleQuote && !inSingleQuote && nestedParenthesis > 0 ) {
+			nestedParenthesis--;
+		}
 
 		if ( str[pos] != '\n' && str[pos] != '\r' && str[pos] != '\t' )
 			buffer += str[pos];
