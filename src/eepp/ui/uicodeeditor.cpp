@@ -1,3 +1,4 @@
+#include "eepp/ui/uistyle.hpp"
 #include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -155,7 +156,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHeightPolicy = SizePolicy::Fixed;
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
-	setColorScheme( SyntaxColorScheme::getDefault() );
+	setColorScheme( SyntaxColorScheme::getDefaultDark() );
 	refreshTag();
 	mDocView.setOnVisibleLineCountChange( [this] {
 		onAutoSize();
@@ -3059,6 +3060,11 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setSyntaxDefinition(
 				SyntaxDefinitionManager::instance()->findFromString( attribute.asString() ) );
 			break;
+		case PropertyId::BackgroundColor: {
+			setBackgroundColor( attribute.asColor() );
+			updateDynamicTheme();
+			break;
+		}
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -5770,6 +5776,29 @@ bool UICodeEditor::needsHorizontalLength() const {
 void UICodeEditor::setUseDefaultStyle( bool use ) {
 	mUseDefaultStyle = use;
 	invalidateDraw();
+}
+
+void UICodeEditor::setDynamicTheming( bool set ) {
+	if ( mDynamicTheming != set ) {
+		mDynamicTheming = set;
+		updateDynamicTheme();
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::updateDynamicTheme() {
+	if ( !mDynamicTheming )
+		return;
+	Color color( getFontColor() );
+	if ( mStyle && mStyle->getProperty( PropertyId::BackgroundColor ) )
+		color = getBackgroundColor();
+	if ( color != Color::Transparent ) {
+		if ( color.perceivedLuminance() > 128 ) {
+			setColorScheme( SyntaxColorScheme::getDefaultLight() );
+		} else {
+			setColorScheme( SyntaxColorScheme::getDefaultDark() );
+		}
+	}
 }
 
 }} // namespace EE::UI

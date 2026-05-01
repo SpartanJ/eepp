@@ -41,8 +41,9 @@ KeyframesDefinition::getPropertyDefinitionList() const {
 	std::map<PropertyId, const PropertyDefinition*> propDefs;
 	for ( auto& block : keyframeBlocks ) {
 		for ( auto& property : block.second.properties ) {
-			propDefs[property.second.getPropertyDefinition()->getPropertyId()] =
-				property.second.getPropertyDefinition();
+			auto propDef = property.second.getPropertyDefinition();
+			if ( propDef )
+				propDefs[propDef->getPropertyId()] = property.second.getPropertyDefinition();
 		}
 	}
 	return propDefs;

@@ -508,6 +508,7 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 				UICodeEditor* editor = UICodeEditor::NewWithTag( "code" );
 				if ( editor ) {
 					editor->setParent( this );
+					editor->setDynamicTheming( true );
 					editor->loadFromXmlNode( child );
 					editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 					editor->setLineWrapMode( LineWrapMode::Word );

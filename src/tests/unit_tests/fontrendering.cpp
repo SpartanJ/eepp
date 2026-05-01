@@ -1006,7 +1006,7 @@ UTEST( FontRendering, TextHardWrap ) {
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-		auto colors = SyntaxColorScheme::getDefault();
+		auto colors = SyntaxColorScheme::getDefaultDark();
 		auto syntax = SyntaxDefinitionManager::instance()->getByLanguageName( "Markdown" );
 
 		app.getWindow()->setClearColor( colors.getEditorColor( "background"_sst ).toRGB() );

@@ -852,6 +852,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setUseDefaultStyle( bool use );
 
+	bool dynamicTheming() const { return mDynamicTheming; }
+
+	void setDynamicTheming( bool set );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -901,6 +905,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
 	bool mDisableScrollInvalidation{ false };
+	bool mDynamicTheming{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
@@ -1229,6 +1234,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onClassChange();
 
 	inline bool needsHorizontalLength() const;
+
+	void updateDynamicTheme();
 };
 
 }} // namespace EE::UI

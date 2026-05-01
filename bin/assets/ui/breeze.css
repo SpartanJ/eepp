@@ -81,6 +81,7 @@ em {
 	font-style: italic;
 }
 
+CodeEditor,
 code {
 	font-family: monospace;
 }
@@ -225,12 +226,10 @@ MarkdownView table > thead > tr > th {
 
 MarkdownView CodeEditor,
 MarkdownView code {
-	padding: 4dp;
-}
-
-MarkdownView code {
 	font-family: monospace;
 	background-color: var(--button-back);
+	font-size: 11dp;
+	padding: 4dp;
 }
 
 pushbutton,
