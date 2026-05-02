@@ -49,6 +49,7 @@
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -217,6 +218,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 			but->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
 			return but;
 		};
+		registeredWidget["webview"] = UIWebView::New;
 
 		sBaseListCreated = true;
 	}

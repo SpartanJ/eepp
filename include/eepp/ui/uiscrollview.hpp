@@ -74,6 +74,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	Uint32 mParentSizeChangeCb{ 0 };
 	Uint32 mParentCloseCb{ 0 };
 
+	UIScrollView( const std::string& tag );
+
 	UIScrollView();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );

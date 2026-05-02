@@ -122,6 +122,10 @@ class EE_API Event {
 		OnFoldUnfoldRange,
 		OnResourceLoaded,
 		OnDiscard,
+		OnNavigationStarted,
+		OnNavigationCompleted,
+		OnNavigationError,
+		OnTitleChanged,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

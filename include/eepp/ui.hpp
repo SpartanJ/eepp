@@ -140,6 +140,7 @@
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>

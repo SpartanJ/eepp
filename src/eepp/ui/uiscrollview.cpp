@@ -5,17 +5,17 @@
 namespace EE { namespace UI {
 
 UIScrollView* UIScrollView::New() {
-	return eeNew( UIScrollView, () );
+	return eeNew( UIScrollView, ( "scrollview" ) );
 }
 
-UIScrollView::UIScrollView() :
-	UITouchDraggableWidget( "scrollview" ),
+UIScrollView::UIScrollView( const std::string& tag ) :
+	UITouchDraggableWidget( tag ),
 	mViewType( ScrollViewType::Outside ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mHScroll( UIScrollBar::NewHorizontal() ),
-	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
+	mContainer( UIWidget::NewWithTag( tag + "::container" ) ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
@@ -36,6 +36,8 @@ UIScrollView::UIScrollView() :
 	applyDefaultTheme();
 	listenParent();
 }
+
+UIScrollView::UIScrollView() : UIScrollView( "webview" ) {}
 
 UIScrollView::~UIScrollView() {
 	clearListeners();
