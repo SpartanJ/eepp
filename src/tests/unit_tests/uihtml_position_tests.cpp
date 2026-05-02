@@ -8,6 +8,8 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
@@ -348,6 +350,91 @@ UTEST( UIHTMLWidget, positionOutOfFlow_RightBottomWithMargin ) {
 	Vector2f worldPos = absoluteChild->convertToWorldSpace( { 0, 0 } );
 	EXPECT_NEAR( 685.f, worldPos.x, 1.f );
 	EXPECT_NEAR( 525.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLWidget, positionOutOfFlow_FixedScroll ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIScrollView* scrollView = UIScrollView::New();
+	scrollView->setParent( sceneNode->getRoot() );
+	scrollView->setPixelsSize( 800, 600 );
+
+	UIHTMLBody* body = UIHTMLBody::New( "body" );
+	body->setParent( scrollView );
+	body->applyProperty( StyleSheetProperty( "position", "relative" ) );
+
+	UIWidget* dummyChild = UIWidget::New();
+	dummyChild->setParent( body );
+	dummyChild->setPixelsSize( 800, 2000 );
+	dummyChild->setPixelsPosition( 0, 0 );
+
+	UIHTMLWidget* fixedChild = UIHTMLWidget::New();
+	fixedChild->setParent( body );
+	fixedChild->setPixelsSize( 100, 50 );
+	fixedChild->applyProperty( StyleSheetProperty( "position", "fixed" ) );
+	fixedChild->applyProperty( StyleSheetProperty( "top", "50px" ) );
+	fixedChild->applyProperty( StyleSheetProperty( "left", "50px" ) );
+
+	sceneNode->updateDirtyLayouts();
+
+	// Scroll down by 200px
+	scrollView->getScrollView()->setPosition( { 0, -200 } );
+
+	Vector2f worldPos = fixedChild->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 50.f, worldPos.x, 1.f );
+	EXPECT_NEAR( 50.f, worldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLWidget, positionOutOfFlow_StickyScroll ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIScrollView* scrollView = UIScrollView::New();
+	scrollView->setParent( sceneNode->getRoot() );
+	scrollView->setPixelsSize( 800, 600 );
+
+	UIHTMLBody* body = UIHTMLBody::New( "body" );
+	body->setParent( scrollView );
+	body->applyProperty( StyleSheetProperty( "position", "relative" ) );
+
+	UIHTMLWidget* stickyChild = UIHTMLWidget::New();
+	stickyChild->setParent( body );
+	stickyChild->setPixelsSize( 100, 50 );
+	stickyChild->applyProperty( StyleSheetProperty( "margin-top", "100px" ) );
+	stickyChild->applyProperty( StyleSheetProperty( "position", "sticky" ) );
+	stickyChild->applyProperty( StyleSheetProperty( "top", "20px" ) );
+
+	UIWidget* dummyChild = UIWidget::New();
+	dummyChild->setParent( body );
+	dummyChild->setPixelsSize( 800, 2000 );
+	dummyChild->setPixelsPosition( 0, 0 );
+
+	sceneNode->updateDirtyLayouts();
+
+	// Force base pos (as if layouter did it)
+	stickyChild->setPixelsPosition( 0, 100 );
+
+	// Ensure base pos was captured correctly
+	EXPECT_NEAR( 100.f, stickyChild->getPixelsPosition().y, 1.f );
+
+	// Scroll down by 50px
+	Float actualMaxScrollY =
+		body->getPixelsSize().getHeight() - scrollView->getContainer()->getPixelsSize().getHeight();
+	scrollView->getVerticalScrollBar()->setValue( 50.f / actualMaxScrollY );
+
+	Vector2f worldPos1 = stickyChild->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 50.f, worldPos1.y, 1.f );
+
+	// Scroll down by 150px
+	scrollView->getVerticalScrollBar()->setValue( 150.f / actualMaxScrollY );
+
+	Vector2f worldPos2 = stickyChild->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 20.f, worldPos2.y, 1.f );
 
 	Engine::destroySingleton();
 }

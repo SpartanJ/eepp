@@ -1173,3 +1173,71 @@ UTEST( UIHTML, InlineBlockBrowserTest ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTML, HeightExpansion ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Height Expansion Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/ensoft/" );
+
+	std::string html;
+	FileSystem::fileGet( "assets/html/ensoft/ensoft.html", html );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	// Wait a bit and update again to make sure layouts are computed
+	sceneNode->updateDirtyLayouts();
+
+	auto htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML );
+	auto bodyNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY );
+
+	ASSERT_TRUE( htmlNode != nullptr );
+	ASSERT_TRUE( bodyNode != nullptr );
+
+	auto htmlWidget = htmlNode->asType<UIWidget>();
+	auto bodyWidget = bodyNode->asType<UIWidget>();
+
+	EXPECT_GT( htmlWidget->getSize().getHeight(), 0 );
+	EXPECT_GT( bodyWidget->getSize().getHeight(), 0 );
+
+	EXPECT_GE( htmlWidget->getSize().getHeight(), bodyWidget->getSize().getHeight() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, HeightExpansion_FixedDoesNotExpand ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Height Expansion Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0;">
+    <div style="height: 100px;"></div>
+    <div style="position: fixed; top: 500px; height: 50px;"></div>
+</body>
+</html>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto bodyNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY );
+	ASSERT_TRUE( bodyNode != nullptr );
+
+	auto bodyWidget = bodyNode->asType<UIWidget>();
+
+	// The height should be 100px, not 550px because the fixed div should be ignored.
+	EXPECT_NEAR( bodyWidget->getPixelsSize().getHeight(), 100.f, 1.f );
+
+	Engine::destroySingleton();
+}

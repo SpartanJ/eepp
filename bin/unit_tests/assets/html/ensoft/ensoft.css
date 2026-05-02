@@ -1,0 +1,621 @@
+@import url(https://fonts.googleapis.com/css?family=Lato);
+@import "../anim.css";
+a:active,
+a:focus {
+  outline: none;
+}
+.no_selection {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.blue_links a {
+  text-decoration: none;
+  color: #4183C4;
+}
+.blue_links a:hover {
+  text-decoration: underline;
+}
+body {
+  font-family: 'Lato', Helvetica, sans-serif;
+  font-size: 16px;
+  background-color: #ffffff;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+::-moz-selection {
+  background-color: #d00000;
+  color: #fff;
+}
+::selection {
+  background-color: #d00000;
+  color: #fff;
+}
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+#bar.smallscreen {
+  position: absolute !important;
+  width: 200px !important;
+}
+#bar {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  width: 250px;
+  border-right: 1px solid #e0e0e0;
+}
+#bar #logo {
+  margin: 40px 0px 0px 50px;
+  height: 144px;
+  width: 100px;
+  background: url('logo.png') no-repeat center;
+}
+#bar #logo #logo-fx {
+  position: absolute;
+  top: -27px;
+  left: -14px;
+  height: 225px;
+  width: 225px;
+  background: url('fx.png') no-repeat center;
+  opacity: 0;
+  -ms-filter: "alpha(opacity=0)";
+  -khtml-opacity: 0;
+  -webkit-animation-name: contract;
+  -moz-animation-name: contract;
+  -webkit-animation-duration: 6s;
+  -moz-animation-duration: 6s;
+  -webkit-animation-iteration-count: infinite;
+  -moz-animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+  -moz-animation-timing-function: linear;
+}
+#bar #links li {
+  margin: 40px 30px 0px 0px;
+  list-style-type: none;
+}
+#bar #links li a {
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+  color: #808080;
+}
+#bar #links li a:hover {
+  color: red;
+}
+#bar #rss {
+  margin-top: 100px;
+  margin-left: 20px;
+}
+#bar #rss a {
+  background: url("rss.png") no-repeat 8px center;
+  padding: 5px 10px 5px 24px;
+  text-decoration: none;
+  font-size: 12px;
+  border-radius: 4px;
+  -khtml-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+  background-color: #d0d0d0;
+  color: white;
+}
+#bar #rss a:hover {
+  background-color: red;
+}
+#content.smallscreen {
+  left: 200px !important;
+}
+#content {
+  position: absolute;
+  left: 250px;
+  right: 0;
+  top: 0;
+  padding: 0px;
+}
+#content >h1 {
+  margin: 50px 0 0 50px;
+  font-size: 35px;
+  font-family: 'Lato';
+  font-weight: 900;
+  padding: 0;
+}
+a img {
+  border: 0;
+}
+#ajax-target {
+  position: relative;
+}
+.loading_corner {
+  position: fixed;
+  bottom: 90px;
+  right: 0px;
+  width: 32px;
+  height: 32px;
+  background: url("loading.gif?v=3") no-repeat !important;
+}
+.kajax-loading .kajax-loading-image {
+  width: 32px;
+  height: 32px;
+  background: url("loading.gif?v=3") no-repeat center white;
+}
+#content > .kajax-loading {
+  position: fixed;
+  top: 10px;
+  left: 260px;
+}
+.stylish-form > .kajax-loading {
+  position: absolute;
+  bottom: 45px;
+  right: 190px;
+}
+.blend_input {
+  display: block;
+  overflow: hidden;
+  outline: none;
+  resize: none;
+  background: transparent;
+  border: none;
+}
+.admin-editor {
+  width: 800px;
+  margin-left: 100px;
+  position: relative;
+}
+.admin-editor .title {
+  color: #808080;
+  width: 800px;
+  font-size: 40px;
+  height: 40px;
+  display: block;
+  overflow: hidden;
+  outline: none;
+  resize: none;
+  background: transparent;
+  border: none;
+}
+.admin-editor .body {
+  color: #808080;
+  padding-left: 60px;
+  margin-left: -50px;
+  background: url('markdown.png') no-repeat top left !important;
+  margin-top: 40px;
+  display: block;
+  overflow: hidden;
+  outline: none;
+  resize: none;
+  background: transparent;
+  border: none;
+  width: 800px;
+  height: 600px;
+  margin-bottom: 200px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: inherit;
+}
+.square-link {
+  display: block;
+  float: left;
+  padding: 15px;
+  margin: 14px 5px 14px 0;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+.square-button {
+  display: block;
+  float: left;
+  padding: 15px;
+  margin: 14px 5px 14px 0;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  background-color: black;
+  border-radius: 5px;
+  -khtml-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+  font-size: 16px;
+  color: white !important;
+}
+.square-button:hover {
+  background-color: red;
+}
+#admin-bar {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  height: 76px;
+  width: 100%;
+  background-color: #202020;
+  z-index: 2;
+}
+#admin-bar .container {
+  width: 800px;
+  margin: 0 auto;
+}
+#admin-bar .container .left {
+  float: left;
+}
+#admin-bar .container .right {
+  float: right;
+}
+#admin-bar .container span {
+  display: block;
+  float: left;
+  padding: 15px;
+  margin: 14px 5px 14px 0;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+#admin-bar .container a,
+#admin-bar .container input[type=submit] {
+  display: block;
+  float: left;
+  padding: 15px;
+  margin: 14px 5px 14px 0;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  background-color: black;
+  border-radius: 5px;
+  -khtml-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+  font-size: 16px;
+  color: white !important;
+}
+#admin-bar .container a:hover,
+#admin-bar .container input[type=submit]:hover {
+  background-color: red;
+}
+#admin-posts {
+  width: 900px;
+  margin: 0 auto;
+}
+#admin-posts h1 {
+  float: left;
+}
+#admin-posts .button {
+  float: right !important;
+  padding: 10px;
+  font-size: 12px;
+  margin-top: 26px;
+}
+#admin-posts ul {
+  padding: 0;
+  margin: 0;
+  clear: both;
+}
+#admin-posts li {
+  position: relative;
+  list-style-type: none;
+  padding: 18px 0 20px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+#admin-posts li a {
+  color: inherit;
+  font-weight: bold;
+  text-decoration: none;
+}
+#admin-posts li a:hover {
+  color: red;
+}
+#admin-posts li span {
+  float: right;
+  display: none;
+}
+#admin-posts li span a {
+  color: #a0a0a0;
+  margin-left: 10px;
+  font-size: 12px;
+}
+#admin-posts li em {
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  font-size: 8px;
+  color: #a0a0a0;
+}
+#admin-posts .post_block {
+  float: left;
+  width: 400px;
+  padding: 20px;
+}
+#admin-posts #drafts {
+  float: left;
+  width: 400px;
+  padding: 20px;
+  border: 4px solid black;
+  border-top: none;
+}
+#admin-posts #published {
+  float: left;
+  width: 400px;
+  padding: 20px;
+  color: #a0a0a0;
+}
+#admin-posts #logout {
+  font-weight: bold;
+  float: right;
+  clear: both;
+  font-size: 14px;
+  margin: 5px 36px -50px 0;
+}
+#admin-posts #logout a {
+  text-decoration: none;
+  color: #4183C4;
+}
+#admin-posts #logout a:hover {
+  text-decoration: underline;
+}
+#admin-posts #logout a {
+  color: #505050 !important;
+}
+.big_title {
+  margin: 50px 0 0 50px;
+  font-size: 35px;
+  font-family: 'Lato';
+  font-weight: 900;
+  padding: 0;
+}
+.blog_post {
+  border-bottom: 1px solid #e0e0e0;
+}
+.blog_post .date {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 25px 0 25px 50px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.blog_post >h1 {
+  margin: 50px 0 0 50px;
+  font-size: 35px;
+  font-family: 'Lato';
+  font-weight: 900;
+  padding: 0;
+}
+.blog_post >h1 >a {
+  color: black;
+  text-decoration: none;
+}
+.blog_post >h1 >a:hover {
+  color: red;
+}
+.blog_post .markdown {
+  width: 500px;
+  margin: 30px 0 65px 50px;
+  color: #808080;
+}
+.blog_post .markdown h1,
+.blog_post .markdown h2,
+.blog_post .markdown h3,
+.blog_post .markdown h4,
+.blog_post .markdown h5 {
+  color: black;
+}
+.blog_post .markdown li {
+  line-height: 2.0em;
+}
+.blog_post .markdown a {
+  text-decoration: none;
+  color: #4183C4;
+}
+.blog_post .markdown a:hover {
+  text-decoration: underline;
+}
+.blog_post .markdown img {
+  border: 5px solid #f0f0f0;
+  padding: 10px;
+  border-radius: 10px;
+  -khtml-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+}
+.blog_post .markdown blockquote {
+  border-left: 5px solid #505050;
+  padding-left: 16px;
+  margin: 0;
+}
+.blog_post .markdown .footnotes {
+  margin-top: 50px;
+  font-size: 14px;
+}
+.blog_post .markdown .footnotes hr {
+  color: #e0e0e0;
+  background-color: #e0e0e0;
+  border: none;
+  height: 1px;
+}
+.padded {
+  padding: 50px 0 0 50px;
+}
+.styled-box {
+  border: 5px solid black;
+  width: 440px;
+  margin: 50px 0 0 50px;
+  padding: 0px;
+}
+.stylish-form {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+.stylish-form .mail_icon {
+  background: url('mail.png') no-repeat center right;
+}
+.stylish-form .robot_icon {
+  background: url('robot.png') no-repeat center right;
+}
+.stylish-form p {
+  color: #808080;
+  font-size: 18px;
+}
+.stylish-form li {
+  list-style-type: none;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 20px;
+  margin: 0;
+}
+.stylish-form input[type=password],
+.stylish-form input[type=text],
+.stylish-form textarea {
+  font-size: 22px;
+  width: 100%;
+  display: block;
+  overflow: hidden;
+  outline: none;
+  resize: none;
+  background: transparent;
+  border: none;
+  padding-left: 10px;
+}
+.stylish-form input[type=password]:focus,
+.stylish-form input[type=text]:focus,
+.stylish-form textarea:focus {
+  border-left: 4px solid red;
+}
+.stylish-form input[type=submit] {
+  display: block;
+  float: left;
+  padding: 15px;
+  margin: 14px 5px 14px 0;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  background-color: black;
+  border-radius: 5px;
+  -khtml-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+  font-size: 16px;
+  color: white !important;
+  float: none;
+}
+.stylish-form input[type=submit]:hover {
+  background-color: red;
+}
+#check-mail-target {
+  display: none;
+  text-align: right;
+  font-style: italic;
+  margin: 0;
+}
+#check-mail-target a {
+  text-decoration: none;
+  color: #4183C4;
+}
+#check-mail-target a:hover {
+  text-decoration: underline;
+}
+.placeholder {
+  color: #808080;
+}
+.form-error {
+  padding: 5px !important;
+  display: none;
+  background-color: #ffffb4;
+}
+.form-error p {
+  text-align: center;
+  display: none;
+}
+.form-error p:first-child {
+  display: block !important;
+}
+#save-success-msg {
+  position: fixed;
+  bottom: 0px;
+  right: 10px;
+  height: 96px;
+  width: 100px;
+  text-align: center;
+  display: none;
+  padding: 5px !important;
+  color: #FFFFFF;
+  font-weight: bold;
+  background-color: red;
+  border-radius: 5px;
+  -khtml-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  behavior: url('https://ensoft.dev/assets/js/PIE.php');
+}
+#minimap {
+  display: none;
+  opacity: 0.5;
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  width: 120px;
+  list-style-type: none;
+  padding: 0;
+  padding: 20px 0 20px 0;
+  margin: 0;
+  border-right: 1px solid #e0e0e0;
+}
+#minimap li .mark {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  right: 0;
+  width: 10px;
+  background-color: #c00000;
+  display: none;
+}
+#minimap li .selected {
+  background-color: #606060 !important;
+}
+#minimap li a {
+  position: relative;
+  margin-top: 5px;
+  background-color: #b0b0b0;
+  border-right: 0;
+  display: block;
+  padding: 5px;
+  padding-right: 10px;
+  text-align: center;
+  color: #a0a0a0;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  -moz-border-radius-topleft: 4px;
+  -moz-border-radius-bottomleft: 4px;
+  -webkit-border-top-left-radius: 4px;
+  -webkit-border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+#minimap li a:hover {
+  background-color: #808080;
+}

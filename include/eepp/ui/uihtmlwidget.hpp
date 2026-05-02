@@ -31,21 +31,27 @@ class EE_API UIHTMLWidget : public UILayout {
 	virtual void onDisplayChange();
 
 	CSSDisplay getDisplay() const { return mDisplay; }
+
 	void setDisplay( CSSDisplay display );
 
 	CSSPosition getCSSPosition() const { return mPosition; }
+
 	void setCSSPosition( CSSPosition position );
 
 	CSSFloat getCSSFloat() const { return mFloat; }
+
 	void setCSSFloat( CSSFloat cssFloat );
 
 	CSSClear getCSSClear() const { return mClear; }
+
 	void setCSSClear( CSSClear cssClear );
 
 	const Rectf& getOffsets() const { return mOffsets; }
+
 	void setOffsets( const Rectf& offsets );
 
 	int getZIndex() const { return mZIndex; }
+
 	void setZIndex( int zIndex );
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
@@ -57,9 +63,17 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual void updateLayout();
 
+	virtual void onParentChange();
+
+	virtual void onPositionChange();
+
 	UIWidget* getContainingBlock();
 
 	void positionOutOfFlowChildren();
+
+	void updateOutOfFlowPosition();
+
+	void updateStickyPosition();
 
 	virtual RichText* getRichTextPtr() { return nullptr; }
 
@@ -84,6 +98,14 @@ class EE_API UIHTMLWidget : public UILayout {
 	int mZIndex{ 0 };
 	UILayouter* mLayouter{ nullptr };
 	UnorderedMap<std::string, StyleSheetProperty> mDataProperties;
+
+	Uint32 mScrollCb{ 0 };
+	Node* mScrollTarget{ nullptr };
+	Vector2f mStickyBasePos;
+	bool mIsUpdatingScroll{ false };
+
+	void updateScrollListeners();
+	void onScrollTargetPositionChange();
 };
 
 }} // namespace EE::UI

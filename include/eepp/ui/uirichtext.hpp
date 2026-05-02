@@ -178,6 +178,7 @@ class EE_API UIHTMLBody : public UIRichText {
 	virtual Uint32 getType() const override;
 	bool isType( const Uint32& type ) const override;
 	bool applyProperty( const StyleSheetProperty& attribute ) override;
+	virtual void updateLayout() override;
 
   protected:
 	bool mPropagatedBackground{ false };

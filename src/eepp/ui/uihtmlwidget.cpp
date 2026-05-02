@@ -2,6 +2,8 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uilayoutermanager.hpp>
+#include <eepp/ui/uiscrollablewidget.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 
 namespace EE { namespace UI {
 
@@ -12,6 +14,8 @@ UIHTMLWidget* UIHTMLWidget::New() {
 UIHTMLWidget::UIHTMLWidget( const std::string& tag ) : UILayout( tag ) {}
 
 UIHTMLWidget::~UIHTMLWidget() {
+	if ( mScrollTarget && mScrollCb )
+		mScrollTarget->removeEventListener( mScrollCb );
 	eeSAFE_DELETE( mLayouter );
 }
 
@@ -65,6 +69,7 @@ void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 			if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
 				setLayoutWidthPolicy( SizePolicy::WrapContent );
 		}
+		updateScrollListeners();
 		onPositionChange();
 	}
 }
@@ -201,17 +206,22 @@ void UIHTMLWidget::updateLayout() {
 UIWidget* UIHTMLWidget::getContainingBlock() {
 	if ( mPosition == CSSPosition::Fixed ) {
 		Node* parent = getParent();
-		UIWidget* lastWidget = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+		UIWidget* cb = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
 		while ( parent ) {
+			if ( parent->isType( UI_TYPE_SCROLLVIEW ) ) {
+				cb = parent->asType<UIWidget>();
+				break;
+			}
 			if ( parent->isWidget() )
-				lastWidget = parent->asType<UIWidget>();
+				cb = parent->asType<UIWidget>();
 			parent = parent->getParent();
 		}
-		return lastWidget;
+		return cb;
 	}
 
 	Node* parent = getParent();
 	UIWidget* lastWidget = nullptr;
+	UIWidget* htmlWidget = nullptr;
 	while ( parent ) {
 		if ( parent->isWidget() ) {
 			lastWidget = parent->asType<UIWidget>();
@@ -219,11 +229,14 @@ UIWidget* UIHTMLWidget::getContainingBlock() {
 				if ( lastWidget->asType<UIHTMLWidget>()->getCSSPosition() != CSSPosition::Static ) {
 					return lastWidget;
 				}
+				if ( lastWidget->isType( UI_TYPE_HTML_HTML ) ) {
+					htmlWidget = lastWidget;
+				}
 			}
 		}
 		parent = parent->getParent();
 	}
-	return lastWidget;
+	return htmlWidget ? htmlWidget : lastWidget;
 }
 
 void UIHTMLWidget::positionOutOfFlowChildren() {
@@ -233,63 +246,179 @@ void UIHTMLWidget::positionOutOfFlowChildren() {
 			UIHTMLWidget* htmlChild = static_cast<UIHTMLWidget*>( child );
 			CSSPosition pos = htmlChild->getCSSPosition();
 			if ( pos == CSSPosition::Absolute || pos == CSSPosition::Fixed ) {
-				UIWidget* cb = htmlChild->getContainingBlock();
-				if ( cb ) {
-					Rectf cbContentOffset = cb->getPixelsContentOffset();
-					Float cbContentWidth = cb->getPixelsSize().getWidth() - cbContentOffset.Left -
-										   cbContentOffset.Right;
-					Float cbContentHeight = cb->getPixelsSize().getHeight() - cbContentOffset.Top -
-											cbContentOffset.Bottom;
-
-					Rectf margin = htmlChild->getLayoutPixelsMargin();
-					Float childWidth = htmlChild->getPixelsSize().getWidth();
-					Float childHeight = htmlChild->getPixelsSize().getHeight();
-
-					Float top = 0;
-					Float left = 0;
-
-					bool useTop = htmlChild->mTopEq != "auto";
-					bool useBottom = htmlChild->mBottomEq != "auto";
-					bool useLeft = htmlChild->mLeftEq != "auto";
-					bool useRight = htmlChild->mRightEq != "auto";
-
-					if ( useLeft ) {
-						left = htmlChild->lengthFromValue(
-							htmlChild->mLeftEq, CSS::PropertyRelativeTarget::ContainingBlockWidth,
-							0 );
-					} else if ( useRight ) {
-						Float rightVal = htmlChild->lengthFromValue(
-							htmlChild->mRightEq, CSS::PropertyRelativeTarget::ContainingBlockWidth,
-							0 );
-						left = cbContentWidth - childWidth - margin.Left - margin.Right - rightVal;
-					}
-
-					if ( useTop ) {
-						top = htmlChild->lengthFromValue(
-							htmlChild->mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight,
-							0 );
-					} else if ( useBottom ) {
-						Float bottomVal = htmlChild->lengthFromValue(
-							htmlChild->mBottomEq,
-							CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
-						top =
-							cbContentHeight - childHeight - margin.Top - margin.Bottom - bottomVal;
-					}
-
-					top += margin.Top;
-					left += margin.Left;
-
-					Vector2f cbPos( cbContentOffset.Left, cbContentOffset.Top );
-					cbPos.x += left;
-					cbPos.y += top;
-
-					Vector2f worldPos = cb->convertToWorldSpace( cbPos );
-					Vector2f localPos = convertToNodeSpace( worldPos );
-					htmlChild->setPixelsPosition( localPos );
-				}
+				htmlChild->updateOutOfFlowPosition();
 			}
 		}
 		child = child->getNextNode();
+	}
+}
+
+void UIHTMLWidget::updateOutOfFlowPosition() {
+	UIWidget* cb = getContainingBlock();
+	if ( !cb )
+		return;
+
+	Rectf cbContentOffset = cb->getPixelsContentOffset();
+	Float cbContentWidth =
+		cb->getPixelsSize().getWidth() - cbContentOffset.Left - cbContentOffset.Right;
+	Float cbContentHeight =
+		cb->getPixelsSize().getHeight() - cbContentOffset.Top - cbContentOffset.Bottom;
+
+	Rectf margin = getLayoutPixelsMargin();
+	Float childWidth = getPixelsSize().getWidth();
+	Float childHeight = getPixelsSize().getHeight();
+
+	Float top = 0;
+	Float left = 0;
+
+	bool useTop = mTopEq != "auto";
+	bool useBottom = mBottomEq != "auto";
+	bool useLeft = mLeftEq != "auto";
+	bool useRight = mRightEq != "auto";
+
+	if ( useLeft ) {
+		left = lengthFromValue( mLeftEq, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
+	} else if ( useRight ) {
+		Float rightVal =
+			lengthFromValue( mRightEq, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
+		left = cbContentWidth - childWidth - margin.Left - margin.Right - rightVal;
+	}
+
+	if ( useTop ) {
+		top = lengthFromValue( mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+	} else if ( useBottom ) {
+		Float bottomVal =
+			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+		top = cbContentHeight - childHeight - margin.Top - margin.Bottom - bottomVal;
+	}
+
+	top += margin.Top;
+	left += margin.Left;
+
+	Vector2f cbPos( cbContentOffset.Left, cbContentOffset.Top );
+	cbPos.x += left;
+	cbPos.y += top;
+
+	Vector2f worldPos = cb->convertToWorldSpace( cbPos );
+	Vector2f localPos = getParent()->convertToNodeSpace( worldPos );
+	setPixelsPosition( localPos );
+}
+
+void UIHTMLWidget::updateStickyPosition() {
+	if ( !mScrollTarget )
+		return;
+
+	UIWidget* cb = getContainingBlock();
+	if ( !cb )
+		return;
+
+	Vector2f baseWorldPos = getParent()->convertToWorldSpace( mStickyBasePos );
+
+	Node* viewport = mScrollTarget->getParent();
+	if ( !viewport )
+		return;
+
+	Vector2f posInViewport = viewport->convertToNodeSpace( baseWorldPos );
+
+	Float topOffset = 0;
+	bool useTop = mTopEq != "auto";
+	if ( useTop )
+		topOffset =
+			lengthFromValue( mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+
+	Float bottomOffset = 0;
+	bool useBottom = mBottomEq != "auto";
+	if ( useBottom )
+		bottomOffset =
+			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+
+	Vector2f newPosInViewport = posInViewport;
+
+	if ( useTop ) {
+		if ( posInViewport.y < topOffset ) {
+			newPosInViewport.y = topOffset;
+		}
+	}
+
+	if ( useBottom ) {
+		Float viewportHeight = viewport->getSize().getHeight();
+		if ( posInViewport.y + getPixelsSize().getHeight() > viewportHeight - bottomOffset ) {
+			newPosInViewport.y = viewportHeight - bottomOffset - getPixelsSize().getHeight();
+		}
+	}
+
+	Vector2f cbWorldPos = cb->convertToWorldSpace( Vector2f( 0, 0 ) );
+	Vector2f cbInViewport = viewport->convertToNodeSpace( cbWorldPos );
+	Float cbBottomInViewport =
+		cbInViewport.y + cb->getPixelsSize().getHeight() - cb->getPixelsPadding().Bottom;
+
+	if ( newPosInViewport.y + getPixelsSize().getHeight() > cbBottomInViewport ) {
+		newPosInViewport.y = cbBottomInViewport - getPixelsSize().getHeight();
+	}
+
+	if ( newPosInViewport.y < cbInViewport.y + cb->getPixelsPadding().Top ) {
+		newPosInViewport.y = cbInViewport.y + cb->getPixelsPadding().Top;
+	}
+
+	if ( newPosInViewport != posInViewport ) {
+		Vector2f newWorldPos = viewport->convertToWorldSpace( newPosInViewport );
+		Vector2f newLocalPos = getParent()->convertToNodeSpace( newWorldPos );
+
+		mIsUpdatingScroll = true;
+		setPixelsPosition( newLocalPos );
+		mIsUpdatingScroll = false;
+	} else {
+		mIsUpdatingScroll = true;
+		setPixelsPosition( mStickyBasePos );
+		mIsUpdatingScroll = false;
+	}
+}
+
+void UIHTMLWidget::updateScrollListeners() {
+	if ( mScrollTarget ) {
+		if ( mScrollCb ) {
+			mScrollTarget->removeEventListener( mScrollCb );
+			mScrollCb = 0;
+		}
+		mScrollTarget = nullptr;
+	}
+
+	if ( mPosition == CSSPosition::Fixed || mPosition == CSSPosition::Sticky ) {
+		Node* parent = getParent();
+		while ( parent ) {
+			if ( parent->isType( UI_TYPE_SCROLLVIEW ) ) {
+				mScrollTarget = parent->asType<UIScrollView>()->getScrollView();
+				break;
+			}
+			parent = parent->getParent();
+		}
+
+		if ( mScrollTarget ) {
+			mScrollCb = mScrollTarget->on( Event::OnPositionChange, [this]( const Event* ) {
+				onScrollTargetPositionChange();
+			} );
+		}
+	}
+}
+
+void UIHTMLWidget::onParentChange() {
+	UILayout::onParentChange();
+	updateScrollListeners();
+}
+
+void UIHTMLWidget::onPositionChange() {
+	UILayout::onPositionChange();
+	if ( mPosition == CSSPosition::Sticky && !mIsUpdatingScroll ) {
+		mStickyBasePos = getPixelsPosition();
+		updateStickyPosition();
+	}
+}
+
+void UIHTMLWidget::onScrollTargetPositionChange() {
+	if ( mPosition == CSSPosition::Fixed ) {
+		updateOutOfFlowPosition();
+	} else if ( mPosition == CSSPosition::Sticky ) {
+		updateStickyPosition();
 	}
 }
 

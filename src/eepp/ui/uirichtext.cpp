@@ -112,6 +112,36 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 	return UIRichText::applyProperty( attribute );
 }
 
+void UIHTMLBody::updateLayout() {
+	UIRichText::updateLayout();
+
+	if ( mChild && mChild->isWidget() ) {
+		Float maxH = 0;
+		Node* child = mChild;
+		while ( child ) {
+			if ( child->isWidget() ) {
+				UIWidget* widget = child->asType<UIWidget>();
+				bool isFixed = false;
+				if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
+					 widget->asType<UIHTMLWidget>()->getCSSPosition() == CSSPosition::Fixed ) {
+					isFixed = true;
+				}
+				if ( !isFixed ) {
+					Float childH =
+						widget->getPixelsPosition().y + widget->getPixelsSize().getHeight();
+					maxH = std::max( maxH, childH );
+				}
+			}
+			child = child->getNextNode();
+		}
+		if ( maxH > 0 ) {
+			Float dpH = PixelDensity::pxToDp( maxH );
+			if ( dpH != getMinSize().getHeight() )
+				setMinHeight( dpH );
+		}
+	}
+}
+
 UIRichText* UIRichText::NewHtml() {
 	auto* html = UIHTMLHtml::New( "html" );
 	html->setClipType( ClipType::None );
