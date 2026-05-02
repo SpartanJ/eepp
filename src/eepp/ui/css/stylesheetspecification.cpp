@@ -433,6 +433,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hidden", "" ).setType( PropertyType::Bool );
 	registerProperty( "display", "inline" ).setType( PropertyType::String );
 	registerProperty( "position", "static" ).setType( PropertyType::String );
+	registerProperty( "float", "none" ).setType( PropertyType::String );
+	registerProperty( "clear", "none" ).setType( PropertyType::String );
 	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
 	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
 	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
@@ -478,6 +480,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "method", "GET" ).setType( PropertyType::String );
 	registerProperty( "enctype", "application/x-www-form-urlencoded" )
 		.setType( PropertyType::String );
+	registerProperty( "target", "_self" ).setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
@@ -1006,7 +1009,10 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		std::string positionStr;
 
 		for ( auto& tok : tokens ) {
-			if ( mDrawableImageParser.exists( tok ) ) {
+			auto open = tok.find_first_of( '(' );
+
+			if ( open != std::string::npos &&
+				 mDrawableImageParser.exists( tok.substr( 0, open ) ) ) {
 				int pos = getIndexEndingWith( propNames, "-image" );
 				if ( pos != -1 )
 					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );

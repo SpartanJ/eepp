@@ -623,6 +623,10 @@ bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Target:{
+			mTarget = attribute.value();
+			break;
+		}
 		case PropertyId::Href:
 			setHref( attribute.asString() );
 			break;
@@ -661,6 +665,8 @@ std::string UIAnchorSpan::getPropertyString( const PropertyDefinition* propertyD
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Target:
+			return mTarget;
 		case PropertyId::Href:
 			return mHref;
 		default:
@@ -670,7 +676,7 @@ std::string UIAnchorSpan::getPropertyString( const PropertyDefinition* propertyD
 
 std::vector<PropertyId> UIAnchorSpan::getPropertiesImplemented() const {
 	auto props = UITextSpan::getPropertiesImplemented();
-	auto local = { PropertyId::Href };
+	auto local = { PropertyId::Href, PropertyId::Target };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

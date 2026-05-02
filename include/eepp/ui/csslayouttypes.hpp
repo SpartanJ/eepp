@@ -61,6 +61,22 @@ struct CSSListStylePositionHelper {
 	static CSSListStylePosition fromString( std::string_view val );
 };
 
+enum class CSSFloat { None, Left, Right };
+
+struct CSSFloatHelper {
+	static std::string toString( CSSFloat val );
+
+	static CSSFloat fromString( std::string_view val );
+};
+
+enum class CSSClear { None, Left, Right, Both };
+
+struct CSSClearHelper {
+	static std::string toString( CSSClear val );
+
+	static CSSClear fromString( std::string_view val );
+};
+
 }} // namespace EE::UI
 
 #endif

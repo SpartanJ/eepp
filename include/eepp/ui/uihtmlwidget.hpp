@@ -36,6 +36,12 @@ class EE_API UIHTMLWidget : public UILayout {
 	CSSPosition getCSSPosition() const { return mPosition; }
 	void setCSSPosition( CSSPosition position );
 
+	CSSFloat getCSSFloat() const { return mFloat; }
+	void setCSSFloat( CSSFloat cssFloat );
+
+	CSSClear getCSSClear() const { return mClear; }
+	void setCSSClear( CSSClear cssClear );
+
 	const Rectf& getOffsets() const { return mOffsets; }
 	void setOffsets( const Rectf& offsets );
 
@@ -68,6 +74,8 @@ class EE_API UIHTMLWidget : public UILayout {
   protected:
 	CSSDisplay mDisplay{ CSSDisplay::Block };
 	CSSPosition mPosition{ CSSPosition::Static };
+	CSSFloat mFloat{ CSSFloat::None };
+	CSSClear mClear{ CSSClear::None };
 	std::string mTopEq{ "auto" };
 	std::string mRightEq{ "auto" };
 	std::string mBottomEq{ "auto" };

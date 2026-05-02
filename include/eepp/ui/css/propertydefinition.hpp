@@ -250,11 +250,14 @@ enum class PropertyId : Uint32 {
 	ListStyleType = String::hash( "list-style-type" ),
 	ListStylePosition = String::hash( "list-style-position" ),
 	ListStyleImage = String::hash( "list-style-image" ),
+	Float = String::hash( "float" ),
+	Clear = String::hash( "clear" ),
 	DataLanguage = String::hash( "data-language" ), // Minor hack
 	Action = String::hash( "action" ),
 	Method = String::hash( "method" ),
 	Enctype = String::hash( "enctype" ),
 	Overflow = String::hash( "overflow" ),
+	Target = String::hash( "target" ),
 };
 
 enum class PropertyType : Uint32 {

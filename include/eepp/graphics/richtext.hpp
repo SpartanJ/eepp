@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/csslayouttypes.hpp>
 #include <memory>
 #include <variant>
 #include <vector>
@@ -83,6 +84,8 @@ class EE_API RichText : public Drawable {
 	struct CustomBlock {
 		Sizef size;
 		bool isBlock{ false };
+		UI::CSSFloat floatType{ UI::CSSFloat::None };
+		UI::CSSClear clearType{ UI::CSSClear::None };
 	};
 
 	struct SpanBlock {
@@ -104,7 +107,9 @@ class EE_API RichText : public Drawable {
 	 * @param size The physical dimensions of the spacer.
 	 * @param isBlock Whether this spacer acts as a block-level element.
 	 */
-	void addCustomSize( const Sizef& size, bool isBlock = false );
+	void addCustomSize( const Sizef& size, bool isBlock = false,
+						UI::CSSFloat floatType = UI::CSSFloat::None,
+						UI::CSSClear clearType = UI::CSSClear::None );
 
 	/** @return The list of blocks. */
 	const std::vector<Block>& getBlocks() { return mBlocks; }

@@ -173,6 +173,7 @@ class EE_API UIAnchorSpan : public UITextSpan {
 	UIAnchorSpan( const std::string& tag = "a" );
 
 	std::string mHref;
+	std::string mTarget;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 

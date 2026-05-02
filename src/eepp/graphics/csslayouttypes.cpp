@@ -143,4 +143,48 @@ CSSListStylePosition CSSListStylePositionHelper::fromString( std::string_view va
 	return CSSListStylePosition::Outside;
 }
 
+std::string CSSFloatHelper::toString( CSSFloat val ) {
+	switch ( val ) {
+		case CSSFloat::Left:
+			return "left";
+		case CSSFloat::Right:
+			return "right";
+		case CSSFloat::None:
+		default:
+			return "none";
+	}
+}
+
+CSSFloat CSSFloatHelper::fromString( std::string_view val ) {
+	if ( val == "left" )
+		return CSSFloat::Left;
+	if ( val == "right" )
+		return CSSFloat::Right;
+	return CSSFloat::None;
+}
+
+std::string CSSClearHelper::toString( CSSClear val ) {
+	switch ( val ) {
+		case CSSClear::Left:
+			return "left";
+		case CSSClear::Right:
+			return "right";
+		case CSSClear::Both:
+			return "both";
+		case CSSClear::None:
+		default:
+			return "none";
+	}
+}
+
+CSSClear CSSClearHelper::fromString( std::string_view val ) {
+	if ( val == "left" )
+		return CSSClear::Left;
+	if ( val == "right" )
+		return CSSClear::Right;
+	if ( val == "both" )
+		return CSSClear::Both;
+	return CSSClear::None;
+}
+
 }} // namespace EE::UI

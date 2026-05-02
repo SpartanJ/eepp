@@ -2309,7 +2309,7 @@ Uint32 Text::getNumLines() {
 	return mString.countChar( '\n' ) + 1;
 }
 
-const std::vector<Float>& Text::getLinesWidth() {
+const SmallVector<Float, 4>& Text::getLinesWidth() {
 	cacheWidth();
 
 	return mLinesWidth;

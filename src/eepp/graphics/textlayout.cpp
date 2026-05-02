@@ -538,8 +538,8 @@ TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Ui
 							   keepIndentation, initialXOffset );
 }
 
-std::vector<Float> TextLayout::getLinesWidth() const {
-	std::vector<Float> lw;
+SmallVector<Float, 4> TextLayout::getLinesWidth() const {
+	SmallVector<Float, 4> lw;
 	std::size_t total = 0;
 	for ( const auto& sp : paragraphs )
 		total += sp.wrapInfo.wrapsWidth.size();
@@ -570,7 +570,7 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 		Sizef maxSize{ 0, vspace + yShift };
 		std::size_t startWrapsCount = sp.wrapInfo.wraps.size();
 
-		std::vector<Float> wrapsWidth = std::move( sp.wrapInfo.wrapsWidth );
+		auto wrapsWidth = std::move( sp.wrapInfo.wrapsWidth );
 		sp.wrapInfo.wrapsWidth.clear();
 
 		if ( keepIndentation && shapedGlyphCount ) {

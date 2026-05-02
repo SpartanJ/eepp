@@ -69,6 +69,20 @@ void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 	}
 }
 
+void UIHTMLWidget::setCSSFloat( CSSFloat cssFloat ) {
+	if ( mFloat != cssFloat ) {
+		mFloat = cssFloat;
+		notifyLayoutAttrChange();
+	}
+}
+
+void UIHTMLWidget::setCSSClear( CSSClear cssClear ) {
+	if ( mClear != cssClear ) {
+		mClear = cssClear;
+		notifyLayoutAttrChange();
+	}
+}
+
 void UIHTMLWidget::setOffsets( const Rectf& offsets ) {
 	if ( mOffsets != offsets ) {
 		mOffsets = offsets;
@@ -86,7 +100,8 @@ void UIHTMLWidget::setZIndex( int zIndex ) {
 
 std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
-	auto local = { PropertyId::Display, PropertyId::Position, PropertyId::Top,	 PropertyId::Right,
+	auto local = { PropertyId::Display, PropertyId::Position, PropertyId::Float,
+				   PropertyId::Clear,	PropertyId::Top,	  PropertyId::Right,
 				   PropertyId::Bottom,	PropertyId::Left,	  PropertyId::ZIndex };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -102,6 +117,10 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 			return CSSDisplayHelper::toString( mDisplay );
 		case PropertyId::Position:
 			return CSSPositionHelper::toString( mPosition );
+		case PropertyId::Float:
+			return CSSFloatHelper::toString( mFloat );
+		case PropertyId::Clear:
+			return CSSClearHelper::toString( mClear );
 		case PropertyId::Top:
 			return mTopEq;
 		case PropertyId::Right:
@@ -128,6 +147,14 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::Position: {
 			setCSSPosition( CSSPositionHelper::fromString( attribute.asString() ) );
+			return true;
+		}
+		case PropertyId::Float: {
+			setCSSFloat( CSSFloatHelper::fromString( attribute.asString() ) );
+			return true;
+		}
+		case PropertyId::Clear: {
+			setCSSClear( CSSClearHelper::fromString( attribute.asString() ) );
 			return true;
 		}
 		case PropertyId::ZIndex: {

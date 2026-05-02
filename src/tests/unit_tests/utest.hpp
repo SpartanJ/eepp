@@ -1,18 +1,20 @@
 #pragma once
 #include "utest.h"
+#include <eepp/core/small_vector.hpp>
 
+#include <ranges>
 #include <sstream>
-#include <vector>
 
-template <typename T> std::string vectorToString( const std::vector<T>& vec ) {
+template <std::ranges::input_range Range> std::string vectorToString( const Range& vec ) {
 	std::ostringstream oss;
 	oss << "[";
-	bool first = true;
-	for ( const auto& element : vec ) {
-		if ( !first )
-			oss << ", ";
-		oss << element;
-		first = false;
+	auto it = std::ranges::begin( vec );
+	auto end = std::ranges::end( vec );
+	if ( it != end ) {
+		oss << *it;
+		for ( ++it; it != end; ++it ) {
+			oss << ", " << *it;
+		}
 	}
 	oss << "]";
 	return oss.str();

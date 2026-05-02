@@ -737,9 +737,16 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 									margin.Right );
 			}
 
+			CSSFloat floatType = CSSFloat::None;
+			CSSClear clearType = CSSClear::None;
+			if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+				floatType = widget->asType<UIHTMLWidget>()->getCSSFloat();
+				clearType = widget->asType<UIHTMLWidget>()->getCSSClear();
+			}
+
 			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
 										   size.getHeight() + margin.Top + margin.Bottom ),
-									isBlock );
+									isBlock, floatType, clearType );
 		}
 	};
 
