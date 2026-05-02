@@ -34,6 +34,21 @@ bool UIHTMLHtml::isType( const Uint32& type ) const {
 	return UIHTMLHtml::getType() == type ? true : UIRichText::isType( type );
 }
 
+bool UIHTMLHtml::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Width:
+		case PropertyId::Height:
+			return false; // Ignore width and height set from CSS
+		default:
+			break;
+	}
+
+	return UIRichText::applyProperty( attribute );
+}
+
 UILineBreak* UILineBreak::New( const std::string& tag ) {
 	return eeNew( UILineBreak, ( tag ) );
 }
@@ -69,6 +84,9 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Width:
+		case PropertyId::Height:
+			return false; // Ignore width and height set from CSS
 		case PropertyId::BackgroundColor:
 		case PropertyId::BackgroundImage:
 		case PropertyId::BackgroundTint:

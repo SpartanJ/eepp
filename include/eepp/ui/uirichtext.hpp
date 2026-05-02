@@ -166,6 +166,7 @@ class EE_API UIHTMLHtml : public UIRichText {
 	static UIHTMLHtml* New( const std::string& tag );
 	virtual Uint32 getType() const override;
 	bool isType( const Uint32& type ) const override;
+	bool applyProperty( const StyleSheetProperty& attribute ) override;
 
   protected:
 	UIHTMLHtml( const std::string& tag = "html" );
