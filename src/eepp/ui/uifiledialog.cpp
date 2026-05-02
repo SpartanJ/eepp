@@ -623,6 +623,20 @@ void UIFileDialog::open() {
 	if ( usingNativeFileDialog() )
 		return;
 
+	std::string fileText = mFile->getText().toUtf8();
+
+	if ( allowFolderSelect() && FileSystem::isDirectory( fileText ) ) {
+		setCurPath( fileText );
+
+		sendCommonEvent( Event::OpenFile );
+
+		disableButtons();
+
+		closeWindow();
+
+		return;
+	}
+
 	auto fullPath( getFullPath() );
 
 	if ( mMultiView->getSelection().isEmpty() &&

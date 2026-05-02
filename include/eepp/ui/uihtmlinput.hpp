@@ -1,15 +1,15 @@
-#ifndef EE_UI_HTMLINPUT_HPP
-#define EE_UI_HTMLINPUT_HPP
+#ifndef EE_UI_UIHTMLINPUT_HPP
+#define EE_UI_UIHTMLINPUT_HPP
 
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API HTMLInput : public UIWidget {
+class EE_API UIHTMLInput : public UIWidget {
   public:
-	static HTMLInput* New();
+	static UIHTMLInput* New();
 
-	HTMLInput();
+	UIHTMLInput();
 
 	virtual Uint32 getType() const;
 
@@ -32,10 +32,13 @@ class EE_API HTMLInput : public UIWidget {
 
 	UIWidget* getChildWidget() const;
 
+	String getFormValue() const;
+
   protected:
 	std::string mInputType{ "text" };
 	UIWidget* mChildWidget{ nullptr };
 	std::map<PropertyId, StyleSheetProperty> mProperties;
+	String mValue;
 
 	void createChildWidget();
 

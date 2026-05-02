@@ -11,10 +11,14 @@
 namespace EE { namespace UI {
 
 UITextEdit* UITextEdit::New() {
-	return eeNew( UITextEdit, () );
+	return eeNew( UITextEdit, ( "textedit" ) );
 }
 
-UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ) {
+UITextEdit* UITextEdit::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextEdit, ( tag ) );
+}
+
+UITextEdit::UITextEdit( const std::string& tag ) : UICodeEditor( tag, true, true ) {
 	setFlags( UI_AUTO_PADDING );
 	setClipType( ClipType::ContentBox );
 	mFont = NULL;

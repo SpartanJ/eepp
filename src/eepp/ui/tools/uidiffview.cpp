@@ -849,7 +849,7 @@ void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string
 	FileSystem::fileGet( oldFilePath, oldText );
 	FileSystem::fileGet( newFilePath, newText );
 
-	auto def = SyntaxDefinitionManager::instance()->getByExtension( oldFilePath );
+	auto def = SyntaxDefinitionManager::instance()->getByExtension( newFilePath );
 	mSyntaxDef =
 		SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
 	mEditor->getDocument().setSyntaxDefinition( def );

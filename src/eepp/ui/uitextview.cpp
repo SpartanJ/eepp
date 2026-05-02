@@ -742,15 +742,17 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			if ( attribute.value() != "inherit" ) {
+				Font* font = FontManager::instance()->getByName( attribute.value() );
 
-			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
-				setFont( font );
+				if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
+					setFont( font );
+				}
 			}
 			break;
 		}
 		case PropertyId::FontSize:
-			if ( !mUsingCustomStyling )
+			if ( !mUsingCustomStyling && attribute.value() != "inherit" )
 				setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::TextDecoration:

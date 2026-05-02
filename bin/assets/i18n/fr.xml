@@ -84,7 +84,6 @@ Cette opération est irréversible !</string>
 	<string name="chat_history">Historique des discussions</string>
 	<string name="check_for_new_updates_at_startup">Toujours vérifier les nouvelles mises à jour au démarrage.</string>
 	<string name="check_for_updates">Rechercher les mises à jour</string>
-	<string name="check_for_updates_ellipsis">Rechercher les mises à jour...</string>
 	<string name="check_languages_health">Vérifier l'état des langues</string>
 	<string name="clean">Nettoyer</string>
 	<string name="clean_failed">Le nettoyage s'est exécuté avec des erreurs
@@ -156,7 +155,6 @@ Toutes les modifications seront perdues.</string>
 	<string name="continue_editing">Continuer la modification</string>
 	<string name="copy">Copier</string>
 	<string name="copy_containing_folder_path">Copier le chemin du dossier parent</string>
-	<string name="copy_containing_folder_path_ellipsis">Copier le chemin du dossier parent...</string>
 	<string name="copy_error_message">Copier le message d'erreur</string>
 	<string name="copy_file_path">Copier le chemin du fichier</string>
 	<string name="copy_file_path_and_position">Copier le chemin et la position du fichier</string>
@@ -245,7 +243,6 @@ Le chemin du fichier est : </string>
 	<string name="duplicate_file_ellipsis">Dupliquer le fichier...</string>
 	<string name="ecode_no_updates_available">Il n'y a actuellement aucune mise à jour disponible.</string>
 	<string name="ecode_source">Code source de ecode</string>
-	<string name="ecode_source_ellipsis">Code source de ecode...</string>
 	<string name="ecode_unreleased_version">Vous utilisez une version non publiée d'ecode !
 Version actuelle : </string>
 	<string name="ecode_updates_available"> est disponible !
@@ -395,7 +392,7 @@ Redémarrez ecode pour voir les changements.</string>
 	<string name="go_to_line_in_current_document">Aller à la ligne dans le document actuel</string>
 	<string name="gone">supprimé</string>
 	<string name="group">Groupe</string>
-	<string name="treat_h_files_as_ellipsis">Traiter les fichiers .h comme du code C++.</string>
+	<string name="treat_h_files_as">Traiter les fichiers .h comme</string>
 	<string name="help">Aide</string>
 	<string name="hide">Masquer</string>
 	<string name="hide_tabbar_on_single_tab">Masquer la barre d'onglets sur un seul onglet</string>
@@ -410,7 +407,7 @@ Redémarrez ecode pour voir les changements.</string>
 	<string name="indent">Indenter</string>
 	<string name="indent_tab_alignment">Alignement de l'indentation</string>
 	<string name="indent_tab_character">Caractère à utiliser pour l'indentation</string>
-	<string name="indent_width">Largeur d'indentation</string>
+	<string name="indent_width">Taille d'indentation</string>
 	<string name="indentation_type">Type d'indentation</string>
 	<string name="inode">Nœud-i</string>
 	<string name="insert_search_query">Insérer la requête de recherche</string>
@@ -486,10 +483,8 @@ La mémoire de discussion ne pourra être supprimée manuellement que dans l'his
 	<string name="more_ellipsis">Plus...</string>
 	<string name="more_options">Plus d'options</string>
 	<string name="move_down">Déplacer vers le bas</string>
-	<string name="move_panel_left">Déplacer le panneau vers la gauche</string>
-	<string name="move_panel_left_ellipsis">Déplacer le panneau vers la gauche...</string>
-	<string name="move_panel_right">Déplacer le panneau vers la droite</string>
-	<string name="move_panel_right_ellipsis">Déplacer le panneau vers la droite...</string>
+	<string name="move_panel_to_left">Déplacer le panneau vers la gauche</string>
+	<string name="move_panel_to_right">Déplacer le panneau vers la droite</string>
 	<string name="move_scroll_down">Déplacer le défilement vers le bas</string>
 	<string name="move_scroll_up">Déplacer le défilement vers le haut</string>
 	<string name="move_to_end_of_line">Aller à la fin de la ligne</string>
@@ -780,8 +775,8 @@ La valeur minimale est 1 et le maximum est 6. Nécessite un redémarrage.</strin
 dans l'arborescence du répertoire.</string>
 	<string name="syntax_color_scheme">Schéma de couleurs syntaxique</string>
 	<string name="system">Système</string>
-	<string name="tab_width">Largeur des onglets</string>
-	<string name="tabs">Onglets</string>
+	<string name="tab_width">Taille des tabulations</string>
+	<string name="tabs">Tabulations</string>
 	<string name="terminal">Terminal</string>
 	<string name="terminal_color_scheme">Schéma de couleurs du terminal</string>
 	<string name="terminal_color_scheme_set">Schéma de couleurs du terminal : %s</string>
@@ -843,7 +838,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="ui_scale_factor">Interface utilisateur : facteur d'échelle</string>
 	<string name="ui_thene">Interface utilisateur : thème</string>
 	<string name="uicodeeditor_copy">Copier</string>
-	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">Copier le chemin du dossier parent...</string>
+	<string name="uicodeeditor_copy_containing_folder_path">Copier le chemin du dossier parent</string>
 	<string name="uicodeeditor_copy_file_path">Copier le chemin du fichier</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copier le chemin du fichier et sa position</string>
 	<string name="uicodeeditor_cut">Couper</string>
@@ -886,7 +881,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="variable_name">Nom de la variable</string>
 	<string name="variables">Variables</string>
 	<string name="view">Vue</string>
-	<string name="viewport">Viewport</string>
+	<string name="viewport">Fenêtre d'affichage</string>
 	<string name="vsync">VSync</string>
 	<string name="vsync_changed">Vsync : configuration mise à jour.
 Redémarrer ecode pour voir les changements.</string>
@@ -899,10 +894,10 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="working_dir_at">Répertoire de travail %s
 </string>
 	<string name="workspace_symbol_find_ellipsis">Rechercher les symboles dans l'espace de travail...</string>
-	<string name="wrap_letter">Letter wrap</string>
-	<string name="wrap_mode">Wrap Mode</string>
-	<string name="wrap_type_ellipsis">Wrap Against...</string>
-	<string name="wrap_word">Word wrap</string>
+	<string name="wrap_letter">Au caractère</string>
+	<string name="wrap_mode">Mode de retour à la ligne</string>
+	<string name="wrap_type">Retour à la ligne</string>
+	<string name="wrap_word">Au mot</string>
 	<string name="write_unicode_bom">Écrire le BOM Unicode</string>
 	<string name="you_have_not_yet_opened_a_folder">Vous n'avez pas encore ouvert de dossier.</string>
 	<string name="zoom_in">Zoomer</string>
@@ -912,6 +907,4 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="terminal_open_link">Ouvrir le lien</string>
 	<string name="terminal_paste">Coller dans le terminal</string>
 	<string name="terminal_rename">Renommer le terminal</string>
-</resources>
-me="terminal_rename">Renommer le terminal</string>
 </resources>

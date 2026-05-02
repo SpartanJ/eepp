@@ -1,11 +1,14 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -15,24 +18,13 @@
 
 namespace EE { namespace UI {
 
-class UILineBreak : public UIRichText {
-  public:
-	static UILineBreak* New( const std::string& tag ) { return eeNew( UILineBreak, ( tag ) ); }
-
-	UILineBreak( const std::string& tag = "br" ) : UIRichText( tag ) {}
-
-	virtual Uint32 getType() const { return UI_TYPE_BR; }
-
-	bool isType( const Uint32& type ) const {
-		return UILineBreak::getType() == type ? true : UINode::isType( type );
-	}
-};
-
 UIHTMLHtml* UIHTMLHtml::New( const std::string& tag ) {
 	return eeNew( UIHTMLHtml, ( tag ) );
 }
 
-UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {}
+UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {
+	enableReportSizeChangeToChildren();
+}
 
 Uint32 UIHTMLHtml::getType() const {
 	return UI_TYPE_HTML_HTML;
@@ -42,11 +34,42 @@ bool UIHTMLHtml::isType( const Uint32& type ) const {
 	return UIHTMLHtml::getType() == type ? true : UIRichText::isType( type );
 }
 
+bool UIHTMLHtml::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Width:
+		case PropertyId::Height:
+			return false; // Ignore width and height set from CSS
+		default:
+			break;
+	}
+
+	return UIRichText::applyProperty( attribute );
+}
+
+UILineBreak* UILineBreak::New( const std::string& tag ) {
+	return eeNew( UILineBreak, ( tag ) );
+}
+
+UILineBreak::UILineBreak( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UILineBreak::getType() const {
+	return UI_TYPE_BR;
+}
+
+bool UILineBreak::isType( const Uint32& type ) const {
+	return UILineBreak::getType() == type ? true : UIHTMLWidget::isType( type );
+}
+
 UIHTMLBody* UIHTMLBody::New( const std::string& tag ) {
 	return eeNew( UIHTMLBody, ( tag ) );
 }
 
-UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {}
+UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {
+	enableReportSizeChangeToChildren();
+}
 
 Uint32 UIHTMLBody::getType() const {
 	return UI_TYPE_HTML_BODY;
@@ -61,6 +84,9 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Width:
+		case PropertyId::Height:
+			return false; // Ignore width and height set from CSS
 		case PropertyId::BackgroundColor:
 		case PropertyId::BackgroundImage:
 		case PropertyId::BackgroundTint:
@@ -87,19 +113,44 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 UIRichText* UIRichText::NewHtml() {
-	return UIHTMLHtml::New( "html" );
+	auto* html = UIHTMLHtml::New( "html" );
+	html->setClipType( ClipType::None );
+	return html;
 }
 
 UIRichText* UIRichText::NewBody() {
-	return UIHTMLBody::New( "body" );
+	auto* body = UIHTMLBody::New( "body" );
+	body->setClipType( ClipType::None );
+	return body;
 }
 
 UIRichText* UIRichText::NewBr() {
 	return UILineBreak::New( "br" );
 };
 
+static void applyDefaultBlockMargins( UIWidget* widget, const std::string& tag ) {
+	static const UnorderedMap<std::string, std::pair<Float, Float>> defaults = {
+		{ "h1", { 0.67f, 0.67f } },			{ "h2", { 0.83f, 0.83f } },
+		{ "h3", { 1.00f, 1.00f } },			{ "h4", { 1.33f, 1.33f } },
+		{ "h5", { 1.67f, 1.67f } },			{ "h6", { 2.33f, 2.33f } },
+		{ "p", { 1.00f, 1.00f } },			{ "pre", { 1.00f, 1.00f } },
+		{ "blockquote", { 1.00f, 1.00f } }, { "hr", { 0.50f, 0.50f } },
+		{ "ul", { 1.00f, 1.00f } },			{ "ol", { 1.00f, 1.00f } },
+		{ "dl", { 1.00f, 1.00f } },			{ "body", { 0.67f, 0.67f } },
+	};
+	auto it = defaults.find( tag );
+	if ( it != defaults.end() ) {
+		widget->applyProperty(
+			StyleSheetProperty( "margin-top", String::format( "%gem", it->second.first ) ) );
+		widget->applyProperty(
+			StyleSheetProperty( "margin-bottom", String::format( "%gem", it->second.second ) ) );
+	}
+}
+
 UIRichText* UIRichText::NewHr() {
-	return UILineBreak::New( "hr" );
+	auto* w = UILineBreak::New( "hr" );
+	applyDefaultBlockMargins( w, "hr" );
+	return w;
 };
 
 UIRichText* UIRichText::New() {
@@ -107,26 +158,29 @@ UIRichText* UIRichText::New() {
 }
 
 UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
-	return eeNew( UIRichText, ( tag ) );
+	auto* w = eeNew( UIRichText, ( tag ) );
+	applyDefaultBlockMargins( w, tag );
+	return w;
 }
 
-UIRichText::UIRichText( const std::string& tag ) : UILayout( tag ) {
+UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
-	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode =
+		getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
+	UITheme* theme = sceneNode ? sceneNode->getUIThemeManager()->getDefaultTheme() : nullptr;
 
 	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
 		mRichText.getFontStyleConfig().Font = theme->getDefaultFont();
-	} else if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
-		mRichText.getFontStyleConfig().Font =
-			getUISceneNode()->getUIThemeManager()->getDefaultFont();
+	} else if ( sceneNode && NULL != sceneNode->getUIThemeManager()->getDefaultFont() ) {
+		mRichText.getFontStyleConfig().Font = sceneNode->getUIThemeManager()->getDefaultFont();
 	}
 
 	if ( NULL != theme ) {
 		mRichText.getFontStyleConfig().CharacterSize = theme->getDefaultFontSize();
-	} else {
+	} else if ( sceneNode ) {
 		mRichText.getFontStyleConfig().CharacterSize =
-			getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
+			sceneNode->getUIThemeManager()->getDefaultFontSize();
 	}
 
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
@@ -137,7 +191,7 @@ Uint32 UIRichText::getType() const {
 }
 
 bool UIRichText::isType( const Uint32& type ) const {
-	return UIRichText::getType() == type ? true : UILayout::isType( type );
+	return UIRichText::getType() == type ? true : UIHTMLWidget::isType( type );
 }
 
 const RichText& UIRichText::getRichText() {
@@ -149,14 +203,16 @@ void UIRichText::draw() {
 		UIWidget::draw();
 
 		if ( mRichText.getSize().getWidth() > 0.f ) {
+			Rectf contentOffset = getPixelsContentOffset();
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
-								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+				clipSmartEnable( mScreenPos.x + contentOffset.Left,
+								 mScreenPos.y + contentOffset.Top,
+								 mSize.getWidth() - contentOffset.Left - contentOffset.Right,
+								 mSize.getHeight() - contentOffset.Top - contentOffset.Bottom );
 			}
 
-			mRichText.draw( std::trunc( mScreenPos.x ) + (int)mPaddingPx.Left,
-							std::trunc( mScreenPos.y ) + (int)mPaddingPx.Top, Vector2f::One, 0.f,
+			mRichText.draw( std::trunc( mScreenPos.x ) + (int)contentOffset.Left,
+							std::trunc( mScreenPos.y ) + (int)contentOffset.Top, Vector2f::One, 0.f,
 							getBlendMode() );
 
 			if ( isClipped() )
@@ -224,8 +280,15 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 				setTextAlign( TEXT_ALIGN_RIGHT );
 			break;
 		}
+		case PropertyId::DataLanguage: {
+			if ( mTag == "pre" && mChild && mChild->isType( UI_TYPE_CODEEDITOR ) ) {
+				mChild->asType<UICodeEditor>()->applyProperty( attribute );
+			} else
+				mDataProperties["data-language"] = attribute;
+			break;
+		}
 		default:
-			return UILayout::applyProperty( attribute );
+			return UIHTMLWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -269,12 +332,12 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 					   ? "center"
 					   : ( getTextAlign() == TEXT_ALIGN_RIGHT ? "right" : "left" );
 		default:
-			return UILayout::getPropertyString( propertyDef, propertyIndex );
+			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
-	auto props = UILayout::getPropertiesImplemented();
+	auto props = UIHTMLWidget::getPropertiesImplemented();
 	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,
 				   PropertyId::FontStyle,		 PropertyId::Color,
 				   PropertyId::BackgroundColor,	 PropertyId::TextShadowColor,
@@ -460,9 +523,10 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( child.type() == pugi::node_element ) {
 			if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
 				// Use a UICodeEditor for <pre><code>
-				UICodeEditor* editor = UICodeEditor::New();
+				UICodeEditor* editor = UICodeEditor::NewWithTag( "code" );
 				if ( editor ) {
 					editor->setParent( this );
+					editor->setDynamicTheming( true );
 					editor->loadFromXmlNode( child );
 					editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 					editor->setLineWrapMode( LineWrapMode::Word );
@@ -475,7 +539,17 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 					editor->setShowLineNumber( false );
 					editor->setShowFoldingRegion( false );
 					editor->setLocked( true );
+
+					auto langIt = mDataProperties.find( "data-language" );
+					if ( langIt != mDataProperties.end() ) {
+						editor->applyProperty( langIt->second );
+					}
 				}
+			} else if ( String::iequals( child.name(), "style" ) ) {
+				getUISceneNode()->loadNode( child, this, 0 );
+			} else if ( String::iequals( child.name(), "script" ) ) {
+				// No plans to support it
+				continue;
 			} else {
 				// Let parent logic load standard child widget
 				UIWidget* uiwidget = UIWidgetCreator::createFromName( child.name() );
@@ -495,9 +569,8 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( child.type() == pugi::node_pcdata ) {
 			String text = Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 			if ( !text.empty() ) {
-				UITextSpan* span = UITextSpan::New();
+				UITextNode* span = UITextNode::New();
 				span->setParent( this );
-				span->setInheritedStyle( mRichText.getFontStyleConfig() );
 				span->setText( text );
 			}
 		}
@@ -507,19 +580,19 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 void UIRichText::onSizeChange() {
-	UILayout::onSizeChange();
+	UIHTMLWidget::onSizeChange();
 	notifyLayoutAttrChange();
 	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onPaddingChange() {
-	UILayout::onPaddingChange();
+	UIHTMLWidget::onPaddingChange();
 	notifyLayoutAttrChange();
 	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onChildCountChange( Node* child, const bool& removed ) {
-	UILayout::onChildCountChange( child, removed );
+	UIHTMLWidget::onChildCountChange( child, removed );
 	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
 		static_cast<UITextSpan*>( child )->setInheritedStyle( mRichText.getFontStyleConfig() );
 	}
@@ -538,26 +611,31 @@ void UIRichText::onFontStyleChanged() {
 	notifyLayoutAttrChangeParent();
 }
 
-void UIRichText::onAlphaChange() {
-	UILayout::onAlphaChange();
-}
-
-void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
+	Float maxWidth = 0;
+	if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		maxWidth = container->getMatchParentWidth() - container->getPixelsContentOffset().Left -
+				   container->getPixelsContentOffset().Right;
+	} else {
+		maxWidth = container->getPixelsSize().getWidth() -
+				   container->getPixelsContentOffset().Left -
+				   container->getPixelsContentOffset().Right;
+	}
 
-	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
 
 	Float mw = 0.f;
-	if ( !mMaxWidthEq.empty() ) {
-		mw = getMaxSizePx().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+	if ( !container->getMaxWidthEq().empty() ) {
+		mw = container->getMaxSizePx().getWidth() - container->getPixelsContentOffset().Left -
+			 container->getPixelsContentOffset().Right;
 		if ( mw < 0 )
 			mw = 0.f;
 	}
 
 	if ( mode == IntrinsicMode::None ) {
-		if ( !mMaxWidthEq.empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
+		if ( !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
 			richText.setMaxWidth( mw );
 		} else {
 			richText.setMaxWidth( maxWidth );
@@ -566,18 +644,66 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	}
 
-	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
-		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-			UITextSpan* span = widget->asType<UITextSpan>();
-			if ( !span->getText().empty() ) {
-				richText.addSpan( span->getText(), span->getFontStyleConfig() );
+	if ( container->isType( UI_TYPE_TEXTSPAN ) ) {
+		UITextSpan* selfSpan = container->asType<UITextSpan>();
+		if ( !selfSpan->getText().empty() && !selfSpan->isMergeable() &&
+			 NULL != selfSpan->getFontStyleConfig().Font ) {
+			richText.addSpan( selfSpan->getText(), selfSpan->getFontStyleConfig() );
+		}
+	}
+
+	auto processNode = [&]( Node* node, auto& processNodeRef ) -> void {
+		if ( node->isTextNode() ) {
+			UITextNode* textNode = static_cast<UITextNode*>( node );
+			if ( !textNode->getText().empty() ) {
+				FontStyleConfig style;
+				if ( node->getParent()->isType( UI_TYPE_TEXTSPAN ) ) {
+					style = node->getParent()->asType<UITextSpan>()->getFontStyleConfig();
+				} else if ( node->getParent()->isType( UI_TYPE_RICHTEXT ) ) {
+					style =
+						node->getParent()->asType<UIRichText>()->getRichText().getFontStyleConfig();
+				} else {
+					style = richText.getFontStyleConfig();
+				}
+				richText.addSpan( textNode->getText(), style );
 			}
+			return;
+		}
+
+		if ( !node->isWidget() || !node->isVisible() )
+			return;
+
+		UIWidget* widget = node->asType<UIWidget>();
+
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) &&
+			 widget->asType<UIHTMLWidget>()->isMergeable() ) {
+			UITextSpan* span = widget->asType<UITextSpan>();
+			Rectf margin = span->getLayoutPixelsMargin();
+			Rectf padding = span->getPixelsPadding();
+			bool hasOwnText = !span->getText().empty() && NULL != span->getFontStyleConfig().Font;
+
+			if ( hasOwnText ) {
+				richText.addSpan( span->getText(), span->getFontStyleConfig(), margin, padding );
+			} else if ( margin.Left > 0 || margin.Top > 0 || padding.Left > 0 || padding.Top > 0 ) {
+				Rectf leftOnly( margin.Left, margin.Top, 0, 0 );
+				Rectf padLeftOnly( padding.Left, padding.Top, 0, 0 );
+				richText.addSpan( "", span->getFontStyleConfig(), leftOnly, padLeftOnly );
+			}
+
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
-				if ( spanChild->isWidget() ) {
-					processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef );
-				}
+				bool isOutOfFlow = spanChild->isType( UI_TYPE_HTML_WIDGET ) &&
+								   spanChild->asType<UIHTMLWidget>()->isOutOfFlow();
+				if ( !isOutOfFlow )
+					processNodeRef( spanChild, processNodeRef );
 				spanChild = spanChild->getNextNode();
+			}
+
+			if ( !hasOwnText && ( margin.Right > 0 || margin.Bottom > 0 || padding.Right > 0 ||
+								  padding.Bottom > 0 ) ) {
+				Rectf rightOnly( 0, 0, margin.Right, margin.Bottom );
+				Rectf padRightOnly( 0, 0, padding.Right, padding.Bottom );
+				richText.addSpan( "", span->getFontStyleConfig(), rightOnly, padRightOnly );
 			}
 		} else if ( widget->isType( UI_TYPE_BR ) ) {
 			richText.addSpan( "\n",
@@ -585,21 +711,29 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 			bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
+			if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+				CSSDisplay display = widget->asType<UIHTMLWidget>()->getDisplay();
+				if ( display == CSSDisplay::Inline || display == CSSDisplay::InlineBlock )
+					isBlock = false;
+				else if ( display == CSSDisplay::ListItem )
+					isBlock = true;
+			}
 
 			if ( mode == IntrinsicMode::None ) {
 				if ( isBlock ) {
-					if ( mSize.getWidth() != 0 ) {
-						Float maxSize =
-							eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-											margin.Left - margin.Right );
+					if ( container->getPixelsSize().getWidth() != 0 ) {
+						Float maxSize = eemax( 0.f, container->getPixelsSize().getWidth() -
+														container->getPixelsContentOffset().Left -
+														container->getPixelsContentOffset().Right -
+														margin.Left - margin.Right );
 						widget->setPixelsSize( eemax( 0.f, maxSize ),
 											   widget->getPixelsSize().getHeight() );
 					} else {
-						onAutoSizeChild( widget );
+						container->onAutoSizeChild( widget );
 					}
 				} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
 							widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-					onAutoSizeChild( widget );
+					container->onAutoSizeChild( widget );
 				}
 			}
 
@@ -613,160 +747,39 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 			}
 
 			Float w = size.getWidth();
-			if ( isBlock && mode == IntrinsicMode::None && mSize.getWidth() != 0 ) {
-				w = eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-									margin.Left - margin.Right );
+			if ( isBlock && mode == IntrinsicMode::None &&
+				 container->getPixelsSize().getWidth() != 0 ) {
+				w = eemax( 0.f, container->getPixelsSize().getWidth() -
+									container->getPixelsContentOffset().Left -
+									container->getPixelsContentOffset().Right - margin.Left -
+									margin.Right );
+			}
+
+			CSSFloat floatType = CSSFloat::None;
+			CSSClear clearType = CSSClear::None;
+			if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+				floatType = widget->asType<UIHTMLWidget>()->getCSSFloat();
+				clearType = widget->asType<UIHTMLWidget>()->getCSSClear();
 			}
 
 			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
 										   size.getHeight() + margin.Top + margin.Bottom ),
-									isBlock );
+									isBlock, floatType, clearType );
 		}
 	};
 
-	Node* child = mChild;
+	Node* child = container->getFirstChild();
 	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			processWidget( child->asType<UIWidget>(), processWidget );
-		}
+		bool isOutOfFlow =
+			child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow();
+		if ( !isOutOfFlow )
+			processNode( child, processNode );
 		child = child->getNextNode();
 	}
 }
 
-void UIRichText::positionChildren() {
-	const auto& lines = mRichText.getLines();
-	Node* child = mChild;
-
-	size_t currentLine = 0;
-	size_t currentSpan = 0;
-
-	// Helper to find the next RenderSpan of type CustomSize
-	auto getNextCustomSpan = [&]() -> const RichText::RenderSpan* {
-		while ( currentLine < lines.size() ) {
-			const auto& line = lines[currentLine];
-			while ( currentSpan < line.spans.size() ) {
-				const auto& span = line.spans[currentSpan];
-				currentSpan++;
-				if ( std::holds_alternative<RichText::CustomBlock>( span.block ) )
-					return &span;
-			}
-			currentSpan = 0;
-			currentLine++;
-		}
-		return nullptr;
-	};
-
-	Int64 curCharIdx = 0;
-
-	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> Rectf {
-		constexpr Float maxF = std::numeric_limits<Float>::max();
-		constexpr Float lowF = std::numeric_limits<Float>::lowest();
-		Rectf bounds( maxF, maxF, lowF, lowF );
-
-		Vector2f offset;
-		Node* p = widget->getParent();
-		while ( p && p != this ) {
-			offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition() : p->getPosition();
-			p = p->getParent();
-		}
-
-		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-			UITextSpan* textSpan = widget->asType<UITextSpan>();
-			Int64 startChar = curCharIdx;
-			Int64 endChar = curCharIdx;
-			if ( !textSpan->getText().empty() ) {
-				endChar += textSpan->getText().length();
-				curCharIdx = endChar;
-			}
-
-			auto& hitBoxes = textSpan->getHitBoxes();
-			hitBoxes.clear();
-
-			if ( startChar < endChar ) {
-				for ( const auto& line : lines ) {
-					bool passedText = false;
-					for ( const auto& rspan : line.spans ) {
-						if ( rspan.startCharIndex >= startChar && rspan.endCharIndex <= endChar ) {
-							Rectf hb( mPaddingPx.Left + rspan.position.x,
-									  mPaddingPx.Top + line.y + rspan.position.y,
-									  mPaddingPx.Left + rspan.position.x + rspan.size.getWidth(),
-									  mPaddingPx.Top + line.y + rspan.position.y +
-										  rspan.size.getHeight() );
-
-							hitBoxes.push_back( hb );
-							bounds.expand( hb );
-						} else if ( rspan.startCharIndex > endChar ) {
-							passedText = true;
-							break;
-						}
-					}
-					if ( passedText )
-						break;
-				}
-			}
-
-			Node* spanChild = widget->getFirstChild();
-			while ( spanChild != NULL ) {
-				if ( spanChild->isWidget() ) {
-					bounds.expand(
-						processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef ) );
-				}
-				spanChild = spanChild->getNextNode();
-			}
-
-			// Ensure the parent span at least has enough size to cover its children
-			if ( bounds.Left <= bounds.Right && bounds.Top <= bounds.Bottom ) {
-				Vector2f boundsPos = bounds.getPosition();
-
-				widget->setPixelsPosition( boundsPos - offset );
-				if ( bounds.getSize() != widget->getPixelsSize() ) {
-					widget->setPixelsSize( bounds.getSize() );
-					mResizedCount++;
-				}
-
-				for ( auto& hb : hitBoxes )
-					hb.move( -boundsPos );
-
-			} else {
-				hitBoxes.clear();
-			}
-
-		} else if ( widget->isType( UI_TYPE_BR ) ) {
-			curCharIdx += 1;
-			Vector2f pos;
-			if ( widget->getPrevNode() && widget->getPrevNode()->isWidget() ) {
-				pos = widget->getPrevNode()->asType<UIWidget>()->getPixelsPosition();
-				pos.y += widget->getPrevNode()->getPixelsSize().getHeight();
-			}
-			widget->setPixelsPosition( pos );
-			widget->setPixelsSize(
-				{ eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ), 0 } );
-		} else {
-			curCharIdx += 1;
-			const auto* span = getNextCustomSpan();
-			if ( span ) {
-				size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
-				Float lineY = lines[lineIdx].y;
-				Rectf margin = widget->getLayoutPixelsMargin();
-
-				Vector2f targetPos( mPaddingPx.Left + span->position.x + margin.Left,
-									mPaddingPx.Top + lineY + span->position.y + margin.Top );
-
-				widget->setPixelsPosition( targetPos - offset );
-
-				bounds = Rectf( targetPos, span->size );
-			}
-		}
-		return bounds;
-	};
-
-	child = mChild;
-	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			processWidget( child->asType<UIWidget>(), processWidget );
-		}
-		child = child->getNextNode();
-	}
+void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+	rebuildRichText( this, richText, mode );
 }
 
 void UIRichText::updateDefaultSpansStyle() {
@@ -779,65 +792,26 @@ void UIRichText::updateDefaultSpansStyle() {
 	}
 }
 
-void UIRichText::updateLayout() {
-	if ( mPacking )
-		return;
-	mResizedCount = 0;
-	mPacking = true;
-
-	setMatchParentIfNeededVerticalGrowth();
-
-	const StyleSheetProperty* prop = nullptr;
-	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
-		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
-		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
-	}
-
-	rebuildRichText( mRichText );
-
-	mRichText.updateLayout();
-
-	positionChildren();
-
-	Float totW = mSize.getWidth();
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		totW = mRichText.getSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		if ( !mMaxWidthEq.empty() && totW > getMaxSizePx().getWidth() )
-			setClipType( ClipType::ContentBox );
-	}
-
-	if ( totW != mSize.getWidth() || mWidthPolicy == SizePolicy::WrapContent )
-		setInternalPixelsWidth( totW );
-
-	Float totH = mSize.getHeight();
-	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		totH = mRichText.getSize().getHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
-		if ( !mMaxHeightEq.empty() && totH > getMaxSizePx().getHeight() )
-			setClipType( ClipType::ContentBox );
-	}
-
-	if ( totH != mSize.getHeight() || mHeightPolicy == SizePolicy::WrapContent )
-		setInternalPixelsHeight( totH );
-
-	if ( mResizedCount )
-		positionChildren();
-
-	mPacking = false;
-	mDirtyLayout = false;
-	mResizedCount = 0;
-}
-
 Float UIRichText::getMinIntrinsicWidth() const {
 	if ( mWidthPolicy == SizePolicy::Fixed ) {
 		return getPropertyWidth();
 	}
 
-	if ( mIntrinsicWidthsDirty ) {
+	UILayouter* layouter = const_cast<UIRichText*>( this )->getLayouter();
+	if ( mIntrinsicWidthsDirty && layouter ) {
+		layouter->computeIntrinsicWidths();
+		mMinIntrinsicWidth = layouter->getMinIntrinsicWidth();
+		mMaxIntrinsicWidth = layouter->getMaxIntrinsicWidth();
+	} else if ( mIntrinsicWidthsDirty ) {
 		RichText richText( mRichText );
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
-		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
-		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
+									 IntrinsicMode::Min );
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + getPixelsContentOffset().Left +
+							 getPixelsContentOffset().Right;
+		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
+									 IntrinsicMode::Max );
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + getPixelsContentOffset().Left +
+							 getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 	}
 
@@ -854,16 +828,24 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 		return getPropertyWidth();
 	}
 
-	if ( mIntrinsicWidthsDirty ) {
-		RichText richText( mRichText );
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
-		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
-		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		mIntrinsicWidthsDirty = false;
+	Float maxW = 0;
+	if ( const_cast<UIRichText*>( this )->getLayouter() ) {
+		maxW = const_cast<UIRichText*>( this )->getLayouter()->getMaxIntrinsicWidth();
+	} else {
+		if ( mIntrinsicWidthsDirty ) {
+			RichText richText( mRichText );
+			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+			mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + getPixelsContentOffset().Left +
+								 getPixelsContentOffset().Right;
+			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+			mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + getPixelsContentOffset().Left +
+								 getPixelsContentOffset().Right;
+			mIntrinsicWidthsDirty = false;
+		}
+		maxW = mMaxIntrinsicWidth;
 	}
 
-	Float maxWidth = mMaxIntrinsicWidth;
+	Float maxWidth = maxW;
 	if ( !mMinWidthEq.empty() )
 		maxWidth = eemax( maxWidth, getMinSizePx().getWidth() );
 	if ( !mMaxWidthEq.empty() )
@@ -875,7 +857,7 @@ Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
 			if ( Msg->getSender() != this && !mPacking ) {
-				mIntrinsicWidthsDirty = true;
+				invalidateIntrinsicSize();
 				notifyLayoutAttrChangeParent();
 			}
 			tryUpdateLayout();
@@ -974,7 +956,7 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 		mSelecting = true;
 	}
 
-	return UILayout::onMouseDown( position, flags );
+	return UIHTMLWidget::onMouseDown( position, flags );
 }
 
 Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
@@ -982,15 +964,15 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		mSelecting = false;
 	}
 
-	return UILayout::onMouseClick( position, flags );
+	return UIHTMLWidget::onMouseClick( position, flags );
 }
 
 Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
-	return UILayout::onMouseDoubleClick( position, flags );
+	return UIHTMLWidget::onMouseDoubleClick( position, flags );
 }
 
 Uint32 UIRichText::onFocusLoss() {
-	UILayout::onFocusLoss();
+	UIHTMLWidget::onFocusLoss();
 
 	selCurEnd( selCurInit() );
 	onSelectionChange();

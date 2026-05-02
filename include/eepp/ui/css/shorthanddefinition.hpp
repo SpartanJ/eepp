@@ -24,7 +24,8 @@ enum class ShorthandId : Uint32 {
 	BorderWidth = String::hash( "border-width" ),
 	BorderRadius = String::hash( "border-radius" ),
 	MinSize = String::hash( "min-size" ),
-	MaxSize = String::hash( "max-size" )
+	MaxSize = String::hash( "max-size" ),
+	Font = String::hash( "font" )
 };
 
 typedef std::function<std::vector<StyleSheetProperty>( const ShorthandDefinition* shorthand,

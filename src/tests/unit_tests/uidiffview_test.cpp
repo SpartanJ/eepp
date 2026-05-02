@@ -22,26 +22,26 @@ UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 
 	ASSERT_EQ( (size_t)7, lines.size() );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
-	ASSERT_TRUE( lines[0].text.toUtf8() == "line 1" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
+	EXPECT_TRUE( lines[0].text.toUtf8() == "line 1" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Added, lines[1].type );
-	ASSERT_TRUE( lines[1].text.toUtf8() == "line 2 changed" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Added, lines[1].type );
+	EXPECT_TRUE( lines[1].text.toUtf8() == "line 2 changed" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Removed, lines[2].type );
-	ASSERT_TRUE( lines[2].text.toUtf8() == "line 2" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Removed, lines[2].type );
+	EXPECT_TRUE( lines[2].text.toUtf8() == "line 2" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[3].type );
-	ASSERT_TRUE( lines[3].text.toUtf8() == "line 3" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Common, lines[3].type );
+	EXPECT_TRUE( lines[3].text.toUtf8() == "line 3" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Added, lines[4].type );
-	ASSERT_TRUE( lines[4].text.toUtf8() == "line 4 added" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Added, lines[4].type );
+	EXPECT_TRUE( lines[4].text.toUtf8() == "line 4 added" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Added, lines[5].type );
-	ASSERT_TRUE( lines[5].text.toUtf8() == "line 5" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Added, lines[5].type );
+	EXPECT_TRUE( lines[5].text.toUtf8() == "line 5" );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Removed, lines[6].type );
-	ASSERT_TRUE( lines[6].text.toUtf8() == "line 4" );
+	EXPECT_EQ( UIDiffView::DiffLineType::Removed, lines[6].type );
+	EXPECT_TRUE( lines[6].text.toUtf8() == "line 4" );
 
 	const auto& text = diffView->getEditor()->getDocument().getText();
 
@@ -49,7 +49,7 @@ UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 		"line 1\nline 2 changed\nline 2\nline 3\nline 4 added\nline 5\nline 4\n";
 
 	std::string textUtf8 = text.toUtf8();
-	ASSERT_TRUE( expectedCleanText == textUtf8 );
+	EXPECT_TRUE( expectedCleanText == textUtf8 );
 
 	eeDelete( diffView );
 }
@@ -73,30 +73,30 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 
 	ASSERT_EQ( (size_t)5, lines.size() );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
-	ASSERT_TRUE( lines[0].text.toUtf8() == "int main() {" );
-	ASSERT_EQ( 1, lines[0].oldLineNum );
-	ASSERT_EQ( 1, lines[0].newLineNum );
+	EXPECT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
+	EXPECT_TRUE( lines[0].text.toUtf8() == "int main() {" );
+	EXPECT_EQ( 1, lines[0].oldLineNum );
+	EXPECT_EQ( 1, lines[0].newLineNum );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Removed, lines[1].type );
-	ASSERT_TRUE( lines[1].text.toUtf8() == "  return 0;" );
-	ASSERT_EQ( 2, lines[1].oldLineNum );
+	EXPECT_EQ( UIDiffView::DiffLineType::Removed, lines[1].type );
+	EXPECT_TRUE( lines[1].text.toUtf8() == "  return 0;" );
+	EXPECT_EQ( 2, lines[1].oldLineNum );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Added, lines[2].type );
-	ASSERT_TRUE( lines[2].text.toUtf8() == "  return 1;" );
-	ASSERT_EQ( 2, lines[2].newLineNum );
+	EXPECT_EQ( UIDiffView::DiffLineType::Added, lines[2].type );
+	EXPECT_TRUE( lines[2].text.toUtf8() == "  return 1;" );
+	EXPECT_EQ( 2, lines[2].newLineNum );
 
-	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[3].type );
-	ASSERT_TRUE( lines[3].text.toUtf8() == "}" );
-	ASSERT_EQ( 3, lines[3].oldLineNum );
-	ASSERT_EQ( 3, lines[3].newLineNum );
+	EXPECT_EQ( UIDiffView::DiffLineType::Common, lines[3].type );
+	EXPECT_TRUE( lines[3].text.toUtf8() == "}" );
+	EXPECT_EQ( 3, lines[3].oldLineNum );
+	EXPECT_EQ( 3, lines[3].newLineNum );
 
 	const auto& text = diffView->getEditor()->getDocument().getText();
 
 	std::string expectedCleanText = "int main() {\n  return 0;\n  return 1;\n}\n\n";
 
 	std::string textUtf8 = text.toUtf8();
-	ASSERT_TRUE( expectedCleanText == textUtf8 );
+	EXPECT_TRUE( expectedCleanText == textUtf8 );
 
 	eeDelete( diffView );
 }

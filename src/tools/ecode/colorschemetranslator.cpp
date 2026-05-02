@@ -47,7 +47,7 @@ static const auto BASE_UI_THEME = R"css(
 	--tab-font-inactive: line_number2;
 
 	/* Icons */
-	--icon: symbol;
+	--icon: normal;
 	--icon-active: type;
 	--icon-back-hover: selection;
 	--icon-line: line_number2;
@@ -170,6 +170,10 @@ std::string ColorSchemeTranslator::fromSyntaxColorScheme( const SyntaxColorSchem
 	String::replaceAll(
 		output, "symbol",
 		colorScheme.getSyntaxStyle( SyntaxStyleTypes::Symbol ).color.toHexString( true ) );
+
+	String::replaceAll(
+		output, "normal",
+		colorScheme.getSyntaxStyle( SyntaxStyleTypes::Normal ).color.toHexString( true ) );
 
 	String::replaceAll(
 		output, "function",

@@ -7,6 +7,7 @@
 #include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -331,12 +332,14 @@ void DrawableImageParser::registerBaseParsers() {
 						UINode* node ) -> Drawable* {
 		if ( functionType.getParameters().size() < 1 )
 			return NULL;
-
-		return DrawableSearcher::searchByName(
-			node->getUISceneNode()
-				->solveRelativePath( functionType.getParameters().at( 0 ) )
-				.toString(),
-			false, node->getUISceneNode()->getReferer() );
+		const auto& param = functionType.getParameters().at( 0 );
+		if ( functionType.getName() == "url" && !param.empty() && param[0] != '@' &&
+			 !String::startsWith( param, "data:image/" ) ) {
+			return DrawableSearcher::searchByName(
+				node->getUISceneNode()->solveRelativePath( param ).toString(), false,
+				node->getUISceneNode()->getReferer() );
+		}
+		return DrawableSearcher::searchByName( param, false, node->getUISceneNode()->getReferer() );
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,

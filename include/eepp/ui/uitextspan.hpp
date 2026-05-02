@@ -2,13 +2,14 @@
 #define EE_UI_UITEXTSPAN_HPP
 
 #include <eepp/ui/uifontstyleconfig.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 using SpanHitBoxes = SmallVector<Rectf, 4>;
 
-class EE_API UITextSpan : public UIWidget {
+class EE_API UITextSpan : public UIRichText {
   public:
 	static UITextSpan* New();
 
@@ -32,11 +33,15 @@ class EE_API UITextSpan : public UIWidget {
 
 	static UITextSpan* NewCode() { return NewWithTag( "code" ); }
 
+	static UITextSpan* NewSmall() { return NewWithTag( "small" ); }
+
 	virtual ~UITextSpan();
 
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
+
+	virtual bool isMergeable() const;
 
 	virtual void draw();
 
@@ -51,7 +56,7 @@ class EE_API UITextSpan : public UIWidget {
 
 	UITextSpan* setText( const String& text );
 
-	const UIFontStyleConfig& getFontStyleConfig() const;
+	const FontStyleConfig& getFontStyleConfig() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -97,7 +102,7 @@ class EE_API UITextSpan : public UIWidget {
 
 	UITextSpan* setFontShadowOffset( const Vector2f& offset );
 
-	void setInheritedStyle( const UIFontStyleConfig& fontStyleConfig );
+	void setInheritedStyle( const FontStyleConfig& fontStyleConfig );
 
 	enum StyleState {
 		StyleStateNone = 0,
@@ -134,20 +139,17 @@ class EE_API UITextSpan : public UIWidget {
   protected:
 	Uint32 mStyleState{ StyleStateNone };
 	String mText;
-	UIFontStyleConfig mFontStyleConfig;
 	SpanHitBoxes mHitBoxes;
 
 	explicit UITextSpan( const std::string& tag = "span" );
+
+	virtual void drawBorder();
 
 	virtual void onTextChanged();
 
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
-
-	virtual void onAlphaChange();
-
-	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
@@ -171,6 +173,7 @@ class EE_API UIAnchorSpan : public UITextSpan {
 	UIAnchorSpan( const std::string& tag = "a" );
 
 	std::string mHref;
+	std::string mTarget;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 

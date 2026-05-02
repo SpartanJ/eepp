@@ -1,17 +1,17 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/htmltextinput.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
-HTMLTextInput* HTMLTextInput::New() {
-	return eeNew( HTMLTextInput, () );
+UIHTMLTextInput* UIHTMLTextInput::New() {
+	return eeNew( UIHTMLTextInput, () );
 }
 
-HTMLTextInput::HTMLTextInput() : HTMLTextInput( "textinput" ) {}
+UIHTMLTextInput::UIHTMLTextInput() : UIHTMLTextInput( "textinput" ) {}
 
-HTMLTextInput::HTMLTextInput( const std::string& tag ) : UITextInput( tag ) {
+UIHTMLTextInput::UIHTMLTextInput( const std::string& tag ) : UITextInput( tag ) {
 	mHtmlSize = 20;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
@@ -19,15 +19,15 @@ HTMLTextInput::HTMLTextInput( const std::string& tag ) : UITextInput( tag ) {
 	onAutoSize();
 }
 
-Uint32 HTMLTextInput::getType() const {
+Uint32 UIHTMLTextInput::getType() const {
 	return UI_TYPE_HTML_TEXTINPUT;
 }
 
-bool HTMLTextInput::isType( const Uint32& type ) const {
-	return HTMLTextInput::getType() == type || UITextInput::isType( type );
+bool UIHTMLTextInput::isType( const Uint32& type ) const {
+	return UIHTMLTextInput::getType() == type || UITextInput::isType( type );
 }
 
-bool HTMLTextInput::applyProperty( const StyleSheetProperty& attribute ) {
+bool UIHTMLTextInput::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !attribute.getPropertyDefinition() )
 		return false;
 
@@ -42,8 +42,8 @@ bool HTMLTextInput::applyProperty( const StyleSheetProperty& attribute ) {
 	return UITextInput::applyProperty( attribute );
 }
 
-std::string HTMLTextInput::getPropertyString( const PropertyDefinition* propertyDef,
-											  const Uint32& propertyIndex ) const {
+std::string UIHTMLTextInput::getPropertyString( const PropertyDefinition* propertyDef,
+												const Uint32& propertyIndex ) const {
 	if ( !propertyDef )
 		return "";
 
@@ -57,13 +57,13 @@ std::string HTMLTextInput::getPropertyString( const PropertyDefinition* property
 	return UITextInput::getPropertyString( propertyDef, propertyIndex );
 }
 
-std::vector<PropertyId> HTMLTextInput::getPropertiesImplemented() const {
+std::vector<PropertyId> UIHTMLTextInput::getPropertiesImplemented() const {
 	auto props = UITextInput::getPropertiesImplemented();
 	props.push_back( PropertyId::Size );
 	return props;
 }
 
-Float HTMLTextInput::getMinIntrinsicWidth() const {
+Float UIHTMLTextInput::getMinIntrinsicWidth() const {
 	if ( mHtmlSize > 0 && getFont() ) {
 		Float advance = getFont()->getGlyph( 'M', getFontSize(), false, false ).advance;
 		return mHtmlSize * advance + mPaddingPx.Left + mPaddingPx.Right;
@@ -71,11 +71,11 @@ Float HTMLTextInput::getMinIntrinsicWidth() const {
 	return UITextInput::getMinIntrinsicWidth();
 }
 
-Float HTMLTextInput::getMaxIntrinsicWidth() const {
+Float UIHTMLTextInput::getMaxIntrinsicWidth() const {
 	return getMinIntrinsicWidth();
 }
 
-void HTMLTextInput::onAutoSize() {
+void UIHTMLTextInput::onAutoSize() {
 	if ( mPacking )
 		return;
 	mPacking = true;
@@ -92,11 +92,11 @@ void HTMLTextInput::onAutoSize() {
 	mPacking = false;
 }
 
-Uint32 HTMLTextInput::getHtmlSize() const {
+Uint32 UIHTMLTextInput::getHtmlSize() const {
 	return mHtmlSize;
 }
 
-void HTMLTextInput::setHtmlSize( Uint32 size ) {
+void UIHTMLTextInput::setHtmlSize( Uint32 size ) {
 	if ( mHtmlSize != size ) {
 		mHtmlSize = size;
 		invalidateIntrinsicSize();

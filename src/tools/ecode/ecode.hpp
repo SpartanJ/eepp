@@ -229,6 +229,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					[this] { runCommand( "plugin-manager-open" ); }, Seconds( 10 ) );
 			}
 		} );
+		t.setCommand( "close-folder", [this] { closeFolder(); } );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
 		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
 		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );

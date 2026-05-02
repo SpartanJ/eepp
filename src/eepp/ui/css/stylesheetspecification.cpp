@@ -171,6 +171,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
 	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
 	registerProperty( "clip", "" ).setType( PropertyType::String );
+	// TODO: layer implement overflow-x and overflow-y properly
+	registerProperty( "overflow", "visible" )
+		.addAlias( "overflow-x" )
+		.addAlias( "overflow-y" )
+		.setType( PropertyType::String );
 	registerProperty( "rotation", "" ).addAlias( "rotate" ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "rotation-origin-point-x", "50%" )
@@ -425,6 +430,28 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "cols", "20" ).setType( PropertyType::NumberInt );
 	registerProperty( "input-mode", "normal" ).setType( PropertyType::String );
 
+	registerProperty( "hidden", "" ).setType( PropertyType::Bool );
+	registerProperty( "display", "inline" ).setType( PropertyType::String );
+	registerProperty( "position", "static" ).setType( PropertyType::String );
+	registerProperty( "float", "none" ).setType( PropertyType::String );
+	registerProperty( "clear", "none" ).setType( PropertyType::String );
+	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
+	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
+	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
+	registerProperty( "top", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "right", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "bottom", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "left", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "z-index", "auto" ).setType( PropertyType::NumberInt );
+
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
 
@@ -446,6 +473,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "display-options", "" ).setType( PropertyType::String );
 	registerProperty( "menu-width-mode", "" ).setType( PropertyType::String );
+
+	registerProperty( "data-language", "" ).setType( PropertyType::String );
+
+	registerProperty( "action", "" ).setType( PropertyType::String );
+	registerProperty( "method", "GET" ).setType( PropertyType::String );
+	registerProperty( "enctype", "application/x-www-form-urlencoded" )
+		.setType( PropertyType::String );
+	registerProperty( "target", "_self" ).setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
@@ -505,6 +540,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "border-bottom",
 					   { "border-bottom-width", "border-bottom-style", "border-bottom-color" },
 					   "border-side" );
+	registerShorthand( "list-style",
+					   { "list-style-type", "list-style-position", "list-style-image" },
+					   "list-style" );
+	registerShorthand( "font", { "font-style", "font-size", "line-spacing", "font-family" },
+					   "font" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -526,7 +566,7 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 	};
 	mNodeSelectors["first-child"] = []( const UIWidget* node, int, int,
 										const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
+		return NULL != node->getParent() && node->getElementIndex() == 0;
 	};
 	mNodeSelectors["enabled"] = []( const UIWidget* node, int, int,
 									const FunctionString& ) -> bool { return node->isEnabled(); };
@@ -534,69 +574,69 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 									 const FunctionString& ) -> bool { return !node->isEnabled(); };
 	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int, int,
 										  const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		while ( NULL != child ) {
-			if ( type == child->getType() ) {
-				return child == node;
-			}
-			child = child->getNextNode();
-		};
-		return false;
+		return NULL != node->getParent() && node->getElementOfTypeIndex() == 0;
 	};
 	mNodeSelectors["last-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
+		Node* child = node->getParent()->getLastChild();
+		while ( NULL != child ) {
+			if ( child->isWidget() && !static_cast<UIWidget*>( child )->isTextNode() )
+				return child == node;
+			child = child->getPrevNode();
+		}
+		return false;
 	};
 	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
 		Uint32 type = node->getType();
+		Node* child = node->getParent()->getLastChild();
 		while ( NULL != child ) {
-			if ( type == child->getType() ) {
+			if ( child->getType() == type && child->isWidget() &&
+				 !static_cast<UIWidget*>( child )->isTextNode() )
 				return child == node;
-			}
 			child = child->getPrevNode();
-		};
+		}
 		return false;
 	};
 	mNodeSelectors["only-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() == 1;
 	};
 	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		Uint32 typeCount = 0;
-		while ( NULL != child ) {
-			if ( child->getType() == type ) {
-				typeCount++;
-			}
-			if ( typeCount > 1 )
-				return false;
-			child = child->getNextNode();
-		};
-		return typeCount == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )
+					   ->getChildElementOfTypeCount( node->getType() ) == 1;
 	};
 	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b,
 									  const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeIndex() + 1 );
+		return isNth( a, b, node->getElementIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b,
 										   const FunctionString& ) -> bool {
-		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
+		return node->getParent() != NULL && node->getParent()->isWidget()
+				   ? isNth(
+						 a, b,
+						 static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() -
+							 node->getElementIndex() )
+				   : false;
 	};
 	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b,
 										const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
+		return isNth( a, b, node->getElementOfTypeIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b,
 											 const FunctionString& ) -> bool {
-		return node->getParent() != NULL
+		return node->getParent() != NULL && node->getParent()->isWidget()
 				   ? isNth( a, b,
-							node->getParent()->getChildOfTypeCount( node->getType() ) -
-								node->getNodeOfTypeIndex() )
+							static_cast<const UIWidget*>( node->getParent() )
+									->getChildElementOfTypeCount( node->getType() ) -
+								node->getElementOfTypeIndex() )
 				   : false;
 	};
 	mNodeSelectors["checked"] = []( const UIWidget* node, int, int,
@@ -969,7 +1009,10 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		std::string positionStr;
 
 		for ( auto& tok : tokens ) {
-			if ( mDrawableImageParser.exists( tok ) ) {
+			auto open = tok.find_first_of( '(' );
+
+			if ( open != std::string::npos &&
+				 mDrawableImageParser.exists( tok.substr( 0, open ) ) ) {
 				int pos = getIndexEndingWith( propNames, "-image" );
 				if ( pos != -1 )
 					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
@@ -1120,6 +1163,186 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			if ( pos != -1 )
 				properties.emplace_back(
 					StyleSheetProperty( propNames[pos], String::join( vec, ' ' ) ) );
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["list-style"] = []( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.empty() )
+			return {};
+		auto tokens = String::split( value, " ", "", "(" );
+		int typePos = getIndexEndingWith( propNames, "-type" );
+		int posPos = getIndexEndingWith( propNames, "-position" );
+		int imagePos = getIndexEndingWith( propNames, "-image" );
+		for ( auto& tok : tokens ) {
+			String::trimInPlace( tok );
+			if ( tok == "inside" || tok == "outside" ) {
+				if ( posPos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[posPos], tok ) );
+			} else if ( String::startsWith( tok, "url(" ) ) {
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else if ( tok == "none" ) {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+			}
+		}
+		return properties;
+	};
+
+	mShorthandParsers["font"] = []( const ShorthandDefinition* shorthand,
+									std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+
+		std::string lowerVal = String::toLower( value );
+		static const std::string systemFonts[] = { "caption",	  "icon",		   "menu",
+												   "message-box", "small-caption", "status-bar" };
+		for ( const auto& sysFont : systemFonts ) {
+			if ( lowerVal == sysFont )
+				return {};
+		}
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+
+		int stylePos = getIndexEndingWith( propNames, "-style" );
+		int sizePos = getIndexEndingWith( propNames, "-size" );
+		int linePos = getIndexEndingWith( propNames, "-spacing" );
+		int familyPos = getIndexEndingWith( propNames, "-family" );
+
+		static const std::string sizeKeywords[] = {
+			"xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large", "xxx-large" };
+
+		auto isSizeKeyword = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			for ( const auto& kw : sizeKeywords ) {
+				if ( lt == kw )
+					return true;
+			}
+			return false;
+		};
+
+		auto isStyleWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "italic" || lt == "oblique" || lt == "normal";
+		};
+
+		auto isWeightWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "bold" || lt == "bolder" || lt == "lighter" || lt == "100" ||
+				   lt == "200" || lt == "300" || lt == "400" || lt == "500" || lt == "600" ||
+				   lt == "700" || lt == "800" || lt == "900";
+		};
+
+		auto isNumberOrLength = []( const std::string& t ) {
+			if ( t.empty() )
+				return false;
+			return ( t[0] >= '0' && t[0] <= '9' ) || t[0] == '.' || t[0] == '-';
+		};
+
+		std::vector<std::string> tokens = String::split( value, " ", "", "(", "\"" );
+		std::string styleStr;
+		std::string sizeStr;
+		std::string lineStr;
+		std::string familyStr;
+		bool inLineHeight = false;
+
+		for ( size_t i = 0; i < tokens.size(); i++ ) {
+			std::string tok = tokens[i];
+			String::trimInPlace( tok );
+			if ( tok.empty() )
+				continue;
+
+			if ( tok == "/" ) {
+				inLineHeight = true;
+				continue;
+			}
+
+			if ( !inLineHeight ) {
+				size_t slashPos = tok.find( '/' );
+				if ( slashPos != std::string::npos ) {
+					if ( slashPos == 0 ) {
+						lineStr = tok.substr( 1 );
+						String::trimInPlace( lineStr );
+						continue;
+					}
+					sizeStr = tok.substr( 0, slashPos );
+					lineStr = tok.substr( slashPos + 1 );
+					String::trimInPlace( lineStr );
+					continue;
+				}
+			}
+
+			if ( inLineHeight ) {
+				lineStr += ( lineStr.empty() ? "" : " " ) + tok;
+				inLineHeight = false;
+				continue;
+			}
+
+			if ( !sizeStr.empty() && familyStr.empty() && !isStyleWord( tok ) &&
+				 !isWeightWord( tok ) ) {
+				familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+				continue;
+			}
+
+			if ( isStyleWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( !styleStr.empty() )
+						styleStr += "|";
+					styleStr += lt;
+				}
+				continue;
+			}
+
+			if ( isWeightWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( !styleStr.empty() )
+						styleStr += "|";
+					styleStr += "bold";
+				}
+				continue;
+			}
+
+			if ( sizeStr.empty() && ( isNumberOrLength( tok ) || isSizeKeyword( tok ) ) ) {
+				sizeStr = tok;
+				continue;
+			}
+
+			familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+		}
+
+		if ( !sizeStr.empty() ) {
+			if ( stylePos != -1 && !styleStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[stylePos], styleStr ) );
+			if ( sizePos != -1 )
+				properties.emplace_back( StyleSheetProperty( propNames[sizePos], sizeStr ) );
+			if ( linePos != -1 && !lineStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[linePos], lineStr ) );
+			if ( familyPos != -1 && !familyStr.empty() ) {
+				String::trimInPlace( familyStr );
+				if ( familyStr.size() >= 2 &&
+					 ( ( familyStr[0] == '"' && familyStr.back() == '"' ) ||
+					   ( familyStr[0] == '\'' && familyStr.back() == '\'' ) ) ) {
+					familyStr = familyStr.substr( 1, familyStr.size() - 2 );
+				}
+				properties.emplace_back( StyleSheetProperty( propNames[familyPos], familyStr ) );
+			}
 		}
 
 		return properties;

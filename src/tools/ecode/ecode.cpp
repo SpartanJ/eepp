@@ -1739,7 +1739,7 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "open_containing_folder_in_fm", "Open Containing Folder in File Manager",
 					 "folder-open", "open-containing-folder" );
 
-			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
+			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path",
 					 "copy", "copy-containing-folder-path" );
 
 			menuAdd( "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
@@ -2283,6 +2283,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"reset-project-language-extensions-priorities",
 		"maximize-tab-widget",
 		"restore-maximized-tab-widget",
+		"close-folder",
 	};
 }
 
@@ -2980,7 +2981,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "find-prev", [this] {
 		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "close-folder", [this] { closeFolder(); } );
 	doc.setCommand( "lock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
@@ -3236,7 +3236,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					auto splitter = getSplitter();
 					auto editor = static_cast<UICodeEditor*>( client );
 					auto doc = editor->getDocumentRef();
-					auto scrollView = UIScrollView::New();
+					auto scrollView = UIScrollViewCommandExecuter::New();
 					auto mdView = UIMarkdownView::New();
 					mdView->setParent( scrollView );
 
@@ -3274,11 +3274,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 					mdView->loadFromString( doc->toUtf8String() );
 					auto title =
-						i18n( "markdown_live_preview_ellipsis", "Markdown Live Preview:" ) + " " +
+						i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) + " " +
 						doc->getFilename();
 					auto [tab, _] =
 						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
 					tab->setIcon( findIcon( "filetype-md" ) );
+					tab->setTooltipText( title );
+
+					registerUnlockedCommands( *scrollView );
 
 					if ( removeUnusedEditor )
 						splitter->removeUnusedTab( tabWidget );

@@ -88,13 +88,13 @@ class EE_API UIBorderDrawable : public Drawable {
   protected:
 	const UINode* mOwner;
 	VertexBuffer* mVertexBuffer;
-	Borders mBorders;
+	mutable Borders mBorders;
 	BorderStr mBorderStr;
 	BorderType mBorderType;
 	Sizef mSize;
 	bool mNeedsUpdate;
 	bool mColorNeedsUpdate;
-	bool mHasBorder;
+	mutable bool mHasBorder;
 	bool mSmooth{ false };
 
 	virtual void onAlphaChange();
@@ -105,7 +105,7 @@ class EE_API UIBorderDrawable : public Drawable {
 
 	void update();
 
-	void updateBorders();
+	void updateBorders() const;
 };
 
 }} // namespace EE::UI

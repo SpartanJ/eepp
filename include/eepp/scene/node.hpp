@@ -79,7 +79,8 @@ enum NodeFlags {
 	NODE_FLAG_LOADING = ( 1 << 27 ),
 	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
 	NODE_FLAG_DISABLE_CLICK_FOCUS = ( 1 << 29 ),
-	NODE_FLAG_FREE_USE = ( 1 << 30 )
+	NODE_FLAG_TEXTNODE = ( 1 << 30 ),
+	NODE_FLAG_FREE_USE = ( 1 << 31 )
 };
 
 /**
@@ -208,6 +209,9 @@ class EE_API Node : public Transformable {
 	 * @return True if the node is of the specified type, false otherwise.
 	 */
 	virtual bool isType( const Uint32& type ) const;
+
+	/** @return True if this node is a UITextNode, false otherwise. */
+	bool isTextNode() const;
 
 	/**
 	 * @brief Posts a message to this node and its ancestors.
@@ -1772,6 +1776,13 @@ class EE_API Node : public Transformable {
 	 * @return True if the close flag is set (node will be removed), false otherwise.
 	 */
 	bool isClosing() const;
+
+	/**
+	 * @brief Checks if the node is marked for closure or any node in its parent tree.
+	 *
+	 * @return True if node is about to close
+	 */
+	bool inClosingTree() const;
 
 	/**
 	 * @brief Checks if the node is in the process of closing children.

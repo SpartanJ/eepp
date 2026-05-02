@@ -258,7 +258,7 @@ class EE_API Text {
 	void setShadowColor( const Color& color );
 
 	/** @return Every cached text line width */
-	const std::vector<Float>& getLinesWidth();
+	const SmallVector<Float, 4>& getLinesWidth();
 
 	/** @return The last line width */
 	Float getLastLineWidth();
@@ -413,8 +413,8 @@ class EE_API Text {
 	TextDirection mDirection{ TextDirection::Unspecified };
 	Vector2f mInitialOffset{ 0.f, 0.f };
 
-	mutable std::vector<Int64> mVisualLines;
-	mutable std::vector<Float> mLinesWidth;
+	mutable SmallVector<Int64, 4> mVisualLines;
+	mutable SmallVector<Float, 4> mLinesWidth;
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;

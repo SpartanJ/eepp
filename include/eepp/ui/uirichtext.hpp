@@ -2,12 +2,18 @@
 #define EE_UI_UIRICHTEXT_HPP
 
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIRichText : public UILayout {
+class EE_API UIRichText : public UIHTMLWidget {
   public:
+	enum class IntrinsicMode { None, Min, Max };
+
+	static void rebuildRichText( UILayout* container, RichText& richText,
+								 IntrinsicMode mode = IntrinsicMode::None );
+
 	static UIRichText* New();
 
 	static UIRichText* NewWithTag( const std::string& tag );
@@ -37,8 +43,6 @@ class EE_API UIRichText : public UILayout {
 	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
 
 	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };
-
-	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
 
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
@@ -125,14 +129,13 @@ class EE_API UIRichText : public UILayout {
 
 	String getSelectionString() const;
 
-	virtual void updateLayout();
+	virtual RichText* getRichTextPtr() { return &mRichText; }
 
   protected:
 	RichText mRichText;
 	Int64 mSelCurInit{ 0 };
 	Int64 mSelCurEnd{ 0 };
 	bool mSelecting{ false };
-	size_t mResizedCount{ 0 };
 
 	explicit UIRichText( const std::string& tag = "richtext" );
 
@@ -147,7 +150,6 @@ class EE_API UIRichText : public UILayout {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();
-	virtual void onAlphaChange();
 	virtual void onSelectionChange();
 
 	void selCurInit( const Int64& init );
@@ -155,9 +157,7 @@ class EE_API UIRichText : public UILayout {
 	Int64 selCurInit() const { return mSelCurInit; }
 	Int64 selCurEnd() const { return mSelCurEnd; }
 
-	enum class IntrinsicMode { None, Min, Max };
 	void rebuildRichText( RichText& richText, IntrinsicMode mode = IntrinsicMode::None );
-	void positionChildren();
 	void updateDefaultSpansStyle();
 };
 
@@ -166,6 +166,7 @@ class EE_API UIHTMLHtml : public UIRichText {
 	static UIHTMLHtml* New( const std::string& tag );
 	virtual Uint32 getType() const override;
 	bool isType( const Uint32& type ) const override;
+	bool applyProperty( const StyleSheetProperty& attribute ) override;
 
   protected:
 	UIHTMLHtml( const std::string& tag = "html" );
@@ -182,6 +183,18 @@ class EE_API UIHTMLBody : public UIRichText {
 	bool mPropagatedBackground{ false };
 
 	UIHTMLBody( const std::string& tag = "body" );
+};
+
+class EE_API UILineBreak : public UIRichText {
+  public:
+	static UILineBreak* New( const std::string& tag );
+
+	virtual Uint32 getType() const;
+
+	bool isType( const Uint32& type ) const;
+
+  protected:
+	UILineBreak( const std::string& tag = "br" );
 };
 
 }} // namespace EE::UI

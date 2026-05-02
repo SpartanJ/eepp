@@ -39,8 +39,9 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	UIApplication app(
 		WindowSettings{ 1280, 720, "eepp - UI HTML Example" },
 		UIApplication::Settings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f ),
-		ContextSettings(
-			false, benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate ) );
+		ContextSettings( false,
+						 benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate,
+						 4 ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
 	Log::instance()->setLogToStdOut( true );
@@ -65,7 +66,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	bool useHNDark = hnDark.Get();
 
-	ui->loadLayoutFromString( R"xml(
+	auto vbox = ui->loadLayoutFromString( R"xml(
 	<vbox layout_width="match_parent" layout_height="match_parent">
 		<hbox layout_width="match_parent" layout_height="wrap_content">
 			<PushButton id="backbtn" text="@string(back, Back)" />
@@ -73,153 +74,93 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<TextInput id="url_bar" layout_width="0" layout_weight="1"
 				hint="@string(enter_address, Enter Address)" />
 		</hbox>
-		<ScrollView id="html_view" layout_width="match_parent" layout_height="0" layout_weight="1">
-			<vbox layout_width="match_parent" layout_height="wrap_content" id="html_doc"></vbox>
-		</ScrollView>
+		<WebView id="webview" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	</vbox>
 	)xml" );
 
+	UIWebView* webView = vbox->find( "webview" )->asType<UIWebView>();
+	webView->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
+
 	auto urlBar = ui->find( "url_bar" )->asType<UITextInput>();
-	auto mainContainer = ui->find( "html_doc" );
 	auto backBtn = ui->find( "backbtn" )->asType<UIPushButton>();
 	auto fwdBtn = ui->find( "fwdbtn" )->asType<UIPushButton>();
-	auto scrollView = ui->find( "html_view" )->asType<UIScrollView>();
-	std::vector<URI> history;
-	int historyIndex = -1;
 
-	auto updateNavButtons = [&]() {
-		backBtn->setEnabled( historyIndex > 0 );
-		fwdBtn->setEnabled( historyIndex < static_cast<int>( history.size() ) - 1 );
+	auto updateNavButtons = [webView, backBtn, fwdBtn]() {
+		backBtn->setEnabled( webView->canGoBack() );
+		fwdBtn->setEnabled( webView->canGoForward() );
 	};
 
-	const auto loadDocumentData = [ui, mainContainer, urlBar, &app, scrollView,
-								   useHNDark]( URI url, std::string& data ) {
-		if ( data.empty() )
-			return;
-		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app, scrollView, useHNDark] {
-			mainContainer->closeAllChildren();
-			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
-			ui->setURIFromURL( url );
-			auto urlStr = url.toString();
-			auto hash = String::hash( urlStr );
-			scrollView->getVerticalScrollBar()->setValue( 0 );
-			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
-			urlBar->setText( urlStr );
+	webView->onNavigationStarted(
+		[urlBar]( const URI& uri ) { urlBar->setText( uri.toString() ); } );
+	webView->onNavigationCompleted( [updateNavButtons, urlBar, ui, useHNDark]( const URI& uri ) {
+		updateNavButtons();
+		urlBar->setText( uri.toString() );
 
-			if ( useHNDark && url.getAuthority() == "news.ycombinator.com" ) {
-				static const std::string_view HN_DARK = R"css(
-				  body * {
-				    color: #dcdccc !important;
-				  }
-				  body,
-				  #hnmain,
-				  .pagetop {
-				    background-color: #404040 !important;
-				  }
-				  body > center > table > tbody > tr:first-child * {
-				    background-color: #505050 !important;
-				  }
-				  body > center > table > tbody > tr:first-child * a:hover {
-				    background: #404040 !important;
-				  }
-				  body code, body pre, body input, body textarea {
-				    background: #505050 !important;
-				  }
-				  body a {
-				    color: #7F9F7F !important;
-				  }
-				  body .subtext a {
-				    color: #dcdccc !important;
-				  }
-				  body a:visited, body a:visited span {
-				    color: #CC9393 !important;
-				  }
-				  body a:hover, body a:hover span {
-				    background: #505050 !important;
-				  }
-				)css";
+		if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
+			static const std::string_view HN_DARK = R"css(
+			  body * {
+			    color: #dcdccc !important;
+			  }
+			  body,
+			  #hnmain,
+			  .pagetop {
+			    background-color: #404040 !important;
+			  }
+			  body > center > table > tbody > tr:first-child * {
+			    background-color: #505050 !important;
+			  }
+			  body > center > table > tbody > tr:first-child * a:hover {
+			    background: #404040 !important;
+			  }
+			  body code, body pre, body input, body textarea {
+			    background: #505050 !important;
+			  }
+			  body a {
+			    color: #7F9F7F !important;
+			  }
+			  body .subtext a {
+			    color: #dcdccc !important;
+			  }
+			  body a:visited, body a:visited span {
+			    color: #CC9393 !important;
+			  }
+			  body a:hover, body a:hover span {
+			    background: #505050 !important;
+			  }
+			)css";
 
-				StyleSheetParser parser;
-				if ( parser.loadFromString( HN_DARK ) )
-					ui->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
-			}
-		} );
-	};
-
-	// We add a default `isHistoryNav` parameter to determine if we are pushing to history or just
-	// navigating back/forth
-	const auto loadDocument = [&]( URI url, bool isHistoryNav = false ) {
-		if ( !isHistoryNav ) {
-			// If we navigate to a new URL while in the middle of history, clear out the "forward"
-			// history
-			if ( historyIndex >= 0 && historyIndex < static_cast<int>( history.size() ) - 1 ) {
-				history.resize( historyIndex + 1 );
-			}
-
-			// Don't add to history if we are just reloading the exact same current page manually
-			if ( history.empty() || history.back().toString() != url.toString() ) {
-				history.push_back( url );
-				historyIndex = static_cast<int>( history.size() ) - 1;
-			}
-			updateNavButtons();
-		}
-
-		if ( !url.getScheme().empty() ) {
-			if ( url.getScheme() == "https" || url.getScheme() == "http" ) {
-				Http::getAsync(
-					[=]( const Http&, Http::Request&, Http::Response& response ) {
-						std::string data = response.getBody();
-						loadDocumentData( url, data );
-					},
-					url, Seconds( 5 ) );
-			} else if ( url.getScheme() == "file" ) {
-				std::string data;
-				FileSystem::fileGet( url.getPath(), data );
-				loadDocumentData( url, data );
-			}
-		} else if ( !url.getPath().empty() ) {
-			std::string data;
-			FileSystem::fileGet( url.getPath(), data );
-			loadDocumentData( url, data );
-		}
-	};
-
-	backBtn->onClick( [&]( const MouseEvent* ) {
-		if ( historyIndex > 0 ) {
-			historyIndex--;
-			updateNavButtons();
-			loadDocument( history[historyIndex], true );
+			StyleSheetParser parser;
+			if ( parser.loadFromString( HN_DARK ) )
+				ui->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
 		}
 	} );
 
-	fwdBtn->onClick( [&]( const MouseEvent* ) {
-		if ( historyIndex < static_cast<int>( history.size() ) - 1 ) {
-			historyIndex++;
-			updateNavButtons();
-			loadDocument( history[historyIndex], true );
-		}
+	backBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
+		webView->goHistoryBack();
+		updateNavButtons();
+	} );
+
+	fwdBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
+		webView->goHistoryForward();
+		updateNavButtons();
 	} );
 
 	updateNavButtons();
-	loadDocument( !url.Get().empty() ? url.Get() : "https://news.ycombinator.com" );
 
 	urlBar->on( Event::OnPressEnter,
-				[&]( auto event ) { loadDocument( urlBar->getText().toUtf8() ); } );
+				[webView, urlBar]( auto ) { webView->loadURI( urlBar->getText().toUtf8() ); } );
 
-	ui->setURLInterceptorCb( [&]( URI uri ) {
-		loadDocument( ui->solveRelativePath( uri ) );
-		return true;
-	} );
+	webView->loadURI( !url.Get().empty() ? url.Get() : "https://news.ycombinator.com" );
 
-	win->getInput()->pushCallback( [&loadDocument]( InputEvent* event ) {
+	win->getInput()->pushCallback( [webView]( InputEvent* event ) {
 		switch ( event->Type ) {
 			case InputEvent::FileDropped: {
 				std::string file( event->file.file );
-				loadDocument( "file://" + file );
+				webView->loadURI( "file://" + file );
 				break;
 			}
 			case InputEvent::TextDropped: {
-				loadDocument( event->textdrop.text );
+				webView->loadURI( event->textdrop.text );
 				break;
 			}
 			default:

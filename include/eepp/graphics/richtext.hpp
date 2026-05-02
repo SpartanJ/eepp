@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/csslayouttypes.hpp>
 #include <memory>
 #include <variant>
 #include <vector>
@@ -32,6 +33,9 @@ class EE_API RichText : public Drawable {
 	 * @param style The font style configuration to apply.
 	 */
 	void addSpan( const String& text, const FontStyleConfig& style );
+
+	void addSpan( const String& text, const FontStyleConfig& style, const Rectf& margin,
+				  const Rectf& padding );
 
 	/**
 	 * @brief Adds a text span with individual style parameters.
@@ -80,9 +84,17 @@ class EE_API RichText : public Drawable {
 	struct CustomBlock {
 		Sizef size;
 		bool isBlock{ false };
+		UI::CSSFloat floatType{ UI::CSSFloat::None };
+		UI::CSSClear clearType{ UI::CSSClear::None };
 	};
 
-	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, CustomBlock>;
+	struct SpanBlock {
+		std::shared_ptr<Text> text;
+		Rectf margin;
+		Rectf padding;
+	};
+
+	using Block = std::variant<SpanBlock, std::shared_ptr<Drawable>, CustomBlock>;
 
 	/**
 	 * @brief Adds a drawable (e.g., an image) into the text flow.
@@ -95,7 +107,9 @@ class EE_API RichText : public Drawable {
 	 * @param size The physical dimensions of the spacer.
 	 * @param isBlock Whether this spacer acts as a block-level element.
 	 */
-	void addCustomSize( const Sizef& size, bool isBlock = false );
+	void addCustomSize( const Sizef& size, bool isBlock = false,
+						UI::CSSFloat floatType = UI::CSSFloat::None,
+						UI::CSSClear clearType = UI::CSSClear::None );
 
 	/** @return The list of blocks. */
 	const std::vector<Block>& getBlocks() { return mBlocks; }

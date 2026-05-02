@@ -246,6 +246,8 @@ class EE_API FontTrueType : public Font {
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
+    mutable UnorderedMap<Uint64, Float> mKerningCache;       // For codepoints (getKerning)
+    mutable UnorderedMap<Uint64, Float> mKerningGlyphCache;  // For glyph indices
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 	FontTrueType* mFontBold{ nullptr };

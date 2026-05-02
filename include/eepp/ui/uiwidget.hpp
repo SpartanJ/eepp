@@ -21,6 +21,13 @@ namespace EE { namespace UI {
 class UITooltip;
 class UIStyle;
 
+struct MarginAuto {
+	static constexpr auto Left = ( 1 << 0 );
+	static constexpr auto Right = ( 1 << 1 );
+	static constexpr auto Top = ( 1 << 2 );
+	static constexpr auto Bottom = ( 1 << 3 );
+};
+
 /**
  * @brief Base class for all UI widgets in the eepp framework.
  *
@@ -531,7 +538,7 @@ class EE_API UIWidget : public UINode {
 	 * Forces a recalculation of the intrinsic widths on the next call to
 	 * getMinIntrinsicWidth() or getMaxIntrinsicWidth().
 	 */
-	void invalidateIntrinsicSize();
+	virtual void invalidateIntrinsicSize();
 
 	/**
 	 * @brief Loads widget configuration from an XML node.
@@ -610,6 +617,15 @@ class EE_API UIWidget : public UINode {
 	 * @return The padding in pixels as a Rectf.
 	 */
 	const Rectf& getPixelsPadding() const;
+
+	/**
+	 * @brief Gets the content offset area (padding + border).
+	 *
+	 * Returns a Rectf containing padding + border for all 4 sides.
+	 *
+	 * @return The content offset as a Rectf.
+	 */
+	Rectf getPixelsContentOffset() const;
 
 	/**
 	 * @brief Sets the padding for all sides.
@@ -783,6 +799,21 @@ class EE_API UIWidget : public UINode {
 	 * @return Vector of pseudo-class strings.
 	 */
 	std::vector<const char*> getStyleSheetPseudoClassesStrings() const;
+
+	/** @return True if the widget is not a text node. */
+	bool isWidgetElement() const;
+
+	/** @return The index of this element among its sibling elements. */
+	Uint32 getElementIndex() const;
+
+	/** @return The index of this element among its sibling elements of the same type. */
+	Uint32 getElementOfTypeIndex() const;
+
+	/** @return The number of child elements. */
+	Uint32 getChildElementCount() const;
+
+	/** @return The number of child elements of the specified type. */
+	Uint32 getChildElementOfTypeCount( const Uint32& type ) const;
 
 	/**
 	 * @brief Resets all CSS classes and removes them.
@@ -1315,9 +1346,20 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onWidgetCreated();
 
+	/**@return The property `width` converted as length */
 	Float getPropertyWidth() const;
 
+	/**@return The property `height` converted as length */
 	Float getPropertyHeight() const;
+
+	/* @return The width of the widget when size policy is match_parent */
+	Float getMatchParentWidth() const;
+
+	/* @return The height of the widget when size policy is match_parent */
+	Float getMatchParentHeight() const;
+
+	/* @return The size of the widget when size policy is match_parent */
+	Sizef getSizeFromLayoutPolicy();
 
   protected:
 	friend class UIManager;
@@ -1349,11 +1391,6 @@ class EE_API UIWidget : public UINode {
 	mutable Float mMaxIntrinsicWidth{ 0 };
 	mutable bool mIntrinsicWidthsDirty{ true };
 	Uint8 mMarginAuto{ 0 };
-
-	static constexpr Uint8 MarginAutoLeft = ( 1 << 0 );
-	static constexpr Uint8 MarginAutoRight = ( 1 << 1 );
-	static constexpr Uint8 MarginAutoTop = ( 1 << 2 );
-	static constexpr Uint8 MarginAutoBottom = ( 1 << 3 );
 
 	void calculateAutoMargin();
 
@@ -1697,15 +1734,6 @@ class EE_API UIWidget : public UINode {
 	 * Reloads the font family for this widget, typically after a theme change.
 	 */
 	void reloadFontFamily();
-
-	/* @return The width of the widget when size policy is match_parent */
-	Float getMatchParentWidth() const;
-
-	/* @return The height of the widget when size policy is match_parent */
-	Float getMatchParentHeight() const;
-
-	/* @return The size of the widget when size policy is match_parent */
-	Sizef getSizeFromLayoutPolicy();
 
 	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
 };

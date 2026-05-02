@@ -210,12 +210,11 @@ UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChildren() {
 }
 
 const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id ) {
-	const CSS::StyleSheetProperty* prop = nullptr;
-	if ( mGlobalDefinition && ( prop = mGlobalDefinition->getProperty( (Uint32)id ) ) )
-		return prop;
-	if ( mElementStyle )
-		prop = mElementStyle->getPropertyById( id );
-	return prop;
+	const auto* gProp = mGlobalDefinition ? mGlobalDefinition->getProperty( (Uint32)id ) : nullptr;
+	const auto* elProp = mElementStyle ? mElementStyle->getPropertyById( id ) : nullptr;
+	if ( elProp && gProp )
+		return elProp->getSpecificity() > gProp->getSpecificity() ? elProp : gProp;
+	return elProp ? elProp : gProp;
 }
 
 bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {
@@ -384,18 +383,44 @@ void UIStyle::onStateChange() {
 
 			applyVarValues( property );
 
-			if ( property->getPropertyDefinition()->isIndexed() ) {
-				for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-					applyVarValues( property->getPropertyIndexRef( i ) );
-
-					applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+			// Resolve "inherit" keyword to parent's value
+			if ( property->getValue() == "inherit" &&
+				 !property->getPropertyDefinition()->isIndexed() ) {
+				StyleSheetProperty* inheritedProp =
+					getInheritedProperty( static_cast<PropertyId>( prop ) );
+				if ( inheritedProp ) {
+					if ( property->getPropertyDefinition()->getPropertyId() ==
+						 PropertyId::FontSize ) {
+						Node* parentNode = mWidget->getParent();
+						if ( parentNode && parentNode->isWidget() ) {
+							Float parentPxSize =
+								mWidget->getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+							StyleSheetProperty resolved(
+								property->getPropertyDefinition(),
+								String::fromFloat( PixelDensity::pxToDp( parentPxSize ), "dp" ),
+								property->getIndex() );
+							mWidget->applyProperty( resolved );
+							mWidget->propagateInheritedProperty( resolved );
+						}
+					} else {
+						mWidget->applyProperty( *inheritedProp );
+						mWidget->propagateInheritedProperty( *inheritedProp );
+					}
 				}
 			} else {
-				applyStyleSheetProperty( *property, prevDefinition );
-			}
+				if ( property->getPropertyDefinition()->isIndexed() ) {
+					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+						applyVarValues( property->getPropertyIndexRef( i ) );
 
-			if ( property->getPropertyDefinition()->isInherited() )
-				mWidget->propagateInheritedProperty( *property );
+						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+					}
+				} else {
+					applyStyleSheetProperty( *property, prevDefinition );
+				}
+
+				if ( property->getPropertyDefinition()->isInherited() )
+					mWidget->propagateInheritedProperty( *property );
+			}
 		}
 
 		updateAnimations();

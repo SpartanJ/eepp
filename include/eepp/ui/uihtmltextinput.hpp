@@ -5,11 +5,11 @@
 
 namespace EE { namespace UI {
 
-class EE_API HTMLTextInput : public UITextInput {
+class EE_API UIHTMLTextInput : public UITextInput {
   public:
-	static HTMLTextInput* New();
+	static UIHTMLTextInput* New();
 
-	HTMLTextInput();
+	UIHTMLTextInput();
 
 	virtual Uint32 getType() const;
 
@@ -33,7 +33,7 @@ class EE_API HTMLTextInput : public UITextInput {
 	void setHtmlSize( Uint32 size );
 
   protected:
-	HTMLTextInput( const std::string& tag );
+	UIHTMLTextInput( const std::string& tag );
 
 	Uint32 mHtmlSize{ 20 };
 	bool mPacking{ false };

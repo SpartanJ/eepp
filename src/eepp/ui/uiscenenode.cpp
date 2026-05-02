@@ -296,6 +296,15 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 				loadCSS( href.as_string() );
 			}
 			continue;
+		} else if ( String::iequals( widget.name(), "meta" ) ) {
+			// Ignored for now
+			continue;
+		} else if ( String::iequals( widget.name(), "title" ) ) {
+			// Ignored for now
+			continue;
+		} else if ( String::iequals( widget.name(), "script" ) ) {
+			// No plans to support it
+			continue;
 		}
 
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
@@ -400,10 +409,21 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
 									 URI baseURI ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
+
+	bool mediaChanged = false;
+	if ( !mStyleSheet.isMediaQueryListEmpty() &&
+		 mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
+		mediaChanged = true;
+	}
+
+	processStyleSheetAtRules( styleSheet, baseURI );
+
 	if ( mRoot && mRoot->getUIStyle() )
 		mRoot->getUIStyle()->resetGlobalDefinition();
-	processStyleSheetAtRules( styleSheet, baseURI );
-	onMediaChanged();
+
+	if ( mRoot && mediaChanged )
+		mRoot->reportStyleStateChangeRecursive( false, false );
+
 	if ( forceReloadStyle )
 		reloadStyle();
 }
@@ -1346,9 +1366,13 @@ void UISceneNode::setURIFromURL( const URI& url ) {
 }
 
 void UISceneNode::openURL( URI uri ) {
-	if ( mURLInterceptorCb && mURLInterceptorCb( uri ) )
+	navigate( NavigationRequest{ std::move( uri ) } );
+}
+
+void UISceneNode::navigate( const NavigationRequest& request ) {
+	if ( mNavigationInterceptorCb && mNavigationInterceptorCb( request ) )
 		return;
-	Engine::instance()->openURI( uri.toString() );
+	Engine::instance()->openURI( request.uri.toString() );
 }
 
 }} // namespace EE::UI

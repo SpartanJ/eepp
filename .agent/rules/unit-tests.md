@@ -9,7 +9,7 @@ The test binary manages its own current working directory, so you can execute it
     `bin/unit_tests/eepp-unit_tests-debug`
 *   **Linux & FreeBSD Execution (Required for Desktop Environments):**
     Tests open ~50 individual windows. To prevent disrupting the desktop environment, run them in an isolated framebuffer using `xvfb-run`:
-    `xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests-debug`
+    `ASAN_OPTIONS=detect_leaks=0 xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests-debug`
 *   **Filtering Tests:**
     Use the `--filter` parameter to run specific tests (supports glob patterns).
     *Example (runs all tests with "Offset" in the name):*

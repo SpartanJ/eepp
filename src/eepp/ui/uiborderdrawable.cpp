@@ -225,6 +225,8 @@ void UIBorderDrawable::setBottomRightRadius( const std::string& radius ) {
 }
 
 const Borders& UIBorderDrawable::getBorders() const {
+	if ( mNeedsUpdate )
+		updateBorders();
 	return mBorders;
 }
 
@@ -249,6 +251,9 @@ void UIBorderDrawable::onPositionChange() {
 }
 
 Rectf UIBorderDrawable::getBorderBoxDiff() const {
+	if ( mNeedsUpdate )
+		updateBorders();
+
 	Rectf bd;
 	switch ( mBorderType ) {
 		case BorderType::Outside: {
@@ -342,7 +347,7 @@ void UIBorderDrawable::update() {
 	mNeedsUpdate = false;
 }
 
-void UIBorderDrawable::updateBorders() {
+void UIBorderDrawable::updateBorders() const {
 	if ( !mBorderStr.width.left.empty() ) {
 		mBorders.left.width = mOwner->lengthFromValue(
 			mBorderStr.width.left, CSS::PropertyRelativeTarget::LocalBlockRadiusWidth );

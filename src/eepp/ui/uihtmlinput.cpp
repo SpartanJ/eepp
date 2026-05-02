@@ -1,40 +1,46 @@
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/htmlinput.hpp>
-#include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uihelper.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextinput.hpp>
 
 namespace EE { namespace UI {
 
-HTMLInput* HTMLInput::New() {
-	return eeNew( HTMLInput, () );
+UIHTMLInput* UIHTMLInput::New() {
+	return eeNew( UIHTMLInput, () );
 }
 
-HTMLInput::HTMLInput() : UIWidget( "input" ) {
+UIHTMLInput::UIHTMLInput() : UIWidget( "input" ) {
 	mFlags |= UI_HTML_ELEMENT;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
 	createChildWidget();
 }
 
-Uint32 HTMLInput::getType() const {
+Uint32 UIHTMLInput::getType() const {
 	return UI_TYPE_HTML_INPUT;
 }
 
-bool HTMLInput::isType( const Uint32& type ) const {
-	return HTMLInput::getType() == type || UIWidget::isType( type );
+bool UIHTMLInput::isType( const Uint32& type ) const {
+	return UIHTMLInput::getType() == type || UIWidget::isType( type );
 }
 
-bool HTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
+bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !attribute.getPropertyDefinition() )
 		return false;
 
 	PropertyId id = attribute.getPropertyDefinition()->getPropertyId();
 
 	switch ( id ) {
+		case PropertyId::Value:
+		case PropertyId::Text:
+			mValue = attribute.value();
+			break;
 		case PropertyId::Type:
 			setInputType( attribute.value() );
 			return true;
@@ -52,12 +58,14 @@ bool HTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 	return UIWidget::applyProperty( attribute );
 }
 
-std::string HTMLInput::getPropertyString( const PropertyDefinition* propertyDef,
-										  const Uint32& propertyIndex ) const {
+std::string UIHTMLInput::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& propertyIndex ) const {
 	if ( !propertyDef )
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Value:
+			return mValue;
 		case PropertyId::Type:
 			return mInputType;
 		default:
@@ -73,36 +81,37 @@ std::string HTMLInput::getPropertyString( const PropertyDefinition* propertyDef,
 	return UIWidget::getPropertyString( propertyDef, propertyIndex );
 }
 
-std::vector<PropertyId> HTMLInput::getPropertiesImplemented() const {
+std::vector<PropertyId> UIHTMLInput::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	props.push_back( PropertyId::Type );
+	props.push_back( PropertyId::Value );
 	return props;
 }
 
-Float HTMLInput::getMinIntrinsicWidth() const {
+Float UIHTMLInput::getMinIntrinsicWidth() const {
 	return mChildWidget ? mChildWidget->getMinIntrinsicWidth() : 0;
 }
 
-Float HTMLInput::getMaxIntrinsicWidth() const {
+Float UIHTMLInput::getMaxIntrinsicWidth() const {
 	return mChildWidget ? mChildWidget->getMaxIntrinsicWidth() : 0;
 }
 
-const std::string& HTMLInput::getInputType() const {
+const std::string& UIHTMLInput::getInputType() const {
 	return mInputType;
 }
 
-void HTMLInput::setInputType( const std::string& type ) {
+void UIHTMLInput::setInputType( const std::string& type ) {
 	if ( mInputType != type ) {
 		mInputType = type;
 		createChildWidget();
 	}
 }
 
-UIWidget* HTMLInput::getChildWidget() const {
+UIWidget* UIHTMLInput::getChildWidget() const {
 	return mChildWidget;
 }
 
-void HTMLInput::createChildWidget() {
+void UIHTMLInput::createChildWidget() {
 	if ( mChildWidget ) {
 		mChildWidget->close();
 		mChildWidget = nullptr;
@@ -113,17 +122,19 @@ void HTMLInput::createChildWidget() {
 	} else if ( mInputType == "checkbox" ) {
 		mChildWidget = UICheckBox::New();
 	} else if ( mInputType == "hidden" ) {
-		mChildWidget = UIWidget::New();
-		mChildWidget->setVisible( false );
+		// We don't need it
 	} else if ( mInputType == "number" ) {
 		mChildWidget = UISpinBox::New();
 	} else if ( mInputType == "password" ) {
-		mChildWidget = HTMLTextInput::New()->setMode( UITextInput::TextInputMode::Password );
+		mChildWidget = UIHTMLTextInput::New()->setMode( UITextInput::TextInputMode::Password );
 	} else if ( mInputType == "radio" ) {
 		mChildWidget = UIRadioButton::New();
 	} else {
-		mChildWidget = HTMLTextInput::New();
+		mChildWidget = UIHTMLTextInput::New();
 	}
+
+	if ( mChildWidget == nullptr )
+		return;
 
 	mChildWidget->setFlags( UI_HTML_ELEMENT );
 
@@ -131,15 +142,36 @@ void HTMLInput::createChildWidget() {
 		mChildWidget->setParent( this );
 		mChildWidget->setLayoutWidthPolicy( SizePolicy::WrapContent );
 		mChildWidget->setLayoutHeightPolicy( SizePolicy::WrapContent );
-		mChildWidget->on( Event::OnSizeChange,
-						  [this]( auto ) { setPixelsSize( mChildWidget->getPixelsSize() ); } );
+		mChildWidget->on( Event::OnSizeChange, [this]( auto ) {
+			if ( mChildWidget )
+				setPixelsSize( mChildWidget->getPixelsSize() );
+		} );
 		for ( const auto& propIt : mProperties ) {
 			mChildWidget->applyProperty( propIt.second );
 		}
 	}
 }
 
-void HTMLInput::onSizeChange() {
+String UIHTMLInput::getFormValue() const {
+	if ( !mChildWidget )
+		return String();
+
+	if ( mInputType == "checkbox" )
+		return static_cast<UICheckBox*>( mChildWidget )->isChecked() ? "on" : "";
+	if ( mInputType == "radio" )
+		return static_cast<UIRadioButton*>( mChildWidget )->isActive() ? "on" : "";
+	if ( mInputType == "number" )
+		return static_cast<UISpinBox*>( mChildWidget )->getTextInput()->getText();
+	if ( mInputType == "button" || mInputType == "submit" )
+		return static_cast<UIPushButton*>( mChildWidget )->getText();
+
+	if ( mChildWidget->isType( UI_TYPE_TEXTINPUT ) )
+		return static_cast<UITextInput*>( mChildWidget )->getText();
+
+	return mValue;
+}
+
+void UIHTMLInput::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 

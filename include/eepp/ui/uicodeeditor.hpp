@@ -187,6 +187,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	static UICodeEditor* New();
 
+	static UICodeEditor* NewWithTag( const std::string& tag,
+									 const bool& autoRegisterBaseCommands = true,
+									 const bool& autoRegisterBaseKeybindings = true );
+
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
@@ -844,6 +848,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	size_t getTotalVisibleLines() const;
 
+	bool usesDefaultStyle() const { return mUseDefaultStyle; }
+
+	void setUseDefaultStyle( bool use );
+
+	bool dynamicTheming() const { return mDynamicTheming; }
+
+	void setDynamicTheming( bool set );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -893,6 +905,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
 	bool mDisableScrollInvalidation{ false };
+	bool mDynamicTheming{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
@@ -1219,6 +1232,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onAutoSize();
 
 	virtual void onClassChange();
+
+	inline bool needsHorizontalLength() const;
+
+	void updateDynamicTheme();
 };
 
 }} // namespace EE::UI

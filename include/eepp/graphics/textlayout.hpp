@@ -30,7 +30,7 @@ class EE_API TextLayout {
 
 	bool isRTL() const { return direction == TextDirection::RightToLeft; }
 
-	std::vector<Float> getLinesWidth() const;
+	SmallVector<Float, 4> getLinesWidth() const;
 
 	static Cache layout( const String& string, Font* font, const Uint32& fontSize,
 						 const Uint32& style, const Uint32& tabWidth = 4,

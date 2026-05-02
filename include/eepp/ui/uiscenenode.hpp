@@ -3,6 +3,7 @@
 
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/network/cookiemanager.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
@@ -26,6 +27,13 @@ class UIWindow;
 class UIWidget;
 class UILayout;
 class UIIcon;
+
+struct NavigationRequest {
+	URI uri;
+	std::string method{ "GET" };
+	std::string body;
+	std::map<std::string, std::string> extraHeaders;
+};
 
 class EE_API UISceneNode : public SceneNode {
   public:
@@ -704,10 +712,14 @@ class EE_API UISceneNode : public SceneNode {
 	/** Handles opening an specific URI */
 	void openURL( URI uri );
 
-	/* Sets a callback to intercept the openURL calls, returns true if intercepted, false to leave
-	 * the default openURL implementation handle it.
-	 */
-	void setURLInterceptorCb( std::function<bool( URI uri )> cb ) { mURLInterceptorCb = cb; };
+	/** Handles navigation (GET/POST) with request body and custom headers. */
+	void navigate( const NavigationRequest& request );
+
+	/** Sets a callback to intercept navigate() calls. Return true to handle the request,
+	 * false to fall through to the URL interceptor and default handling. */
+	void setNavigationInterceptorCb( std::function<bool( const NavigationRequest& request )> cb ) {
+		mNavigationInterceptorCb = cb;
+	};
 
 	/**
 	 * Solves a relative path with no scheme or authority into a complete URI.
@@ -717,6 +729,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	/** @return The document referer */
 	URI getReferer() const { return mReferer; };
+
+	const Network::CookieManager& getCookieManager() const { return mCookieManager; }
+
+	Network::CookieManager& getCookieManager() { return mCookieManager; }
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -747,7 +763,8 @@ class EE_API UISceneNode : public SceneNode {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
 	URI mReferer;
-	std::function<bool( URI uri )> mURLInterceptorCb;
+	std::function<bool( const NavigationRequest& request )> mNavigationInterceptorCb;
+	Network::CookieManager mCookieManager;
 
 	/**
 	 * @brief Protected constructor.

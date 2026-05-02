@@ -32,6 +32,9 @@ class UIWidget;
 
 class EE_API UINode : public Node {
   public:
+	friend class BlockLayouter;
+	friend class InlineLayouter;
+	friend class TableLayouter;
 	/**
 	 * @brief Creates a new UINode instance.
 	 *
@@ -1419,6 +1422,9 @@ class EE_API UINode : public Node {
 	 */
 	virtual bool isScrollable() const;
 
+	/** @brief Get a widget's computed absolute font size in pixels. */
+	Float getAbsoluteFontSize( const UIWidget* widget ) const;
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
@@ -1859,8 +1865,6 @@ class EE_API UINode : public Node {
 	 * @return The droppable hover color.
 	 */
 	Color getDroppableHoveringColor();
-
-	Float getAbsoluteFontSize( const UIWidget* widget ) const;
 };
 
 }} // namespace EE::UI

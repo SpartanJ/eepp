@@ -156,14 +156,14 @@ static const auto LAYOUT = R"xml(
 			</vbox>
 		</vbox>
 		<vbox class="right" lw="0" lh="wc" lw8="0.5" lg="center">
-			<button id="create-new" text="@string(new_file, New File)" />
-			<button id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
-			<button id="open-folder" text="@string(open_a_folder, Open a Folder)" />
-			<button id="open-file" text="@string(open_a_file, Open a File)" />
-			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
-			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
-			<button id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
-			<button id="keybindings" text="@string(keybindings, Keybindings)" />
+			<PushButton id="create-new" text="@string(new_file, New File)" />
+			<PushButton id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
+			<PushButton id="open-folder" text="@string(open_a_folder, Open a Folder)" />
+			<PushButton id="open-file" text="@string(open_a_file, Open a File)" />
+			<PushButton id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
+			<PushButton id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
+			<PushButton id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
+			<PushButton id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />
 			<tv class="bold" text="@string(for_help_please_visit, For help, please visit:)" lg="center" />
 			<vbox lw="wc" lh="wc" lg="center">

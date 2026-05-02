@@ -105,7 +105,7 @@ UICodeEditorSplitter::UICodeEditorSplitter( UICodeEditorSplitter::Client* client
 								  ? initColorScheme
 								  : colorSchemes[0].getName();
 	} else {
-		mColorSchemes["default"] = SyntaxColorScheme::getDefault();
+		mColorSchemes["default"] = SyntaxColorScheme::getDefaultDark();
 		mCurrentColorScheme = "default";
 	}
 }

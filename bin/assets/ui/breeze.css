@@ -62,6 +62,10 @@ strong {
 	font-style: bold;
 }
 
+small {
+	font-size: smaller;
+}
+
 u,
 ins {
 	text-decoration: underline;
@@ -77,39 +81,38 @@ em {
 	font-style: italic;
 }
 
+CodeEditor,
+code {
+	font-family: monospace;
+}
+
 h1 {
 	font-size: 2em;
-	margin: 0.67em 0;
 	font-weight: bold;
 }
 
 h2 {
 	font-size: 1.5em;
-	margin: 0.83em 0;
 	font-weight: bold;
 }
 
 h3 {
 	font-size: 1.17em;
-	margin: 1em 0;
 	font-weight: bold;
 }
 
 h4 {
 	font-size: 1em;
-	margin: 1.33em 0;
 	font-weight: bold;
 }
 
 h5 {
 	font-size: 0.83em;
-	margin: 1.67em 0;
 	font-weight: bold;
 }
 
 h6 {
 	font-size: 0.67em;
-	margin: 2.33em 0;
 	font-weight: bold;
 }
 
@@ -120,76 +123,18 @@ table, td {
 hr {
 	min-height: 1dp;
 	background-color: gray;
-	margin: 0.5em 0;
 }
 
 center {
 	text-align: center;
 }
 
-p, ol, ul, pre, blockquote {
-	margin: 1em 0;
+ul {
+	list-style-type: disc;
 }
 
-li > p {
-	margin: 0;
-}
-
-ol, ul {
-	margin: 0.67em 0;
-}
-
-ul > li,
-ol > li {
-	padding-left: 2em;
-}
-
-ol > li {
-  background-tint: var(--font);
-  background-position: 0.6em 0.3em;
-}
-
-ol > li:nth-child(1) {
-	background-image: glyph("monospace", 1em, "1");
-}
-
-ol > li:nth-child(2) {
-	background-image: glyph("monospace", 1em, "2");
-}
-
-ol > li:nth-child(3) {
-	background-image: glyph("monospace", 1em, "3");
-}
-
-ol > li:nth-child(4) {
-	background-image: glyph("monospace", 1em, "4");
-}
-
-ol > li:nth-child(5) {
-	background-image: glyph("monospace", 1em, "5");
-}
-
-ol > li:nth-child(6) {
-	background-image: glyph("monospace", 1em, "6");
-}
-
-ol > li:nth-child(7) {
-	background-image: glyph("monospace", 1em, "7");
-}
-
-ol > li:nth-child(8) {
-	background-image: glyph("monospace", 1em, "8");
-}
-
-ol > li:nth-child(9) {
-	background-image: glyph("monospace", 1em, "9");
-}
-
-ul > li {
-  background-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
-  background-tint: var(--font);
-  background-position: 0.6em 0.45em;
-  background-size: 0.5em 0.5em;
+ol {
+	list-style-type: decimal;
 }
 
 a {
@@ -218,20 +163,25 @@ blockquote {
 	border-left: 2dp solid var(--tab-line);
 }
 
-blockquote > *:first-child {
-	margin-top: 0dp;
-}
-
-blockquote > *:last-child {
-	margin-bottom: 0dp;
-}
-
 MarkdownView p,
 MarkdownView ol,
 MarkdownView ul,
 MarkdownView pre,
 MarkdownView blockquote {
 	margin-top: 0;
+}
+
+MarkdownView ul,
+MarkdownView ol {
+	padding-left: 21dp;
+}
+
+MarkdownView ul ul,
+MarkdownView ul ol,
+MarkdownView ol ul,
+MarkdownView ol ol  {
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 MarkdownView a {
@@ -250,6 +200,10 @@ MarkdownView {
 	padding: 4dp;
 }
 
+MarkdownView li > p { margin: 0; }
+MarkdownView blockquote > *:first-child { margin-top: 0dp; }
+MarkdownView blockquote > *:last-child { margin-bottom: 0dp; }
+
 MarkdownView h1,
 MarkdownView h2 {
 	border-bottom: 1dp solid var(--tab-line);
@@ -265,13 +219,12 @@ MarkdownView table > thead > tr > th {
 	font-style: bold;
 }
 
-MarkdownView CodeEditor {
-	padding: 4dp;
-}
-
+MarkdownView CodeEditor,
 MarkdownView code {
 	font-family: monospace;
 	background-color: var(--button-back);
+	font-size: 11dp;
+	padding: 4dp;
 }
 
 pushbutton,
@@ -838,7 +791,8 @@ Loader {
 	fill-color: var(--primary);
 }
 
-CodeEditor > Loader {
+CodeEditor > Loader,
+code > Loader {
 	background-color: #0000002d;
 	radius: 32dp;
 	outline-thickness: 6dp;

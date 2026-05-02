@@ -8,13 +8,14 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
-#include <eepp/ui/htmlinput.hpp>
-#include <eepp/ui/htmltextarea.hpp>
-#include <eepp/ui/htmltextinput.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/uihtmltextarea.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -135,6 +136,74 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 	win->display();
 
 	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-2", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, anchorMargins ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "Anchor Margins Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/anchor_margins.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-anchor-margins", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, spanPadding ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "Span Padding Test", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/span_padding.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-span-padding", "html" );
 
 	Engine::destroySingleton();
 }
@@ -304,7 +373,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 	Engine::destroySingleton();
 }
 
-UTEST( HTMLInput, sizeAttribute ) {
+UTEST( UIHTMLInput, sizeAttribute ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
 	sceneNode->loadLayoutFromString( R"html(
@@ -318,12 +387,12 @@ UTEST( HTMLInput, sizeAttribute ) {
 		</vbox>
 	)html" );
 
-	auto c1 = sceneNode->getRoot()->find( "i1" )->asType<HTMLInput>();
-	auto c2 = sceneNode->getRoot()->find( "i2" )->asType<HTMLInput>();
-	auto c3 = sceneNode->getRoot()->find( "i3" )->asType<HTMLInput>();
-	auto cp = sceneNode->getRoot()->find( "i_pwd" )->asType<HTMLInput>();
-	auto cm = sceneNode->getRoot()->find( "i_mode_pwd" )->asType<HTMLInput>();
-	auto cc = sceneNode->getRoot()->find( "i_chk" )->asType<HTMLInput>();
+	auto c1 = sceneNode->getRoot()->find( "i1" )->asType<UIHTMLInput>();
+	auto c2 = sceneNode->getRoot()->find( "i2" )->asType<UIHTMLInput>();
+	auto c3 = sceneNode->getRoot()->find( "i3" )->asType<UIHTMLInput>();
+	auto cp = sceneNode->getRoot()->find( "i_pwd" )->asType<UIHTMLInput>();
+	auto cm = sceneNode->getRoot()->find( "i_mode_pwd" )->asType<UIHTMLInput>();
+	auto cc = sceneNode->getRoot()->find( "i_chk" )->asType<UIHTMLInput>();
 
 	ASSERT_TRUE( c1 != nullptr );
 	ASSERT_TRUE( c2 != nullptr );
@@ -332,9 +401,9 @@ UTEST( HTMLInput, sizeAttribute ) {
 	ASSERT_TRUE( cm != nullptr );
 	ASSERT_TRUE( cc != nullptr );
 
-	auto i1 = c1->getChildWidget()->asType<HTMLTextInput>();
-	auto i2 = c2->getChildWidget()->asType<HTMLTextInput>();
-	auto i3 = c3->getChildWidget()->asType<HTMLTextInput>();
+	auto i1 = c1->getChildWidget()->asType<UIHTMLTextInput>();
+	auto i2 = c2->getChildWidget()->asType<UIHTMLTextInput>();
+	auto i3 = c3->getChildWidget()->asType<UIHTMLTextInput>();
 
 	ASSERT_TRUE( i1 != nullptr );
 	ASSERT_TRUE( i2 != nullptr );
@@ -359,7 +428,7 @@ UTEST( HTMLInput, sizeAttribute ) {
 	Engine::destroySingleton();
 }
 
-UTEST( HTMLTextArea, rowsColsAttribute ) {
+UTEST( UIHTMLTextArea, rowsColsAttribute ) {
 	init_ui_test();
 	auto* scene = SceneManager::instance()->getUISceneNode();
 	auto* c1_raw = scene->loadLayoutFromString( R"html(
@@ -369,8 +438,8 @@ UTEST( HTMLTextArea, rowsColsAttribute ) {
 		</vbox>
 	)html" );
 	ASSERT_TRUE( c1_raw != nullptr );
-	auto* t1 = c1_raw->find( "t1" )->asType<HTMLTextArea>();
-	auto* t2 = c1_raw->find( "t2" )->asType<HTMLTextArea>();
+	auto* t1 = c1_raw->find( "t1" )->asType<UIHTMLTextArea>();
+	auto* t2 = c1_raw->find( "t2" )->asType<UIHTMLTextArea>();
 	ASSERT_TRUE( t1 != nullptr );
 	ASSERT_TRUE( t2 != nullptr );
 	EXPECT_EQ( t1->getRows(), 2u );
@@ -567,6 +636,540 @@ UTEST( UILayout, marginAuto ) {
 
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleTypeDecimal ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ol>
+				<li id="li1" style="list-style-type: decimal;">First item</li>
+				<li id="li2" style="list-style-type: decimal;">Second item</li>
+				<li id="li3" style="list-style-type: decimal;">Third item</li>
+			</ol>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* propDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	ASSERT_TRUE( propDef != nullptr );
+
+	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
+	auto* li2 = sceneNode->getRoot()->find( "li2" )->asType<UIRichText>();
+	auto* li3 = sceneNode->getRoot()->find( "li3" )->asType<UIRichText>();
+
+	ASSERT_TRUE( li1 != nullptr );
+	ASSERT_TRUE( li2 != nullptr );
+	ASSERT_TRUE( li3 != nullptr );
+
+	EXPECT_TRUE( li1->getPropertyString( propDef ) == "decimal" );
+	EXPECT_TRUE( li2->getPropertyString( propDef ) == "decimal" );
+	EXPECT_TRUE( li3->getPropertyString( propDef ) == "decimal" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleTypeDisc ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ul>
+				<li id="li1" style="list-style-type: disc;">Bullet item</li>
+			</ul>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* propDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	ASSERT_TRUE( propDef != nullptr );
+
+	auto* li1 = sceneNode->getRoot()->find( "li1" )->asType<UIRichText>();
+	ASSERT_TRUE( li1 != nullptr );
+
+	EXPECT_TRUE( li1->getPropertyString( propDef ) == "disc" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleShorthand ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<ol>
+				<li id="li1" style="list-style: decimal outside;">First</li>
+				<li id="li2" style="list-style: lower-alpha inside;">Second</li>
+				<li id="li3" style="list-style: none;">Third</li>
+			</ol>
+			<ul>
+				<li id="li4" style="list-style: disc;">Bullet</li>
+				<li id="li5" style="list-style: square outside;">Square</li>
+				<li id="li6" style="list-style: circle;">Circle</li>
+			</ul>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* typeDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+	const auto* posDef = StyleSheetSpecification::instance()->getProperty( "list-style-position" );
+
+	for ( const char* id : { "li1", "li2", "li3", "li4", "li5", "li6" } ) {
+		auto* li = sceneNode->getRoot()->find( id )->asType<UIWidget>();
+		ASSERT_TRUE( li != nullptr );
+		EXPECT_TRUE( li->isType( UI_TYPE_HTML_LIST_ITEM ) );
+	}
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "decimal" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li1" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "outside" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "lower-alpha" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li2" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "inside" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li3" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "none" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li4" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li5" )->asType<UIRichText>()->getPropertyString(
+					 posDef ) == "outside" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "li6" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "circle" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, listStyleInheritanceFromUl ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html>
+			<head>
+				<style>
+					ul.a { list-style-type: circle; }
+					ul.b { list-style-type: disc; }
+					ul.c { list-style-type: square; }
+					ol.d { list-style-type: decimal; }
+					ol.h { list-style-type: upper-roman; }
+				</style>
+			</head>
+			<body>
+				<ol class="h">
+					<li id="h1">Coffee</li>
+				</ol>
+				<ul class="a">
+					<li id="a1">Coffee</li>
+				</ul>
+				<ul class="b">
+					<li id="b1">Coffee</li>
+				</ul>
+				<ul class="c">
+					<li id="c1">Coffee</li>
+				</ul>
+				<ol class="d">
+					<li id="d1">Coffee</li>
+				</ol>
+			</body>
+		</html>
+	)html" );
+
+	sceneNode->updateDirtyLayouts();
+
+	const auto* typeDef = StyleSheetSpecification::instance()->getProperty( "list-style-type" );
+
+	EXPECT_TRUE( sceneNode->getRoot()->find( "h1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "upper-roman" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "a1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "circle" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "b1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "disc" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "c1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "square" );
+	EXPECT_TRUE( sceneNode->getRoot()->find( "d1" )->asType<UIRichText>()->getPropertyString(
+					 typeDef ) == "decimal" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIBorder, renderingVariations ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 653, "Border Rendering Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/border_tests.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-border-rendering", "html", 4 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIBorder, renderingVariations2 ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 653, "Border Rendering Test 2", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/border_tests_2.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-ui-border-rendering-2", "html", 4 );
+
+	Engine::destroySingleton();
+}
+
+static UISceneNode* init_test_inline_block() {
+	FontTrueType* font = nullptr;
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	UITheme* theme = UITheme::New( "default", "default" );
+	theme->setDefaultFont( font );
+	themeManager->setDefaultTheme( theme );
+	themeManager->applyDefaultTheme( sceneNode->getRoot() );
+	return sceneNode;
+}
+
+UTEST( UIHTML, InlineBlock ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+ul > li {
+	display: inline-block;
+	border: 1px solid red;
+}
+</style>
+</head>
+<body>
+	<ul class="flat-list buttons">
+		<li><a href="#">6 comments</a></li>
+		<li><a class="post-sharing-button" href="#">share</a></li>
+		<li><a href="#">save</a></li>
+		<li><span><a href="#">hide</a></span></li>
+		<li><a href="#">report</a></li>
+		<li><a href="#">crosspost</a></li>
+	</ul>
+</body>
+</html>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+
+	// Force layout update
+	sceneNode->update( Seconds( 1 ) );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)6 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( li->getLayoutWidthPolicy(), SizePolicy::WrapContent );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_LT( li->getPixelsSize().getWidth(), ul->getPixelsSize().getWidth() );
+		EXPECT_GT( li->getPixelsSize().getHeight(), 0 );
+	}
+
+	// Check if they are on the same line (inline-block)
+	if ( lis.size() >= 2 ) {
+		EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+		EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BlockList ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Block List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<ul id="block-list">
+	<li style="height: 20px">Item 1</li>
+	<li style="height: 20px">Item 2</li>
+</ul>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	EXPECT_GT( ul->getPixelsSize().getWidth(), 0 );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)2 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::ListItem );
+		EXPECT_GT( li->getChildCount(), (size_t)0 );
+		EXPECT_TRUE( li->asType<UIRichText>()->getRichTextPtr()->getFontStyleConfig().Font !=
+					 nullptr );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getFontStyleConfig().CharacterSize,
+				   0 );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getSize().getWidth(), 0 );
+		EXPECT_GT( li->asType<UIRichText>()->getRichTextPtr()->getSize().getHeight(), 0 );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( li->getPixelsSize().getHeight(), 0 );
+	}
+
+	// They should be one above the other (block)
+	EXPECT_LT( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+	EXPECT_EQ( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineList ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<ul style="display: block">
+	<li style="display: inline">Item 1</li>
+	<li style="display: inline">Item 2</li>
+</ul>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ul = sceneNode->getRoot()->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	EXPECT_GT( ul->getPixelsSize().getWidth(), 0 );
+
+	auto lis = ul->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)2 );
+
+	for ( auto li : lis ) {
+		EXPECT_EQ( li->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::Inline );
+		EXPECT_EQ( li->getLayoutWidthPolicy(), SizePolicy::WrapContent );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_LT( li->getPixelsSize().getWidth(), ul->getPixelsSize().getWidth() );
+	}
+
+	// They should be on the same line (inline)
+	EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
+	EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockExplicitWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Explicit Width Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<div style="width: 200px">
+	<div id="d1" style="display: inline-block; width: 150px; height: 50px"></div>
+	<div id="d2" style="display: inline-block; width: 150px; height: 50px"></div>
+</div>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto d1 = sceneNode->getRoot()->find( "d1" )->asType<UIWidget>();
+	auto d2 = sceneNode->getRoot()->find( "d2" )->asType<UIWidget>();
+	ASSERT_TRUE( d1 != nullptr && d2 != nullptr );
+
+	// They should NOT be on the same line because 150 + 150 > 200
+	EXPECT_LT( d1->getPixelsPosition().y, d2->getPixelsPosition().y );
+	EXPECT_EQ( d1->getPixelsPosition().x, d2->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockMixedContent ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Mixed Content Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<div>
+	Some text
+	<div id="ib" style="display: inline-block; width: 50px; height: 50px; background-color: red"></div>
+	more text
+</div>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ib = sceneNode->getRoot()->find( "ib" )->asType<UIWidget>();
+	ASSERT_TRUE( ib != nullptr );
+
+	// The inline-block should have a non-zero position and be somewhat centered vertically if it
+	// follows text flow
+	EXPECT_GT( ib->getPixelsPosition().x, 0 );
+	EXPECT_GT( ib->getPixelsSize().getWidth(), 0 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockWrapIssue ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Wrap Issue Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	std::string html;
+	FileSystem::fileGet( "assets/html/inline_block_wrap.html", html );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto h2 = sceneNode->getRoot()->find( "h2-wrap" );
+	ASSERT_TRUE( h2 != nullptr );
+
+	auto rt = h2->asType<UIRichText>()->getRichTextPtr();
+
+	EXPECT_EQ( (size_t)1, rt->getLines().size() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineBlockBrowserTest ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Browser Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+  .parent-container {
+    width: 450px;
+  }
+  .target {
+    background-color: #e0f7fa;
+  }
+  .is-inline-block {
+    display: inline-block;
+  }
+  .is-inline {
+    display: inline;
+  }
+</style>
+</head>
+<body>
+  <div class="parent-container" id="parent-ib">
+    <span id="t1">Here is some normal starting text.</span>
+    <span id="ib" class="target is-inline-block">This is the target inline-block element. If the container gets too narrow, this solid block drops to the next line, and its internal text will wrap, making the block taller without breaking.</span>
+    <span id="t2">And here is the text that comes immediately after. It gets pushed down correctly.</span>
+  </div>
+</body>
+</html>
+)HTML";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto ib = sceneNode->getRoot()->find( "ib" )->asType<UIWidget>();
+	auto t1 = sceneNode->getRoot()->find( "t1" )->asType<UIWidget>();
+	auto t2 = sceneNode->getRoot()->find( "t2" )->asType<UIWidget>();
+
+	ASSERT_TRUE( ib != nullptr && t1 != nullptr && t2 != nullptr );
+
+	// If it drops to the next line:
+	EXPECT_GT( ib->getPixelsPosition().y, t1->getPixelsPosition().y );
+	// And t2 should be AFTER ib (either horizontally or vertically)
+	EXPECT_GE( t2->getPixelsPosition().y, ib->getPixelsPosition().y );
+	if ( t2->getPixelsPosition().y == ib->getPixelsPosition().y ) {
+		EXPECT_GE( t2->getPixelsPosition().x,
+				   ib->getPixelsPosition().x + ib->getPixelsSize().getWidth() );
+	}
 
 	Engine::destroySingleton();
 }

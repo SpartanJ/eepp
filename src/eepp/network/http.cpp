@@ -48,6 +48,8 @@ std::string Http::Request::statusToString( Http::Request::Status status ) {
 			return "HeaderReceived";
 		case ContentReceived:
 			return "ContentReceived";
+		case Redirect:
+			return "Redirect";
 	}
 	return "";
 }
@@ -449,6 +451,10 @@ Http::Response Http::Response::createFakeResponse( const Http::Response::FieldTa
 
 Http::Response::Response() : mStatus( ConnectionFailed ), mMajorVersion( 0 ), mMinorVersion( 0 ) {}
 
+const Http::Response::FieldTable& Http::Response::getHeaders() const {
+	return mFields;
+}
+
 Http::Response::FieldTable Http::Response::getHeaders() {
 	return mFields;
 }
@@ -653,11 +659,13 @@ Uint64 Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri
 						   const Time& timeout, Request::Method method,
 						   const Http::Request::ProgressCallback& progressCallback,
 						   const Http::Request::FieldTable& headers, const std::string& body,
-						   const bool& validateCertificate, const URI& proxy ) {
+						   const bool& validateCertificate, const URI& proxy,
+						   bool followRedirect ) {
 	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
 	request.setProgressCallback( progressCallback );
+	request.setFollowRedirect( followRedirect );
 
 	for ( const auto& field : headers )
 		request.setField( field.first, field.second );
@@ -668,17 +676,17 @@ Uint64 Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri
 Uint64 Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
 					   const Http::Request::ProgressCallback& progressCallback,
 					   const Http::Request::FieldTable& headers, const std::string& body,
-					   const bool& validateCertificate, const URI& proxy ) {
+					   const bool& validateCertificate, const URI& proxy, bool followRedirect ) {
 	return requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body,
-						 validateCertificate, proxy );
+						 validateCertificate, proxy, followRedirect );
 }
 
 Uint64 Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
 						const Http::Request::ProgressCallback& progressCallback,
 						const Http::Request::FieldTable& headers, const std::string& body,
-						const bool& validateCertificate, const URI& proxy ) {
+						const bool& validateCertificate, const URI& proxy, bool followRedirect ) {
 	return requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body,
-						 validateCertificate, proxy );
+						 validateCertificate, proxy, followRedirect );
 }
 
 Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ), mHostSolved( false ) {}
@@ -1091,25 +1099,45 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											eeSAFE_DELETE( chunkedStream );
 											eeSAFE_DELETE( inflateStream );
 
-											Http::Request newRequest( request );
-											newRequest.setUri( uri.getPathAndQuery() );
-
-											request.mRedirectionCount++;
-											newRequest.mRedirectionCount =
-												request.mRedirectionCount;
-
-											// Same host, expects a path in the same domain
-											if ( uri.getHost().empty() ||
-												 uri.getHost() == getHostName() ) {
-												return downloadRequest( newRequest, writeTo,
-																		timeout );
+											if ( !request.isCancelled() &&
+												 !sendProgress( *this, request, received,
+																Request::Redirect, contentLength,
+																currentTotalBytes ) ) {
+												request.mCancel = true;
 											} else {
-												// New host, we need to solve the host
-												Http http( uri.getHost(), uri.getPort(),
-														   uri.getScheme() == "https" ? true
-																					  : false );
-												return http.downloadRequest( newRequest, writeTo,
-																			 timeout );
+												Http::Request newRequest( request );
+												newRequest.setUri( uri.getPathAndQuery() );
+												newRequest.setMethod(
+													Http::Request::getRedirectMethodFromStatus(
+														request.getMethod(),
+														received.getStatus() ) );
+
+												newRequest.setProgressCallback(
+													request.getProgressCallback() );
+
+												if ( received.hasField( "set-cookie" ) ) {
+													newRequest.setField(
+														"Cookie",
+														received.getField( "set-cookie" ) );
+												}
+
+												request.mRedirectionCount++;
+												newRequest.mRedirectionCount =
+													request.mRedirectionCount;
+
+												// Same host, expects a path in the same domain
+												if ( uri.getHost().empty() ||
+													 uri.getHost() == getHostName() ) {
+													return downloadRequest( newRequest, writeTo,
+																			timeout );
+												} else {
+													// New host, we need to solve the host
+													Http http( uri.getHost(), uri.getPort(),
+															   uri.getScheme() == "https" ? true
+																						  : false );
+													return http.downloadRequest( newRequest,
+																				 writeTo, timeout );
+												}
 											}
 										}
 									}
@@ -1193,6 +1221,26 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 	}
 
 	return received;
+}
+
+Http::Request::Method
+Http::Request::getRedirectMethodFromStatus( Method requestMethod,
+											Response::Status responseStatus ) {
+	// 1. 307 and 308 ALWAYS preserve the original method.
+	if ( responseStatus == Http::Response::PermanentRedirect ||
+		 responseStatus == Http::Response::TemporaryRedirect ) {
+		return requestMethod;
+	}
+	// 2. 303 See Other ALWAYS converts to GET (unless it
+	// was a HEAD).
+	if ( responseStatus == Http::Response::SeeOther ) {
+		return requestMethod == Http::Request::Method::Head ? Http::Request::Method::Head
+															: Http::Request::Method::Get;
+	}
+	// 3. 301 and 302 historically convert POST to GET, but
+	// preserve others.
+	return requestMethod == Http::Request::Method::Post ? Http::Request::Method::Get
+														: requestMethod;
 }
 
 void Http::endConnection() {

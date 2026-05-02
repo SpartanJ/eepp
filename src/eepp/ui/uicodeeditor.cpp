@@ -1,3 +1,4 @@
+#include "eepp/ui/uistyle.hpp"
 #include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -35,6 +36,12 @@ namespace EE { namespace UI {
 
 UICodeEditor* UICodeEditor::New() {
 	return eeNew( UICodeEditor, ( true, true ) );
+}
+
+UICodeEditor* UICodeEditor::NewWithTag( const std::string& tag,
+										const bool& autoRegisterBaseCommands,
+										const bool& autoRegisterBaseKeybindings ) {
+	return eeNew( UICodeEditor, ( tag, autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
 UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
@@ -149,7 +156,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHeightPolicy = SizePolicy::Fixed;
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
-	setColorScheme( SyntaxColorScheme::getDefault() );
+	setColorScheme( SyntaxColorScheme::getDefaultDark() );
 	refreshTag();
 	mDocView.setOnVisibleLineCountChange( [this] {
 		onAutoSize();
@@ -170,11 +177,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHScrollBar->on( Event::OnValueChange, [this]( const Event* ) {
 		setScrollX( mHScrollBar->getValue() * getMaxScroll().x, false );
 	} );
-
-	if ( NULL == mFont && elementTag == "codeeditor" )
-		Log::error(
-			"A monospace font must be loaded to be able to use the code editor.\nTry loading "
-			"a font with the name \"monospace\"" );
 
 	mFontStyleConfig.Font = mFont;
 
@@ -488,7 +490,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		invalidateDraw();
 	}
 
-	if ( mDoc && !mDoc->isLoading() && mHorizontalScrollBarEnabled && isVisible() &&
+	if ( mDoc && !mDoc->isLoading() && needsHorizontalLength() && isVisible() &&
 		 mLongestLineWidthDirty &&
 		 mLongestLineWidthLastUpdate.getElapsedTime() > mFindLongestLineWidthUpdateFrequency ) {
 		updateLongestLineWidth();
@@ -499,8 +501,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 }
 
 void UICodeEditor::updateLongestLineWidth() {
-	if ( mHorizontalScrollBarEnabled && mDoc && !mDoc->isLoading() &&
-		 !mDoc->isRunningTransaction() ) {
+	if ( needsHorizontalLength() && mDoc && !mDoc->isLoading() && !mDoc->isRunningTransaction() ) {
 		Float maxWidth = mLongestLineWidth;
 		findLongestLine();
 		mLongestLineWidthLastUpdate.restart();
@@ -1436,8 +1437,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 				 "folder-open", "open-containing-folder" );
 
 		menuAdd( menu,
-				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",
-					   "Copy Containing Folder Path..." ),
+				 i18n( "uicodeeditor_copy_containing_folder_path", "Copy Containing Folder Path" ),
 				 "copy", "copy-containing-folder-path" );
 
 		menuAdd( menu, i18n( "uicodeeditor_copy_file_path", "Copy File Path" ), "copy",
@@ -2060,7 +2060,7 @@ void UICodeEditor::onPaddingChange() {
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
 	std::pair<size_t, Float> curRange{ mLongestLineIndex, mLongestLineWidth };
-	if ( mHorizontalScrollBarEnabled ) {
+	if ( needsHorizontalLength() ) {
 		Float longestLineWidth = 0;
 		for ( Int64 lineIndex = range.start().line(); lineIndex <= range.end().line();
 			  lineIndex++ ) {
@@ -2076,7 +2076,7 @@ std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& 
 }
 
 void UICodeEditor::findLongestLine() {
-	if ( mHorizontalScrollBarEnabled ) {
+	if ( needsHorizontalLength() ) {
 		auto range = findLongestLineInRange( mDoc->getDocRange() );
 		mLongestLineIndex = range.first;
 		mLongestLineWidth = range.second;
@@ -3056,6 +3056,15 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			mDoc->textInput( attribute.asString() );
 			break;
+		case PropertyId::DataLanguage:
+			setSyntaxDefinition(
+				SyntaxDefinitionManager::instance()->findFromString( attribute.asString() ) );
+			break;
+		case PropertyId::BackgroundColor: {
+			setBackgroundColor( attribute.asColor() );
+			updateDynamicTheme();
+			break;
+		}
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -3261,14 +3270,16 @@ void UICodeEditor::checkMatchingBrackets() {
 		String::StringBaseType openBracket = open[index];
 		String::StringBaseType closeBracket = close[index];
 		TextPosition closePosition = mDoc->getMatchingBracket(
-			pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward );
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward, true,
+			Milliseconds( 100 ) );
 		mMatchingBrackets = { pos, closePosition };
 	} else if ( isCloseIt != close.end() ) {
 		size_t index = std::distance( close.begin(), isCloseIt );
 		String::StringBaseType openBracket = open[index];
 		String::StringBaseType closeBracket = close[index];
 		TextPosition closePosition = mDoc->getMatchingBracket(
-			pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward );
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward, true,
+			Milliseconds( 100 ) );
 		mMatchingBrackets = { pos, closePosition };
 	}
 }
@@ -5696,12 +5707,45 @@ void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	if ( !node.text().empty() ) {
-		std::string_view str{ node.text().as_string() };
-		if ( '\n' == str.back() )
-			str = str.substr( 0, str.size() - 1 );
-		mDoc->textInput( str );
+	std::string text;
+	bool hasElementChildren = false;
+	for ( pugi::xml_node child : node.children() ) {
+		if ( child.type() == pugi::node_element ) {
+			hasElementChildren = true;
+			break;
+		}
 	}
+
+	auto collectText = []( const pugi::xml_node& n, std::string& out, auto& self ) -> void {
+		for ( pugi::xml_node c : n.children() ) {
+			if ( c.type() == pugi::node_pcdata || c.type() == pugi::node_cdata ) {
+				out += c.value();
+			} else if ( c.type() == pugi::node_element ) {
+				self( c, out, self );
+			}
+		}
+	};
+
+	if ( hasElementChildren ) {
+		for ( pugi::xml_node child : node.children() ) {
+			if ( child.type() == pugi::node_element ) {
+				if ( !text.empty() )
+					text += "\n";
+				collectText( child, text, collectText );
+			}
+		}
+	} else {
+		for ( pugi::xml_node child : node.children() ) {
+			if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
+				text += child.value();
+			}
+		}
+		if ( !text.empty() && text.back() == '\n' )
+			text.pop_back();
+	}
+
+	if ( !text.empty() )
+		mDoc->textInput( text );
 
 	endAttributesTransaction();
 }
@@ -5721,6 +5765,38 @@ void UICodeEditor::onClassChange() {
 		if ( String::startsWith( name, "language-" ) ) {
 			auto langname = std::string_view{ name }.substr( 9 );
 			setSyntaxDefinition( SyntaxDefinitionManager::instance()->findFromString( langname ) );
+		}
+	}
+}
+
+bool UICodeEditor::needsHorizontalLength() const {
+	return mDocView.getConfig().mode == LineWrapMode::NoWrap;
+}
+
+void UICodeEditor::setUseDefaultStyle( bool use ) {
+	mUseDefaultStyle = use;
+	invalidateDraw();
+}
+
+void UICodeEditor::setDynamicTheming( bool set ) {
+	if ( mDynamicTheming != set ) {
+		mDynamicTheming = set;
+		updateDynamicTheme();
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::updateDynamicTheme() {
+	if ( !mDynamicTheming )
+		return;
+	Color color( getFontColor() );
+	if ( mStyle && mStyle->getProperty( PropertyId::BackgroundColor ) )
+		color = getBackgroundColor();
+	if ( color != Color::Transparent ) {
+		if ( color.perceivedLuminance() > 128 ) {
+			setColorScheme( SyntaxColorScheme::getDefaultLight() );
+		} else {
+			setColorScheme( SyntaxColorScheme::getDefaultDark() );
 		}
 	}
 }

@@ -84,7 +84,7 @@ class UpdateListener : public efsw::FileWatchListener {
 	virtual ~UpdateListener() {}
 
 	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
-						   efsw::Action action, std::string ) {
+						   efsw::Action action, const std::string& ) {
 		if ( action == efsw::Actions::Modified ) {
 			if ( dir + filename == mApp->getCurrentLayout() ) {
 				mApp->updateLayoutFunc( InvalidationType::FileSystem );

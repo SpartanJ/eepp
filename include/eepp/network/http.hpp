@@ -49,8 +49,9 @@ class EE_API Http : NonCopyable {
 			MultipleChoices = 300,	///< The requested page can be accessed from several locations
 			MovedPermanently = 301, ///< The requested page has permanently moved to a new location
 			MovedTemporarily = 302, ///< The requested page has temporarily moved to a new location
-			NotModified = 304,		///< For conditional requests, means the requested page hasn't
-									///< changed and doesn't need to be refreshed
+			SeeOther = 303, ///< The response can be found under a different URI using a GET method
+			NotModified = 304, ///< For conditional requests, means the requested page hasn't
+							   ///< changed and doesn't need to be refreshed
 
 			TemporaryRedirect = 307, ///< The requested page has temporarily moved to a new location
 			PermanentRedirect = 308, ///< The requested page has permanently moved to a new location
@@ -95,6 +96,8 @@ class EE_API Http : NonCopyable {
 		Response();
 
 		FieldTable getHeaders();
+
+		const FieldTable& getHeaders() const;
 
 		/** @brief Get the value of a field
 		**  If the field @a field is not found in the response header,
@@ -180,7 +183,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					///< resource. It can be used to open a tunnel.
+					 ///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -188,7 +191,8 @@ class EE_API Http : NonCopyable {
 			Connected,		///< Connected to server.
 			Sent,			///< Request sent to the server.
 			HeaderReceived, ///< Header received.
-			ContentReceived ///< Content received.
+			ContentReceived, ///< Content received.
+			Redirect, ///< A redirect has been handled
 		};
 
 		static std::string statusToString( Status status );
@@ -198,6 +202,9 @@ class EE_API Http : NonCopyable {
 
 		/** @return The method string from a method */
 		static std::string methodToString( const Method& method );
+
+		static Method getRedirectMethodFromStatus( Method requestMethod,
+												   Response::Status responseStatus );
 
 		/** @brief Default constructor
 		**  This constructor creates a GET request, with the root
@@ -675,25 +682,29 @@ class EE_API Http : NonCopyable {
 				  const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 				  const Request::FieldTable& headers = Request::FieldTable(),
 				  const std::string& body = "", const bool& validateCertificate = true,
-				  const URI& proxy = URI() );
+				  const URI& proxy = URI(), bool followRedirect = true );
 
 	/** Creates an async HTTP GET Request using the global HTTP Client Pool
 	** @return The unique async request id
 	*/
-	static Uint64 getAsync(
-		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
-		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
-		const bool& validateCertificate = true, const URI& proxy = URI() );
+	static Uint64
+	getAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
+			  const Time& timeout = Time::Zero,
+			  const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+			  const Request::FieldTable& headers = Request::FieldTable(),
+			  const std::string& body = "", const bool& validateCertificate = true,
+			  const URI& proxy = URI(), bool followRedirect = true );
 
 	/** Creates an async HTTP POST Request using the global HTTP Client Pool
 	** @return The unique async request id
 	*/
-	static Uint64 postAsync(
-		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
-		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
-		const bool& validateCertificate = true, const URI& proxy = URI() );
+	static Uint64
+	postAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
+			   const Time& timeout = Time::Zero,
+			   const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+			   const Request::FieldTable& headers = Request::FieldTable(),
+			   const std::string& body = "", const bool& validateCertificate = true,
+			   const URI& proxy = URI(), bool followRedirect = true );
 
 	/** It will try to get the proxy from the environment variables. */
 	static URI getEnvProxyURI();
