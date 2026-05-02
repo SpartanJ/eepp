@@ -21,7 +21,7 @@ enum class CSSDisplay {
 	TableFooter
 };
 
-struct CSSDisplayHelper {
+struct EE_API CSSDisplayHelper {
 	static std::string toString( CSSDisplay display );
 
 	static CSSDisplay fromString( std::string_view val );
@@ -29,7 +29,7 @@ struct CSSDisplayHelper {
 
 enum class CSSPosition { Static, Relative, Absolute, Fixed, Sticky };
 
-struct CSSPositionHelper {
+struct EE_API CSSPositionHelper {
 	static std::string toString( CSSPosition position );
 
 	static CSSPosition fromString( std::string_view val );
@@ -47,7 +47,7 @@ enum class CSSListStyleType {
 	UpperRoman
 };
 
-struct CSSListStyleTypeHelper {
+struct EE_API CSSListStyleTypeHelper {
 	static std::string toString( CSSListStyleType type );
 
 	static CSSListStyleType fromString( std::string_view val );
@@ -55,7 +55,7 @@ struct CSSListStyleTypeHelper {
 
 enum class CSSListStylePosition { Outside, Inside };
 
-struct CSSListStylePositionHelper {
+struct EE_API CSSListStylePositionHelper {
 	static std::string toString( CSSListStylePosition pos );
 
 	static CSSListStylePosition fromString( std::string_view val );
@@ -63,7 +63,7 @@ struct CSSListStylePositionHelper {
 
 enum class CSSFloat { None, Left, Right };
 
-struct CSSFloatHelper {
+struct EE_API CSSFloatHelper {
 	static std::string toString( CSSFloat val );
 
 	static CSSFloat fromString( std::string_view val );
@@ -71,7 +71,7 @@ struct CSSFloatHelper {
 
 enum class CSSClear { None, Left, Right, Both };
 
-struct CSSClearHelper {
+struct EE_API CSSClearHelper {
 	static std::string toString( CSSClear val );
 
 	static CSSClear fromString( std::string_view val );
