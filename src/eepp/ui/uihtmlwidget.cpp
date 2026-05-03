@@ -270,27 +270,51 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 
 	Float top = 0;
 	Float left = 0;
+	Float right = 0;
+	Float bottom = 0;
 
 	bool useTop = mTopEq != "auto";
 	bool useBottom = mBottomEq != "auto";
 	bool useLeft = mLeftEq != "auto";
 	bool useRight = mRightEq != "auto";
 
-	if ( useLeft ) {
+	if ( useLeft )
 		left = lengthFromValue( mLeftEq, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
-	} else if ( useRight ) {
-		Float rightVal =
-			lengthFromValue( mRightEq, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
-		left = cbContentWidth - childWidth - margin.Left - margin.Right - rightVal;
+	if ( useRight )
+		right = lengthFromValue( mRightEq, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0 );
+
+	if ( useTop )
+		top = lengthFromValue( mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+	if ( useBottom )
+		bottom =
+			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+
+	Float finalWidth = childWidth;
+	Float finalHeight = childHeight;
+
+	if ( useLeft && useRight && getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		Float stretched = cbContentWidth - left - right - margin.Left - margin.Right;
+		if ( stretched >= 0 )
+			finalWidth = stretched;
 	}
 
-	if ( useTop ) {
-		top = lengthFromValue( mTopEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
-	} else if ( useBottom ) {
-		Float bottomVal =
-			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
-		top = cbContentHeight - childHeight - margin.Top - margin.Bottom - bottomVal;
+	if ( useTop && useBottom && getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+		Float stretched = cbContentHeight - top - bottom - margin.Top - margin.Bottom;
+		if ( stretched >= 0 )
+			finalHeight = stretched;
 	}
+
+	if ( finalWidth != childWidth || finalHeight != childHeight ) {
+		setPixelsSize( finalWidth, finalHeight );
+		childWidth = finalWidth;
+		childHeight = finalHeight;
+	}
+
+	if ( !useLeft && useRight )
+		left = cbContentWidth - childWidth - margin.Left - margin.Right - right;
+
+	if ( !useTop && useBottom )
+		top = cbContentHeight - childHeight - margin.Top - margin.Bottom - bottom;
 
 	top += margin.Top;
 	left += margin.Left;

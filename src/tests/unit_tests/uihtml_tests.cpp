@@ -1206,6 +1206,21 @@ UTEST( UIHTML, HeightExpansion ) {
 
 	EXPECT_GE( htmlWidget->getSize().getHeight(), bodyWidget->getSize().getHeight() );
 
+	auto barNode = sceneNode->getRoot()->find( "bar" );
+	ASSERT_TRUE( barNode != nullptr );
+
+	auto barWidget = barNode->asType<UIWidget>();
+	auto barHTML = barNode->asType<UIHTMLWidget>();
+
+	EXPECT_EQ( barHTML->getCSSPosition(), CSSPosition::Fixed );
+
+	EXPECT_NEAR( barWidget->getPixelsSize().getWidth(), 250.f, 1.f );
+
+	auto rootWidget = sceneNode->getRoot();
+	EXPECT_GT( rootWidget->getPixelsSize().getHeight(), 0 );
+	EXPECT_NEAR( barWidget->getPixelsSize().getHeight(), rootWidget->getPixelsSize().getHeight(),
+				 1.f );
+
 	Engine::destroySingleton();
 }
 
