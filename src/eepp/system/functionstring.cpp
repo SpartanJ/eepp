@@ -2,13 +2,12 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/functionstring.hpp>
 
-#include <concepts>
 #include <string>
+#include <type_traits>
 
 namespace EE { namespace System {
 
-template <AllowedFunctionString StringType>
-FunctionString FunctionString::parse( StringType function ) {
+template <typename StringType> FunctionString FunctionString::parse( StringType function ) {
 	using CharType = typename StringType::value_type;
 
 	size_t funcSep = function.find( '(' );
@@ -35,7 +34,7 @@ FunctionString FunctionString::parse( StringType function ) {
 	int parenDepth = 0;
 
 	auto pushBufferToParams = [&]() {
-		if constexpr ( std::same_as<CharType, char> ) {
+		if constexpr ( std::is_same_v<CharType, char> ) {
 			if ( !currentParamIsString )
 				String::trimInPlace( buffer );
 			funcParameters.push_back( buffer );
@@ -109,11 +108,15 @@ FunctionString FunctionString::parse( StringType function ) {
 	if ( !buffer.empty() || currentParamIsString )
 		pushBufferToParams();
 
-	if constexpr ( std::same_as<StringType, std::string> ) {
+	if constexpr ( std::is_same_v<StringType, std::string> ) {
 		return FunctionString( std::string{ funcName }, funcParameters, typeStringData );
 	} else {
 		return FunctionString( String( funcName ).toUtf8(), funcParameters, typeStringData );
 	}
+}
+
+FunctionString FunctionString::parse( const std::string& function ) {
+	return parse<std::string_view>( std::string_view{ function } );
 }
 
 FunctionString FunctionString::parse( std::string_view function ) {

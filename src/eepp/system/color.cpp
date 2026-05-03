@@ -715,7 +715,7 @@ Color Color::fromString( std::string str ) {
 	return Color::Transparent;
 }
 
-template <AllowedFunctionString StringType>
+template <typename StringType>
 bool Color::isColorStringT( StringType str, bool searchColorNames ) {
 	if ( str.empty() )
 		return false;

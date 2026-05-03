@@ -189,9 +189,9 @@ UTEST( UITextNode_CSSSelectors, EmptyWithTextNodes ) {
 	ASSERT_TRUE( rtEmpty != nullptr );
 
 	// rtText has a text node child → NOT empty
-	EXPECT_FALSE( emptySel.selector( rtText, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_FALSE( emptySel.selector( rtText, 0, 0, FunctionString() ) );
 	// rtEmpty has no children → empty
-	EXPECT_TRUE( emptySel.selector( rtEmpty, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( emptySel.selector( rtEmpty, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -220,8 +220,8 @@ UTEST( UITextNode_CSSSelectors, FirstChildWithTextNodes ) {
 	ASSERT_TRUE( elem0 != nullptr );
 	ASSERT_TRUE( elem1 != nullptr );
 
-	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_FALSE( sel.selector( elem1, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString() ) );
+	EXPECT_FALSE( sel.selector( elem1, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -250,8 +250,8 @@ UTEST( UITextNode_CSSSelectors, LastChildWithTextNodes ) {
 	ASSERT_TRUE( elem0 != nullptr );
 	ASSERT_TRUE( elem1 != nullptr );
 
-	EXPECT_FALSE( sel.selector( elem0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( elem1, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_FALSE( sel.selector( elem0, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( elem1, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -279,7 +279,7 @@ UTEST( UITextNode_CSSSelectors, OnlyChildWithTextNodes ) {
 	ASSERT_TRUE( elem0 != nullptr );
 
 	// Text nodes are invisible → elem0 IS the only element child
-	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -311,9 +311,9 @@ UTEST( UITextNode_CSSSelectors, FirstOfTypeWithTextNodes ) {
 	Node* br0 = sceneNode->find( "br0" );
 	ASSERT_TRUE( br0 != nullptr );
 
-	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_FALSE( sel.selector( span1, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString() ) );
+	EXPECT_FALSE( sel.selector( span1, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -411,8 +411,8 @@ UTEST( UITextNode_CSSSelectors, OnlyOfTypeWithTextNodes ) {
 	ASSERT_TRUE( br0 != nullptr );
 
 	// Each is the only one of its C++ type
-	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -443,9 +443,9 @@ UTEST( UITextNode_CSSSelectors, LastOfTypeWithTextNodes ) {
 	Node* br0 = sceneNode->find( "br0" );
 	ASSERT_TRUE( br0 != nullptr );
 
-	EXPECT_FALSE( sel.selector( span0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( span1, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_FALSE( sel.selector( span0, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( span1, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -1048,7 +1048,7 @@ UTEST( UITextNode_Regression, ElementCountingDoesNotCountDeletedNodes ) {
 	ASSERT_TRUE( elem0 != nullptr );
 
 	// elem0 is first element child (text node skipped)
-	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( elem0, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -1078,14 +1078,14 @@ UTEST( UITextNode_Regression, OnlyOfTypeStaysCorrectAfterModification ) {
 	ASSERT_TRUE( br0 != nullptr );
 
 	// Each is only-of-type
-	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString::parse( "" ) ) );
-	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString() ) );
+	EXPECT_TRUE( sel.selector( static_cast<UIWidget*>( br0 ), 0, 0, FunctionString() ) );
 
 	// Remove br0 → span0 still only-of-type
 	br0->detach();
 	eeDelete( br0 );
 
-	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString::parse( "" ) ) );
+	EXPECT_TRUE( sel.selector( span0, 0, 0, FunctionString() ) );
 
 	destroyRichTextScene( sceneNode );
 }

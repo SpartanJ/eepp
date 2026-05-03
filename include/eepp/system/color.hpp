@@ -406,7 +406,7 @@ class EE_API Color : public tColor<Uint8> {
 
 	static void initColorMap();
 
-	template <AllowedFunctionString StringType>
+	template <typename StringType>
 	static bool isColorStringT( StringType str, bool searchColorNames );
 };
 
