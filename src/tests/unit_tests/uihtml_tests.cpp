@@ -1256,3 +1256,63 @@ UTEST( UIHTML, HeightExpansion_FixedDoesNotExpand ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTML, ContactFormLayout ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Contact Form Layout Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/ensoft/" );
+
+	std::string html;
+	FileSystem::fileGet( "assets/html/ensoft/contact.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto form = sceneNode->getRoot()->find( "form-contact" );
+	ASSERT_TRUE( form != nullptr );
+	auto formWidget = form->asType<UIWidget>();
+	EXPECT_GT( formWidget->getPixelsSize().getHeight(), 0 );
+
+	auto ul = formWidget->findByTag( "ul" );
+	ASSERT_TRUE( ul != nullptr );
+	auto ulWidget = ul->asType<UIWidget>();
+	Float ulHeight = ulWidget->getPixelsSize().getHeight();
+	EXPECT_GT( ulHeight, 0 );
+
+	auto lis = ulWidget->findAllByTag( "li" );
+	EXPECT_EQ( lis.size(), (size_t)7 );
+
+	Float totalLiHeight = 0;
+	int visibleLiCount = 0;
+	for ( auto li : lis ) {
+		Float liH = li->getPixelsSize().getHeight();
+		if ( liH > 0 )
+			visibleLiCount++;
+		totalLiHeight += liH;
+	}
+	EXPECT_EQ( visibleLiCount, 6 );
+	EXPECT_GT( totalLiHeight, 0 );
+	EXPECT_NEAR( ulHeight, totalLiHeight, 1.f );
+
+	auto contactBox = sceneNode->getRoot()->find( "contact-box" );
+	ASSERT_TRUE( contactBox != nullptr );
+	auto cbWidget = contactBox->asType<UIWidget>();
+	EXPECT_GT( cbWidget->getPixelsSize().getHeight(), 10 );
+
+	auto content = sceneNode->getRoot()->find( "content" );
+	ASSERT_TRUE( content != nullptr );
+	auto contentWidget = content->asType<UIWidget>();
+	EXPECT_GT( contentWidget->getPixelsSize().getHeight(), 60 );
+
+	auto bodyNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY );
+	ASSERT_TRUE( bodyNode != nullptr );
+	auto bodyWidget = bodyNode->asType<UIWidget>();
+	EXPECT_GT( bodyWidget->getPixelsSize().getHeight(), 0 );
+
+	Engine::destroySingleton();
+}
