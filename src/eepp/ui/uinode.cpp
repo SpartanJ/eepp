@@ -883,6 +883,54 @@ Uint32 UINode::getForegroundRadius() const {
 	return NULL != mForeground ? mForeground->getBorderRadius() : 0;
 }
 
+UINode* UINode::setForegroundTopLeftRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundTopRightRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundBottomLeftRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundBottomRightRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
+	return this;
+}
+
+const Sizef& UINode::getForegroundTopLeftRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().topLeft;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundTopRightRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().topRight;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundBottomLeftRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().bottomLeft;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundBottomRightRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().bottomRight;
+	return zero;
+}
+
 UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
 	const_cast<UINode*>( this )->writeFlag( UI_BORDER, enabled ? 1 : 0 );
 

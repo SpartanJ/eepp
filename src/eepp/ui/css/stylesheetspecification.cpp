@@ -126,7 +126,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "foreground-size", "auto" )
 		.setType( PropertyType::ForegroundSize )
 		.setIndexed();
-	registerProperty( "foreground-radius", "0px" ).setType( PropertyType::NumberLength );
 	registerProperty( "visible", "true" ).setType( PropertyType::Bool );
 	registerProperty( "enabled", "true" ).setType( PropertyType::Bool );
 	registerProperty( "theme", "" );
@@ -402,6 +401,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
 	registerProperty( "foreground-smooth", "false" ).setType( PropertyType::Bool );
 
+	registerProperty( "foreground-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
+
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
@@ -516,6 +520,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "border-radius",
 					   { "border-top-left-radius", "border-top-right-radius",
 						 "border-bottom-right-radius", "border-bottom-left-radius" },
+					   "radius" );
+	registerShorthand( "foreground-radius",
+					   { "foreground-top-left-radius", "foreground-top-right-radius",
+						 "foreground-bottom-right-radius", "foreground-bottom-left-radius" },
 					   "radius" );
 	registerShorthand( "rotation-origin-point",
 					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );

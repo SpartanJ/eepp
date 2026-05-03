@@ -1609,7 +1609,10 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BackgroundTint,
 			 PropertyId::ForegroundColor,
 			 PropertyId::ForegroundTint,
-			 PropertyId::ForegroundRadius,
+			 PropertyId::ForegroundTopLeftRadius,
+			 PropertyId::ForegroundTopRightRadius,
+			 PropertyId::ForegroundBottomLeftRadius,
+			 PropertyId::ForegroundBottomRightRadius,
 			 PropertyId::BorderType,
 			 PropertyId::SkinColor,
 			 PropertyId::Rotation,
@@ -1701,8 +1704,22 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return getForegroundColor().toHexString();
 		case PropertyId::ForegroundTint:
 			return getForegroundTint( propertyIndex ).toHexString();
-		case PropertyId::ForegroundRadius:
-			return String::toString( getForegroundRadius() );
+		case PropertyId::ForegroundTopLeftRadius:
+			return String::format( "%s %s",
+								   String::fromFloat( getForegroundTopLeftRadius().x, "px" ),
+								   String::fromFloat( getForegroundTopLeftRadius().y, "px" ) );
+		case PropertyId::ForegroundTopRightRadius:
+			return String::format( "%s %s",
+								   String::fromFloat( getForegroundTopRightRadius().x, "px" ),
+								   String::fromFloat( getForegroundTopRightRadius().y, "px" ) );
+		case PropertyId::ForegroundBottomLeftRadius:
+			return String::format( "%s %s",
+								   String::fromFloat( getForegroundBottomLeftRadius().x, "px" ),
+								   String::fromFloat( getForegroundBottomLeftRadius().y, "px" ) );
+		case PropertyId::ForegroundBottomRightRadius:
+			return String::format( "%s %s",
+								   String::fromFloat( getForegroundBottomRightRadius().x, "px" ),
+								   String::fromFloat( getForegroundBottomRightRadius().y, "px" ) );
 		case PropertyId::BorderType:
 			return Borders::fromBorderType( setBorderEnabled( true )->getBorderType() );
 		case PropertyId::SkinColor:
@@ -1964,8 +1981,17 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ForegroundImage:
 			setForegroundDrawable( attribute.getValue(), attribute.getIndex() );
 			break;
-		case PropertyId::ForegroundRadius:
-			setForegroundRadius( lengthFromValue( attribute ) );
+		case PropertyId::ForegroundTopLeftRadius:
+			setForegroundTopLeftRadius( attribute.value() );
+			break;
+		case PropertyId::ForegroundTopRightRadius:
+			setForegroundTopRightRadius( attribute.value() );
+			break;
+		case PropertyId::ForegroundBottomLeftRadius:
+			setForegroundBottomLeftRadius( attribute.value() );
+			break;
+		case PropertyId::ForegroundBottomRightRadius:
+			setForegroundBottomRightRadius( attribute.value() );
 			break;
 		case PropertyId::ForegroundSize:
 			setForegroundSize( attribute.value(), attribute.getIndex() );

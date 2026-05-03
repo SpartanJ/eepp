@@ -706,6 +706,18 @@ Multiple flags can be set, flags are separated by `|`.
 
 ---
 
+### foreground-bottom-left-radius
+
+Same as [border-bottom-left-radius](#border-bottom-left-radius) but for the foreground of the node.
+
+---
+
+### foreground-bottom-right-radius
+
+Same as [border-bottom-right-radius](#border-bottom-right-radius) but for the foreground of the node.
+
+---
+
 ### foreground-color
 
 Same as [background-color](#background-color) but for the foreground.
@@ -753,6 +765,18 @@ Sets the tint color of the foreground image.
 * Applicable to: Any element
 * Data Type: [color](#color-data-type)
 * Default value: `white`
+
+---
+
+### foreground-top-left-radius
+
+Same as [border-top-left-radius](#border-top-left-radius) but for the foreground of the node.
+
+---
+
+### foreground-top-right-radius
+
+Same as [border-top-right-radius](#border-top-right-radius) but for the foreground of the node.
 
 ---
 
@@ -2486,6 +2510,8 @@ Same as the [background-position](#background-position) but for the foreground o
 ### foreground-radius
 
 Same as the [border-radius](#border-radius) but for the foreground of the node.
+
+This is a shorthand for setting [foreground-top-left-radius](#foreground-top-left-radius), [foreground-top-right-radius](#foreground-top-right-radius), [foreground-bottom-right-radius](#foreground-bottom-right-radius), and [foreground-bottom-left-radius](#foreground-bottom-left-radius) in a single declaration.
 
 ---
 

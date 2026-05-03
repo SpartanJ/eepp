@@ -634,6 +634,74 @@ class EE_API UINode : public Node {
 	Uint32 getForegroundRadius() const;
 
 	/**
+	 * @brief Sets the top-left foreground border radius.
+	 *
+	 * Sets the top-left corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundTopLeftRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the top-right foreground border radius.
+	 *
+	 * Sets the top-right corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundTopRightRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the bottom-left foreground border radius.
+	 *
+	 * Sets the bottom-left corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundBottomLeftRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the bottom-right foreground border radius.
+	 *
+	 * Sets the bottom-right corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundBottomRightRadius( const std::string& radius );
+
+	/**
+	 * @brief Gets the top-left foreground border radius.
+	 *
+	 * @return The top-left foreground border radius.
+	 */
+	const Sizef& getForegroundTopLeftRadius() const;
+
+	/**
+	 * @brief Gets the top-right foreground border radius.
+	 *
+	 * @return The top-right foreground border radius.
+	 */
+	const Sizef& getForegroundTopRightRadius() const;
+
+	/**
+	 * @brief Gets the bottom-left foreground border radius.
+	 *
+	 * @return The bottom-left foreground border radius.
+	 */
+	const Sizef& getForegroundBottomLeftRadius() const;
+
+	/**
+	 * @brief Gets the bottom-right foreground border radius.
+	 *
+	 * @return The bottom-right foreground border radius.
+	 */
+	const Sizef& getForegroundBottomRightRadius() const;
+
+	/**
 	 * @brief Enables or disables the border and returns the border drawable.
 	 *
 	 * If enabled, creates or returns the border drawable. If disabled, the border is hidden.

@@ -16,6 +16,16 @@ If you have **added, renamed, or deleted** any source files, you must regenerate
 
 *(If no files were added/removed, you may skip Step 1).*
 
+## Step 1a: Format Changed Files
+After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** run `clang-format` on all modified files to ensure consistent formatting with the project's style (defined in `.clang-format` at the repository root).
+
+**Command (formats all currently modified tracked files at once):**
+`git diff --name-only -- '*.c' '*.cpp' '*.h' '*.hpp' | xargs clang-format -i`
+
+Run this **after** all edits and **before** attempting to compile.
+
+---
+
 ## Step 2: Compile the Project
 To compile the project in debug mode, execute the `make` command, ensuring you point to the correct directory for your current Operating System.
 
