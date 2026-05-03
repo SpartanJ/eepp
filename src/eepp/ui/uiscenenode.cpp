@@ -1235,8 +1235,15 @@ URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
 	// directory merging, and ".." segment collapsing!
 	base.resolve( uri );
 
-	if ( base.getAuthority().empty() && base.getScheme().empty() )
-		base.setScheme( "file" );
+	// If after resolution the scheme is still empty:
+	// - For plain relative paths (no authority), default to "file"
+	// - For protocol-relative URLs (has authority via //), default to "https"
+	if ( base.getScheme().empty() ) {
+		if ( base.getAuthority().empty() )
+			base.setScheme( "file" );
+		else
+			base.setScheme( "https" );
+	}
 
 	return base;
 }

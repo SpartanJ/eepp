@@ -368,13 +368,12 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
 	auto props = UIHTMLWidget::getPropertiesImplemented();
-	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,
-				   PropertyId::FontStyle,		 PropertyId::Color,
-				   PropertyId::BackgroundColor,	 PropertyId::TextShadowColor,
-				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor,	 PropertyId::TextAlign,
-				   PropertyId::SelectionColor,	 PropertyId::SelectionBackColor,
-				   PropertyId::TextSelection,	 PropertyId::TextDecoration };
+	auto local = {
+		PropertyId::FontFamily,		 PropertyId::FontSize,			 PropertyId::FontStyle,
+		PropertyId::Color,			 PropertyId::TextShadowColor,	 PropertyId::TextShadowOffset,
+		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,	 PropertyId::TextAlign,
+		PropertyId::SelectionColor,	 PropertyId::SelectionBackColor, PropertyId::TextSelection,
+		PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
