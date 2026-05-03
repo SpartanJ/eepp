@@ -258,6 +258,7 @@ enum class PropertyId : Uint32 {
 	Enctype = String::hash( "enctype" ),
 	Overflow = String::hash( "overflow" ),
 	Target = String::hash( "target" ),
+	UnicodeRange = String::hash( "unicode-range" ),
 };
 
 enum class PropertyType : Uint32 {

@@ -5,8 +5,8 @@
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
@@ -99,8 +99,7 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Graphics::Font* font =
-				Graphics::FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -205,11 +204,11 @@ void UITextSpan::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) 
 	notifyLayoutAttrChange();
 }
 
-Graphics::Font* UITextSpan::getFont() const {
+Font* UITextSpan::getFont() const {
 	return mRichText.getFontStyleConfig().getFont();
 }
 
-UITextSpan* UITextSpan::setFont( Graphics::Font* font ) {
+UITextSpan* UITextSpan::setFont( Font* font ) {
 	if ( mRichText.getFontStyleConfig().Font != font ) {
 		mRichText.getFontStyleConfig().Font = font;
 		mStyleState |= StyleStateFont;
@@ -333,9 +332,9 @@ UITextSpan* UITextSpan::setFontShadowColor( const Color& color ) {
 	if ( mRichText.getFontStyleConfig().ShadowColor != color ) {
 		mRichText.getFontStyleConfig().ShadowColor = color;
 		if ( color != Color::Transparent )
-			mRichText.getFontStyleConfig().Style |= Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style |= Text::Shadow;
 		else
-			mRichText.getFontStyleConfig().Style &= ~Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style &= ~Text::Shadow;
 		mStyleState |= StyleStateFontShadowColor;
 		mRichText.invalidate();
 		onFontStyleChanged();
@@ -623,7 +622,7 @@ bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Target:{
+		case PropertyId::Target: {
 			mTarget = attribute.value();
 			break;
 		}

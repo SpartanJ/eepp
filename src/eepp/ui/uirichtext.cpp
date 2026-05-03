@@ -257,7 +257,7 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}

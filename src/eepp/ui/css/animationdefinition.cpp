@@ -141,7 +141,7 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 			animationDef.setDelay( delays[i % delays.size()] );
 
 		if ( !durations.empty() )
-			animationDef.setDuration( delays[i % durations.size()] );
+			animationDef.setDuration( durations[i % durations.size()] );
 
 		if ( !fillModes.empty() )
 			animationDef.setFillMode( fillModes[i % fillModes.size()] );

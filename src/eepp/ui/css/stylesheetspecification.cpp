@@ -481,6 +481,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "enctype", "application/x-www-form-urlencoded" )
 		.setType( PropertyType::String );
 	registerProperty( "target", "_self" ).setType( PropertyType::String );
+	registerProperty( "unicode-range", "" ).setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },

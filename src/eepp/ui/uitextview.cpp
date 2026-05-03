@@ -742,12 +742,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			if ( attribute.value() != "inherit" ) {
-				Font* font = FontManager::instance()->getByName( attribute.value() );
-
-				if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
-					setFont( font );
-				}
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value() );
+			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
+				setFont( font );
 			}
 			break;
 		}

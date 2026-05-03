@@ -2,10 +2,10 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/functionstring.hpp>
 
-namespace EE { namespace System {
-
 #include <concepts>
 #include <string>
+
+namespace EE { namespace System {
 
 template <AllowedFunctionString StringType>
 FunctionString FunctionString::parse( StringType function ) {
@@ -29,6 +29,7 @@ FunctionString FunctionString::parse( StringType function ) {
 	bool stateParsingString = false;
 	std::basic_string<CharType> buffer;
 	CharType prevChar = 0;
+	CharType quoteChar = 0;
 
 	bool currentParamIsString = false;
 	int parenDepth = 0;
@@ -65,14 +66,17 @@ FunctionString FunctionString::parse( StringType function ) {
 				buffer += c;
 			} else if ( c == ',' ) {
 				if ( parenDepth == 0 ) {
-					if ( !buffer.empty() ) {
+					// Add param if we either accumulated characters or actively parsed an empty
+					// string parameter.
+					if ( !buffer.empty() || currentParamIsString ) {
 						pushBufferToParams();
 					}
 				} else {
 					buffer += c;
 				}
-			} else if ( c == '"' ) {
+			} else if ( c == '"' || c == '\'' ) {
 				stateParsingString = true;
+				quoteChar = c;
 				if ( parenDepth == 0 && buffer.empty() ) {
 					currentParamIsString = true;
 				} else {
@@ -88,8 +92,8 @@ FunctionString FunctionString::parse( StringType function ) {
 			}
 		} else {
 			if ( c == '\\' && i + 1 < parametersString.length() &&
-				 parametersString[i + 1] == '"' ) {
-			} else if ( prevChar != '\\' && c == '"' ) {
+				 parametersString[i + 1] == quoteChar ) {
+			} else if ( prevChar != '\\' && c == quoteChar ) {
 				stateParsingString = false;
 				if ( !currentParamIsString ) {
 					buffer += c;
@@ -101,7 +105,8 @@ FunctionString FunctionString::parse( StringType function ) {
 		}
 	}
 
-	if ( !buffer.empty() )
+	// Add param if we either accumulated characters or actively parsed an empty string parameter.
+	if ( !buffer.empty() || currentParamIsString )
 		pushBufferToParams();
 
 	if constexpr ( std::same_as<StringType, std::string> ) {

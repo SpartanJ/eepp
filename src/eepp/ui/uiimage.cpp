@@ -358,6 +358,9 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::Src: {
+			if ( attribute.getValue().empty() )
+				return true;
+
 			std::string path( attribute.getValue() );
 			URI uri( path );
 			bool ownIt;

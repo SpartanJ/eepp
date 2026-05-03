@@ -434,7 +434,7 @@ void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool f
 
 	if ( parser.loadFromString( inlineStyleSheet ) ) {
 		parser.getStyleSheet().setMarker( marker );
-
+		resolveStyleSheetRelativeURLs( parser.getStyleSheet(), baseURI.empty() ? mURI : baseURI );
 		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle, baseURI );
 	}
 }
@@ -1069,6 +1069,61 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 	}
 }
 
+static void resolvePropertyValueURLs( CSS::StyleSheetProperty& prop, const URI& baseURI,
+									  UISceneNode* node ) {
+	const std::string& value = prop.getValue();
+	if ( value.find( "url(" ) == std::string::npos )
+		return;
+
+	FunctionString func = FunctionString::parse( value );
+	if ( func.getName() != "url" || func.getParameters().empty() )
+		return;
+
+	std::string param = func.getParameters()[0];
+	if ( !param.empty() && param.front() == '\'' && param.back() == '\'' )
+		param = param.substr( 1, param.size() - 2 );
+	else if ( !param.empty() && param.front() == '"' && param.back() == '"' )
+		param = param.substr( 1, param.size() - 2 );
+
+	if ( param.empty() || param[0] == '@' || String::startsWith( param, "data:image/" ) )
+		return;
+
+	URI resolved = node->solveRelativePath( param, baseURI );
+	if ( resolved != URI( param ) )
+		prop.setValue( "url(" + resolved.toString() + ")", true );
+}
+
+static void resolvePropertyRelativeURLs( CSS::StyleSheetProperty& prop, const URI& baseURI,
+										 UISceneNode* node ) {
+	size_t indexCount = prop.getPropertyIndexCount();
+	if ( indexCount > 0 ) {
+		std::string newValue;
+		for ( size_t i = 0; i < indexCount; i++ ) {
+			auto* indexed = prop.getPropertyIndexRef( i );
+			if ( indexed ) {
+				resolvePropertyValueURLs( *indexed, baseURI, node );
+				if ( i > 0 )
+					newValue += ", ";
+				newValue += indexed->getValue();
+			}
+		}
+		prop.setValue( newValue, true );
+	} else {
+		resolvePropertyValueURLs( prop, baseURI, node );
+	}
+}
+
+void UISceneNode::resolveStyleSheetRelativeURLs( CSS::StyleSheet& styleSheet, URI baseURI ) {
+	if ( baseURI.empty() )
+		return;
+
+	for ( auto& stylePtr : styleSheet.getStyles() ) {
+		auto& props = stylePtr->getPropertiesRef();
+		for ( auto& it : props )
+			resolvePropertyRelativeURLs( it.second, baseURI, this );
+	}
+}
+
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseURI ) {
 	auto loadFont = [this, baseURI]( const std::string& familyName,
 									 const CSS::StyleSheetProperty& srcProp, Font* fontFamily,
@@ -1153,8 +1208,17 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 
 		Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
 		std::string fontFamily( String::trim( familyProp.getValue(), '"' ) );
+		String::trimInPlace( fontFamily, "'" );
+
 		if ( fontStyle )
 			fontFamily += "#" + Text::styleFlagToString( fontStyle );
+
+		auto unicodeRange = style->getPropertyById( PropertyId::UnicodeRange );
+
+		// We don't support unicode ranges yet
+		if ( unicodeRange && unicodeRange->value().find( "U+0000-00FF" ) == std::string::npos ) {
+			continue;
+		}
 
 		if ( nullptr == fontSearch ) {
 			loadFont( fontFamily, srcProp, nullptr, fontStyle );
@@ -1170,6 +1234,9 @@ URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
 	// Automatically handles absolute URLs, protocol-relative URLs,
 	// directory merging, and ".." segment collapsing!
 	base.resolve( uri );
+
+	if ( base.getAuthority().empty() && base.getScheme().empty() )
+		base.setScheme( "file" );
 
 	return base;
 }
@@ -1373,6 +1440,20 @@ void UISceneNode::navigate( const NavigationRequest& request ) {
 	if ( mNavigationInterceptorCb && mNavigationInterceptorCb( request ) )
 		return;
 	Engine::instance()->openURI( request.uri.toString() );
+}
+
+Font* UISceneNode::getFontFromNamesList( std::string_view names ) const {
+	Font* font = nullptr;
+	String::readBySeparatorStoppable(
+		names,
+		[&font]( std::string_view name ) {
+			name = String::trim( name, ' ' );
+			name = String::trim( name, '\'' );
+			font = FontManager::instance()->getByName( std::string{ name } );
+			return font == nullptr;
+		},
+		',' );
+	return font;
 }
 
 }} // namespace EE::UI

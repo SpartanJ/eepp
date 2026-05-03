@@ -1,9 +1,9 @@
 #ifndef EE_UISCENENODE_HPP
 #define EE_UISCENENODE_HPP
 
+#include <eepp/network/cookiemanager.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/network/cookiemanager.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
@@ -734,6 +734,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	Network::CookieManager& getCookieManager() { return mCookieManager; }
 
+	Font* getFontFromNamesList( std::string_view names ) const;
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -905,6 +907,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * relative paths in CSS
 	 */
 	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet, URI baseURI = {} );
+
+	/** Resolves relative URLs in all CSS property values against the stylesheet's base URI. */
+	void resolveStyleSheetRelativeURLs( CSS::StyleSheet& styleSheet, URI baseURI = {} );
 
 	/**
 	 * @brief Loads font faces from @font-face rules.

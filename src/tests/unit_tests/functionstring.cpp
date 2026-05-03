@@ -51,4 +51,12 @@ UTEST( FunctionString, functionString ) {
 			  { "s t r i n g", "s t r i n g 2" } );
 	testCase( R"(test24(       func( "test" , "string" )    , call(12,42)    ))", "test24",
 			  { "func( \"test\" , \"string\" )", "call(12,42)" } );
+	testCase( R"(test25('string', 'string2'))", "test25", { "string", "string2" } );
+	testCase( R"(test26('str\'ing', 'stri\'ng2'))", "test26", { "str\'ing", "stri\'ng2" } );
+	testCase( R"(test27('str,ing', 'stri,ng2'))", "test27", { "str,ing", "stri,ng2" } );
+	testCase( R"(test28( '12   ' ,  '  14  ' ))", "test28", { "12   ", "  14  " } );
+	testCase( R"(test29(func( 'test' , 'string' ), call(12,42)))", "test29",
+			  { "func( 'test' , 'string' )", "call(12,42)" } );
+	testCase( R"(test30("str'ing", 'str"ing2'))", "test30", { "str'ing", "str\"ing2" } );
+	testCase( R"(test31('', ''))", "test31", { "", "" } );
 }

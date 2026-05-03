@@ -186,7 +186,7 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
