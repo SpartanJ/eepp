@@ -188,6 +188,10 @@ bool StyleSheetLength::isLength( const std::string& unitStr ) {
 	return false;
 }
 
+bool StyleSheetLength::isPercentage( const std::string& val ) {
+	return !val.empty() && val.back() == '%';
+}
+
 StyleSheetLength::StyleSheetLength() : mUnit( Px ), mValue( 0 ) {}
 
 StyleSheetLength::StyleSheetLength( const Float& val, const StyleSheetLength::Unit& unit ) :

@@ -68,6 +68,12 @@ void BlockLayouter::updateLayout() {
 			{ mContainer->lengthFromValue( *prop ), mContainer->getPixelsSize().getHeight() } );
 	}
 
+	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::Fixed && mContainer->getUIStyle() &&
+		 ( prop = mContainer->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
+		mContainer->setInternalPixelsSize(
+			{ mContainer->getPixelsSize().getWidth(), mContainer->lengthFromValue( *prop ) } );
+	}
+
 	UIRichText::rebuildRichText( widget, *rt );
 
 	rt->updateLayout();
@@ -80,6 +86,20 @@ void BlockLayouter::updateLayout() {
 			   mContainer->getPixelsContentOffset().Right;
 		if ( !mContainer->getMaxWidthEq().empty() && totW > mContainer->getMaxSizePx().getWidth() )
 			mContainer->setClipType( ClipType::ContentBox );
+	} else if ( mContainer->getLayoutWidthPolicy() == SizePolicy::Fixed &&
+				mContainer->getUIStyle() ) {
+		const StyleSheetProperty* wprop =
+			mContainer->getUIStyle()->getProperty( PropertyId::Width );
+		if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) && mContainer->getParent() &&
+			 mContainer->getParent()->isWidget() &&
+			 mContainer->getParent()->asType<UIWidget>()->getLayoutWidthPolicy() ==
+				 SizePolicy::WrapContent ) {
+			totW = rt->getSize().getWidth() + mContainer->getPixelsContentOffset().Left +
+				   mContainer->getPixelsContentOffset().Right;
+			if ( !mContainer->getMaxWidthEq().empty() &&
+				 totW > mContainer->getMaxSizePx().getWidth() )
+				mContainer->setClipType( ClipType::ContentBox );
+		}
 	}
 
 	if ( totW != mContainer->getPixelsSize().getWidth() ||
@@ -93,6 +113,20 @@ void BlockLayouter::updateLayout() {
 		if ( !mContainer->getMaxHeightEq().empty() &&
 			 totH > mContainer->getMaxSizePx().getHeight() )
 			mContainer->setClipType( ClipType::ContentBox );
+	} else if ( mContainer->getLayoutHeightPolicy() == SizePolicy::Fixed &&
+				mContainer->getUIStyle() ) {
+		const StyleSheetProperty* hprop =
+			mContainer->getUIStyle()->getProperty( PropertyId::Height );
+		if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) && mContainer->getParent() &&
+			 mContainer->getParent()->isWidget() &&
+			 mContainer->getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
+				 SizePolicy::WrapContent ) {
+			totH = rt->getSize().getHeight() + mContainer->getPixelsContentOffset().Top +
+				   mContainer->getPixelsContentOffset().Bottom;
+			if ( !mContainer->getMaxHeightEq().empty() &&
+				 totH > mContainer->getMaxSizePx().getHeight() )
+				mContainer->setClipType( ClipType::ContentBox );
+		}
 	}
 
 	if ( totH != mContainer->getPixelsSize().getHeight() ||

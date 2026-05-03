@@ -1947,22 +1947,14 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( attribute.value() == "auto" ) {
 				setLayoutHeightPolicy( SizePolicy::WrapContent );
 			} else {
-				StyleSheetLength length( attribute.value() );
-				if ( length.getUnit() == StyleSheetLength::Unit::Percentage && getParent() &&
-					 getParent()->isWidget() &&
-					 getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
-						 SizePolicy::WrapContent ) {
-					setLayoutHeightPolicy( SizePolicy::WrapContent );
-				} else {
-					if ( mStyle ) {
-						mStyle->setStyleSheetProperty(
-							StyleSheetProperty( "layout-height", attribute.value(), true,
-												StyleSheetSelectorRule::SpecificityImportant ) );
-					}
-					setLayoutHeightPolicy( SizePolicy::Fixed );
-					setSize( mDpSize.getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
-					notifyLayoutAttrChange();
+				if ( mStyle ) {
+					mStyle->setStyleSheetProperty(
+						StyleSheetProperty( "layout-height", attribute.value(), true,
+											StyleSheetSelectorRule::SpecificityImportant ) );
 				}
+				setLayoutHeightPolicy( SizePolicy::Fixed );
+				setSize( mDpSize.getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
+				notifyLayoutAttrChange();
 			}
 			break;
 		case PropertyId::BackgroundColor:
@@ -2210,21 +2202,13 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				setLayoutHeightPolicy( SizePolicy::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
-				StyleSheetLength length( val, 0 );
-				if ( length.getUnit() == StyleSheetLength::Unit::Percentage && getParent() &&
-					 getParent()->isWidget() &&
-					 getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
-						 SizePolicy::WrapContent ) {
-					setLayoutHeightPolicy( SizePolicy::WrapContent );
-				} else {
-					unsetFlags( UI_AUTO_SIZE );
-					setLayoutHeightPolicy( SizePolicy::Fixed );
-					Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
-					if ( !( newVal == 0 && getLayoutWeight() != 0 &&
-							getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
-						setInternalHeight( newVal );
-						onSizeChange();
-					}
+				unsetFlags( UI_AUTO_SIZE );
+				setLayoutHeightPolicy( SizePolicy::Fixed );
+				Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
+				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
+						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
+					setInternalHeight( newVal );
+					onSizeChange();
 				}
 			}
 			break;

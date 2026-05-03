@@ -42,6 +42,8 @@ class EE_API StyleSheetLength {
 
 	static bool isLength( const std::string& unitStr );
 
+	static bool isPercentage( const std::string& val );
+
 	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0,
 										bool pxAsDp = false );
 

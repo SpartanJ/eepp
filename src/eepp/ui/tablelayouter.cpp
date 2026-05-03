@@ -272,9 +272,11 @@ void TableLayouter::computeIntrinsicWidths() {
 	}
 
 	mMinIntrinsicWidth = totalMin + mContainer->getPixelsContentOffset().Left +
-						 mContainer->getPixelsContentOffset().Right + ( maxCols + 1 ) * mCellspacing;
+						 mContainer->getPixelsContentOffset().Right +
+						 ( maxCols + 1 ) * mCellspacing;
 	mMaxIntrinsicWidth = totalMax + mContainer->getPixelsContentOffset().Left +
-						 mContainer->getPixelsContentOffset().Right + ( maxCols + 1 ) * mCellspacing;
+						 mContainer->getPixelsContentOffset().Right +
+						 ( maxCols + 1 ) * mCellspacing;
 
 	mIntrinsicWidthsDirty = false;
 }
@@ -297,7 +299,35 @@ void TableLayouter::updateLayout() {
 			{ widget->lengthFromValue( *prop ), widget->getPixelsSize().getHeight() } );
 	}
 
+	if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed && widget->getUIStyle() &&
+		 ( prop = widget->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
+		widget->asType<UINode>()->setInternalPixelsSize(
+			{ widget->getPixelsSize().getWidth(), widget->lengthFromValue( *prop ) } );
+	}
+
 	computeIntrinsicWidths();
+
+	bool useContentWidth = false;
+	if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed && widget->getUIStyle() ) {
+		const StyleSheetProperty* wprop = widget->getUIStyle()->getProperty( PropertyId::Width );
+		if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) && widget->getParent() &&
+			 widget->getParent()->isWidget() &&
+			 widget->getParent()->asType<UIWidget>()->getLayoutWidthPolicy() ==
+				 SizePolicy::WrapContent ) {
+			useContentWidth = true;
+		}
+	}
+
+	bool useContentHeight = false;
+	if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed && widget->getUIStyle() ) {
+		const StyleSheetProperty* hprop = widget->getUIStyle()->getProperty( PropertyId::Height );
+		if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) && widget->getParent() &&
+			 widget->getParent()->isWidget() &&
+			 widget->getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
+				 SizePolicy::WrapContent ) {
+			useContentHeight = true;
+		}
+	}
 
 	if ( mRows.empty() ) {
 		mPacking = false;
@@ -306,8 +336,11 @@ void TableLayouter::updateLayout() {
 
 	size_t maxCols = mColMinWidths.size();
 	mColWidths.assign( maxCols, 0.f );
-	Float paddingH = mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
+	Float paddingH =
+		mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 	Float containerWidth = mContainer->getPixelsSize().getWidth();
+	if ( useContentWidth )
+		containerWidth = mMaxIntrinsicWidth;
 	Float availableWidth = sanitizeFloat(
 		std::max( 0.f, containerWidth - paddingH - ( maxCols + 1 ) * mCellspacing ) );
 
@@ -523,11 +556,14 @@ void TableLayouter::updateLayout() {
 	if ( mFooter && !mRows.empty() )
 		mRows[rowCount - 1]->setPixelsPosition( mContainer->getPixelsContentOffset().Left, 0 );
 
-	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent || useContentHeight ) {
 		mContainer->asType<UINode>()->setInternalPixelsHeight(
 			mContainer->getPixelsContentOffset().Top + headHeight + bodyHeight + footerHeight +
 			( rowCount + 1 ) * mCellspacing + mContainer->getPixelsContentOffset().Bottom );
 	}
+
+	if ( useContentWidth )
+		widget->asType<UINode>()->setInternalPixelsWidth( mMaxIntrinsicWidth );
 
 	mPacking = false;
 }
