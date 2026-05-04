@@ -38,7 +38,7 @@ enum class WindowFlashOperation {
 	UntilFocused,
 };
 
-enum class WindowBackend : Uint32 { SDL2, Default };
+enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
 #define EE_SCREEN_KEYBOARD_ENABLED false
@@ -89,7 +89,8 @@ class WindowSettings {
 /** @brief ContextSettings Small class that contains the renderer context information */
 class ContextSettings {
   public:
-	static constexpr Int32 FrameRateLimitScreenRefreshRate = (std::numeric_limits<Int32>::max)() - 1;
+	static constexpr Int32 FrameRateLimitScreenRefreshRate =
+		( std::numeric_limits<Int32>::max )() - 1;
 
 	inline ContextSettings( bool vsync, Int32 frameRateLimit = FrameRateLimitScreenRefreshRate,
 							Uint32 multisamples = 0, GraphicsLibraryVersion version = GLv_default,

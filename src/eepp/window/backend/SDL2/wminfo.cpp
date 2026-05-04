@@ -24,7 +24,7 @@ WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( eeMalloc( sizeof( SDL_SysWMinfo ) )
 	SDL_GetWindowWMInfo( win, info );
 }
 #else
-WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( NULL ) {}
+WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( nullptr ) {}
 #endif
 
 WMInfo::~WMInfo() {

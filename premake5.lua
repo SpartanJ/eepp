@@ -24,6 +24,7 @@ newoption {
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
 		{ "SDL2",  "SDL2" },
+		{ "SDL3",  "SDL3" },
 	}
 }
 newoption {
@@ -644,17 +645,45 @@ function add_sdl2()
 	table.insert( backends, "SDL2" )
 end
 
+function add_sdl3()
+	print("Using SDL3 backend");
+	if not can_add_static_backend("SDL3") then
+		table.insert( link_list, get_backend_link_name( "SDL3" ) )
+	else
+		print("Using static backend")
+		insert_static_backend( "SDL3" )
+	end
+
+	table.insert( backends, "SDL3" )
+end
+
 function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
-		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		if table.contains(backends, "SDL2") then
+			incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		end
+		if table.contains(backends, "SDL3") then
+			incdirs { "/Library/Frameworks/SDL3.framework/Headers" }
+		end
 	end
 	if os.istarget("macosx") then
-		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if table.contains(backends, "SDL2") then
+			defines { "EE_SDL2_FROM_ROOTPATH" }
+		end
+		if table.contains(backends, "SDL3") then
+			defines { "EE_SDL3_FROM_ROOTPATH" }
+		end
 		if not is_xcode() and not _OPTIONS["use-frameworks"] then
-			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
-			buildoptions { sdl2flags }
+			if table.contains(backends, "SDL2") then
+				local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+				buildoptions { sdl2flags }
+			end
+			if table.contains(backends, "SDL3") then
+				local sdl3flags = popen("sdl3-config --cflags"):gsub("\n", "")
+				buildoptions { sdl3flags }
+			end
 		end
 	end
 end
@@ -720,9 +749,16 @@ function select_backend()
 		add_sdl2()
 	end
 
+	if backend_is("SDL3", "SDL3") then
+		print("Selected SDL3")
+		add_sdl3()
+	end
+
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os_findlib("SDL2", "SDL2") then
+		if os_findlib("SDL3", "SDL3") then
+			add_sdl3()
+		elseif os_findlib("SDL2", "SDL2") then
 			add_sdl2()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
@@ -773,6 +809,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
@@ -815,6 +852,11 @@ function build_eepp( build_name )
 	if table.contains( backends, "SDL2" ) then
 		files { "src/eepp/window/backend/SDL2/*.cpp" }
 		defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
+	end
+
+	if table.contains( backends, "SDL3" ) then
+		files { "src/eepp/window/backend/SDL3/*.cpp" }
+		defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_3" }
 	end
 
 	multiple_insert( link_list, os_links )
@@ -1212,9 +1254,16 @@ workspace "eepp"
 	project "mojoal-static"
 		kind "StaticLib"
 		language "C"
-		incdirs { "include/eepp/thirdparty/mojoAL" }
 		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
-		files { "src/thirdparty/mojoAL/*.c" }
+
+		if _OPTIONS["with-backend"] == "SDL3" then
+			incdirs { "src/thirdparty/mojoAL-SDL3", "src/thirdparty/mojoAL-SDL3/AL" }
+			files { "src/thirdparty/mojoAL-SDL3/*.c" }
+		else
+			incdirs { "src/thirdparty/mojoAL" }
+			files { "src/thirdparty/mojoAL/*.c" }
+		end
+
 		build_base_cpp_configuration( "mojoal" )
 		target_dir_thirdparty()
 		filter "options:windows-vc-build"
@@ -1702,8 +1751,14 @@ workspace "eepp"
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		incdirs { "src/modules/eterm/include/" }
 		language "C++"
-		files { "src/tests/unit_tests/*.cpp" }
-		build_link_configuration( "eepp-unit_tests", true )
+    files { "src/tests/unit_tests/*.cpp" }
+    build_link_configuration( "eepp-unit_tests", true )
+    if table.contains(backends, "SDL2") then
+        defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
+    end
+    if table.contains(backends, "SDL3") then
+        defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_3" }
+    end
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

@@ -25,6 +25,10 @@
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
+#if defined(EE_SDL_VERSION_3)
+#include <eepp/window/backend/SDL3/backendsdl3.hpp>
+#include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
+#endif
 #include <eepp/window/engine.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -32,10 +36,13 @@
 #endif
 
 #define BACKEND_SDL2 1
+#define BACKEND_SDL3 2
 
 #ifndef DEFAULT_BACKEND
 
-#if defined( EE_BACKEND_SDL2 )
+#if defined( EE_BACKEND_SDL3 )
+#define DEFAULT_BACKEND BACKEND_SDL3
+#elif defined( EE_BACKEND_SDL2 )
 #define DEFAULT_BACKEND BACKEND_SDL2
 #endif
 
@@ -153,10 +160,35 @@ EE::Window::Window* Engine::createSDL2Window( const WindowSettings& Settings,
 #endif
 }
 
+#ifdef EE_BACKEND_SDL3
+Backend::WindowBackendLibrary* Engine::createSDL3Backend( const WindowSettings& ) {
+#if defined( EE_SDL_VERSION_3 )
+	return eeNew( Backend::SDL3::WindowBackendSDL3, () );
+#else
+	return NULL;
+#endif
+}
+
+EE::Window::Window* Engine::createSDL3Window( const WindowSettings& Settings,
+											  const ContextSettings& Context ) {
+#if defined( EE_SDL_VERSION_3 )
+	if ( NULL == mBackend ) {
+		mBackend = createSDL3Backend( Settings );
+	}
+
+	return eeNew( Backend::SDL3::WindowSDL, ( Settings, Context ) );
+#else
+	return NULL;
+#endif
+}
+#endif
+
 EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 												 const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return createSDL2Window( Settings, Context );
+#elif DEFAULT_BACKEND == BACKEND_SDL3
+	return createSDL3Window( Settings, Context );
 #else
 	return NULL;
 #endif
@@ -255,6 +287,8 @@ bool Engine::isRunning() const {
 WindowBackend Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
+#elif DEFAULT_BACKEND == BACKEND_SDL3
+	return WindowBackend::SDL3;
 #else
 	return WindowBackend::Default;
 #endif
@@ -297,6 +331,8 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 
 	if ( "sdl2" == backend )
 		winBackend = WindowBackend::SDL2;
+	else if ( "sdl3" == backend )
+		winBackend = WindowBackend::SDL3;
 
 	Uint32 Style = WindowStyle::Titlebar;
 
@@ -386,6 +422,8 @@ PlatformHelper* Engine::getPlatformHelper() {
 	if ( NULL == mPlatformHelper ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 		mPlatformHelper = eeNew( Backend::SDL2::PlatformHelperSDL2, () );
+#elif DEFAULT_BACKEND == BACKEND_SDL3
+		mPlatformHelper = eeNew( Backend::SDL3::PlatformHelperSDL3, () );
 #endif
 	}
 
@@ -396,6 +434,8 @@ DisplayManager* Engine::getDisplayManager() {
 	if ( NULL == mDisplayManager ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 		mDisplayManager = eeNew( Backend::SDL2::DisplayManagerSDL2, () );
+#elif DEFAULT_BACKEND == BACKEND_SDL3
+		mDisplayManager = eeNew( Backend::SDL3::DisplayManagerSDL3, () );
 #endif
 	}
 

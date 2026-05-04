@@ -1,17 +1,16 @@
-#include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
-#include <eepp/window/backend/SDL2/cursorsdl2.hpp>
+#include <eepp/window/backend/SDL3/cursormanagersdl3.hpp>
+#include <eepp/window/backend/SDL3/cursorsdl3.hpp>
 
-#ifdef EE_BACKEND_SDL2
+#ifdef EE_BACKEND_SDL3
 
-namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+namespace EE { namespace Window { namespace Backend { namespace SDL3 {
 
-static SDL_Cursor* SDL_SYS_CURSORS[Cursor::SysCursorCount] = {0};
+static SDL_Cursor* SDL_SYS_CURSORS[Cursor::SysCursorCount] = { 0 };
 
 static SDL_Cursor* getLoadCursor( const Cursor::SysType& cursor ) {
 	if ( 0 == SDL_SYS_CURSORS[cursor] ) {
 		SDL_SYS_CURSORS[cursor] = SDL_CreateSystemCursor( (SDL_SystemCursor)cursor );
 	}
-
 	return SDL_SYS_CURSORS[cursor];
 }
 
@@ -33,7 +32,6 @@ Cursor* CursorManagerSDL::create( const std::string& path, const Vector2i& hotsp
 void CursorManagerSDL::set( Cursor* cursor ) {
 	if ( nullptr != cursor && cursor != mCurrent ) {
 		SDL_SetCursor( reinterpret_cast<CursorSDL*>( cursor )->GetCursor() );
-
 		mCurrent = cursor;
 		mCurSysCursor = false;
 		mSysCursor = Cursor::SysCursorNone;
@@ -43,7 +41,6 @@ void CursorManagerSDL::set( Cursor* cursor ) {
 void CursorManagerSDL::set( Cursor::SysType syscurid ) {
 	if ( syscurid != mSysCursor ) {
 		SDL_SetCursor( getLoadCursor( syscurid ) );
-
 		mCurrent = nullptr;
 		mCurSysCursor = true;
 		mSysCursor = syscurid;
@@ -59,13 +56,11 @@ void CursorManagerSDL::hide() {
 }
 
 void CursorManagerSDL::setVisible( bool visible ) {
-	if ( visible ) {
-		SDL_ShowCursor( SDL_ENABLE );
-		mVisible = true;
-	} else {
-		SDL_ShowCursor( SDL_DISABLE );
-		mVisible = false;
-	}
+	if ( visible )
+		SDL_ShowCursor();
+	else
+		SDL_HideCursor();
+	mVisible = visible;
 }
 
 void CursorManagerSDL::remove( Cursor* cursor, bool Delete ) {
@@ -75,7 +70,6 @@ void CursorManagerSDL::remove( Cursor* cursor, bool Delete ) {
 void CursorManagerSDL::reload() {
 	if ( mVisible ) {
 		show();
-
 		if ( mCurSysCursor ) {
 			set( mSysCursor );
 		} else {
@@ -86,6 +80,6 @@ void CursorManagerSDL::reload() {
 	}
 }
 
-}}}} // namespace EE::Window::Backend::SDL2
+}}}} // namespace EE::Window::Backend::SDL3
 
 #endif

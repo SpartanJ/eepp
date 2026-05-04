@@ -95,6 +95,7 @@ CODE_SRCS				:=  \
 	math/*.cpp \
 	audio/*.cpp \
 	window/*.cpp \
+	window/backend/*.cpp \
 	window/backend/SDL2/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \

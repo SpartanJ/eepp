@@ -348,9 +348,17 @@ void Window::close() {
 
 void Window::setFrameRateLimit( Uint32 FrameRateLimit ) {
 	if ( FrameRateLimit == ContextSettings::FrameRateLimitScreenRefreshRate ) {
-		Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(
-			isOpen() ? getCurrentDisplayIndex() : 0 );
-		FrameRateLimit = currentDisplay->getRefreshRate();
+		Display* currentDisplay = nullptr;
+		if ( Engine::existsSingleton() && Engine::instance()->getDisplayManager() ) {
+			currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(
+				getCurrentDisplayIndex() );
+		}
+		if ( currentDisplay ) {
+			FrameRateLimit = currentDisplay->getRefreshRate();
+		} else {
+			// Fallback to 60 FPS if display info not available
+			FrameRateLimit = 60;
+		}
 	}
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }

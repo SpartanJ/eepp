@@ -18,7 +18,6 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
 	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
-	SDL_SetHint( SDL_HINT_RETURN_KEY_HIDES_IME, "0" );
 	SDL_SetHint( SDL_HINT_RETURN_KEY_HIDES_IME, "1" );
 #if SDL_VERSION_ATLEAST( 2, 0, 18 )
 	SDL_SetHint( SDL_HINT_IME_SHOW_UI, "1" );
