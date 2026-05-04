@@ -1357,8 +1357,13 @@ solution "eepp"
 			language "C"
 			defines {"AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-			includedirs { "include/eepp/thirdparty/mojoAL" }
-			files { "src/thirdparty/mojoAL/*.c" }
+			if _OPTIONS["with-backend"] == "SDL3" then
+				includedirs { "src/thirdparty/mojoAL-SDL3", "src/thirdparty/mojoAL-SDL3/AL" }
+				files { "src/thirdparty/mojoAL-SDL3/*.c" }
+			else
+				includedirs { "src/thirdparty/mojoAL" }
+				files { "src/thirdparty/mojoAL/*.c" }
+			end
 			build_base_configuration( "mojoal" )
 	end
 

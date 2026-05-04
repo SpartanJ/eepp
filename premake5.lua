@@ -1254,9 +1254,16 @@ workspace "eepp"
 	project "mojoal-static"
 		kind "StaticLib"
 		language "C"
-		incdirs { "include/eepp/thirdparty/mojoAL" }
 		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
-		files { "src/thirdparty/mojoAL/*.c" }
+
+		if _OPTIONS["with-backend"] == "SDL3" then
+			incdirs { "src/thirdparty/mojoAL-SDL3", "src/thirdparty/mojoAL-SDL3/AL" }
+			files { "src/thirdparty/mojoAL-SDL3/*.c" }
+		else
+			incdirs { "src/thirdparty/mojoAL" }
+			files { "src/thirdparty/mojoAL/*.c" }
+		end
+
 		build_base_cpp_configuration( "mojoal" )
 		target_dir_thirdparty()
 		filter "options:windows-vc-build"
