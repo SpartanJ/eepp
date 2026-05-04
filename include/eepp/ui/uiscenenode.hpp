@@ -748,6 +748,7 @@ class EE_API UISceneNode : public SceneNode {
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
+	bool mStyleDuringLoad{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
@@ -984,6 +985,8 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return The document / scene URI used to resolve paths from a complete URI (with
 	 * path+query+fragment+etc) */
 	URI getURIFromURL( const URI& url ) const;
+
+	void updateStyleSheet( bool forceReloadStyle = true );
 };
 
 }} // namespace EE::UI

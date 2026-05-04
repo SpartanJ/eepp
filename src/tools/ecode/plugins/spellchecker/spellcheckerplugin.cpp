@@ -424,7 +424,8 @@ void SpellCheckerPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& i
 	for ( size_t i = 0; i < matches.size(); ++i ) {
 		auto& match = matches[i];
 
-		if ( match.lineHash != doc->getLineHash( index ) )
+		if ( match.lineHash != doc->getLineHash( index ) ||
+			 doc->getLineLength( index ) > ( EE_1KB * 10 ) )
 			return;
 
 		Text line( "", editor->getFont(), editor->getFontSize() );

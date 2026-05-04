@@ -476,7 +476,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--disable-static-build --with-debug-symbols  --with-backend=SDL3 ninja",
+        "args": "--disable-static-build --with-debug-symbols --with-backend=SDL3 ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },

@@ -371,6 +371,11 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 					innerClock.getElapsedTimeAndReset().asMilliseconds() );
 	}
 
+	if ( mStyleDuringLoad ) {
+		updateStyleSheet( false );
+		mStyleDuringLoad = false;
+	}
+
 	for ( auto& widget : widgets )
 		widget->reloadStyle( true, true, true );
 
@@ -380,6 +385,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 	}
 
 	mIsLoading = false;
+
 	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
 
 	if ( mVerbose ) {
@@ -406,17 +412,12 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 		setStyleSheet( parser.getStyleSheet() );
 }
 
-void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
-									 URI baseURI ) {
-	mStyleSheet.combineStyleSheet( styleSheet );
-
+void UISceneNode::updateStyleSheet( bool forceReloadStyle ) {
 	bool mediaChanged = false;
 	if ( !mStyleSheet.isMediaQueryListEmpty() &&
 		 mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
 		mediaChanged = true;
 	}
-
-	processStyleSheetAtRules( styleSheet, baseURI );
 
 	if ( mRoot && mRoot->getUIStyle() )
 		mRoot->getUIStyle()->resetGlobalDefinition();
@@ -426,6 +427,20 @@ void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool for
 
 	if ( forceReloadStyle )
 		reloadStyle();
+}
+
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
+									 URI baseURI ) {
+	mStyleSheet.combineStyleSheet( styleSheet );
+
+	processStyleSheetAtRules( styleSheet, baseURI );
+
+	if ( mIsLoading ) {
+		mStyleDuringLoad = true;
+		return;
+	}
+
+	updateStyleSheet( forceReloadStyle );
 }
 
 void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle,
