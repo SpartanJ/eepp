@@ -2,7 +2,6 @@
 #include <eepp/window/backend/SDL3/joystickmanagersdl3.hpp>
 #include <eepp/window/backend/SDL3/windowsdl3.hpp>
 #include <eepp/window/engine.hpp>
-#include <limits>
 
 #ifdef EE_BACKEND_SDL3
 

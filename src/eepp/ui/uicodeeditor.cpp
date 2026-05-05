@@ -4212,6 +4212,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			}
 		}
 	} else {
+		bool getChunkHints = !Text::canSkipShaping( drawHints ) && tokens.size() > 8192;
 		for ( const auto& token : tokens ) {
 			String::View text = strLine.view();
 			if ( pos < strLine.size() && !( pos == 0 && text.size() == token.len ) ) {
@@ -4281,28 +4282,35 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 						Int64 totalChars = curCharsWidth - start;
 						Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 						if ( curCharsWidth >= charsToVisible ) {
+							String::View subText( text.substr( start, end ) );
 							size = Text::draw(
-								text.substr( start, end ),
+								subText,
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-								fontStyle, mTabWidth, drawHints, mTextDirection,
-								whitespaceDisplayConfig );
+								fontStyle, mTabWidth,
+								getChunkHints ? String::getTextHints( subText ) : drawHints,
+								mTextDirection, whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
-						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
-										   { position.x, position.y + lineOffset }, fontStyle,
-										   mTabWidth, drawHints, mTextDirection,
-										   whitespaceDisplayConfig );
+						String::View subText( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
+						size = Text::draw(
+							subText, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
+							getChunkHints ? String::getTextHints( subText ) : drawHints,
+							mTextDirection, whitespaceDisplayConfig );
 					}
 				} else {
-					size =
-						Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									mTabWidth, drawHints, mTextDirection, whitespaceDisplayConfig );
+					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+									   mTabWidth,
+									   getChunkHints ? String::getTextHints( text ) : drawHints,
+									   mTextDirection, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )
 					textWidth = size.getWidth();
+
+				if ( position.x > mScreenPos.x + mSize.getWidth() )
+					break;
 			} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 				break;
 			}

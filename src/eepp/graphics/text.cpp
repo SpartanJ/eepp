@@ -1336,7 +1336,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				};
 
 				if ( fpos.y >= charTop && fpos.y <= charBottom ) {
-					auto findNextInsertionIndex = [&layout, sg, i, sgs, tSize, sp]() -> Int32 {
+					auto findNextInsertionIndex = [&]() -> Int32 {
 						if ( layout->isRTL() ) {
 							if ( i > 0 ) {
 								for ( auto j = i - 1; j >= 0; j-- ) {

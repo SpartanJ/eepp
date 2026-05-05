@@ -13,7 +13,7 @@
 
 namespace EE::Graphics {
 
-using LRULayoutCache = LRUCache<2048, Uint64, TextLayout::Cache>;
+using LRULayoutCache = LRUCache<8192, Uint64, TextLayout::Cache>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 
