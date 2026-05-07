@@ -1589,7 +1589,17 @@ void UICodeEditorSplitter::addEditorPositionToNavigationHistory( UICodeEditor* e
 		return;
 	}
 
-	NavigationRecord rec{ doc->getFilePath(), doc->getSelection().start() };
+	NavigationRecord rec{ doc->getFilePath(), doc->getSelection().start(), Sys::getTicks() };
+
+	// This usually happens in quick-searches
+	if ( !mNavigationHistory.empty() &&
+		 rec.path == mNavigationHistory[mNavigationHistory.size() - 1].path &&
+		 rec.timestamp - mNavigationHistory[mNavigationHistory.size() - 1].timestamp < 300 &&
+		 rec.pos.line() == mNavigationHistory[mNavigationHistory.size() - 1].pos.line() &&
+		 rec.pos.distance( mNavigationHistory[mNavigationHistory.size() - 1].pos ) < 20 ) {
+		mNavigationHistory.pop_back();
+	}
+
 	mNavigationHistory.emplace_back( std::move( rec ) );
 	mNavigationHistoryPos = mNavigationHistory.size() - 1;
 

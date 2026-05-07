@@ -419,6 +419,7 @@ class EE_API UICodeEditorSplitter {
 	struct NavigationRecord {
 		std::string path;
 		TextPosition pos;
+		Uint64 timestamp;
 	};
 	size_t mNavigationHistoryMaxSize{ 100 };
 	std::vector<NavigationRecord> mNavigationHistory;
