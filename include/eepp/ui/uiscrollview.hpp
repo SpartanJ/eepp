@@ -94,7 +94,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void onValueChangeCb( const Event* Event );
 
-	void onScrollViewSizeChange( const Event* Event );
+	virtual void onScrollViewSizeChange( const Event* Event );
 
 	void onScrollViewPositionChange( const Event* Event );
 
@@ -113,7 +113,6 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	void clearListeners();
 
 	void updateInternalSize();
-
 };
 
 }} // namespace EE::UI

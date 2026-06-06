@@ -312,9 +312,48 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 
 	sceneNode->combineStyleSheet( css, false, String::hash( css ), URI() );
 
-	Font* loadedFont = FontManager::instance()->getByName( "DataURIFont" );
+	Font* loadedFont = sceneNode->getFontFromNamesList( "DataURIFont" );
 	ASSERT_NE( loadedFont, nullptr );
 	ASSERT_TRUE_MSG( loadedFont->loaded(), "Font loaded via data URI is not loaded" );
+	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "DataURIFont" ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( FontRendering, fontFaceAuthorFamilyIsSceneScoped ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "eepp - Scoped Font Face", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	UISceneNode* sceneA = UISceneNode::New();
+	UISceneNode* sceneB = UISceneNode::New();
+	SceneManager::instance()->add( sceneA );
+	SceneManager::instance()->add( sceneB );
+
+	const std::string processPath( Sys::getProcessPath() );
+	const std::string cssA =
+		"@font-face { font-family: 'ScopedAuthorFace'; src: url('file://" + processPath +
+		"../assets/fonts/NotoSans-Regular.ttf'); font-weight: normal; font-style: normal; }";
+	const std::string cssB =
+		"@font-face { font-family: 'ScopedAuthorFace'; src: url('file://" + processPath +
+		"../assets/fonts/DejaVuSansMono.ttf'); font-weight: normal; font-style: normal; }";
+
+	sceneA->combineStyleSheet( cssA, false, String::hash( cssA ), URI() );
+	sceneB->combineStyleSheet( cssB, false, String::hash( cssB ), URI() );
+
+	Font* fontA = sceneA->getFontFromNamesList( "ScopedAuthorFace" );
+	Font* fontB = sceneB->getFontFromNamesList( "ScopedAuthorFace" );
+	ASSERT_NE( fontA, nullptr );
+	ASSERT_NE( fontB, nullptr );
+	EXPECT_TRUE( fontA->loaded() );
+	EXPECT_TRUE( fontB->loaded() );
+	EXPECT_NE( fontA, fontB );
+	EXPECT_TRUE( fontA->getName() != fontB->getName() );
+	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "ScopedAuthorFace" ) );
 
 	Engine::destroySingleton();
 }

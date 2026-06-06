@@ -125,12 +125,13 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	webView->onNavigationStarted(
 		[urlBar]( const URI& uri ) { urlBar->setText( uri.toString() ); } );
-	webView->onNavigationCompleted( [updateNavButtons, urlBar, ui, useHNDark]( const URI& uri ) {
-		updateNavButtons();
-		urlBar->setText( uri.toString() );
+	webView->onNavigationCompleted(
+		[webView, updateNavButtons, urlBar, ui, useHNDark]( const URI& uri ) {
+			updateNavButtons();
+			urlBar->setText( uri.toString() );
 
-		if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
-			static const std::string_view HN_DARK = R"css(
+			if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
+				static const std::string_view HN_DARK = R"css(
 			  body * {
 			    color: #dcdccc !important;
 			  }
@@ -162,11 +163,11 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			  }
 			)css";
 
-			StyleSheetParser parser;
-			if ( parser.loadFromString( HN_DARK ) )
-				ui->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
-		}
-	} );
+				StyleSheetParser parser;
+				if ( parser.loadFromString( HN_DARK ) )
+					webView->getDocumentSceneNode()->combineStyleSheet( parser.getStyleSheet() );
+			}
+		} );
 
 	backBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
 		webView->goHistoryBack();

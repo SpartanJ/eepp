@@ -1820,8 +1820,10 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 	if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
 		font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
 
-	auto ret = length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
-								getSceneNode()->getDPI(), elFontSize, rootFontSize, font );
+	const Sizef& viewportSize = getUISceneNode() ? getUISceneNode()->getViewportPixelsSize()
+												 : getSceneNode()->getPixelsSize();
+	auto ret = length.asPixels( containerLength, viewportSize, getSceneNode()->getDPI(), elFontSize,
+								rootFontSize, font );
 
 	if ( ( mFlags & UI_HTML_ELEMENT ) && length.getUnit() == StyleSheetLength::Unit::Px )
 		ret = PixelDensity::dpToPx( ret ); // scale px as if where dp in HTML elements

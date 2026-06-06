@@ -12,6 +12,8 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 
+#include <memory>
+
 using namespace EE::Network;
 
 namespace EE { namespace Graphics {
@@ -99,6 +101,42 @@ class EE_API UISceneNode : public SceneNode {
 	 * @return Pointer to this node for method chaining.
 	 */
 	UISceneNode* setPixelsSize( const Float& x, const Float& y );
+
+	/**
+	 * @brief Sets the viewport size used by viewport-relative CSS and media queries.
+	 *
+	 * The viewport size is independent from the scene extent. This is useful for embedded,
+	 * scrollable scenes whose actual size represents their document extent.
+	 *
+	 * @param size The viewport size in pixels.
+	 */
+	void setViewportPixelsSize( const Sizef& size );
+
+	/** Clears the explicit viewport size so the scene extent is used as the viewport. */
+	void clearViewportPixelsSize();
+
+	/** @return The explicit viewport size, or the scene extent when no override is set. */
+	const Sizef& getViewportPixelsSize() const;
+
+	/**
+	 * @brief Controls whether a nested scene automatically follows its direct parent's size.
+	 *
+	 * Existing nested scenes follow their parent by default.
+	 */
+	void setFollowParentSize( bool followParentSize );
+
+	/** @return Whether a nested scene automatically follows its direct parent's size. */
+	bool followsParentSize() const;
+
+	/**
+	 * @brief Binds an embedded scene to host-scene services without copying document state.
+	 *
+	 * Copies only shared platform/configuration services: dispatcher, DPI/window pointer,
+	 * thread pool, color/contrast preferences, and default font/theme pointers. Stylesheets,
+	 * URI, referer, cookies, navigation callbacks, actions, roots, and dirty queues remain owned
+	 * by this scene.
+	 */
+	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 
 	/**
 	 * @brief Gets the size in density-independent pixels (dp).
@@ -754,6 +792,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	Network::CookieManager& getCookieManager() { return mCookieManager; }
 
+	void invalidateAsyncResourceLoads();
+
+	virtual void invalidate( Node* invalidator );
+
 	Font* getFontFromNamesList( std::string_view names, Uint32 fontStyle = 0,
 								FontWeight weight = FontWeight::Normal ) const;
 
@@ -782,6 +824,12 @@ class EE_API UISceneNode : public SceneNode {
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
+	UnorderedMap<std::string, Font*> mFontFaceAliases;
+	struct AsyncResourceLoadState {
+		bool alive{ true };
+		Uint64 generation{ 0 };
+	};
+	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;
@@ -796,6 +844,10 @@ class EE_API UISceneNode : public SceneNode {
 	Node* mCurParent{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	Uint32 mCurrentMarker{ 0 };
+	Sizef mViewportPixelsSize;
+	bool mHasViewportPixelsSize{ false };
+	bool mFollowParentSize{ true };
+	bool mOwnsEventDispatcher{ true };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
 	URI mReferer;
@@ -843,6 +895,12 @@ class EE_API UISceneNode : public SceneNode {
 	 * Handles event dispatcher updates and size propagation.
 	 */
 	virtual void onParentChange();
+
+	virtual void onSceneChange();
+
+	void updateParentSizeListener();
+	void onViewportPixelsSizeChange();
+	UISceneNode* getHostUISceneNode() const;
 
 	/**
 	 * @brief Sets the internal pixel size without triggering update cycles.
@@ -956,6 +1014,12 @@ class EE_API UISceneNode : public SceneNode {
 	 * relative paths in CSS
 	 */
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles, URI baseURI = {} );
+
+	void registerFontFaceAlias( std::string_view family, Uint32 fontStyle, FontWeight weight,
+								Font* font );
+
+	Font* getFontFaceAlias( std::string_view family, Uint32 fontStyle,
+							FontWeight weight = FontWeight::Normal ) const;
 
 	/**
 	 * @brief Loads CSS files from URI

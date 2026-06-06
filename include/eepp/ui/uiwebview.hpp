@@ -9,6 +9,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -18,6 +19,7 @@ namespace EE { namespace UI {
 
 class UIHTMLHtml;
 class UIHTMLBody;
+class UISceneNode;
 
 class EE_API UIWebView : public UIScrollView {
   public:
@@ -67,6 +69,8 @@ class EE_API UIWebView : public UIScrollView {
 
 	UIWidget* getDocumentContainer() const;
 
+	UISceneNode* getDocumentSceneNode() const;
+
 	void setStyleSheetDefaultMarker( Uint32 marker );
 
 	void setUserAgent( const std::string& userAgent );
@@ -90,10 +94,24 @@ class EE_API UIWebView : public UIScrollView {
   protected:
 	UIWebView();
 
+	UISceneNode* mDocumentScene{ nullptr };
 	UIWidget* mDocContainer{ nullptr };
+	Uint32 mScrollContainerSizeChangeCb{ 0 };
+	Uint32 mVerticalScrollVisibleChangeCb{ 0 };
+	Uint32 mHorizontalScrollVisibleChangeCb{ 0 };
+	bool mUpdatingDocumentViewportMetrics{ false };
+	bool mUpdatingDocumentContentExtent{ false };
+	bool mDocumentViewportSyncQueued{ false };
+	struct NavigationLoadState {
+		UIWebView* owner{ nullptr };
+		bool alive{ true };
+		Uint64 generation{ 0 };
+	};
+	std::shared_ptr<NavigationLoadState> mNavigationLoadState;
 	std::vector<URI> mHistory;
 	int mHistoryIndex{ -1 };
 	bool mIsLoading{ false };
+	Uint64 mNavigationGeneration{ 0 };
 	std::string mUserAgent;
 	Time mDefaultTimeout{ Seconds( 30 ) };
 	Uint32 mStyleSheetDefaultMarker{ 0 };
@@ -104,16 +122,29 @@ class EE_API UIWebView : public UIScrollView {
 				  const Http::Request::FieldTable& headers );
 
 	virtual void onSizeChange();
+	virtual void onSceneChange();
+	virtual void scheduledUpdate( const Time& time );
+	virtual void onScrollViewSizeChange( const Event* event );
 
 	void loadDocumentData( URI url, std::string data );
+	void loadDocumentData( URI url, std::string data, Uint64 generation );
 	void
 	loadDocumentAsync( const URI& url, const std::string& method = "GET",
 					   const std::string& body = "",
 					   const Http::Request::FieldTable& headers = Http::Request::FieldTable() );
+	Uint64 beginNavigationLoad();
+	bool isNavigationLoadCurrent( Uint64 generation ) const;
+	static UIWebView* resolveNavigationLoad( const std::weak_ptr<NavigationLoadState>& state,
+											 Uint64 generation );
 	void pushHistory( const URI& url );
 	void navigateToHistoryIndex( int index );
+	Sizef getDocumentViewportPixelsSize() const;
+	void onDocumentViewportGeometryChanged();
 	void updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body );
 	void updateHTMLMinHeightForDocument();
+	bool updateDocumentViewportMetrics();
+	void updateDocumentSceneContentExtent();
+	void updateDocumentSceneMetrics();
 };
 
 }} // namespace EE::UI

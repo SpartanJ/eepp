@@ -11,21 +11,136 @@
 
 namespace EE { namespace UI {
 
+static void expandDocumentContentExtent( Node* node, Vector2f offset, Sizef& extent,
+										 bool hasClip = false,
+										 const Sizef& clipExtent = Sizef::Zero ) {
+	if ( !node || node->isClosing() || !node->isVisible() )
+		return;
+
+	Vector2f childOffset( offset );
+	bool childHasClip = hasClip;
+	Sizef childClipExtent = clipExtent;
+	if ( node->isWidget() ) {
+		UIWidget* widget = node->asType<UIWidget>();
+		childOffset += widget->getPixelsPosition();
+		Sizef size = widget->fitMinMaxSizePx( widget->getPixelsSize() );
+		Float right = childOffset.x + size.getWidth();
+		Float bottom = childOffset.y + size.getHeight();
+		if ( hasClip ) {
+			right = eemin( right, clipExtent.getWidth() );
+			bottom = eemin( bottom, clipExtent.getHeight() );
+		}
+		if ( widget->getLayoutWidthPolicy() != SizePolicy::MatchParent )
+			extent.x = eemax( extent.x, right );
+		if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent )
+			extent.y = eemax( extent.y, bottom );
+
+		if ( widget->getClipType() != ClipType::None ) {
+			Float clipRight = childOffset.x + widget->getPixelsSize().getWidth();
+			Float clipBottom = childOffset.y + widget->getPixelsSize().getHeight();
+			if ( hasClip ) {
+				clipRight = eemin( clipRight, clipExtent.getWidth() );
+				clipBottom = eemin( clipBottom, clipExtent.getHeight() );
+			}
+			childClipExtent = Sizef( clipRight, clipBottom );
+			childHasClip = true;
+		}
+	}
+
+	Node* child = node->getFirstChild();
+	while ( child ) {
+		expandDocumentContentExtent( child, childOffset, extent, childHasClip, childClipExtent );
+		child = child->getNextNode();
+	}
+}
+
+static void expandWidgetContentExtent( UIWidget* widget, const Vector2f& offset, Sizef& extent ) {
+	if ( !widget || widget->isClosing() )
+		return;
+
+	const Vector2f position = offset + widget->getPixelsPosition();
+	Sizef size = widget->fitMinMaxSizePx( widget->getPixelsSize() );
+	if ( widget->getLayoutWidthPolicy() != SizePolicy::MatchParent )
+		extent.x = eemax( extent.x, position.x + size.getWidth() );
+	if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent )
+		extent.y = eemax( extent.y, position.y + size.getHeight() );
+}
+
+Sizef UIWebView::getDocumentViewportPixelsSize() const {
+	Sizef contentBox = getPixelsSize();
+	const Rectf& padding = getPixelsPadding();
+	contentBox.x -= padding.Left + padding.Right;
+	contentBox.y -= padding.Top + padding.Bottom;
+
+	Sizef viewport = contentBox;
+
+	if ( getViewType() == ScrollViewType::Outside ) {
+		if ( getVerticalScrollBar()->isVisible() )
+			viewport.x -= getVerticalScrollBar()->getPixelsSize().getWidth();
+		if ( getHorizontalScrollBar()->isVisible() )
+			viewport.y -= getHorizontalScrollBar()->getPixelsSize().getHeight();
+	}
+
+	if ( mContainer && mContainer->getPixelsSize() != Sizef::Zero ) {
+		Sizef container = mContainer->getPixelsSize();
+		Float verticalScrollWidth = getVerticalScrollBar()->getPixelsSize().getWidth();
+		Float horizontalScrollHeight = getHorizontalScrollBar()->getPixelsSize().getHeight();
+		if ( eeabs( container.getWidth() - viewport.getWidth() ) <= 0.5f ||
+			 ( getVerticalScrollBar()->isVisible() &&
+			   container.getWidth() < contentBox.getWidth() &&
+			   eeabs( contentBox.getWidth() - container.getWidth() - verticalScrollWidth ) <=
+				   0.5f ) )
+			viewport.x = container.getWidth();
+		if ( eeabs( container.getHeight() - viewport.getHeight() ) <= 0.5f ||
+			 ( getHorizontalScrollBar()->isVisible() &&
+			   container.getHeight() < contentBox.getHeight() &&
+			   eeabs( contentBox.getHeight() - container.getHeight() - horizontalScrollHeight ) <=
+				   0.5f ) )
+			viewport.y = container.getHeight();
+	}
+
+	viewport.x = eemax( 0.f, viewport.x );
+	viewport.y = eemax( 0.f, viewport.y );
+	return viewport;
+}
+
 UIWebView* UIWebView::New() {
 	return eeNew( UIWebView, () );
 }
 
 UIWebView::UIWebView() : UIScrollView( "webview" ) {
+	mNavigationLoadState = std::make_shared<NavigationLoadState>();
+	mNavigationLoadState->owner = this;
+	mDocumentScene = UISceneNode::New();
+	mDocumentScene->setFollowParentSize( false );
+	mDocumentScene->setParent( this );
+
 	mDocContainer = UILinearLayout::NewVerticalWidthMatchParent( "webview::doc" );
 	mDocContainer->setClipType( ClipType::None );
 	mDocContainer->setFlags( UI_OWNS_CHILDREN_POSITION );
 	mDocContainer->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
-	mDocContainer->setParent( this );
+	mDocContainer->setParent( mDocumentScene->getRoot() );
 	mDocContainer->setBackgroundColor( Color::White );
+	mScrollContainerSizeChangeCb = mContainer->on( Event::OnSizeChange, [this]( const Event* ) {
+		onDocumentViewportGeometryChanged();
+		updateScroll();
+	} );
+	mVerticalScrollVisibleChangeCb = mVScroll->on(
+		Event::OnVisibleChange, [this]( const Event* ) { onDocumentViewportGeometryChanged(); } );
+	mHorizontalScrollVisibleChangeCb = mHScroll->on(
+		Event::OnVisibleChange, [this]( const Event* ) { onDocumentViewportGeometryChanged(); } );
 	mStyleSheetDefaultMarker = String::hash( "html_defaults" );
 }
 
-UIWebView::~UIWebView() {}
+UIWebView::~UIWebView() {
+	if ( mNavigationLoadState ) {
+		mNavigationLoadState->alive = false;
+		mNavigationLoadState->owner = nullptr;
+		mNavigationLoadState->generation++;
+	}
+	if ( mDocumentScene )
+		mDocumentScene->invalidateAsyncResourceLoads();
+}
 
 Uint32 UIWebView::getType() const {
 	return UI_TYPE_WEBVIEW;
@@ -37,26 +152,35 @@ bool UIWebView::isType( const Uint32& type ) const {
 
 void UIWebView::onSizeChange() {
 	UIScrollView::onSizeChange();
-
-	auto ui = getUISceneNode();
-	if ( !ui )
-		return;
-
-	auto htmlNode = ui->findByType( UI_TYPE_HTML_HTML );
-	auto bodyNode = ui->findByType( UI_TYPE_HTML_BODY );
-	if ( htmlNode && bodyNode ) {
-		auto html = htmlNode->asType<UIHTMLHtml>();
-		auto body = bodyNode->asType<UIHTMLBody>();
-		updateHTMLMinHeight( html, body );
-	}
+	onDocumentViewportGeometryChanged();
 }
 
 void UIWebView::updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body ) {
-	Float h = PixelDensity::pxToDp( getPixelsSize().getHeight() );
+	Sizef viewport = mDocumentScene ? mDocumentScene->getViewportPixelsSize() : getPixelsSize();
+	Float h = PixelDensity::pxToDp( viewport.getHeight() );
 	html->setMinHeight( h );
-	body->setDocumentViewportMinHeight( h );
-	body->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
-	html->setPixelsSize( { html->getPixelsSize().getWidth(), 0 } );
+	body->setMinHeight( h );
+	html->setPixelsSize( viewport );
+	body->setPixelsSize( viewport );
+}
+
+void UIWebView::onSceneChange() {
+	UIScrollView::onSceneChange();
+	if ( mDocumentScene )
+		mDocumentScene->initializeEmbeddedFromHost( getUISceneNode() );
+}
+
+void UIWebView::scheduledUpdate( const Time& time ) {
+	UITouchDraggableWidget::scheduledUpdate( time );
+	if ( mDocumentScene ) {
+		mDocumentScene->update( time );
+		updateDocumentSceneContentExtent();
+	}
+}
+
+void UIWebView::onScrollViewSizeChange( const Event* event ) {
+	UIScrollView::onScrollViewSizeChange( event );
+	onDocumentViewportGeometryChanged();
 }
 
 void UIWebView::loadURI( URI uri ) {
@@ -74,8 +198,7 @@ void UIWebView::loadURI( URI uri, const std::string& method, const std::string& 
 
 void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 						 const std::string& body, const Http::Request::FieldTable& headers ) {
-	if ( mIsLoading )
-		return;
+	Uint64 generation = beginNavigationLoad();
 	mIsLoading = true;
 
 	if ( !isHistoryNav )
@@ -94,14 +217,38 @@ void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 				path = uri.toString();
 			FileSystem::fileGet( path, data );
 		}
-		loadDocumentData( uri, std::move( data ) );
+		loadDocumentData( uri, std::move( data ), generation );
 	}
+}
+
+Uint64 UIWebView::beginNavigationLoad() {
+	mNavigationGeneration++;
+	if ( mNavigationLoadState )
+		mNavigationLoadState->generation = mNavigationGeneration;
+	if ( mDocumentScene )
+		mDocumentScene->invalidateAsyncResourceLoads();
+	return mNavigationGeneration;
+}
+
+bool UIWebView::isNavigationLoadCurrent( Uint64 generation ) const {
+	return mNavigationLoadState && mNavigationLoadState->alive &&
+		   mNavigationLoadState->generation == generation && mNavigationGeneration == generation;
+}
+
+UIWebView* UIWebView::resolveNavigationLoad( const std::weak_ptr<NavigationLoadState>& state,
+											 Uint64 generation ) {
+	auto locked = state.lock();
+	if ( !locked || !locked->alive || locked->generation != generation )
+		return nullptr;
+	return locked->owner;
 }
 
 void UIWebView::loadDocumentAsync( const URI& url, const std::string& method,
 								   const std::string& body,
 								   const Http::Request::FieldTable& headers ) {
-	auto ui = getUISceneNode();
+	Uint64 generation = mNavigationGeneration;
+	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
+	auto ui = getDocumentSceneNode();
 	if ( !ui ) {
 		mIsLoading = false;
 		return;
@@ -118,26 +265,41 @@ void UIWebView::loadDocumentAsync( const URI& url, const std::string& method,
 	if ( !mUserAgent.empty() )
 		reqHeaders["User-Agent"] = mUserAgent;
 
-	Http::AsyncResponseCallback responseCb = [this, url, ui]( const Http&, Http::Request&,
-															  Http::Response& response ) {
-		if ( response.isOK() ) {
-			std::string data = response.getBody();
-			if ( response.hasField( "set-cookie" ) ) {
-				ui->getCookieManager().storeCookiesFromHeader( url.getAuthority(),
-															   response.getField( "set-cookie" ) );
+	Http::AsyncResponseCallback responseCb =
+		[loadState, generation, url]( const Http&, Http::Request&, Http::Response& response ) {
+			UIWebView* self = resolveNavigationLoad( loadState, generation );
+			if ( !self )
+				return;
+			auto ui = self->getDocumentSceneNode();
+			if ( !ui )
+				return;
+			if ( response.isOK() ) {
+				std::string data = response.getBody();
+				if ( response.hasField( "set-cookie" ) ) {
+					ui->getCookieManager().storeCookiesFromHeader(
+						url.getAuthority(), response.getField( "set-cookie" ) );
+				}
+				self->loadDocumentData( url, std::move( data ), generation );
+			} else {
+				if ( !self->isNavigationLoadCurrent( generation ) )
+					return;
+				self->mIsLoading = false;
+				NavigationEvent ev( self, Event::OnNavigationError, url, false,
+									response.getStatusDescription() );
+				self->sendEvent( &ev );
 			}
-			loadDocumentData( url, std::move( data ) );
-		} else {
-			mIsLoading = false;
-			NavigationEvent ev( this, Event::OnNavigationError, url, false,
-								response.getStatusDescription() );
-			sendEvent( &ev );
-		}
-	};
+		};
 
 	Http::Request::ProgressCallback progressCb =
-		[url, ui]( const Http&, const Http::Request&, const Http::Response& response,
-				   const Http::Request::Status& status, std::size_t, std::size_t ) {
+		[loadState, generation,
+		 url]( const Http&, const Http::Request&, const Http::Response& response,
+			   const Http::Request::Status& status, std::size_t, std::size_t ) {
+			UIWebView* self = resolveNavigationLoad( loadState, generation );
+			if ( !self )
+				return false;
+			auto ui = self->getDocumentSceneNode();
+			if ( !ui )
+				return false;
 			if ( status == Http::Request::Status::Redirect && response.hasField( "set-cookie" ) ) {
 				ui->getCookieManager().storeCookiesFromHeader( url.getAuthority(),
 															   response.getField( "set-cookie" ) );
@@ -151,45 +313,75 @@ void UIWebView::loadDocumentAsync( const URI& url, const std::string& method,
 }
 
 void UIWebView::loadDocumentData( URI url, std::string data ) {
+	loadDocumentData( std::move( url ), std::move( data ), mNavigationGeneration );
+}
+
+void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation ) {
+	if ( !isNavigationLoadCurrent( generation ) )
+		return;
+
 	if ( data.empty() ) {
-		mIsLoading = false;
+		if ( isNavigationLoadCurrent( generation ) )
+			mIsLoading = false;
 		NavigationEvent ev( this, Event::OnNavigationError, url, false, "Empty response body" );
 		sendEvent( &ev );
 		return;
 	}
 
-	ensureMainThread( [this, url = std::move( url ), data = std::move( data )]() mutable {
-		auto ui = getUISceneNode();
-		if ( !ui ) {
-			mIsLoading = false;
-			return;
-		}
+	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
+	ensureMainThread(
+		[loadState, generation, url = std::move( url ), data = std::move( data )]() mutable {
+			UIWebView* self = resolveNavigationLoad( loadState, generation );
+			if ( !self )
+				return;
 
-		getVerticalScrollBar()->setValue( 0 );
-		mDocContainer->closeAllChildren();
+			auto ui = self->getDocumentSceneNode();
+			if ( !ui || !self->isNavigationLoadCurrent( generation ) )
+				return;
 
-		ui->getStyleSheet().removeAllWithoutMarker( mStyleSheetDefaultMarker );
-		ui->setURIFromURL( url );
+			self->getVerticalScrollBar()->setValue( 0 );
+			self->mDocContainer->closeAllChildren();
+			ui->invalidateAsyncResourceLoads();
+			ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
+			ui->setURIFromURL( url );
 
-		auto hash = String::hash( url.toString() );
-		ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), mDocContainer, hash );
+			auto hash = String::hash( url.toString() );
+			ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), self->mDocContainer,
+									  hash );
 
-		ui->setNavigationInterceptorCb( [this]( const NavigationRequest& request ) {
-			URI uri = getUISceneNode()->solveRelativePath( request.uri );
-			loadURI( uri, request.method != "GET", request.method, request.body,
-					 request.extraHeaders );
-			return true;
+			ui->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
+				auto locked = loadState.lock();
+				if ( !locked || !locked->alive || locked->owner == nullptr )
+					return true;
+				UIWebView* self = locked->owner;
+				UISceneNode* docScene = self->getDocumentSceneNode();
+				if ( !docScene )
+					return true;
+				URI uri = docScene->solveRelativePath( request.uri );
+				self->loadURI( uri, request.method != "GET", request.method, request.body,
+							   request.extraHeaders );
+				return true;
+			} );
+
+			if ( !self->isNavigationLoadCurrent( generation ) )
+				return;
+			self->mIsLoading = false;
+			NavigationEvent ev( self, (Uint32)Event::OnNavigationCompleted, url, true );
+			self->sendEvent( &ev );
+			self->updateDocumentViewportMetrics();
+			self->updateHTMLMinHeightForDocument();
+			self->updateDocumentSceneContentExtent();
 		} );
+}
 
-		mIsLoading = false;
-		NavigationEvent ev( this, (Uint32)Event::OnNavigationCompleted, url, true );
-		sendEvent( &ev );
+void UIWebView::onDocumentViewportGeometryChanged() {
+	if ( updateDocumentViewportMetrics() )
 		updateHTMLMinHeightForDocument();
-	} );
+	updateDocumentSceneContentExtent();
 }
 
 void UIWebView::updateHTMLMinHeightForDocument() {
-	auto ui = getUISceneNode();
+	auto ui = getDocumentSceneNode();
 	if ( !ui )
 		return;
 
@@ -256,6 +448,80 @@ void UIWebView::reload() {
 
 UIWidget* UIWebView::getDocumentContainer() const {
 	return mDocContainer;
+}
+
+UISceneNode* UIWebView::getDocumentSceneNode() const {
+	return mDocumentScene;
+}
+
+bool UIWebView::updateDocumentViewportMetrics() {
+	if ( !mDocumentScene || !mDocContainer || mUpdatingDocumentViewportMetrics )
+		return false;
+
+	mUpdatingDocumentViewportMetrics = true;
+
+	Sizef viewport = getDocumentViewportPixelsSize();
+	bool changed = viewport != Sizef::Zero && viewport != mDocumentScene->getViewportPixelsSize();
+
+	if ( viewport != Sizef::Zero )
+		mDocumentScene->setViewportPixelsSize( viewport );
+
+	if ( changed && !mUpdatingDocumentContentExtent && viewport != mDocumentScene->getPixelsSize() )
+		mDocumentScene->setPixelsSize( viewport );
+
+	mUpdatingDocumentViewportMetrics = false;
+	return changed;
+}
+
+void UIWebView::updateDocumentSceneContentExtent() {
+	if ( !mDocumentScene || !mDocContainer || mUpdatingDocumentContentExtent )
+		return;
+
+	mUpdatingDocumentContentExtent = true;
+	if ( !mUpdatingDocumentViewportMetrics )
+		updateDocumentViewportMetrics();
+
+	Sizef viewport = mDocumentScene->getViewportPixelsSize();
+	if ( viewport == Sizef::Zero )
+		viewport = mContainer ? mContainer->getPixelsSize() : getPixelsSize();
+
+	Sizef extent( viewport.getWidth(), viewport.getHeight() );
+
+	if ( auto htmlNode = mDocContainer->findByType( UI_TYPE_HTML_HTML ) ) {
+		UIWidget* html = htmlNode->asType<UIWidget>();
+		expandWidgetContentExtent( html, Vector2f::Zero, extent );
+	}
+
+	if ( auto bodyNode = mDocContainer->findByType( UI_TYPE_HTML_BODY ) ) {
+		UIWidget* body = bodyNode->asType<UIWidget>();
+		expandWidgetContentExtent( body, Vector2f::Zero, extent );
+
+		expandDocumentContentExtent( body, mDocContainer->getPixelsPosition(), extent );
+	}
+
+	bool extentChanged = extent != Sizef::Zero && extent != mDocumentScene->getPixelsSize();
+	if ( extentChanged )
+		mDocumentScene->setPixelsSize( extent );
+
+	mUpdatingDocumentContentExtent = false;
+
+	viewport = getDocumentViewportPixelsSize();
+	bool viewportChanged =
+		viewport != Sizef::Zero && viewport != mDocumentScene->getViewportPixelsSize();
+	if ( ( viewportChanged || extentChanged ) && !mDocumentViewportSyncQueued ) {
+		mDocumentViewportSyncQueued = true;
+		runOnMainThread( [this]() {
+			runOnMainThread( [this]() {
+				mDocumentViewportSyncQueued = false;
+				onDocumentViewportGeometryChanged();
+			} );
+		} );
+	}
+}
+
+void UIWebView::updateDocumentSceneMetrics() {
+	updateDocumentViewportMetrics();
+	updateDocumentSceneContentExtent();
 }
 
 void UIWebView::setStyleSheetDefaultMarker( Uint32 marker ) {

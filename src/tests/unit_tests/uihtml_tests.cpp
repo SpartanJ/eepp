@@ -2,6 +2,7 @@
 #include "utest.hpp"
 
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -30,6 +31,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -252,33 +254,39 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 		win->display();
 	}
 
-	auto side = sceneNode->getRoot()->findByClass( "side" );
-	auto siteTable = sceneNode->getRoot()->find( "siteTable" );
-	auto midcol = sceneNode->getRoot()->findByClass( "midcol" );
-	auto entry = sceneNode->getRoot()->findByClass( "entry" );
-	auto arrow = sceneNode->getRoot()->findByClass( "arrow" );
-	auto srHeader = sceneNode->getRoot()->find( "sr-header-area" );
-	auto redesignButton = sceneNode->getRoot()->find( "redesign-beta-optin-btn" );
-	auto srDrop = sceneNode->getRoot()->querySelector( "#sr-header-area .dropdown.srdrop" );
-	auto srList = sceneNode->getRoot()->querySelector( "#sr-header-area .sr-list" );
-	auto srFlatList = sceneNode->getRoot()->querySelector( "#sr-header-area .sr-list .flat-list" );
-	auto headerBottomLeft = sceneNode->getRoot()->find( "header-bottom-left" );
-	auto headerBottomRight = sceneNode->getRoot()->find( "header-bottom-right" );
-	auto header = sceneNode->getRoot()->find( "header" );
-	auto dropChoices = sceneNode->getRoot()->querySelector( ".drop-choices.srdrop" );
-	auto selftextMd = sceneNode->getRoot()->querySelector( ".link .usertext-body .md" );
-	auto selftextFirstP = sceneNode->getRoot()->querySelector( ".link .usertext-body .md p" );
-	auto postTitle = sceneNode->getRoot()->querySelector( ".link .top-matter > p.title" );
-	auto postTagline = sceneNode->getRoot()->querySelector( ".link .top-matter > p.tagline" );
-	auto postExpando = sceneNode->getRoot()->querySelector( ".link .expando" );
-	auto postUsertext = sceneNode->getRoot()->querySelector( ".link .expando > form.usertext" );
-	auto commentArea = sceneNode->getRoot()->querySelector( ".commentarea" );
-	auto commentForm = sceneNode->getRoot()->find( "form-t3_1tk9dgh5ov" );
-	auto commentEdit = sceneNode->getRoot()->querySelector( ".commentarea .usertext-edit" );
-	auto commentTextarea = sceneNode->getRoot()->querySelector( ".commentarea textarea" );
-	auto commentHelpToggle = sceneNode->getRoot()->querySelector( ".commentarea .help-toggle" );
-	auto commentContentPolicy = sceneNode->getRoot()->querySelector( ".commentarea a.reddiquette" );
-	auto flairCheckbox = sceneNode->getRoot()->find( "flair_enabled" );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	UIWidget* documentRoot = documentScene->getRoot();
+	ASSERT_TRUE( documentRoot != nullptr );
+	EXPECT_TRUE( sceneNode->getRoot()->findByClass( "side" ) == nullptr );
+
+	auto side = documentRoot->findByClass( "side" );
+	auto siteTable = documentRoot->find( "siteTable" );
+	auto midcol = documentRoot->findByClass( "midcol" );
+	auto entry = documentRoot->findByClass( "entry" );
+	auto arrow = documentRoot->findByClass( "arrow" );
+	auto srHeader = documentRoot->find( "sr-header-area" );
+	auto redesignButton = documentRoot->find( "redesign-beta-optin-btn" );
+	auto srDrop = documentRoot->querySelector( "#sr-header-area .dropdown.srdrop" );
+	auto srList = documentRoot->querySelector( "#sr-header-area .sr-list" );
+	auto srFlatList = documentRoot->querySelector( "#sr-header-area .sr-list .flat-list" );
+	auto headerBottomLeft = documentRoot->find( "header-bottom-left" );
+	auto headerBottomRight = documentRoot->find( "header-bottom-right" );
+	auto header = documentRoot->find( "header" );
+	auto dropChoices = documentRoot->querySelector( ".drop-choices.srdrop" );
+	auto selftextMd = documentRoot->querySelector( ".link .usertext-body .md" );
+	auto selftextFirstP = documentRoot->querySelector( ".link .usertext-body .md p" );
+	auto postTitle = documentRoot->querySelector( ".link .top-matter > p.title" );
+	auto postTagline = documentRoot->querySelector( ".link .top-matter > p.tagline" );
+	auto postExpando = documentRoot->querySelector( ".link .expando" );
+	auto postUsertext = documentRoot->querySelector( ".link .expando > form.usertext" );
+	auto commentArea = documentRoot->querySelector( ".commentarea" );
+	auto commentForm = documentRoot->find( "form-t3_1tk9dgh5ov" );
+	auto commentEdit = documentRoot->querySelector( ".commentarea .usertext-edit" );
+	auto commentTextarea = documentRoot->querySelector( ".commentarea textarea" );
+	auto commentHelpToggle = documentRoot->querySelector( ".commentarea .help-toggle" );
+	auto commentContentPolicy = documentRoot->querySelector( ".commentarea a.reddiquette" );
+	auto flairCheckbox = documentRoot->find( "flair_enabled" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -2560,6 +2568,40 @@ static UISceneNode* init_test_inline_block() {
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );
 	return sceneNode;
+}
+
+UTEST( UIHTML, BodyViewportMinimumHeightUsesSceneViewport ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Body Viewport Height Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setPixelsSize( 800, 3000 );
+	sceneNode->setViewportPixelsSize( Sizef( 800, 600 ) );
+
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head><style>body { margin: 0; min-height: 100vh; }</style></head>
+<body><div style="height: 10px;"></div></body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto bodyNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY );
+	ASSERT_TRUE( bodyNode != nullptr );
+	auto body = bodyNode->asType<UIHTMLBody>();
+	body->applyProperty( StyleSheetProperty( "min-height", "100vh" ) );
+	body->updateLayout();
+	EXPECT_NEAR( bodyNode->getPixelsSize().getHeight(), 600.f, 1.f );
+	EXPECT_EQ( sceneNode->getPixelsSize().getWidth(), 800 );
+	EXPECT_EQ( sceneNode->getPixelsSize().getHeight(), 3000 );
+
+	Engine::destroySingleton();
 }
 
 UTEST( UIHTML, InlineBlock ) {

@@ -73,6 +73,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
+	mAsyncResourceLoadState( std::make_shared<AsyncResourceLoadState>() ),
 	mKeyBindings( mWindow->getInput() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
 	// the required events to its children.
@@ -94,6 +95,11 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 }
 
 UISceneNode::~UISceneNode() {
+	if ( mAsyncResourceLoadState ) {
+		mAsyncResourceLoadState->alive = false;
+		mAsyncResourceLoadState->generation++;
+	}
+
 	eeSAFE_DELETE( mUIThemeManager );
 	eeSAFE_DELETE( mUIIconThemeManager );
 
@@ -105,6 +111,9 @@ UISceneNode::~UISceneNode() {
 	// We need to ensure that the children are destroyed before the thread pool,
 	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
+
+	if ( !mOwnsEventDispatcher )
+		mEventDispatcher = nullptr;
 }
 
 void UISceneNode::resizeNode( EE::Window::Window* ) {
@@ -164,22 +173,84 @@ void UISceneNode::onParentChange() {
 
 	if ( mCurParent && mCurOnSizeChangeListener )
 		mCurParent->removeEventListener( mCurOnSizeChangeListener );
+	mCurOnSizeChangeListener = 0;
 
-	if ( !mCurParent )
+	if ( !mCurParent && mOwnsEventDispatcher )
 		eeSAFE_DELETE( mEventDispatcher );
 
 	mCurParent = mParentNode;
 
 	if ( !mParentNode ) {
 		setEventDispatcher( UIEventDispatcher::New( this ) );
+		mOwnsEventDispatcher = true;
 		return;
 	}
 
-	mEventDispatcher = getParent()->asType<UINode>()->getUISceneNode()->getEventDispatcher();
+	initializeEmbeddedFromHost( getHostUISceneNode() );
 
 	setDirty();
-	setPixelsSize( getParent()->getPixelsSize() );
+	updateParentSizeListener();
+}
 
+void UISceneNode::onSceneChange() {
+	mSceneNode = this;
+	eeASSERT( !removeFromCloseQueue( this ) );
+	initializeEmbeddedFromHost( getHostUISceneNode() );
+
+	Node* child = getFirstChild();
+	while ( NULL != child ) {
+		child->onSceneChange();
+		child = child->getNextNode();
+	}
+}
+
+UISceneNode* UISceneNode::getHostUISceneNode() const {
+	const Node* node = getParent();
+	while ( node ) {
+		SceneNode* sceneNode = node->getSceneNode();
+		if ( sceneNode && sceneNode->isUISceneNode() && sceneNode != this )
+			return static_cast<UISceneNode*>( sceneNode );
+		if ( node->isUISceneNode() && node != this )
+			return const_cast<Node*>( node )->asType<UISceneNode>();
+		node = node->getParent();
+	}
+	return nullptr;
+}
+
+void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
+	if ( !hostScene || hostScene == this )
+		return;
+
+	mWindow = hostScene->getWindow();
+	mDPI = hostScene->getDPI();
+	mEventDispatcher = hostScene->getEventDispatcher();
+	mOwnsEventDispatcher = false;
+	mThreadPool = hostScene->getThreadPool();
+	mColorSchemePreference = hostScene->getColorSchemePreference();
+	mContrastPreference = hostScene->getContrastPreference();
+
+	UIThemeManager* hostThemeManager = hostScene->getUIThemeManager();
+	if ( hostThemeManager ) {
+		mUIThemeManager->setDefaultFont( hostThemeManager->getDefaultFont() );
+		mUIThemeManager->setDefaultFontSize( hostThemeManager->getDefaultFontSize() );
+		mUIThemeManager->setDefaultTheme( hostThemeManager->getDefaultTheme() );
+		mUIThemeManager->setAutoApplyDefaultTheme( hostThemeManager->getAutoApplyDefaultTheme() );
+		mUIThemeManager->setDefaultEffectsEnabled( hostThemeManager->getDefaultEffectsEnabled() );
+		mUIThemeManager->setWidgetsFadeInTime( hostThemeManager->getWidgetsFadeInTime() );
+		mUIThemeManager->setWidgetsFadeOutTime( hostThemeManager->getWidgetsFadeOutTime() );
+		mUIThemeManager->setTooltipTimeToShow( hostThemeManager->getTooltipTimeToShow() );
+		mUIThemeManager->setTooltipFollowMouse( hostThemeManager->getTooltipFollowMouse() );
+		mUIThemeManager->setCursorSize( hostThemeManager->getCursorSize() );
+	}
+
+	mUIIconThemeManager->setFallbackThemeManager( mUIThemeManager );
+}
+
+void UISceneNode::updateParentSizeListener() {
+	if ( !mParentNode || !mFollowParentSize )
+		return;
+
+	setPixelsSize( getParent()->getPixelsSize() );
 	mCurOnSizeChangeListener = getParent()->on( Event::OnSizeChange, [this]( const Event* ) {
 		setDirty();
 		setPixelsSize( getParent()->getPixelsSize() );
@@ -712,6 +783,50 @@ UISceneNode* UISceneNode::setPixelsSize( const Float& x, const Float& y ) {
 	return setPixelsSize( Sizef( x, y ) );
 }
 
+void UISceneNode::setViewportPixelsSize( const Sizef& size ) {
+	if ( mHasViewportPixelsSize && mViewportPixelsSize == size )
+		return;
+
+	mViewportPixelsSize = size;
+	mHasViewportPixelsSize = true;
+	mRoot->setPixelsSize( mViewportPixelsSize );
+	onViewportPixelsSizeChange();
+}
+
+void UISceneNode::clearViewportPixelsSize() {
+	if ( !mHasViewportPixelsSize )
+		return;
+
+	mHasViewportPixelsSize = false;
+	onViewportPixelsSizeChange();
+}
+
+void UISceneNode::onViewportPixelsSizeChange() {
+	onMediaChanged();
+	reloadStyle( true, true, true );
+	sendMsg( this, NodeMessage::WindowResize );
+}
+
+const Sizef& UISceneNode::getViewportPixelsSize() const {
+	return mHasViewportPixelsSize ? mViewportPixelsSize : getPixelsSize();
+}
+
+void UISceneNode::setFollowParentSize( bool followParentSize ) {
+	if ( mFollowParentSize == followParentSize )
+		return;
+
+	mFollowParentSize = followParentSize;
+	if ( mCurParent && mCurOnSizeChangeListener ) {
+		mCurParent->removeEventListener( mCurOnSizeChangeListener );
+		mCurOnSizeChangeListener = 0;
+	}
+	updateParentSizeListener();
+}
+
+bool UISceneNode::followsParentSize() const {
+	return mFollowParentSize;
+}
+
 void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
@@ -1044,11 +1159,12 @@ Drawable* UISceneNode::findIconDrawable( const std::string& iconName, const size
 
 CSS::MediaFeatures UISceneNode::getMediaFeatures() const {
 	CSS::MediaFeatures media;
+	const Sizef& viewportSize = getViewportPixelsSize();
 	media.type = media_type_screen;
-	media.width = mWindow->getWidth();
-	media.height = mWindow->getHeight();
-	media.deviceWidth = mWindow->getDesktopResolution().getWidth();
-	media.deviceHeight = mWindow->getDesktopResolution().getHeight();
+	media.width = PixelDensity::pxToDp( viewportSize.getWidth() );
+	media.height = PixelDensity::pxToDp( viewportSize.getHeight() );
+	media.deviceWidth = PixelDensity::pxToDp( mWindow->getDesktopResolution().getWidth() );
+	media.deviceHeight = PixelDensity::pxToDp( mWindow->getDesktopResolution().getHeight() );
 	media.color = 8;
 	media.monochrome = 0;
 	media.colorIndex = 256;
@@ -1079,7 +1195,7 @@ void UISceneNode::onChildCountChange( Node* child, const bool& removed ) {
 void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
-	mRoot->setPixelsSize( getPixelsSize() );
+	mRoot->setPixelsSize( getViewportPixelsSize() );
 }
 
 void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet, URI baseURI ) {
@@ -1180,23 +1296,72 @@ void UISceneNode::resolveStyleSheetRelativeURLs( CSS::StyleSheet& styleSheet, UR
 	}
 }
 
-void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseURI ) {
-	auto loadFont = [this, baseURI]( const std::string& familyName,
-									 const CSS::StyleSheetProperty& srcProp, Font* fontFamily,
-									 Uint32 fontStyle ) {
-		auto trySetFontFamily = []( Font* fontFamily, Uint32 fontStyle, FontTrueType* font ) {
-			if ( fontFamily && fontFamily->getType() == FontType::TTF && fontStyle ) {
-				FontTrueType* ttf = static_cast<FontTrueType*>( fontFamily );
-				if ( fontStyle == ( Text::Italic | Text::Bold ) ) {
-					ttf->setBoldItalicFont( font );
-				} else if ( fontStyle == Text::Italic ) {
-					ttf->setItalicFont( font );
-				} else if ( fontStyle == Text::Bold ) {
-					ttf->setBoldFont( font );
-				}
-			}
-		};
+static std::string normalizeFontFaceFamily( std::string_view family ) {
+	std::string normalized{ String::trim( family, ' ' ) };
+	normalized = String::trim( normalized, '\'' );
+	normalized = String::trim( normalized, '"' );
+	return String::toLower( normalized );
+}
 
+static std::string makeFontFaceAliasKey( std::string_view family, Uint32 fontStyle,
+										 FontWeight weight ) {
+	FontWeight resolvedWeight =
+		weight != FontWeight::Normal
+			? weight
+			: ( ( fontStyle & Text::Bold ) ? FontWeight::Bold : FontWeight::Normal );
+	return String::format( "%s#%u#%u", normalizeFontFaceFamily( family ).c_str(), fontStyle,
+						   static_cast<Uint32>( resolvedWeight ) );
+}
+
+void UISceneNode::registerFontFaceAlias( std::string_view family, Uint32 fontStyle,
+										 FontWeight weight, Font* font ) {
+	if ( family.empty() || font == nullptr || !font->loaded() )
+		return;
+
+	mFontFaceAliases[makeFontFaceAliasKey( family, fontStyle, weight )] = font;
+}
+
+Font* UISceneNode::getFontFaceAlias( std::string_view family, Uint32 fontStyle,
+									 FontWeight weight ) const {
+	auto aliasIt = mFontFaceAliases.find( makeFontFaceAliasKey( family, fontStyle, weight ) );
+	if ( aliasIt != mFontFaceAliases.end() )
+		return aliasIt->second;
+
+	if ( weight != FontWeight::Normal ) {
+		aliasIt =
+			mFontFaceAliases.find( makeFontFaceAliasKey( family, fontStyle, FontWeight::Normal ) );
+		if ( aliasIt != mFontFaceAliases.end() )
+			return aliasIt->second;
+	}
+
+	if ( fontStyle != 0 ) {
+		aliasIt = mFontFaceAliases.find( makeFontFaceAliasKey( family, 0, weight ) );
+		if ( aliasIt != mFontFaceAliases.end() )
+			return aliasIt->second;
+	}
+
+	return nullptr;
+}
+
+void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseURI ) {
+	auto loadFont = [this, baseURI]( const std::string& authorFamily,
+									 const CSS::StyleSheetProperty& srcProp, Uint32 fontStyle,
+									 FontWeight fontWeight ) {
+		auto makeInternalFontName = [this]( const std::string& familyName, Uint32 fontStyle,
+											FontWeight fontWeight ) {
+			return String::format( "__eepp_font_face_%p_%zu_%s_%u_%u", this,
+								   mFontFaces.size() + mFontFaceAliases.size(), familyName.c_str(),
+								   fontStyle, static_cast<Uint32>( fontWeight ) );
+		};
+		auto registerLoadedFont = [this, authorFamily, fontStyle,
+								   fontWeight]( FontTrueType* font ) {
+			if ( font == nullptr || !font->loaded() )
+				return false;
+			registerFontFaceAlias( authorFamily, fontStyle, fontWeight, font );
+			mFontFaces.push_back( font );
+			mRoot->reloadFontFamily();
+			return true;
+		};
 		std::string path( srcProp.getValue() );
 		FunctionString func( FunctionString::parse( path ) );
 
@@ -1219,13 +1384,10 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 				if ( isBase64 && !data.empty() ) {
 					std::string decoded;
 					Base64::decode( data, decoded );
-					FontTrueType* font = FontTrueType::New( familyName );
+					FontTrueType* font = FontTrueType::New(
+						makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
 					if ( font->loadFromMemory( &decoded[0], decoded.size() ) ) {
-						runOnMainThread( [this, trySetFontFamily, fontFamily, fontStyle, font] {
-							trySetFontFamily( fontFamily, fontStyle, font );
-							mFontFaces.push_back( font );
-							mRoot->reloadFontFamily();
-						} );
+						registerLoadedFont( font );
 					} else
 						eeSAFE_DELETE( font );
 				}
@@ -1238,46 +1400,55 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 		if ( String::startsWith( path, "file://" ) ) {
 			std::string filePath( path.substr( 7 ) );
 
-			FontTrueType* font = FontTrueType::New( familyName );
+			FontTrueType* font =
+				FontTrueType::New( makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
 
-			font->loadFromFile( filePath );
-			trySetFontFamily( fontFamily, fontStyle, font );
-
-			mFontFaces.push_back( font );
-			runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
+			if ( font->loadFromFile( filePath ) ) {
+				registerLoadedFont( font );
+				runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
+			} else
+				eeSAFE_DELETE( font );
 		} else if ( String::startsWith( path, "http://" ) ||
 					String::startsWith( path, "https://" ) ) {
+			std::string internalFontName(
+				makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
+			auto resourceState = mAsyncResourceLoadState;
+			Uint64 resourceGeneration = resourceState ? resourceState->generation : 0;
 			Http::getAsync(
-				[this, fontStyle, familyName, fontFamily, trySetFontFamily,
+				[this, resourceState, resourceGeneration, internalFontName, registerLoadedFont,
 				 path]( const Http&, Http::Request&, Http::Response& response ) {
-					FontTrueType* font = FontTrueType::New( familyName );
+					if ( !resourceState || !resourceState->alive ||
+						 resourceState->generation != resourceGeneration )
+						return;
+					FontTrueType* font = FontTrueType::New( internalFontName );
 					if ( response.isOK() && !response.getBody().empty() &&
 						 font->loadFromMemory( &response.getBody()[0],
 											   response.getBody().size() ) ) {
-						runOnMainThread( [this, font, fontFamily, fontStyle, trySetFontFamily] {
-							trySetFontFamily( fontFamily, fontStyle, font );
-							mFontFaces.push_back( font );
-							mRoot->reloadFontFamily();
+						runOnMainThread( [resourceState, resourceGeneration, registerLoadedFont,
+										  font]() mutable {
+							if ( resourceState && resourceState->alive &&
+								 resourceState->generation == resourceGeneration ) {
+								registerLoadedFont( font );
+							} else {
+								eeSAFE_DELETE( font );
+							}
 						} );
 					} else {
 						eeSAFE_DELETE( font );
 						Log::error( "UISceneNode::loadFontFaces: Failed to load font \"%s\", from: "
 									"%s. Request response status code: %d (%s)",
-									familyName, path, response.getStatus(),
+									internalFontName, path, response.getStatus(),
 									response.getStatusDescription() );
 					}
 				},
 				URI( path ), Seconds( 5 ) );
 		} else if ( VFS::instance()->fileExists( path ) ) {
-			FontTrueType* font = FontTrueType::New( familyName );
+			FontTrueType* font =
+				FontTrueType::New( makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
 
 			IOStream* stream = VFS::instance()->getFileFromPath( path );
 			if ( font->loadFromStream( *stream ) ) {
-				runOnMainThread( [this, fontFamily, fontStyle, font, trySetFontFamily] {
-					trySetFontFamily( fontFamily, fontStyle, font );
-					mFontFaces.push_back( font );
-					mRoot->reloadFontFamily();
-				} );
+				registerLoadedFont( font );
 			} else
 				eeSAFE_DELETE( font );
 		}
@@ -1292,6 +1463,9 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 		Uint32 fontStyle = fontStyleProp ? fontStyleProp->asFontStyle() : 0;
 		auto fontWeightProp = style->getPropertyById( PropertyId::FontWeight );
 		fontStyle |= fontWeightProp ? fontWeightProp->asFontStyle() : 0;
+		FontWeight fontWeight = fontWeightProp
+									? Text::stringToFontWeight( fontWeightProp->getValue() )
+									: FontWeight::Normal;
 
 		CSS::StyleSheetProperty familyProp( *family );
 		CSS::StyleSheetProperty srcProp( *src );
@@ -1299,12 +1473,8 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 		if ( familyProp.isEmpty() || srcProp.isEmpty() )
 			return;
 
-		Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
 		std::string fontFamily( String::trim( familyProp.getValue(), '"' ) );
 		String::trimInPlace( fontFamily, "'" );
-
-		if ( fontStyle )
-			fontFamily += "#" + Text::styleFlagToString( fontStyle );
 
 		auto unicodeRange = style->getPropertyById( PropertyId::UnicodeRange );
 
@@ -1313,11 +1483,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 			continue;
 		}
 
-		if ( nullptr == fontSearch ) {
-			loadFont( fontFamily, srcProp, nullptr, fontStyle );
-		} else if ( fontSearch->isRegular() && fontSearch->getFontStyle() != fontStyle ) {
-			loadFont( fontFamily, srcProp, fontSearch, fontStyle );
-		}
+		loadFont( fontFamily, srcProp, fontStyle, fontWeight );
 	}
 }
 
@@ -1380,12 +1546,22 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 			}
 		}
 	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
+		auto resourceState = mAsyncResourceLoadState;
+		Uint64 resourceGeneration = resourceState ? resourceState->generation : 0;
 		Http::getAsync(
-			[this, url]( const Http&, Http::Request&, Http::Response& response ) {
+			[this, resourceState, resourceGeneration, url]( const Http&, Http::Request&,
+															Http::Response& response ) {
+				if ( !resourceState || !resourceState->alive ||
+					 resourceState->generation != resourceGeneration )
+					return;
 				if ( !response.getBody().empty() &&
 					 response.getStatus() == Http::Response::Status::Ok ) {
 					std::string css( response.getBody() );
-					runOnMainThread( [css = std::move( css ), url = std::move( url ), this] {
+					runOnMainThread( [resourceState, resourceGeneration, css = std::move( css ),
+									  url = std::move( url ), this] {
+						if ( !resourceState || !resourceState->alive ||
+							 resourceState->generation != resourceGeneration )
+							return;
 						combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
 						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
@@ -1587,6 +1763,21 @@ void UISceneNode::navigate( const NavigationRequest& request ) {
 	Engine::instance()->openURI( request.uri.toString() );
 }
 
+void UISceneNode::invalidateAsyncResourceLoads() {
+	if ( mAsyncResourceLoadState )
+		mAsyncResourceLoadState->generation++;
+}
+
+void UISceneNode::invalidate( Node* invalidator ) {
+	Node::invalidate( invalidator );
+
+	if ( mParentNode ) {
+		UISceneNode* hostScene = getHostUISceneNode();
+		if ( hostScene && hostScene != this )
+			hostScene->invalidate( invalidator );
+	}
+}
+
 Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyle,
 										 FontWeight weight ) const {
 	FontManager* fm = FontManager::instance();
@@ -1599,6 +1790,10 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 			name = String::trim( name, '"' );
 
 			std::string fontFamily{ name };
+			font = getFontFaceAlias( fontFamily, fontStyle, weight );
+			if ( font )
+				return true;
+
 			size_t size = fontFamily.size();
 			if ( fontStyle )
 				fontFamily += "#" + Text::styleFlagToString( fontStyle );
