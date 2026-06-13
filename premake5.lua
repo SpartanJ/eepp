@@ -34,6 +34,11 @@ newoption {
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
+function is_arm64_arch()
+	local arch = _OPTIONS["arch"]
+	return arch and (arch:lower() == "arm64" or arch:lower() == "aarch64")
+end
+
 function get_dll_extension()
 	if os.target() == "macosx" then
 		return "dylib"
@@ -266,13 +271,13 @@ end
 function copy_sdl()
 	local dll_name = get_sdl_dll_name()
 	local version_dir = get_sdl_version_dir()
-	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+	if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
 	elseif _OPTIONS["windows-vc-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/lib/x64/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/lib/x64/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
-	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
+	elseif _OPTIONS["windows-mingw-build"] and not is_arm64_arch() then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/x86_64-w64-mingw32/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/x86_64-w64-mingw32/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
 	end
@@ -297,23 +302,23 @@ end
 function download_and_extract_dependencies()
 	sdl_version_dir_override = nil
 
-	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+	if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
 		sdl_version_dir_override = get_sdl_arm64_version_name()
 	end
 
 	local sdl_version_dir = get_sdl_version_dir()
 
 	if not os.isdir("src/thirdparty/" .. sdl_version_dir) then
-		if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+		if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
 			download_and_extract_sdl(get_sdl_devel_url("vc_arm64"), sdl_version_dir)
 			copy_sdl()
 		elseif _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(get_sdl_devel_url("vc"), sdl_version_dir)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
+		elseif _OPTIONS["windows-mingw-build"] and not is_arm64_arch() then
 			download_and_extract_sdl(get_sdl_devel_url("mingw"), sdl_version_dir)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] == "arm64" then
+		elseif _OPTIONS["windows-mingw-build"] and is_arm64_arch() then
 			download_and_extract_sdl(get_sdl_devel_url("src"), sdl_version_dir)
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(get_sdl_devel_url("src"), sdl_version_dir)
@@ -326,7 +331,7 @@ function build_arch_configuration()
 		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/i686-w64-mingw32-" }
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
-		if _OPTIONS["arch"] ~= "arm64" then
+		if not is_arm64_arch() then
 			buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
 		end
 
@@ -544,21 +549,27 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "options:windows-vc-build", "options:arch=arm64" }
 		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib" }
 
+	filter { "options:windows-vc-build", "options:arch=aarch64" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib" }
+
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86" }
 		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib/x86" }
 
-	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64", "not options:arch=arm64" }
+	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64", "not options:arch=arm64", "not options:arch=aarch64" }
 		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib/x64" }
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
 		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["arch"] ~= "arm64" then
+		if not is_arm64_arch() then
 			syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 		end
 
 	filter { "options:windows-mingw-build", "options:arch=arm64" }
+		syslibdirs { get_sdl_arm64_cross_tools_path().. "/lib/" }
+
+	filter { "options:windows-mingw-build", "options:arch=aarch64" }
 		syslibdirs { get_sdl_arm64_cross_tools_path().. "/lib/" }
 
 	filter "system:emscripten"
@@ -985,11 +996,14 @@ function build_eepp( build_name )
 		incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/include/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["arch"] ~= "arm64" then
+		if not is_arm64_arch() then
 			incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/include/" }
 		end
 
 	filter { "options:windows-mingw-build", "options:arch=arm64" }
+		incdirs { get_sdl_arm64_cross_tools_path() .. "/include/" }
+
+	filter { "options:windows-mingw-build", "options:arch=aarch64" }
 		incdirs { get_sdl_arm64_cross_tools_path() .. "/include/" }
 
 	filter "action:vs*"
@@ -1026,6 +1040,7 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:AARCH64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=arm64" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=aarch64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
 	if name == "eepp" then
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
@@ -1033,6 +1048,7 @@ function postsymlinklib_arch(name)
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:AARCH64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "options:arch=arm64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "options:arch=aarch64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:universal" )
 	end
 end
@@ -1121,6 +1137,9 @@ workspace "eepp"
 		build_base_configuration( "glew" )
 		target_dir_thirdparty()
 		filter { "action:vs*", "options:arch=arm64" }
+			buildoptions{ "/bigobj", "/O1", "/Zm200" }
+
+		filter { "action:vs*", "options:arch=aarch64" }
 			buildoptions{ "/bigobj", "/O1", "/Zm200" }
 
 	project "mbedtls-static"
@@ -1359,10 +1378,13 @@ workspace "eepp"
 		filter { "options:windows-mingw-build", "architecture:x86" }
 				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64" }
-			if _OPTIONS["arch"] ~= "arm64" then
+			if not is_arm64_arch() then
 				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/include/" }
 			end
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
+			incdirs { get_sdl_arm64_cross_tools_path() .."/include/" }
+
+		filter { "options:windows-mingw-build", "options:arch=aarch64" }
 			incdirs { get_sdl_arm64_cross_tools_path() .."/include/" }
 
 	project "brotli-static"

@@ -1092,11 +1092,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-go-to-implementation"] = "shift+f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
-		#if EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		mKeyBindings["lsp-symbol-code-action"] = "mod+return";
-		#else
+#else
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
-		#endif
+#endif
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
 		mKeyBindings["lsp-format-range"] = "alt+shift+f";
@@ -1156,26 +1156,37 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 		// Allow overriding the command for already defined LSP
 		// And overriding parameters to the already defined LSP
-		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
+		if ( updateConfigFile &&
+			 ( obj.contains( "name" ) || obj.contains( "use" ) || obj.contains( "language" ) ) &&
 			 ( obj.contains( "command" ) ||
 			   ( obj.contains( "command_parameters" ) &&
 				 obj.at( "command_parameters" ).is_string() ) ||
 			   ( obj.contains( "host" ) && obj.at( "host" ).is_string() &&
 				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ||
-			   obj.contains( "settings" ) || obj.contains( "initializationOptions" ) ) ) {
+			   obj.contains( "settings" ) || obj.contains( "initializationOptions" ) ||
+			   obj.contains( "share_process" ) ) ) {
 			for ( auto& lspR : lsps ) {
-				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
-				if ( lspR.name == name ) {
+				std::string name = obj.contains( "name" ) && obj["name"].is_string()
+									   ? obj.value( "name", "" )
+									   : obj.value( "use", "" );
+				std::string lang = obj.value( "language", "" );
+				if ( ( !name.empty() && lspR.name == name ) ||
+					 ( !lang.empty() && lang == lspR.language ) ) {
 					lspOverwritten = true;
 					if ( obj.contains( "use" ) && obj["use"].is_string() )
 						lspR.usesLSP = obj["use"].get<std::string>();
+					else
+						lspR.usesLSP.clear();
+
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
 						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
 					}
+
 					if ( obj.contains( "command" ) ) {
 						lspR.command =
 							parseCommand( obj["command"], mManager->getWorkspaceFolder() );
 					}
+
 					if ( !obj.value( "command_parameters", "" ).empty() ) {
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
@@ -1184,16 +1195,20 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						LSPClientServer::sanitizeCommand( lspR.commandParameters,
 														  mManager->getWorkspaceFolder() );
 					}
+
 					if ( obj.contains( "host" ) ) {
 						lspR.host = obj.value( "host", "" );
 						lspR.port = obj.value( "port", 0 );
 					}
+
 					if ( obj.contains( "settings" ) ) {
 						lspR.settings = obj["settings"];
 					}
+
 					if ( obj.contains( "initializationOptions" ) ) {
 						lspR.initializationOptions = obj["initializationOptions"];
 					}
+
 					tryAddEnv( obj, lspR );
 				}
 			}

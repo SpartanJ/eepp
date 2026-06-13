@@ -482,9 +482,9 @@ jobs:
     name: Windows x86_64 MSVC Nightly
     needs: release
     runs-on: windows-latest
-    env:
-      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
     steps:
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v3
     - name: Configure Git
       shell: pwsh
       run: |
@@ -511,9 +511,9 @@ jobs:
     name: Windows arm64 MSVC Nightly
     needs: release
     runs-on: windows-latest
-    env:
-      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
     steps:
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v3
     - name: Configure Git
       shell: pwsh
       run: |

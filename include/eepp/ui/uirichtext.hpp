@@ -215,7 +215,7 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();
 	virtual void onSelectionChange();
-	virtual void onLayoutUpdate() override;
+	virtual void onLayoutUpdate();
 
 	void selCurInit( const Int64& init );
 	void selCurEnd( const Int64& end );
@@ -229,9 +229,9 @@ class EE_API UIRichText : public UIHTMLWidget {
 class EE_API UIHTMLHtml : public UIRichText {
   public:
 	static UIHTMLHtml* New( const std::string& tag );
-	virtual Uint32 getType() const override;
-	bool isType( const Uint32& type ) const override;
-	bool applyProperty( const StyleSheetProperty& attribute ) override;
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
+	bool applyProperty( const StyleSheetProperty& attribute );
 
   protected:
 	UIHTMLHtml( const std::string& tag = "html" );
@@ -240,10 +240,10 @@ class EE_API UIHTMLHtml : public UIRichText {
 class EE_API UIHTMLBody : public UIRichText {
   public:
 	static UIHTMLBody* New( const std::string& tag );
-	virtual Uint32 getType() const override;
-	bool isType( const Uint32& type ) const override;
-	bool applyProperty( const StyleSheetProperty& attribute ) override;
-	virtual void updateLayout() override;
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
+	bool applyProperty( const StyleSheetProperty& attribute );
+	virtual void updateLayout();
 	void setDocumentViewportMinHeight( const Float& height );
 
   protected:
@@ -259,14 +259,14 @@ class EE_API UIHTMLBody : public UIRichText {
 	void setDocumentContentMinHeight( const Float& height );
 	void updateDocumentMinHeight();
 	void updateDocumentContentMinHeightFromChildren();
-	virtual Uint32 onMessage( const NodeMessage* Msg ) override;
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 
 class EE_API UIHTMLHead : public UIWidget {
   public:
 	static UIHTMLHead* New();
-	virtual Uint32 getType() const override;
-	bool isType( const Uint32& type ) const override;
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
 
   protected:
 	UIHTMLHead();

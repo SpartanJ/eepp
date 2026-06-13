@@ -49,20 +49,31 @@ class EE_API String {
 	  public:
 		typedef std::vector<size_t> OccTable;
 
-		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength );
+		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength,
+											  bool caseInsensitive = false );
 
 		/** @returns haystackLength if not found, otherwise the position */
 		static size_t search( const unsigned char* haystack, size_t haystackLength,
 							  const unsigned char* needle, const size_t needleLength,
-							  const OccTable& occ );
+							  const OccTable& occ, bool caseInsensitive = false );
 
 		/** @returns -1 if not found otherwise the position */
 		static Int64 find( const std::string& haystack, const std::string& needle,
-						   const size_t& haystackOffset, const OccTable& occ );
+						   const size_t& haystackOffset, const OccTable& occ,
+						   bool caseInsensitive = false );
 
 		/** @returns -1 if not found otherwise the position */
 		static Int64 find( const std::string& haystack, const std::string& needle,
-						   const size_t& haystackOffset = 0 );
+						   const size_t& haystackOffset = 0, bool caseInsensitive = false );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( std::string_view haystack, std::string_view needle,
+						   const size_t& haystackOffset, const OccTable& occ,
+						   bool caseInsensitive = false );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( std::string_view haystack, std::string_view needle,
+						   const size_t& haystackOffset = 0, bool caseInsensitive = false );
 	};
 
 	/** @return string hash */
@@ -146,6 +157,10 @@ class EE_API String {
 
 	/** @return If the needle substring, found starting at startPos is a whole-word. */
 	static bool isWholeWord( const std::string& haystack, const std::string& needle,
+							 const Int64& startPos );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( std::string_view haystack, std::string_view needle,
 							 const Int64& startPos );
 
 	/** @return If the needle substring, found starting at startPos is a whole-word. */

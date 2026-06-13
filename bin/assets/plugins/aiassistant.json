@@ -531,6 +531,20 @@
           "cheapest": true
         }
       ]
+    },
+    "xiaomimimo": {
+      "api_url": "https://api.xiaomimimo.com/v1/chat/completions",
+      "display_name": "Xiaomi MiMo",
+      "models": [
+        {
+          "name": "mimo-v2.5-pro",
+          "display_name": "MiMo V2.5 Pro"
+        },
+        {
+          "name": "mimo-v2.5",
+          "display_name": "MiMo V2.5"
+        }
+      ]
     }
   },
   "agents": {
