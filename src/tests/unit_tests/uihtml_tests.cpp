@@ -4042,6 +4042,8 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 	std::string html = R"html(
 		<!doctype html>
 		<html>
@@ -4054,19 +4056,19 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 		</body>
 		</html>
 	)html";
-	sceneNode->setURI( "file://delayed-image-resize.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "delayed-image-resize" ) );
+	documentScene->setURI( "file://delayed-image-resize.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "delayed-image-resize" ) );
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* article = sceneNode->getRoot()->find( "article" )->asType<UIRichText>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* article = documentScene->getRoot()->find( "article" )->asType<UIRichText>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
 	auto* doc = webView->getDocumentContainer();
-	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	auto images = documentScene->getRoot()->findAllByTag( "img" );
 	ASSERT_TRUE( article != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( doc != nullptr );
@@ -4078,7 +4080,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 		TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent );
 	ASSERT_TRUE( texture != nullptr );
 	img->setDrawable( texture );
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	Float articleInitialHeight = article->getPixelsSize().getHeight();
 	Float bodyInitialHeight = body->getPixelsSize().getHeight();
@@ -4087,7 +4089,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	Image loadedImage( 320, 180, 4, Color::White );
 	texture->replace( &loadedImage );
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	EXPECT_GT( article->getPixelsSize().getHeight(), articleInitialHeight + 150.f );
 	EXPECT_GT( body->getPixelsSize().getHeight(), bodyInitialHeight + 150.f );
@@ -4108,6 +4110,8 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	std::string html;
@@ -4119,14 +4123,14 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 		html.erase( pos, end + 2 - pos );
 	}
 
-	sceneNode->setURI( "file://html-table-body-height.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "html-table-body-height" ) );
+	documentScene->setURI( "file://html-table-body-height.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "html-table-body-height" ) );
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	std::string css;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/base.css", css ) );
@@ -4134,16 +4138,18 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 	std::string newsCss;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/news.css", newsCss ) );
 	css += newsCss;
-	sceneNode->runOnMainThread( [sceneNode, css = std::move( css )] {
-		sceneNode->combineStyleSheet( css, true,
-									  String::hash( "html-table-body-height-late-css" ) );
+	documentScene->runOnMainThread( [documentScene, css = std::move( css )] {
+		documentScene->combineStyleSheet( css, true,
+										  String::hash( "html-table-body-height-late-css" ) );
 	} );
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
+	SceneManager::instance()->update();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* table = sceneNode->getRoot()->find( "hnmain" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* table = documentScene->getRoot()->find( "hnmain" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( table != nullptr );
@@ -4167,6 +4173,8 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 
 	std::string html = R"html(
 		<!doctype html>
@@ -4177,19 +4185,19 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 		</html>
 	)html";
 
-	sceneNode->setURI( "file://body-content-min-height-shrink.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "body-content-min-height-shrink" ) );
+	documentScene->setURI( "file://body-content-min-height-shrink.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "body-content-min-height-shrink" ) );
 	webView->refreshDocumentLayout();
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* spacer = sceneNode->getRoot()->find( "spacer" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* spacer = documentScene->getRoot()->find( "spacer" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( spacer != nullptr );
@@ -4201,10 +4209,10 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 	spacer->setStyleSheetProperty( StyleSheetProperty( "height", "120px" ) );
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	EXPECT_LT( spacer->getPixelsSize().getHeight(), 180.f );
 	EXPECT_LT( body->getPixelsSize().getHeight(), tallBodyHeight - 250.f );
@@ -4250,12 +4258,14 @@ UTEST( UIHTML, DeferredCSSKeepsTableHeightStableAfterViewportResize ) {
 	webView->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
 	webView->loadURI( "assets/html/hn_empty_thread.html" );
 
-	auto* bigboxTd = ui->getRoot()->querySelector( "#bigbox > td" );
-	auto* bigboxTable = ui->getRoot()->querySelector( "#bigbox > td > table" );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	auto* bigboxTd = documentScene->getRoot()->querySelector( "#bigbox > td" );
+	auto* bigboxTable = documentScene->getRoot()->querySelector( "#bigbox > td > table" );
 	ASSERT_TRUE( bigboxTd != nullptr );
 	ASSERT_TRUE( bigboxTable != nullptr );
 
-	auto* titleCell = ui->getRoot()->querySelector( ".title" );
+	auto* titleCell = documentScene->getRoot()->querySelector( ".title" );
 	ASSERT_TRUE( titleCell != nullptr );
 	ASSERT_TRUE( titleCell->isType( UI_TYPE_RICHTEXT ) );
 

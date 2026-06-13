@@ -157,11 +157,12 @@ void UIWebView::onSizeChange() {
 
 void UIWebView::updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body ) {
 	Sizef viewport = mDocumentScene ? mDocumentScene->getViewportPixelsSize() : getPixelsSize();
-	Float h = PixelDensity::pxToDp( viewport.getHeight() );
+	const Float h = PixelDensity::pxToDp( viewport.getHeight() );
+	const Rectf bodyMargin = body->getLayoutPixelsMargin();
+	const Float bodyMarginHeight = PixelDensity::pxToDp( bodyMargin.Top + bodyMargin.Bottom );
 	html->setMinHeight( h );
-	body->setMinHeight( h );
 	html->setPixelsSize( viewport );
-	body->setPixelsSize( viewport );
+	body->setDocumentViewportMinHeight( eemax( 0.f, h - bodyMarginHeight ) );
 }
 
 void UIWebView::onSceneChange() {
@@ -500,8 +501,10 @@ void UIWebView::updateDocumentSceneContentExtent() {
 	}
 
 	bool extentChanged = extent != Sizef::Zero && extent != mDocumentScene->getPixelsSize();
-	if ( extentChanged )
+	if ( extentChanged ) {
 		mDocumentScene->setPixelsSize( extent );
+		updateHTMLMinHeightForDocument();
+	}
 
 	mUpdatingDocumentContentExtent = false;
 
@@ -510,8 +513,8 @@ void UIWebView::updateDocumentSceneContentExtent() {
 		viewport != Sizef::Zero && viewport != mDocumentScene->getViewportPixelsSize();
 	if ( ( viewportChanged || extentChanged ) && !mDocumentViewportSyncQueued ) {
 		mDocumentViewportSyncQueued = true;
-		runOnMainThread( [this]() {
-			runOnMainThread( [this]() {
+		runOnMainThread( [this] {
+			runOnMainThread( [this] {
 				mDocumentViewportSyncQueued = false;
 				onDocumentViewportGeometryChanged();
 			} );

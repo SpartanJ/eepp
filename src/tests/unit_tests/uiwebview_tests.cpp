@@ -362,8 +362,8 @@ UTEST( UIWebView, ResponsiveDocumentShrinksAfterGrowResize ) {
 	EXPECT_LT( fill->getPixelsSize().getWidth(), grownFillWidth );
 	EXPECT_NEAR( fill->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
+				 0.5f );
 	EXPECT_NEAR( body->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
@@ -443,11 +443,11 @@ UTEST( UIWebView, HorizontalScrollDisappearsAfterResponsiveShrink ) {
 	ASSERT_TRUE( html != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( fit->getPixelsSize().getWidth(), documentScene->getViewportPixelsSize().getWidth(),
 				 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
+				 0.5f );
 	EXPECT_NEAR( body->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getWidth(),
@@ -718,9 +718,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
+				 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 
@@ -740,9 +740,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
+				 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 	viewportHeight = webView->getContainer()->getPixelsSize().getHeight();
@@ -758,9 +758,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
+				 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 	viewportHeight = webView->getContainer()->getPixelsSize().getHeight();
@@ -774,6 +774,15 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GT( inputRect.Bottom, containerRect.Top );
 	EXPECT_NEAR( -documentScene->getPosition().y + viewportHeight,
 				 documentScene->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getHeight(),
+				 documentScene->getPixelsSize().getHeight(), 0.5f );
+
+	const Vector2f inputCenter( inputRect.Left + inputRect.getWidth() * 0.5f,
+								inputRect.Top + inputRect.getHeight() * 0.5f );
+	Node* hitNode = sceneNode->overFind( inputCenter );
+	ASSERT_TRUE( hitNode != nullptr );
+	EXPECT_TRUE( hitNode == documentScene->getRoot() ||
+				 documentScene->getRoot()->isParentOf( hitNode ) );
 
 	Engine::destroySingleton();
 	EE::Graphics::PixelDensity::setPixelDensity( 1.0f );
@@ -838,7 +847,7 @@ UTEST( UIWebView, NavigationAfterGrowDoesNotKeepMaximizedWidthOnShrink ) {
 				 webView->getContainer()->getPixelsSize().getWidth(), 0.5f );
 	EXPECT_LT( documentScene->getViewportPixelsSize().getWidth(), 900.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
 	EXPECT_LT( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( body->fitMinMaxSizePx( body->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( documentScene->getPixelsSize().getWidth(), 900.f );
@@ -898,7 +907,7 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	pump();
 	EXPECT_GT( documentScene->getViewportPixelsSize().getWidth(), 2000.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
 
 	webView->loadURI( URI( "file://" + Sys::getProcessPath() + "assets/html/hn_frontpage.html" ) );
 	pump();
@@ -913,7 +922,7 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	ASSERT_TRUE( body != nullptr );
 	EXPECT_LT( documentScene->getViewportPixelsSize().getWidth(), 900.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+				 documentScene->getPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( html->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_LE( body->getPixelsSize().getWidth(),

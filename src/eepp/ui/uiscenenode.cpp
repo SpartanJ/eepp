@@ -789,7 +789,7 @@ void UISceneNode::setViewportPixelsSize( const Sizef& size ) {
 
 	mViewportPixelsSize = size;
 	mHasViewportPixelsSize = true;
-	mRoot->setPixelsSize( mViewportPixelsSize );
+	mRoot->setPixelsSize( getPixelsSize() );
 	onViewportPixelsSizeChange();
 }
 
@@ -798,6 +798,7 @@ void UISceneNode::clearViewportPixelsSize() {
 		return;
 
 	mHasViewportPixelsSize = false;
+	mRoot->setPixelsSize( getPixelsSize() );
 	onViewportPixelsSizeChange();
 }
 
@@ -1195,7 +1196,7 @@ void UISceneNode::onChildCountChange( Node* child, const bool& removed ) {
 void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
-	mRoot->setPixelsSize( getViewportPixelsSize() );
+	mRoot->setPixelsSize( getPixelsSize() );
 }
 
 void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet, URI baseURI ) {
