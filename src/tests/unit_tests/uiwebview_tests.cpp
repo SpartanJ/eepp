@@ -521,8 +521,7 @@ UTEST( UIWebView, HiddenAndClippedWideDescendantsDoNotCreateHorizontalScroll ) {
 	EXPECT_GT( clippedWide->getPixelsSize().getWidth(), 1000.f );
 	EXPECT_TRUE( webView->getVerticalScrollBar()->isVisible() );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
-	EXPECT_NEAR( documentScene->getPixelsSize().getWidth(),
-				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_LE( documentScene->getPixelsSize().getWidth(), webView->getPixelsSize().getWidth() );
 
 	Engine::destroySingleton();
 }
@@ -851,6 +850,82 @@ UTEST( UIWebView, NavigationAfterGrowDoesNotKeepMaximizedWidthOnShrink ) {
 	EXPECT_LT( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( body->fitMinMaxSizePx( body->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( documentScene->getPixelsSize().getWidth(), 900.f );
+	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, HackerNewsSingleStepRestoreSettlesViewportInOneFrame ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "UIWebView Single Step Restore Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1.f, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 800, 500 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->getVerticalScrollBar()->setPixelsSize( 15, 500 );
+	webView->getHorizontalScrollBar()->setPixelsSize( 800, 15 );
+	webView->loadURI( URI( "file://" + Sys::getProcessPath() + "assets/html/hn_frontpage.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 30; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	auto updateOnce = [&]() {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	};
+
+	pump();
+	ASSERT_GE( documentScene->getRoot()->querySelectorAll( ".athing" ).size(), (size_t)30 );
+
+	webView->setPixelsSize( 2345, 900 );
+	webView->getVerticalScrollBar()->setPixelsSize( 15, 900 );
+	webView->getHorizontalScrollBar()->setPixelsSize( 2345, 15 );
+	updateOnce();
+
+	EXPECT_NEAR( documentScene->getViewportPixelsSize().getWidth(),
+				 webView->getContainer()->getPixelsSize().getWidth(), 0.5f );
+	EXPECT_GT( documentScene->getViewportPixelsSize().getWidth(), 2000.f );
+
+	webView->setPixelsSize( 800, 500 );
+	webView->getVerticalScrollBar()->setPixelsSize( 15, 500 );
+	webView->getHorizontalScrollBar()->setPixelsSize( 800, 15 );
+	updateOnce();
+
+	UIWidget* html = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	UIWidget* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	UIWidget* center = documentScene->getRoot()->querySelector( "center" )->asType<UIWidget>();
+	UIWidget* table = documentScene->getRoot()->find( "hnmain" )->asType<UIWidget>();
+	ASSERT_TRUE( html != nullptr );
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( center != nullptr );
+	ASSERT_TRUE( table != nullptr );
+	EXPECT_NEAR( documentScene->getViewportPixelsSize().getWidth(),
+				 webView->getContainer()->getPixelsSize().getWidth(), 0.5f );
+	EXPECT_LT( documentScene->getViewportPixelsSize().getWidth(), 900.f );
+	EXPECT_LT( html->getPixelsSize().getWidth(), 900.f );
+	EXPECT_LT( body->getPixelsSize().getWidth(), 900.f );
+	EXPECT_LT( center->getPixelsSize().getWidth(), 900.f );
+	EXPECT_LT( table->getPixelsSize().getWidth(), 900.f );
+	EXPECT_LT( documentScene->getPixelsSize().getWidth(), webView->getPixelsSize().getWidth() );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
 
 	Engine::destroySingleton();

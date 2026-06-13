@@ -3,10 +3,12 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uiwebview.hpp>
 
 namespace EE { namespace UI {
@@ -64,6 +66,51 @@ static void expandWidgetContentExtent( UIWidget* widget, const Vector2f& offset,
 		extent.x = eemax( extent.x, position.x + size.getWidth() );
 	if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent )
 		extent.y = eemax( extent.y, position.y + size.getHeight() );
+}
+
+static void resetViewportDependentDocumentWidths( UIWidget* container ) {
+	if ( !container )
+		return;
+
+	auto nodes = container->findAllByType( UI_TYPE_HTML_WIDGET );
+	for ( Node* node : nodes ) {
+		if ( node == container || !node->isWidget() )
+			continue;
+
+		UIWidget* widget = node->asType<UIWidget>();
+		Node* parent = widget->getParent();
+		UIWidget* parentWidget =
+			parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+		if ( !parentWidget )
+			continue;
+
+		const Float containerWidth = eemax( 0.f, parentWidget->getPixelsSize().getWidth() -
+													 parentWidget->getPixelsContentOffset().Left -
+													 parentWidget->getPixelsContentOffset().Right );
+		bool normalFlow = true;
+		Rectf margin = widget->getLayoutPixelsMargin();
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+			auto* htmlWidget = widget->asType<UIHTMLWidget>();
+			normalFlow = !htmlWidget->isOutOfFlow();
+			margin = htmlWidget->getNormalFlowLayoutPixelsMargin();
+		}
+
+		if ( normalFlow ) {
+			widget->invalidateIntrinsicSize();
+			/* if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+				widget->setPixelsSize( eemax( 0.f, containerWidth - margin.Left - margin.Right ),
+									   widget->getPixelsSize().getHeight() );
+			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed &&
+						widget->getUIStyle() ) {
+				const StyleSheetProperty* wprop =
+					widget->getUIStyle()->getProperty( PropertyId::Width );
+				if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) ) {
+					widget->setPixelsSize( { widget->lengthFromValue( *wprop ),
+											 widget->getPixelsSize().getHeight() } );
+				}
+			} */
+		}
+	}
 }
 
 Sizef UIWebView::getDocumentViewportPixelsSize() const {
@@ -162,6 +209,7 @@ void UIWebView::updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body ) {
 	const Float bodyMarginHeight = PixelDensity::pxToDp( bodyMargin.Top + bodyMargin.Bottom );
 	html->setMinHeight( h );
 	html->setPixelsSize( viewport );
+	body->setPixelsSize( { viewport.getWidth(), body->getPixelsSize().getHeight() } );
 	body->setDocumentViewportMinHeight( eemax( 0.f, h - bodyMarginHeight ) );
 }
 
@@ -376,8 +424,20 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 }
 
 void UIWebView::onDocumentViewportGeometryChanged() {
-	if ( updateDocumentViewportMetrics() )
+	if ( updateDocumentViewportMetrics() ) {
 		updateHTMLMinHeightForDocument();
+		if ( mDocContainer && mDocContainer->isLayout() )
+			mDocContainer->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+		if ( auto htmlNode = mDocumentScene->findByType( UI_TYPE_HTML_HTML ) ) {
+			if ( htmlNode->isWidget() )
+				resetViewportDependentDocumentWidths( htmlNode->asType<UIWidget>() );
+			if ( htmlNode->isLayout() )
+				htmlNode->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+		}
+		mDocumentScene->update( Time::Zero );
+		updateDocumentSceneContentExtent();
+		return;
+	}
 	updateDocumentSceneContentExtent();
 }
 
@@ -490,6 +550,8 @@ void UIWebView::updateDocumentSceneContentExtent() {
 
 	if ( auto htmlNode = mDocContainer->findByType( UI_TYPE_HTML_HTML ) ) {
 		UIWidget* html = htmlNode->asType<UIWidget>();
+		resetViewportDependentDocumentWidths( html );
+		mDocumentScene->updateDirtyLayouts();
 		expandWidgetContentExtent( html, Vector2f::Zero, extent );
 	}
 
