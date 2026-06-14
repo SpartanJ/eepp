@@ -18,6 +18,7 @@ class EE_API UIDropDownList : public UIDropDown {
 	virtual ~UIDropDownList();
 
 	virtual Uint32 getType() const;
+
 	virtual bool isType( const Uint32& type ) const;
 
 	UIListBox* getListBox() const;
@@ -27,17 +28,24 @@ class EE_API UIDropDownList : public UIDropDown {
 	virtual UIDropDownList* setMaxNumVisibleItems( const Uint32& maxNumVisibleItems );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
+
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+	void setClickStepItems( Uint32 num );
+
+	Uint32 getClickStepItems() const { return mClickStepItems; }
 
   protected:
 	friend class UIComboBox;
 
 	UIListBox* mListBox;
 	Uint32 mListBoxCloseCb{ 0 };
+	Uint32 mClickStepItems{ 3 };
 
 	UIDropDownList( const std::string& tag = "dropdownlist" );
 
@@ -52,6 +60,8 @@ class EE_API UIDropDownList : public UIDropDown {
 	virtual void onClassChange();
 
 	void destroyListBox();
+
+	void updateClickStep();
 };
 
 }} // namespace EE::UI

@@ -66,7 +66,7 @@ class EE_API UIHTMLTableCell : public UIRichText {
   protected:
 	Uint32 mColSpan{ 1 };
 
-	virtual void onLayoutUpdate() override;
+	virtual void onLayoutUpdate();
 };
 
 class EE_API UIHTMLTableRow : public UIHTMLWidget {

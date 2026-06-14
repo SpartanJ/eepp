@@ -32,10 +32,12 @@ LSPClientServerManager::supportsLSP( const std::shared_ptr<TextDocument>& doc ) 
 				lsps.push_back( lsp );
 				break;
 			}
-			auto& files = def.getFiles();
-			if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {
-				lsps.push_back( lsp );
-				break;
+			if ( !String::startsWith( ext, "%" ) && !String::endsWith( ext, "$" ) ) {
+				auto& files = def.getFiles();
+				if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {
+					lsps.push_back( lsp );
+					break;
+				}
 			}
 		}
 	}

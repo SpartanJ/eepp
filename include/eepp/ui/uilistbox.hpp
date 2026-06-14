@@ -63,6 +63,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	std::vector<UIListBoxItem*> getItemsSelected();
 
+	Uint32 getVisibleItemsCount() const;
+
 	Rectf getContainerPadding() const;
 
 	void setSmoothScroll( const bool& soft );
@@ -195,6 +197,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	virtual void onTouchDragValueChange( Vector2f diff );
 
 	virtual bool isTouchOverAllowedChildren();
+
+	void onItemsCountChange();
 };
 
 }} // namespace EE::UI

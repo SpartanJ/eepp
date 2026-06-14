@@ -1175,11 +1175,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lspOverwritten = true;
 					if ( obj.contains( "use" ) && obj["use"].is_string() )
 						lspR.usesLSP = obj["use"].get<std::string>();
-					else
-						lspR.usesLSP.clear();
 
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
 						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
+						if ( !lspR.shareProcessWithOtherDefinition )
+							lspR.usesLSP.clear();
 					}
 
 					if ( obj.contains( "command" ) ) {

@@ -37,6 +37,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) : UIDropDown( tag ), mL
 	mListBox->on( Event::OnItemKeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
 	mListBox->on( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
 	mListBox->on( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
+	mListBox->on( Event::OnItemsCountChange, [this]( auto event ) { updateClickStep(); } );
 	mListBoxCloseCb =
 		mListBox->on( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
 	mListBox->on( Event::OnSelectionChanged, [this]( auto ) {
@@ -139,10 +140,12 @@ UIDropDownList* UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisib
 	if ( maxNumVisibleItems != mStyleConfig.MaxNumVisibleItems ) {
 		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-		if ( NULL != mListBox )
+		if ( NULL != mListBox ) {
 			mListBox->setSize( getSize().getWidth(), std::min( mStyleConfig.MaxNumVisibleItems,
 															   getListBox()->getItemsCount() ) *
 														 mListBox->getRowHeight() );
+			updateClickStep();
+		}
 	}
 	return this;
 }
@@ -230,6 +233,22 @@ void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 void UIDropDownList::onClassChange() {
 	if ( mListBox )
 		mListBox->setClasses( getClasses() );
+}
+
+void UIDropDownList::setClickStepItems( Uint32 num ) {
+	if ( num != mClickStepItems ) {
+		mClickStepItems = num;
+		updateClickStep();
+	}
+}
+
+void UIDropDownList::updateClickStep() {
+	if ( mListBox == nullptr )
+		return;
+	Float totalScrollableItems = (Float)mListBox->getItemsCount() - getMaxNumVisibleItems();
+	mListBox->getVerticalScrollBar()->setClickStep(
+		totalScrollableItems > mClickStepItems ? mClickStepItems / totalScrollableItems
+											   : mListBox->getVerticalScrollBar()->getMaxValue() );
 }
 
 }} // namespace EE::UI

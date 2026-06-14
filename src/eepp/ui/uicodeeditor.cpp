@@ -2047,7 +2047,7 @@ void UICodeEditor::onSizeChange() {
 	onAutoSize();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( !mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn )
 		invalidateLongestLineWidth();
 	UIWidget::onSizeChange();
 }
@@ -2055,7 +2055,7 @@ void UICodeEditor::onSizeChange() {
 void UICodeEditor::onPaddingChange() {
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( !mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn )
 		invalidateLongestLineWidth();
 	UIWidget::onPaddingChange();
 }
@@ -2157,7 +2157,9 @@ void UICodeEditor::updateScrollBar() {
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
-		bool showHScroll = mLongestLineWidth > viewPortWidth && !mDocView.isWrapEnabled();
+		bool showHScroll =
+			mLongestLineWidth > viewPortWidth &&
+			( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn );
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
 	}
@@ -2171,8 +2173,10 @@ void UICodeEditor::updateScrollBar() {
 	mVScrollBar->setEnabled( showVScroll );
 	mVScrollBar->setVisible( showVScroll );
 
-	if ( wasVScrollVisible != showVScroll && mDocView.isWrapEnabled() )
+	if ( wasVScrollVisible != showVScroll &&
+		 ( mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn ) ) {
 		invalidateLineWrapMaxWidth( false );
+	}
 
 	setScrollY( mScroll.y );
 }
@@ -5812,7 +5816,8 @@ void UICodeEditor::onClassChange() {
 }
 
 bool UICodeEditor::needsHorizontalLength() const {
-	return mDocView.getConfig().mode == LineWrapMode::NoWrap;
+	return mDocView.getConfig().mode == LineWrapMode::NoWrap ||
+		   mLineWrapType == LineWrapType::LineBreakingColumn;
 }
 
 void UICodeEditor::setUseDefaultStyle( bool use ) {

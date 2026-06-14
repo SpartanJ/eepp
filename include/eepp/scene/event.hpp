@@ -130,6 +130,7 @@ class EE_API Event {
 		OnToggle,
 		OnFocusWithin,
 		OnFocusWithinLoss,
+		OnItemsCountChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
