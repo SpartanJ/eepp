@@ -148,7 +148,7 @@ ShaderProgram::ShaderProgram( const char** VertexShaderData, const Uint32& NumLi
 ShaderProgram::~ShaderProgram() {
 	if ( getHandler() > 0 ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glDeleteProgram( getHandler() );
+		GLi->deleteProgram( getHandler() );
 #endif
 	}
 
@@ -176,7 +176,7 @@ void ShaderProgram::removeFromManager() {
 void ShaderProgram::init() {
 	if ( GLi->shadersSupported() && 0 == getHandler() ) {
 #ifdef EE_SHADERS_SUPPORTED
-		mHandler = glCreateProgram();
+		mHandler = GLi->createProgram();
 #endif
 		mValid = false;
 		mUniformLocations.clear();
@@ -215,7 +215,7 @@ void ShaderProgram::addShader( Shader* Shader ) {
 
 	if ( 0 != getHandler() ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glAttachShader( getHandler(), Shader->getId() );
+		GLi->attachShader( getHandler(), Shader->getId() );
 #endif
 
 		mShaders.push_back( Shader );
@@ -229,20 +229,19 @@ void ShaderProgram::addShaders( const std::vector<Shader*>& Shaders ) {
 
 bool ShaderProgram::link() {
 #ifdef EE_SHADERS_SUPPORTED
-	glLinkProgram( getHandler() );
+	GLi->linkProgram( getHandler() );
 
 	Int32 linked;
-	glGetProgramiv( getHandler(), GL_LINK_STATUS, &linked );
+	GLi->getProgramiv( getHandler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
 	int logsize = 0, logarraysize = 0;
-	glGetProgramiv( getHandler(), GL_INFO_LOG_LENGTH, &logarraysize );
+	GLi->getProgramiv( getHandler(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 	if ( logarraysize > 0 ) {
 		mLinkLog.resize( logarraysize );
 
-		glGetProgramInfoLog( getHandler(), logarraysize, &logsize,
-							 reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+		GLi->getProgramInfoLog( getHandler(), logarraysize, &logsize, &mLinkLog[0] );
 
 		mLinkLog.resize( logsize );
 	}
@@ -283,7 +282,7 @@ Int32 ShaderProgram::getUniformLocation( const std::string& Name ) {
 	std::map<std::string, Int32>::iterator it = mUniformLocations.find( Name );
 	if ( it == mUniformLocations.end() ) {
 #ifdef EE_SHADERS_SUPPORTED
-		Int32 Location = glGetUniformLocation( getHandler(), Name.c_str() );
+		Int32 Location = GLi->getUniformLocation( getHandler(), Name.c_str() );
 		mUniformLocations[Name] = Location;
 #endif
 	}
@@ -297,7 +296,7 @@ Int32 ShaderProgram::getAttributeLocation( const std::string& Name ) {
 	std::map<std::string, Int32>::iterator it = mAttributeLocations.find( Name );
 	if ( it == mAttributeLocations.end() ) {
 #ifdef EE_SHADERS_SUPPORTED
-		Int32 Location = glGetAttribLocation( getHandler(), Name.c_str() );
+		Int32 Location = GLi->getAttribLocation( getHandler(), Name.c_str() );
 		mAttributeLocations[Name] = Location;
 #endif
 	}
@@ -332,7 +331,7 @@ bool ShaderProgram::setUniform( const std::string& Name, Int32 Value ) {
 bool ShaderProgram::setUniform( const Int32& Location, Int32 Value ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniform1i( Location, Value );
+		GLi->uniform1i( Location, Value );
 #endif
 
 		return true;
@@ -344,7 +343,7 @@ bool ShaderProgram::setUniform( const Int32& Location, Int32 Value ) {
 bool ShaderProgram::setUniform( const Int32& Location, float Value ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniform1f( Location, Value );
+		GLi->uniform1f( Location, Value );
 #endif
 
 		return true;
@@ -356,7 +355,7 @@ bool ShaderProgram::setUniform( const Int32& Location, float Value ) {
 bool ShaderProgram::setUniform( const Int32& Location, Vector2ff Value ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
+		GLi->uniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 #endif
 
 		return true;
@@ -368,7 +367,7 @@ bool ShaderProgram::setUniform( const Int32& Location, Vector2ff Value ) {
 bool ShaderProgram::setUniform( const Int32& Location, Vector3ff Value ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
+		GLi->uniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 #endif
 
 		return true;
@@ -380,7 +379,7 @@ bool ShaderProgram::setUniform( const Int32& Location, Vector3ff Value ) {
 bool ShaderProgram::setUniform( const Int32& Location, float x, float y, float z, float w ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniform4f( Location, x, y, z, w );
+		GLi->uniform4f( Location, x, y, z, w );
 #endif
 
 		return true;
@@ -392,7 +391,7 @@ bool ShaderProgram::setUniform( const Int32& Location, float x, float y, float z
 bool ShaderProgram::setUniformMatrix( const Int32& Location, const float* Value ) {
 	if ( -1 != Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glUniformMatrix4fv( Location, 1, false, Value );
+		GLi->uniformMatrix4fv( Location, 1, false, Value );
 #endif
 
 		return true;
@@ -430,7 +429,7 @@ void ShaderProgram::enableVertexAttribArray( const std::string& Name ) {
 
 void ShaderProgram::enableVertexAttribArray( const Int32& Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-	glEnableVertexAttribArray( Location );
+	GLi->enableVertexAttribArray( Location );
 #endif
 }
 
@@ -440,7 +439,7 @@ void ShaderProgram::disableVertexAttribArray( const std::string& Name ) {
 
 void ShaderProgram::disableVertexAttribArray( const Int32& Location ) {
 #ifdef EE_SHADERS_SUPPORTED
-	glDisableVertexAttribArray( Location );
+	GLi->disableVertexAttribArray( Location );
 #endif
 }
 

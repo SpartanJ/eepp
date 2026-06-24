@@ -539,8 +539,7 @@ UITableRow* UIAbstractTableView::createRow() {
 		}
 	} );
 	rowWidget->on( Event::MouseClick, [this]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK ) ) ||
-			 !isRowSelection() )
+		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK ) ) || !isRowSelection() )
 			return;
 
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
@@ -919,12 +918,8 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 		return 0;
 	if ( mSearchTextAction )
 		removeAction( mSearchTextAction );
-	mSearchTextAction = Actions::Runnable::New(
-		[this] {
-			mSearchTextAction = nullptr;
-			mSearchText = "";
-		},
-		Milliseconds( 750 ) );
+	mSearchTextAction =
+		Actions::Runnable::New( [this] { resetSearchText(); }, Milliseconds( 750 ) );
 	runAction( mSearchTextAction );
 	mSearchText += String::trim( String::toLower( event.getText() ) );
 	if ( mSearchText.empty() )
@@ -958,6 +953,13 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 		}
 	}
 	return 1;
+}
+
+void UIAbstractTableView::resetSearchText() {
+	if ( mSearchTextAction )
+		removeAction( mSearchTextAction );
+	mSearchTextAction = nullptr;
+	mSearchText = "";
 }
 
 bool UIAbstractTableView::tryBeginEditing( KeyBindings::Shortcut fromShortcut ) {

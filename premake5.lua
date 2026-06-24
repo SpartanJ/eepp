@@ -8,6 +8,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "with-glew", description = "Compile with GLEW support (disabled by default)." }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
@@ -183,6 +184,14 @@ function is_sdl3_backend()
 		return _OPTIONS["with-backend"] == "SDL3"
 	end
 	return false
+end
+
+function glew_supported()
+	return not os.istarget("haiku") and not os.istarget("ios") and not os.istarget("android") and not os.istarget("emscripten")
+end
+
+function glew_enabled()
+	return _OPTIONS["with-glew"] and glew_supported()
 end
 
 function get_sdl_version_dir()
@@ -640,6 +649,10 @@ function parse_args()
 		defines { "EE_GLES1", "SOIL_GLES1" }
 	end
 
+	if glew_enabled() then
+		defines { "EE_ENABLE_GLEW" }
+	end
+
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
@@ -707,7 +720,7 @@ function add_static_links()
 		links { "mbedtls-static" }
 	end
 
-	if not os.istarget("haiku") and not os.istarget("ios") and not os.istarget("android") and not os.istarget("emscripten") then
+	if glew_enabled() then
 		links{ "glew-static" }
 	end
 end
@@ -1068,6 +1081,7 @@ workspace "eepp"
 	select_backend()
 	generate_os_links()
 	parse_args()
+
 	location("./make/" .. os.target() .. "/")
 	objdir("obj/" .. os.target() .. "/")
 
@@ -1128,19 +1142,23 @@ workspace "eepp"
 		build_base_configuration( "SOIL2" )
 		target_dir_thirdparty()
 
-	project "glew-static"
-		kind "StaticLib"
-		language "C"
-		defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-		files { "src/thirdparty/glew/*.c" }
-		incdirs { "include/thirdparty/glew" }
-		build_base_configuration( "glew" )
-		target_dir_thirdparty()
-		filter { "action:vs*", "options:arch=arm64" }
-			buildoptions{ "/bigobj", "/O1", "/Zm200" }
+	if glew_enabled() then
+		project "glew-static"
+			kind "StaticLib"
+			language "C"
+			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
+			files { "src/thirdparty/glew/*.c" }
+			incdirs { "include/thirdparty/glew" }
+			build_base_configuration( "glew" )
+			target_dir_thirdparty()
+			filter { "action:vs*", "options:arch=arm64" }
+				buildoptions{ "/bigobj", "/O1", "/Zm200" }
 
-		filter { "action:vs*", "options:arch=aarch64" }
-			buildoptions{ "/bigobj", "/O1", "/Zm200" }
+			filter { "action:vs*", "options:arch=aarch64" }
+				buildoptions{ "/bigobj", "/O1", "/Zm200" }
+
+			filter {}
+	end
 
 	project "mbedtls-static"
 		kind "StaticLib"

@@ -45,6 +45,9 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 													   (char)0x06 }; // Empty ZIP
 	static constexpr std::array<char, 4> ZIP_SPANNED = { 'P', 'K', (char)0x07,
 														 (char)0x08 }; // Spanned ZIP
+	static constexpr std::array<char, 4> ASTC_MAGIC = { (char)0x13, (char)0xAB, (char)0xA1,
+														(char)0x5C };
+	static constexpr std::array<char, 4> PKM_MAGIC = { 'P', 'K', 'M', ' ' };
 	// UTF-8/UTF-16/UTF-32 BOMs (to avoid misclassifying as binary)
 	static constexpr std::array<char, 3> UTF8_BOM = { (char)0xEF, (char)0xBB, (char)0xBF };
 	static constexpr std::array<char, 2> UTF16BE_BOM = { (char)0xFE, (char)0xFF };
@@ -90,6 +93,8 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 			 std::equal( ZIP_MAGIC.begin(), ZIP_MAGIC.end(), buffer.begin() ) ||
 			 std::equal( ZIP_EMPTY.begin(), ZIP_EMPTY.end(), buffer.begin() ) ||
 			 std::equal( ZIP_SPANNED.begin(), ZIP_SPANNED.end(), buffer.begin() ) ||
+			 std::equal( ASTC_MAGIC.begin(), ASTC_MAGIC.end(), buffer.begin() ) ||
+			 std::equal( PKM_MAGIC.begin(), PKM_MAGIC.end(), buffer.begin() ) ||
 			 ( bytesRead >= 5 &&
 			   std::equal( PDF_MAGIC.begin(), PDF_MAGIC.end(), buffer.begin() ) ) ) {
 			return true; // Known binary file type

@@ -2,6 +2,7 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -53,6 +54,20 @@ UTEST( TextFormat, autodetect ) {
 									   TextFormat::lineEndingToString( newLine ) )
 						   .c_str() );
 	}
+}
+
+UTEST( TextFormat, autodetectSingleInvalidShiftJISByte ) {
+	const char data[] = { static_cast<char>( 0xFF ) };
+	IOStreamMemory stream( data, sizeof( data ) );
+	auto textFormat = TextFormat::autodetect( stream );
+	EXPECT_EQ( textFormat.encoding, TextFormat::Encoding::Latin1 );
+}
+
+UTEST( TextFormat, autodetectTruncatedShiftJISLeadByte ) {
+	const char data[] = { static_cast<char>( 0x81 ) };
+	IOStreamMemory stream( data, sizeof( data ) );
+	auto textFormat = TextFormat::autodetect( stream );
+	EXPECT_EQ( textFormat.encoding, TextFormat::Encoding::Latin1 );
 }
 
 UTEST( TextFormat, autodetectProject ) {

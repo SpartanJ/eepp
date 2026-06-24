@@ -565,17 +565,18 @@ void EETest::createBaseUI() {
 		Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 #ifdef EE_PLATFORM_TOUCH
-	UISkin nSkin( "button-te" );
-	nSkin.setStateDrawable( UIState::getStateNumber( "normal" ),
-							TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
-	nSkin.setStateDrawable( UIState::getStateNumber( "pressed" ),
-							TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) );
+	UISkin* nSkin = UISkin::New( "button-te" );
+	nSkin->setStateDrawable( UIState::getStateNumber( "normal" ),
+							 TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
+	nSkin->setStateDrawable( UIState::getStateNumber( "pressed" ),
+							 TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
 	mShowMenu->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
 	mShowMenu->setPadding( Rectf( 16, 0, 16, 0 ) );
-	mShowMenu->setSkin( nSkin );
+	mShowMenu->setSkin( *nSkin );
+	eeSAFE_DELETE( nSkin );
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setPosition( screenSize.getWidth() - mShowMenu->getSize().getWidth() - 32,
 							screenSize.getHeight() - mShowMenu->getSize().getHeight() - 9 );

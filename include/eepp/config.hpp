@@ -195,8 +195,8 @@
 #endif
 
 #if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	  defined( EE_X11_PLATFORM ) ) &&                                        \
-	!defined( EE_GLES )
+	  defined( EE_X11_PLATFORM ) ) &&                                       \
+	!defined( EE_GLES ) && defined( EE_ENABLE_GLEW )
 #define EE_GLEW_AVAILABLE
 #endif
 
@@ -317,9 +317,9 @@ typedef unsigned long long Uint64;
 #endif
 
 #if defined( __x86_64__ ) || defined( _M_X64 )
-	#define EE_ARCH_X86_64
+#define EE_ARCH_X86_64
 #elif defined( __aarch64__ ) || defined( _M_ARM64 )
-	#define EE_ARCH_ARM64
+#define EE_ARCH_ARM64
 #endif
 
 #if defined( EE_LINUX_64 ) || defined( EE_SPARC_64 ) || defined( __osf__ ) ||                  \

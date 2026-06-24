@@ -158,6 +158,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "with-glew", description = "Compile with GLEW support (disabled by default)." }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
@@ -219,6 +220,14 @@ end
 
 function os.is_real( os_name )
 	return os.get_real() == os_name
+end
+
+function glew_supported()
+	return not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten")
+end
+
+function glew_enabled()
+	return _OPTIONS["with-glew"] and glew_supported()
 end
 
 if os.is_real("haiku") and not os.is64bit() then
@@ -710,6 +719,10 @@ function parse_args()
 		defines { "EE_GLES1", "SOIL_GLES1" }
 	end
 
+	if glew_enabled() then
+		defines { "EE_ENABLE_GLEW" }
+	end
+
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
@@ -776,7 +789,7 @@ function add_static_links()
 		links { "mbedtls-static" }
 	end
 
-	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+	if glew_enabled() then
 		links{ "glew-static" }
 	end
 end
@@ -1130,7 +1143,7 @@ solution "eepp"
 		includedirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
-	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+	if glew_enabled() then
 		project "glew-static"
 			kind "StaticLib"
 			language "C"

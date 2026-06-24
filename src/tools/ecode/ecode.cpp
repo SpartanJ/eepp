@@ -3365,9 +3365,13 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			auto menu = cevent->getMenu();
 
 			UIPopUpMenu* compareMenu = UIPopUpMenu::New();
-			compareMenu->add( i18n( "compare_to_ellipsis", "Compare to..." ) )
+			compareMenu
+				->add( i18n( "compare_to_ellipsis", "Compare to..." ), nullptr,
+					   getKeybind( "compare-to" ) )
 				->setId( "compare-to" );
-			compareMenu->add( i18n( "compare_with_clipboard", "Compare with clipboard" ) )
+			compareMenu
+				->add( i18n( "compare_with_clipboard", "Compare with clipboard" ), nullptr,
+					   getKeybind( "compare-with-clipboard" ) )
 				->setId( "compare-with-clipboard" );
 
 			menu->addSeparator();
@@ -3376,12 +3380,12 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			if ( ext == "md" || ext == "markdown" ) {
 				menu->addSeparator();
 				menu->add( i18n( "show_markdown_preview", "Show Markdown Live Preview" ),
-						   findIcon( "filetype-md" ) )
+						   findIcon( "filetype-md" ), getKeybind( "show-markdown-preview" ) )
 					->setId( "show-markdown-preview" );
 			} else if ( ext == "diff" || ext == "patch" ) {
 				menu->addSeparator();
 				menu->add( i18n( "show_diff_preview", "Show Diff Preview" ),
-						   findIcon( "filetype-diff" ) )
+						   findIcon( "filetype-diff" ), getKeybind( "show-diff-preview" ) )
 					->setId( "show-diff-preview" );
 			}
 		} );

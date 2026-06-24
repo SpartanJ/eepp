@@ -248,7 +248,9 @@ pushbutton:disabled,
 selectbutton:disabled,
 textinput:disabled,
 textedit:disabled,
-textarea:disabled {
+textarea:disabled,
+DropDownList:disabled,
+DropDownModelList:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }

@@ -24,6 +24,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <limits>
 
 using namespace EE;
@@ -1865,6 +1866,122 @@ UTEST( UIHTMLTable, basicLayout ) {
 					   cell10->asType<UIWidget>()->getPixelsPosition().x );
 		}
 	}
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, cellHeightIsMinimumForInlineContentHitTest ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String xml = R"xml(
+		<table id="table" layout_width="200dp" layout_height="wrap_content">
+			<tr>
+				<td id="cell" style="height: 10px; line-height: 24px">
+					<a id="link" href="#">Link</a>
+				</td>
+			</tr>
+		</table>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	sceneNode->update( Time::Zero );
+
+	auto* table = sceneNode->find<UIHTMLTable>( "table" );
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	auto* link = sceneNode->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( table != nullptr );
+	ASSERT_TRUE( cell != nullptr );
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_FALSE( link->getHitBoxes().empty() );
+
+	const Rectf& hitBox = link->getHitBoxes().front();
+	EXPECT_GT( cell->getPixelsSize().getHeight(), 10.f );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), link->getPixelsPosition().y + hitBox.Bottom );
+
+	Vector2f hitPos = link->convertToWorldSpace(
+		{ hitBox.Left + 1.f, eemax( hitBox.Top, hitBox.Bottom - 1.f ) } );
+	Node* hitNode = table->overFind( hitPos );
+	EXPECT_EQ( hitNode, link );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, cellHeightStretchesToRowMinimum ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String xml = R"xml(
+		<table id="table" layout_width="200dp" layout_height="wrap_content">
+			<tr>
+				<td id="logo"><img id="img" style="width: 18px; height: 18px; display: block" /></td>
+				<td id="nav" style="height: 10px">Nav</td>
+			</tr>
+		</table>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	sceneNode->update( Time::Zero );
+
+	auto* logo = sceneNode->find<UIHTMLTableCell>( "logo" );
+	auto* nav = sceneNode->find<UIHTMLTableCell>( "nav" );
+	ASSERT_TRUE( logo != nullptr );
+	ASSERT_TRUE( nav != nullptr );
+
+	EXPECT_GT( logo->getPixelsSize().getHeight(), 10.f );
+	EXPECT_EQ( nav->getPixelsSize().getHeight(), logo->getPixelsSize().getHeight() );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, tableCellAnchorHoverRelayoutsRichText ) {
+	auto sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	String xml = R"xml(
+		<table id="table" layout_width="200dp" layout_height="wrap_content">
+			<style>
+				a { text-decoration: none; }
+				a:hover { text-decoration: underline; }
+			</style>
+			<tr>
+				<td id="logo"><img id="img" style="width: 18px; height: 18px; display: block" /></td>
+				<td id="nav" style="height: 10px"><a id="link" href="#">Nav</a></td>
+			</tr>
+		</table>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	sceneNode->update( Time::Zero );
+
+	auto* nav = sceneNode->find<UIHTMLTableCell>( "nav" );
+	auto* link = sceneNode->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( nav != nullptr );
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_FALSE( link->getHitBoxes().empty() );
+	auto renderedAnchorStyle = [&nav]() -> Uint32 {
+		for ( const auto& line : nav->getRichText().getLines() ) {
+			for ( const auto& span : line.spans ) {
+				if ( span.type == RichText::RenderSpan::Type::Text && span.text &&
+					 span.text->getString() == "Nav" )
+					return span.text->getStyle();
+			}
+		}
+		return 0;
+	};
+
+	EXPECT_FALSE( ( renderedAnchorStyle() & Text::Underlined ) != 0 );
+	EXPECT_GT( nav->getPixelsSize().getHeight(), 10.f );
+
+	const Rectf& hitBox = link->getHitBoxes().front();
+	Vector2f hoverPos = link->convertToWorldSpace( { hitBox.Left + 1.f, hitBox.Top + 1.f } );
+	EXPECT_EQ( sceneNode->overFind( hoverPos ), link );
+
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( hoverPos.asInt() );
+	sceneNode->update( Time::Zero );
+
+	EXPECT_TRUE( ( renderedAnchorStyle() & Text::Underlined ) != 0 );
+	EXPECT_GT( nav->getPixelsSize().getHeight(), 10.f );
 
 	destroyRichTextScene( sceneNode );
 }

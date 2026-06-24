@@ -39,8 +39,7 @@ Texture::Texture() :
 	mFlags( 0 ),
 	mClampMode( ClampMode::ClampToEdge ),
 	mFilter( Filter::Linear ),
-	mCoordinateType( CoordinateType::Normalized ) {
-}
+	mCoordinateType( CoordinateType::Normalized ) {}
 
 Texture::Texture( const Texture& Copy ) :
 	DrawableResource( Drawable::TEXTURE, Copy.mName ),
@@ -166,7 +165,7 @@ Uint8* Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		allocate( (unsigned int)size );
 
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*>( &mPixels[0] ) );
+			GLi->getCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*>( &mPixels[0] ) );
 		} else {
 			Uint32 Channel = GL_RGBA;
 
@@ -476,8 +475,8 @@ void Texture::reload() {
 														&width, &height, mChannels, mTexture,
 														flags | SOIL_FLAG_COMPRESS_TO_DXT );
 				else
-					glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize,
-											&mPixels[0] );
+					GLi->compressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0,
+											   mSize, &mPixels[0] );
 			} else {
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
 													&height, mChannels, mTexture, flags );

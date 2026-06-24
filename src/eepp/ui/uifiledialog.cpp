@@ -11,6 +11,9 @@
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+
+#include <nlohmann/json.hpp>
+
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -180,7 +183,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		if ( event->asKeyEvent()->getKeyCode() == KEY_BACKSPACE )
 			goFolderUp();
 	} );
-	mMultiView->on( Event::OnModelEvent, [&]( const Event* event ) {
+	mMultiView->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
@@ -195,6 +198,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 						shouldOpenFolder = true;
 					}
 				}
+				mMultiView->getCurrentView()->resetSearchText();
 				openFileOrFolder( shouldOpenFolder );
 			}
 		}
@@ -341,24 +345,28 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 	if ( icon ) {
 		mButtonUp->setText( "" );
 		mButtonUp->setIcon( icon );
+		mButtonUp->setTooltipText( i18n( "uifiledialog_go_up", "Up" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "folder-add", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonNewFolder->setText( "" );
 		mButtonNewFolder->setIcon( icon );
+		mButtonNewFolder->setTooltipText( i18n( "uifiledialog_new_folder", "New Folder" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "list-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonListView->setText( "" );
 		mButtonListView->setIcon( icon );
+		mButtonListView->setTooltipText( i18n( "uifiledialog_list", "List" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "table-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonTableView->setText( "" );
 		mButtonTableView->setIcon( icon );
+		mButtonTableView->setTooltipText( i18n( "uifiledialog_table", "Table" ) );
 	}
 
 	onThemeLoaded();
@@ -1062,6 +1070,18 @@ void UIFileDialog::scheduledUpdate( const Time& time ) {
 			mHandler->openFile.reset();
 		}
 	}
+}
+
+nlohmann::json UIFileDialog::serialize() const {
+	nlohmann::json j = UIWindow::serialize();
+	j["view_mode"] = static_cast<int>( getViewMode() );
+	return j;
+}
+
+void UIFileDialog::unserialize( const nlohmann::json& j ) {
+	UIWindow::unserialize( j );
+	if ( j.contains( "view_mode" ) )
+		setViewMode( static_cast<UIMultiModelView::ViewMode>( j["view_mode"].get<int>() ) );
 }
 
 }} // namespace EE::UI

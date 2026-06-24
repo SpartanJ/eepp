@@ -8,6 +8,36 @@ static inline Float sanitizeFloat( Float val ) {
 	return std::isfinite( val ) ? val : 0.f;
 }
 
+static Float specifiedHeightPx( UIWidget* widget ) {
+	if ( widget == nullptr || widget->getUIStyle() == nullptr )
+		return 0.f;
+
+	const StyleSheetProperty* prop = widget->getUIStyle()->getProperty( PropertyId::Height );
+	if ( prop == nullptr )
+		return 0.f;
+
+	return sanitizeFloat( widget->lengthFromValue( *prop ) );
+}
+
+static Float normalFlowChildrenBottomPx( UIWidget* widget ) {
+	if ( widget == nullptr )
+		return 0.f;
+
+	Float bottom = 0.f;
+	for ( Node* child = widget->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( !child->isWidget() || !child->isVisible() )
+			continue;
+		if ( child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow() )
+			continue;
+
+		UIWidget* childWidget = child->asType<UIWidget>();
+		const Float childTop = childWidget->getPixelsPosition().y;
+		bottom = std::max( bottom, childTop + childWidget->getPixelsSize().getHeight() );
+		bottom = std::max( bottom, childTop + normalFlowChildrenBottomPx( childWidget ) );
+	}
+	return sanitizeFloat( bottom );
+}
+
 void TableLayouter::setTableLayout( TableLayout layout ) {
 	if ( layout != mTableLayout ) {
 		mTableLayout = layout;
@@ -479,9 +509,9 @@ void TableLayouter::updateLayout() {
 		Uint32 colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
-			cell->beginAttributesTransaction();
-			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
-			cell->setLayoutHeightPolicy( SizePolicy::WrapContent );
+			Float cellSpecifiedHeight = specifiedHeightPx( cell );
+			cell->mWidthPolicy = SizePolicy::Fixed;
+			cell->mHeightPolicy = SizePolicy::WrapContent;
 			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
@@ -490,19 +520,30 @@ void TableLayouter::updateLayout() {
 			if ( cellColspan > 1 )
 				cellWidth += ( cellColspan - 1 ) * mCellspacing;
 			cell->setPixelsSize( cellWidth, cell->getPixelsSize().getHeight() );
-			cell->updateLayout();
-			cell->setLayoutHeightPolicy( SizePolicy::Fixed );
-			cell->endAttributesTransaction();
-			rowHeight = std::max( rowHeight, cell->getPixelsSize().getHeight() );
+			cell->UIRichText::updateLayout();
+			cell->mHeightPolicy = SizePolicy::Fixed;
+			// CSS Tables: a single-row table-cell height contributes to the row minimum
+			// height. It must not clamp content that needs more space.
+			Float cellMinHeight =
+				std::max( cell->getPixelsSize().getHeight(), cellSpecifiedHeight );
+			if ( cellSpecifiedHeight > 0.f )
+				cellMinHeight = std::max( cellMinHeight, normalFlowChildrenBottomPx( cell ) );
+			rowHeight = std::max( rowHeight, cellMinHeight );
 			colIndex += cellColspan;
 		}
+
+		UIHTMLTableRow* row = mRows[r];
+		// CSS Tables: row height is also a minimum, not a hard height.
+		if ( row->getLayoutHeightPolicy() == SizePolicy::Fixed )
+			rowHeight = std::max( rowHeight, specifiedHeightPx( row ) );
 
 		Float currentX = mCellspacing;
 		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
-			cell->beginAttributesTransaction();
 			cell->setPixelsPosition( currentX, 0 );
+			cell->mWidthPolicy = SizePolicy::Fixed;
+			cell->mHeightPolicy = SizePolicy::Fixed;
 			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
@@ -510,19 +551,11 @@ void TableLayouter::updateLayout() {
 			}
 			if ( cellColspan > 1 )
 				cellWidth += ( cellColspan - 1 ) * mCellspacing;
-			cell->setPixelsSize( cellWidth, rowHeight );
-			cell->endAttributesTransaction();
+			cell->setInternalPixelsSize( { cellWidth, rowHeight } );
 			currentX += cellWidth + mCellspacing;
 			colIndex += cellColspan;
 		}
 
-		UIHTMLTableRow* row = mRows[r];
-		// Respect the row's specified height (e.g., <tr style="height: 10px">)
-		if ( row->getLayoutHeightPolicy() == SizePolicy::Fixed ) {
-			Float rowSpecifiedHeight = row->getPropertyHeight();
-			if ( rowSpecifiedHeight > 0.f )
-				rowHeight = std::max( rowHeight, rowSpecifiedHeight );
-		}
 		row->setPixelsSize( containerWidth - paddingH, rowHeight );
 
 		if ( r == 0 && mCells[start]->getParent() &&

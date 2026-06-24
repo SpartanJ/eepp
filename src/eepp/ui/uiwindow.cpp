@@ -18,6 +18,8 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
+#include <nlohmann/json.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -1841,6 +1843,68 @@ bool UIWindow::stealsFocusOnShow() const {
 
 void UIWindow::setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn ) {
 	mCheckEphemeralCloseFn = fn;
+}
+
+nlohmann::json UIWindow::serialize() const {
+	nlohmann::json j;
+	j["size"]["dp"]["width"] = getSize().asInt().x;
+	j["size"]["dp"]["height"] = getSize().asInt().y;
+	j["size"]["percentage"]["width"] = getPixelsSize().x / getUISceneNode()->getSize().x;
+	j["size"]["percentage"]["height"] = getPixelsSize().y / getUISceneNode()->getSize().y;
+	j["position"]["dp"]["x"] = getPosition().asInt().x;
+	j["position"]["dp"]["y"] = getPosition().asInt().y;
+	j["position"]["percentage"]["x"] = getPixelsPosition().x / getUISceneNode()->getSize().x;
+	j["position"]["percentage"]["y"] = getPixelsPosition().y / getUISceneNode()->getSize().y;
+	return j;
+}
+
+void UIWindow::unserialize( const nlohmann::json& j ) {
+	if ( !j.contains( "size" ) && !j.contains( "position" ) )
+		return;
+
+	const Sizef& viewSize( getUISceneNode()->getSize() );
+	bool useDp = true;
+
+	if ( j.contains( "size" ) && j["size"].contains( "dp" ) ) {
+		const auto& dp = j["size"]["dp"];
+		Sizef sz( dp["width"].get<Float>(), dp["height"].get<Float>() );
+		if ( sz.getWidth() > viewSize.getWidth() || sz.getHeight() > viewSize.getHeight() )
+			useDp = false;
+	}
+
+	if ( useDp && j.contains( "position" ) && j["position"].contains( "dp" ) ) {
+		const auto& dp = j["position"]["dp"];
+		Vector2f pos( dp["x"].get<Float>(), dp["y"].get<Float>() );
+		Sizef sz( getSize() );
+		if ( j.contains( "size" ) && j["size"].contains( "dp" ) )
+			sz = Sizef( j["size"]["dp"]["width"].get<Float>(),
+						j["size"]["dp"]["height"].get<Float>() );
+		if ( pos.x + sz.getWidth() > viewSize.getWidth() ||
+			 pos.y + sz.getHeight() > viewSize.getHeight() )
+			useDp = false;
+	}
+
+	if ( useDp ) {
+		if ( j.contains( "size" ) && j["size"].contains( "dp" ) ) {
+			const auto& dp = j["size"]["dp"];
+			setSize( Sizef( dp["width"].get<Float>(), dp["height"].get<Float>() ) );
+		}
+		if ( j.contains( "position" ) && j["position"].contains( "dp" ) ) {
+			const auto& dp = j["position"]["dp"];
+			setPosition( Vector2f( dp["x"].get<Float>(), dp["y"].get<Float>() ) );
+		}
+	} else {
+		if ( j.contains( "size" ) && j["size"].contains( "percentage" ) ) {
+			const auto& pct = j["size"]["percentage"];
+			setSize( Sizef( pct["width"].get<Float>() * viewSize.getWidth(),
+							pct["height"].get<Float>() * viewSize.getHeight() ) );
+		}
+		if ( j.contains( "position" ) && j["position"].contains( "percentage" ) ) {
+			const auto& pct = j["position"]["percentage"];
+			setPosition( Vector2f( pct["x"].get<Float>() * viewSize.getWidth(),
+								   pct["y"].get<Float>() * viewSize.getHeight() ) );
+		}
+	}
 }
 
 }} // namespace EE::UI

@@ -59,7 +59,7 @@ RendererGL3CP::RendererGL3CP() :
 RendererGL3CP::~RendererGL3CP() {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( mVBO ); i++ ) {
 		if ( 0 != mVBO[i] ) {
-			glDeleteBuffers( 1, &mVBO[i] );
+			deleteBuffers( 1, &mVBO[i] );
 		}
 	}
 
@@ -128,7 +128,7 @@ void RendererGL3CP::init() {
 	genVertexArrays( 1, &mVAO );
 	bindVertexArray( mVAO );
 
-	glGenBuffers( EEGL_ARRAY_STATES_COUNT + 5, &mVBO[0] );
+	genBuffers( EEGL_ARRAY_STATES_COUNT + 5, &mVBO[0] );
 
 	allocateBuffers( mVBOSizeAlloc );
 
@@ -194,7 +194,7 @@ void RendererGL3CP::setShader( ShaderProgram* Shader ) {
 		mTextureUnits[i] = mCurShader->getAttributeLocation( EEGL3CP_TEXTUREUNIT_NAMES[i] );
 	}
 
-	glUseProgram( mCurShader->getHandler() );
+	useProgram( mCurShader->getHandler() );
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
 		enableClientState( GL_VERTEX_ARRAY );
@@ -317,7 +317,7 @@ void RendererGL3CP::enableClientState( unsigned int array ) {
 		if ( -1 != ( state = mTextureUnits[mCurActiveTex] ) ) {
 			mTextureUnitsStates[mCurActiveTex] = 1;
 
-			glEnableVertexAttribArray( state );
+			enableVertexAttribArray( state );
 		}
 	} else {
 		Int32 Pos = array - GL_VERTEX_ARRAY;
@@ -325,7 +325,7 @@ void RendererGL3CP::enableClientState( unsigned int array ) {
 		if ( -1 != ( state = mAttribsLoc[Pos] ) ) {
 			mAttribsLocStates[Pos] = 1;
 
-			glEnableVertexAttribArray( state );
+			enableVertexAttribArray( state );
 		}
 	}
 }
@@ -337,7 +337,7 @@ void RendererGL3CP::disableClientState( unsigned int array ) {
 		if ( -1 != ( state = mTextureUnits[mCurActiveTex] ) ) {
 			mTextureUnitsStates[mCurActiveTex] = 0;
 
-			glDisableVertexAttribArray( state );
+			disableVertexAttribArray( state );
 		}
 	} else {
 		Int32 Pos = array - GL_VERTEX_ARRAY;
@@ -345,7 +345,7 @@ void RendererGL3CP::disableClientState( unsigned int array ) {
 		if ( -1 != ( state = mAttribsLoc[Pos] ) ) {
 			mAttribsLocStates[Pos] = 0;
 
-			glDisableVertexAttribArray( state );
+			disableVertexAttribArray( state );
 		}
 	}
 }
@@ -365,19 +365,19 @@ void RendererGL3CP::vertexPointer( int size, unsigned int type, int stride, cons
 			allocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
+		bufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mAttribsLocStates[EEGL_VERTEX_ARRAY] ) {
 			mAttribsLocStates[EEGL_VERTEX_ARRAY] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointer( index, size, type, GL_TRUE, stride, 0 );
+			vertexAttribPointer( index, size, type, true, stride, 0 );
 		} else {
-			glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+			vertexAttribPointer( index, size, type, false, stride, 0 );
 		}
 	}
 }
@@ -397,19 +397,19 @@ void RendererGL3CP::colorPointer( int size, unsigned int type, int stride, const
 			allocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
+		bufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mAttribsLocStates[EEGL_COLOR_ARRAY] ) {
 			mAttribsLocStates[EEGL_COLOR_ARRAY] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointer( index, size, type, GL_TRUE, stride, 0 );
+			vertexAttribPointer( index, size, type, true, stride, 0 );
 		} else {
-			glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+			vertexAttribPointer( index, size, type, false, stride, 0 );
 		}
 	}
 }
@@ -429,16 +429,16 @@ void RendererGL3CP::texCoordPointer( int size, unsigned int type, int stride, co
 			allocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mCurTexCoordArray );
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		bindBuffer( GL_ARRAY_BUFFER, mCurTexCoordArray );
+		bufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mTextureUnitsStates[mCurActiveTex] ) {
 			mTextureUnitsStates[mCurActiveTex] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+		vertexAttribPointer( index, size, type, false, stride, 0 );
 	}
 }
 
@@ -493,10 +493,10 @@ void RendererGL3CP::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int
 	GLi->enable( GL_CLIP_PLANE2 );
 	GLi->enable( GL_CLIP_PLANE3 );
 
-	glUniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0] ) );
-	glUniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0] ) );
-	glUniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0] ) );
-	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0] ) );
+	uniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0] ) );
+	uniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0] ) );
+	uniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0] ) );
+	uniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0] ) );
 }
 
 void RendererGL3CP::clip2DPlaneDisable() {
@@ -521,7 +521,7 @@ void RendererGL3CP::clipPlane( unsigned int plane, const double* equation ) {
 	} else {
 		std::string planeNum( "dgl_ClipPlane[" + String::toString( nplane ) + "]" );
 
-		location = glGetUniformLocation( mCurShader->getHandler(), (GLchar*)&planeNum[0] );
+		location = getUniformLocation( mCurShader->getHandler(), &planeNum[0] );
 	}
 
 	glm::vec4 teq( equation[0], equation[1], equation[2], equation[3] );
@@ -530,7 +530,7 @@ void RendererGL3CP::clipPlane( unsigned int plane, const double* equation ) {
 		  glm::inverse( mStack->mModelViewMatrix
 							.top() ); /// Apply the inverse of the model view matrix to the equation
 
-	glUniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
+	uniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
 }
 
 float RendererGL3CP::pointSize() {
@@ -573,23 +573,23 @@ void RendererGL3CP::allocateBuffers( const Uint32& size ) {
 
 	mVBOSizeAlloc = size;
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 1] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 1] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 2] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 2] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 3] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	bindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 3] );
+	bufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 }
 
 }} // namespace EE::Graphics

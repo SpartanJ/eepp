@@ -1,6 +1,7 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/graphics/richtext.hpp>
 #include <eepp/ui/blocklayouter.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -25,6 +26,11 @@ static bool isStretchedFlexItem( UIHTMLWidget* widget ) {
 		return parentHtml->getAlignItems() == CSSAlignItems::Stretch;
 
 	return false;
+}
+
+static bool isTableCellInTableRow( UIWidget* widget ) {
+	return widget && widget->isType( UI_TYPE_HTML_TABLE_CELL ) && widget->getParent() &&
+		   widget->getParent()->isType( UI_TYPE_HTML_TABLE_ROW );
 }
 
 Float BlockLayouter::getMinIntrinsicWidth() {
@@ -106,7 +112,8 @@ void BlockLayouter::updateLayout() {
 			{ mContainer->lengthFromValue( *prop ), mContainer->getPixelsSize().getHeight() } );
 	}
 
-	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::Fixed && mContainer->getUIStyle() &&
+	if ( !isTableCellInTableRow( mContainer ) &&
+		 mContainer->getLayoutHeightPolicy() == SizePolicy::Fixed && mContainer->getUIStyle() &&
 		 ( prop = mContainer->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
 		mContainer->setInternalPixelsSize(
 			{ mContainer->getPixelsSize().getWidth(), mContainer->lengthFromValue( *prop ) } );

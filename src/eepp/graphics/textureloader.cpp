@@ -145,7 +145,8 @@ void TextureLoader::loadFromFile() {
 			loadFile();
 			mDirectUpload = true;
 		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 			loadFile();
 			mIsCompressed = mDirectUpload = true;
 			stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -201,7 +202,8 @@ void TextureLoader::loadFromMemory() {
 		memcpy( mPixels, mImagePtr, mSize );
 		mDirectUpload = true;
 	} else if ( Image::Format::PKM == mImgType &&
-				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+				GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -250,7 +252,8 @@ void TextureLoader::loadFromStream() {
 			mStream->seek( 0 );
 			mDirectUpload = true;
 		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -316,8 +319,8 @@ void TextureLoader::loadFromPixels() {
 						tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize,
 																   SOIL_CREATE_NEW_ID, flags, 0 );
 					} else if ( Image::Format::PKM == mImgType ) {
-						tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize,
-																	SOIL_CREATE_NEW_ID, flags );
+						tTexId = SOIL_direct_load_PKM_from_memory( mPixels, mSize,
+																   SOIL_CREATE_NEW_ID, flags );
 					}
 				} else {
 					if ( NULL != mColorKey ) {
