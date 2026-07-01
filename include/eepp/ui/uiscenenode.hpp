@@ -119,6 +119,20 @@ class EE_API UISceneNode : public SceneNode {
 	const Sizef& getViewportPixelsSize() const;
 
 	/**
+	 * @brief Sets the layout viewport size used by the scene root as the initial containing block.
+	 *
+	 * Embedded document scenes can have a scroll extent larger than the CSS/layout viewport. This
+	 * keeps root/body normal-flow layout viewport-sized while the scroll target owns overflow.
+	 */
+	void setLayoutViewportPixelsSize( const Sizef& size );
+
+	/** Clears the explicit layout viewport size so the CSS viewport is used. */
+	void clearLayoutViewportPixelsSize();
+
+	/** @return The explicit layout viewport size, or the CSS viewport when no override is set. */
+	const Sizef& getLayoutViewportPixelsSize() const;
+
+	/**
 	 * @brief Controls whether a nested scene automatically follows its direct parent's size.
 	 *
 	 * Existing nested scenes follow their parent by default.
@@ -156,6 +170,15 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param elapsed The time elapsed since the last update.
 	 */
 	virtual void update( const Time& elapsed );
+
+	/**
+	 * @brief Flushes dirty styles, style states, and layouts without running scene/node updates.
+	 *
+	 * This is intended for embedded document scenes that need synchronous style/layout settlement
+	 * before measuring scroll extent. It must not run actions, timers, scheduled updates, or
+	 * arbitrary node update callbacks.
+	 */
+	void flushDirtyStyleAndLayout();
 
 	/**
 	 * @brief Sets the translator for internationalization.
@@ -692,6 +715,8 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
+	Node* overFind( const Vector2f& point );
+
 	/**
 	 * @brief Reloads the UI styles.
 	 *
@@ -846,6 +871,8 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurrentMarker{ 0 };
 	Sizef mViewportPixelsSize;
 	bool mHasViewportPixelsSize{ false };
+	Sizef mLayoutViewportPixelsSize;
+	bool mHasLayoutViewportPixelsSize{ false };
 	bool mFollowParentSize{ true };
 	bool mOwnsEventDispatcher{ true };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -900,6 +927,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	void updateParentSizeListener();
 	void onViewportPixelsSizeChange();
+	const Sizef& getRootPixelsSize() const;
 	UISceneNode* getHostUISceneNode() const;
 
 	/**

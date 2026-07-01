@@ -6,6 +6,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -55,7 +56,8 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 
 	UISceneNode* documentScene = webView->getDocumentSceneNode();
 	ASSERT_TRUE( documentScene != nullptr );
-	ASSERT_TRUE( documentScene->getParent() == webView->getContainer() );
+	ASSERT_TRUE( webView->getScrollView() == documentScene->getParent() );
+	ASSERT_TRUE( documentScene->getParent()->getParent() == webView->getContainer() );
 	EXPECT_EQ( SceneManager::instance()->count(), (size_t)1 );
 
 	Node* htmlNode = nullptr;
@@ -82,8 +84,10 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	EXPECT_GT( documentScene->getPixelsSize().getHeight(), 1000.f );
 	EXPECT_TRUE( webView->getVerticalScrollBar()->isVisible() );
 
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
 	webView->getVerticalScrollBar()->setValue( 1.f );
-	EXPECT_LT( documentScene->getPosition().y, -500.f );
+	EXPECT_LT( scrollTarget->getPixelsPosition().y, -500.f );
 
 	Engine::destroySingleton();
 }
@@ -163,10 +167,12 @@ UTEST( UIWebView, VerticalScrollbarViewportDoesNotCreateHorizontalScroll ) {
 	EXPECT_NEAR( documentScene->getPixelsSize().getWidth(), stableExtent.getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(), stableExtent.getHeight(), 0.5f );
 
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
 	webView->getVerticalScrollBar()->setValue( 1.f );
-	EXPECT_NEAR( -documentScene->getPosition().y +
+	EXPECT_NEAR( -scrollTarget->getPixelsPosition().y +
 					 webView->getContainer()->getPixelsSize().getHeight(),
-				 documentScene->getPixelsSize().getHeight(), 1.f );
+				 scrollTarget->getPixelsSize().getHeight(), 1.f );
 
 	Engine::destroySingleton();
 }
@@ -278,9 +284,11 @@ UTEST( UIWebView, ExplicitWideDocumentHorizontalScrollReachesRightEdgeAtPixelDen
 	webView->getHorizontalScrollBar()->setValue( 1.f );
 	pump();
 
-	EXPECT_NEAR( -documentScene->getPosition().x +
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
+	EXPECT_NEAR( -scrollTarget->getPixelsPosition().x +
 					 webView->getContainer()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 1.f );
+				 scrollTarget->getPixelsSize().getWidth(), 1.f );
 
 	Engine::destroySingleton();
 	EE::Graphics::PixelDensity::setPixelDensity( 1.0f );
@@ -431,7 +439,9 @@ UTEST( UIWebView, HorizontalScrollDisappearsAfterResponsiveShrink ) {
 
 	webView->getHorizontalScrollBar()->setValue( 1.f );
 	pump();
-	ASSERT_LT( documentScene->getPosition().x, -100.f );
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
+	ASSERT_LT( scrollTarget->getPixelsPosition().x, -100.f );
 
 	webView->loadURI( URI( "file://" + fitPath ) );
 	pump();
@@ -443,17 +453,17 @@ UTEST( UIWebView, HorizontalScrollDisappearsAfterResponsiveShrink ) {
 	ASSERT_TRUE( html != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( fit->getPixelsSize().getWidth(), documentScene->getViewportPixelsSize().getWidth(),
 				 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
-				 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( body->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
-	EXPECT_NEAR( documentScene->getPosition().x, 0.f, 0.5f );
+	EXPECT_NEAR( scrollTarget->getPixelsPosition().x, 0.f, 0.5f );
 
 	Engine::destroySingleton();
 }
@@ -708,6 +718,8 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	ASSERT_TRUE( html != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
 
 	Float viewportHeight = webView->getContainer()->getPixelsSize().getHeight();
 	const Float inputBottomInDocument =
@@ -717,9 +729,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
-				 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 
@@ -739,9 +751,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
-				 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 	viewportHeight = webView->getContainer()->getPixelsSize().getHeight();
@@ -757,9 +769,9 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	EXPECT_GE( documentScene->getPixelsSize().getWidth(),
 			   documentScene->getViewportPixelsSize().getWidth() );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
-	EXPECT_NEAR( html->getPixelsSize().getWidth(), documentScene->getPixelsSize().getWidth(),
-				 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
+	EXPECT_NEAR( html->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
 				 html->fitMinMaxSizePx( html->getPixelsSize() ).getHeight(), 0.5f );
 	viewportHeight = webView->getContainer()->getPixelsSize().getHeight();
@@ -771,10 +783,10 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 	const Rectf containerRect = webView->getContainer()->getScreenRect();
 	EXPECT_LE( inputRect.Bottom, containerRect.Bottom + 1.f );
 	EXPECT_GT( inputRect.Bottom, containerRect.Top );
-	EXPECT_NEAR( -documentScene->getPosition().y + viewportHeight,
-				 documentScene->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( -scrollTarget->getPixelsPosition().y + viewportHeight,
+				 scrollTarget->getPixelsSize().getHeight(), 1.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getHeight(),
-				 documentScene->getPixelsSize().getHeight(), 0.5f );
+				 documentScene->getViewportPixelsSize().getHeight(), 0.5f );
 
 	const Vector2f inputCenter( inputRect.Left + inputRect.getWidth() * 0.5f,
 								inputRect.Top + inputRect.getHeight() * 0.5f );
@@ -846,11 +858,182 @@ UTEST( UIWebView, NavigationAfterGrowDoesNotKeepMaximizedWidthOnShrink ) {
 				 webView->getContainer()->getPixelsSize().getWidth(), 0.5f );
 	EXPECT_LT( documentScene->getViewportPixelsSize().getWidth(), 900.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_LT( html->fitMinMaxSizePx( html->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( body->fitMinMaxSizePx( body->getPixelsSize() ).getWidth(), 900.f );
 	EXPECT_LT( documentScene->getPixelsSize().getWidth(), 900.f );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, NavigationFromTallToShortShrinksDocumentExtent ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Navigation Extent Shrink Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 400, 300 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string tallPath = Sys::getTempPath() + "eepp_uiwebview_tall.html";
+	FileSystem::fileWrite( tallPath, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>html, body { margin: 0; padding: 0; }</style></head>
+<body><div id="content" style="height: 1800px; width: 100%;"></div></body>
+</html>
+)html" );
+	const std::string shortPath = Sys::getTempPath() + "eepp_uiwebview_short.html";
+	FileSystem::fileWrite( shortPath, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>html, body { margin: 0; padding: 0; }</style></head>
+<body><div id="content" style="height: 120px; width: 100%;"></div></body>
+</html>
+)html" );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 20; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + tallPath ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	pump();
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
+	EXPECT_GT( scrollTarget->getPixelsSize().getHeight(), 1700.f );
+
+	webView->loadURI( URI( "file://" + shortPath ) );
+	pump();
+	EXPECT_NEAR( scrollTarget->getPixelsSize().getHeight(),
+				 webView->getContainer()->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
+				 webView->getContainer()->getPixelsSize().getHeight(), 1.f );
+	EXPECT_FALSE( webView->getVerticalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, AsyncCSSCanShrinkDocumentExtent ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView CSS Extent Shrink Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 400, 300 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_css_shrink.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>html, body { margin: 0; padding: 0; } #content { height: 1800px; }</style></head>
+<body><div id="content"></div></body>
+</html>
+)html" );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 20; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + path ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	pump();
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
+	EXPECT_GT( scrollTarget->getPixelsSize().getHeight(), 1700.f );
+
+	documentScene->combineStyleSheet( "#content { height: 120px; }", true );
+	pump();
+	EXPECT_NEAR( scrollTarget->getPixelsSize().getHeight(),
+				 webView->getContainer()->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentScene->getPixelsSize().getHeight(),
+				 webView->getContainer()->getPixelsSize().getHeight(), 1.f );
+	EXPECT_FALSE( webView->getVerticalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, CoalescesViewportResizeDocumentMetrics ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Resize Metrics Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 800, 500 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI( "file://" + Sys::getProcessPath() + "assets/html/hn_frontpage.html" ) );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 30; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	pump();
+	ASSERT_GE( webView->getDocumentSceneNode()->getRoot()->querySelectorAll( ".athing" ).size(),
+			   (size_t)30 );
+
+	UILayout::resetMetrics();
+	webView->setPixelsSize( 900, 530 );
+	webView->setPixelsSize( 700, 480 );
+	webView->setPixelsSize( 1000, 600 );
+	webView->setPixelsSize( 800, 500 );
+	for ( int frame = 0; frame < 6; frame++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_LE( metrics.treeUpdates, (Uint64)4 );
+	EXPECT_EQ( metrics.synchronousUpdates, (Uint64)0 );
+	EXPECT_EQ( metrics.richTextRebuilds, (Uint64)0 );
 
 	Engine::destroySingleton();
 }
@@ -982,7 +1165,7 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	pump();
 	EXPECT_GT( documentScene->getViewportPixelsSize().getWidth(), 2000.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 
 	webView->loadURI( URI( "file://" + Sys::getProcessPath() + "assets/html/hn_frontpage.html" ) );
 	pump();
@@ -997,7 +1180,7 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	ASSERT_TRUE( body != nullptr );
 	EXPECT_LT( documentScene->getViewportPixelsSize().getWidth(), 900.f );
 	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getWidth(),
-				 documentScene->getPixelsSize().getWidth(), 0.5f );
+				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_NEAR( html->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 0.5f );
 	EXPECT_LE( body->getPixelsSize().getWidth(),
@@ -1015,13 +1198,15 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	webView->getVerticalScrollBar()->setValue( 1.f );
 	webView->getHorizontalScrollBar()->setValue( 1.f );
 	pump();
-	EXPECT_NEAR( -documentScene->getPosition().y +
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
+	EXPECT_NEAR( -scrollTarget->getPixelsPosition().y +
 					 webView->getContainer()->getPixelsSize().getHeight(),
-				 documentScene->getPixelsSize().getHeight(), 1.f );
+				 scrollTarget->getPixelsSize().getHeight(), 1.f );
 	if ( webView->getHorizontalScrollBar()->isVisible() ) {
-		EXPECT_NEAR( -documentScene->getPosition().x +
+		EXPECT_NEAR( -scrollTarget->getPixelsPosition().x +
 						 webView->getContainer()->getPixelsSize().getWidth(),
-					 documentScene->getPixelsSize().getWidth(), 1.f );
+					 scrollTarget->getPixelsSize().getWidth(), 1.f );
 	}
 
 	Engine::destroySingleton();

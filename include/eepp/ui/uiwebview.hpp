@@ -19,6 +19,7 @@ namespace EE { namespace UI {
 
 class UIHTMLHtml;
 class UIHTMLBody;
+class UILayout;
 class UISceneNode;
 
 class EE_API UIWebView : public UIScrollView {
@@ -95,13 +96,15 @@ class EE_API UIWebView : public UIScrollView {
 	UIWebView();
 
 	UISceneNode* mDocumentScene{ nullptr };
+	UILayout* mDocumentLayout{ nullptr };
 	UIWidget* mDocContainer{ nullptr };
 	Uint32 mScrollContainerSizeChangeCb{ 0 };
 	Uint32 mVerticalScrollVisibleChangeCb{ 0 };
 	Uint32 mHorizontalScrollVisibleChangeCb{ 0 };
 	bool mUpdatingDocumentViewportMetrics{ false };
 	bool mUpdatingDocumentContentExtent{ false };
-	bool mDocumentViewportSyncQueued{ false };
+	bool mDocumentExtentDirty{ true };
+	LayoutInvalidationFlags mDocumentExtentDirtyReasons{ 0 };
 	struct NavigationLoadState {
 		UIWebView* owner{ nullptr };
 		bool alive{ true };
@@ -142,9 +145,9 @@ class EE_API UIWebView : public UIScrollView {
 	void onDocumentViewportGeometryChanged();
 	void updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body );
 	void updateHTMLMinHeightForDocument();
+	void markDocumentExtentDirty( LayoutInvalidationFlags reasons );
 	bool updateDocumentViewportMetrics();
-	void updateDocumentSceneContentExtent();
-	void updateDocumentSceneMetrics();
+	void updateDocumentMetricsIfNeeded();
 };
 
 }} // namespace EE::UI

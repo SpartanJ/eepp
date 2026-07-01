@@ -11,8 +11,13 @@ media-query evaluation, dirty style/layout queues, and document resources must u
 instead of the application `UISceneNode`.
 
 The owned scene remains attached inside the application scene tree so it renders and receives input
-as part of the embedding UI. This establishes the document boundary needed for multiple independent
-web views and is the foundation for future `iframe` support.
+as part of the embedding UI. A real layout widget, not the scene node itself, is the scroll target.
+This establishes the document boundary needed for multiple independent web views and is the
+foundation for future `iframe` support.
+
+This plan should be implemented together with
+`.agent/plans/uiwebview_document_scene_layout_refactor.md`, which details the corrected scroll-target
+architecture.
 
 ## Required Invariants
 
@@ -24,11 +29,17 @@ After implementation:
   referer, navigation callback, dirty queues, or document lookup results.
 - Every loaded HTML widget returns the web view's owned scene from `getUISceneNode()` and
   `getSceneNode()`.
-- The owned scene is attached to the application tree but is not registered as a top-level
-  `SceneManager` scene.
-- The owned scene size follows the scrollable HTML/body document extent.
+- The owned scene is attached below the web view document layout widget but is not registered as a
+  top-level `SceneManager` scene.
+- The web view document layout widget is the `UIScrollView` scroll target and follows the scrollable
+  HTML/body document extent.
 - The document scene separately stores the visible web-view viewport size for viewport units, media
   queries, document minimum height, and fixed-position semantics.
+- The document scene distinguishes CSS viewport, layout viewport / initial containing block, and
+  scrollable overflow extent. Scroll extent must not become the containing block used for normal
+  root/body layout.
+- Document scroll extent is recomputed only from explicit dirty signals, not by scanning the full
+  document every frame.
 - Input and focus continue through the embedding application's shared `UIEventDispatcher`.
 - Closing or destroying the web view destroys its owned scene and document without leaving async
   callbacks, actions, listeners, or dirty pointers behind.
@@ -70,21 +81,32 @@ An owned web-view scene must not require top-level `SceneManager` registration.
 
 ### Viewport And Scroll Extent Are Currently Conflated
 
-The owned scene must be the `UIScrollView` scroll target and must grow to the HTML/body document
-extent. For example, a 600px-tall web view displaying a 3000px-tall page needs a 3000px-tall
-`mDocumentScene` so `UIScrollView` can derive the correct scroll range.
+The owned document scene must expose the HTML/body scrollable overflow extent to a real layout-widget
+scroll target. For example, a 600px-tall web view displaying a 3000px-tall page needs a 3000px-tall
+scroll target so `UIScrollView` can derive the correct scroll range. The scroll target should be a
+`UILayout`/`UIWidget` owned by `UIWebView`, not `UISceneNode` itself.
 
-`UISceneNode` currently also uses its own size for viewport-dependent CSS behavior. Once the scene is
-content-sized, those uses must not read the scene extent:
+`UISceneNode` currently also uses its own size for viewport-dependent CSS behavior. Once the document
+has a separately measured scroll extent, those uses must not read the scroll extent:
 
 - `UISceneNode::getMediaFeatures()` must report the visible web-view viewport.
 - `vw`/`vh` and related viewport-relative lengths must resolve against the visible viewport.
 - HTML/body minimum height must use the visible viewport.
-- Fixed-position layout must remain relative to the web-view viewport while the content-sized scene
-  is translated by scrolling.
+- Fixed-position layout must remain relative to the web-view viewport while the scroll target is
+  translated by scrolling.
 
-The design therefore needs separate scene extent and viewport metrics. The scene extent participates
-in scrolling; the viewport size is provided by the embedding `UIWebView`.
+The design therefore needs separate metrics:
+
+- **CSS viewport:** the visible `UIScrollView::mContainer` size. Media queries, `vw`/`vh`, fixed
+  positioning, sticky positioning, and document minimum height use this size.
+- **Layout viewport / initial containing block:** the viewport-sized root layout reference used for
+  normal root/body auto-width layout. This prevents a previously measured scroll extent from becoming
+  the containing block and keeping responsive content artificially wide or tall.
+- **Scrollable overflow extent:** the measured document overflow size used only as the scroll target
+  size observed by `UIScrollView`.
+
+The scroll extent participates in scrolling; the CSS and layout viewport are provided by the
+embedding `UIWebView`.
 
 ## Proposed Scene Tree
 
@@ -93,20 +115,23 @@ application UISceneNode
 └── ... application widgets ...
     └── UIWebView
         └── UIScrollView::mContainer              host-scene clipping shell
-            └── UIWebView::mDocumentScene         owned UISceneNode, content-sized scroll target
-                └── UISceneNode::mRoot             owned scene root, content-sized
-                    └── UIWebView::mDocContainer   document layout container
-                        └── html
-                            └── body
-                                └── document content
+            └── UIWebView::mDocumentLayout        UILayout scroll target, scroll-extent sized
+                └── UIWebView::mDocumentScene     owned UISceneNode, document boundary
+                    └── UISceneNode::mRoot         owned scene root, layout-viewport sized
+                        └── UIWebView::mDocContainer
+                            └── html
+                                └── body
+                                    └── document content
 ```
 
-`mDocumentScene` is added as the `UIWebView` child through the normal `UIScrollView` path.
+`mDocumentLayout` is added as the `UIWebView` child through the normal `UIScrollView` path.
 `UIScrollView::onChildCountChange()` reparents it into the clipped `mContainer` and selects it as the
-scroll target. `mDocumentScene` grows to the document extent and is translated when scrolling.
+scroll target. `mDocumentLayout` exposes the measured scrollable extent and is translated when
+scrolling.
 
 The visible `mContainer` size is separately passed to `mDocumentScene` as its CSS viewport size.
-Every document node, including `mDocContainer`, belongs to the owned scene.
+The document scene root keeps a layout-viewport size unless an explicit API says a caller is setting
+the scroll target extent. Every document node, including `mDocContainer`, belongs to the owned scene.
 
 ## Ownership And Service Policy
 
@@ -172,7 +197,7 @@ persist across navigations inside this web view. The default remains the HTML de
 
 ## Implementation Plan
 
-### Phase 1: Separate UISceneNode Extent From Viewport Metrics
+### Phase 1: Separate Viewport, Layout Viewport, And Scroll Extent
 
 **Files:**
 
@@ -195,24 +220,45 @@ Steps:
 
    When no override is set, `getViewportPixelsSize()` returns the scene's own pixel size so existing
    top-level and UI editor behavior remains unchanged.
-2. Add a narrow way to disable the nested scene's automatic parent-size following. Preserve the
-   current default for existing nested scenes; `UIWebView` disables it because its document scene
-   extent is content-driven.
-3. Make `UISceneNode::getMediaFeatures()` use `getViewportPixelsSize()` for viewport width/height
+2. Add explicit layout-viewport metrics or an equivalent root-sizing policy for embedded document
+   scenes:
+
+   ```cpp
+   void setLayoutViewportPixelsSize( const Sizef& size );
+   void clearLayoutViewportPixelsSize();
+   const Sizef& getLayoutViewportPixelsSize() const;
+   ```
+
+   If a separate field is not needed, this can be implemented as a document-scene root sizing policy
+   that keeps `UISceneNode::mRoot` viewport-sized while the document layout widget carries the scroll
+   target extent. The important invariant is that setting the scrollable extent must not resize the
+   root containing block used by normal HTML/body layout.
+3. Add a narrow way to disable the nested scene's automatic parent-size following or override root
+   sizing for embedded document scenes. Preserve the current default for existing nested scenes;
+   `UIWebView` must prevent automatic parent-size following from turning scroll extent into the root
+   layout viewport.
+4. Make `UISceneNode::getMediaFeatures()` use `getViewportPixelsSize()` for viewport width/height
    while keeping device metrics from the window.
-4. Audit viewport-relative length conversion. Replace direct `getSceneNode()->getPixelsSize()` use
+5. Audit viewport-relative length conversion. Replace direct `getSceneNode()->getPixelsSize()` use
    for CSS viewport units with the owning `UISceneNode` viewport metrics.
-5. Make HTML/body viewport minimum-height calculations use the document scene viewport metrics.
-6. Keep ordinary scene/root sizing and world bounds based on the actual content-sized scene extent.
+6. Make HTML/body viewport minimum-height calculations use the document scene viewport metrics.
+7. Keep ordinary top-level scene/root sizing unchanged, but for embedded document scenes make root
+   sizing use the layout viewport while world bounds and scroll target size use the scrollable extent.
+8. Document the split close to `UISceneNode::onSizeChange()` or the new root-sizing policy because
+   future changes to scene sizing can easily reintroduce root-as-scroll-extent behavior.
 
 Tests:
 
 - A normal scene without a viewport override preserves existing size-based behavior.
 - A 3000px-tall scene with a 600px viewport reports 600px media height and resolves `100vh` to
   600px.
-- HTML/body minimum height uses the viewport while document/root extent can grow beyond it.
-- Changing viewport width re-evaluates media queries without forcing the scene extent to viewport
+- HTML/body minimum height uses the viewport while the document scroll extent can grow beyond it.
+- Changing viewport width re-evaluates media queries without forcing the scroll extent to viewport
   height.
+- Growing the scroll extent does not make `html`, `body`, or viewport-width descendants keep a stale
+  wide containing block after the web view later shrinks.
+- Explicit overflow content can grow the scroll extent while `width: 100vw`, `width: 100%`, and root
+  auto-width layout continue resolving against the layout viewport.
 
 ### Phase 2: Harden Embedded UISceneNode Behavior
 
@@ -251,38 +297,92 @@ Tests:
 
 Steps:
 
-1. Add `UISceneNode* mDocumentScene`.
-2. Construct the owned scene with the host window, initialize its embedded services, and add it as
-   the `UIWebView` scroll child. Let the normal `UIScrollView` path reparent it into the clipped
-   `mContainer` and select it as the scroll target.
-3. Create `mDocContainer` under `mDocumentScene->getRoot()`, preserving its current vertical,
+1. Add `UISceneNode* mDocumentScene` and `UILayout* mDocumentLayout` (or a narrow internal
+   `DocumentLayout` subclass if hooks are needed).
+2. Construct `mDocumentLayout` as the only direct `UIWebView` scroll child. Let the normal
+   `UIScrollView` path reparent it into the clipped `mContainer` and select it as the scroll target.
+3. Construct the owned scene with the host window, initialize its embedded services, and parent it
+   under `mDocumentLayout` so rendering, hit testing, invalidation, and document-scene ownership flow
+   through the normal tree.
+4. Create `mDocContainer` under `mDocumentScene->getRoot()`, preserving its current vertical,
    match-width, wrap-content behavior and white initial background.
-4. Disable automatic parent-size following for `mDocumentScene`.
-5. Feed the visible `UIScrollView::mContainer` size into
-   `mDocumentScene->setViewportPixelsSize()`.
-6. Size `mDocumentScene` to at least the viewport width/height and grow it to the laid-out
-   HTML/body/document extent. Its size is the size observed by `UIScrollView` for scrollbar
-   calculations.
-7. Listen for document extent and visible-container changes so scene extent, viewport metrics,
-   media queries, and scrollbar state are updated in the correct order without layout loops.
-8. Override `scheduledUpdate()` in `UIWebView`, call the inherited
+5. Disable automatic parent-size following for `mDocumentScene` if following would make scene/root
+   sizing consume the scroll extent. Prefer an explicit embedded-document root sizing policy that
+   keeps root layout viewport-sized.
+6. Feed the visible `UIScrollView::mContainer` size into
+   `mDocumentScene->setViewportPixelsSize()` and the document root/layout viewport sizing API.
+7. Size `mDocumentLayout` to at least the viewport width/height and grow it to the measured
+   scrollable overflow extent. This size is the size observed by `UIScrollView` for scrollbar
+   calculations, but it must not become the root layout containing block.
+8. Add a narrow scene flush API that processes dirty styles, dirty style states, and dirty layouts
+   without running actions, scheduled updates, timers, or arbitrary node updates:
+
+   ```cpp
+   void UISceneNode::flushDirtyStyleAndLayout();
+   ```
+
+   Internally this should reuse the existing dirty queues and invalidation-depth behavior used by
+   `UISceneNode::update()`, but stop before `SceneNode::update(elapsed)`. `UIWebView` uses this when
+   viewport geometry changes need a synchronous style/layout settlement before measuring scroll
+   extent. Do not call `mDocumentScene->update(Time::Zero)` for this purpose.
+9. Add a document-extent dirty flag owned by `UIWebView`, for example:
+
+   ```cpp
+   bool mDocumentExtentDirty{ true };
+   LayoutInvalidationFlags mDocumentExtentDirtyReasons{};
+   void markDocumentExtentDirty( LayoutInvalidationFlags reasons );
+   ```
+
+   Mark it dirty when viewport metrics change, document children are loaded/closed, external CSS
+   applies, images/fonts/replaced controls change intrinsic size, layout invalidation includes
+   document/viewport/overflow-affecting reasons, or the scroll target size itself changes.
+10. Recompute scrollable extent only when the document-extent dirty flag is set. The recomputation
+   sequence should be:
+
+   - update CSS/layout viewport metrics from `mContainer`,
+   - if viewport changed, mark root/html/body dirty and invalidate viewport-dependent intrinsic
+     widths,
+   - call `mDocumentScene->flushDirtyStyleAndLayout()`,
+   - measure visible/unclipped scrollable overflow from html/body/document descendants,
+   - set only `mDocumentLayout` / scroll-target size to the measured extent,
+   - call `UIScrollView::containerUpdate()` / `updateScroll()` as needed,
+   - clear the dirty flag only after the measured extent is stable for that pass.
+
+   Avoid full-document extent scans from the normal per-frame path when no dirty signal occurred.
+11. Listen for document extent and visible-container changes so scroll-target extent, viewport
+   metrics, media queries, scrollbar state, and root/body layout are updated in the correct order
+   without layout loops. Treat scrollbar visibility changes as viewport changes only when the scroll
+   view type makes scrollbars consume viewport space.
+12. Override `scheduledUpdate()` in `UIWebView`, call the inherited
    `UITouchDraggableWidget::scheduledUpdate()` behavior, and then call
    `mDocumentScene->update(elapsed)` exactly once per host-scene frame. `UIScrollView` is already
    subscribed through `UITouchDraggableWidget`; do not add a second subscription or add the document
-   scene to `SceneManager`.
-9. Expose `getDocumentSceneNode()`.
-10. On web-view scene changes, reinitialize/rebind the document scene's inherited services without
+   scene to `SceneManager`. If document extent is dirty after the update, run the narrow
+   dirty-style/layout flush and extent measurement path; do not run a second full scene update.
+13. Expose `getDocumentSceneNode()`.
+14. On web-view scene changes, reinitialize/rebind the document scene's inherited services without
    touching document-owned state.
 
 Tests:
 
 - The document scene is attached below the host scene but absent from `SceneManager`.
+- The `UIScrollView` scroll target is `mDocumentLayout`, not `mDocumentScene`.
+- `mDocumentScene` is parented below `mDocumentLayout` and remains the scene owner for descendants.
 - `mDocContainer`, `html`, `body`, and descendants all belong to the document scene.
-- A page taller than the viewport grows the document scene and produces the correct scroll range.
-- Scrolling translates the content-sized document scene inside the fixed `UIScrollView` viewport.
+- A page taller than the viewport grows the document layout scroll target and produces the correct
+  scroll range.
+- Scrolling translates the document layout, including the nested document scene, inside the fixed
+  `UIScrollView` viewport.
 - `vh`/`vw`, viewport media queries, fixed elements, and sticky elements continue using the visible
-  web-view viewport rather than the document scene extent while the scene is scrolled.
+  web-view viewport rather than the document scroll extent while the document is scrolled.
 - Document actions/animations and dirty style/layout queues update through the web view.
+- A viewport change can synchronously settle style/layout through `flushDirtyStyleAndLayout()` but
+  does not run actions, timers, scheduled updates, or arbitrary node update callbacks twice in one
+  host frame.
+- A large stable document does not rescan its full descendant tree every frame when no style, layout,
+  viewport, image, font, or replaced-control dirty signal occurred.
+- After growing to a very wide viewport and then shrinking, root/body/`width:100vw` descendants
+  resolve against the new viewport, while explicit wide overflow still creates horizontal scroll.
 
 ### Phase 4: Route All Document Operations To The Owned Scene
 
@@ -303,13 +403,17 @@ Steps:
    widget.
 4. Install the navigation interceptor once during document-scene setup. It must resolve and navigate
    through the owned scene and web view, not replace a host callback on every load.
-5. On navigation, close only `mDocContainer` children and remove only nonpersistent rules from the
-   document scene.
+5. On navigation, close only `mDocContainer` children, remove only nonpersistent rules from the
+   document scene, clear document-local author font aliases/resources from the previous document, and
+   mark document extent dirty.
 6. Update the HTML example's injected Hacker News stylesheet to combine into
    `webView->getDocumentSceneNode()`.
 7. Audit document descendants that use `getUISceneNode()` for links, forms, images, inline styles,
    external CSS, fonts, and relative URLs. They should work without special cases once parentage is
    correct.
+8. Ensure any document-scoped style injection, including application-provided user CSS, calls the
+   document-scene style API and then marks the owning `UIWebView` document extent dirty when layout
+   may be affected.
 
 Tests:
 
@@ -323,6 +427,10 @@ Tests:
   correct document URI.
 - Application-level `findByType(UI_TYPE_HTML_HTML)` no longer returns a web-view document node;
   document-scene lookup does.
+- Two web views can load external CSS files with the same selectors and relative URLs without either
+  stylesheet, URL base, or late style application leaking into the other document.
+- Injecting document CSS through `getDocumentSceneNode()->combineStyleSheet(...)` relayouts and
+  remeasures the document extent, while injecting host CSS does not affect document descendants.
 
 ### Phase 5: Isolate Author Font Faces
 
@@ -343,14 +451,23 @@ Steps:
 3. Register author fonts under an internal scene-unique resource name if `FontManager` registration
    remains required, while preserving the author-visible family only in the scene-local alias.
 4. Keep generic/system fonts and explicitly shared application defaults as global fallbacks.
-5. Remove only the scene's internally registered author fonts during scene destruction.
-6. Apply the async scene-lifetime guard from the next phase to remote `@font-face` loads.
+5. Add an explicit `clearDocumentFontFaces()` / `clearAuthorFontFaces()` operation used during
+   navigation before new document CSS is loaded. It removes only this scene's internally registered
+   author fonts and clears aliases; it must not remove application/system fonts or sibling-document
+   author fonts.
+6. Remove any remaining scene-owned author fonts during scene destruction.
+7. Apply the async scene-lifetime guard from the next phase to remote, local deferred, and VFS
+   `@font-face` loads.
+8. Mark the owning web-view document extent dirty after a loaded font is registered because font
+   metrics can change line wrapping, table sizing, and scroll extent.
 
 Tests:
 
 - Two web views can declare the same family name with different font files and each resolves its own
   font.
 - Destroying or navigating one web view does not remove or replace the sibling's author font.
+- Navigating one web view clears its previous document-local author font alias and replaces it with
+  the new document's face without leaving the old alias visible to CSS.
 - Application/system font lookup still works when no document-local face matches.
 
 ### Phase 6: Make Navigation And Resource Loading Lifetime-Safe
@@ -363,23 +480,41 @@ Tests:
 - `src/eepp/ui/uiscenenode.cpp`
 - `src/tests/unit_tests/uiwebview_tests.cpp`
 
-The current async HTTP callbacks capture raw `this` and a raw scene pointer. Owning a scene makes
-correct cancellation and stale-response handling part of the document lifecycle. The same audit
-must cover async document resources such as `UISceneNode::loadCSS()`, which currently captures the
-scene directly.
+The current async/deferred callbacks can capture raw `this` and raw scene pointers. Owning a scene
+makes correct cancellation and stale-response handling part of the document lifecycle. The audit must
+cover every deferred document resource path, not only HTTP:
+
+- top-level HTTP document navigation,
+- HTTP redirects and cookies,
+- external HTTP CSS,
+- deferred local-file CSS through the thread pool,
+- VFS CSS if it can become deferred later,
+- HTTP, local-file, data URI, and VFS `@font-face`,
+- async image/replaced-resource loads,
+- main-thread reposts created by any of the above.
 
 Steps:
 
 1. Add a small shared navigation/load state containing an alive owner pointer and monotonically
    increasing navigation generation.
-2. Async callbacks capture a weak load state, not raw `this` or raw scene pointers.
-3. Before storing cookies, posting to the main thread, or applying a response, verify that the web
-   view still exists and the generation is current.
-4. A newer navigation invalidates older responses. Destruction invalidates all pending callbacks.
-5. Keep history mutation and navigation events deterministic when requests fail or are superseded.
-6. Give document-scene async resource loads a scene-lifetime guard before they enqueue main-thread
+2. Async top-level navigation callbacks capture a weak load state, not raw `this` or raw scene
+   pointers.
+3. Add a scene-local async resource state for document subresources. It must be invalidated on
+   navigation, scene destruction, and explicit document resource reset.
+4. Subresource callbacks capture the scene-local state and a generation. They may capture immutable
+   values such as resolved URLs and parsed buffers, but must not dereference the scene or widget
+   until the generation/alive check has passed on the main thread.
+5. Before storing cookies, posting to the main thread, applying a response, combining a stylesheet,
+   registering a font, mutating an image/replaced widget, or marking document extent dirty, verify
+   that the owner still exists and the generation is current.
+6. A newer navigation invalidates older document responses and all old document subresources.
+   Destruction invalidates all pending callbacks.
+7. Keep history mutation and navigation events deterministic when requests fail or are superseded.
+8. Give document-scene async resource loads a scene-lifetime guard before they enqueue main-thread
    work or mutate the stylesheet. Audit other document-triggered async loaders and use the same
    pattern where they retain scene/widget pointers.
+9. When a stale callback is ignored, it must not store cookies, mutate style/font/image state, mark
+   extent dirty, send navigation events, or trigger layout.
 
 Tests:
 
@@ -387,6 +522,11 @@ Tests:
 - A slow old response cannot replace a newer document.
 - Stale redirects/cookies do not mutate the current document scene.
 - Destroying a web view while external CSS is loading is safe and cannot mutate another scene.
+- Deferred local CSS that completes after navigation/destruction is ignored safely.
+- A remote or deferred `@font-face` response from an old navigation cannot register a font alias,
+  replace the current document's font, or remeasure the current document.
+- An async image/replaced-resource response from an old navigation cannot mutate a closed widget or
+  dirty the current document extent.
 
 ### Phase 7: Integration And Documentation
 
@@ -416,7 +556,7 @@ Steps:
 | `src/eepp/ui/uinode.cpp` | Resolve viewport units from document viewport instead of scene extent |
 | `src/eepp/ui/uirichtext.cpp` | HTML/body viewport minimum-height handling |
 | `include/eepp/ui/uiwebview.hpp` | Owned scene, getter, scheduled update, lifetime state |
-| `src/eepp/ui/uiwebview.cpp` | Content-sized scene scroll target, viewport updates, isolated loading/navigation |
+| `src/eepp/ui/uiwebview.cpp` | Document layout scroll target, viewport updates, isolated loading/navigation |
 | `src/examples/ui_html/ui_html.cpp` | Inject document CSS through the document scene |
 | `src/tests/unit_tests/uiwebview_tests.cpp` | New focused isolation/lifecycle tests |
 | `src/tests/unit_tests/uihtml_tests.cpp` | Existing realistic web-view fixture adjustments |
@@ -435,9 +575,9 @@ media state, dirty queues, cookies, font faces, or DOM lookup. This does not cre
 
 ### Keep UISceneNode Size As Both Document Extent And CSS Viewport
 
-The document scene must be content-sized to scroll, but that size cannot also define viewport units
-and media queries. Keep one content-sized scene and add explicit viewport metrics instead of adding
-an extra nested scroll target or treating the content extent as the viewport.
+The document needs a scrollable extent, but that size cannot also define viewport units, media
+queries, or the root/body containing block. Keep a real document layout scroll target and explicit
+viewport/layout-viewport metrics instead of treating content extent as the viewport.
 
 ### Add Every Document Scene To SceneManager
 

@@ -47,6 +47,17 @@ static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 	// viewport did not move. Keeping it scoped to WebView documents avoids reopening the generic
 	// RichText parent-recompute storm, while the final html dirty mark gives the normal layout
 	// queue one coalesced pass from the document root.
+	Node* parent = root;
+	while ( parent ) {
+		if ( parent->isType( UI_TYPE_WEBVIEW ) ) {
+			parent->asType<UIWebView>()->invalidateDocumentLayout(
+				LayoutInvalidation::Document |
+				toLayoutInvalidationFlags( LayoutInvalidationReason::Style ) );
+			break;
+		}
+		parent = parent->getParent();
+	}
+
 	auto webViews = root->findAllByType( UI_TYPE_WEBVIEW );
 	for ( auto webViewNode : webViews ) {
 		auto* webView = webViewNode->asType<UIWebView>();
@@ -166,6 +177,54 @@ void UISceneNode::nodeToWorldTranslation( Vector2f& Pos ) const {
 
 		ParentLoop = ParentLoop->getParent();
 	}
+}
+
+Node* UISceneNode::overFind( const Vector2f& point ) {
+	Node* pOver = NULL;
+
+	if ( ( mNodeFlags & NODE_FLAG_OVER_FIND_ALLOWED ) && mEnabled && mVisible ) {
+		updateWorldPolygon();
+
+		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
+			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			mSceneNode->addMouseOverNode( this );
+
+			Node* child = getLastChild();
+
+			while ( NULL != child ) {
+				Node* childOver = child->overFind( point );
+
+				if ( NULL == childOver && child == mRoot && mHasLayoutViewportPixelsSize ) {
+					mRoot->updateWorldPolygon();
+					mRoot->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+					mSceneNode->addMouseOverNode( mRoot );
+
+					Node* rootChild = mRoot->getLastChild();
+					while ( NULL != rootChild ) {
+						childOver = rootChild->overFind( point );
+						if ( NULL != childOver )
+							break;
+						rootChild = rootChild->getPrevNode();
+					}
+
+					if ( NULL == childOver )
+						childOver = mRoot;
+				}
+
+				if ( NULL != childOver ) {
+					pOver = childOver;
+					break;
+				}
+
+				child = child->getPrevNode();
+			}
+
+			if ( NULL == pOver )
+				pOver = this;
+		}
+	}
+
+	return pOver;
 }
 
 void UISceneNode::onParentChange() {
@@ -789,7 +848,7 @@ void UISceneNode::setViewportPixelsSize( const Sizef& size ) {
 
 	mViewportPixelsSize = size;
 	mHasViewportPixelsSize = true;
-	mRoot->setPixelsSize( getPixelsSize() );
+	mRoot->setPixelsSize( getRootPixelsSize() );
 	onViewportPixelsSizeChange();
 }
 
@@ -798,7 +857,7 @@ void UISceneNode::clearViewportPixelsSize() {
 		return;
 
 	mHasViewportPixelsSize = false;
-	mRoot->setPixelsSize( getPixelsSize() );
+	mRoot->setPixelsSize( getRootPixelsSize() );
 	onViewportPixelsSizeChange();
 }
 
@@ -810,6 +869,29 @@ void UISceneNode::onViewportPixelsSizeChange() {
 
 const Sizef& UISceneNode::getViewportPixelsSize() const {
 	return mHasViewportPixelsSize ? mViewportPixelsSize : getPixelsSize();
+}
+
+void UISceneNode::setLayoutViewportPixelsSize( const Sizef& size ) {
+	if ( mHasLayoutViewportPixelsSize && mLayoutViewportPixelsSize == size )
+		return;
+
+	mLayoutViewportPixelsSize = size;
+	mHasLayoutViewportPixelsSize = true;
+	mRoot->setPixelsSize( getRootPixelsSize() );
+	sendMsg( this, NodeMessage::WindowResize );
+}
+
+void UISceneNode::clearLayoutViewportPixelsSize() {
+	if ( !mHasLayoutViewportPixelsSize )
+		return;
+
+	mHasLayoutViewportPixelsSize = false;
+	mRoot->setPixelsSize( getRootPixelsSize() );
+	sendMsg( this, NodeMessage::WindowResize );
+}
+
+const Sizef& UISceneNode::getLayoutViewportPixelsSize() const {
+	return mHasLayoutViewportPixelsSize ? mLayoutViewportPixelsSize : getViewportPixelsSize();
 }
 
 void UISceneNode::setFollowParentSize( bool followParentSize ) {
@@ -826,6 +908,21 @@ void UISceneNode::setFollowParentSize( bool followParentSize ) {
 
 bool UISceneNode::followsParentSize() const {
 	return mFollowParentSize;
+}
+
+void UISceneNode::flushDirtyStyleAndLayout() {
+	updateDirtyStyles();
+	updateDirtyStyleStates();
+	updateDirtyLayouts();
+
+	int invalidationDepth = mMaxInvalidationDepth;
+	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
+			invalidationDepth > 0 ) {
+		updateDirtyStyles();
+		updateDirtyStyleStates();
+		updateDirtyLayouts();
+		invalidationDepth--;
+	}
 }
 
 void UISceneNode::update( const Time& elapsed ) {
@@ -1196,7 +1293,11 @@ void UISceneNode::onChildCountChange( Node* child, const bool& removed ) {
 void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
-	mRoot->setPixelsSize( getPixelsSize() );
+	mRoot->setPixelsSize( getRootPixelsSize() );
+}
+
+const Sizef& UISceneNode::getRootPixelsSize() const {
+	return mHasLayoutViewportPixelsSize ? mLayoutViewportPixelsSize : getViewportPixelsSize();
 }
 
 void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet, URI baseURI ) {

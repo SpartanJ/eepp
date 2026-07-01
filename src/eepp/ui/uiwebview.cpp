@@ -13,6 +13,16 @@
 
 namespace EE { namespace UI {
 
+class UIWebViewDocumentContainer : public UILinearLayout {
+  public:
+	static UIWebViewDocumentContainer* New() { return eeNew( UIWebViewDocumentContainer, () ); }
+
+	void clearDocumentChildren() { childDeleteAll(); }
+
+  protected:
+	UIWebViewDocumentContainer() : UILinearLayout( "webview::doc", UIOrientation::Vertical ) {}
+};
+
 static void expandDocumentContentExtent( Node* node, Vector2f offset, Sizef& extent,
 										 bool hasClip = false,
 										 const Sizef& clipExtent = Sizef::Zero ) {
@@ -55,7 +65,6 @@ static void expandDocumentContentExtent( Node* node, Vector2f offset, Sizef& ext
 		child = child->getNextNode();
 	}
 }
-
 static void expandWidgetContentExtent( UIWidget* widget, const Vector2f& offset, Sizef& extent ) {
 	if ( !widget || widget->isClosing() )
 		return;
@@ -84,9 +93,6 @@ static void resetViewportDependentDocumentWidths( UIWidget* container ) {
 		if ( !parentWidget )
 			continue;
 
-		const Float containerWidth = eemax( 0.f, parentWidget->getPixelsSize().getWidth() -
-													 parentWidget->getPixelsContentOffset().Left -
-													 parentWidget->getPixelsContentOffset().Right );
 		bool normalFlow = true;
 		Rectf margin = widget->getLayoutPixelsMargin();
 		if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
@@ -97,53 +103,21 @@ static void resetViewportDependentDocumentWidths( UIWidget* container ) {
 
 		if ( normalFlow ) {
 			widget->invalidateIntrinsicSize();
-			/* if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-				widget->setPixelsSize( eemax( 0.f, containerWidth - margin.Left - margin.Right ),
-									   widget->getPixelsSize().getHeight() );
-			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed &&
-						widget->getUIStyle() ) {
-				const StyleSheetProperty* wprop =
-					widget->getUIStyle()->getProperty( PropertyId::Width );
-				if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) ) {
-					widget->setPixelsSize( { widget->lengthFromValue( *wprop ),
-											 widget->getPixelsSize().getHeight() } );
-				}
-			} */
 		}
 	}
 }
 
 Sizef UIWebView::getDocumentViewportPixelsSize() const {
-	Sizef contentBox = getPixelsSize();
+	Sizef viewport = getPixelsSize();
 	const Rectf& padding = getPixelsPadding();
-	contentBox.x -= padding.Left + padding.Right;
-	contentBox.y -= padding.Top + padding.Bottom;
-
-	Sizef viewport = contentBox;
+	viewport.x -= padding.Left + padding.Right;
+	viewport.y -= padding.Top + padding.Bottom;
 
 	if ( getViewType() == ScrollViewType::Outside ) {
 		if ( getVerticalScrollBar()->isVisible() )
 			viewport.x -= getVerticalScrollBar()->getPixelsSize().getWidth();
 		if ( getHorizontalScrollBar()->isVisible() )
 			viewport.y -= getHorizontalScrollBar()->getPixelsSize().getHeight();
-	}
-
-	if ( mContainer && mContainer->getPixelsSize() != Sizef::Zero ) {
-		Sizef container = mContainer->getPixelsSize();
-		Float verticalScrollWidth = getVerticalScrollBar()->getPixelsSize().getWidth();
-		Float horizontalScrollHeight = getHorizontalScrollBar()->getPixelsSize().getHeight();
-		if ( eeabs( container.getWidth() - viewport.getWidth() ) <= 0.5f ||
-			 ( getVerticalScrollBar()->isVisible() &&
-			   container.getWidth() < contentBox.getWidth() &&
-			   eeabs( contentBox.getWidth() - container.getWidth() - verticalScrollWidth ) <=
-				   0.5f ) )
-			viewport.x = container.getWidth();
-		if ( eeabs( container.getHeight() - viewport.getHeight() ) <= 0.5f ||
-			 ( getHorizontalScrollBar()->isVisible() &&
-			   container.getHeight() < contentBox.getHeight() &&
-			   eeabs( contentBox.getHeight() - container.getHeight() - horizontalScrollHeight ) <=
-				   0.5f ) )
-			viewport.y = container.getHeight();
 	}
 
 	viewport.x = eemax( 0.f, viewport.x );
@@ -158,11 +132,18 @@ UIWebView* UIWebView::New() {
 UIWebView::UIWebView() : UIScrollView( "webview" ) {
 	mNavigationLoadState = std::make_shared<NavigationLoadState>();
 	mNavigationLoadState->owner = this;
+
+	mDocumentLayout = UILinearLayout::NewVerticalWidthMatchParent( "webview::document_layout" );
+	mDocumentLayout->setClipType( ClipType::None );
+	mDocumentLayout->setFlags( UI_OWNS_CHILDREN_POSITION );
+	mDocumentLayout->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	mDocumentLayout->setParent( this );
+
 	mDocumentScene = UISceneNode::New();
 	mDocumentScene->setFollowParentSize( false );
-	mDocumentScene->setParent( this );
+	mDocumentScene->setParent( mDocumentLayout );
 
-	mDocContainer = UILinearLayout::NewVerticalWidthMatchParent( "webview::doc" );
+	mDocContainer = UIWebViewDocumentContainer::New();
 	mDocContainer->setClipType( ClipType::None );
 	mDocContainer->setFlags( UI_OWNS_CHILDREN_POSITION );
 	mDocContainer->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
@@ -223,7 +204,7 @@ void UIWebView::scheduledUpdate( const Time& time ) {
 	UITouchDraggableWidget::scheduledUpdate( time );
 	if ( mDocumentScene ) {
 		mDocumentScene->update( time );
-		updateDocumentSceneContentExtent();
+		updateDocumentMetricsIfNeeded();
 	}
 }
 
@@ -378,67 +359,53 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 	}
 
 	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
-	ensureMainThread(
-		[loadState, generation, url = std::move( url ), data = std::move( data )]() mutable {
-			UIWebView* self = resolveNavigationLoad( loadState, generation );
-			if ( !self )
-				return;
+	ensureMainThread( [loadState, generation, url = std::move( url ),
+					   data = std::move( data )]() mutable {
+		UIWebView* self = resolveNavigationLoad( loadState, generation );
+		if ( !self )
+			return;
 
-			auto ui = self->getDocumentSceneNode();
-			if ( !ui || !self->isNavigationLoadCurrent( generation ) )
-				return;
+		auto ui = self->getDocumentSceneNode();
+		if ( !ui || !self->isNavigationLoadCurrent( generation ) )
+			return;
 
-			self->getVerticalScrollBar()->setValue( 0 );
-			self->mDocContainer->closeAllChildren();
-			ui->invalidateAsyncResourceLoads();
-			ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
-			ui->setURIFromURL( url );
+		self->getVerticalScrollBar()->setValue( 0 );
+		self->getHorizontalScrollBar()->setValue( 0 );
+		static_cast<UIWebViewDocumentContainer*>( self->mDocContainer )->clearDocumentChildren();
+		ui->invalidateAsyncResourceLoads();
+		ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
+		ui->setURIFromURL( url );
 
-			auto hash = String::hash( url.toString() );
-			ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), self->mDocContainer,
-									  hash );
+		auto hash = String::hash( url.toString() );
+		ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), self->mDocContainer,
+								  hash );
 
-			ui->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
-				auto locked = loadState.lock();
-				if ( !locked || !locked->alive || locked->owner == nullptr )
-					return true;
-				UIWebView* self = locked->owner;
-				UISceneNode* docScene = self->getDocumentSceneNode();
-				if ( !docScene )
-					return true;
-				URI uri = docScene->solveRelativePath( request.uri );
-				self->loadURI( uri, request.method != "GET", request.method, request.body,
-							   request.extraHeaders );
+		ui->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
+			auto locked = loadState.lock();
+			if ( !locked || !locked->alive || locked->owner == nullptr )
 				return true;
-			} );
-
-			if ( !self->isNavigationLoadCurrent( generation ) )
-				return;
-			self->mIsLoading = false;
-			NavigationEvent ev( self, (Uint32)Event::OnNavigationCompleted, url, true );
-			self->sendEvent( &ev );
-			self->updateDocumentViewportMetrics();
-			self->updateHTMLMinHeightForDocument();
-			self->updateDocumentSceneContentExtent();
+			UIWebView* self = locked->owner;
+			UISceneNode* docScene = self->getDocumentSceneNode();
+			if ( !docScene )
+				return true;
+			URI uri = docScene->solveRelativePath( request.uri );
+			self->loadURI( uri, request.method != "GET", request.method, request.body,
+						   request.extraHeaders );
+			return true;
 		} );
+
+		if ( !self->isNavigationLoadCurrent( generation ) )
+			return;
+		self->mIsLoading = false;
+		NavigationEvent ev( self, (Uint32)Event::OnNavigationCompleted, url, true );
+		self->sendEvent( &ev );
+		self->markDocumentExtentDirty( LayoutInvalidation::Document );
+		self->updateDocumentMetricsIfNeeded();
+	} );
 }
 
 void UIWebView::onDocumentViewportGeometryChanged() {
-	if ( updateDocumentViewportMetrics() ) {
-		updateHTMLMinHeightForDocument();
-		if ( mDocContainer && mDocContainer->isLayout() )
-			mDocContainer->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
-		if ( auto htmlNode = mDocumentScene->findByType( UI_TYPE_HTML_HTML ) ) {
-			if ( htmlNode->isWidget() )
-				resetViewportDependentDocumentWidths( htmlNode->asType<UIWidget>() );
-			if ( htmlNode->isLayout() )
-				htmlNode->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
-		}
-		mDocumentScene->update( Time::Zero );
-		updateDocumentSceneContentExtent();
-		return;
-	}
-	updateDocumentSceneContentExtent();
+	markDocumentExtentDirty( toLayoutInvalidationFlags( LayoutInvalidationReason::Viewport ) );
 }
 
 void UIWebView::updateHTMLMinHeightForDocument() {
@@ -516,7 +483,7 @@ UISceneNode* UIWebView::getDocumentSceneNode() const {
 }
 
 bool UIWebView::updateDocumentViewportMetrics() {
-	if ( !mDocumentScene || !mDocContainer || mUpdatingDocumentViewportMetrics )
+	if ( !mDocumentScene || !mDocumentLayout || !mDocContainer || mUpdatingDocumentViewportMetrics )
 		return false;
 
 	mUpdatingDocumentViewportMetrics = true;
@@ -524,34 +491,63 @@ bool UIWebView::updateDocumentViewportMetrics() {
 	Sizef viewport = getDocumentViewportPixelsSize();
 	bool changed = viewport != Sizef::Zero && viewport != mDocumentScene->getViewportPixelsSize();
 
-	if ( viewport != Sizef::Zero )
+	if ( viewport != Sizef::Zero ) {
 		mDocumentScene->setViewportPixelsSize( viewport );
+		mDocumentScene->setLayoutViewportPixelsSize( viewport );
+	}
 
-	if ( changed && !mUpdatingDocumentContentExtent && viewport != mDocumentScene->getPixelsSize() )
-		mDocumentScene->setPixelsSize( viewport );
+	if ( mDocumentLayout->getPixelsSize() == Sizef::Zero && viewport != Sizef::Zero )
+		mDocumentLayout->setPixelsSize( viewport );
 
 	mUpdatingDocumentViewportMetrics = false;
 	return changed;
 }
 
-void UIWebView::updateDocumentSceneContentExtent() {
-	if ( !mDocumentScene || !mDocContainer || mUpdatingDocumentContentExtent )
+void UIWebView::markDocumentExtentDirty( LayoutInvalidationFlags reasons ) {
+	mDocumentExtentDirty = true;
+	mDocumentExtentDirtyReasons |= reasons;
+}
+
+void UIWebView::updateDocumentMetricsIfNeeded() {
+	if ( !mDocumentScene || !mDocumentLayout || !mDocContainer || mUpdatingDocumentContentExtent ||
+		 !mDocumentExtentDirty )
 		return;
 
 	mUpdatingDocumentContentExtent = true;
-	if ( !mUpdatingDocumentViewportMetrics )
-		updateDocumentViewportMetrics();
+	bool viewportChanged = !mUpdatingDocumentViewportMetrics && updateDocumentViewportMetrics();
 
 	Sizef viewport = mDocumentScene->getViewportPixelsSize();
 	if ( viewport == Sizef::Zero )
 		viewport = mContainer ? mContainer->getPixelsSize() : getPixelsSize();
 
+	const bool documentReset =
+		mDocumentExtentDirtyReasons &
+		toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent );
+	if ( !viewportChanged && !documentReset ) {
+		mDocumentExtentDirty = false;
+		mDocumentExtentDirtyReasons = 0;
+		mUpdatingDocumentContentExtent = false;
+		return;
+	}
+
+	if ( viewportChanged || documentReset ) {
+		updateHTMLMinHeightForDocument();
+		if ( mDocContainer->isLayout() )
+			mDocContainer->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+		if ( auto htmlNode = mDocumentScene->findByType( UI_TYPE_HTML_HTML ) ) {
+			if ( htmlNode->isWidget() )
+				resetViewportDependentDocumentWidths( htmlNode->asType<UIWidget>() );
+			if ( htmlNode->isLayout() )
+				htmlNode->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+		}
+	}
+
+	mDocumentScene->flushDirtyStyleAndLayout();
+
 	Sizef extent( viewport.getWidth(), viewport.getHeight() );
 
 	if ( auto htmlNode = mDocContainer->findByType( UI_TYPE_HTML_HTML ) ) {
 		UIWidget* html = htmlNode->asType<UIWidget>();
-		resetViewportDependentDocumentWidths( html );
-		mDocumentScene->updateDirtyLayouts();
 		expandWidgetContentExtent( html, Vector2f::Zero, extent );
 	}
 
@@ -562,31 +558,17 @@ void UIWebView::updateDocumentSceneContentExtent() {
 		expandDocumentContentExtent( body, mDocContainer->getPixelsPosition(), extent );
 	}
 
-	bool extentChanged = extent != Sizef::Zero && extent != mDocumentScene->getPixelsSize();
+	bool extentChanged = extent != Sizef::Zero && extent != mDocumentLayout->getPixelsSize();
 	if ( extentChanged ) {
+		mDocumentLayout->setPixelsSize( extent );
 		mDocumentScene->setPixelsSize( extent );
-		updateHTMLMinHeightForDocument();
+		containerUpdate();
+		updateScroll();
 	}
 
+	mDocumentExtentDirty = false;
+	mDocumentExtentDirtyReasons = 0;
 	mUpdatingDocumentContentExtent = false;
-
-	viewport = getDocumentViewportPixelsSize();
-	bool viewportChanged =
-		viewport != Sizef::Zero && viewport != mDocumentScene->getViewportPixelsSize();
-	if ( ( viewportChanged || extentChanged ) && !mDocumentViewportSyncQueued ) {
-		mDocumentViewportSyncQueued = true;
-		runOnMainThread( [this] {
-			runOnMainThread( [this] {
-				mDocumentViewportSyncQueued = false;
-				onDocumentViewportGeometryChanged();
-			} );
-		} );
-	}
-}
-
-void UIWebView::updateDocumentSceneMetrics() {
-	updateDocumentViewportMetrics();
-	updateDocumentSceneContentExtent();
 }
 
 void UIWebView::setStyleSheetDefaultMarker( Uint32 marker ) {
@@ -615,8 +597,7 @@ void UIWebView::invalidateDocumentLayout( LayoutInvalidationFlags reasons ) {
 		reasons & ( toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent ) |
 					toLayoutInvalidationFlags( LayoutInvalidationReason::Viewport ) );
 	if ( docExtent ) {
-		containerUpdate();
-		updateHTMLMinHeightForDocument();
+		markDocumentExtentDirty( reasons );
 	}
 	if ( mDocContainer && mDocContainer->isLayout() )
 		mDocContainer->asType<UILayout>()->setLayoutDirty( reasons );
