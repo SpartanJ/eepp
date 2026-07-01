@@ -208,12 +208,13 @@ void UILinearLayout::packVertical() {
 
 			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
-					pos.x = ( getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+					pos.x = mPaddingPx.Left +
+							( getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							  widget->getPixelsSize().getWidth() ) /
-							2;
+								2;
 					break;
 				case UI_HALIGN_RIGHT:
-					pos.x = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+					pos.x = getPixelsSize().getWidth() - mPaddingPx.Right -
 							widget->getPixelsSize().getWidth() -
 							widget->getLayoutPixelsMargin().Right;
 					break;
@@ -342,12 +343,13 @@ void UILinearLayout::packHorizontal() {
 
 			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
-					pos.y = ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+					pos.y = mPaddingPx.Top +
+							( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
 							  widget->getPixelsSize().getHeight() ) /
-							2;
+								2;
 					break;
 				case UI_VALIGN_BOTTOM:
-					pos.y = getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+					pos.y = getPixelsSize().getHeight() - mPaddingPx.Bottom -
 							widget->getPixelsSize().getHeight() -
 							widget->getLayoutPixelsMargin().Bottom;
 					break;

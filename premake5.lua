@@ -1662,6 +1662,12 @@ workspace "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-font-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_font_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-font-picker", true )
+
 	project "eepp-ui-dropdownmodellist"
 		set_kind()
 		language "C++"

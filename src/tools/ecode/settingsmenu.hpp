@@ -117,6 +117,7 @@ class SettingsMenu {
 	UIPopUpMenu* mProjectMenu{ nullptr };
 	UIPopUpMenu* mHExtLanguageTypeMenu{ nullptr };
 	UIPopUpMenu* mEditMenu{ nullptr };
+	UIPopUpMenu* mDateMenu{ nullptr };
 	UIPopUpMenu* mHelpMenu{ nullptr };
 	UIPopUpMenu* mLineWrapMenu{ nullptr };
 	UIPopUpMenu* mCodeFoldingMenu{ nullptr };
@@ -131,6 +132,8 @@ class SettingsMenu {
 	Float mColorSchemeMenusCreatedWithHeight{ 0 };
 
 	void forEachTerminal( const std::function<void( UITerminal* )> fn );
+
+	void updateDateMenu();
 
 	UITerminal* getCurrentTerminal() const;
 };

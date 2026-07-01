@@ -1605,6 +1605,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		if ( localPos.y < mPluginsTopSpace )
 			return UIWidget::onMouseDown( position, flags );
 
+		const auto resetSelectionTo = [this]( const TextPosition& pos ) {
+			mDoc->resetSelection();
+			mDoc->setSelection( pos );
+		};
+
 		bool downOverGutter = localPos.x < mPaddingPx.Left + getGutterWidth();
 
 		if ( flags & EE_BUTTON_LMASK ) {
@@ -1620,14 +1625,14 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 					return UIWidget::onMouseDown( position, flags );
 
 				if ( !downOverGutter || mAllowSelectingTextFromGutter )
-					mDoc->setSelection( textScreenPos );
+					resetSelectionTo( textScreenPos );
 				if ( downOverGutter && mAllowSelectingTextFromGutter )
 					mDoc->selectLine();
 			}
 		} else if ( !downOverGutter && tryExecuteMouseBinding( shortcut ) ) {
 			return UIWidget::onMouseDown( position, flags );
 		} else if ( !mDoc->hasSelection() ) {
-			mDoc->setSelection( textScreenPos );
+			resetSelectionTo( textScreenPos );
 		}
 	} else if ( !( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ) {
 		tryExecuteMouseBinding( shortcut );

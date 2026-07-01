@@ -74,6 +74,7 @@
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
+#include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -141,7 +142,6 @@
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
-#include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
@@ -172,6 +172,7 @@
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwidgettable.hpp>

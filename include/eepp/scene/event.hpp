@@ -131,6 +131,7 @@ class EE_API Event {
 		OnFocusWithin,
 		OnFocusWithinLoss,
 		OnItemsCountChange,
+		OnApply,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

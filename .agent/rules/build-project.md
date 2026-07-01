@@ -2,8 +2,8 @@
 
 All build commands must be executed from the **root project directory**. Follow these steps to build the project:
 
-## Step 1: Update Makefiles (Conditional)
-If you have **added, renamed, or deleted** any source files, you must regenerate the makefiles before compiling.
+## Step 1: Regenerate Project Files
+Always regenerate the project files before compiling or running tests after making changes. Do this even for edits to existing files, because the checked-in makefiles can be stale and may reference removed files or miss recently added targets.
 
 *   **Tool:** Use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
 *   **Linker Flag (`--with-mold-linker`):** This flag is conditional. If the `mold` linker is installed on the system, you **must** include it to speed up linking. If `mold` is not installed, omit the flag.
@@ -13,8 +13,6 @@ If you have **added, renamed, or deleted** any source files, you must regenerate
 
 **Command (if `mold` is NOT installed):**
 `premake4 --disable-static-build --with-debug-symbols --address-sanitizer gmake`
-
-*(If no files were added/removed, you may skip Step 1).*
 
 ## Step 1a: Format Changed Files
 After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** run `clang-format` on all modified files to ensure consistent formatting with the project's style (defined in `.clang-format` at the repository root).

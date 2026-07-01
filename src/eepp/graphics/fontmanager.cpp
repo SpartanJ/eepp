@@ -111,7 +111,8 @@ FontTrueType* FontManager::getOrLoadSystemFallbackFont( const FontDesc& desc ) {
 	for ( auto* font : mSystemFallbackFonts ) {
 		if ( font->getType() == FontType::TTF ) {
 			auto* ttf = static_cast<FontTrueType*>( font );
-			if ( ttf->getInfo().fontpath + ttf->getInfo().filename == desc.path )
+			if ( ttf->getInfo().fontpath + ttf->getInfo().filename == desc.path &&
+				 ttf->getFaceIndex() == desc.faceIndex )
 				return ttf;
 		}
 	}

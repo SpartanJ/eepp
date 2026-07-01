@@ -816,34 +816,46 @@ void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
 }
 
 void UIWidget::alignAgainstLayout() {
-	Vector2f pos = mDpPos;
+	Vector2f pos = mPosition;
+	const Sizef parentSize( getParent()->getPixelsSize() );
+	const Sizef size( getPixelsSize() );
+	Rectf parentContentOffset = Rectf::Zero;
+
+	if ( getParent()->isWidget() )
+		parentContentOffset = getParent()->asType<UIWidget>()->getPixelsContentOffset();
+
+	const Float parentContentWidth =
+		parentSize.getWidth() - parentContentOffset.Left - parentContentOffset.Right;
+	const Float parentContentHeight =
+		parentSize.getHeight() - parentContentOffset.Top - parentContentOffset.Bottom;
 
 	switch ( Font::getHorizontalAlign( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
-			pos.x = ( getParent()->getSize().getWidth() - getSize().getWidth() ) / 2;
+			pos.x = parentContentOffset.Left + ( parentContentWidth - size.getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
-			pos.x = getParent()->getSize().getWidth() - getSize().getWidth() - mLayoutMargin.Right;
+			pos.x = parentSize.getWidth() - parentContentOffset.Right - size.getWidth() -
+					mLayoutMarginPx.Right;
 			break;
 		case UI_HALIGN_LEFT:
-			pos.x = mLayoutMargin.Left;
+			pos.x = parentContentOffset.Left + mLayoutMarginPx.Left;
 			break;
 	}
 
 	switch ( Font::getVerticalAlign( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
-			pos.y = ( getParent()->getSize().getHeight() - getSize().getHeight() ) / 2;
+			pos.y = parentContentOffset.Top + ( parentContentHeight - size.getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
-			pos.y =
-				getParent()->getSize().getHeight() - getSize().getHeight() - mLayoutMargin.Bottom;
+			pos.y = parentSize.getHeight() - parentContentOffset.Bottom - size.getHeight() -
+					mLayoutMarginPx.Bottom;
 			break;
 		case UI_VALIGN_TOP:
-			pos.y = mLayoutMargin.Top;
+			pos.y = parentContentOffset.Top + mLayoutMarginPx.Top;
 			break;
 	}
 
-	setPosition( pos );
+	setPixelsPosition( pos );
 }
 
 void UIWidget::reportStyleStateChange( bool disableAnimations, bool forceReApplyStyles ) {

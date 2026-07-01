@@ -62,6 +62,32 @@ struct FontDesc {
 	FontStretch stretch{ FontStretch::Normal };
 	bool italic{ false };
 	bool monospace{ false };
+
+	std::string getFileKey() const { return path + "#" + String::toString( faceIndex ); }
+
+	std::string getStyleKey() const {
+		return String::toLower( family ) + "#" + String::toString( static_cast<Uint32>( weight ) ) +
+			   "#" + String::toString( static_cast<Uint32>( stretch ) ) + "#" +
+			   String::toString( italic ? 1 : 0 ) + "#" + String::toString( faceIndex );
+	}
+
+	bool sameFile( const FontDesc& other ) const {
+		return path == other.path && faceIndex == other.faceIndex;
+	}
+
+	bool sameFile( const std::string& otherPath, Uint32 otherFaceIndex = 0 ) const {
+		return path == otherPath && faceIndex == otherFaceIndex;
+	}
+
+	bool sameStyle( const FontDesc& other ) const { return getStyleKey() == other.getStyleKey(); }
+
+	bool operator==( const FontDesc& other ) const {
+		return family == other.family && path == other.path && faceIndex == other.faceIndex &&
+			   weight == other.weight && stretch == other.stretch && italic == other.italic &&
+			   monospace == other.monospace;
+	}
+
+	bool operator!=( const FontDesc& other ) const { return !( *this == other ); }
 };
 
 class EE_API SystemFontResolver {

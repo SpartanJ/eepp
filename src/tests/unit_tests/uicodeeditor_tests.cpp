@@ -2,14 +2,18 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+
+#include "../../tools/ecode/keybindingshelper.cpp"
 
 using namespace EE;
 using namespace EE::UI;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
+using namespace EE::System;
 
 static const std::string userCode = R"objcpp(#import "common.h"
 #import <cmath>
@@ -100,6 +104,87 @@ OF_APPLICATION_DELEGATE(test)
 			EXPECT_EQ( expectedVisibleCount, view.getVisibleLinesCount() );                     \
 		}                                                                                       \
 	}
+
+UTEST( KeybindingsHelper, PreservesUserShortcutWhenAddingBinding ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - KeybindingsHelper Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const std::string path = Sys::getTempPath() + "eepp_keybindingshelper.cfg";
+	const std::string statePath = Sys::getTempPath() + "eepp_keybindingshelper_state.cfg";
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( statePath );
+
+	IniFile ini( path, false );
+	IniFile iniState( statePath, false );
+	const std::string group( "editor" );
+	const std::string modD( "mod+d" );
+	const std::string modX( "mod+x" );
+	const std::string modE( "mod+e" );
+	ini.setValue( group, modD, std::string( "duplicate-line-or-selection" ) );
+	ini.setValue( group, modX, std::string( "cut" ) );
+	ini.setValue( group, modE, std::string( "show-markdown-preview" ) );
+
+	std::unordered_map<std::string, std::string> keybindings;
+	std::unordered_map<std::string, std::string> invertedKeybindings;
+	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
+	};
+
+	ecode::KeybindingsHelper::updateKeybindings( ini, group, app.getWindow()->getInput(),
+												 keybindings, invertedKeybindings,
+												 defaultKeybindings, false, {}, iniState );
+
+	ASSERT_TRUE( keybindings.find( modD ) != keybindings.end() );
+	const std::string savedModD = ini.getValue( group, modD, "" );
+	EXPECT_STREQ( keybindings[modD].c_str(), "duplicate-line-or-selection" );
+	EXPECT_STREQ( savedModD.c_str(), "duplicate-line-or-selection" );
+	EXPECT_STREQ( invertedKeybindings["duplicate-line-or-selection"].c_str(), modD.c_str() );
+
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( statePath );
+}
+
+UTEST( KeybindingsHelper, RestoresMissingCommandWhenShortcutIsFree ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - KeybindingsHelper Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const std::string path = Sys::getTempPath() + "eepp_keybindingshelper_restore.cfg";
+	const std::string statePath = Sys::getTempPath() + "eepp_keybindingshelper_restore_state.cfg";
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( statePath );
+
+	IniFile ini( path, false );
+	IniFile iniState( statePath, false );
+	const std::string group( "editor" );
+	const std::string modD( "mod+d" );
+	const std::string modX( "mod+x" );
+	ini.setValue( group, modX, std::string( "cut" ) );
+
+	std::unordered_map<std::string, std::string> keybindings;
+	std::unordered_map<std::string, std::string> invertedKeybindings;
+	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
+	};
+
+	ecode::KeybindingsHelper::updateKeybindings( ini, group, app.getWindow()->getInput(),
+												 keybindings, invertedKeybindings,
+												 defaultKeybindings, false, {}, iniState );
+
+	ASSERT_TRUE( keybindings.find( modD ) != keybindings.end() );
+	const std::string savedModD = ini.getValue( group, modD, "" );
+	EXPECT_STREQ( keybindings[modD].c_str(), "select-word" );
+	EXPECT_STREQ( savedModD.c_str(), "select-word" );
+	EXPECT_STREQ( invertedKeybindings["select-word"].c_str(), modD.c_str() );
+
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( statePath );
+}
 
 UTEST( UICodeEditor, DocumentViewStressTest ) {
 	UIApplication app(

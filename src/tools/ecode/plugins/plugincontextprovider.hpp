@@ -22,6 +22,7 @@ class UISplitter;
 class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
+class UIMessageBox;
 
 namespace Doc {
 class SyntaxColorScheme;
@@ -93,6 +94,8 @@ class PluginContextProvider {
 	virtual UITabWidget* getSidePanel() const = 0;
 
 	virtual String i18n( const std::string& key, const String& def ) = 0;
+
+	virtual UIMessageBox* errorMsgBox( const String& msg ) = 0;
 
 	virtual const std::string& getWindowTitle() const = 0;
 

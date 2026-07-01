@@ -119,6 +119,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "input-field", 0xF47A },
 				  { "sun", 0xF1BC },
 				  { "moon", 0xEF72 },
+				  { "calendar-2", 0xEB21 },
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, remixIconFont, icon.second ) );
 		}

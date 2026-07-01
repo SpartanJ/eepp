@@ -13,15 +13,8 @@ jobs:
       with:
         distribution: temurin
         java-version: 17
-    - uses: android-actions/setup-android@v3
-    - name: Accept licenses
-      run: yes | sdkmanager --licenses > /dev/null
-    - name: Install SDK + NDK components
-      run: |
-        sdkmanager "platform-tools" \
-                   "platforms;android-34" \
-                   "build-tools;34.0.0" \
-                   "ndk;29.0.14206865"
+    - name: Accept Android SDK licenses
+      run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
     - name: Configure local properties
       run: |
         cd projects/android-project

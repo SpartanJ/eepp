@@ -1340,6 +1340,15 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   getKeybind( "delete-to-next-char" ) )
 		->setId( "delete-to-next-char" );
 	mEditMenu->addSeparator();
+	mDateMenu = UIPopUpMenu::New();
+	auto* dateMenuItem = mEditMenu->addSubMenu( i18n( "insert_date", "Insert Date" ),
+												findIcon( "calendar-2" ), mDateMenu );
+	dateMenuItem->setId( "insert_date_menu" );
+	dateMenuItem->on( Event::OnMenuShow, [this, dateMenuItem]( const Event* ) {
+		mDateMenu->setOwnerNode( dateMenuItem );
+		updateDateMenu();
+	} );
+	mEditMenu->addSeparator();
 	mEditMenu
 		->add( i18n( "select_all", "Select All" ), findIcon( "select-all" ),
 			   getKeybind( "select-all" ) )
@@ -1395,6 +1404,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			mEditMenu->getItemId( "redo" )->setEnabled( false );
 			mEditMenu->getItemId( "copy" )->setEnabled( false );
 			mEditMenu->getItemId( "cut" )->setEnabled( false );
+			mEditMenu->getItemId( "insert_date_menu" )->setEnabled( false );
 			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
 			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
 			moveSep->setEnabled( false )->setVisible( false );
@@ -1409,6 +1419,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
 		mEditMenu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
 		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
+		mEditMenu->getItemId( "insert_date_menu" )->setEnabled( true );
 		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
 		moveSep->setEnabled( true )->setVisible( true );
@@ -1418,6 +1429,48 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
 	} );
 	return mEditMenu;
+}
+
+void SettingsMenu::updateDateMenu() {
+	if ( mDateMenu->getCount() != 0 )
+		return;
+	mDateMenu->removeAll();
+	mDateMenu->removeEventsOfType( Event::OnItemClicked );
+
+	struct DateFormatCommand {
+		const char* command;
+		const char* i18nKey;
+		const char* label;
+	};
+
+	static constexpr DateFormatCommand DATE_COMMANDS[] = {
+		{ "insert-date-dd-mm-yyyy", "insert_date_dd_mm_yyyy", "dd.mm.yyyy" },
+		{ "insert-date-mm-dd-yyyy", "insert_date_mm_dd_yyyy", "mm.dd.yyyy" },
+		{ "insert-date-yyyy-mm-dd", "insert_date_yyyy_mm_dd", "yyyy/mm/dd" },
+		{ "insert-date-time-dd-mm-yyyy", "insert_date_time_dd_mm_yyyy", "dd.mm.yyyy hh:mm:ss" },
+		{ "insert-date-time-mm-dd-yyyy", "insert_date_time_mm_dd_yyyy", "mm.dd.yyyy hh:mm:ss" },
+		{ "insert-date-time-yyyy-mm-dd", "insert_date_time_yyyy_mm_dd", "yyyy/mm/dd hh:mm:ss" },
+	};
+
+	for ( const auto& cmd : DATE_COMMANDS ) {
+		mDateMenu->add( i18n( cmd.i18nKey, cmd.label ), nullptr, getKeybind( cmd.command ) )
+			->setId( cmd.command );
+	}
+
+	mDateMenu->addSeparator();
+	mDateMenu
+		->add( i18n( "use_custom_date_format", "Use Custom Date Format" ), nullptr,
+			   getKeybind( "insert-date-custom" ) )
+		->setId( "insert-date-custom" );
+	mDateMenu
+		->add( i18n( "set_custom_date_format", "Set Custom Date Format" ), nullptr,
+			   getKeybind( "set-custom-date-format" ) )
+		->setId( "set-custom-date-format" );
+
+	mDateMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			runCommand( event->getNode()->getId() );
+	} );
 }
 
 UIMenu* SettingsMenu::createWindowMenu() {
@@ -2077,6 +2130,15 @@ UIMenu* SettingsMenu::createViewMenu() {
 				  "Synchronizes the current focused document as the selected\nfile in the "
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
+	mViewMenu
+		->addCheckBox(
+			i18n( "restore_editor_selection_on_focus", "Restore editor selection on focus" ) )
+		->setActive( mApp->getConfig().editor.restoreEditorSelectionOnFocus )
+		->setTooltipText(
+			i18n( "restore_editor_selection_on_focus_tooltip",
+				  "Restores each editor split's last cursor and selection state when it regains "
+				  "focus." ) )
+		->setId( "restore-editor-selection-on-focus" );
 
 	mViewMenu->addSeparator();
 	mViewMenu
@@ -2210,6 +2272,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 		} else if ( item->getId() == "sync-project-tree" ) {
 			mApp->getConfig().editor.syncProjectTreeWithEditor =
 				item->asType<UIMenuCheckBox>()->isActive();
+		} else if ( item->getId() == "restore-editor-selection-on-focus" ) {
+			mApp->getConfig().editor.restoreEditorSelectionOnFocus =
+				item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->setRestoreEditorSelectionOnFocus(
+				mApp->getConfig().editor.restoreEditorSelectionOnFocus );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );

@@ -545,6 +545,20 @@ const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
 }
 
+bool FontTrueType::getFontDesc( FontDesc& desc ) const {
+	if ( !loaded() || mInfo.filename.empty() || mInfo.fontpath.empty() )
+		return false;
+
+	desc = FontDesc{};
+	desc.family = mInfo.family.empty() ? getName() : mInfo.family;
+	desc.path = mInfo.fontpath + mInfo.filename;
+	desc.faceIndex = getFaceIndex();
+	desc.weight = isBold() || isBoldItalic() ? FontWeight::Bold : FontWeight::Normal;
+	desc.italic = isItalic() || isBoldItalic();
+	desc.monospace = isIdentifiedAsMonospace();
+	return !desc.family.empty() && !desc.path.empty();
+}
+
 void FontTrueType::updateFontInternalId() {
 	auto fontInternalId = fontsInternalIds.find( mInfo.family );
 	if ( fontsInternalIds.end() == fontInternalId ) {

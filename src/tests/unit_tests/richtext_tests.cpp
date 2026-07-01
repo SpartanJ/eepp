@@ -831,7 +831,7 @@ UTEST( RichText, RichTextTest ) {
 
 	const auto& runTest = [&createRichText, &utest_result]() {
 		auto win = Engine::instance()->createWindow(
-			WindowSettings( 1024, 650, "RichText Example", WindowStyle::Default,
+			WindowSettings( 1024, 650, "RichText Example", VisualTestWindowStyle,
 							WindowBackend::Default, 32, "", 1, EE_SCREEN_KEYBOARD_ENABLED, true ) );
 
 		if ( !win->isOpen() )

@@ -9,6 +9,7 @@
 #include <eepp/ui/uitabwidget.hpp>
 
 #include <eepp/system/log.hpp>
+#include <unordered_map>
 
 using namespace EE::UI::Doc;
 
@@ -387,6 +388,10 @@ class EE_API UICodeEditorSplitter {
 
 	bool openDocumentsInMainSplit() const { return mOpenDocumentsInMainSplit; }
 
+	void setRestoreEditorSelectionOnFocus( bool restore );
+
+	bool getRestoreEditorSelectionOnFocus() const { return mRestoreEditorSelectionOnFocus; }
+
 	UITabWidget* getFirstTabWidget() const;
 
 	UITabWidget* getPreferredTabWidget() const;
@@ -413,6 +418,7 @@ class EE_API UICodeEditorSplitter {
 	bool mFirstCodeEditor{ true };
 	bool mVisualSplitting{ true };
 	bool mOpenDocumentsInMainSplit{ false };
+	bool mRestoreEditorSelectionOnFocus{ true };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
 	Mutex mTabWidgetMutex;
@@ -424,10 +430,12 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryMaxSize{ 100 };
 	std::vector<NavigationRecord> mNavigationHistory;
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
+	std::unordered_map<UICodeEditor*, TextRanges> mEditorSelections;
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
 	TabTryCloseCallback mTabTryCloseCb;
 	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
+	std::unordered_map<Node*, std::vector<Uint32>> mEventCbs;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,
@@ -435,6 +443,10 @@ class EE_API UICodeEditorSplitter {
 						  const std::string& initColorScheme );
 
 	virtual void onTabClosed( const TabEvent* tabEvent );
+
+	void saveEditorSelection( UICodeEditor* editor );
+
+	void restoreEditorSelection( UICodeEditor* editor );
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 
