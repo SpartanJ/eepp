@@ -156,11 +156,13 @@ UTEST( UIWebView, DocumentRootHitTestingTraversesScrollableExtent ) {
 	webView->getVerticalScrollBar()->setValue( 1.f );
 	pump();
 
-	const Rectf targetRect = target->getScreenRect();
-	const Rectf rootRect = documentScene->getRoot()->getScreenRect();
+	const Rectf targetRect = target->getWorldBounds();
+	const Rectf rootRect = documentRoot->getWorldBounds();
 	const Rectf containerRect = webView->getContainer()->getScreenRect();
 	const Vector2f hitPoint( targetRect.Left + targetRect.getWidth() * 0.5f,
 							 targetRect.Top + targetRect.getHeight() * 0.5f );
+	const Vector2f rootLocalHitPoint = documentRoot->convertToNodeSpace( hitPoint );
+	ASSERT_GT( rootLocalHitPoint.y, documentRoot->getPixelsSize().getHeight() );
 	ASSERT_TRUE( containerRect.contains( hitPoint ) );
 	ASSERT_FALSE( rootRect.contains( hitPoint ) );
 
