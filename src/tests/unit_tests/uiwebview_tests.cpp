@@ -7,6 +7,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -88,6 +89,83 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
 	webView->getVerticalScrollBar()->setValue( 1.f );
 	EXPECT_LT( scrollTarget->getPixelsPosition().y, -500.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, DocumentRootHitTestingTraversesScrollableExtent ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Document Hit Test Bounds", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 400, 300 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->getVerticalScrollBar()->setPixelsSize( 15, 300 );
+	webView->getHorizontalScrollBar()->setPixelsSize( 400, 15 );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_hit_test_extent.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>html, body { margin: 0; padding: 0; }</style></head>
+<body>
+	<div style="height: 900px"></div>
+	<div id="target" style="width: 220px; height: 100px; background: #abcdef"></div>
+</body>
+</html>
+)html" );
+	webView->loadURI( URI( "file://" + path ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 30; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	pump();
+
+	Node* targetNode = documentScene->getRoot()->find( "target" );
+	ASSERT_TRUE( targetNode != nullptr && targetNode->isWidget() );
+	UIWidget* target = targetNode->asType<UIWidget>();
+	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+	UIRoot* documentRoot = documentScene->getRoot()->asType<UIRoot>();
+	ASSERT_TRUE( documentRoot != nullptr );
+	ASSERT_TRUE( documentRoot->hasChildHitTestTraversalPixelsSize() );
+	EXPECT_NEAR( documentScene->getRoot()->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 0.5f );
+	EXPECT_NEAR( documentRoot->getChildHitTestTraversalPixelsSize().getHeight(),
+				 documentScene->getPixelsSize().getHeight(), 0.5f );
+
+	webView->getVerticalScrollBar()->setValue( 1.f );
+	pump();
+
+	const Rectf targetRect = target->getScreenRect();
+	const Rectf rootRect = documentScene->getRoot()->getScreenRect();
+	const Rectf containerRect = webView->getContainer()->getScreenRect();
+	const Vector2f hitPoint( targetRect.Left + targetRect.getWidth() * 0.5f,
+							 targetRect.Top + targetRect.getHeight() * 0.5f );
+	ASSERT_TRUE( containerRect.contains( hitPoint ) );
+	ASSERT_FALSE( rootRect.contains( hitPoint ) );
+
+	Node* hitNode = sceneNode->overFind( hitPoint );
+	ASSERT_TRUE( hitNode != nullptr );
+	EXPECT_TRUE( hitNode == target || target->isParentOf( hitNode ) );
 
 	Engine::destroySingleton();
 }

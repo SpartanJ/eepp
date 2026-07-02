@@ -5,6 +5,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -146,6 +147,44 @@ UTEST( UISceneNode, EmbeddedSceneCanKeepContentDrivenExtent ) {
 	host->setPixelsSize( 640, 480 );
 	EXPECT_EQ( embeddedScene->getPixelsSize().getWidth(), 640 );
 	EXPECT_EQ( embeddedScene->getPixelsSize().getHeight(), 480 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, LayoutViewportRootTraversesDocumentExtentForHitTesting ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Embedded Scene Hit Test Bounds",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* hostScene = init_test_scene_node();
+	UIWidget* host = UIWidget::New();
+	host->setPixelsSize( 800, 600 );
+	host->setParent( hostScene->getRoot() );
+
+	UISceneNode* embeddedScene = UISceneNode::New();
+	embeddedScene->setFollowParentSize( false );
+	embeddedScene->setParent( host );
+	embeddedScene->setPixelsSize( 800, 1000 );
+	embeddedScene->setLayoutViewportPixelsSize( Sizef( 800, 300 ) );
+
+	UIWidget* target = UIWidget::New();
+	target->setId( "below-layout-viewport" );
+	target->setPixelsSize( 100, 50 );
+	target->setPosition( 10, 900 );
+	target->setParent( embeddedScene->getRoot() );
+
+	UIRoot* embeddedRoot = embeddedScene->getRoot()->asType<UIRoot>();
+	ASSERT_TRUE( embeddedRoot != nullptr );
+	ASSERT_TRUE( embeddedRoot->hasChildHitTestTraversalPixelsSize() );
+	EXPECT_NEAR( embeddedScene->getRoot()->getPixelsSize().getHeight(), 300.f, 0.5f );
+	EXPECT_NEAR( embeddedRoot->getChildHitTestTraversalPixelsSize().getHeight(), 1000.f, 0.5f );
+
+	Node* hit = embeddedScene->overFind( Vector2f( 20, 920 ) );
+	EXPECT_EQ( hit, target );
+
+	embeddedScene->clearLayoutViewportPixelsSize();
+	EXPECT_FALSE( embeddedRoot->hasChildHitTestTraversalPixelsSize() );
 
 	Engine::destroySingleton();
 }

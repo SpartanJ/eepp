@@ -1,7 +1,9 @@
 # UIWebView Document Scene Isolation Plan
 
-> Status: PROPOSED - investigated against the current `UIWebView`, `UISceneNode`,
-> `UIScrollView`, HTML loading, and nested-scene behavior.
+> Status: IMPLEMENTED WITH FOLLOW-UPS - the owned document scene, real scroll-target
+> layout widget, viewport/extent split, root-scoped hit-test traversal, and focused
+> UIWebView coverage are implemented. Remaining work is cleanup/audit coverage for
+> async subresources, examples/docs, and fixed/sticky acceptance tests.
 
 ## Goal
 
@@ -612,6 +614,12 @@ projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests-debug
 
 Run it after the focused isolation, scrolling, positioned-layout, media-query, and nested-scene
 tests pass.
+
+Current verification status:
+
+- Focused `UISceneNode.*` and `UIWebView.*` suites pass through
+  `projects/scripts/xvfb-run-eepp`.
+- The full native Linux unit-test suite has been run and passes.
 
 ## Phase Backup Stashes
 

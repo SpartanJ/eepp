@@ -179,54 +179,6 @@ void UISceneNode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	}
 }
 
-Node* UISceneNode::overFind( const Vector2f& point ) {
-	Node* pOver = NULL;
-
-	if ( ( mNodeFlags & NODE_FLAG_OVER_FIND_ALLOWED ) && mEnabled && mVisible ) {
-		updateWorldPolygon();
-
-		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
-			Node* child = getLastChild();
-
-			while ( NULL != child ) {
-				Node* childOver = child->overFind( point );
-
-				if ( NULL == childOver && child == mRoot && mHasLayoutViewportPixelsSize ) {
-					mRoot->updateWorldPolygon();
-					mRoot->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-					mSceneNode->addMouseOverNode( mRoot );
-
-					Node* rootChild = mRoot->getLastChild();
-					while ( NULL != rootChild ) {
-						childOver = rootChild->overFind( point );
-						if ( NULL != childOver )
-							break;
-						rootChild = rootChild->getPrevNode();
-					}
-
-					if ( NULL == childOver )
-						childOver = mRoot;
-				}
-
-				if ( NULL != childOver ) {
-					pOver = childOver;
-					break;
-				}
-
-				child = child->getPrevNode();
-			}
-
-			if ( NULL == pOver )
-				pOver = this;
-		}
-	}
-
-	return pOver;
-}
-
 void UISceneNode::onParentChange() {
 	SceneNode::onParentChange();
 
@@ -797,6 +749,7 @@ void UISceneNode::setInternalSize( const Sizef& size ) {
 		mSize = PixelDensity::dpToPx( size );
 		updateCenter();
 		onSizeChange();
+		updateRootHitTestTraversalBounds();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -849,6 +802,7 @@ void UISceneNode::setViewportPixelsSize( const Sizef& size ) {
 	mViewportPixelsSize = size;
 	mHasViewportPixelsSize = true;
 	mRoot->setPixelsSize( getRootPixelsSize() );
+	updateRootHitTestTraversalBounds();
 	onViewportPixelsSizeChange();
 }
 
@@ -858,6 +812,7 @@ void UISceneNode::clearViewportPixelsSize() {
 
 	mHasViewportPixelsSize = false;
 	mRoot->setPixelsSize( getRootPixelsSize() );
+	updateRootHitTestTraversalBounds();
 	onViewportPixelsSizeChange();
 }
 
@@ -878,6 +833,7 @@ void UISceneNode::setLayoutViewportPixelsSize( const Sizef& size ) {
 	mLayoutViewportPixelsSize = size;
 	mHasLayoutViewportPixelsSize = true;
 	mRoot->setPixelsSize( getRootPixelsSize() );
+	updateRootHitTestTraversalBounds();
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
@@ -887,6 +843,7 @@ void UISceneNode::clearLayoutViewportPixelsSize() {
 
 	mHasLayoutViewportPixelsSize = false;
 	mRoot->setPixelsSize( getRootPixelsSize() );
+	updateRootHitTestTraversalBounds();
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
@@ -1695,8 +1652,20 @@ void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
 		onSizeChange();
+		updateRootHitTestTraversalBounds();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
+	}
+}
+
+void UISceneNode::updateRootHitTestTraversalBounds() {
+	if ( !mRoot )
+		return;
+
+	if ( mHasLayoutViewportPixelsSize ) {
+		mRoot->setChildHitTestTraversalPixelsSize( mSize );
+	} else {
+		mRoot->clearChildHitTestTraversalPixelsSize();
 	}
 }
 

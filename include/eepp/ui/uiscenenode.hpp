@@ -28,9 +28,9 @@ class UIIconThemeManager;
 class UIEventDispatcher;
 class UIWidget;
 class UIWindow;
-class UIWidget;
 class UILayout;
 class UIIcon;
+class UIRoot;
 
 struct NavigationRequest {
 	URI uri;
@@ -715,8 +715,6 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
-	Node* overFind( const Vector2f& point );
-
 	/**
 	 * @brief Reloads the UI styles.
 	 *
@@ -837,7 +835,7 @@ class EE_API UISceneNode : public SceneNode {
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
 
-	UIWidget* mRoot{ nullptr };
+	UIRoot* mRoot{ nullptr };
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
@@ -1113,6 +1111,8 @@ class EE_API UISceneNode : public SceneNode {
 	URI getURIFromURL( const URI& url ) const;
 
 	void updateStyleSheet( bool forceReloadStyle = true );
+
+	void updateRootHitTestTraversalBounds();
 };
 
 }} // namespace EE::UI

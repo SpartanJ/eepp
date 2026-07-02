@@ -164,22 +164,21 @@ application UISceneNode
   `UIScrollView::mContainer` size updates.
 - Scroll extent measurement resizes `mDocumentLayout` and `mDocumentScene`, while
   root/html/body layout remains viewport-sized.
+- Hit testing now uses a root-scoped traversal extent instead of a
+  `UISceneNode::overFind()` compatibility override. `UIRoot` keeps its layout/self-hit
+  bounds viewport-sized, but embedded document scenes can ask it to traverse child
+  hit testing through the measured document extent.
+- Basic author `@font-face` isolation is implemented and covered by UIWebView tests.
 - Tests cover the new topology, viewport-vs-extent behavior, scrolling, two-scene
   style isolation, navigation supersession, and a resize metric regression that guards
-  against no-op queued viewport churn rebuilding RichText.
+  against no-op queued viewport churn rebuilding RichText. They also cover document
+  root hit testing below the layout viewport.
 
 ### Pending / Follow-Up
 
-- **Cleaner hit-test bounds model.** The current implementation overrides
-  `UISceneNode::overFind()` for scenes with an explicit layout viewport. This is a
-  narrow compatibility hook: when the viewport-sized `mRoot` rejects a point, the scene
-  searches root children directly so visible scrolled document descendants can still be
-  hit. The cleaner long-term shape is to split layout bounds from hit-test traversal
-  bounds, likely on `UIRoot` or `Node`, so root can remain the layout viewport while
-  hit testing can intentionally traverse visible overflow without a `UISceneNode`
-  special case.
-- **Author `@font-face` isolation and cleanup** still needs the full scene-local alias
-  registry and navigation cleanup described in Phase 5.
+- **Author `@font-face` cleanup audit** should verify navigation/destruction cleanup
+  for scene-local aliases and loaded font resources. The basic scene-local isolation
+  path is implemented and tested.
 - **Subresource lifetime coverage** should be completed for every async path described
   in Phase 6, including deferred CSS, fonts, images, redirects, cookies, and destruction.
 - **Example and documentation integration** should be completed after the code shape
@@ -476,6 +475,12 @@ two-web-view isolation tests pass:
 ```sh
 projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests-debug
 ```
+
+Current verification status:
+
+- Focused `UISceneNode.*` and `UIWebView.*` suites pass through
+  `projects/scripts/xvfb-run-eepp`.
+- The full native Linux unit-test suite has been run and passes.
 
 ---
 
