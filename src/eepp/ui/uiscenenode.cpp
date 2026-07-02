@@ -1497,10 +1497,11 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 			return;
 		}
 
-		path = solveRelativePath( path, baseURI ).toString();
+		URI resolvedURI = solveRelativePath( path, baseURI );
+		path = resolvedURI.toString();
 
 		if ( String::startsWith( path, "file://" ) ) {
-			std::string filePath( path.substr( 7 ) );
+			std::string filePath( resolvedURI.getFSPath() );
 
 			FontTrueType* font =
 				FontTrueType::New( makeInternalFontName( authorFamily, fontStyle, fontWeight ) );

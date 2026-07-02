@@ -81,6 +81,20 @@ UTEST( URI, toString ) {
 	EXPECT_STDSTREQ( "file:///home/user/doc.html", uri5.toString() );
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+UTEST( URI, windowsFileURIConvertsToFilesystemPath ) {
+	URI uri( "file:///c:/Temp/eepp-uiwebview.html" );
+	EXPECT_STDSTREQ( "file", uri.getScheme() );
+	EXPECT_STDSTREQ( "/c:/Temp/eepp-uiwebview.html", uri.getPath() );
+	EXPECT_STDSTREQ( "C:\\Temp\\eepp-uiwebview.html", uri.getFSPath() );
+
+	URI nativePathURI( "file://C:\\Temp\\eepp-uiwebview.html" );
+	EXPECT_STDSTREQ( "file", nativePathURI.getScheme() );
+	EXPECT_STDSTREQ( "/c:/Temp/eepp-uiwebview.html", nativePathURI.getPath() );
+	EXPECT_STDSTREQ( "C:\\Temp\\eepp-uiwebview.html", nativePathURI.getFSPath() );
+}
+#endif
+
 UTEST( URI, resolveProtocolRelativeAgainstHttp ) {
 	URI base( "https://mysite.com/page.html" );
 	URI rel( "//cdn.example.com/img/hero.jpg" );

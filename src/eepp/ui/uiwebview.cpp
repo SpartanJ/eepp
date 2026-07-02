@@ -241,8 +241,10 @@ void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 		loadDocumentAsync( uri, method, body, headers );
 	} else {
 		std::string data;
-		std::string path = uri.getPath().empty() ? uri.getFSPath() : uri.getPath();
 		if ( uri.getScheme() == "file" || uri.getScheme().empty() ) {
+			std::string path = uri.getScheme() == "file"
+								   ? uri.getFSPath()
+								   : ( uri.getPath().empty() ? uri.toString() : uri.getPath() );
 			if ( path.empty() )
 				path = uri.toString();
 			FileSystem::fileGet( path, data );
