@@ -1751,6 +1751,28 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			res.setValue( 12, StyleSheetLength::Unit::Dp );
 			return convertLength( res, 0 );
 		}
+
+		if ( length.getUnit() != StyleSheetLength::Unit::Em &&
+			 length.getUnit() != StyleSheetLength::Unit::Ex &&
+			 length.getUnit() != StyleSheetLength::Unit::Ch )
+			return convertLength( length, 0 );
+
+		Float parentFontSize = 12.f * PixelDensity::getPixelDensity();
+		Node* parentNode = getParent();
+		while ( parentNode ) {
+			if ( parentNode->isWidget() ) {
+				parentFontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+				break;
+			}
+			parentNode = parentNode->getParent();
+		}
+
+		Font* font = nullptr;
+		if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
+			font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
+
+		return length.asPixels( 0, Sizef::Zero, getSceneNode()->getDPI(), parentFontSize,
+								parentFontSize, font );
 	}
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,

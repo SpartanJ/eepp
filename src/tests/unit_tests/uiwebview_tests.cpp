@@ -10,6 +10,7 @@
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -166,6 +167,72 @@ UTEST( UIWebView, DocumentRootHitTestingTraversesScrollableExtent ) {
 	Node* hitNode = sceneNode->overFind( hitPoint );
 	ASSERT_TRUE( hitNode != nullptr );
 	EXPECT_TRUE( hitNode == target || target->isParentOf( hitNode ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Font Size Em Relayout", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 420, 260 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_font_size_em.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	html, body { margin: 0; padding: 0; }
+	body { font-size: 16px; }
+	h1 { font-size: 2.5em; margin: 0.5em 0; }
+</style>
+</head>
+<body>
+	<h1><span id="title-text">Title</span></h1>
+	<div style="height: 900px"></div>
+</body>
+</html>
+)html" );
+	webView->loadURI( URI( "file://" + path ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 30; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	pump();
+
+	Node* title = documentScene->getRoot()->find( "title-text" );
+	ASSERT_TRUE( title != nullptr && title->isType( UI_TYPE_TEXTSPAN ) );
+	EXPECT_NEAR( title->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+
+	for ( int i = 0; i < 4; i++ ) {
+		webView->setPixelsSize( 520 + i * 20, 320 + i * 10 );
+		pump();
+		webView->setPixelsSize( 420, 260 );
+		pump();
+		EXPECT_NEAR( title->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+	}
 
 	Engine::destroySingleton();
 }
