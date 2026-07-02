@@ -1,11 +1,83 @@
 #include "universallocator.hpp"
 #include "ecode.hpp"
+#include "mathexpressionevaluator.hpp"
 #include "pathhelper.hpp"
 #include "settingsmenu.hpp"
 
 #include <algorithm>
 
 namespace ecode {
+
+namespace {
+
+static constexpr size_t CALCULATOR_MAX_HISTORY = 100;
+
+struct CalculatorRow {
+	std::string value;
+	std::string detail;
+	std::string expression;
+	bool current{ false };
+};
+
+class CalculatorResultModel : public Model {
+  public:
+	explicit CalculatorResultModel( std::vector<CalculatorRow>&& rows ) :
+		mRows( std::move( rows ) ) {}
+
+	size_t rowCount( const ModelIndex& ) const override { return mRows.size(); }
+
+	size_t columnCount( const ModelIndex& ) const override { return 2; }
+
+	std::string columnName( const size_t& index ) const override {
+		return index == 0 ? "Result" : "Expression";
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override {
+		if ( index.row() >= static_cast<Int64>( mRows.size() ) )
+			return {};
+
+		const auto& row = mRows[index.row()];
+		if ( role == ModelRole::Display )
+			return Variant( index.column() == 0 ? row.value : row.detail );
+		if ( role == ModelRole::Custom && !row.current && !row.expression.empty() )
+			return Variant( row.expression );
+		return {};
+	}
+
+  protected:
+	std::vector<CalculatorRow> mRows;
+};
+
+std::string calculatorExpressionFromInput( const String& input ) {
+	if ( String::startsWith( input, "= " ) )
+		return input.substr( 2 ).trim().toUtf8();
+	if ( String::startsWith( input, "=" ) )
+		return input.substr( 1 ).trim().toUtf8();
+	return {};
+}
+
+std::shared_ptr<CalculatorResultModel> calculatorResultModel(
+	const String& input, const String& emptyText,
+	const MathExpressionEvaluator::Variables& variables,
+	const std::vector<std::tuple<std::string, std::string, std::string>>& history ) {
+	std::vector<CalculatorRow> rows;
+	const std::string expression( calculatorExpressionFromInput( input ) );
+	if ( expression.empty() ) {
+		rows.push_back( { emptyText.toUtf8(), "", "", true } );
+	} else {
+		const auto result( MathExpressionEvaluator::evaluate( expression, variables ) );
+		if ( !result.value.empty() )
+			rows.push_back( { result.value, result.detail, expression, true } );
+	}
+
+	rows.reserve( rows.size() + history.size() );
+	for ( const auto& item : history )
+		rows.push_back( { std::get<0>( item ), std::get<1>( item ), std::get<2>( item ), false } );
+
+	return std::make_shared<CalculatorResultModel>( std::move( rows ) );
+}
+
+} // namespace
 
 class LSPSymbolInfoModel : public Model {
   public:
@@ -115,6 +187,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 	mUISceneNode( sceneNode ),
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
+
+	mCalculatorVariables = MathExpressionEvaluator::defaultVariables();
 
 	mLocatorProviders.push_back(
 		{ ">", mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
@@ -320,6 +394,36 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 		  },
 		  nullptr, false } );
 
+	mLocatorProviders.push_back(
+		{ "=", mUISceneNode->i18n( "evaluate_math_expression", "Evaluate Math Expression" ),
+		  [this]( auto ) {
+			  showCalculator();
+			  return true;
+		  },
+		  [this]( const Variant& result, const ModelEvent* modelEvent ) {
+			  if ( modelEvent ) {
+				  Variant expression( modelEvent->getModel()->data(
+					  modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),
+					  ModelRole::Custom ) );
+				  if ( expression.isValid() && !expression.toString().empty() ) {
+					  mLocateInput->setText( String( "= " ) + expression.toString() );
+					  mLocateInput->setFocus();
+					  return;
+				  }
+			  }
+			  if ( !calculatorExpressionFromInput( mLocateInput->getText() ).empty() &&
+				   result.isValid() && result.toString() != "Invalid expression" )
+				  mLocateInput->setText( String( "= " ) + result.toString() );
+		  },
+		  [this]( const String& ) {
+			  if ( openCalculatorHistorySelection() )
+				  return true;
+			  saveCalculatorResult();
+			  updateCalculatorTable();
+			  return true;
+		  },
+		  false, true } );
+
 	mApp->getPluginManager()->subscribeMessages(
 		"universallocator", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			return processResponse( msg );
@@ -443,7 +547,7 @@ bool UniversalLocator::isCommand( const std::string& filename ) {
 
 std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( const String& txt ) {
 	for ( const auto& locator : mLocatorProviders )
-		if ( String::startsWith( txt, locator.symbolTrigger ) )
+		if ( locator.matches( txt ) )
 			return locator;
 	return {};
 }
@@ -451,7 +555,7 @@ std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( c
 bool UniversalLocator::isLocator( const String& txt ) {
 	if ( !txt.empty() ) {
 		for ( const auto& locator : mLocatorProviders )
-			if ( String::startsWith( txt, locator.symbolTrigger ) )
+			if ( locator.matches( txt ) )
 				return true;
 	}
 	return false;
@@ -461,7 +565,7 @@ bool UniversalLocator::tryLocator( const String& txt ) {
 	if ( txt.empty() )
 		return false;
 	for ( const auto& locator : mLocatorProviders ) {
-		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.switchFn( txt ) )
+		if ( locator.matches( txt ) && locator.switchFn( txt ) )
 			return true;
 	}
 	return false;
@@ -470,7 +574,7 @@ bool UniversalLocator::tryLocator( const String& txt ) {
 bool UniversalLocator::openLocator( const String& txt, const Variant& vName,
 									const ModelEvent* modelEvent ) {
 	for ( const auto& locator : mLocatorProviders ) {
-		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.openFn ) {
+		if ( locator.matches( txt ) && locator.openFn ) {
 			locator.openFn( vName, modelEvent );
 			return true;
 		}
@@ -480,8 +584,7 @@ bool UniversalLocator::openLocator( const String& txt, const Variant& vName,
 
 bool UniversalLocator::pressEnterLocator( const String& txt ) {
 	for ( const auto& locator : mLocatorProviders ) {
-		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.pressEnterFn &&
-			 locator.pressEnterFn( txt ) )
+		if ( locator.matches( txt ) && locator.pressEnterFn && locator.pressEnterFn( txt ) )
 			return true;
 	}
 	return false;
@@ -625,7 +728,7 @@ void UniversalLocator::showBar() {
 		auto locator = *getLocator( text );
 		mLocateInput->getDocument().setSelection(
 			{ { 0, mLocateInput->getDocument().endOfLine( { 0, 0 } ).column() },
-			  { 0, static_cast<Int64>( locator.symbolTrigger.size() ) } } );
+			  { 0, static_cast<Int64>( locator.triggerSize( text ) ) } } );
 	} else {
 		mLocateInput->getDocument().selectAll();
 	}
@@ -945,6 +1048,63 @@ void UniversalLocator::updateSwitchFileTypeTable() {
 		mLocateTable->scrollToTop();
 	}
 	mLocateTable->setColumnsVisible( { 0 } );
+}
+
+void UniversalLocator::showCalculator() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || !String::startsWith( mLocateInput->getText(), "=" ) )
+		mLocateInput->setText( "= " );
+
+	updateCalculatorTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
+void UniversalLocator::updateCalculatorTable() {
+	mLocateTable->setModel( calculatorResultModel(
+		mLocateInput->getText(),
+		mUISceneNode->i18n( "insert_math_expression", "Insert math expression" ),
+		mCalculatorVariables, mCalculatorHistory ) );
+	if ( mLocateTable->getModel()->hasChildren() )
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	mLocateTable->scrollToTop();
+}
+
+bool UniversalLocator::saveCalculatorResult() {
+	const std::string expression( calculatorExpressionFromInput( mLocateInput->getText() ) );
+	const auto result(
+		MathExpressionEvaluator::evaluateAndAssign( expression, mCalculatorVariables ) );
+	if ( !result.success )
+		return false;
+
+	const std::tuple<std::string, std::string, std::string> historyEntry{
+		result.value, result.detail, expression };
+	mCalculatorHistory.erase(
+		std::remove( mCalculatorHistory.begin(), mCalculatorHistory.end(), historyEntry ),
+		mCalculatorHistory.end() );
+	mCalculatorHistory.insert( mCalculatorHistory.begin(), historyEntry );
+	if ( mCalculatorHistory.size() > CALCULATOR_MAX_HISTORY )
+		mCalculatorHistory.resize( CALCULATOR_MAX_HISTORY );
+	return true;
+}
+
+bool UniversalLocator::openCalculatorHistorySelection() {
+	if ( !mLocateTable->getModel() || mLocateTable->getSelection().isEmpty() )
+		return false;
+
+	const auto selection( mLocateTable->getSelection().first() );
+	if ( !selection.isValid() )
+		return false;
+
+	Variant expression( mLocateTable->getModel()->data(
+		mLocateTable->getModel()->index( selection.row(), 0 ), ModelRole::Custom ) );
+	if ( !expression.isValid() || expression.toString().empty() )
+		return false;
+
+	mLocateInput->setText( String( "= " ) + expression.toString() );
+	mLocateInput->setFocus();
+	return true;
 }
 
 void UniversalLocator::onCodeEditorFocusChange( UICodeEditor* editor ) {
