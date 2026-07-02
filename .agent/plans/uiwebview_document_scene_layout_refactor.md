@@ -168,7 +168,11 @@ application UISceneNode
   `UISceneNode::overFind()` compatibility override. `UIRoot` keeps its layout/self-hit
   bounds viewport-sized, but embedded document scenes can ask it to traverse child
   hit testing through the measured document extent.
-- Basic author `@font-face` isolation is implemented and covered by UIWebView tests.
+- Author `@font-face` isolation and cleanup are implemented. Scene-local aliases resolve before
+  global font fallback; WebView navigation clears the document scene's previous author aliases and
+  internally registered font resources; document scene destruction removes any remaining scene-owned
+  author fonts. Tests cover sibling-scene isolation, navigation cleanup, and WebView destruction
+  cleanup.
 - Tests cover the new topology, viewport-vs-extent behavior, scrolling, two-scene
   style isolation, navigation supersession, and a resize metric regression that guards
   against no-op queued viewport churn rebuilding RichText. They also cover document
@@ -176,9 +180,6 @@ application UISceneNode
 
 ### Pending / Follow-Up
 
-- **Author `@font-face` cleanup audit** should verify navigation/destruction cleanup
-  for scene-local aliases and loaded font resources. The basic scene-local isolation
-  path is implemented and tested.
 - **Subresource lifetime coverage** should be completed for every async path described
   in Phase 6, including deferred CSS, fonts, images, redirects, cookies, and destruction.
 - **Example and documentation integration** should be completed after the code shape
@@ -385,7 +386,7 @@ Steps:
 1. Add a scene-local font-face alias registry keyed by CSS family, style, and weight.
 2. Register loaded author fonts under scene-unique internal names.
 3. Resolve author font aliases before global `FontManager` fallback.
-4. Add `clearAuthorFontFaces()` and call it during navigation.
+4. Add `clearFontFaces()` and call it during navigation.
 5. Remove only this scene's internally registered author fonts during scene destruction.
 6. Mark document extent dirty after a font load can affect metrics.
 

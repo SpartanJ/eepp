@@ -153,7 +153,7 @@ UTEST( CSSInheritance, ComputedFontSizePercentageAndRem ) {
 		UIWidget* targetSpan = root->querySelector( "#targetspan" );
 		EXPECT_TRUE( targetSpan != nullptr );
 
-		EXPECT_NEAR( 18u * scale, targetSpan->asType<UITextSpan>()->getFontSize(), 1.f );
+		EXPECT_NEAR( 30u * scale, targetSpan->asType<UITextSpan>()->getFontSize(), 1.f );
 	}
 }
 

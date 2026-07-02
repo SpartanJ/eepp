@@ -111,12 +111,10 @@ UISceneNode::~UISceneNode() {
 		mAsyncResourceLoadState->generation++;
 	}
 
+	clearFontFaces();
+
 	eeSAFE_DELETE( mUIThemeManager );
 	eeSAFE_DELETE( mUIIconThemeManager );
-
-	for ( auto& font : mFontFaces ) {
-		FontManager::instance()->remove( font );
-	}
 
 	// UISceneNode can now destroy the ThreadPool shared to him. If that's the case,
 	// We need to ensure that the children are destroyed before the thread pool,
@@ -1935,6 +1933,20 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 		',' );
 
 	return font;
+}
+
+void UISceneNode::clearFontFaces() {
+	if ( mFontFaces.empty() && mFontFaceAliases.empty() )
+		return;
+
+	mFontFaceAliases.clear();
+	if ( mRoot )
+		mRoot->reloadFontFamily();
+
+	for ( auto& font : mFontFaces )
+		FontManager::instance()->remove( font );
+
+	mFontFaces.clear();
 }
 
 Font* UISceneNode::reevaluateFontStyle( Font* currentFont, Uint32 fontStyle,

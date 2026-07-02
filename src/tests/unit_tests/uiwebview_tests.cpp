@@ -203,10 +203,12 @@ UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
 	html, body { margin: 0; padding: 0; }
 	body { font-size: 16px; }
 	h1 { font-size: 2.5em; margin: 0.5em 0; }
+	h2 { font-size: 250%; margin: 0.5em 0; }
 </style>
 </head>
 <body>
-	<h1><span id="title-text">Title</span></h1>
+	<h1><span id="title-em">Title em</span></h1>
+	<h2><span id="title-percent">Title percent</span></h2>
 	<div style="height: 900px"></div>
 </body>
 </html>
@@ -224,16 +226,20 @@ UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
 	};
 	pump();
 
-	Node* title = documentScene->getRoot()->find( "title-text" );
-	ASSERT_TRUE( title != nullptr && title->isType( UI_TYPE_TEXTSPAN ) );
-	EXPECT_NEAR( title->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+	Node* titleEm = documentScene->getRoot()->find( "title-em" );
+	Node* titlePercent = documentScene->getRoot()->find( "title-percent" );
+	ASSERT_TRUE( titleEm != nullptr && titleEm->isType( UI_TYPE_TEXTSPAN ) );
+	ASSERT_TRUE( titlePercent != nullptr && titlePercent->isType( UI_TYPE_TEXTSPAN ) );
+	EXPECT_NEAR( titleEm->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+	EXPECT_NEAR( titlePercent->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
 
 	for ( int i = 0; i < 4; i++ ) {
 		webView->setPixelsSize( 520 + i * 20, 320 + i * 10 );
 		pump();
 		webView->setPixelsSize( 420, 260 );
 		pump();
-		EXPECT_NEAR( title->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+		EXPECT_NEAR( titleEm->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+		EXPECT_NEAR( titlePercent->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
 	}
 
 	Engine::destroySingleton();
@@ -1479,6 +1485,8 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 	const std::string processPath( Sys::getProcessPath() );
 	const std::string pathA = Sys::getTempPath() + "eepp_uiwebview_font_doc_a.html";
 	const std::string pathB = Sys::getTempPath() + "eepp_uiwebview_font_doc_b.html";
+	const std::string pathAWithoutFont =
+		Sys::getTempPath() + "eepp_uiwebview_font_doc_a_without_font.html";
 	const std::string pathA2 = Sys::getTempPath() + "eepp_uiwebview_font_doc_a2.html";
 	FileSystem::fileWrite( pathA,
 						   "<html><head><style>"
@@ -1494,6 +1502,11 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 							   "../assets/fonts/DejaVuSansMono.ttf'); }"
 							   "#target-b { font-family: 'SharedDocFace'; }"
 							   "</style></head><body><span id='target-b'>B</span></body></html>" );
+	FileSystem::fileWrite( pathAWithoutFont,
+						   "<html><head><style>"
+						   "#target-a-empty { font-family: 'SharedDocFace'; }"
+						   "</style></head><body><span id='target-a-empty'>A empty</span></body>"
+						   "</html>" );
 	FileSystem::fileWrite(
 		pathA2, "<html><head><style>"
 				"@font-face { font-family: 'SharedDocFace'; src: url('file://" +
@@ -1525,6 +1538,16 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 	EXPECT_TRUE( fontB->loaded() );
 	EXPECT_NE( fontA, fontB );
 	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "SharedDocFace" ) );
+	const std::string fontAResourceName = fontA->getName();
+	EXPECT_EQ( fontA, FontManager::instance()->getByName( fontAResourceName ) );
+
+	webViewA->loadURI( URI( "file://" + pathAWithoutFont ) );
+	pump();
+
+	auto targetAWithoutFont = docA->getRoot()->find( "target-a-empty" );
+	ASSERT_TRUE( targetAWithoutFont != nullptr );
+	EXPECT_EQ( nullptr, docA->getFontFromNamesList( "SharedDocFace" ) );
+	EXPECT_EQ( nullptr, FontManager::instance()->getByName( fontAResourceName ) );
 
 	webViewA->loadURI( URI( "file://" + pathA2 ) );
 	pump();
@@ -1533,9 +1556,88 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 	Font* stableFontB = docB->getFontFromNamesList( "SharedDocFace" );
 	ASSERT_TRUE( reloadedFontA != nullptr );
 	ASSERT_TRUE( stableFontB != nullptr );
-	EXPECT_NE( reloadedFontA, fontA );
 	EXPECT_EQ( stableFontB, fontB );
 	EXPECT_NE( reloadedFontA, stableFontB );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, DocumentSceneAuthorFontFacesCleanUpOnDestruction ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Font Face Cleanup Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webViewA = UIWebView::New();
+	webViewA->setParent( sceneNode->getRoot() );
+	webViewA->setPixelsSize( 300, 200 );
+	webViewA->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UIWebView* webViewB = UIWebView::New();
+	webViewB->setParent( sceneNode->getRoot() );
+	webViewB->setPixelsSize( 300, 200 );
+	webViewB->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string processPath( Sys::getProcessPath() );
+	const std::string pathA = Sys::getTempPath() + "eepp_uiwebview_font_doc_destroy_a.html";
+	const std::string pathB = Sys::getTempPath() + "eepp_uiwebview_font_doc_destroy_b.html";
+	FileSystem::fileWrite( pathA,
+						   "<html><head><style>"
+						   "@font-face { font-family: 'DestroyDocFace'; src: url('file://" +
+							   processPath +
+							   "../assets/fonts/DejaVuSansMono.ttf'); }"
+							   "#target-a { font-family: 'DestroyDocFace'; }"
+							   "</style></head><body><span id='target-a'>A</span></body></html>" );
+	FileSystem::fileWrite( pathB,
+						   "<html><head><style>"
+						   "@font-face { font-family: 'DestroyDocFace'; src: url('file://" +
+							   processPath +
+							   "../assets/fonts/NotoSans-Regular.ttf'); }"
+							   "#target-b { font-family: 'DestroyDocFace'; }"
+							   "</style></head><body><span id='target-b'>B</span></body></html>" );
+
+	webViewA->loadURI( URI( "file://" + pathA ) );
+	webViewB->loadURI( URI( "file://" + pathB ) );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 10; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	pump();
+
+	UISceneNode* docA = webViewA->getDocumentSceneNode();
+	UISceneNode* docB = webViewB->getDocumentSceneNode();
+	ASSERT_TRUE( docA != nullptr );
+	ASSERT_TRUE( docB != nullptr );
+	Font* loadedFontA = docA->getFontFromNamesList( "DestroyDocFace" );
+	Font* loadedFontB = docB->getFontFromNamesList( "DestroyDocFace" );
+	ASSERT_TRUE( loadedFontA != nullptr );
+	ASSERT_TRUE( loadedFontB != nullptr );
+	EXPECT_TRUE( loadedFontA->loaded() );
+	EXPECT_TRUE( loadedFontB->loaded() );
+	EXPECT_NE( loadedFontA, loadedFontB );
+	const std::string loadedFontAName = loadedFontA->getName();
+	const std::string loadedFontBName = loadedFontB->getName();
+	EXPECT_EQ( loadedFontA, FontManager::instance()->getByName( loadedFontAName ) );
+	EXPECT_EQ( loadedFontB, FontManager::instance()->getByName( loadedFontBName ) );
+
+	webViewA->close();
+	pump();
+
+	EXPECT_EQ( nullptr, FontManager::instance()->getByName( loadedFontAName ) );
+	EXPECT_EQ( loadedFontB, FontManager::instance()->getByName( loadedFontBName ) );
+	EXPECT_EQ( loadedFontB, docB->getFontFromNamesList( "DestroyDocFace" ) );
 
 	Engine::destroySingleton();
 }

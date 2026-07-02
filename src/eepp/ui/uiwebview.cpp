@@ -375,6 +375,7 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 		self->getHorizontalScrollBar()->setValue( 0 );
 		static_cast<UIWebViewDocumentContainer*>( self->mDocContainer )->clearDocumentChildren();
 		ui->invalidateAsyncResourceLoads();
+		ui->clearFontFaces();
 		ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
 		ui->setURIFromURL( url );
 

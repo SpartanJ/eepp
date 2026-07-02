@@ -1702,9 +1702,29 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 	if ( property.getPropertyDefinition() &&
 		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
 		StyleSheetLength length( property.value() );
+		auto parentFontSize = [this]() {
+			Float fontSize = 12.f * PixelDensity::getPixelDensity();
+			Node* parentNode = getParent();
+			while ( parentNode ) {
+				if ( parentNode->isWidget() ) {
+					fontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+					break;
+				}
+				parentNode = parentNode->getParent();
+			}
+			return fontSize;
+		};
+		auto resolveFontRelativeLength = [this, &parentFontSize]( const StyleSheetLength& len ) {
+			const Float parentSize = parentFontSize();
+			Font* font = nullptr;
+			if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
+				font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
+			return len.asPixels( parentSize, Sizef::Zero, getSceneNode()->getDPI(), parentSize,
+								 parentSize, font );
+		};
+
 		if ( length.getUnit() == StyleSheetLength::Unit::Percentage ) {
-			length.setValue( length.getValue() / 100.f, StyleSheetLength::Unit::Em );
-			return convertLength( length, 0 );
+			return resolveFontRelativeLength( length );
 		}
 
 		static constexpr std::string_view FontSizeNames[] = {
@@ -1738,6 +1758,8 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			} else if ( keyword == "larger" ) {
 				res.setValue( 1.2f, StyleSheetLength::Unit::Em );
 			}
+			if ( res.getUnit() == StyleSheetLength::Unit::Em )
+				return resolveFontRelativeLength( res );
 			return convertLength( res, 0 );
 		} else if ( property.getValue() == "inherit" ) {
 			Node* parentNode = getParent();
@@ -1757,22 +1779,7 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			 length.getUnit() != StyleSheetLength::Unit::Ch )
 			return convertLength( length, 0 );
 
-		Float parentFontSize = 12.f * PixelDensity::getPixelDensity();
-		Node* parentNode = getParent();
-		while ( parentNode ) {
-			if ( parentNode->isWidget() ) {
-				parentFontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
-				break;
-			}
-			parentNode = parentNode->getParent();
-		}
-
-		Font* font = nullptr;
-		if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
-			font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
-
-		return length.asPixels( 0, Sizef::Zero, getSceneNode()->getDPI(), parentFontSize,
-								parentFontSize, font );
+		return resolveFontRelativeLength( length );
 	}
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,

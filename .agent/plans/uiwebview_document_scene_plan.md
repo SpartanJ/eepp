@@ -2,8 +2,8 @@
 
 > Status: IMPLEMENTED WITH FOLLOW-UPS - the owned document scene, real scroll-target
 > layout widget, viewport/extent split, root-scoped hit-test traversal, and focused
-> UIWebView coverage are implemented. Remaining work is cleanup/audit coverage for
-> async subresources, examples/docs, and fixed/sticky acceptance tests.
+> UIWebView coverage are implemented. Remaining work is broader async subresource
+> coverage, examples/docs, and fixed/sticky acceptance tests.
 
 ## Goal
 
@@ -453,7 +453,7 @@ Steps:
 3. Register author fonts under an internal scene-unique resource name if `FontManager` registration
    remains required, while preserving the author-visible family only in the scene-local alias.
 4. Keep generic/system fonts and explicitly shared application defaults as global fallbacks.
-5. Add an explicit `clearDocumentFontFaces()` / `clearAuthorFontFaces()` operation used during
+5. Add an explicit `clearFontFaces()` operation used during
    navigation before new document CSS is loaded. It removes only this scene's internally registered
    author fonts and clears aliases; it must not remove application/system fonts or sibling-document
    author fonts.

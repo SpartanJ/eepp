@@ -822,6 +822,8 @@ class EE_API UISceneNode : public SceneNode {
 	Font* getFontFromNamesList( std::string_view names, Uint32 fontStyle = 0,
 								FontWeight weight = FontWeight::Normal ) const;
 
+	void clearFontFaces();
+
 	Font* reevaluateFontStyle( Font* currentFont, Uint32 fontStyle,
 							   FontWeight weight = FontWeight::Normal ) const;
 
