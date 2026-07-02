@@ -1429,6 +1429,13 @@ workspace "eepp"
 		build_base_configuration( "libyaml" )
 		target_dir_thirdparty()
 
+	project "tinyexpr-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/tinyexpr/tinyexpr.c" }
+		build_base_configuration( "tinyexpr" )
+		target_dir_thirdparty()
+
 	project "gumbo-parser-static"
 		kind "StaticLib"
 		language "C"
@@ -1799,7 +1806,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows" }
 			links { "gumbo-parser-static" }
