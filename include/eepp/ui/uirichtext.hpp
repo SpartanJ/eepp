@@ -256,9 +256,9 @@ class EE_API UIHTMLBody : public UIRichText {
 	UIHTMLBody( const std::string& tag = "body" );
 
 	Float getLocalMinHeight() const;
-	void setDocumentContentMinHeight( const Float& height );
-	void updateDocumentMinHeight();
-	void updateDocumentContentMinHeightFromChildren();
+	bool setDocumentContentMinHeight( const Float& height );
+	bool updateDocumentMinHeight();
+	bool updateDocumentContentMinHeightFromChildren();
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 

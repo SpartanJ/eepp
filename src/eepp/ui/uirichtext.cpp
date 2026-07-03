@@ -291,27 +291,33 @@ Float UIHTMLBody::getLocalMinHeight() const {
 	return convertLengthAsDp( mMinHeightLocal, parentHeight );
 }
 
-void UIHTMLBody::setDocumentContentMinHeight( const Float& height ) {
+bool UIHTMLBody::setDocumentContentMinHeight( const Float& height ) {
 	if ( mDocumentContentMinHeight == height )
-		return;
+		return false;
 	mDocumentContentMinHeight = height;
-	updateDocumentMinHeight();
+	return updateDocumentMinHeight();
 }
 
-void UIHTMLBody::updateDocumentMinHeight() {
+bool UIHTMLBody::updateDocumentMinHeight() {
 	const Float oldMinHeight = getCurMinSize().getHeight();
 	Float minHeight =
 		std::max( { getLocalMinHeight(), mDocumentViewportMinHeight, mDocumentContentMinHeight } );
 	setMinHeight( minHeight );
 
+	bool minHeightChanged = minHeight != oldMinHeight;
+	bool sizeForced = false;
 	if ( minHeight < oldMinHeight &&
-		 getPixelsSize().getHeight() > PixelDensity::dpToPx( minHeight ) )
+		 getPixelsSize().getHeight() > PixelDensity::dpToPx( minHeight ) ) {
 		// Lowering min-height does not shrink the current box by itself. Reapply size through
 		// min/max fitting so the body can settle at the new floor.
 		setPixelsSize( { getPixelsSize().getWidth(), 0 } );
+		sizeForced = true;
+	}
+
+	return minHeightChanged || sizeForced;
 }
 
-void UIHTMLBody::updateDocumentContentMinHeightFromChildren() {
+bool UIHTMLBody::updateDocumentContentMinHeightFromChildren() {
 	Float maxH = 0;
 	Node* child = mChild;
 
@@ -331,7 +337,7 @@ void UIHTMLBody::updateDocumentContentMinHeightFromChildren() {
 		child = child->getNextNode();
 	}
 
-	setDocumentContentMinHeight( maxH > 0 ? std::trunc( PixelDensity::pxToDp( maxH ) ) : 0 );
+	return setDocumentContentMinHeight( maxH > 0 ? std::trunc( PixelDensity::pxToDp( maxH ) ) : 0 );
 }
 
 Uint32 UIHTMLBody::onMessage( const NodeMessage* Msg ) {
@@ -340,10 +346,10 @@ Uint32 UIHTMLBody::onMessage( const NodeMessage* Msg ) {
 	if ( Msg->getMsg() == NodeMessage::LayoutAttributeChange && Msg->getSender() != this &&
 		 !mSettingBodyHeight ) {
 		mSettingBodyHeight = true;
-		updateDocumentContentMinHeightFromChildren();
+		bool documentMinHeightChanged = updateDocumentContentMinHeightFromChildren();
 		mSettingBodyHeight = false;
 
-		if ( getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) )
+		if ( documentMinHeightChanged && getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) )
 			getParent()->asType<UIHTMLHtml>()->setLayoutDirty( LayoutInvalidation::Document );
 	}
 
