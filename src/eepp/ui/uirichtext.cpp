@@ -281,6 +281,10 @@ void UIHTMLBody::setDocumentViewportMinHeight( const Float& height ) {
 	updateDocumentMinHeight();
 }
 
+void UIHTMLBody::setDocumentCanvasMinHeight( const Float& height ) {
+	setDocumentContentMinHeight( height );
+}
+
 Float UIHTMLBody::getLocalMinHeight() const {
 	if ( !getParent() )
 		return 0;
@@ -310,10 +314,6 @@ void UIHTMLBody::updateDocumentMinHeight() {
 		// Lowering min-height does not shrink the current box by itself. Reapply size through
 		// min/max fitting so the body can settle at the new floor.
 		setPixelsSize( { getPixelsSize().getWidth(), 0 } );
-	else if ( minHeight > oldMinHeight &&
-			  getPixelsSize().getHeight() < PixelDensity::dpToPx( minHeight ) )
-		// Raising min-height must expand the body to the new minimum when it is currently smaller.
-		setPixelsSize( { getPixelsSize().getWidth(), PixelDensity::dpToPx( minHeight ) } );
 }
 
 void UIHTMLBody::updateDocumentContentMinHeightFromChildren() {

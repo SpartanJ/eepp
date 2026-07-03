@@ -176,18 +176,23 @@ application UISceneNode
 - Tests cover the new topology, viewport-vs-extent behavior, scrolling, two-scene
   style isolation, navigation supersession, and a resize metric regression that guards
   against no-op queued viewport churn rebuilding RichText. They also cover document
-  root hit testing below the layout viewport.
+  root hit testing below the layout viewport and fixed/sticky positioning against the
+  visible web-view viewport while scrolling.
 
 ### Pending / Follow-Up
 
-- **Subresource lifetime coverage** should be completed for every async path described
-  in Phase 6, including deferred CSS, fonts, images, redirects, cookies, and destruction.
-- **Example and documentation integration** should be completed after the code shape
-  settles, especially `.agent/rules/html-layout-architecture.md` and the HTML example
-  stylesheet injection path.
-- **Fixed/sticky positioning coverage** is still listed as required test coverage for
-  the final architecture. Existing viewport tests cover the core sizing behavior, but
-  fixed/sticky document behavior should remain an explicit acceptance item.
+- **Subresource lifetime coverage** is implemented for the current resource paths. Deferred/remote
+  CSS, remote author fonts, HTML `img` remote resources, CSS background/foreground image URLs, and
+  stale top-level redirect cookies now use document-scene lifetime admission. Tests cover stale
+  callbacks after navigation and mixed pending CSS/font/image/background-image callbacks during
+  `UIWebView` destruction. Future cache/session integration remains a follow-up layer.
+- **Example and documentation integration** is implemented for the current architecture. The
+  architecture rule documents the document-scene boundary and viewport/layout/extent split, the
+  HTML example injects document CSS through `getDocumentSceneNode()`, and integration tests cover
+  two WebViews resolving the same relative stylesheet path against independent document URIs.
+- **Fixed/sticky positioning coverage** is implemented for the document-scene WebView topology.
+  The acceptance tests load real HTML through `UIWebView`, scroll the WebView, and verify that
+  fixed/sticky elements use the visible viewport rather than the measured document extent.
 
 ---
 
@@ -405,6 +410,12 @@ Tests:
 - `src/eepp/ui/uiwebview.cpp`
 - `include/eepp/ui/uiscenenode.hpp`
 - `src/eepp/ui/uiscenenode.cpp`
+
+The detailed implementation roadmap for this phase lives in
+`.agent/plans/uiwebview_document_scene_plan.md`. This layout refactor only tracks the
+architecture-level acceptance item: document subresources must use document-scene lifetime admission,
+not raw scene/widget callbacks, and the design must remain compatible with a future local cache layer
+and shared-pointer resource ownership.
 
 Steps:
 

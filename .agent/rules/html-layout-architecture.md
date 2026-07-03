@@ -38,8 +38,8 @@ The application scene and document scene are separate style and resource boundar
 
 - Application stylesheets must not match web-view document nodes.
 - Document stylesheets must not match application widgets or sibling web views.
-- URI, referer, navigation interception, cookies, dirty style/layout queues, actions, keyframes, and
-  author `@font-face` aliases are document-scoped state.
+- URI, referer, relative-resource resolution, navigation interception, cookies, dirty style/layout
+  queues, actions, keyframes, and author `@font-face` aliases are document-scoped state.
 - Application code that intentionally injects document CSS must use
   `UIWebView::getDocumentSceneNode()->combineStyleSheet(...)`.
 
@@ -54,11 +54,15 @@ Nested document scenes inherit only host services needed to operate inside the e
 Do not copy the host stylesheet, URI, referer, navigation callback, cookies, dirty queues, roots,
 actions, or icon-theme ownership into a document scene.
 
-The document scene has two independent sizes:
+The WebView document topology keeps three document metrics distinct:
 
-- its actual scene extent is content-sized and is the `UIScrollView` scroll target;
-- its explicit viewport size is the visible web-view viewport and is used for media queries,
-  viewport units, HTML/body minimum height, and fixed-position layout.
+- **CSS viewport:** the visible web-view viewport, used for media queries, viewport units,
+  HTML/body minimum height, fixed positioning, and sticky positioning.
+- **Layout viewport / initial containing block:** the viewport-sized root layout reference used for
+  normal root/body layout and percentage descendants.
+- **Scrollable overflow extent:** the measured document overflow size. This belongs to the
+  `UIWebView` document layout scroll target and the nested document scene extent, not to the root
+  containing block.
 
 Document scenes are owner-updated by `UIWebView::scheduledUpdate()`. Do not register them with
 `SceneManager`, and do not add a second update subscription for the same document scene.

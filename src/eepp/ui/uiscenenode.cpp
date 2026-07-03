@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <mutex>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -35,6 +36,50 @@
 using namespace EE::Network;
 
 namespace EE { namespace UI {
+
+namespace {
+
+struct PendingAsyncResourceMainThread {
+	std::shared_ptr<UISceneNode::AsyncResourceLoadState> resourceState;
+	Uint64 generation{ 0 };
+	UISceneNode::AsyncResourceMainThreadFunc func;
+	Time delay{ Time::Zero };
+	Clock clock;
+};
+
+std::mutex sAsyncResourceMainThreadMutex;
+std::vector<PendingAsyncResourceMainThread> sAsyncResourceMainThreadQueue;
+
+void drainAsyncResourceMainThreadQueue() {
+	std::vector<PendingAsyncResourceMainThread> pending;
+	{
+		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		pending.swap( sAsyncResourceMainThreadQueue );
+	}
+
+	std::vector<PendingAsyncResourceMainThread> delayed;
+	for ( auto& item : pending ) {
+		if ( !UISceneNode::isAsyncResourceLoadCurrent( item.resourceState, item.generation ) )
+			continue;
+
+		if ( item.delay > Time::Zero && item.clock.getElapsedTime() < item.delay ) {
+			delayed.emplace_back( std::move( item ) );
+			continue;
+		}
+
+		UISceneNode* owner = item.resourceState->owner.load( std::memory_order_acquire );
+		if ( owner && item.func )
+			item.func( owner );
+	}
+
+	if ( !delayed.empty() ) {
+		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		for ( auto& item : delayed )
+			sAsyncResourceMainThreadQueue.emplace_back( std::move( item ) );
+	}
+}
+
+} // namespace
 
 static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 	if ( !root )
@@ -101,14 +146,16 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mRoot = UIRoot::New();
 	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
 	mRoot->enableReportSizeChangeToChildren();
+	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 
 	resizeNode( mWindow );
 }
 
 UISceneNode::~UISceneNode() {
 	if ( mAsyncResourceLoadState ) {
-		mAsyncResourceLoadState->alive = false;
-		mAsyncResourceLoadState->generation++;
+		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
+		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
+		mAsyncResourceLoadState->generation.fetch_add( 1, std::memory_order_acq_rel );
 	}
 
 	clearFontFaces();
@@ -121,8 +168,11 @@ UISceneNode::~UISceneNode() {
 	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
 
-	if ( !mOwnsEventDispatcher )
+	if ( mOwnsEventDispatcher ) {
+		eeSAFE_DELETE( mEventDispatcher );
+	} else {
 		mEventDispatcher = nullptr;
+	}
 }
 
 void UISceneNode::resizeNode( EE::Window::Window* ) {
@@ -232,7 +282,10 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 
 	mWindow = hostScene->getWindow();
 	mDPI = hostScene->getDPI();
-	mEventDispatcher = hostScene->getEventDispatcher();
+	EventDispatcher* hostDispatcher = hostScene->getEventDispatcher();
+	if ( mOwnsEventDispatcher && mEventDispatcher != hostDispatcher )
+		eeSAFE_DELETE( mEventDispatcher );
+	mEventDispatcher = hostDispatcher;
 	mOwnsEventDispatcher = false;
 	mThreadPool = hostScene->getThreadPool();
 	mColorSchemePreference = hostScene->getColorSchemePreference();
@@ -883,6 +936,8 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
+	drainAsyncResourceMainThreadQueue();
+
 	if ( mFirstUpdate && mVerbose ) {
 		mClock.restart();
 	}
@@ -1471,32 +1526,45 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 			std::string internalFontName(
 				makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
 			auto resourceState = mAsyncResourceLoadState;
-			Uint64 resourceGeneration = resourceState ? resourceState->generation : 0;
+			Uint64 resourceGeneration =
+				resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 			Http::getAsync(
-				[this, resourceState, resourceGeneration, internalFontName, registerLoadedFont,
-				 path]( const Http&, Http::Request&, Http::Response& response ) {
-					if ( !resourceState || !resourceState->alive ||
-						 resourceState->generation != resourceGeneration )
+				[resourceState, resourceGeneration, internalFontName, authorFamily, fontStyle,
+				 fontWeight, path]( const Http&, Http::Request&, Http::Response& response ) {
+					if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState,
+																   resourceGeneration ) )
 						return;
-					FontTrueType* font = FontTrueType::New( internalFontName );
-					if ( response.isOK() && !response.getBody().empty() &&
-						 font->loadFromMemory( &response.getBody()[0],
-											   response.getBody().size() ) ) {
-						runOnMainThread( [resourceState, resourceGeneration, registerLoadedFont,
-										  font]() mutable {
-							if ( resourceState && resourceState->alive &&
-								 resourceState->generation == resourceGeneration ) {
-								registerLoadedFont( font );
-							} else {
-								eeSAFE_DELETE( font );
-							}
-						} );
+
+					if ( response.isOK() && !response.getBody().empty() ) {
+						std::string fontData( response.getBody() );
+						UISceneNode::runAsyncResourceOnMainThread(
+							resourceState, resourceGeneration,
+							[fontData = std::move( fontData ), internalFontName, authorFamily,
+							 fontStyle, fontWeight]( UISceneNode* scene ) mutable {
+								FontTrueType* font = FontTrueType::New( internalFontName );
+								if ( font->loadFromMemory( &fontData[0], fontData.size() ) &&
+									 font->loaded() ) {
+									scene->registerFontFaceAlias( authorFamily, fontStyle,
+																  fontWeight, font );
+									scene->mFontFaces.push_back( font );
+									if ( scene->mRoot )
+										scene->mRoot->reloadFontFamily();
+								} else {
+									eeSAFE_DELETE( font );
+								}
+							} );
 					} else {
-						eeSAFE_DELETE( font );
-						Log::error( "UISceneNode::loadFontFaces: Failed to load font \"%s\", from: "
-									"%s. Request response status code: %d (%s)",
-									internalFontName, path, response.getStatus(),
-									response.getStatusDescription() );
+						UISceneNode::runAsyncResourceOnMainThread(
+							resourceState, resourceGeneration,
+							[internalFontName, path, status = response.getStatus(),
+							 statusDescription =
+								 std::string( response.getStatusDescription() )]( UISceneNode* ) {
+								Log::error( "UISceneNode::loadFontFaces: Failed to load font "
+											"\"%s\", from: %s. Request response status code: %d "
+											"(%s)",
+											internalFontName, path, status,
+											statusDescription.c_str() );
+							} );
 					}
 				},
 				URI( path ), Seconds( 5 ) );
@@ -1573,7 +1641,12 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 	if ( "file" == uri.getScheme() ||
 		 ( uri.getScheme().empty() && FileSystem::fileExists( uri.getFSPath() ) ) ) {
 		if ( defer && mThreadPool ) {
-			mThreadPool->run( [this, uri, url, defer] {
+			auto resourceState = mAsyncResourceLoadState;
+			Uint64 resourceGeneration =
+				resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+			URI baseURL = getURIFromURL( url );
+			mThreadPool->run( [resourceState, resourceGeneration, uri, url, defer,
+							   baseURL = std::move( baseURL )] {
 				Clock c;
 				std::string filePath( uri.getFSPath() );
 				std::string css;
@@ -1581,14 +1654,14 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 					CSS::StyleSheetParser parser;
 					if ( parser.loadFromString( css ) ) {
 						parser.getStyleSheet().setMarker( String::hash( url ) );
-						auto baseURL = getURIFromURL( url );
 						auto delay = defer.has_value() ? *defer - c.getElapsedTime() : Time::Zero;
 						if ( delay < Time::Zero )
 							delay = Time::Zero;
-						runOnMainThread(
-							[this, url, baseURL = std::move( baseURL ),
-							 parser = std::move( parser )]() mutable {
-								combineStyleSheet( parser.getStyleSheet(), true, baseURL );
+						UISceneNode::runAsyncResourceOnMainThread(
+							resourceState, resourceGeneration,
+							[url, baseURL, parser = std::move( parser )](
+								UISceneNode* scene ) mutable {
+								scene->combineStyleSheet( parser.getStyleSheet(), true, baseURL );
 								Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 							},
 							delay );
@@ -1605,24 +1678,24 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 		}
 	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
 		auto resourceState = mAsyncResourceLoadState;
-		Uint64 resourceGeneration = resourceState ? resourceState->generation : 0;
+		Uint64 resourceGeneration =
+			resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+		URI baseURL = getURIFromURL( url );
 		Http::getAsync(
-			[this, resourceState, resourceGeneration, url]( const Http&, Http::Request&,
-															Http::Response& response ) {
-				if ( !resourceState || !resourceState->alive ||
-					 resourceState->generation != resourceGeneration )
+			[resourceState, resourceGeneration, url, baseURL = std::move( baseURL )](
+				const Http&, Http::Request&, Http::Response& response ) {
+				if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState,
+															   resourceGeneration ) )
 					return;
 				if ( !response.getBody().empty() &&
 					 response.getStatus() == Http::Response::Status::Ok ) {
 					std::string css( response.getBody() );
-					runOnMainThread( [resourceState, resourceGeneration, css = std::move( css ),
-									  url = std::move( url ), this] {
-						if ( !resourceState || !resourceState->alive ||
-							 resourceState->generation != resourceGeneration )
-							return;
-						combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
-						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
-					} );
+					UISceneNode::runAsyncResourceOnMainThread(
+						resourceState, resourceGeneration,
+						[css = std::move( css ), url, baseURL]( UISceneNode* scene ) mutable {
+							scene->combineStyleSheet( css, true, String::hash( url ), baseURL );
+							Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
+						} );
 				} else {
 					Log::debug( "UISceneNode::loadCSS: Failed to load %s - %s", url,
 								response.getStatusDescription() );
@@ -1835,7 +1908,41 @@ void UISceneNode::navigate( const NavigationRequest& request ) {
 
 void UISceneNode::invalidateAsyncResourceLoads() {
 	if ( mAsyncResourceLoadState )
-		mAsyncResourceLoadState->generation++;
+		mAsyncResourceLoadState->generation.fetch_add( 1, std::memory_order_acq_rel );
+}
+
+std::shared_ptr<UISceneNode::AsyncResourceLoadState>
+UISceneNode::getAsyncResourceLoadState() const {
+	return mAsyncResourceLoadState;
+}
+
+bool UISceneNode::isAsyncResourceLoadCurrent(
+	const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation ) {
+	if ( !resourceState || !resourceState->alive.load( std::memory_order_acquire ) ||
+		 resourceState->generation.load( std::memory_order_acquire ) != generation )
+		return false;
+
+	return resourceState->owner.load( std::memory_order_acquire ) != nullptr;
+}
+
+void UISceneNode::runAsyncResourceOnMainThread(
+	const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation,
+	AsyncResourceMainThreadFunc func, const Time& delay ) {
+	if ( !func || !isAsyncResourceLoadCurrent( resourceState, generation ) )
+		return;
+
+	if ( Engine::isMainThread() && delay <= Time::Zero ) {
+		UISceneNode* owner = resourceState->owner.load( std::memory_order_acquire );
+		if ( owner )
+			func( owner );
+		return;
+	}
+
+	{
+		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		sAsyncResourceMainThreadQueue.push_back(
+			{ resourceState, generation, std::move( func ), delay, Clock() } );
+	}
 }
 
 void UISceneNode::invalidate( Node* invalidator ) {

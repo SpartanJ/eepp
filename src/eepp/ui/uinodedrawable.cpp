@@ -1,7 +1,11 @@
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawableresource.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/math/easing.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -416,9 +420,13 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable* container ) :
 	mAttachmentEq( "scroll" ),
 	mOrigin( Origin::PaddingBox ),
 	mClip( Clip::BorderBox ),
-	mAttachment( Attachment::Scroll ) {}
+	mAttachment( Attachment::Scroll ),
+	mAsyncDrawableAlive( std::make_shared<std::atomic<bool>>( true ) ) {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
+	if ( mAsyncDrawableAlive )
+		mAsyncDrawableAlive->store( false, std::memory_order_release );
+
 	if ( NULL != mDrawable && 0 != mResourceChangeCbId && mDrawable->isDrawableResource() ) {
 		reinterpret_cast<DrawableResource*>( mDrawable )
 			->popResourceChangeCallback( mResourceChangeCbId );
@@ -645,12 +653,93 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 }
 
 void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef ) {
+	if ( loadRemoteDrawable( drawableRef ) ) {
+		mDrawableRef = drawableRef;
+		return;
+	}
+
 	bool ownIt;
 	Drawable* drawable = createDrawable( drawableRef, mSize, ownIt );
 
 	setDrawable( drawable, ownIt );
 
 	mDrawableRef = drawableRef;
+}
+
+bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value ) {
+	FunctionString functionType = FunctionString::parse( value );
+	std::string path;
+
+	if ( !functionType.isEmpty() && functionType.getName() == "url" &&
+		 !functionType.getParameters().empty() ) {
+		path = functionType.getParameters().at( 0 );
+	} else {
+		path = value;
+	}
+
+	if ( !path.empty() && path.front() == '\'' && path.back() == '\'' )
+		String::trimInPlace( path, '\'' );
+	else if ( !path.empty() && path.front() == '"' && path.back() == '"' )
+		String::trimInPlace( path, '"' );
+
+	UINode* owner = mContainer ? mContainer->getOwner() : nullptr;
+	UISceneNode* scene = owner ? owner->getUISceneNode() : nullptr;
+	if ( !scene )
+		return false;
+
+	URI uri( path );
+	if ( uri.getScheme().empty() )
+		uri = scene->solveRelativePath( uri );
+
+	if ( uri.getScheme() != "http" && uri.getScheme() != "https" )
+		return false;
+
+	if ( value == mDrawableRef && mDrawable != nullptr )
+		return true;
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	Uint64 resourceGeneration =
+		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	Uint64 loadId = ++mRemoteDrawableLoadId;
+	auto alive = mAsyncDrawableAlive;
+	const std::string url = uri.toString();
+	const std::string textureName =
+		String::format( "__eepp_ui_layer_image_%p_%llu_%u", this,
+						static_cast<unsigned long long>( loadId ), String::hash( url ) );
+
+	Texture* texture = TextureFactory::instance()->createEmptyTexture(
+		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false,
+		textureName );
+	if ( texture )
+		setDrawable( texture, true );
+
+	Http::getAsync(
+		[resourceState, resourceGeneration, alive, loadId, texture,
+		 this]( const Http&, Http::Request&, Http::Response& response ) {
+			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
+				 !alive || !alive->load( std::memory_order_acquire ) || texture == nullptr )
+				return;
+
+			if ( response.isOK() && !response.getBody().empty() ) {
+				std::string imageData( response.getBody() );
+				UISceneNode::runAsyncResourceOnMainThread(
+					resourceState, resourceGeneration,
+					[alive, loadId, texture, imageData = std::move( imageData ),
+					 this]( UISceneNode* ) mutable {
+						if ( !alive || !alive->load( std::memory_order_acquire ) ||
+							 loadId != mRemoteDrawableLoadId || mDrawable != texture )
+							return;
+
+						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
+									 imageData.size() );
+						if ( image.getPixels() != nullptr )
+							texture->replace( &image );
+					} );
+			}
+		},
+		uri, Seconds( 5 ), {}, {}, "", true, Http::getEnvProxyURI() );
+
+	return true;
 }
 
 Drawable* UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,

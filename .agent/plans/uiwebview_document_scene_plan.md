@@ -2,8 +2,7 @@
 
 > Status: IMPLEMENTED WITH FOLLOW-UPS - the owned document scene, real scroll-target
 > layout widget, viewport/extent split, root-scoped hit-test traversal, and focused
-> UIWebView coverage are implemented. Remaining work is broader async subresource
-> coverage, examples/docs, and fixed/sticky acceptance tests.
+> UIWebView coverage are implemented. Remaining work is future cache/session integration.
 
 ## Goal
 
@@ -480,6 +479,8 @@ Tests:
 - `src/eepp/ui/uiwebview.cpp`
 - `include/eepp/ui/uiscenenode.hpp`
 - `src/eepp/ui/uiscenenode.cpp`
+- `src/eepp/ui/uiimage.cpp`
+- `src/eepp/graphics/drawablesearcher.cpp`
 - `src/tests/unit_tests/uiwebview_tests.cpp`
 
 The current async/deferred callbacks can capture raw `this` and raw scene pointers. Owning a scene
@@ -495,40 +496,171 @@ cover every deferred document resource path, not only HTTP:
 - async image/replaced-resource loads,
 - main-thread reposts created by any of the above.
 
-Steps:
+The browser-engine model to follow is:
 
-1. Add a small shared navigation/load state containing an alive owner pointer and monotonically
-   increasing navigation generation.
-2. Async top-level navigation callbacks capture a weak load state, not raw `this` or raw scene
-   pointers.
-3. Add a scene-local async resource state for document subresources. It must be invalidated on
-   navigation, scene destruction, and explicit document resource reset.
-4. Subresource callbacks capture the scene-local state and a generation. They may capture immutable
-   values such as resolved URLs and parsed buffers, but must not dereference the scene or widget
-   until the generation/alive check has passed on the main thread.
-5. Before storing cookies, posting to the main thread, applying a response, combining a stylesheet,
-   registering a font, mutating an image/replaced widget, or marking document extent dirty, verify
-   that the owner still exists and the generation is current.
-6. A newer navigation invalidates older document responses and all old document subresources.
-   Destruction invalidates all pending callbacks.
-7. Keep history mutation and navigation events deterministic when requests fail or are superseded.
-8. Give document-scene async resource loads a scene-lifetime guard before they enqueue main-thread
-   work or mutate the stylesheet. Audit other document-triggered async loaders and use the same
-   pattern where they retain scene/widget pointers.
-9. When a stale callback is ignored, it must not store cookies, mutate style/font/image state, mark
+- A document owns the resource clients and lifetime tokens.
+- Shared caches may outlive the document.
+- Network, file, and decode work may finish after navigation or destruction.
+- Finished work may mutate stylesheet, font, image, cookie, layout, or widget state only if the
+  owning document is still alive and still represents the same navigation generation.
+- Cancellation is useful for saving work, but stale-callback rejection is the correctness mechanism.
+
+This must be compatible with the current global `ResourceManager`/`TextureFactory`/`FontManager`
+model and with the planned future resource refactor to shared pointers. Do not solve this by adding
+heavy ownership to `Node` or by making global managers document-aware. The document-scene resource
+context should be a narrow compatibility layer today, and later it should naturally become a set of
+`weak_ptr`/`shared_ptr` resource clients once eepp resources stop being lifetime-owned by global
+managers.
+
+Also keep the future local cache layer in mind. The lifetime checks below must distinguish
+**resource cache lifetime** from **document client lifetime**:
+
+- A cached CSS/font/image response may be reusable by a later document.
+- A cached cookie may be preserved by a future browsing-session/domain-cookie store.
+- A stale document client must still be unable to apply the cached result or store cookies into the
+  wrong document/session.
+
+Current Phase 6 implementation progress:
+
+- Implemented: shared document-scene subresource admission state with atomic owner/alive/generation
+  checks and a safe main-thread admission queue that is not scheduled through a possibly destroyed
+  document node.
+- Implemented: deferred local CSS and remote CSS callbacks are generation-checked before applying
+  stylesheets.
+- Implemented: remote author `@font-face` callbacks construct/register scene-owned fonts only after
+  current-generation main-thread admission.
+- Implemented: HTML `img` / `UIImage src` remote loads use document-scene admission and per-widget
+  load ids before replacing textures.
+- Implemented: CSS background/foreground image URLs loaded through `UINodeDrawable` use
+  document-scene admission, scene-unique placeholder textures, and per-layer load ids before
+  replacing texture pixels.
+- Implemented: stale top-level redirect cookies are ignored after a newer navigation.
+- Implemented: explicit mixed-resource destruction coverage exercises pending CSS, font, HTML image,
+  and CSS background-image callbacks while the `UIWebView` is destroyed.
+- Pending: cache/session integration remains a future layer; current work only preserves the
+  document-client lifetime boundary that a cache will need.
+
+#### Phase 6.1: Shared Lifetime Primitive And Main-Thread Admission
+
+1. Keep top-level navigation guarded by `UIWebView` navigation generation state.
+2. Keep/add a scene-local document subresource state with:
+   - `alive`, cleared during `UISceneNode` destruction;
+   - a monotonically increasing generation, incremented on navigation and explicit document resource
+     reset.
+3. Subresource workers may capture immutable values such as resolved URLs, marker hashes, parsed CSS,
+   downloaded bytes, and generation numbers.
+4. Subresource workers must not dereference `UISceneNode*`, `UIWidget*`, `Texture*`, or `Font*`
+   unless that lifetime is independently guaranteed.
+5. All document mutation must happen on the main thread after checking `alive` and generation.
+6. Audit `Node::runOnMainThread()` usage carefully. Because it queues an action on a node, using it
+   through a possibly destroyed document node is not a complete lifetime guard. Prefer a safe
+   scheduler or a host/document lookup that performs the lifetime check before touching the node.
+
+Tests:
+
+- Destroying a web view before any pending subresource callback completes is safe.
+- A stale callback can complete without touching a destroyed node, stylesheet, font, texture, widget,
+  cookie jar, navigation events, or document extent state.
+
+#### Phase 6.2: CSS Resources
+
+1. For external CSS, resolve URI and marker before dispatch.
+2. For deferred local CSS, file IO and parsing may happen off the main thread, but only immutable
+   data and parsed stylesheet state may cross the worker boundary.
+3. For remote CSS, HTTP callbacks must check the resource generation before accepting the response
+   and again before applying it on the main thread.
+4. `combineStyleSheet()`, media-query updates, relative URL resolution, font-face processing, and
+   document extent dirtying must run only for the current document generation.
+5. VFS CSS is currently synchronous, but it should use the same admission helper if it later becomes
+   deferred.
+
+Tests:
+
+- A delayed local stylesheet from page A completes after navigating to page B and does not affect B.
+- A slow remote stylesheet from an old navigation cannot change the current document's style or
+  document extent.
+- Destroying a web view with a pending stylesheet load is safe.
+
+#### Phase 6.3: Author Fonts
+
+1. Keep author family names as document-scoped aliases before global font fallback.
+2. For remote fonts, do not register a global `FontManager` resource or alias until the current
+   generation is admitted on the main thread. `Font` construction currently registers globally, so
+   avoid constructing scene-owned fonts on a worker unless that behavior is changed first.
+3. Local-file, data URI, VFS, and remote font paths should share the same scene-owned registration
+   and cleanup path.
+4. Font load completion may call `reloadFontFamily()` and mark document extent dirty only if the
+   owning document is current.
+5. Navigation/destruction must remove only this document scene's internally registered author fonts.
+
+Tests:
+
+- A stale remote `@font-face` response cannot register an alias or global font resource.
+- A stale font response cannot replace the current document's text metrics or dirty its extent.
+- Local-file, data URI, VFS, and remote author fonts still clean up on navigation/destruction.
+
+#### Phase 6.4: Images And Replaced Resources
+
+1. Audit HTML `img`, SVG/image widgets, CSS background/foreground images, and any replaced resource
+   whose intrinsic size can affect layout.
+2. Avoid using bare global URL names as the document lifetime boundary for remote document images.
+   Use a document image loader path with scene-unique internal texture/resource names or explicit
+   document clients.
+3. A remote image response from an old generation must not replace a current document texture,
+   repaint a current widget, notify a closed widget, or mark current document extent dirty.
+4. Widget resource-change subscriptions must be disconnected before scene-owned resources are
+   removed.
+5. If a pending HTTP image already owns a placeholder texture, stale completion must either drop the
+   decoded image or clean up the placeholder on the main thread without notifying stale document
+   clients.
+6. This path should be designed so a future cache can store decoded bytes or textures separately
+   from document clients. A cache hit is still applied only after document-generation admission.
+
+Tests:
+
+- A slow image response from page A cannot mutate page B after navigation.
+- Destroying a web view with a pending image load is safe.
+- An image intrinsic-size change from an admitted current resource still invalidates layout and
+  document extent.
+- The same remote image URL used by two web views does not let one document's cleanup break the
+  other's visible resource.
+
+#### Phase 6.5: Redirects, Cookies, And Future Cache Boundary
+
+1. Treat redirects as part of the active navigation or subresource load, not as separate document
+   mutations.
+2. Progress callbacks that observe redirects must check the current owner/generation before storing
+   cookies or continuing work where cancellation is available.
+3. Final response callbacks must check generation before storing `Set-Cookie`.
+4. Preserve the current per-document cookie behavior for now, but shape the code so a future
+   browsing-session/domain-cookie cache can be introduced without weakening stale-response checks.
+5. Cache admission and document admission are separate decisions: a stale response may be eligible
+   for a future cache, but it must not be applied to or store cookies through a stale document.
+
+Tests:
+
+- A stale top-level redirect cannot store cookies into the current document.
+- A stale subresource redirect cannot store cookies or affect the current document.
+- A newer navigation supersedes an older redirected load deterministically.
+
+#### Phase 6.6: Destruction And Cross-Resource Cleanup
+
+This phase is cross-cutting and should be implemented partially inside each resource phase above, not
+left until the end.
+
+1. On navigation, invalidate document responses and subresources before clearing children/resources.
+2. On destruction, mark the resource state dead before destroying children or resource managers.
+3. Pending callbacks may finish later, but they must have no live document client to call into.
+4. Cleanup order should be: invalidate, disconnect widget/resource clients, clear document children,
+   clear document-scoped aliases/resources, then allow late stale callbacks to drop results.
+5. When a stale callback is ignored, it must not store cookies, mutate style/font/image state, mark
    extent dirty, send navigation events, or trigger layout.
 
 Tests:
 
-- Destroying a web view before an HTTP response completes is safe.
-- A slow old response cannot replace a newer document.
-- Stale redirects/cookies do not mutate the current document scene.
-- Destroying a web view while external CSS is loading is safe and cannot mutate another scene.
-- Deferred local CSS that completes after navigation/destruction is ignored safely.
-- A remote or deferred `@font-face` response from an old navigation cannot register a font alias,
-  replace the current document's font, or remeasure the current document.
-- An async image/replaced-resource response from an old navigation cannot mutate a closed widget or
-  dirty the current document extent.
+- Destroying a web view with pending CSS, font, and image loads is safe.
+- Navigating repeatedly while mixed subresources are pending leaves only the newest document's
+  styles, fonts, images, cookies, and extents visible.
 
 ### Phase 7: Integration And Documentation
 
@@ -542,7 +674,9 @@ Steps:
 
 1. Document the web-document scene boundary, viewport/content split, and host-service inheritance.
 2. Add a realistic two-web-view integration test with visibly conflicting CSS and independent
-   relative resources.
+   relative resources. **Implemented:** `DocumentScenesIsolateStylesUriAndLookup` loads two
+   documents from separate directories that use the same relative stylesheet path and verifies each
+   document resolves it through its own URI.
 3. Run the existing old Reddit `UIWebView` smoke test against the new document scene.
 4. Verify the UI editor nested scene still behaves correctly after nested-scene hardening.
 5. Verify inspector/debug tooling can target either the application scene or
@@ -559,10 +693,10 @@ Steps:
 | `src/eepp/ui/uirichtext.cpp` | HTML/body viewport minimum-height handling |
 | `include/eepp/ui/uiwebview.hpp` | Owned scene, getter, scheduled update, lifetime state |
 | `src/eepp/ui/uiwebview.cpp` | Document layout scroll target, viewport updates, isolated loading/navigation |
-| `src/examples/ui_html/ui_html.cpp` | Inject document CSS through the document scene |
+| `src/examples/ui_html/ui_html.cpp` | Inject document CSS through the document scene; already uses `getDocumentSceneNode()` |
 | `src/tests/unit_tests/uiwebview_tests.cpp` | New focused isolation/lifecycle tests |
 | `src/tests/unit_tests/uihtml_tests.cpp` | Existing realistic web-view fixture adjustments |
-| `.agent/rules/html-layout-architecture.md` | Document final architecture after implementation |
+| `.agent/rules/html-layout-architecture.md` | Documents final document-scene boundary and metrics |
 
 No new production source file is required for the initial implementation. If the embedded-scene
 service policy grows beyond the narrow helper above, introduce a dedicated browsing/document context

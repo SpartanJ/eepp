@@ -77,6 +77,67 @@ static void expandWidgetContentExtent( UIWidget* widget, const Vector2f& offset,
 		extent.y = eemax( extent.y, position.y + size.getHeight() );
 }
 
+static bool syncWidgetDocumentPixelsSize( UIWidget* widget, const Sizef& size ) {
+	if ( !widget || widget->isClosing() )
+		return false;
+
+	Sizef next( size.getWidth(), size.getHeight() );
+	if ( next == widget->getPixelsSize() )
+		return false;
+
+	widget->setPixelsSize( next );
+	return true;
+}
+
+static Float getDocumentBodyPixelsHeight( UIWidget* body, const Sizef& extent ) {
+	return extent.getHeight();
+}
+
+static void syncDocumentBoxesPixelsSize( UIWidget* container, const Sizef& extent ) {
+	if ( !container || extent == Sizef::Zero )
+		return;
+
+	UIWidget* html = nullptr;
+	UIWidget* body = nullptr;
+	if ( auto htmlNode = container->findByType( UI_TYPE_HTML_HTML ) ) {
+		if ( htmlNode->isWidget() )
+			html = htmlNode->asType<UIWidget>();
+	}
+	if ( auto bodyNode = container->findByType( UI_TYPE_HTML_BODY ) ) {
+		if ( bodyNode->isWidget() )
+			body = bodyNode->asType<UIWidget>();
+	}
+
+	syncWidgetDocumentPixelsSize( container, extent );
+	syncWidgetDocumentPixelsSize( html, extent );
+	if ( body ) {
+		if ( body->isType( UI_TYPE_HTML_BODY ) )
+			body->asType<UIHTMLBody>()->setDocumentCanvasMinHeight(
+				PixelDensity::pxToDp( extent.getHeight() ) );
+		syncWidgetDocumentPixelsSize(
+			body, { extent.getWidth(), getDocumentBodyPixelsHeight( body, extent ) } );
+	}
+}
+
+static Sizef computeDocumentContentExtent( UIWidget* container, const Sizef& viewport ) {
+	Sizef extent( viewport.getWidth(), viewport.getHeight() );
+	if ( !container )
+		return extent;
+
+	if ( auto htmlNode = container->findByType( UI_TYPE_HTML_HTML ) ) {
+		UIWidget* html = htmlNode->asType<UIWidget>();
+		expandWidgetContentExtent( html, Vector2f::Zero, extent );
+	}
+
+	if ( auto bodyNode = container->findByType( UI_TYPE_HTML_BODY ) ) {
+		UIWidget* body = bodyNode->asType<UIWidget>();
+		expandWidgetContentExtent( body, Vector2f::Zero, extent );
+		expandDocumentContentExtent( body, container->getPixelsPosition(), extent );
+	}
+
+	return extent;
+}
+
 static void resetViewportDependentDocumentWidths( UIWidget* container ) {
 	if ( !container )
 		return;
@@ -517,6 +578,9 @@ void UIWebView::updateDocumentMetricsIfNeeded() {
 		return;
 
 	mUpdatingDocumentContentExtent = true;
+	LayoutInvalidationFlags requestedReasons = mDocumentExtentDirtyReasons;
+	mDocumentExtentDirty = false;
+	mDocumentExtentDirtyReasons = 0;
 	bool viewportChanged = !mUpdatingDocumentViewportMetrics && updateDocumentViewportMetrics();
 
 	Sizef viewport = mDocumentScene->getViewportPixelsSize();
@@ -524,11 +588,8 @@ void UIWebView::updateDocumentMetricsIfNeeded() {
 		viewport = mContainer ? mContainer->getPixelsSize() : getPixelsSize();
 
 	const bool documentReset =
-		mDocumentExtentDirtyReasons &
-		toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent );
+		requestedReasons & toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent );
 	if ( !viewportChanged && !documentReset ) {
-		mDocumentExtentDirty = false;
-		mDocumentExtentDirtyReasons = 0;
 		mUpdatingDocumentContentExtent = false;
 		return;
 	}
@@ -547,30 +608,24 @@ void UIWebView::updateDocumentMetricsIfNeeded() {
 
 	mDocumentScene->flushDirtyStyleAndLayout();
 
-	Sizef extent( viewport.getWidth(), viewport.getHeight() );
+	auto applyDocumentExtent = [&]() {
+		Sizef extent = computeDocumentContentExtent( mDocContainer, viewport );
+		bool extentChanged = extent != Sizef::Zero && extent != mDocumentLayout->getPixelsSize();
+		if ( extentChanged ) {
+			mDocumentLayout->setPixelsSize( extent );
+			mDocumentScene->setPixelsSize( extent );
+			containerUpdate();
+			updateScroll();
+		}
+		syncDocumentBoxesPixelsSize( mDocContainer, extent );
+		return extentChanged;
+	};
 
-	if ( auto htmlNode = mDocContainer->findByType( UI_TYPE_HTML_HTML ) ) {
-		UIWidget* html = htmlNode->asType<UIWidget>();
-		expandWidgetContentExtent( html, Vector2f::Zero, extent );
+	if ( applyDocumentExtent() ) {
+		mDocumentScene->flushDirtyStyleAndLayout();
+		applyDocumentExtent();
 	}
 
-	if ( auto bodyNode = mDocContainer->findByType( UI_TYPE_HTML_BODY ) ) {
-		UIWidget* body = bodyNode->asType<UIWidget>();
-		expandWidgetContentExtent( body, Vector2f::Zero, extent );
-
-		expandDocumentContentExtent( body, mDocContainer->getPixelsPosition(), extent );
-	}
-
-	bool extentChanged = extent != Sizef::Zero && extent != mDocumentLayout->getPixelsSize();
-	if ( extentChanged ) {
-		mDocumentLayout->setPixelsSize( extent );
-		mDocumentScene->setPixelsSize( extent );
-		containerUpdate();
-		updateScroll();
-	}
-
-	mDocumentExtentDirty = false;
-	mDocumentExtentDirtyReasons = 0;
 	mUpdatingDocumentContentExtent = false;
 }
 

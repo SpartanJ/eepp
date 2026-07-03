@@ -1,6 +1,10 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -25,7 +29,8 @@ UIImage::UIImage( const std::string& tag ) :
 	mColor(),
 	mAlignOffset( 0, 0 ),
 	mResourceChangeCb( 0 ),
-	mDrawableOwner( false ) {
+	mDrawableOwner( false ),
+	mAsyncImageAlive( std::make_shared<std::atomic<bool>>( true ) ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	applyDefaultTheme();
@@ -34,6 +39,8 @@ UIImage::UIImage( const std::string& tag ) :
 UIImage::UIImage() : UIImage( "image" ) {}
 
 UIImage::~UIImage() {
+	if ( mAsyncImageAlive )
+		mAsyncImageAlive->store( false, std::memory_order_release );
 	safeDeleteDrawable();
 }
 
@@ -286,6 +293,54 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 	}
 }
 
+void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
+	UISceneNode* scene = getUISceneNode();
+	if ( !scene )
+		return;
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	Uint64 resourceGeneration =
+		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	Uint64 loadId = ++mRemoteImageLoadId;
+	auto alive = mAsyncImageAlive;
+	const std::string url = uri.toString();
+	const std::string textureName =
+		String::format( "__eepp_ui_image_%p_%llu_%u", this,
+						static_cast<unsigned long long>( loadId ), String::hash( url ) );
+
+	Texture* texture = TextureFactory::instance()->createEmptyTexture(
+		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false,
+		textureName );
+	if ( texture )
+		setDrawable( texture, true );
+
+	Http::getAsync(
+		[resourceState, resourceGeneration, alive, loadId, texture,
+		 this]( const Http&, Http::Request&, Http::Response& response ) {
+			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
+				 !alive || !alive->load( std::memory_order_acquire ) || texture == nullptr )
+				return;
+
+			if ( response.isOK() && !response.getBody().empty() ) {
+				std::string imageData( response.getBody() );
+				UISceneNode::runAsyncResourceOnMainThread(
+					resourceState, resourceGeneration,
+					[alive, loadId, texture, imageData = std::move( imageData ),
+					 this]( UISceneNode* ) mutable {
+						if ( !alive || !alive->load( std::memory_order_acquire ) ||
+							 loadId != mRemoteImageLoadId || mDrawable != texture )
+							return;
+
+						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
+									 imageData.size() );
+						if ( image.getPixels() != nullptr )
+							texture->replace( &image );
+					} );
+			}
+		},
+		uri, Seconds( 5 ), {}, {}, "", true, Http::getEnvProxyURI() );
+}
+
 void UIImage::onSizeChange() {
 	onAutoSize();
 	calcDestSize();
@@ -384,6 +439,11 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
 				uri = getUISceneNode()->solveRelativePath( uri );
 				path = uri.toString();
+			}
+
+			if ( uri.getScheme() == "http" || uri.getScheme() == "https" ) {
+				loadRemoteDrawable( uri );
+				break;
 			}
 
 			Drawable* createdDrawable =

@@ -1,12 +1,24 @@
 #include "utest.hpp"
 
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
+
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/network/tcplistener.hpp>
+#include <eepp/network/tcpsocket.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -22,6 +34,19 @@ using namespace EE::Graphics;
 using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
+
+static bool readHttpRequestHeaders( TcpSocket& client ) {
+	std::string request;
+	char buffer[1024];
+	std::size_t received = 0;
+	while ( request.find( "\r\n\r\n" ) == std::string::npos ) {
+		Socket::Status st = client.receive( buffer, sizeof( buffer ), received );
+		if ( st != Socket::Done )
+			return false;
+		request.append( buffer, received );
+	}
+	return true;
+}
 
 UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	auto win = Engine::instance()->createWindow(
@@ -1140,6 +1165,560 @@ UTEST( UIWebView, AsyncCSSCanShrinkDocumentExtent ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWebView, FixedPositionStaysPinnedToViewportWhenScrolled ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Fixed Position Viewport Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsPosition( 50, 40 );
+	webView->setPixelsSize( 320, 220 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->setViewType( ScrollViewType::Overlay );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_fixed_viewport.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>
+html, body { margin: 0; padding: 0; }
+#fixed { position: fixed; left: 30px; top: 40px; width: 80px; height: 30px; background: #f00; }
+#spacer { height: 1400px; }
+</style></head>
+<body><div id="fixed"></div><div id="spacer"></div></body>
+</html>
+)html" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + path ) );
+	pump( 40 );
+	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	Node* fixedNode = documentScene->getRoot()->find( "fixed" );
+	ASSERT_TRUE( fixedNode != nullptr && fixedNode->isWidget() );
+	UIWidget* fixed = fixedNode->asType<UIWidget>();
+
+	Vector2f beforeScroll = fixed->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 80.f, beforeScroll.x, 1.f );
+	EXPECT_NEAR( 80.f, beforeScroll.y, 1.f );
+
+	webView->getVerticalScrollBar()->setValue( 0.5f );
+	pump( 4 );
+
+	Vector2f afterScroll = fixed->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( beforeScroll.x, afterScroll.x, 1.f );
+	EXPECT_NEAR( beforeScroll.y, afterScroll.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, StickyPositionUsesWebViewViewportWhenScrolled ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Sticky Position Viewport Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsPosition( 50, 40 );
+	webView->setPixelsSize( 320, 220 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->setViewType( ScrollViewType::Overlay );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_sticky_viewport.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head><style>
+html, body { margin: 0; padding: 0; }
+#sticky { position: sticky; top: 20px; margin-top: 100px; width: 80px; height: 30px; background: #0f0; }
+#spacer { height: 1400px; }
+</style></head>
+<body><div id="sticky"></div><div id="spacer"></div></body>
+</html>
+)html" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + path ) );
+	pump( 40 );
+	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	Node* stickyNode = documentScene->getRoot()->find( "sticky" );
+	ASSERT_TRUE( stickyNode != nullptr && stickyNode->isWidget() );
+	UIWidget* sticky = stickyNode->asType<UIWidget>();
+
+	Float maxScrollY = webView->getScrollView()->getPixelsSize().getHeight() -
+					   webView->getContainer()->getPixelsSize().getHeight();
+	ASSERT_GT( maxScrollY, 200.f );
+
+	webView->getVerticalScrollBar()->setValue( 50.f / maxScrollY );
+	pump( 4 );
+	Vector2f beforeStick = sticky->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 90.f, beforeStick.y, 1.f );
+
+	webView->getVerticalScrollBar()->setValue( 150.f / maxScrollY );
+	pump( 4 );
+	Vector2f afterStick = sticky->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 60.f, afterStick.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, DeferredLocalCSSIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Deferred CSS Stale Navigation Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	auto cssThreadPool = ThreadPool::createShared( 1 );
+	sceneNode->setThreadPool( cssThreadPool );
+
+	std::mutex cssMutex;
+	std::condition_variable cssCv;
+	bool cssWorkerStarted = false;
+	bool releaseCSSWorker = false;
+	cssThreadPool->run( [&] {
+		std::unique_lock<std::mutex> lock( cssMutex );
+		cssWorkerStarted = true;
+		cssCv.notify_one();
+		cssCv.wait( lock, [&] { return releaseCSSWorker; } );
+	} );
+	{
+		std::unique_lock<std::mutex> lock( cssMutex );
+		cssCv.wait( lock, [&] { return cssWorkerStarted; } );
+	}
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 400, 300 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string staleCSSPath = Sys::getTempPath() + "eepp_uiwebview_stale_deferred.css";
+	const std::string oldPath = Sys::getTempPath() + "eepp_uiwebview_stale_deferred_old.html";
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_stale_deferred_new.html";
+	FileSystem::fileWrite( staleCSSPath, "#probe { width: 700px; height: 40px; }\n" );
+	FileSystem::fileWrite(
+		oldPath, "<!DOCTYPE html><html><head><link rel='stylesheet' href='file://" + staleCSSPath +
+					 "'><style>#probe { width: 80px; height: 40px; }</style></head>"
+					 "<body><div id='old-doc'></div><div id='probe'></div></body></html>" );
+	FileSystem::fileWrite(
+		newPath,
+		"<!DOCTYPE html><html><head><style>#probe { width: 120px; height: 40px; }</style></head>"
+		"<body><div id='new-doc'></div><div id='probe'></div></body></html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + oldPath ) );
+	pump( 2 );
+	webView->loadURI( URI( "file://" + newPath ) );
+	{
+		std::unique_lock<std::mutex> lock( cssMutex );
+		releaseCSSWorker = true;
+	}
+	cssCv.notify_one();
+	pump( 80 );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "old-doc" ) == nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "new-doc" ) != nullptr );
+	Node* probeNode = documentScene->getRoot()->find( "probe" );
+	ASSERT_TRUE( probeNode != nullptr && probeNode->isWidget() );
+	EXPECT_NEAR( probeNode->asType<UIWidget>()->getPixelsSize().getWidth(), 120.f, 0.5f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RemoteCSSIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Remote CSS Stale Navigation Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::atomic<bool> serverOk{ false };
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponse = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponse; } );
+		}
+
+		const std::string body = "#probe { width: 700px; height: 40px; }\n";
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Type: text/css\r\n"
+									 "Content-Length: " +
+									 String::toString( static_cast<Uint64>( body.size() ) ) +
+									 "\r\nConnection: close\r\n"
+									 "\r\n" +
+									 body;
+		serverOk = client.send( response.data(), response.size() ) == Socket::Done;
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 400, 300 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string oldPath = Sys::getTempPath() + "eepp_uiwebview_remote_css_old.html";
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_remote_css_new.html";
+	const std::string cssURL =
+		String::format( "http://127.0.0.1:%u/stale.css", listener.getLocalPort() );
+	FileSystem::fileWrite(
+		oldPath, "<!DOCTYPE html><html><head><link rel='stylesheet' href='" + cssURL +
+					 "'><style>#probe { width: 80px; height: 40px; }</style></head>"
+					 "<body><div id='old-doc'></div><div id='probe'></div></body></html>" );
+	FileSystem::fileWrite(
+		newPath,
+		"<!DOCTYPE html><html><head><style>#probe { width: 120px; height: 40px; }</style></head>"
+		"<body><div id='new-doc'></div><div id='probe'></div></body></html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + oldPath ) );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+	webView->loadURI( URI( "file://" + newPath ) );
+	pump( 10 );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponse = true;
+	}
+	serverCv.notify_one();
+
+	server.join();
+	listener.close();
+	EXPECT_TRUE( serverOk );
+	pump( 80 );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "old-doc" ) == nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "new-doc" ) != nullptr );
+	Node* probeNode = documentScene->getRoot()->find( "probe" );
+	ASSERT_TRUE( probeNode != nullptr && probeNode->isWidget() );
+	EXPECT_NEAR( probeNode->asType<UIWidget>()->getPixelsSize().getWidth(), 120.f, 0.5f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RemoteImageIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Remote Image Stale Navigation Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	std::string imageData;
+	const std::string imagePath =
+		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
+	ASSERT_FALSE( imageData.empty() );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::atomic<bool> serverOk{ false };
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponse = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponse; } );
+		}
+
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Type: image/png\r\n"
+									 "Content-Length: " +
+									 String::toString( static_cast<Uint64>( imageData.size() ) ) +
+									 "\r\nConnection: close\r\n"
+									 "\r\n" +
+									 imageData;
+		serverOk = client.send( response.data(), response.size() ) == Socket::Done;
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string oldPath = Sys::getTempPath() + "eepp_uiwebview_remote_image_old.html";
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_remote_image_new.html";
+	const std::string imageURL =
+		String::format( "http://127.0.0.1:%u/stale.png", listener.getLocalPort() );
+	FileSystem::fileWrite(
+		oldPath, "<!DOCTYPE html><html><body><div id='old-doc'></div><img id='probe' src='" +
+					 imageURL + "'></body></html>" );
+	FileSystem::fileWrite(
+		newPath, "<!DOCTYPE html><html><body><div id='new-doc'></div><img id='probe' src='file://" +
+					 imagePath + "'></body></html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + oldPath ) );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+	webView->loadURI( URI( "file://" + newPath ) );
+	pump( 10 );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponse = true;
+	}
+	serverCv.notify_one();
+
+	server.join();
+	listener.close();
+	EXPECT_TRUE( serverOk );
+	pump( 80 );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "old-doc" ) == nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "new-doc" ) != nullptr );
+	Node* probeNode = documentScene->getRoot()->find( "probe" );
+	ASSERT_TRUE( probeNode != nullptr && probeNode->isType( UI_TYPE_HTML_IMAGE ) );
+	EXPECT_TRUE( probeNode->asType<UIImage>()->getDrawable() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RemoteBackgroundImageIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Remote Background Image Stale Navigation Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	std::string imageData;
+	const std::string imagePath =
+		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
+	ASSERT_FALSE( imageData.empty() );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::atomic<bool> serverOk{ false };
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponse = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponse; } );
+		}
+
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Type: image/png\r\n"
+									 "Content-Length: " +
+									 String::toString( static_cast<Uint64>( imageData.size() ) ) +
+									 "\r\nConnection: close\r\n"
+									 "\r\n" +
+									 imageData;
+		serverOk = client.send( response.data(), response.size() ) == Socket::Done;
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string oldPath = Sys::getTempPath() + "eepp_uiwebview_remote_bg_old.html";
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_remote_bg_new.html";
+	const std::string imageURL =
+		String::format( "http://127.0.0.1:%u/stale-bg.png", listener.getLocalPort() );
+	FileSystem::fileWrite(
+		oldPath,
+		"<!DOCTYPE html><html><head><style>"
+		"#probe { width: 100px; height: 80px; background-image: url('" +
+			imageURL +
+			"'); }"
+			"</style></head><body><div id='old-doc'></div><div id='probe'></div></body></html>" );
+	FileSystem::fileWrite(
+		newPath,
+		"<!DOCTYPE html><html><head><style>"
+		"#probe { width: 100px; height: 80px; background-image: url('file://" +
+			imagePath +
+			"'); }"
+			"</style></head><body><div id='new-doc'></div><div id='probe'></div></body></html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + oldPath ) );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+	webView->loadURI( URI( "file://" + newPath ) );
+	pump( 10 );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponse = true;
+	}
+	serverCv.notify_one();
+
+	server.join();
+	listener.close();
+	EXPECT_TRUE( serverOk );
+	pump( 80 );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "old-doc" ) == nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "new-doc" ) != nullptr );
+	Node* probeNode = documentScene->getRoot()->find( "probe" );
+	ASSERT_TRUE( probeNode != nullptr && probeNode->isUINode() );
+	UINode* probe = probeNode->asType<UINode>();
+	ASSERT_TRUE( probe->getBackground() != nullptr );
+	ASSERT_TRUE( probe->getBackground()->getLayer( 0 ) != nullptr );
+	EXPECT_TRUE( probe->getBackground()->getLayer( 0 )->getDrawable() != nullptr );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIWebView, CoalescesViewportResizeDocumentMetrics ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 800, 600, "UIWebView Resize Metrics Test", WindowStyle::Default,
@@ -1365,6 +1944,138 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWebView, DocumentContainerHeightStaysSyncedAfterBottomGrow ) {
+	UIApplication app( WindowSettings{ 1280, 720, "eepp - UI HTML Example", WindowStyle::Default,
+									   WindowBackend::Default, 32 },
+					   UIApplication::Settings( {}, 1.f ), ContextSettings( false, 0, 0 ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto win = app.getWindow();
+	ASSERT_TRUE( win != nullptr );
+
+	auto ui = app.getUI();
+	ASSERT_TRUE( ui != nullptr );
+	ui->setColorSchemePreference( ColorSchemeExtPreference::Light );
+
+	UIWidget* vbox = ui->loadLayoutFromString( R"xml(
+	<style>
+		PushButton.webview_ui {
+			border-top-color: transparent;
+			border-right-color: transparent;
+			border-bottom-color: transparent;
+			border-left-color: transparent;
+		}
+		PushButton.webview_ui:hover {
+			border-top-color: var(--primary);
+			border-right-color: var(--primary);
+			border-bottom-color: var(--primary);
+			border-left-color: var(--primary);
+		}
+	</style>
+	<vbox layout_width="match_parent" layout_height="match_parent">
+		<hbox layout_width="match_parent" layout_height="wrap_content">
+			<PushButton lw="26dp" id="backbtn" class="webview_ui" text="@string(back, Back)"
+				icon="icon(arrow-left-s, 22dp)"
+				text-as-fallback="true" />
+			<PushButton lw="26dp" id="fwdbtn"  class="webview_ui" text="@string(forward, Forward)"
+				icon="icon(arrow-right-s, 22dp)"
+				text-as-fallback="true" />
+			<PushButton lw="26dp" id="refreshbtn"  class="webview_ui" text="@string(refresh, Refresh)"
+				icon="icon(refresh, 18dp)"
+				text-as-fallback="true" />
+			<TextInput id="url_bar" layout_width="0" layout_weight="1" />
+		</hbox>
+		<WebView id="webview" layout_width="match_parent" layout_height="0" layout_weight="1" />
+	</vbox>
+	)xml",
+											   nullptr, app.getStyleSheetDefaultMarker() );
+	ASSERT_TRUE( vbox != nullptr );
+
+	UIWebView* webView = vbox->find( "webview" )->asType<UIWebView>();
+	ASSERT_TRUE( webView != nullptr );
+	webView->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
+	bool navigationCompleted = false;
+	webView->onNavigationCompleted(
+		[&navigationCompleted]( const URI& ) { navigationCompleted = true; } );
+	webView->loadURI(
+		URI( "file://" + Sys::getProcessPath() + "assets/html/body_height_miscalculation.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
+	UINode* documentLayout = documentScene->getParent()->asType<UINode>();
+	UIWidget* documentContainer = webView->getDocumentContainer();
+	ASSERT_TRUE( documentContainer != nullptr );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 40; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+			win->clear();
+			SceneManager::instance()->draw();
+			win->display();
+		}
+	};
+	auto updateOnce = [&]() {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		win->clear();
+		SceneManager::instance()->draw();
+		win->display();
+	};
+	for ( int i = 0; i < 120 && !navigationCompleted; i++ )
+		updateOnce();
+	ASSERT_TRUE( navigationCompleted );
+	pump();
+	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+	const Sizef initialRootSize = ui->getRoot()->getPixelsSize();
+	const Sizef initialWebViewSize = webView->getPixelsSize();
+
+	webView->getVerticalScrollBar()->setValue( 1.f );
+	pump();
+
+	win->setSize( 2048, 1150 );
+	ui->setPixelsSize( win->getSize().asFloat() );
+	ui->setViewportPixelsSize( win->getSize().asFloat() );
+	pump();
+
+	UIWidget* html = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	UIWidget* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	ASSERT_TRUE( html != nullptr );
+	ASSERT_TRUE( body != nullptr );
+	EXPECT_GT( ui->getRoot()->getPixelsSize().getWidth(), initialRootSize.getWidth() );
+	EXPECT_GT( ui->getRoot()->getPixelsSize().getHeight(), initialRootSize.getHeight() );
+	EXPECT_GT( webView->getPixelsSize().getWidth(), initialWebViewSize.getWidth() );
+	EXPECT_GT( webView->getPixelsSize().getHeight(), initialWebViewSize.getHeight() );
+	EXPECT_NEAR( webView->getContainer()->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( webView->getContainer()->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getWidth(),
+				 documentScene->getPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getWidth(),
+				 documentContainer->getPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getWidth(), html->getPixelsSize().getWidth(),
+				 1.f );
+	EXPECT_NEAR( body->getPixelsSize().getWidth(),
+				 documentScene->getViewportPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getHeight(),
+				 documentScene->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getHeight(),
+				 documentContainer->getPixelsSize().getHeight(), 1.f );
+	EXPECT_NEAR( documentLayout->getPixelsSize().getHeight(), html->getPixelsSize().getHeight(),
+				 1.f );
+	EXPECT_LE( body->getPixelsPosition().y + body->getPixelsSize().getHeight(),
+			   documentLayout->getPixelsSize().getHeight() + 1.f );
+	EXPECT_GE( body->getPixelsSize().getHeight(),
+			   documentScene->getViewportPixelsSize().getHeight() - 1.f );
+	EXPECT_NEAR( -documentLayout->getPixelsPosition().y +
+					 webView->getContainer()->getPixelsSize().getHeight(),
+				 documentLayout->getPixelsSize().getHeight(), 1.f );
+
+	app.getUI()->getRoot()->closeAllChildren();
+}
+
 UTEST( UIWebView, DocumentScenesIsolateStylesUriAndLookup ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 800, 600, "UIWebView Isolation Test", WindowStyle::Default,
@@ -1396,16 +2107,31 @@ UTEST( UIWebView, DocumentScenesIsolateStylesUriAndLookup ) {
 	webViewB->setPixelsSize( 300, 200 );
 	webViewB->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
-	const std::string pathA = Sys::getTempPath() + "eepp_uiwebview_doc_a.html";
-	const std::string pathB = Sys::getTempPath() + "eepp_uiwebview_doc_b.html";
+	const std::string testDir =
+		Sys::getTempPath() + String::format( "eepp_uiwebview_doc_isolation_%llu_%llu/",
+											 static_cast<unsigned long long>( Sys::getProcessID() ),
+											 static_cast<unsigned long long>( Sys::getTicks() ) );
+	const std::string dirA = testDir + "a/";
+	const std::string dirB = testDir + "b/";
+	ASSERT_TRUE( FileSystem::makeDir( dirA + "styles/", true ) );
+	ASSERT_TRUE( FileSystem::makeDir( dirB + "styles/", true ) );
+
+	const std::string pathA = dirA + "index.html";
+	const std::string pathB = dirB + "index.html";
 	const std::string pathA2 = Sys::getTempPath() + "eepp_uiwebview_doc_a2.html";
+	FileSystem::fileWrite(
+		dirA + "styles/site.css",
+		".shared { background-color: #ff0000; } #target-a { width: 111px; height: 20px; }" );
+	FileSystem::fileWrite(
+		dirB + "styles/site.css",
+		".shared { background-color: #0000ff; } #target-b { width: 222px; height: 20px; }" );
 	FileSystem::fileWrite( pathA, R"html(
-<html><head><style>.shared { background-color: #ff0000; }</style></head>
-<body><div id="target-a" class="shared" style="height:20px"></div></body></html>
+<html><head><link rel="stylesheet" href="styles/site.css"></head>
+<body><div id="target-a" class="shared"></div></body></html>
 )html" );
 	FileSystem::fileWrite( pathB, R"html(
-<html><head><style>.shared { background-color: #0000ff; }</style></head>
-<body><div id="target-b" class="shared" style="height:20px"></div></body></html>
+<html><head><link rel="stylesheet" href="styles/site.css"></head>
+<body><div id="target-b" class="shared"></div></body></html>
 )html" );
 	FileSystem::fileWrite( pathA2, R"html(
 <html><head><style>.shared { background-color: #ffff00; }</style></head>
@@ -1435,12 +2161,12 @@ UTEST( UIWebView, DocumentScenesIsolateStylesUriAndLookup ) {
 	ASSERT_TRUE( targetB != nullptr );
 	EXPECT_TRUE( targetA->asType<UIWidget>()->getBackgroundColor() == Color( "#ff0000" ) );
 	EXPECT_TRUE( targetB->asType<UIWidget>()->getBackgroundColor() == Color( "#0000ff" ) );
+	EXPECT_NEAR( 111.f, targetA->asType<UIWidget>()->getPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( 222.f, targetB->asType<UIWidget>()->getPixelsSize().getWidth(), 1.f );
 	EXPECT_TRUE( sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML ) == nullptr );
 	EXPECT_TRUE( sceneNode->getRoot()->find( "target-a" ) == nullptr );
-	EXPECT_TRUE( docA->getReferer().toString().find( "eepp_uiwebview_doc_a" ) !=
-				 std::string::npos );
-	EXPECT_TRUE( docB->getReferer().toString().find( "eepp_uiwebview_doc_b" ) !=
-				 std::string::npos );
+	EXPECT_TRUE( docA->getReferer() == URI( "file://" + pathA ) );
+	EXPECT_TRUE( docB->getReferer() == URI( "file://" + pathB ) );
 
 	webViewA->loadURI( URI( "file://" + pathA2 ) );
 	pump();
@@ -1451,8 +2177,7 @@ UTEST( UIWebView, DocumentScenesIsolateStylesUriAndLookup ) {
 	targetB = docB->getRoot()->find( "target-b" );
 	ASSERT_TRUE( targetB != nullptr );
 	EXPECT_TRUE( targetB->asType<UIWidget>()->getBackgroundColor() == Color( "#0000ff" ) );
-	EXPECT_TRUE( docB->getReferer().toString().find( "eepp_uiwebview_doc_b" ) !=
-				 std::string::npos );
+	EXPECT_TRUE( docB->getReferer() == URI( "file://" + pathB ) );
 
 	Engine::destroySingleton();
 }
@@ -1638,6 +2363,312 @@ UTEST( UIWebView, DocumentSceneAuthorFontFacesCleanUpOnDestruction ) {
 	EXPECT_EQ( nullptr, FontManager::instance()->getByName( loadedFontAName ) );
 	EXPECT_EQ( loadedFontB, FontManager::instance()->getByName( loadedFontBName ) );
 	EXPECT_EQ( loadedFontB, docB->getFontFromNamesList( "DestroyDocFace" ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RemoteFontFaceIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Remote Font Stale Navigation Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	const std::string fontPath = Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf";
+	font->loadFromFile( fontPath );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	std::string fontData;
+	ASSERT_TRUE( FileSystem::fileGet( fontPath, fontData ) );
+	ASSERT_FALSE( fontData.empty() );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::atomic<bool> serverOk{ false };
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponse = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponse; } );
+		}
+
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Type: font/ttf\r\n"
+									 "Content-Length: " +
+									 String::toString( static_cast<Uint64>( fontData.size() ) ) +
+									 "\r\nConnection: close\r\n"
+									 "\r\n" +
+									 fontData;
+		serverOk = client.send( response.data(), response.size() ) == Socket::Done;
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string oldPath = Sys::getTempPath() + "eepp_uiwebview_remote_font_old.html";
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_remote_font_new.html";
+	const std::string fontURL =
+		String::format( "http://127.0.0.1:%u/stale.ttf", listener.getLocalPort() );
+	FileSystem::fileWrite(
+		oldPath,
+		"<!DOCTYPE html><html><head><style>"
+		"@font-face { font-family: 'StaleRemoteFace'; src: url('" +
+			fontURL +
+			"'); }"
+			"#probe { font-family: 'StaleRemoteFace'; font-size: 20px; }"
+			"</style></head><body><div id='old-doc'></div><span id='probe'>old</span></body>"
+			"</html>" );
+	FileSystem::fileWrite(
+		newPath,
+		"<!DOCTYPE html><html><body><div id='new-doc'></div><span id='probe'>new</span></body>"
+		"</html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + oldPath ) );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+	webView->loadURI( URI( "file://" + newPath ) );
+	pump( 10 );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponse = true;
+	}
+	serverCv.notify_one();
+
+	server.join();
+	listener.close();
+	EXPECT_TRUE( serverOk );
+	pump( 80 );
+
+	UISceneNode* doc = webView->getDocumentSceneNode();
+	ASSERT_TRUE( doc != nullptr );
+	EXPECT_TRUE( doc->getRoot()->find( "old-doc" ) == nullptr );
+	EXPECT_TRUE( doc->getRoot()->find( "new-doc" ) != nullptr );
+	EXPECT_EQ( nullptr, doc->getFontFromNamesList( "StaleRemoteFace" ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, StaleRedirectCookieIgnoredAfterNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Stale Redirect Cookie Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponse = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponse; } );
+		}
+
+		const std::string response = "HTTP/1.1 302 Found\r\n"
+									 "Location: /new-location\r\n"
+									 "Set-Cookie: stale_cookie=1; Path=/\r\n"
+									 "Content-Length: 0\r\n"
+									 "Connection: close\r\n"
+									 "\r\n";
+		client.send( response.data(), response.size() );
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string newPath = Sys::getTempPath() + "eepp_uiwebview_stale_cookie_new.html";
+	FileSystem::fileWrite( newPath, "<html><body><div id='new-doc'></div></body></html>" );
+	const URI staleURI( String::format( "http://127.0.0.1:%u/old", listener.getLocalPort() ) );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( staleURI );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+	webView->loadURI( URI( "file://" + newPath ) );
+	pump( 10 );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponse = true;
+	}
+	serverCv.notify_one();
+
+	listener.close();
+	if ( server.joinable() )
+		server.join();
+	pump( 80 );
+
+	UISceneNode* doc = webView->getDocumentSceneNode();
+	ASSERT_TRUE( doc != nullptr );
+	EXPECT_TRUE( doc->getRoot()->find( "new-doc" ) != nullptr );
+	EXPECT_FALSE( doc->getCookieManager().hasCookie( staleURI.getAuthority() ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, DestroyWithPendingSubresourcesIsSafe ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Pending Subresource Destruction Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	const std::string fontPath = Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf";
+	font->loadFromFile( fontPath );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	std::string imageData;
+	const std::string imagePath =
+		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
+	ASSERT_FALSE( imageData.empty() );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+
+	std::mutex serverMutex;
+	std::condition_variable serverCv;
+	bool requestReceived = false;
+	bool releaseResponses = false;
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		if ( !readHttpRequestHeaders( client ) )
+			return;
+
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			requestReceived = true;
+		}
+		serverCv.notify_one();
+		{
+			std::unique_lock<std::mutex> lock( serverMutex );
+			serverCv.wait( lock, [&] { return releaseResponses; } );
+		}
+
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Type: image/png\r\n"
+									 "Content-Length: " +
+									 String::toString( static_cast<Uint64>( imageData.size() ) ) +
+									 "\r\nConnection: close\r\n"
+									 "\r\n" +
+									 imageData;
+		client.send( response.data(), response.size() );
+		client.disconnect();
+	} );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string baseURL = String::format( "http://127.0.0.1:%u", listener.getLocalPort() );
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_destroy_pending.html";
+	FileSystem::fileWrite( path, "<!DOCTYPE html><html><body><img id='img' src='" + baseURL +
+									 "/img.png'></body></html>" );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+
+	webView->loadURI( URI( "file://" + path ) );
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		serverCv.wait( lock, [&] { return requestReceived; } );
+	}
+
+	webView->close();
+	pump( 20 );
+
+	{
+		std::unique_lock<std::mutex> lock( serverMutex );
+		releaseResponses = true;
+	}
+	serverCv.notify_all();
+	listener.close();
+	if ( server.joinable() )
+		server.join();
+
+	pump( 20 );
+	ASSERT_TRUE( sceneNode->getRoot()->findByType( UI_TYPE_WEBVIEW ) == nullptr );
 
 	Engine::destroySingleton();
 }

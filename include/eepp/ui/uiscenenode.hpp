@@ -12,6 +12,8 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 
+#include <atomic>
+#include <functional>
 #include <memory>
 
 using namespace EE::Network;
@@ -833,6 +835,23 @@ class EE_API UISceneNode : public SceneNode {
 
 	void loadHTMLBaseCSS();
 
+	struct AsyncResourceLoadState {
+		std::atomic<UISceneNode*> owner{ nullptr };
+		std::atomic<bool> alive{ true };
+		std::atomic<Uint64> generation{ 0 };
+	};
+
+	using AsyncResourceMainThreadFunc = std::function<void( UISceneNode* )>;
+
+	std::shared_ptr<AsyncResourceLoadState> getAsyncResourceLoadState() const;
+
+	static bool isAsyncResourceLoadCurrent(
+		const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation );
+
+	static void runAsyncResourceOnMainThread(
+		const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation,
+		AsyncResourceMainThreadFunc func, const Time& delay = Seconds( 0 ) );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -850,10 +869,6 @@ class EE_API UISceneNode : public SceneNode {
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
-	struct AsyncResourceLoadState {
-		bool alive{ true };
-		Uint64 generation{ 0 };
-	};
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
