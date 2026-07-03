@@ -1787,11 +1787,13 @@ UTEST( UIWebView, LinearGradientRendersToFramebuffer ) {
 	Image framebuffer = win->getFrontBufferImage();
 	Color left = framebuffer.getPixel( 20 + 10 + 12, 20 + 10 + 40 );
 	Color right = framebuffer.getPixel( 20 + 10 + 108, 20 + 10 + 40 );
+	int redDiff = static_cast<int>( left.r ) - static_cast<int>( right.r );
+	int blueDiff = static_cast<int>( right.b ) - static_cast<int>( left.b );
 
 	EXPECT_GT( left.r, left.b );
 	EXPECT_GT( right.b, right.r );
-	EXPECT_GT( eeabs( static_cast<int>( left.r ) - static_cast<int>( right.r ) ), 80 );
-	EXPECT_GT( eeabs( static_cast<int>( left.b ) - static_cast<int>( right.b ) ), 80 );
+	EXPECT_GT( redDiff, 80 );
+	EXPECT_GT( blueDiff, 80 );
 
 	Engine::destroySingleton();
 }
