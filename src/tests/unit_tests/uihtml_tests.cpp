@@ -4223,6 +4223,60 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, BodyNoOpContentHeightChangeDoesNotDirtyHtml ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "body no-op content height change", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	std::string html = R"html(
+		<!doctype html>
+		<html>
+		<body style="margin: 0;">
+			<div id="spacer" style="display: block; width: 100px; height: 900px;"></div>
+		</body>
+		</html>
+	)html";
+
+	sceneNode->setURI( "file://body-no-op-content-height-change.html" );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+									 webView->getDocumentContainer(),
+									 String::hash( "body-no-op-content-height-change" ) );
+	webView->refreshDocumentLayout();
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UILayout>();
+	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* spacer = sceneNode->getRoot()->find( "spacer" )->asType<UIWidget>();
+	ASSERT_TRUE( htmlNode != nullptr );
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( spacer != nullptr );
+	ASSERT_GT( body->getPixelsSize().getHeight(), 850.f );
+	ASSERT_FALSE( htmlNode->isLayoutDirty() );
+
+	spacer->setPixelsSize(
+		{ spacer->getPixelsSize().getWidth() + 25.f, spacer->getPixelsSize().getHeight() } );
+	EXPECT_FALSE( htmlNode->isLayoutDirty() );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, DeferredCSSKeepsTableHeightStableAfterViewportResize ) {
 	std::shared_ptr<ThreadPool> threadPool(
 		ThreadPool::createShared( eemax<int>( 4, Sys::getCPUCount() ) ) );
