@@ -19,12 +19,24 @@ jobs:
         brew install wget SDL2 premake
     - name: Build
       run: |
-        premake5 --disable-static-build gmake
+        premake5 --disable-static-build --with-debug-symbols gmake
         make -C make/macosx/ -j$(sysctl -n hw.ncpu) -e config=release_arm64
     - name: Unit Tests
       run: |
+        set +e
         cd bin/unit_tests
         ./eepp-unit_tests
+        status=$?
+        if [ "$status" -ne 0 ]; then
+          echo "::group::lldb crash backtrace rerun"
+          lldb --batch \
+            -o "run" \
+            -k "thread backtrace all" \
+            -k "quit" \
+            -- ./eepp-unit_tests || true
+          echo "::endgroup::"
+        fi
+        exit "$status"
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4

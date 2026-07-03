@@ -824,8 +824,11 @@ UTEST( UITextNode_BlockLayouter, OuterSpanHitBoxesCoverTextNodes ) {
 }
 
 UTEST( UITextNode_BlockLayouter, HitBoxLocalPositionsAreAtOrigin ) {
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: begin" );
+
 	auto sceneNode = createRichTextScene();
 	ASSERT_TRUE( sceneNode != nullptr );
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: scene created" );
 
 	// Simple span with own text: hitboxes should be at (0,0) in local space
 	String xml = R"xml(
@@ -837,7 +840,9 @@ UTEST( UITextNode_BlockLayouter, HitBoxLocalPositionsAreAtOrigin ) {
 	)xml";
 
 	sceneNode->loadLayoutFromString( xml );
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: layout loaded" );
 	sceneNode->update( Time::Zero );
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: scene updated" );
 
 	UIWidget* anchor = sceneNode->find<UIWidget>( "anchor" );
 	ASSERT_TRUE( anchor != nullptr );
@@ -853,12 +858,17 @@ UTEST( UITextNode_BlockLayouter, HitBoxLocalPositionsAreAtOrigin ) {
 		EXPECT_NEAR( firstHb.Top, 0.f, 2.f );
 	}
 
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: before destroy" );
 	destroyRichTextScene( sceneNode );
+	UTEST_PRINT_STEP( "HitBoxLocalPositionsAreAtOrigin: end" );
 }
 
 UTEST( UITextNode_BlockLayouter, OverFindHitsAnchorWhenMatchingText ) {
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: begin" );
+
 	auto sceneNode = createRichTextScene();
 	ASSERT_TRUE( sceneNode != nullptr );
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: scene created" );
 
 	// Mixed text nodes + anchor: overFind should return the anchor when
 	// clicking inside its hitbox
@@ -871,7 +881,9 @@ UTEST( UITextNode_BlockLayouter, OverFindHitsAnchorWhenMatchingText ) {
 	)xml";
 
 	sceneNode->loadLayoutFromString( xml );
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: layout loaded" );
 	sceneNode->update( Time::Zero );
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: scene updated" );
 
 	UITextSpan* anchor = sceneNode->find<UITextSpan>( "anchor" );
 	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
@@ -883,16 +895,23 @@ UTEST( UITextNode_BlockLayouter, OverFindHitsAnchorWhenMatchingText ) {
 	if ( !anchor->getHitBoxes().empty() ) {
 		const Rectf& firstHb = anchor->getHitBoxes()[0];
 		Vector2f hitPos = anchor->convertToWorldSpace( { firstHb.Left + 1, firstHb.Top + 1 } );
+		UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: before overFind" );
 		Node* hitNode = rt->overFind( hitPos );
+		UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: after overFind" );
 		EXPECT_EQ( hitNode, anchor );
 	}
 
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: before destroy" );
 	destroyRichTextScene( sceneNode );
+	UTEST_PRINT_STEP( "OverFindHitsAnchorWhenMatchingText: end" );
 }
 
 UTEST( UITextNode_BlockLayouter, NestedSpanOverFindHitsInnerSpan ) {
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: begin" );
+
 	auto sceneNode = createRichTextScene();
 	ASSERT_TRUE( sceneNode != nullptr );
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: scene created" );
 
 	// Outer span contains text nodes and an inner span.
 	// Clicking inside the inner span's hitbox should return the inner span.
@@ -905,7 +924,9 @@ UTEST( UITextNode_BlockLayouter, NestedSpanOverFindHitsInnerSpan ) {
 	)xml";
 
 	sceneNode->loadLayoutFromString( xml );
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: layout loaded" );
 	sceneNode->update( Time::Zero );
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: scene updated" );
 
 	UITextSpan* inner = sceneNode->find<UITextSpan>( "inner" );
 	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
@@ -917,11 +938,16 @@ UTEST( UITextNode_BlockLayouter, NestedSpanOverFindHitsInnerSpan ) {
 	if ( !inner->getHitBoxes().empty() ) {
 		const Rectf& firstHb = inner->getHitBoxes()[0];
 		Vector2f hitPos = inner->convertToWorldSpace( { firstHb.Left + 1, firstHb.Top + 1 } );
+		UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: before overFind" );
 		Node* hitNode = rt->overFind( hitPos );
+		UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: after overFind" );
+		ASSERT_TRUE( hitNode != nullptr );
 		EXPECT_TRUE( hitNode == inner || hitNode->inParentTreeOf( inner ) );
 	}
 
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: before destroy" );
 	destroyRichTextScene( sceneNode );
+	UTEST_PRINT_STEP( "NestedSpanOverFindHitsInnerSpan: end" );
 }
 
 // ============================================================
