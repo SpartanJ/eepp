@@ -4245,22 +4245,24 @@ UTEST( UIHTML, BodyNoOpContentHeightChangeDoesNotDirtyHtml ) {
 		</html>
 	)html";
 
-	sceneNode->setURI( "file://body-no-op-content-height-change.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "body-no-op-content-height-change" ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	documentScene->setURI( "file://body-no-op-content-height-change.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "body-no-op-content-height-change" ) );
 	webView->refreshDocumentLayout();
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UILayout>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* spacer = sceneNode->getRoot()->find( "spacer" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UILayout>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* spacer = documentScene->getRoot()->find( "spacer" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( spacer != nullptr );
@@ -4272,7 +4274,19 @@ UTEST( UIHTML, BodyNoOpContentHeightChangeDoesNotDirtyHtml ) {
 	EXPECT_FALSE( htmlNode->isLayoutDirty() );
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
+
+	UILayout::resetMetrics();
+	for ( int i = 0; i < 4; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update();
+		documentScene->updateDirtyLayouts();
+	}
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.invalidations );
+	EXPECT_EQ( 0u, metrics.treeUpdates );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
 
 	Engine::destroySingleton();
 }

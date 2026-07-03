@@ -670,8 +670,9 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	FunctionString functionType = FunctionString::parse( value );
 	std::string path;
 
-	if ( !functionType.isEmpty() && functionType.getName() == "url" &&
-		 !functionType.getParameters().empty() ) {
+	if ( !functionType.isEmpty() ) {
+		if ( functionType.getName() != "url" || functionType.getParameters().empty() )
+			return false;
 		path = functionType.getParameters().at( 0 );
 	} else {
 		path = value;

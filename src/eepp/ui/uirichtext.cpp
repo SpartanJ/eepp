@@ -253,11 +253,11 @@ void UIHTMLBody::updateLayout() {
 	if ( mChild && mChild->isWidget() && !mSettingBodyHeight ) {
 		mSettingBodyHeight = true;
 
-		updateDocumentContentMinHeightFromChildren();
+		bool documentMinHeightChanged = updateDocumentContentMinHeightFromChildren();
 
 		mSettingBodyHeight = false;
 
-		if ( getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
+		if ( documentMinHeightChanged && getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
 			auto* html = getParent()->asType<UIHTMLHtml>();
 			const Float bodyBottom = getPixelsPosition().y + getPixelsSize().getHeight();
 			if ( bodyBottom > html->getPixelsSize().getHeight() + 0.5f ) {

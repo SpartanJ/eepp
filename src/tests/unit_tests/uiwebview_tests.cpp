@@ -10,11 +10,13 @@
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilayout.hpp>
@@ -1715,6 +1717,81 @@ UTEST( UIWebView, RemoteBackgroundImageIgnoredAfterNavigation ) {
 	ASSERT_TRUE( probe->getBackground() != nullptr );
 	ASSERT_TRUE( probe->getBackground()->getLayer( 0 ) != nullptr );
 	EXPECT_TRUE( probe->getBackground()->getLayer( 0 )->getDrawable() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, LinearGradientRendersToFramebuffer ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Linear Gradient Render Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	win->setClearColor( Color::Black );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->setPixelsPosition( 20, 20 );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	documentScene->setURI( "https://newsblur.com/features/" );
+	documentScene->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( R"html(
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<style>
+					html, body { margin: 0; padding: 0; background: #ffffff; }
+					#probe {
+						margin: 10px 0 0 10px;
+						width: 120px;
+						height: 80px;
+						background: linear-gradient(135deg, #ff0000ff 0%, #0000ffff 100%);
+					}
+				</style>
+			</head>
+			<body><div id="probe"></div></body>
+			</html>
+		)html" ),
+										 webView->getDocumentContainer(),
+										 String::hash( "https-linear-gradient" ) );
+	webView->refreshDocumentLayout();
+
+	for ( int i = 0; i < 10; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+
+	Node* probeNode = documentScene->getRoot()->find( "probe" );
+	ASSERT_TRUE( probeNode != nullptr && probeNode->isUINode() );
+	UINode* probe = probeNode->asType<UINode>();
+	ASSERT_TRUE( probe->getBackground() != nullptr );
+	auto* layer = probe->getBackground()->getLayer( 0 );
+	ASSERT_TRUE( layer != nullptr );
+	ASSERT_TRUE( layer->getDrawable() != nullptr );
+	EXPECT_EQ( Drawable::LINEARGRADIENT, layer->getDrawable()->getDrawableType() );
+
+	win->clear();
+	sceneNode->draw();
+	Image framebuffer = win->getFrontBufferImage();
+	Color left = framebuffer.getPixel( 20 + 10 + 12, 20 + 10 + 40 );
+	Color right = framebuffer.getPixel( 20 + 10 + 108, 20 + 10 + 40 );
+
+	EXPECT_GT( left.r, left.b );
+	EXPECT_GT( right.b, right.r );
+	EXPECT_GT( eeabs( static_cast<int>( left.r ) - static_cast<int>( right.r ) ), 80 );
+	EXPECT_GT( eeabs( static_cast<int>( left.b ) - static_cast<int>( right.b ) ), 80 );
 
 	Engine::destroySingleton();
 }
