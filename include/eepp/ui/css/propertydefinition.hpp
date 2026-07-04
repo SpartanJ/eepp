@@ -306,6 +306,7 @@ enum class PropertyId : Uint32 {
 	GridArea = String::hash( "grid-area" ),
 	JustifyItems = String::hash( "justify-items" ),
 	JustifySelf = String::hash( "justify-self" ),
+	Defer = String::hash( "defer" ),
 };
 
 enum class PropertyType : Uint32 {

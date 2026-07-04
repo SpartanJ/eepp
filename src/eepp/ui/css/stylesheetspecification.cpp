@@ -528,6 +528,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "grid-area", "auto" ).setType( PropertyType::String );
 	registerProperty( "justify-items", "normal" ).setType( PropertyType::String );
 	registerProperty( "justify-self", "auto" ).setType( PropertyType::String );
+	registerProperty( "defer", "0" ).setType( PropertyType::Bool );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },

@@ -72,7 +72,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	ui->setColorSchemePreference(
 		!prefersColorScheme.Get().empty()
 			? ColorSchemePreferences::fromStringExt( prefersColorScheme.Get() )
-			: ColorSchemeExtPreference::Light );
+			: ColorSchemeExtPreference::System );
 
 	bool useHNDark = hnDark.Get();
 

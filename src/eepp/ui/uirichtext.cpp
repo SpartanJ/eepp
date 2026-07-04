@@ -2343,37 +2343,19 @@ bool UIRichText::isTextSelectionEnabled() const {
 }
 
 void UIRichText::onLayoutUpdate() {
-	// This trashes too much the layout, there must be a better way, also, all tests pass without
-	// this, and also I cannot find an example where this ends up being 100% necessary.
-	/* if ( mDeferredLayoutReasons ) {
-		LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
-		mDeferredLayoutReasons = 0;
+	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
+	mDeferredLayoutReasons = 0;
 
-		LayoutInvalidationFlags nonPaint =
-			deferred & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+	LayoutInvalidationFlags nonPaint =
+		deferred & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+	if ( !nonPaint )
+		return;
 
-		if ( nonPaint ) {
-			const Sizef oldSize = getPixelsSize();
-			const LayoutInvalidationFlags formattingReasons =
-				toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::Style ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::Viewport );
-			if ( nonPaint & formattingReasons )
-				tryUpdateLayout();
-			if ( nonPaint & toLayoutInvalidationFlags( LayoutInvalidationReason::OutOfFlowChild ) )
-				updateOutOfFlowPosition();
-			if ( oldSize != getPixelsSize() ) {
-				LayoutInvalidationFlags parentReasons = LayoutInvalidation::ParentChildChange;
-				if ( nonPaint &
-					 toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) )
-					parentReasons |=
-						toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext );
-				notifyLayoutAttrChangeParent( parentReasons );
-			}
-		}
-	} */
+	LayoutInvalidationFlags newReasons = nonPaint & ~mCurrentLayoutReasons;
+	if ( !newReasons )
+		return;
+
+	setLayoutDirty( nonPaint );
 }
 
 void UIRichText::setTextSelectionEnabled( bool active ) {

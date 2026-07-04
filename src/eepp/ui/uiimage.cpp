@@ -11,6 +11,7 @@
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI {
 
@@ -56,6 +57,8 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	if ( drawable == mDrawable )
 		return this;
 
+	Sizef oldSize( mSize );
+
 	safeDeleteDrawable();
 
 	mDrawable = drawable;
@@ -86,6 +89,9 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	}
 
 	onAutoSize();
+
+	if ( mSize != oldSize )
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 
 	autoAlign();
 
@@ -293,6 +299,43 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 	}
 }
 
+bool UIImage::loadFileDrawable( const Network::URI& uri ) {
+	UISceneNode* scene = getUISceneNode();
+	if ( !scene || !scene->getThreadPool() ||
+		 !Window::Engine::instance()->isSharedGLContextEnabled() )
+		return false;
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	Uint64 resourceGeneration =
+		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	Uint64 loadId = ++mRemoteImageLoadId;
+	auto alive = mAsyncImageAlive;
+	const std::string filePath = uri.getFSPath();
+
+	scene->getThreadPool()->run(
+		[resourceState, resourceGeneration, alive, loadId, filePath, this] {
+			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
+				 !alive || !alive->load( std::memory_order_acquire ) )
+				return;
+
+			Texture* texture = TextureFactory::instance()->loadFromFile(
+				filePath, false, Texture::ClampMode::ClampToEdge, false, false );
+			if ( texture == nullptr )
+				return;
+
+			UISceneNode::runAsyncResourceOnMainThread(
+				resourceState, resourceGeneration, [alive, loadId, texture, this]( UISceneNode* ) {
+					if ( !alive || !alive->load( std::memory_order_acquire ) ||
+						 loadId != mRemoteImageLoadId )
+						return;
+
+					setDrawable( texture, false );
+				} );
+		} );
+
+	return true;
+}
+
 void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 	UISceneNode* scene = getUISceneNode();
 	if ( !scene )
@@ -435,9 +478,10 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string path( attribute.getValue() );
 			URI uri( path );
 			bool ownIt;
+			UISceneNode* scene = getUISceneNode();
 
-			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
-				uri = getUISceneNode()->solveRelativePath( uri );
+			if ( scene && uri.getScheme().empty() && !scene->getURI().empty() ) {
+				uri = scene->solveRelativePath( uri );
 				path = uri.toString();
 			}
 
@@ -445,6 +489,9 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				loadRemoteDrawable( uri );
 				break;
 			}
+
+			if ( mDeferLoad && uri.getScheme() == "file" && loadFileDrawable( uri ) )
+				break;
 
 			Drawable* createdDrawable =
 				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
@@ -454,7 +501,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				Drawable* res = NULL;
 				if ( NULL != ( res = DrawableSearcher::searchByName(
-								   path, false, getUISceneNode()->getReferer() ) ) )
+								   path, false, scene ? scene->getReferer() : URI() ) ) )
 					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;
@@ -494,6 +541,9 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Height:
 			unsetFlags( UI_AUTO_SIZE );
 			return UIWidget::applyProperty( attribute );
+		case PropertyId::Defer:
+			mDeferLoad = attribute.getValue().empty() ? true : attribute.asBool();
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
