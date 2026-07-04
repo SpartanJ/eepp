@@ -32,25 +32,37 @@ std::unordered_map<std::string, LogLevel> Log::getMapFlag() {
 
 Log* Log::create( const std::string& logPath, const LogLevel& level, bool stdOutLog,
 				  bool liveWrite ) {
-	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( Log, ( logPath, level, stdOutLog, liveWrite ) );
+	Log* singleton = ms_singleton.load( std::memory_order_acquire );
+	if ( NULL == singleton ) {
+		Lock l( ms_mutex );
+		singleton = ms_singleton.load( std::memory_order_acquire );
+		if ( NULL == singleton ) {
+			singleton = eeNew( Log, ( logPath, level, stdOutLog, liveWrite ) );
+			ms_singleton.store( singleton, std::memory_order_release );
+		}
 	} else {
-		ms_singleton->setLogLevelThreshold( level );
-		ms_singleton->setLogToStdOut( stdOutLog );
-		ms_singleton->setLiveWrite( liveWrite );
+		singleton->setLogLevelThreshold( level );
+		singleton->setLogToStdOut( stdOutLog );
+		singleton->setLiveWrite( liveWrite );
 	}
-	return ms_singleton;
+	return singleton;
 }
 
 Log* Log::create( const LogLevel& level, bool stdOutLog, bool liveWrite ) {
-	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( Log, ( "", level, stdOutLog, liveWrite ) );
+	Log* singleton = ms_singleton.load( std::memory_order_acquire );
+	if ( NULL == singleton ) {
+		Lock l( ms_mutex );
+		singleton = ms_singleton.load( std::memory_order_acquire );
+		if ( NULL == singleton ) {
+			singleton = eeNew( Log, ( "", level, stdOutLog, liveWrite ) );
+			ms_singleton.store( singleton, std::memory_order_release );
+		}
 	} else {
-		ms_singleton->setLogLevelThreshold( level );
-		ms_singleton->setLogToStdOut( stdOutLog );
-		ms_singleton->setLiveWrite( liveWrite );
+		singleton->setLogLevelThreshold( level );
+		singleton->setLogToStdOut( stdOutLog );
+		singleton->setLiveWrite( liveWrite );
 	}
-	return ms_singleton;
+	return singleton;
 }
 
 Log::Log() : mSave( false ), mStdOutEnabled( false ), mLiveWrite( false ), mFS( NULL ) {

@@ -163,11 +163,17 @@ SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
 SyntaxDefinitionManager*
 SyntaxDefinitionManager::createSingleton( std::size_t reserveSpaceForLanguages ) {
-	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( SyntaxDefinitionManager, ( reserveSpaceForLanguages ) );
+	SyntaxDefinitionManager* singleton = ms_singleton.load( std::memory_order_acquire );
+	if ( NULL == singleton ) {
+		Lock l( ms_mutex );
+		singleton = ms_singleton.load( std::memory_order_acquire );
+		if ( NULL == singleton ) {
+			singleton = eeNew( SyntaxDefinitionManager, ( reserveSpaceForLanguages ) );
+			ms_singleton.store( singleton, std::memory_order_release );
+		}
 	}
 
-	return ms_singleton;
+	return singleton;
 }
 
 static void addPlainText() {
@@ -179,8 +185,8 @@ static void addPlainText() {
 // lite-plugins (https://github.com/rxi/lite-plugins) supported languages.
 
 SyntaxDefinitionManager::SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages ) {
-	if ( ms_singleton == nullptr )
-		ms_singleton = this;
+	if ( ms_singleton.load( std::memory_order_acquire ) == nullptr )
+		ms_singleton.store( this, std::memory_order_release );
 
 	{
 		Lock l( mMutex );
