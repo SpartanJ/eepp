@@ -1,220 +1,28 @@
-<!DOCTYPE html>
-<!-- saved from url=(0049)https://brennan.io/2026/05/09/pinball-and-escrow/ -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <!-- Main/Important Meta -->
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Space Cadet Pinball on Linux • Stephen Brennan</title>
-  <link rel="canonical" href="https://brennan.io/2026/05/09/pinball-and-escrow/">
-
-  <!-- Icons -->
-  <link rel="apple-touch-icon" href="https://brennan.io/images/me.jpg">
-  <link rel="shortcut icon" sizes="16x16 24x24 32x32 48x48 64x64" href="https://brennan.io/favicon.ico">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="./inline_block_wrap_files/normalize.css" defer>
-  <link rel="stylesheet" href="./inline_block_wrap_files/main.css" defer>
-
-  <!-- Meta information -->
-  <meta name="author" content="Stephen Brennan">
-  <meta name="description" content="Stephen Brennan&#39;s personal website and blog.">
-  <meta name="keywords" content="blog programming technology">
-
-  <meta name="fediverse:creator" content="@brenns10@snake.club">
-
-  <!-- Open Graph tags (Facebook meta-info) -->
-  <meta property="og:title" content="Space Cadet Pinball on Linux - Stephen Brennan">
-  <meta property="og:url" content="https://brennan.io/2026/05/09/pinball-and-escrow/">
-  <meta property="og:image" content="https://brennan.io/images/me.jpg">
-  <meta property="og:description" content="Stephen Brennan&#39;s personal website and blog.">
-  <meta property="og:site_name" content="Stephen Brennan&#39;s Blog">
-  <meta property="og:see_also" content="https://brennan.io">
-
-  <!-- Twitter meta-info -->
-  <meta name="twitter:site" content="@brenns10">
-  <meta name="twitter:creator" content="@brenns10">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:url" content="https://brennan.io/2026/05/09/pinball-and-escrow/">
-  <meta name="twitter:title" content="Space Cadet Pinball on Linux - Stephen Brennan">
-  <meta name="twitter:description" content="Stephen Brennan&#39;s personal website and blog.">
-  <meta name="twitter:image" content="https://brennan.io/images/me.jpg">
-</head>
-
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link
+      rel="stylesheet"
+      href="./inline_block_wrap_files/normalize.css"
+      defer
+    />
+    <link rel="stylesheet" href="./inline_block_wrap_files/main.css" defer />
+  </head>
   <body>
-
-  <div class="site-content">
-  <nav>
-    <input type="checkbox" id="nav" class="hidden">
-    <label for="nav" class="nav-open"><i></i><i></i><i></i></label>
-    <div class="nav-container">
-      <ul>
-        <li><a href="https://brennan.io/" class="title">Stephen Brennan</a></li>
-        <li><a href="https://brennan.io/blog">Blog</a></li>
-        <li><a href="https://brennan.io/projects">Projects</a></li>
-        <li><a href="https://brennan.io/resume">Resume</a></li>
-      </ul>
+    <div class="site-content">
+      <nav>
+        <div class="nav-container">
+          <ul>
+            <li>
+              <a href="https://brennan.io/" class="title">Stephen Brennan</a>
+            </li>
+            <li><a href="https://brennan.io/blog">Blog</a></li>
+            <li><a href="https://brennan.io/projects">Projects</a></li>
+            <li><a href="https://brennan.io/resume">Resume</a></li>
+          </ul>
+        </div>
+      </nav>
     </div>
-  </nav>
-  </div>
-
-  <div class="site-content">
-
-  <h1>Space Cadet Pinball on Linux</h1>
-<em>Stephen Brennan • 09 May 2026</em>
-
-<p>To my fellow Linux users who grew up using Windows XP: did you know, you can
-have Space Cadet Pinball on your Linux machine? This is not breaking news, but
-it’s exciting to me, and I’m the one who decides what I write about. So here’s
-your PSA!</p>
-
-<p>Space Cadet Pinball was bundled with Windows XP, and growing up I played it a
-lot. As a result it holds a special place in my heart. I found that it was the
-most engaging game that was bundled with Windows.  Solitaire was too mindless,
-and Freecell, Hearts, and Minesweeper were too complex and boring to me at that
-age. But pinball held my attention, and so I played it a lot<sup id="fnref:1" role="doc-noteref"><a href="https://brennan.io/2026/05/09/pinball-and-escrow/#fn:1" class="footnote" rel="footnote">1</a></sup>.</p>
-
-<p>Anyway, somebody has gone to the effort of using a decompiler and reverse
-engineering tools to create source code, and then put in what I’d imagine is a
-lot of effort to make it playable on a lot of platforms! All that results in
-<a href="https://github.com/k4zmu2a/SpaceCadetPinball">this project on Github</a>. The
-easiest way to play on Linux is actually to use the Flatpak, which comes bundled
-with the original game resources from the Windows version. You can either
-install it with a GUI (e.g. KDE Discover) or install on the CLI:</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>flatpak install com.github.k4zmu2a.spacecadetpinball
-</code></pre></div></div>
-
-<p>That’s all you need to play &amp; get a hit of nostalgia! I know there are
-<a href="https://pinball.alula.me/">browser-based versions</a> available too, but I would
-rather have it installed on my computer directly.</p>
-
-<h3 id="higher-resolution-with-full-tilt-data">High(er) Resolution With Full Tilt Data</h3>
-
-<p>Graphics technology has come a long way since then, and the graphics are a bit
-rough at 480p. But fear not: another version of the game existed, called Full
-Tilt! Pinball. Its game data is capable of displaying at the massive screen
-resolution 1024x768! You can find this game data <a href="https://archive.org/details/full_tilt_pinball">on
-archive.org</a> in a zip file.</p>
-
-<p>Getting the flatpak version to use these data files is a bit tricky. The easiest
-way is:</p>
-
-<ol>
-  <li>Ensure that you’ve run the game at least once prior to this, so that the data
-directory is created.</li>
-  <li>Extract the downloaded zip file directly into your data directory:
-    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd ~/.var/app/com.github.k4zmu2a.spacecadetpinball/data/SpaceCadetPinball
-unzip ~/Downloads/CADET.ZIP
-</code></pre></div>    </div>
-  </li>
-  <li>Delete (or, if you’re cautious, rename) the old data directory which is
-bundled with the app. Unfortunately this is necessary because the game
-searches multiple locations for data, but once it finds data files in one
-directory, it won’t continue looking for files in other locations.
-    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo rm -r $(flatpak info --show-location com.github.k4zmu2a.spacecadetpinball)/files/extra/Pinball
-</code></pre></div>    </div>
-    <p>You may not need the <code class="language-plaintext highlighter-rouge">sudo</code> call if your installation was per-user. Mine got
-installed to <code class="language-plaintext highlighter-rouge">/var/lib/flatpak</code> so I needed root.</p>
-  </li>
-</ol>
-
-<p>It’s possible you’d need to repeat step 3 if the game gets updated. However, <a href="https://flathub.org/en/apps/com.github.k4zmu2a.spacecadetpinball">the
-flatpak</a>
-hasn’t seen an update in over two years. I doubt one will happen, and if it
-does, it won’t be frequent.</p>
-
-<h3 id="random-notes">Random Notes</h3>
-
-<ol>
-  <li>
-    <p>If you want, you can keep the original files and merge them together so that
-you have the full set of both the original (referred to as “3DPB” for 3D
-Pinball in the game) and the new (Full Tilt) data. Then, the game will let
-you toggle between them if you’d like.</p>
-  </li>
-  <li>
-    <p>The data files seem to have some impact on the game rules. For instance, in
-the original 3DPB version, the reentry lanes (and launch lanes) have lights
-which toggle as the ball passes over. In the Full Tilt version, the lights
-stay on (rather than toggling), making it easier to complete the set of
-lights and upgrade the associated set of bumpers. (Yes yes, I know I’m a nerd
-for noticing this.)</p>
-  </li>
-  <li>
-    <p>Apparently, there was a game called “Marble Blast” which came pre-installed
-on some Macs in a roughly similar time period, which I know people developed
-similar relationships to growing up. Unlike this pinball game, the Marble
-Blast series grew, and there are newer versions available to play today.</p>
-  </li>
-</ol>
-
-<h3 id="bonus-thoughts">Bonus Thoughts</h3>
-
-<p>I think it’s great that this old game was beloved to enough people (and
-especially at least one very competent &amp; motivated person) to do this work.
-Having (any) source code available makes this game portable to all sorts of
-platforms, which is really great. You can play this on Mac, Windows, Linux, and
-even Android &amp; Nintendo Switch, apparently.</p>
-
-<p>Personally, I would be happy to pay the original developers for their work on
-this game, and I understand that there’s some concern about the legality of
-downloading game data files, especially for the Full Tilt version of the game.
-After all, they are copyrighted art &amp; data which was part of a commercial
-product. It seems like an unpopular opinion in today’s world, but I don’t
-advocate for piracy. Paying people for their work is important, even when it
-feels like you’re paying a faceless corporation. While I’d prefer things be
-created with a FOSS license, the world doesn’t always work that way. At the end
-of the day, I want people to be paid to create good things, because that’s how
-we get more good things!</p>
-
-<p>On the other hand, I feel software preservation is an important goal too.
-Ideally, I’d like to see a world where proprietary software like this could be
-placed into some sort of <a href="https://en.wikipedia.org/wiki/Source_code_escrow">source code
-escrow</a>. As long as the
-original copyright holders are in the business of selling their product, their
-rights should be respected. But if they elect to stop selling it, I think that
-code should revert to a FOSS license that allows users to improve &amp; maintain the
-software they use. This would help balance the rights of creators, users, and
-the goals of preservation.</p>
-
-<hr>
-
-<div class="footnotes" role="doc-endnotes">
-  <ol>
-    <li id="fn:1" role="doc-endnote">
-      <p>I also played another pinball game called 3D Ultra Pinball, but that came
-  on a CD presumably for purchase. I have no idea whether my parents went
-  out and bought it, or if it came in a cereal box. (Yes, game CDs did show
-  up in cereal boxes sometimes.)&nbsp;<a href="https://brennan.io/2026/05/09/pinball-and-escrow/#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
-    </li>
-  </ol>
-</div>
-
-
-<div class="social">
-  <ul>
-    <li>Share on:</li>
-    <li><a href="https://www.facebook.com/sharer/sharer.php?u=https://brennan.io/2026/05/09/pinball-and-escrow/"><span class="fab fa-facebook-square fa-lg"></span></a></li>
-    <li><a href="http://twitter.com/share?text=Space%20Cadet%20Pinball%20on%20Linux&amp;url=https://brennan.io/2026/05/09/pinball-and-escrow/"><span class="fab fa-twitter-square fa-lg"></span></a></li>
-    <li><a href="http://news.ycombinator.com/submitlink?u=https://brennan.io/2026/05/09/pinball-and-escrow/&amp;t=Space%20Cadet%20Pinball%20on%20Linux"><span class="fab fa-hacker-news-square fa-lg"></span></a></li>
-    <li><a href="https://www.reddit.com/submit?title=Space%20Cadet%20Pinball%20on%20Linux&amp;url=https://brennan.io/2026/05/09/pinball-and-escrow/"><span class="fab fa-reddit-square fa-lg"></span></a></li>
-  </ul>
-</div>
-<hr>
-
-
-
-  <div style="clear:both;"></div>
-  <div class="poweredby">
-      <a href="https://brennan.io/legal">Legal</a> •
-      <a href="https://brennan.io/blog/rss.xml">RSS</a>
-      <br><br>
-      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="./inline_block_wrap_files/88x31.png"></a>
-      <br><br>
-      <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">Stephen Brennan's Blog</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>
-  </div>
-
-  </div>
-
-
-</body></html>
+  </body>
+</html>

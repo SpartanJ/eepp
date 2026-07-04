@@ -1693,10 +1693,14 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
 								parentNode->asType<UIHTMLWidget>()->isGrid() );
 	if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+		 container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
 		 container->getPixelsSize().getWidth() > 0 ) {
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
+	} else if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
 				mode == IntrinsicMode::None ) {

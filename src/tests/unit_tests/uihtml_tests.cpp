@@ -2832,6 +2832,83 @@ UTEST( UIHTML, InlineBlockWrapIssue ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Deferred Inline Block List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 1280, 600 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI( "./assets/html/inline_block_wrap_defer.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	UIWidget* ul = nullptr;
+
+	for ( int i = 0; i < 100; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Milliseconds( 16 ) );
+		ul = documentScene->getRoot()->findByTag( "ul" );
+		if ( ul ) {
+			auto lis = ul->findAllByTag( "li" );
+			if ( !lis.empty() &&
+				 lis.front()->asType<UIHTMLWidget>()->getDisplay() == CSSDisplay::InlineBlock )
+				break;
+		}
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( ul != nullptr );
+	auto lis = ul->findAllByTag( "li" );
+	ASSERT_EQ( lis.size(), (size_t)4 );
+
+	const Float rowY = lis.front()->getPixelsPosition().y;
+	Float previousRight = lis.front()->getPixelsPosition().x;
+
+	for ( auto li : lis ) {
+		auto* htmlLi = li->asType<UIHTMLWidget>();
+		auto* richLi = li->asType<UIRichText>();
+		ASSERT_TRUE( htmlLi != nullptr );
+		ASSERT_TRUE( richLi != nullptr );
+		auto* anchor = li->findByTag( "a" );
+		ASSERT_TRUE( anchor != nullptr );
+		auto* htmlAnchor = anchor->asType<UIHTMLWidget>();
+		auto* richAnchor = anchor->asType<UIRichText>();
+		ASSERT_TRUE( htmlAnchor != nullptr );
+		ASSERT_TRUE( richAnchor != nullptr );
+
+		EXPECT_EQ( htmlLi->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( htmlAnchor->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( richLi->getRichTextPtr()->getLines().size(), (size_t)1 );
+		EXPECT_EQ( richAnchor->getRichTextPtr()->getLines().size(), (size_t)1 );
+		const auto& anchorLine = richAnchor->getRichTextPtr()->getLines().front();
+		const Rectf liContentOffset = li->asType<UIWidget>()->getPixelsContentOffset();
+		const Rectf anchorContentOffset = anchor->asType<UIWidget>()->getPixelsContentOffset();
+		EXPECT_NEAR( li->getPixelsSize().getHeight(),
+					 anchorLine.height + liContentOffset.Top + liContentOffset.Bottom, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight(),
+					 anchorLine.height + anchorContentOffset.Top + anchorContentOffset.Bottom,
+					 1.f );
+		EXPECT_EQ( li->getPixelsPosition().y, rowY );
+		EXPECT_GE( li->getPixelsPosition().x, previousRight );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_GE( li->getPixelsSize().getWidth() + 1.f, li->getMaxIntrinsicWidth() );
+		EXPECT_GE( anchor->getPixelsSize().getWidth() + 1.f, anchor->getMaxIntrinsicWidth() );
+
+		previousRight = li->getPixelsPosition().x + li->getPixelsSize().getWidth();
+	}
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, InlineBlockBrowserTest ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Browser Test",
 													  WindowStyle::Default, WindowBackend::Default,

@@ -35,6 +35,11 @@ static std::string normalizeDataPropertyName( std::string_view name ) {
 	return normalizedName;
 }
 
+static bool isAtomicInlineAutoDisplay( CSSDisplay display ) {
+	return display == CSSDisplay::InlineBlock || display == CSSDisplay::InlineFlex ||
+		   display == CSSDisplay::InlineGrid;
+}
+
 static CSSBaselineAlignValue parseBaselineAlign( UIHTMLWidget* widget,
 												 const StyleSheetProperty& property ) {
 	std::string_view val = property.value();
@@ -132,6 +137,21 @@ void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 
 		if ( oldDisplay == CSSDisplay::None )
 			setVisible( true );
+
+		if ( isAtomicInlineAutoDisplay( mDisplay ) ) {
+			Sizef size( getPixelsSize() );
+			bool resetSize = false;
+			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && size.getWidth() != 0.f ) {
+				size.setWidth( 0.f );
+				resetSize = true;
+			}
+			if ( getLayoutHeightPolicy() == SizePolicy::WrapContent && size.getHeight() != 0.f ) {
+				size.setHeight( 0.f );
+				resetSize = true;
+			}
+			if ( resetSize )
+				setInternalPixelsSize( size );
+		}
 
 		onDisplayChange();
 	}

@@ -1504,7 +1504,7 @@ UTEST( UIWebView, RemoteImageIgnoredAfterNavigation ) {
 
 	std::string imageData;
 	const std::string imagePath =
-		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+		Sys::getProcessPath() + "assets/html/reddit_old_thread_files/pixel.png";
 	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
 	ASSERT_FALSE( imageData.empty() );
 
@@ -1614,7 +1614,7 @@ UTEST( UIWebView, RemoteBackgroundImageIgnoredAfterNavigation ) {
 
 	std::string imageData;
 	const std::string imagePath =
-		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+		Sys::getProcessPath() + "assets/html/reddit_old_thread_files/pixel.png";
 	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
 	ASSERT_FALSE( imageData.empty() );
 
@@ -2667,7 +2667,7 @@ UTEST( UIWebView, DestroyWithPendingSubresourcesIsSafe ) {
 
 	std::string imageData;
 	const std::string imagePath =
-		Sys::getProcessPath() + "assets/html/inline_block_wrap_files/88x31.png";
+		Sys::getProcessPath() + "assets/html/reddit_old_thread_files/pixel.png";
 	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
 	ASSERT_FALSE( imageData.empty() );
 
