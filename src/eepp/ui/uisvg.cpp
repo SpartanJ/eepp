@@ -7,6 +7,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <memory>
 
 namespace EE { namespace UI {
 
@@ -18,6 +19,24 @@ class XmlStringWriter : public pugi::xml_writer {
 	virtual void write( const void* data, size_t size ) override {
 		result.append( static_cast<const char*>( data ), size );
 	}
+};
+
+class PendingSpriteTransfer {
+  public:
+	explicit PendingSpriteTransfer( Sprite* sprite ) : mSprite( sprite ) {}
+	PendingSpriteTransfer( const PendingSpriteTransfer& ) = delete;
+	PendingSpriteTransfer& operator=( const PendingSpriteTransfer& ) = delete;
+
+	~PendingSpriteTransfer() { eeSAFE_DELETE( mSprite ); }
+
+	Sprite* release() {
+		Sprite* sprite = mSprite;
+		mSprite = nullptr;
+		return sprite;
+	}
+
+  private:
+	Sprite* mSprite{ nullptr };
 };
 
 } // namespace
@@ -90,7 +109,14 @@ void UISvg::rasterizeSvg( const std::string& svgXml ) {
 	sprite->setAsTextureOwner( true );
 	sprite->setAsTextureRegionOwner( true );
 
-	runOnMainThread( [this, sprite] { setDrawable( sprite, true ); } );
+	auto spriteTransfer = std::make_shared<PendingSpriteTransfer>( sprite );
+
+	runOnMainThread( [this, spriteTransfer] {
+		Sprite* sprite = spriteTransfer->release();
+		if ( sprite ) {
+			setDrawable( sprite, true );
+		}
+	} );
 }
 
 void UISvg::onSizeChange() {
