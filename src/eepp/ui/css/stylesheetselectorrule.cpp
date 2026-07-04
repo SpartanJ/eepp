@@ -45,7 +45,30 @@ static bool isStructuralPseudoClass( const std::string& pseudoClass ) {
 }
 
 static bool isDataAttributeName( std::string_view name ) {
-	return String::istartsWith( String::trim( name ), "data-" );
+	return String::istartsWith( name, "data-" );
+}
+
+static bool containsWord( const std::string& string, const std::string& word ) {
+	size_t pos = 0;
+	while ( pos < string.size() ) {
+		while ( pos < string.size() && string[pos] == ' ' )
+			pos++;
+
+		size_t end = string.find( ' ', pos );
+		if ( end == std::string::npos )
+			end = string.size();
+
+		if ( word.size() == end - pos && string.compare( pos, word.size(), word ) == 0 )
+			return true;
+
+		pos = end + 1;
+	}
+	return false;
+}
+
+static bool startsWithDashMatch( const std::string& string, const std::string& prefix ) {
+	return string == prefix || ( string.size() > prefix.size() && string[prefix.size()] == '-' &&
+								 string.compare( 0, prefix.size(), prefix ) == 0 );
 }
 
 StyleSheetSelectorRule::PseudoClasses
@@ -311,20 +334,18 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 		}
 	}
 
-	const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
-	if ( !mClasses.empty() && !elClasses.empty() ) {
-		bool hasClasses = true;
+	if ( !mClasses.empty() ) {
+		const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
+		if ( elClasses.empty() )
+			return false;
 
 		for ( const auto& cls : mClasses ) {
 			if ( std::find( elClasses.begin(), elClasses.end(), cls ) == elClasses.end() ) {
-				hasClasses = false;
-				break;
+				return false;
 			}
 		}
 
-		if ( hasClasses ) {
-			flags |= Class;
-		}
+		flags |= Class;
 	}
 
 	if ( !mAttributeSelectors.empty() ) {
@@ -366,16 +387,14 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 							return false;
 						break;
 					case AttributeOperator::ContainsWord: { // ~= (Space-separated word check)
-						auto words = String::split( *elVal, ' ', true );
-						if ( std::find( words.begin(), words.end(), attr.value ) == words.end() ) {
+						if ( !containsWord( *elVal, attr.value ) ) {
 							return false;
 						}
 						break;
 					}
 					case AttributeOperator::StartsWithDash: // |= (Exact match or starts with value
 															// + "-")
-						if ( *elVal != attr.value &&
-							 !String::startsWith( *elVal, attr.value + "-" ) ) {
+						if ( !startsWithDashMatch( *elVal, attr.value ) ) {
 							return false;
 						}
 						break;
@@ -389,21 +408,10 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 	}
 
 	if ( applyPseudo ) {
-		if ( mPseudoClasses && element->getStyleSheetPseudoClasses() ) {
-			bool hasPseudoClasses = true;
-
-			for ( Uint32 i = 0; i < PseudoClassesTotal; i++ ) {
-				Uint32 pcls = ( 1 << i );
-				if ( ( mPseudoClasses & pcls ) &&
-					 !( element->getStyleSheetPseudoClasses() & pcls ) ) {
-					hasPseudoClasses = false;
-					break;
-				}
-			}
-
-			if ( hasPseudoClasses ) {
+		if ( mPseudoClasses ) {
+			const Uint32 elementPseudoClasses = element->getStyleSheetPseudoClasses();
+			if ( ( elementPseudoClasses & mPseudoClasses ) == mPseudoClasses )
 				flags |= PseudoClass;
-			}
 		}
 
 		if ( !mStructuralSelectors.empty() ) {
