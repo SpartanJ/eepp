@@ -204,14 +204,6 @@ void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
 	mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
 }
 
-bool StyleSheetStyle::isMediaValid() const {
-	if ( !mMediaQueryList ) {
-		return true;
-	}
-
-	return mMediaQueryList->isUsed();
-}
-
 const MediaQueryList::ptr& StyleSheetStyle::getMediaQueryList() const {
 	return mMediaQueryList;
 }
