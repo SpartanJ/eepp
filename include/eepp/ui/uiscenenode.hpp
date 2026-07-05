@@ -160,6 +160,15 @@ class EE_API UISceneNode : public SceneNode {
 	/** Enables or disables mouse-over highlighting in this scene and embedded UI scenes. */
 	void setHighlightOverRecursive( bool highlight );
 
+	/** Enables or disables focus highlighting in this scene and embedded UI scenes. */
+	void setHighlightFocusRecursive( bool highlight );
+
+	/** Enables or disables box debug drawing in this scene and embedded UI scenes. */
+	void setDrawBoxesRecursive( bool draw );
+
+	/** Enables or disables debug-data drawing in this scene and embedded UI scenes. */
+	void setDrawDebugDataRecursive( bool debug );
+
 	/**
 	 * @brief Gets the size in density-independent pixels (dp).
 	 *

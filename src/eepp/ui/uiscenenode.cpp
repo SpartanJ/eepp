@@ -324,6 +324,27 @@ void UISceneNode::setHighlightOverRecursive( bool highlight ) {
 		sceneNode->setHighlightOverRecursive( highlight );
 }
 
+void UISceneNode::setHighlightFocusRecursive( bool highlight ) {
+	setHighlightFocus( highlight );
+
+	for ( auto* sceneNode : mChildUISceneNodes )
+		sceneNode->setHighlightFocusRecursive( highlight );
+}
+
+void UISceneNode::setDrawBoxesRecursive( bool draw ) {
+	setDrawBoxes( draw );
+
+	for ( auto* sceneNode : mChildUISceneNodes )
+		sceneNode->setDrawBoxesRecursive( draw );
+}
+
+void UISceneNode::setDrawDebugDataRecursive( bool debug ) {
+	setDrawDebugData( debug );
+
+	for ( auto* sceneNode : mChildUISceneNodes )
+		sceneNode->setDrawDebugDataRecursive( debug );
+}
+
 void UISceneNode::updateHostUISceneNode() {
 	UISceneNode* hostScene = getHostUISceneNode();
 

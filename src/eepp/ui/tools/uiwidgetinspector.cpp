@@ -173,8 +173,9 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( highlightToggle ) {
 				highlightToggle();
 			} else {
-				sceneNode->setHighlightFocus( !sceneNode->getHighlightFocus() );
-				sceneNode->setHighlightOver( !sceneNode->getHighlightOver() );
+				bool highlight = !sceneNode->getHighlightOver();
+				sceneNode->setHighlightFocusRecursive( highlight );
+				sceneNode->setHighlightOverRecursive( highlight );
 			}
 		} );
 
@@ -184,7 +185,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawBoxesToggle ) {
 				drawBoxesToggle();
 			} else {
-				sceneNode->setDrawBoxes( !sceneNode->getDrawBoxes() );
+				sceneNode->setDrawBoxesRecursive( !sceneNode->getDrawBoxes() );
 			}
 		} );
 
@@ -194,7 +195,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawDebugDataToggle ) {
 				drawDebugDataToggle();
 			} else {
-				sceneNode->setDrawDebugData( !sceneNode->getDrawDebugData() );
+				sceneNode->setDrawDebugDataRecursive( !sceneNode->getDrawDebugData() );
 			}
 		} );
 

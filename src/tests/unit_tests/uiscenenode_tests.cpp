@@ -250,16 +250,40 @@ UTEST( UISceneNode, NestedSceneRebindsHostServicesOnSceneChange ) {
 	EXPECT_TRUE( nestedScene->getChildUISceneNodes()[0] == nestedChildScene );
 
 	hostSceneA->setHighlightOverRecursive( true );
+	hostSceneA->setHighlightFocusRecursive( true );
+	hostSceneA->setDrawBoxesRecursive( true );
+	hostSceneA->setDrawDebugDataRecursive( true );
 
 	EXPECT_TRUE( hostSceneA->getHighlightOver() );
+	EXPECT_TRUE( hostSceneA->getHighlightFocus() );
+	EXPECT_TRUE( hostSceneA->getDrawBoxes() );
+	EXPECT_TRUE( hostSceneA->getDrawDebugData() );
 	EXPECT_TRUE( nestedScene->getHighlightOver() );
+	EXPECT_TRUE( nestedScene->getHighlightFocus() );
+	EXPECT_TRUE( nestedScene->getDrawBoxes() );
+	EXPECT_TRUE( nestedScene->getDrawDebugData() );
 	EXPECT_TRUE( nestedChildScene->getHighlightOver() );
+	EXPECT_TRUE( nestedChildScene->getHighlightFocus() );
+	EXPECT_TRUE( nestedChildScene->getDrawBoxes() );
+	EXPECT_TRUE( nestedChildScene->getDrawDebugData() );
 
 	nestedScene->setHighlightOverRecursive( false );
+	nestedScene->setHighlightFocusRecursive( false );
+	nestedScene->setDrawBoxesRecursive( false );
+	nestedScene->setDrawDebugDataRecursive( false );
 
 	EXPECT_TRUE( hostSceneA->getHighlightOver() );
+	EXPECT_TRUE( hostSceneA->getHighlightFocus() );
+	EXPECT_TRUE( hostSceneA->getDrawBoxes() );
+	EXPECT_TRUE( hostSceneA->getDrawDebugData() );
 	EXPECT_FALSE( nestedScene->getHighlightOver() );
+	EXPECT_FALSE( nestedScene->getHighlightFocus() );
+	EXPECT_FALSE( nestedScene->getDrawBoxes() );
+	EXPECT_FALSE( nestedScene->getDrawDebugData() );
 	EXPECT_FALSE( nestedChildScene->getHighlightOver() );
+	EXPECT_FALSE( nestedChildScene->getHighlightFocus() );
+	EXPECT_FALSE( nestedChildScene->getDrawBoxes() );
+	EXPECT_FALSE( nestedChildScene->getDrawDebugData() );
 
 	hostWidget->setParent( hostSceneB->getRoot() );
 
