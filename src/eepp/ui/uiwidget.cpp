@@ -30,6 +30,33 @@ static bool isDataAttributeName( std::string_view name ) {
 	return String::istartsWith( String::trim( name ), "data-" );
 }
 
+static UIWidget* getCSSContainingBlockParent( const UIWidget* widget ) {
+	Node* parent = widget->getParent();
+	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+			static_cast<UIHTMLWidget*>( parent )->isInline() )
+		parent = parent->getParent();
+	return parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+}
+
+static bool hasDefiniteCSSHeight( UIWidget* widget ) {
+	if ( !widget || widget->getLayoutHeightPolicy() != SizePolicy::Fixed )
+		return false;
+
+	auto* style = widget->getUIStyle();
+	const auto* height = style ? style->getProperty( PropertyId::Height ) : nullptr;
+	return !( height && StyleSheetLength::isPercentage( height->value() ) );
+}
+
+static bool isUnresolvableHTMLPercentageHeight( const UIWidget* widget,
+												const StyleSheetProperty& property ) {
+	if ( 0 == ( widget->getFlags() & UI_HTML_ELEMENT ) ||
+		 !StyleSheetLength::isPercentage( property.value() ) )
+		return false;
+
+	UIWidget* parent = getCSSContainingBlockParent( widget );
+	return parent && !hasDefiniteCSSHeight( parent );
+}
+
 UIWidget* UIWidget::New() {
 	return eeNew( UIWidget, () );
 }
@@ -2027,6 +2054,8 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Height:
 			if ( attribute.value() == "auto" ) {
+				setLayoutHeightPolicy( SizePolicy::WrapContent );
+			} else if ( isUnresolvableHTMLPercentageHeight( this, attribute ) ) {
 				setLayoutHeightPolicy( SizePolicy::WrapContent );
 			} else {
 				if ( mStyle ) {

@@ -272,6 +272,212 @@ UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWebView, AbsoluteTextareaPercentageHeightDoesNotRecurse ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView Textarea Percent Height Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 420, 260 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_absolute_textarea.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	.commentsignupbar__textarea {
+		width: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		z-index: 1;
+		resize: none;
+		height: 100%;
+		box-sizing: border-box;
+	}
+</style>
+</head>
+<body>
+	<textarea class="commentsignupbar__textarea"></textarea>
+</body>
+</html>
+)html" );
+	webView->loadURI( URI( "file://" + path ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	for ( int i = 0; i < 20; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		win->clear();
+		SceneManager::instance()->draw();
+		win->display();
+	}
+
+	auto textarea = documentScene->getRoot()->querySelector( ".commentsignupbar__textarea" );
+	ASSERT_TRUE( textarea != nullptr && textarea->isWidget() );
+	EXPECT_GT( textarea->asType<UIWidget>()->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( textarea->asType<UIWidget>()->getPixelsSize().getHeight(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RedditLoggedOutCommentSignupTextareaDoesNotGrowWithDocument ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "UIWebView Reddit Logged Out Textarea Test",
+						WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_reddit_textarea_growth.html";
+	FileSystem::fileWrite( path, R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	body {
+		margin: 0;
+	}
+	.content {
+		height: 2400px;
+	}
+	.infobar.commentsignupbar {
+		box-sizing: border-box;
+		position: relative;
+		min-height: 0;
+		overflow: hidden;
+	}
+	.commentsignupbar__container {
+		position: relative;
+		display: block;
+		box-sizing: border-box;
+		min-height: 106px;
+		padding: 18px 9px;
+		background: white;
+		text-align: center;
+		max-width: 508px;
+	}
+	.commentsignupbar__link-wrapper {
+		display: block;
+	}
+	.commentsignupbar__textarea {
+		width: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		z-index: 1;
+		resize: none;
+		height: 100%;
+		box-sizing: border-box;
+	}
+	.commentsignupbar__textarea-above {
+		position: relative;
+		z-index: 2;
+	}
+	.commentsignupbar__title {
+		margin: 0 0 8px 0;
+		font-size: 18px;
+		line-height: 24px;
+	}
+	.commentsignupbar__desc {
+		margin: 0 0 10px 0;
+		font-size: 13px;
+		line-height: 18px;
+	}
+	.commentsignupbar__cta-button {
+		display: inline-block;
+		padding: 4px 12px;
+		line-height: 20px;
+	}
+</style>
+</head>
+<body>
+	<div class="content">
+		<section class="infobar commentsignupbar">
+			<div class="commentsignupbar__container">
+				<a class="login-required commentsignupbar__link-wrapper">
+					<textarea class="commentsignupbar__textarea"></textarea>
+					<div class="commentsignupbar__textarea-above">
+						<h2 class="commentsignupbar__title">Want to add to the discussion?</h2>
+						<p class="commentsignupbar__desc">Post a comment!</p>
+						<span class="commentsignupbar__cta-button">Log in or sign up</span>
+					</div>
+				</a>
+			</div>
+		</section>
+	</div>
+</body>
+</html>
+)html" );
+	webView->loadURI( URI( "file://" + path ) );
+
+	win->setClearColor( Color::White );
+	for ( int i = 0; i < 20; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		win->clear();
+		SceneManager::instance()->draw();
+		win->display();
+	}
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	UIWidget* documentRoot = documentScene->getRoot();
+	ASSERT_TRUE( documentRoot != nullptr );
+
+	auto signupBar = documentRoot->querySelector( ".commentsignupbar" );
+	auto signupContainer = documentRoot->querySelector( ".commentsignupbar__container" );
+	auto textarea = documentRoot->querySelector( ".commentsignupbar__textarea" );
+	ASSERT_TRUE( signupBar != nullptr && signupBar->isWidget() );
+	ASSERT_TRUE( signupContainer != nullptr && signupContainer->isWidget() );
+	ASSERT_TRUE( textarea != nullptr && textarea->isWidget() );
+
+	UIWidget* signupBarWidget = signupBar->asType<UIWidget>();
+	UIWidget* signupContainerWidget = signupContainer->asType<UIWidget>();
+	UIWidget* textareaWidget = textarea->asType<UIWidget>();
+
+	EXPECT_LE( signupContainerWidget->getPixelsSize().getHeight(), 180.f );
+	EXPECT_LE( signupBarWidget->getPixelsSize().getHeight(), 220.f );
+	EXPECT_LE( textareaWidget->getPixelsSize().getHeight(), 160.f );
+	EXPECT_LT( textareaWidget->getPixelsSize().getHeight(),
+			   documentScene->getPixelsSize().getHeight() * 0.1f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIWebView, VerticalScrollbarViewportDoesNotCreateHorizontalScroll ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 640, 480, "UIWebView Scrollbar Viewport Test", WindowStyle::Default,
