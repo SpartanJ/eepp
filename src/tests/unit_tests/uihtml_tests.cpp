@@ -2870,6 +2870,7 @@ UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
 	auto lis = ul->findAllByTag( "li" );
 	ASSERT_EQ( lis.size(), (size_t)4 );
 
+	const Color expectedLinkColor( "#B58900" );
 	const Float rowY = lis.front()->getPixelsPosition().y;
 	Float previousRight = lis.front()->getPixelsPosition().x;
 
@@ -2882,11 +2883,14 @@ UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
 		ASSERT_TRUE( anchor != nullptr );
 		auto* htmlAnchor = anchor->asType<UIHTMLWidget>();
 		auto* richAnchor = anchor->asType<UIRichText>();
+		auto* textAnchor = anchor->asType<UITextSpan>();
 		ASSERT_TRUE( htmlAnchor != nullptr );
 		ASSERT_TRUE( richAnchor != nullptr );
+		ASSERT_TRUE( textAnchor != nullptr );
 
 		EXPECT_EQ( htmlLi->getDisplay(), CSSDisplay::InlineBlock );
 		EXPECT_EQ( htmlAnchor->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( textAnchor->getFontColor().getValue(), expectedLinkColor.getValue() );
 		EXPECT_EQ( richLi->getRichTextPtr()->getLines().size(), (size_t)1 );
 		EXPECT_EQ( richAnchor->getRichTextPtr()->getLines().size(), (size_t)1 );
 		const auto& anchorLine = richAnchor->getRichTextPtr()->getLines().front();
@@ -2902,6 +2906,12 @@ UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
 		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
 		EXPECT_GE( li->getPixelsSize().getWidth() + 1.f, li->getMaxIntrinsicWidth() );
 		EXPECT_GE( anchor->getPixelsSize().getWidth() + 1.f, anchor->getMaxIntrinsicWidth() );
+		EXPECT_TRUE( textAnchor->getHitBoxes().empty() );
+
+		Vector2f lowerRightHitPoint( anchor->getPixelsSize().getWidth() - 1.f,
+									 anchor->getPixelsSize().getHeight() - 1.f );
+		anchor->nodeToWorld( lowerRightHitPoint );
+		EXPECT_EQ( documentScene->overFind( lowerRightHitPoint ), anchor );
 
 		previousRight = li->getPixelsPosition().x + li->getPixelsSize().getWidth();
 	}

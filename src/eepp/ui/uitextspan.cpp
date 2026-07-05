@@ -86,6 +86,8 @@ void UITextSpan::onDisplayChange() {
 			setFontBackgroundColor( Color::Transparent );
 		}
 	}
+	if ( !nowInline )
+		mHitBoxes.clear();
 	UIHTMLWidget::onDisplayChange();
 }
 

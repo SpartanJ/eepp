@@ -48,7 +48,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 }
 
 StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
-										const std::string& value, const Uint64& /*specificity*/,
+										const std::string& value, const Int64& /*specificity*/,
 										const Uint32& index ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
@@ -72,7 +72,7 @@ StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinitio
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										bool trimValue, const Uint64& specificity,
+										bool trimValue, const Int64& specificity,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -99,7 +99,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const Uint64& specificity, bool isVolatile,
+										const Int64& specificity, bool isVolatile,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -143,11 +143,11 @@ const std::string& StyleSheetProperty::value() const {
 	return mValue;
 }
 
-const Uint64& StyleSheetProperty::getSpecificity() const {
+const Int64& StyleSheetProperty::getSpecificity() const {
 	return mSpecificity;
 }
 
-void StyleSheetProperty::setSpecificity( const Uint64& specificity ) {
+void StyleSheetProperty::setSpecificity( const Int64& specificity ) {
 	mSpecificity = specificity;
 	if ( mImportant )
 		mSpecificity += StyleSheetSelectorRule::SpecificityImportant;

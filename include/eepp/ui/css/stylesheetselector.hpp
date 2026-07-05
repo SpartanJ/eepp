@@ -17,9 +17,9 @@ class EE_API StyleSheetSelector {
 
 	const std::string& getName() const;
 
-	const Uint32& getSpecificity() const;
+	const Int64& getSpecificity() const;
 
-	void setSpecificity( const Uint32& specificity );
+	void setSpecificity( const Int64& specificity );
 
 	bool select( UIWidget* element, const bool& applyPseudo = true ) const;
 
@@ -39,7 +39,7 @@ class EE_API StyleSheetSelector {
 
   protected:
 	std::string mName;
-	Uint32 mSpecificity;
+	Int64 mSpecificity;
 	std::vector<StyleSheetSelectorRule> mSelectorRules;
 	bool mCacheable;
 	bool mStructurallyVolatile;

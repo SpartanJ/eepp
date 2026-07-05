@@ -2505,7 +2505,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		}
 
 		// Create a property without trimming its value
-		Uint64 specificity =
+		Int64 specificity =
 			( mFlags & UI_HTML_ELEMENT ) ? 0 : StyleSheetSelectorRule::SpecificityInline;
 		StyleSheetProperty prop( ait->name(), ait->value(), false, specificity );
 

@@ -45,15 +45,17 @@ class EE_API StyleSheetSelectorRule {
 		Attribute = 1 << 5,
 	};
 
-	enum SpecificityVal : Uint64 {
-		SpecificityImportant = 1000000000000000ULL,
-		SpecificityInline = 1000000000000ULL,
-		SpecificityId = 1000000ULL,
-		SpecificityClass = 100000ULL,
-		SpecificityTag = 10000ULL,
-		SpecificityPseudoClass = 100ULL,
-		SpecificityStructuralPseudoClass = 50ULL,
-		SpecificityGlobal = 1ULL
+	// Packed CSS specificity tuple. This matches lexicographic specificity comparison while
+	// selector buckets remain below SpecificityClass.
+	enum SpecificityVal : Int64 {
+		SpecificityImportant = 1000000000000000LL,
+		SpecificityInline = 1000000000000LL,
+		SpecificityId = 1048576LL,
+		SpecificityClass = 1024LL,
+		SpecificityTag = 1LL,
+		SpecificityPseudoClass = SpecificityClass,
+		SpecificityStructuralPseudoClass = SpecificityClass,
+		SpecificityGlobal = 0LL
 	};
 
 	enum PatternMatch {
@@ -128,7 +130,7 @@ class EE_API StyleSheetSelectorRule {
 
 	const PatternMatch& getPatternMatch() const { return mPatternMatch; }
 
-	const Uint64& getSpecificity() const { return mSpecificity; }
+	const Int64& getSpecificity() const { return mSpecificity; }
 
 	bool matches( UIWidget* element, const bool& applyPseudo = true ) const;
 
@@ -151,7 +153,7 @@ class EE_API StyleSheetSelectorRule {
 	const std::string& getId() const;
 
   protected:
-	Uint64 mSpecificity{ 0 };
+	Int64 mSpecificity{ 0 };
 	PatternMatch mPatternMatch;
 	std::string mTagName;
 	std::string mId;

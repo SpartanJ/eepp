@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <mutex>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -29,6 +28,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#include <mutex>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -158,6 +158,9 @@ UISceneNode::~UISceneNode() {
 		mAsyncResourceLoadState->generation.fetch_add( 1, std::memory_order_acq_rel );
 	}
 
+	if ( mHostUISceneNode )
+		mHostUISceneNode->unregisterChildUISceneNode( this );
+
 	clearFontFaces();
 
 	eeSAFE_DELETE( mUIThemeManager );
@@ -238,6 +241,7 @@ void UISceneNode::onParentChange() {
 		eeSAFE_DELETE( mEventDispatcher );
 
 	mCurParent = mParentNode;
+	updateHostUISceneNode();
 
 	if ( !mParentNode ) {
 		setEventDispatcher( UIEventDispatcher::New( this ) );
@@ -245,7 +249,7 @@ void UISceneNode::onParentChange() {
 		return;
 	}
 
-	initializeEmbeddedFromHost( getHostUISceneNode() );
+	initializeEmbeddedFromHost( mHostUISceneNode );
 
 	setDirty();
 	updateParentSizeListener();
@@ -254,7 +258,8 @@ void UISceneNode::onParentChange() {
 void UISceneNode::onSceneChange() {
 	mSceneNode = this;
 	eeASSERT( !removeFromCloseQueue( this ) );
-	initializeEmbeddedFromHost( getHostUISceneNode() );
+	updateHostUISceneNode();
+	initializeEmbeddedFromHost( mHostUISceneNode );
 
 	Node* child = getFirstChild();
 	while ( NULL != child ) {
@@ -306,6 +311,48 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	}
 
 	mUIIconThemeManager->setFallbackThemeManager( mUIThemeManager );
+}
+
+const std::vector<UISceneNode*>& UISceneNode::getChildUISceneNodes() const {
+	return mChildUISceneNodes;
+}
+
+void UISceneNode::setHighlightOverRecursive( bool highlight ) {
+	setHighlightOver( highlight );
+
+	for ( auto* sceneNode : mChildUISceneNodes )
+		sceneNode->setHighlightOverRecursive( highlight );
+}
+
+void UISceneNode::updateHostUISceneNode() {
+	UISceneNode* hostScene = getHostUISceneNode();
+
+	if ( mHostUISceneNode == hostScene )
+		return;
+
+	if ( mHostUISceneNode )
+		mHostUISceneNode->unregisterChildUISceneNode( this );
+
+	mHostUISceneNode = hostScene;
+
+	if ( mHostUISceneNode )
+		mHostUISceneNode->registerChildUISceneNode( this );
+}
+
+void UISceneNode::registerChildUISceneNode( UISceneNode* sceneNode ) {
+	if ( !sceneNode || sceneNode == this ||
+		 std::find( mChildUISceneNodes.begin(), mChildUISceneNodes.end(), sceneNode ) !=
+			 mChildUISceneNodes.end() )
+		return;
+
+	mChildUISceneNodes.push_back( sceneNode );
+}
+
+void UISceneNode::unregisterChildUISceneNode( UISceneNode* sceneNode ) {
+	auto it = std::find( mChildUISceneNodes.begin(), mChildUISceneNodes.end(), sceneNode );
+
+	if ( it != mChildUISceneNodes.end() )
+		mChildUISceneNodes.erase( it );
 }
 
 void UISceneNode::updateParentSizeListener() {
@@ -1659,8 +1706,8 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 							delay = Time::Zero;
 						UISceneNode::runAsyncResourceOnMainThread(
 							resourceState, resourceGeneration,
-							[url, baseURL, parser = std::move( parser )](
-								UISceneNode* scene ) mutable {
+							[url, baseURL,
+							 parser = std::move( parser )]( UISceneNode* scene ) mutable {
 								scene->combineStyleSheet( parser.getStyleSheet(), true, baseURL );
 								Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 							},
@@ -1684,8 +1731,7 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 		Http::getAsync(
 			[resourceState, resourceGeneration, url, baseURL = std::move( baseURL )](
 				const Http&, Http::Request&, Http::Response& response ) {
-				if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState,
-															   resourceGeneration ) )
+				if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 					return;
 				if ( !response.getBody().empty() &&
 					 response.getStatus() == Http::Response::Status::Ok ) {

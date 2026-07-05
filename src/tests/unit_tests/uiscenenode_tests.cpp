@@ -237,9 +237,29 @@ UTEST( UISceneNode, NestedSceneRebindsHostServicesOnSceneChange ) {
 	hostWidget->setParent( hostSceneA->getRoot() );
 	UISceneNode* nestedScene = UISceneNode::New();
 	nestedScene->setParent( hostWidget );
+	UIWidget* nestedHostWidget = UIWidget::New();
+	nestedHostWidget->setParent( nestedScene->getRoot() );
+	UISceneNode* nestedChildScene = UISceneNode::New();
+	nestedChildScene->setParent( nestedHostWidget );
 
 	EXPECT_TRUE( nestedScene->getEventDispatcher() == hostSceneA->getEventDispatcher() );
 	EXPECT_EQ( nestedScene->getColorSchemePreference(), ColorSchemePreference::Light );
+	EXPECT_EQ( hostSceneA->getChildUISceneNodes().size(), 1u );
+	EXPECT_TRUE( hostSceneA->getChildUISceneNodes()[0] == nestedScene );
+	EXPECT_EQ( nestedScene->getChildUISceneNodes().size(), 1u );
+	EXPECT_TRUE( nestedScene->getChildUISceneNodes()[0] == nestedChildScene );
+
+	hostSceneA->setHighlightOverRecursive( true );
+
+	EXPECT_TRUE( hostSceneA->getHighlightOver() );
+	EXPECT_TRUE( nestedScene->getHighlightOver() );
+	EXPECT_TRUE( nestedChildScene->getHighlightOver() );
+
+	nestedScene->setHighlightOverRecursive( false );
+
+	EXPECT_TRUE( hostSceneA->getHighlightOver() );
+	EXPECT_FALSE( nestedScene->getHighlightOver() );
+	EXPECT_FALSE( nestedChildScene->getHighlightOver() );
 
 	hostWidget->setParent( hostSceneB->getRoot() );
 
@@ -247,6 +267,11 @@ UTEST( UISceneNode, NestedSceneRebindsHostServicesOnSceneChange ) {
 	EXPECT_EQ( nestedScene->getColorSchemePreference(), ColorSchemePreference::Dark );
 	EXPECT_EQ( nestedScene->getUIThemeManager()->getDefaultFontSize(), 42.f );
 	EXPECT_TRUE( nestedScene->getRoot()->getUISceneNode() == nestedScene );
+	EXPECT_TRUE( hostSceneA->getChildUISceneNodes().empty() );
+	EXPECT_EQ( hostSceneB->getChildUISceneNodes().size(), 1u );
+	EXPECT_TRUE( hostSceneB->getChildUISceneNodes()[0] == nestedScene );
+	EXPECT_EQ( nestedScene->getChildUISceneNodes().size(), 1u );
+	EXPECT_TRUE( nestedScene->getChildUISceneNodes()[0] == nestedChildScene );
 
 	Engine::destroySingleton();
 }

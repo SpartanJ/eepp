@@ -154,6 +154,12 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 
+	/** @return Direct embedded UI scenes hosted below this scene's node tree. */
+	const std::vector<UISceneNode*>& getChildUISceneNodes() const;
+
+	/** Enables or disables mouse-over highlighting in this scene and embedded UI scenes. */
+	void setHighlightOverRecursive( bool highlight );
+
 	/**
 	 * @brief Gets the size in density-independent pixels (dp).
 	 *
@@ -845,12 +851,14 @@ class EE_API UISceneNode : public SceneNode {
 
 	std::shared_ptr<AsyncResourceLoadState> getAsyncResourceLoadState() const;
 
-	static bool isAsyncResourceLoadCurrent(
-		const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation );
+	static bool
+	isAsyncResourceLoadCurrent( const std::shared_ptr<AsyncResourceLoadState>& resourceState,
+								Uint64 generation );
 
-	static void runAsyncResourceOnMainThread(
-		const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation,
-		AsyncResourceMainThreadFunc func, const Time& delay = Seconds( 0 ) );
+	static void
+	runAsyncResourceOnMainThread( const std::shared_ptr<AsyncResourceLoadState>& resourceState,
+								  Uint64 generation, AsyncResourceMainThreadFunc func,
+								  const Time& delay = Seconds( 0 ) );
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -878,10 +886,12 @@ class EE_API UISceneNode : public SceneNode {
 	UnorderedSet<UILayout*> mDirtyLayouts;
 	SmallVector<UILayout*, 64> mDirtyLayoutsSnapshot;
 	std::vector<std::pair<Float, std::string>> mTimes;
+	std::vector<UISceneNode*> mChildUISceneNodes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 	ContrastPreference mContrastPreference{ ContrastPreference::NoPreference };
 	Uint32 mMaxInvalidationDepth{ 3 };
 	Node* mCurParent{ nullptr };
+	UISceneNode* mHostUISceneNode{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	Uint32 mCurrentMarker{ 0 };
 	Sizef mViewportPixelsSize;
@@ -944,6 +954,9 @@ class EE_API UISceneNode : public SceneNode {
 	void onViewportPixelsSizeChange();
 	const Sizef& getRootPixelsSize() const;
 	UISceneNode* getHostUISceneNode() const;
+	void updateHostUISceneNode();
+	void registerChildUISceneNode( UISceneNode* sceneNode );
+	void unregisterChildUISceneNode( UISceneNode* sceneNode );
 
 	/**
 	 * @brief Sets the internal pixel size without triggering update cycles.

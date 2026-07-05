@@ -23,7 +23,7 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	}
 }
 
-void StyleSheetStyle::setSelectorSpecificity( const Uint32& specificity ) {
+void StyleSheetStyle::setSelectorSpecificity( const Int64& specificity ) {
 	const_cast<StyleSheetSelector&>( mSelector ).setSpecificity( specificity );
 	for ( auto& it : mProperties )
 		it.second.setSpecificity( specificity );
@@ -156,9 +156,8 @@ void StyleSheetStyle::clearProperties() {
 void StyleSheetStyle::clearCachedProperties() {
 	StyleSheetProperties::iterator it;
 	do {
-		it = std::find_if(
-			mProperties.begin(), mProperties.end(),
-			[]( const auto& model ) { return model.second.isCachedProperty(); } );
+		it = std::find_if( mProperties.begin(), mProperties.end(),
+						   []( const auto& model ) { return model.second.isCachedProperty(); } );
 		if ( it != mProperties.end() )
 			mProperties.erase( it );
 	} while ( it != mProperties.end() );

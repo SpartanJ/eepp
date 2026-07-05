@@ -126,7 +126,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	webView->onNavigationStarted(
 		[urlBar]( const URI& uri ) { urlBar->setText( uri.toString() ); } );
 	webView->onNavigationCompleted(
-		[webView, updateNavButtons, urlBar, ui, useHNDark]( const URI& uri ) {
+		[webView, updateNavButtons, urlBar, useHNDark]( const URI& uri ) {
 			updateNavButtons();
 			urlBar->setText( uri.toString() );
 
@@ -136,8 +136,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			    color: #dcdccc !important;
 			  }
 			  body,
-			  #hnmain,
-			  .pagetop {
+			  #hnmain {
 			    background-color: #404040 !important;
 			  }
 			  body > center > table > tbody > tr:first-child * {
