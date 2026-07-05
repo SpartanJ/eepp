@@ -7,6 +7,7 @@
 #include <eepp/math/easing.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/system/functionstring.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -698,24 +699,30 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	if ( value == mDrawableRef && mDrawable != nullptr )
 		return true;
 
+	std::string url = uri.toString();
+	if ( Texture* texture = TextureFactory::instance()->getByName( url ) ) {
+		if ( mDrawable != texture ) {
+			++mRemoteDrawableLoadId;
+			setDrawable( texture, false );
+		}
+		return true;
+	}
+
 	auto resourceState = scene->getAsyncResourceLoadState();
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	Uint64 loadId = ++mRemoteDrawableLoadId;
 	auto alive = mAsyncDrawableAlive;
-	const std::string url = uri.toString();
-	const std::string textureName =
-		String::format( "__eepp_ui_layer_image_%p_%llu_%u", this,
-						static_cast<unsigned long long>( loadId ), String::hash( url ) );
-
 	Texture* texture = TextureFactory::instance()->createEmptyTexture(
-		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false,
-		textureName );
+		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
 	if ( texture )
-		setDrawable( texture, true );
+		setDrawable( texture, false );
 
+	Http::Request::FieldTable headers;
+	if ( !scene->getReferer().empty() )
+		headers["referer"] = scene->getReferer().toString();
 	Http::getAsync(
-		[resourceState, resourceGeneration, alive, loadId, texture,
+		[resourceState, resourceGeneration, alive, loadId, texture, url = std::move( url ),
 		 this]( const Http&, Http::Request&, Http::Response& response ) {
 			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
 				 !alive || !alive->load( std::memory_order_acquire ) || texture == nullptr )
@@ -736,9 +743,13 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 						if ( image.getPixels() != nullptr )
 							texture->replace( &image );
 					} );
+			} else {
+				Log::debug( "UINodeDrawable::LayerDrawable::loadRemoteDrawable: could not "
+							"download image: %s. Error: %d\n%s",
+							url, response.getStatus(), response.getBody() );
 			}
 		},
-		uri, Seconds( 5 ), {}, {}, "", true, Http::getEnvProxyURI() );
+		uri, Seconds( 5 ), {}, headers, "", true, Http::getEnvProxyURI() );
 
 	return true;
 }

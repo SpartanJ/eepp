@@ -3342,6 +3342,39 @@ UTEST( UIBackground, cssFileRelativeSpriteUrlAndNegativePosition ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "remote bg cache reuse",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-background.png";
+	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<body>
+			<div id="first" style="width:10px;height:10px;background-image:url('http://127.0.0.1:1/eepp-cached-background.png')"></div>
+			<div id="second" style="width:10px;height:10px;background-image:url('http://127.0.0.1:1/eepp-cached-background.png')"></div>
+		</body>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* first = sceneNode->find<UIWidget>( "first" );
+	auto* second = sceneNode->find<UIWidget>( "second" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( first->getBackground() != nullptr );
+	ASSERT_TRUE( second->getBackground() != nullptr );
+	ASSERT_TRUE( first->getBackground()->getLayer( 0 ) != nullptr );
+	ASSERT_TRUE( second->getBackground()->getLayer( 0 ) != nullptr );
+	EXPECT_EQ( cached, first->getBackground()->getLayer( 0 )->getDrawable() );
+	EXPECT_EQ( cached, second->getBackground()->getLayer( 0 )->getDrawable() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIBackground, InlineBlockImageSpans ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "inline-block image spans", VisualTestWindowStyle,
@@ -4253,6 +4286,91 @@ UTEST( UIHTML, DeferredFileImageLoadsAsync ) {
 	ASSERT_TRUE( img->getDrawable() != nullptr );
 	EXPECT_GT( img->getPixelsSize().getWidth(), 0.f );
 	EXPECT_GT( img->getPixelsSize().getHeight(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "deferred file img cache reuse", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	const std::string processPath = Sys::getProcessPath();
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( URI( "file://" + processPath ) );
+	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
+	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
+	Texture* cached = TextureFactory::instance()->loadFromFile(
+		imageURI.getFSPath(), false, Texture::ClampMode::ClampToEdge, false, false );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<img id="first-img" defer src="../assets/icon/ee.png">
+			<img id="second-img" defer src="../assets/icon/ee.png">
+		</body>
+		</html>
+	)html" ),
+									 sceneNode->getRoot(), String::hash( "deferred-file-cache" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* firstNode = sceneNode->getRoot()->find( "first-img" );
+	auto* secondNode = sceneNode->getRoot()->find( "second-img" );
+	ASSERT_TRUE( firstNode != nullptr );
+	ASSERT_TRUE( secondNode != nullptr );
+	auto* first = firstNode->asType<UIHTMLImage>();
+	auto* second = secondNode->asType<UIHTMLImage>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( cached, first->getDrawable() );
+	EXPECT_EQ( cached, second->getDrawable() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "remote img cache reuse", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-image.png";
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<img id="first-img" src="http://127.0.0.1:1/eepp-cached-image.png">
+			<img id="second-img" src="http://127.0.0.1:1/eepp-cached-image.png">
+		</body>
+		</html>
+	)html" ),
+									 sceneNode->getRoot(), String::hash( "remote-image-cache" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* firstNode = sceneNode->getRoot()->find( "first-img" );
+	auto* secondNode = sceneNode->getRoot()->find( "second-img" );
+	ASSERT_TRUE( firstNode != nullptr );
+	ASSERT_TRUE( secondNode != nullptr );
+	auto* first = firstNode->asType<UIHTMLImage>();
+	auto* second = secondNode->asType<UIHTMLImage>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( cached, first->getDrawable() );
+	EXPECT_EQ( cached, second->getDrawable() );
 
 	Engine::destroySingleton();
 }
