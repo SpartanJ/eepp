@@ -103,7 +103,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 					query->mExpressions.push_back( expr );
 				}
 			}
-		} else {
+		} else if ( tok != "only" && tok != "and" ) {
 			query->mMediaType =
 				(MediaType)String::valueIndex( tok, MediaTypeStrings, media_type_all );
 		}

@@ -419,7 +419,7 @@ void UIWidgetCreator::loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 
 	CSS::StyleSheetParser parser;
 	if ( parser.loadFromString( getHTMLBaseDefaultsCSS() ) ) {
 		CSS::StyleSheet baseDefaults = parser.getStyleSheet();
-		baseDefaults.setSelectorSpecificity( 0 );
+		baseDefaults.setSelectorSpecificity( -1 );
 		baseDefaults.setMarker( marker );
 		styleSheet.combineStyleSheet( baseDefaults );
 	}

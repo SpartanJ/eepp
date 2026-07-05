@@ -16,11 +16,11 @@ const std::string& StyleSheetSelector::getName() const {
 	return mName;
 }
 
-const Uint32& StyleSheetSelector::getSpecificity() const {
+const Int64& StyleSheetSelector::getSpecificity() const {
 	return mSpecificity;
 }
 
-void StyleSheetSelector::setSpecificity( const Uint32& specificity ) {
+void StyleSheetSelector::setSpecificity( const Int64& specificity ) {
 	mSpecificity = specificity;
 }
 

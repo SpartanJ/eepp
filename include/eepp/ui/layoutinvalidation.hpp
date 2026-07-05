@@ -24,7 +24,8 @@ enum class LayoutInvalidationReason : Uint32 {
 
 using LayoutInvalidationFlags = Uint32;
 
-inline LayoutInvalidationFlags toLayoutInvalidationFlags( LayoutInvalidationReason reason ) {
+inline constexpr LayoutInvalidationFlags
+toLayoutInvalidationFlags( LayoutInvalidationReason reason ) {
 	return static_cast<LayoutInvalidationFlags>( reason );
 }
 

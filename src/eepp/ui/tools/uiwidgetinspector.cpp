@@ -13,11 +13,32 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
+#include <vector>
+
 using namespace EE::Window;
 using namespace EE::UI::Models;
 using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Tools {
+
+struct UIWidgetInspector::PickHighlightOverState {
+	std::vector<std::pair<UISceneNode*, bool>> sceneStates;
+
+	void capture( UISceneNode* sceneNode ) {
+		if ( !sceneNode )
+			return;
+
+		sceneStates.emplace_back( sceneNode, sceneNode->getHighlightOver() );
+
+		for ( auto* childSceneNode : sceneNode->getChildUISceneNodes() )
+			capture( childSceneNode );
+	}
+
+	void restore() {
+		for ( auto& sceneState : sceneStates )
+			sceneState.first->setHighlightOver( sceneState.second );
+	}
+};
 
 UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIconSize,
 									 std::function<void()> highlightToggle,
@@ -90,6 +111,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	stylesEditor->setLineWrapType( LineWrapType::Viewport );
 	stylesEditor->setLineWrapMode( LineWrapMode::Word );
 	stylesEditor->setLineWrapKeepIndentation( true );
+	stylesEditor->setColorPreview( true );
 	stylesEditor->setColorScheme( sceneNode->getColorSchemePreference() ==
 										  ColorSchemePreference::Dark
 									  ? SyntaxColorScheme::getDefaultDark()
@@ -135,11 +157,12 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	button->on( Event::MouseClick, [sceneNode, nodeTree, computedView]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-			bool wasHighlightOver = sceneNode->getHighlightOver();
-			sceneNode->setHighlightOver( true );
+			auto highlightOverState = std::make_shared<PickHighlightOverState>();
+			highlightOverState->capture( sceneNode );
+			sceneNode->setHighlightOverRecursive( true );
 			sceneNode->getEventDispatcher()->setDisableMousePress( true );
-			sceneNode->runOnMainThread( [sceneNode, nodeTree, computedView, wasHighlightOver]() {
-				checkWidgetPick( sceneNode, nodeTree, wasHighlightOver, computedView );
+			sceneNode->runOnMainThread( [sceneNode, nodeTree, computedView, highlightOverState]() {
+				checkWidgetPick( sceneNode, nodeTree, highlightOverState, computedView );
 			} );
 		}
 	} );
@@ -150,8 +173,9 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( highlightToggle ) {
 				highlightToggle();
 			} else {
-				sceneNode->setHighlightFocus( !sceneNode->getHighlightFocus() );
-				sceneNode->setHighlightOver( !sceneNode->getHighlightOver() );
+				bool highlight = !sceneNode->getHighlightOver();
+				sceneNode->setHighlightFocusRecursive( highlight );
+				sceneNode->setHighlightOverRecursive( highlight );
 			}
 		} );
 
@@ -161,7 +185,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawBoxesToggle ) {
 				drawBoxesToggle();
 			} else {
-				sceneNode->setDrawBoxes( !sceneNode->getDrawBoxes() );
+				sceneNode->setDrawBoxesRecursive( !sceneNode->getDrawBoxes() );
 			}
 		} );
 
@@ -171,7 +195,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawDebugDataToggle ) {
 				drawDebugDataToggle();
 			} else {
-				sceneNode->setDrawDebugData( !sceneNode->getDrawDebugData() );
+				sceneNode->setDrawDebugDataRecursive( !sceneNode->getDrawDebugData() );
 			}
 		} );
 
@@ -221,18 +245,19 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 }
 
 void UIWidgetInspector::checkWidgetPick( UISceneNode* sceneNode, UITreeView* widgetTree,
-										 bool wasHighlightOver, UITableView* tableView ) {
+										 std::shared_ptr<PickHighlightOverState> highlightOverState,
+										 UITableView* tableView ) {
 	Input* input = sceneNode->getWindow()->getInput();
 	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
 		Node* node = sceneNode->getEventDispatcher()->getMouseOverNode();
 		WidgetTreeModel* model = static_cast<WidgetTreeModel*>( widgetTree->getModel() );
 		ModelIndex index( model->getModelIndex( node ) );
 		widgetTree->setSelection( index );
-		sceneNode->setHighlightOver( wasHighlightOver );
+		highlightOverState->restore();
 		sceneNode->getEventDispatcher()->setDisableMousePress( false );
 	} else {
-		sceneNode->runOnMainThread( [sceneNode, widgetTree, wasHighlightOver, tableView]() {
-			checkWidgetPick( sceneNode, widgetTree, wasHighlightOver, tableView );
+		sceneNode->runOnMainThread( [sceneNode, widgetTree, highlightOverState, tableView]() {
+			checkWidgetPick( sceneNode, widgetTree, highlightOverState, tableView );
 		} );
 	}
 }

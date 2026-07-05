@@ -588,7 +588,7 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 						 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 						Float contentWidth =
 							eemax( 0.f, atomicBounds.getWidth() - margin.Left - margin.Right );
-						if ( eeabs( widget->getPixelsSize().getWidth() - contentWidth ) > 0.01f ) {
+						if ( contentWidth + 0.01f < widget->getPixelsSize().getWidth() ) {
 							widget->setPixelsSize( contentWidth,
 												   widget->getPixelsSize().getHeight() );
 							mResizedCount++;
@@ -630,7 +630,7 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 						 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 						Float contentWidth =
 							eemax( 0.f, span->size.getWidth() - margin.Left - margin.Right );
-						if ( eeabs( widget->getPixelsSize().getWidth() - contentWidth ) > 0.01f ) {
+						if ( contentWidth + 0.01f < widget->getPixelsSize().getWidth() ) {
 							widget->setPixelsSize( contentWidth,
 												   widget->getPixelsSize().getHeight() );
 							mResizedCount++;

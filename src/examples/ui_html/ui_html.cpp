@@ -72,7 +72,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	ui->setColorSchemePreference(
 		!prefersColorScheme.Get().empty()
 			? ColorSchemePreferences::fromStringExt( prefersColorScheme.Get() )
-			: ColorSchemeExtPreference::Light );
+			: ColorSchemeExtPreference::System );
 
 	bool useHNDark = hnDark.Get();
 
@@ -125,18 +125,18 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	webView->onNavigationStarted(
 		[urlBar]( const URI& uri ) { urlBar->setText( uri.toString() ); } );
-	webView->onNavigationCompleted( [updateNavButtons, urlBar, ui, useHNDark]( const URI& uri ) {
-		updateNavButtons();
-		urlBar->setText( uri.toString() );
+	webView->onNavigationCompleted(
+		[webView, updateNavButtons, urlBar, useHNDark]( const URI& uri ) {
+			updateNavButtons();
+			urlBar->setText( uri.toString() );
 
-		if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
-			static const std::string_view HN_DARK = R"css(
+			if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
+				static const std::string_view HN_DARK = R"css(
 			  body * {
 			    color: #dcdccc !important;
 			  }
 			  body,
-			  #hnmain,
-			  .pagetop {
+			  #hnmain {
 			    background-color: #404040 !important;
 			  }
 			  body > center > table > tbody > tr:first-child * {
@@ -162,11 +162,11 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			  }
 			)css";
 
-			StyleSheetParser parser;
-			if ( parser.loadFromString( HN_DARK ) )
-				ui->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
-		}
-	} );
+				StyleSheetParser parser;
+				if ( parser.loadFromString( HN_DARK ) )
+					webView->getDocumentSceneNode()->combineStyleSheet( parser.getStyleSheet() );
+			}
+		} );
 
 	backBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
 		webView->goHistoryBack();

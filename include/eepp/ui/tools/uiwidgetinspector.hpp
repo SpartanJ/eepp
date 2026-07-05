@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <functional>
+#include <memory>
 
 namespace EE { namespace UI {
 class UISceneNode;
@@ -21,8 +22,11 @@ class EE_API UIWidgetInspector {
 							 std::function<void()> drawDebugDataToggle = std::function<void()>() );
 
   protected:
+	struct PickHighlightOverState;
+
 	static void checkWidgetPick( UISceneNode* sceneNode, UITreeView* widgetTree,
-								 bool wasHighlightOver, UITableView* tableView );
+								 std::shared_ptr<PickHighlightOverState> highlightOverState,
+								 UITableView* tableView );
 };
 
 }}} // namespace EE::UI::Tools

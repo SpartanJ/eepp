@@ -28,6 +28,58 @@ Required workflow for new HTML/CSS behavior:
 
 ## Core Concepts
 
+### UIWebView Document Scenes
+
+Each `UIWebView` owns a nested `UISceneNode` for its loaded HTML document. The document scene is
+attached below the web view's clipped scroll container so it renders, receives input, and scrolls as
+part of the embedding application tree, but it is not added to `SceneManager` as a top-level scene.
+
+The application scene and document scene are separate style and resource boundaries:
+
+- Application stylesheets must not match web-view document nodes.
+- Document stylesheets must not match application widgets or sibling web views.
+- URI, referer, relative-resource resolution, navigation interception, cookies, dirty style/layout
+  queues, actions, keyframes, and author `@font-face` aliases are document-scoped state.
+- Application code that intentionally injects document CSS must use
+  `UIWebView::getDocumentSceneNode()->combineStyleSheet(...)`.
+
+Nested document scenes inherit only host services needed to operate inside the embedding UI:
+
+- window and DPI,
+- shared `UIEventDispatcher`,
+- thread pool,
+- color-scheme and contrast preferences,
+- default font, default font size, and default theme pointer for native controls.
+
+Do not copy the host stylesheet, URI, referer, navigation callback, cookies, dirty queues, roots,
+actions, or icon-theme ownership into a document scene.
+
+The WebView document topology keeps three document metrics distinct:
+
+- **CSS viewport:** the visible web-view viewport, used for media queries, viewport units,
+  HTML/body minimum height, fixed positioning, and sticky positioning.
+- **Layout viewport / initial containing block:** the viewport-sized root layout reference used for
+  normal root/body layout and percentage descendants.
+- **Scrollable overflow extent:** the measured document overflow size. This belongs to the
+  `UIWebView` document layout scroll target and the nested document scene extent, not to the root
+  containing block.
+
+Document scenes are owner-updated by `UIWebView::scheduledUpdate()`. Do not register them with
+`SceneManager`, and do not add a second update subscription for the same document scene.
+
+Author `@font-face` family names resolve through the owning `UISceneNode` before the global
+`FontManager`. Internally registered font resources use scene-unique names so two documents can
+declare the same CSS family without replacing each other. Generic, system, and explicitly shared
+application fonts remain global fallbacks.
+
+Async document work must be generation-guarded. A newer navigation invalidates older document
+responses and document-scene resource loads, and destroying the web view or document scene invalidates
+pending callbacks before they mutate styles, cookies, fonts, or DOM.
+
+Inspector and debugging tools should target either the application scene or a document scene
+explicitly. Application-root searches intentionally stop at nested scene boundaries; use
+`UIWebView::getDocumentSceneNode()` when inspecting or querying document nodes.
+
 ### UIHTMLWidget
 
 `UIHTMLWidget` is the base class for HTML-like elements. It stores parsed CSS layout state such as `display`, `position`, `float`, `clear`, list style, and data attributes. It does not own all layout math directly. Instead, it uses `UILayouterManager` to instantiate the appropriate `UILayouter` for its `CSSDisplay`.

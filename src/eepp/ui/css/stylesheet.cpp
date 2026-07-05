@@ -95,7 +95,7 @@ void StyleSheet::removeAllWithoutMarker( const Uint32& marker ) {
 	invalidateCache();
 }
 
-void StyleSheet::setSelectorSpecificity( const Uint32& specificity ) {
+void StyleSheet::setSelectorSpecificity( const Int64& specificity ) {
 	for ( auto& node : mNodes )
 		node->setSelectorSpecificity( specificity );
 	invalidateCache();

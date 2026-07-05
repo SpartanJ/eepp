@@ -1,11 +1,13 @@
 #ifndef EE_UI_UINODEDRAWABLE_HPP
 #define EE_UI_UINODEDRAWABLE_HPP
 
+#include <atomic>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <map>
+#include <memory>
 
 using namespace EE::Graphics;
 using namespace EE::Scene;
@@ -139,6 +141,8 @@ class EE_API UINodeDrawable : public Drawable {
 		Origin mOrigin{ Origin::PaddingBox };
 		Clip mClip{ Clip::BorderBox };
 		Attachment mAttachment{ Attachment::Scroll };
+		std::shared_ptr<std::atomic<bool>> mAsyncDrawableAlive;
+		Uint64 mRemoteDrawableLoadId{ 0 };
 
 		virtual void onPositionChange();
 
@@ -147,6 +151,8 @@ class EE_API UINodeDrawable : public Drawable {
 		void update();
 
 		Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt );
+
+		bool loadRemoteDrawable( const std::string& value );
 	};
 
 	static UINodeDrawable* New( UINode* owner );

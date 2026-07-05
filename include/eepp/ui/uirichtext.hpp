@@ -245,6 +245,7 @@ class EE_API UIHTMLBody : public UIRichText {
 	bool applyProperty( const StyleSheetProperty& attribute );
 	virtual void updateLayout();
 	void setDocumentViewportMinHeight( const Float& height );
+	void setDocumentCanvasMinHeight( const Float& height );
 
   protected:
 	bool mPropagatedBackground{ false };

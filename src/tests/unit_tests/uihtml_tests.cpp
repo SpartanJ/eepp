@@ -1,7 +1,9 @@
 #include "compareimages.hpp"
 #include "utest.hpp"
 
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -30,6 +32,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -39,6 +42,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#include <atomic>
 #include <cstdlib>
 #include <iostream>
 
@@ -252,33 +256,39 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 		win->display();
 	}
 
-	auto side = sceneNode->getRoot()->findByClass( "side" );
-	auto siteTable = sceneNode->getRoot()->find( "siteTable" );
-	auto midcol = sceneNode->getRoot()->findByClass( "midcol" );
-	auto entry = sceneNode->getRoot()->findByClass( "entry" );
-	auto arrow = sceneNode->getRoot()->findByClass( "arrow" );
-	auto srHeader = sceneNode->getRoot()->find( "sr-header-area" );
-	auto redesignButton = sceneNode->getRoot()->find( "redesign-beta-optin-btn" );
-	auto srDrop = sceneNode->getRoot()->querySelector( "#sr-header-area .dropdown.srdrop" );
-	auto srList = sceneNode->getRoot()->querySelector( "#sr-header-area .sr-list" );
-	auto srFlatList = sceneNode->getRoot()->querySelector( "#sr-header-area .sr-list .flat-list" );
-	auto headerBottomLeft = sceneNode->getRoot()->find( "header-bottom-left" );
-	auto headerBottomRight = sceneNode->getRoot()->find( "header-bottom-right" );
-	auto header = sceneNode->getRoot()->find( "header" );
-	auto dropChoices = sceneNode->getRoot()->querySelector( ".drop-choices.srdrop" );
-	auto selftextMd = sceneNode->getRoot()->querySelector( ".link .usertext-body .md" );
-	auto selftextFirstP = sceneNode->getRoot()->querySelector( ".link .usertext-body .md p" );
-	auto postTitle = sceneNode->getRoot()->querySelector( ".link .top-matter > p.title" );
-	auto postTagline = sceneNode->getRoot()->querySelector( ".link .top-matter > p.tagline" );
-	auto postExpando = sceneNode->getRoot()->querySelector( ".link .expando" );
-	auto postUsertext = sceneNode->getRoot()->querySelector( ".link .expando > form.usertext" );
-	auto commentArea = sceneNode->getRoot()->querySelector( ".commentarea" );
-	auto commentForm = sceneNode->getRoot()->find( "form-t3_1tk9dgh5ov" );
-	auto commentEdit = sceneNode->getRoot()->querySelector( ".commentarea .usertext-edit" );
-	auto commentTextarea = sceneNode->getRoot()->querySelector( ".commentarea textarea" );
-	auto commentHelpToggle = sceneNode->getRoot()->querySelector( ".commentarea .help-toggle" );
-	auto commentContentPolicy = sceneNode->getRoot()->querySelector( ".commentarea a.reddiquette" );
-	auto flairCheckbox = sceneNode->getRoot()->find( "flair_enabled" );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	UIWidget* documentRoot = documentScene->getRoot();
+	ASSERT_TRUE( documentRoot != nullptr );
+	EXPECT_TRUE( sceneNode->getRoot()->findByClass( "side" ) == nullptr );
+
+	auto side = documentRoot->findByClass( "side" );
+	auto siteTable = documentRoot->find( "siteTable" );
+	auto midcol = documentRoot->findByClass( "midcol" );
+	auto entry = documentRoot->findByClass( "entry" );
+	auto arrow = documentRoot->findByClass( "arrow" );
+	auto srHeader = documentRoot->find( "sr-header-area" );
+	auto redesignButton = documentRoot->find( "redesign-beta-optin-btn" );
+	auto srDrop = documentRoot->querySelector( "#sr-header-area .dropdown.srdrop" );
+	auto srList = documentRoot->querySelector( "#sr-header-area .sr-list" );
+	auto srFlatList = documentRoot->querySelector( "#sr-header-area .sr-list .flat-list" );
+	auto headerBottomLeft = documentRoot->find( "header-bottom-left" );
+	auto headerBottomRight = documentRoot->find( "header-bottom-right" );
+	auto header = documentRoot->find( "header" );
+	auto dropChoices = documentRoot->querySelector( ".drop-choices.srdrop" );
+	auto selftextMd = documentRoot->querySelector( ".link .usertext-body .md" );
+	auto selftextFirstP = documentRoot->querySelector( ".link .usertext-body .md p" );
+	auto postTitle = documentRoot->querySelector( ".link .top-matter > p.title" );
+	auto postTagline = documentRoot->querySelector( ".link .top-matter > p.tagline" );
+	auto postExpando = documentRoot->querySelector( ".link .expando" );
+	auto postUsertext = documentRoot->querySelector( ".link .expando > form.usertext" );
+	auto commentArea = documentRoot->querySelector( ".commentarea" );
+	auto commentForm = documentRoot->find( "form-t3_1tk9dgh5ov" );
+	auto commentEdit = documentRoot->querySelector( ".commentarea .usertext-edit" );
+	auto commentTextarea = documentRoot->querySelector( ".commentarea textarea" );
+	auto commentHelpToggle = documentRoot->querySelector( ".commentarea .help-toggle" );
+	auto commentContentPolicy = documentRoot->querySelector( ".commentarea a.reddiquette" );
+	auto flairCheckbox = documentRoot->find( "flair_enabled" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -2562,6 +2572,40 @@ static UISceneNode* init_test_inline_block() {
 	return sceneNode;
 }
 
+UTEST( UIHTML, BodyViewportMinimumHeightUsesSceneViewport ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Body Viewport Height Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setPixelsSize( 800, 3000 );
+	sceneNode->setViewportPixelsSize( Sizef( 800, 600 ) );
+
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head><style>body { margin: 0; min-height: 100vh; }</style></head>
+<body><div style="height: 10px;"></div></body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto bodyNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY );
+	ASSERT_TRUE( bodyNode != nullptr );
+	auto body = bodyNode->asType<UIHTMLBody>();
+	body->applyProperty( StyleSheetProperty( "min-height", "100vh" ) );
+	body->updateLayout();
+	EXPECT_NEAR( bodyNode->getPixelsSize().getHeight(), 600.f, 1.f );
+	EXPECT_EQ( sceneNode->getPixelsSize().getWidth(), 800 );
+	EXPECT_EQ( sceneNode->getPixelsSize().getHeight(), 3000 );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, InlineBlock ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -2785,6 +2829,93 @@ UTEST( UIHTML, InlineBlockWrapIssue ) {
 	auto rt = h2->asType<UIRichText>()->getRichTextPtr();
 
 	EXPECT_EQ( (size_t)1, rt->getLines().size() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Deferred Inline Block List Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 1280, 600 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI( "./assets/html/inline_block_wrap_defer.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	UIWidget* ul = nullptr;
+
+	for ( int i = 0; i < 100; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Milliseconds( 16 ) );
+		ul = documentScene->getRoot()->findByTag( "ul" );
+		if ( ul ) {
+			auto lis = ul->findAllByTag( "li" );
+			if ( !lis.empty() &&
+				 lis.front()->asType<UIHTMLWidget>()->getDisplay() == CSSDisplay::InlineBlock )
+				break;
+		}
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( ul != nullptr );
+	auto lis = ul->findAllByTag( "li" );
+	ASSERT_EQ( lis.size(), (size_t)4 );
+
+	const Color expectedLinkColor( "#B58900" );
+	const Float rowY = lis.front()->getPixelsPosition().y;
+	Float previousRight = lis.front()->getPixelsPosition().x;
+
+	for ( auto li : lis ) {
+		auto* htmlLi = li->asType<UIHTMLWidget>();
+		auto* richLi = li->asType<UIRichText>();
+		ASSERT_TRUE( htmlLi != nullptr );
+		ASSERT_TRUE( richLi != nullptr );
+		auto* anchor = li->findByTag( "a" );
+		ASSERT_TRUE( anchor != nullptr );
+		auto* htmlAnchor = anchor->asType<UIHTMLWidget>();
+		auto* richAnchor = anchor->asType<UIRichText>();
+		auto* textAnchor = anchor->asType<UITextSpan>();
+		ASSERT_TRUE( htmlAnchor != nullptr );
+		ASSERT_TRUE( richAnchor != nullptr );
+		ASSERT_TRUE( textAnchor != nullptr );
+
+		EXPECT_EQ( htmlLi->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( htmlAnchor->getDisplay(), CSSDisplay::InlineBlock );
+		EXPECT_EQ( textAnchor->getFontColor().getValue(), expectedLinkColor.getValue() );
+		EXPECT_EQ( richLi->getRichTextPtr()->getLines().size(), (size_t)1 );
+		EXPECT_EQ( richAnchor->getRichTextPtr()->getLines().size(), (size_t)1 );
+		const auto& anchorLine = richAnchor->getRichTextPtr()->getLines().front();
+		const Rectf liContentOffset = li->asType<UIWidget>()->getPixelsContentOffset();
+		const Rectf anchorContentOffset = anchor->asType<UIWidget>()->getPixelsContentOffset();
+		EXPECT_NEAR( li->getPixelsSize().getHeight(),
+					 anchorLine.height + liContentOffset.Top + liContentOffset.Bottom, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight(),
+					 anchorLine.height + anchorContentOffset.Top + anchorContentOffset.Bottom,
+					 1.f );
+		EXPECT_EQ( li->getPixelsPosition().y, rowY );
+		EXPECT_GE( li->getPixelsPosition().x, previousRight );
+		EXPECT_GT( li->getPixelsSize().getWidth(), 0 );
+		EXPECT_GE( li->getPixelsSize().getWidth() + 1.f, li->getMaxIntrinsicWidth() );
+		EXPECT_GE( anchor->getPixelsSize().getWidth() + 1.f, anchor->getMaxIntrinsicWidth() );
+		EXPECT_TRUE( textAnchor->getHitBoxes().empty() );
+
+		Vector2f lowerRightHitPoint( anchor->getPixelsSize().getWidth() - 1.f,
+									 anchor->getPixelsSize().getHeight() - 1.f );
+		anchor->nodeToWorld( lowerRightHitPoint );
+		EXPECT_EQ( documentScene->overFind( lowerRightHitPoint ), anchor );
+
+		previousRight = li->getPixelsPosition().x + li->getPixelsSize().getWidth();
+	}
 
 	Engine::destroySingleton();
 }
@@ -3208,6 +3339,39 @@ UTEST( UIBackground, cssFileRelativeSpriteUrlAndNegativePosition ) {
 	EXPECT_NEAR( layer->getOffset().y, -1678.f, 0.1f );
 	EXPECT_EQ( layer->getRepeatX(), UINodeDrawable::RepeatX::NoRepeat );
 	EXPECT_EQ( layer->getRepeatY(), UINodeDrawable::RepeatY::NoRepeat );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "remote bg cache reuse",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-background.png";
+	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<body>
+			<div id="first" style="width:10px;height:10px;background-image:url('http://127.0.0.1:1/eepp-cached-background.png')"></div>
+			<div id="second" style="width:10px;height:10px;background-image:url('http://127.0.0.1:1/eepp-cached-background.png')"></div>
+		</body>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* first = sceneNode->find<UIWidget>( "first" );
+	auto* second = sceneNode->find<UIWidget>( "second" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( first->getBackground() != nullptr );
+	ASSERT_TRUE( second->getBackground() != nullptr );
+	ASSERT_TRUE( first->getBackground()->getLayer( 0 ) != nullptr );
+	ASSERT_TRUE( second->getBackground()->getLayer( 0 ) != nullptr );
+	EXPECT_EQ( cached, first->getBackground()->getLayer( 0 )->getDrawable() );
+	EXPECT_EQ( cached, second->getBackground()->getLayer( 0 )->getDrawable() );
 
 	Engine::destroySingleton();
 }
@@ -4000,6 +4164,8 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 	std::string html = R"html(
 		<!doctype html>
 		<html>
@@ -4012,19 +4178,21 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 		</body>
 		</html>
 	)html";
-	sceneNode->setURI( "file://delayed-image-resize.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "delayed-image-resize" ) );
+	documentScene->setURI( "file://delayed-image-resize.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "delayed-image-resize" ) );
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* article = sceneNode->getRoot()->find( "article" )->asType<UIRichText>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* articleNode = documentScene->getRoot()->find( "article" );
+	auto* bodyNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY );
+	auto* article = articleNode ? articleNode->asType<UIRichText>() : nullptr;
+	auto* body = bodyNode ? bodyNode->asType<UIWidget>() : nullptr;
 	auto* doc = webView->getDocumentContainer();
-	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	auto images = documentScene->getRoot()->findAllByTag( "img" );
 	ASSERT_TRUE( article != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( doc != nullptr );
@@ -4036,7 +4204,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 		TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent );
 	ASSERT_TRUE( texture != nullptr );
 	img->setDrawable( texture );
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	Float articleInitialHeight = article->getPixelsSize().getHeight();
 	Float bodyInitialHeight = body->getPixelsSize().getHeight();
@@ -4045,11 +4213,438 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	Image loadedImage( 320, 180, 4, Color::White );
 	texture->replace( &loadedImage );
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	EXPECT_GT( article->getPixelsSize().getHeight(), articleInitialHeight + 150.f );
 	EXPECT_GT( body->getPixelsSize().getHeight(), bodyInitialHeight + 150.f );
 	EXPECT_GT( doc->getPixelsSize().getHeight(), docInitialHeight + 150.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DeferredFileImageLoadsAsync ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "deferred file img async", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	const std::string processPath = Sys::getProcessPath();
+	const std::string imagePath = processPath + "../assets/icon/ee.png";
+	ASSERT_TRUE( FileSystem::fileExists( imagePath ) );
+
+	auto threadPool = ThreadPool::createShared( 1 );
+	std::atomic<bool> releaseBlocker{ false };
+	std::atomic<bool> blockerStarted{ false };
+	threadPool->run( [&] {
+		blockerStarted.store( true, std::memory_order_release );
+		while ( !releaseBlocker.load( std::memory_order_acquire ) )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+
+	for ( int i = 0; i < 100 && !blockerStarted.load( std::memory_order_acquire ); ++i )
+		Sys::sleep( Milliseconds( 1 ) );
+	if ( !blockerStarted.load( std::memory_order_acquire ) )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( blockerStarted.load( std::memory_order_acquire ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setThreadPool( threadPool );
+	sceneNode->setURI( URI( "file://" + processPath ) );
+
+	std::string html = R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<img id="deferred-img" defer src="../assets/icon/ee.png">
+		</body>
+		</html>
+	)html";
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ), sceneNode->getRoot(),
+									 String::hash( "deferred-file-image" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* imgNode = sceneNode->getRoot()->find( "deferred-img" );
+	if ( imgNode == nullptr )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( imgNode != nullptr );
+	auto* img = imgNode->asType<UIHTMLImage>();
+	if ( img == nullptr )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( img != nullptr );
+	EXPECT_TRUE( img->getDrawable() == nullptr );
+
+	releaseBlocker.store( true, std::memory_order_release );
+
+	for ( int i = 0; i < 200 && img->getDrawable() == nullptr; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update();
+		sceneNode->updateDirtyLayouts();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( img->getDrawable() != nullptr );
+	EXPECT_GT( img->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( img->getPixelsSize().getHeight(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "deferred file img cache reuse", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	const std::string processPath = Sys::getProcessPath();
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+	sceneNode->setURI( URI( "file://" + processPath ) );
+	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
+	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
+	Drawable* cached = DrawableSearcher::searchByName( imageURI.toString() );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<img id="first-img" defer src="../assets/icon/ee.png">
+			<img id="second-img" defer src="../assets/icon/ee.png">
+		</body>
+		</html>
+	)html" ),
+									 sceneNode->getRoot(), String::hash( "deferred-file-cache" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* firstNode = sceneNode->getRoot()->find( "first-img" );
+	auto* secondNode = sceneNode->getRoot()->find( "second-img" );
+	ASSERT_TRUE( firstNode != nullptr );
+	ASSERT_TRUE( secondNode != nullptr );
+	auto* first = firstNode->asType<UIHTMLImage>();
+	auto* second = secondNode->asType<UIHTMLImage>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( cached, first->getDrawable() );
+	EXPECT_EQ( cached, second->getDrawable() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "remote img cache reuse", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-image.png";
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
+	ASSERT_TRUE( cached != nullptr );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<img id="first-img" src="http://127.0.0.1:1/eepp-cached-image.png">
+			<img id="second-img" src="http://127.0.0.1:1/eepp-cached-image.png">
+		</body>
+		</html>
+	)html" ),
+									 sceneNode->getRoot(), String::hash( "remote-image-cache" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* firstNode = sceneNode->getRoot()->find( "first-img" );
+	auto* secondNode = sceneNode->getRoot()->find( "second-img" );
+	ASSERT_TRUE( firstNode != nullptr );
+	ASSERT_TRUE( secondNode != nullptr );
+	auto* first = firstNode->asType<UIHTMLImage>();
+	auto* second = secondNode->asType<UIHTMLImage>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( cached, first->getDrawable() );
+	EXPECT_EQ( cached, second->getDrawable() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DeferredFileImageRelayoutsAncestors ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "deferred file img relayout", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	const std::string imageName = "eepp_deferred_file_image_relayout.png";
+	const std::string imagePath = Sys::getTempPath() + imageName;
+	Image testImage( 320, 180, 4, Color::White );
+	ASSERT_TRUE( testImage.saveToFile( imagePath, Image::SaveType::PNG ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto threadPool = ThreadPool::createShared( 1 );
+	std::atomic<bool> releaseBlocker{ false };
+	std::atomic<bool> blockerStarted{ false };
+	threadPool->run( [&] {
+		blockerStarted.store( true, std::memory_order_release );
+		while ( !releaseBlocker.load( std::memory_order_acquire ) )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+
+	for ( int i = 0; i < 100 && !blockerStarted.load( std::memory_order_acquire ); ++i )
+		Sys::sleep( Milliseconds( 1 ) );
+	if ( !blockerStarted.load( std::memory_order_acquire ) )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( blockerStarted.load( std::memory_order_acquire ) );
+
+	documentScene->setThreadPool( threadPool );
+	documentScene->setURI( URI( "file://" + Sys::getTempPath() ) );
+
+	std::string html = R"html(
+		<!doctype html>
+		<html>
+		<body>
+			<article id="article" style="display:block; width: 480px;">
+				<p>Before image</p>
+				<img id="async-img" defer src=")html" +
+					   imageName +
+					   R"html(">
+				<p id="after-img">After image</p>
+			</article>
+		</body>
+		</html>
+	)html";
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "deferred-file-image-relayout" ) );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	documentScene->updateDirtyLayouts();
+
+	auto* article = documentScene->getRoot()->find( "article" )->asType<UIRichText>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* doc = webView->getDocumentContainer();
+	auto* imgNode = documentScene->getRoot()->find( "async-img" );
+	if ( article == nullptr || body == nullptr || doc == nullptr || imgNode == nullptr )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( article != nullptr );
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( doc != nullptr );
+	ASSERT_TRUE( imgNode != nullptr );
+	auto* img = imgNode->asType<UIHTMLImage>();
+	if ( img == nullptr )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( img != nullptr );
+	EXPECT_TRUE( img->getDrawable() == nullptr );
+
+	Float articleInitialHeight = article->getPixelsSize().getHeight();
+	Float bodyInitialHeight = body->getPixelsSize().getHeight();
+	Float docInitialHeight = doc->getPixelsSize().getHeight();
+
+	releaseBlocker.store( true, std::memory_order_release );
+
+	for ( int i = 0; i < 200 && article->getPixelsSize().getHeight() < articleInitialHeight + 150.f;
+		  ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update();
+		documentScene->updateDirtyLayouts();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( img->getDrawable() != nullptr );
+	EXPECT_GT( article->getPixelsSize().getHeight(), articleInitialHeight + 150.f );
+	EXPECT_GT( body->getPixelsSize().getHeight(), bodyInitialHeight + 150.f );
+	EXPECT_GT( doc->getPixelsSize().getHeight(), docInitialHeight + 150.f );
+
+	FileSystem::fileRemove( imagePath );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
+	auto threadPool = ThreadPool::createShared( eemax<int>( 4, Sys::getCPUCount() ) );
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "ron stoner deferred image relayout", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	sceneNode->setThreadPool( threadPool );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getProcessPath() + "assets/html/ron_stoner.html";
+	ASSERT_TRUE( FileSystem::fileExists( path ) );
+	webView->loadURI( URI( "file://" + path ) );
+
+	auto pump = [&] {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		if ( auto* documentScene = webView->getDocumentSceneNode() )
+			documentScene->updateDirtyLayouts();
+		Sys::sleep( Milliseconds( 1 ) );
+	};
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	UIWidget* body = nullptr;
+	std::vector<UIWidget*> images;
+	for ( int i = 0; i < 300; ++i ) {
+		pump();
+		body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+		images = documentScene->getRoot()->findAllByTag( "img" );
+		if ( body != nullptr && !images.empty() )
+			break;
+	}
+
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_FALSE( images.empty() );
+
+	auto allImagesLoaded = [&images] {
+		for ( auto* image : images ) {
+			auto* uiImage = image ? image->asType<UIImage>() : nullptr;
+			if ( uiImage == nullptr || uiImage->getDrawable() == nullptr )
+				return false;
+		}
+		return true;
+	};
+
+	for ( int i = 0; i < 600 && !allImagesLoaded(); ++i )
+		pump();
+
+	ASSERT_TRUE( allImagesLoaded() );
+
+	for ( int i = 0; i < 30; ++i )
+		pump();
+
+	const Float bodyHeightAfterAsyncLoad = body->getPixelsSize().getHeight();
+	const Float docHeightAfterAsyncLoad =
+		webView->getDocumentContainer()->getPixelsSize().getHeight();
+	ASSERT_GT( bodyHeightAfterAsyncLoad, 1000.f );
+	ASSERT_GT( docHeightAfterAsyncLoad, 1000.f );
+
+	webView->setPixelsSize( 1180, 680 );
+	for ( int i = 0; i < 30; ++i )
+		pump();
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	for ( int i = 0; i < 30; ++i )
+		pump();
+
+	const Float bodyHeightAfterResize = body->getPixelsSize().getHeight();
+	const Float docHeightAfterResize = webView->getDocumentContainer()->getPixelsSize().getHeight();
+
+	EXPECT_GE( bodyHeightAfterAsyncLoad + 1.f, bodyHeightAfterResize );
+	EXPECT_GE( docHeightAfterAsyncLoad + 1.f, docHeightAfterResize );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, NewsBlurStoryArchiveLayoutStabilizes ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "newsblur story archive layout stability", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( win->getWidth(), win->getHeight() );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string path = Sys::getProcessPath() + "assets/html/story_archive_newsblur.html";
+	ASSERT_TRUE( FileSystem::fileExists( path ) );
+	webView->loadURI( URI( "file://" + path ) );
+
+	auto pump = [&] {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		if ( auto* documentScene = webView->getDocumentSceneNode() )
+			documentScene->updateDirtyLayouts();
+		Sys::sleep( Milliseconds( 1 ) );
+	};
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	UIWidget* body = nullptr;
+	for ( int i = 0; i < 300; ++i ) {
+		pump();
+		auto* bodyNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY );
+		body = bodyNode ? bodyNode->asType<UIWidget>() : nullptr;
+		if ( body != nullptr && body->getPixelsSize().getHeight() > 0 )
+			break;
+	}
+
+	ASSERT_TRUE( body != nullptr );
+
+	bool stabilized = false;
+	Uint64 lastInvalidations = 0;
+	Uint64 lastTreeUpdates = 0;
+	Uint64 lastRichTextRebuilds = 0;
+	int stableFrames = 0;
+	for ( int i = 0; i < 240; ++i ) {
+		UILayout::resetMetrics();
+		pump();
+		auto metrics = UILayout::getMetrics();
+		lastInvalidations = metrics.invalidations;
+		lastTreeUpdates = metrics.treeUpdates;
+		lastRichTextRebuilds = metrics.richTextRebuilds;
+
+		if ( metrics.invalidations == 0 && metrics.treeUpdates == 0 &&
+			 metrics.richTextRebuilds == 0 ) {
+			if ( ++stableFrames >= 10 ) {
+				stabilized = true;
+				break;
+			}
+		} else {
+			stableFrames = 0;
+		}
+	}
+	UILayout::setMetricsEnabled( false );
+
+	if ( !stabilized ) {
+		std::cout << "NewsBlur layout did not stabilize: lastInvalidations=" << lastInvalidations
+				  << " lastTreeUpdates=" << lastTreeUpdates
+				  << " lastRichTextRebuilds=" << lastRichTextRebuilds << std::endl;
+	}
+	EXPECT_TRUE( stabilized );
 
 	Engine::destroySingleton();
 }
@@ -4066,6 +4661,8 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	std::string html;
@@ -4077,14 +4674,14 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 		html.erase( pos, end + 2 - pos );
 	}
 
-	sceneNode->setURI( "file://html-table-body-height.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "html-table-body-height" ) );
+	documentScene->setURI( "file://html-table-body-height.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "html-table-body-height" ) );
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	std::string css;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/base.css", css ) );
@@ -4092,16 +4689,18 @@ UTEST( UIHTML, HtmlContainsTableBodyHeight ) {
 	std::string newsCss;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/news.css", newsCss ) );
 	css += newsCss;
-	sceneNode->runOnMainThread( [sceneNode, css = std::move( css )] {
-		sceneNode->combineStyleSheet( css, true,
-									  String::hash( "html-table-body-height-late-css" ) );
+	documentScene->runOnMainThread( [documentScene, css = std::move( css )] {
+		documentScene->combineStyleSheet( css, true,
+										  String::hash( "html-table-body-height-late-css" ) );
 	} );
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
+	SceneManager::instance()->update();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* table = sceneNode->getRoot()->find( "hnmain" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* table = documentScene->getRoot()->find( "hnmain" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( table != nullptr );
@@ -4125,6 +4724,8 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 	webView->setParent( sceneNode->getRoot() );
 	webView->setPixelsSize( win->getWidth(), win->getHeight() );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
 
 	std::string html = R"html(
 		<!doctype html>
@@ -4135,19 +4736,19 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 		</html>
 	)html";
 
-	sceneNode->setURI( "file://body-content-min-height-shrink.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "body-content-min-height-shrink" ) );
+	documentScene->setURI( "file://body-content-min-height-shrink.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "body-content-min-height-shrink" ) );
 	webView->refreshDocumentLayout();
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* spacer = sceneNode->getRoot()->find( "spacer" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* spacer = documentScene->getRoot()->find( "spacer" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( spacer != nullptr );
@@ -4159,10 +4760,10 @@ UTEST( UIHTML, BodyDocumentContentMinHeightCanShrink ) {
 	spacer->setStyleSheetProperty( StyleSheetProperty( "height", "120px" ) );
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
 	EXPECT_LT( spacer->getPixelsSize().getHeight(), 180.f );
 	EXPECT_LT( body->getPixelsSize().getHeight(), tallBodyHeight - 250.f );
@@ -4195,22 +4796,24 @@ UTEST( UIHTML, BodyNoOpContentHeightChangeDoesNotDirtyHtml ) {
 		</html>
 	)html";
 
-	sceneNode->setURI( "file://body-no-op-content-height-change.html" );
-	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
-									 webView->getDocumentContainer(),
-									 String::hash( "body-no-op-content-height-change" ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	documentScene->setURI( "file://body-no-op-content-height-change.html" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ),
+										 webView->getDocumentContainer(),
+										 String::hash( "body-no-op-content-height-change" ) );
 	webView->refreshDocumentLayout();
 
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
 
-	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UILayout>();
-	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
-	auto* spacer = sceneNode->getRoot()->find( "spacer" )->asType<UIWidget>();
+	auto* htmlNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UILayout>();
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* spacer = documentScene->getRoot()->find( "spacer" )->asType<UIWidget>();
 	ASSERT_TRUE( htmlNode != nullptr );
 	ASSERT_TRUE( body != nullptr );
 	ASSERT_TRUE( spacer != nullptr );
@@ -4222,7 +4825,19 @@ UTEST( UIHTML, BodyNoOpContentHeightChangeDoesNotDirtyHtml ) {
 	EXPECT_FALSE( htmlNode->isLayoutDirty() );
 	win->getInput()->update();
 	SceneManager::instance()->update();
-	sceneNode->updateDirtyLayouts();
+	documentScene->updateDirtyLayouts();
+
+	UILayout::resetMetrics();
+	for ( int i = 0; i < 4; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update();
+		documentScene->updateDirtyLayouts();
+	}
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.invalidations );
+	EXPECT_EQ( 0u, metrics.treeUpdates );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
 
 	Engine::destroySingleton();
 }
@@ -4262,12 +4877,14 @@ UTEST( UIHTML, DeferredCSSKeepsTableHeightStableAfterViewportResize ) {
 	webView->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
 	webView->loadURI( "assets/html/hn_empty_thread.html" );
 
-	auto* bigboxTd = ui->getRoot()->querySelector( "#bigbox > td" );
-	auto* bigboxTable = ui->getRoot()->querySelector( "#bigbox > td > table" );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	auto* bigboxTd = documentScene->getRoot()->querySelector( "#bigbox > td" );
+	auto* bigboxTable = documentScene->getRoot()->querySelector( "#bigbox > td > table" );
 	ASSERT_TRUE( bigboxTd != nullptr );
 	ASSERT_TRUE( bigboxTable != nullptr );
 
-	auto* titleCell = ui->getRoot()->querySelector( ".title" );
+	auto* titleCell = documentScene->getRoot()->querySelector( ".title" );
 	ASSERT_TRUE( titleCell != nullptr );
 	ASSERT_TRUE( titleCell->isType( UI_TYPE_RICHTEXT ) );
 

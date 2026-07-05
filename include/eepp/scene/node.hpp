@@ -29,6 +29,10 @@ class SceneNode;
 }} // namespace EE::Scene
 using namespace EE::Scene;
 
+namespace EE { namespace UI {
+class UISceneNode;
+}} // namespace EE::UI
+
 namespace EE { namespace Scene {
 
 /**
@@ -1929,6 +1933,7 @@ class EE_API Node : public Transformable {
 
 	/** @brief Forward declaration for EventDispatcher. */
 	friend class EventDispatcher;
+	friend class EE::UI::UISceneNode;
 
 	std::string mId;
 	String::HashType mIdHash{ 0 };

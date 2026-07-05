@@ -69,13 +69,23 @@ FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer 
 	FT_UNUSED( data_pointer );
 	FT_UNUSED( cache );
 	FT_SVG_Document document = (FT_SVG_Document)slot->other;
-	FT_Pos ascender = document->metrics.ascender;
-	FT_Pos descender = document->metrics.descender;
 
-	// The total height of the glyph's design space in pixels is ascender - descender.
-	// We convert from 26.6 format to integer pixels using ceiling division.
-	unsigned int pixel_height = ( ascender - descender + 63 ) >> 6;
-	unsigned int pixel_width = pixel_height;
+	auto ceilPixels = []( FT_Pos value ) -> unsigned int {
+		return value > 0 ? static_cast<unsigned int>( ( value + 63 ) >> 6 ) : 0;
+	};
+
+	unsigned int pixel_width = document->metrics.x_ppem;
+	unsigned int pixel_height = document->metrics.y_ppem;
+
+	if ( pixel_width == 0 && document->units_per_EM != 0 )
+		pixel_width = ceilPixels( FT_MulFix( document->units_per_EM, document->metrics.x_scale ) );
+	if ( pixel_height == 0 && document->units_per_EM != 0 )
+		pixel_height = ceilPixels( FT_MulFix( document->units_per_EM, document->metrics.y_scale ) );
+
+	if ( pixel_width == 0 )
+		pixel_width = ceilPixels( document->metrics.max_advance );
+	if ( pixel_height == 0 )
+		pixel_height = ceilPixels( document->metrics.height );
 
 	if ( pixel_width == 0 || pixel_height == 0 ) {
 		slot->bitmap.width = 0;
@@ -87,7 +97,7 @@ FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer 
 	slot->bitmap.rows = pixel_height;
 	slot->bitmap.pitch = pixel_width * 4;
 	slot->bitmap.pixel_mode = FT_PIXEL_MODE_BGRA;
-	slot->bitmap_top = ascender >> 6;
+	slot->bitmap_top = pixel_height;
 	slot->bitmap_left = 0;
 	slot->metrics.width = (FT_Pos)( pixel_width * 64 );
 	slot->metrics.height = (FT_Pos)( pixel_height * 64 );
@@ -104,6 +114,9 @@ FT_Error svg_render( FT_GlyphSlot slot, FT_Pointer* data_pointer ) {
 	}
 
 	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+
+	if ( !slot->bitmap.buffer && slot->bitmap.width > 0 && slot->bitmap.rows > 0 )
+		return FT_Err_Invalid_Slot_Handle;
 
 	memset( slot->bitmap.buffer, 0, slot->bitmap.pitch * slot->bitmap.rows );
 
@@ -502,11 +515,11 @@ bool FontTrueType::setFontFace( void* _face ) {
 #endif
 	}
 
-	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
+	if ( ( mIsColorEmojiFont || mHasColrGlyphs ) &&
 		 FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
 
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+	if ( mIsEmojiFont && !mHasSvgGlyphs && FontManager::instance()->getEmojiFont() == nullptr )
 		FontManager::instance()->setEmojiFont( this );
 
 	// Load the stroker that will be used to outline the font
@@ -1273,7 +1286,22 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting, glyphDesc->format );
 
 	// Convert the glyph to a bitmap (i.e. rasterize it)
-	FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 );
+	if ( ( err = FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 ) ) != 0 ) {
+		Log::error( "FT_Glyph_To_Bitmap failed for: glyphIndex %d characterSize: %d font: %s "
+					"error: %d",
+					index, characterSize, mFontName.c_str(), err );
+		FT_Done_Glyph( glyphDesc );
+		return glyph;
+	}
+
+	if ( glyphDesc->format != FT_GLYPH_FORMAT_BITMAP ) {
+		Log::error( "FT_Glyph_To_Bitmap produced non-bitmap glyph for: glyphIndex %d "
+					"characterSize: %d font: %s",
+					index, characterSize, mFontName.c_str() );
+		FT_Done_Glyph( glyphDesc );
+		return glyph;
+	}
+
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
@@ -1302,6 +1330,30 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		width /= 3;
 
 	if ( ( width > 0 ) && ( height > 0 ) ) {
+		int minimumPitch = width;
+		if ( bitmap.pixel_mode == FT_PIXEL_MODE_MONO )
+			minimumPitch = ( bitmap.width + 7 ) / 8;
+		else if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA )
+			minimumPitch = bitmap.width * 4;
+		else if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD )
+			minimumPitch = bitmap.width;
+		else if ( bitmap.pixel_mode != FT_PIXEL_MODE_GRAY ) {
+			Log::error( "Unsupported glyph bitmap pixel mode: %d for glyphIndex %d "
+						"characterSize: %d font: %s",
+						bitmap.pixel_mode, index, characterSize, mFontName.c_str() );
+			FT_Done_Glyph( glyphDesc );
+			return glyph;
+		}
+
+		if ( bitmap.buffer == nullptr || eeabs( bitmap.pitch ) < minimumPitch ) {
+			Log::error( "Invalid glyph bitmap buffer for glyphIndex %d characterSize: %d "
+						"font: %s size: %dx%d pitch: %d mode: %d",
+						index, characterSize, mFontName.c_str(), bitmap.width, bitmap.rows,
+						bitmap.pitch, bitmap.pixel_mode );
+			FT_Done_Glyph( glyphDesc );
+			return glyph;
+		}
+
 		// Leave a small padding around characters, so that filtering doesn't
 		// pollute them with pixels from neighbors
 		const int padding = 2;

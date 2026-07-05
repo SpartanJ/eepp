@@ -14,7 +14,7 @@ class EE_API StyleSheetVariable {
 	explicit StyleSheetVariable( const std::string& name, const std::string& value );
 
 	explicit StyleSheetVariable( const std::string& name, const std::string& value,
-								 const Uint32& specificity );
+								 const Int64& specificity );
 
 	const std::string& getName() const;
 
@@ -24,9 +24,9 @@ class EE_API StyleSheetVariable {
 
 	const std::string& value() const;
 
-	const Uint32& getSpecificity() const;
+	const Int64& getSpecificity() const;
 
-	void setSpecificity( const Uint32& specificity );
+	void setSpecificity( const Int64& specificity );
 
 	bool isEmpty() const;
 
@@ -40,7 +40,7 @@ class EE_API StyleSheetVariable {
 	std::string mName;
 	String::HashType mNameHash;
 	std::string mValue;
-	Uint32 mSpecificity;
+	Int64 mSpecificity;
 };
 
 typedef UnorderedMap<Uint32, StyleSheetVariable> StyleSheetVariables;

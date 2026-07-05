@@ -108,6 +108,7 @@ void UILayout::updateLayoutTree() {
 	if ( sMetricsEnabled )
 		sMetrics.treeUpdates++;
 
+	mCurrentLayoutReasons = mDirtyReasons;
 	mUpdatingLayoutTree = true;
 	updateLayout();
 
@@ -118,6 +119,7 @@ void UILayout::updateLayoutTree() {
 	mUpdatingLayoutTree = false;
 	mDirtyReasons = 0;
 	onLayoutUpdate();
+	mCurrentLayoutReasons = 0;
 }
 
 bool UILayout::setMatchParentIfNeededVerticalGrowth() {

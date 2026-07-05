@@ -2143,6 +2143,10 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 }
 
 void UICodeEditor::updateScrollBar() {
+	if ( mUpdatingScrollBar )
+		return;
+	mUpdatingScrollBar = true;
+
 	Int64 notVisibleLineCount = (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y;
 
 	mHScrollBar->setEnabled( false );
@@ -2184,6 +2188,7 @@ void UICodeEditor::updateScrollBar() {
 	}
 
 	setScrollY( mScroll.y );
+	mUpdatingScrollBar = false;
 }
 
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,

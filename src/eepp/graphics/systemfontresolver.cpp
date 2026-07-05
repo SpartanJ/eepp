@@ -6,6 +6,7 @@
 #endif
 
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/font.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -46,6 +47,7 @@
 #include FT_FREETYPE_H
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_TRUETYPE_TABLES_H
 #include <memory>
 
 using namespace EE::System;
@@ -102,6 +104,23 @@ std::shared_ptr<FreeTypeState> getFTState() {
 void destroyFTState() {
 	Lock lock( gStateInitMutex );
 	gFtState.reset();
+}
+
+bool fontHasSfntTable( const std::string& path, FT_ULong tag ) {
+	std::shared_ptr<FreeTypeState> state = getFTState();
+	if ( !state )
+		return false;
+
+	FT_Face face = state->getFace( path );
+	if ( !face )
+		return false;
+
+	FT_ULong length = 0;
+	return FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length ) == 0 && length > 0;
+}
+
+bool fontHasSvgTable( const std::string& path ) {
+	return fontHasSfntTable( path, FT_MAKE_TAG( 'S', 'V', 'G', ' ' ) );
 }
 
 } // namespace
@@ -367,6 +386,7 @@ FontDesc SystemFontResolver::getSystemMonospaceFont() const {
 FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeight weight,
 													  bool italic ) {
 	ensureFontListPopulated();
+	const bool isEmoji = Font::isEmojiCodePoint( codepoint );
 
 	std::vector<FontDesc> snapshot;
 	{
@@ -380,6 +400,8 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 				return FontDesc();
 			for ( const auto& desc : mFontList ) {
 				if ( desc.path == path ) {
+					if ( isEmoji && fontHasSvgTable( desc.path ) )
+						break;
 					FontDesc result = desc;
 					result.weight = weight;
 					result.italic = italic;
@@ -393,6 +415,9 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 
 	for ( const auto& desc : snapshot ) {
 		if ( fontContainsCodepoint( desc.path, codepoint ) ) {
+			if ( isEmoji && fontHasSvgTable( desc.path ) )
+				continue;
+
 			Lock lock( mMutex );
 			mCodepointFallbackCache[codepoint] = desc.path;
 			FontDesc result = desc;

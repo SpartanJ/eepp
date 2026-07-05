@@ -238,6 +238,7 @@ bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::MinHeight:
 			mMinHeightLocal = attribute.asStyleSheetLength();
+			updateDocumentMinHeight();
 			return true;
 		default:
 			break;
@@ -252,11 +253,11 @@ void UIHTMLBody::updateLayout() {
 	if ( mChild && mChild->isWidget() && !mSettingBodyHeight ) {
 		mSettingBodyHeight = true;
 
-		updateDocumentContentMinHeightFromChildren();
+		bool documentMinHeightChanged = updateDocumentContentMinHeightFromChildren();
 
 		mSettingBodyHeight = false;
 
-		if ( getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
+		if ( documentMinHeightChanged && getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
 			auto* html = getParent()->asType<UIHTMLHtml>();
 			const Float bodyBottom = getPixelsPosition().y + getPixelsSize().getHeight();
 			if ( bodyBottom > html->getPixelsSize().getHeight() + 0.5f ) {
@@ -278,6 +279,10 @@ void UIHTMLBody::setDocumentViewportMinHeight( const Float& height ) {
 		return;
 	mDocumentViewportMinHeight = height;
 	updateDocumentMinHeight();
+}
+
+void UIHTMLBody::setDocumentCanvasMinHeight( const Float& height ) {
+	setDocumentContentMinHeight( height );
 }
 
 Float UIHTMLBody::getLocalMinHeight() const {
@@ -1688,10 +1693,14 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
 								parentNode->asType<UIHTMLWidget>()->isGrid() );
 	if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+		 container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
 		 container->getPixelsSize().getWidth() > 0 ) {
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
+	} else if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
 				mode == IntrinsicMode::None ) {
@@ -2338,37 +2347,19 @@ bool UIRichText::isTextSelectionEnabled() const {
 }
 
 void UIRichText::onLayoutUpdate() {
-	// This trashes too much the layout, there must be a better way, also, all tests pass without
-	// this, and also I cannot find an example where this ends up being 100% necessary.
-	/* if ( mDeferredLayoutReasons ) {
-		LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
-		mDeferredLayoutReasons = 0;
+	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
+	mDeferredLayoutReasons = 0;
 
-		LayoutInvalidationFlags nonPaint =
-			deferred & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+	LayoutInvalidationFlags nonPaint =
+		deferred & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+	if ( !nonPaint )
+		return;
 
-		if ( nonPaint ) {
-			const Sizef oldSize = getPixelsSize();
-			const LayoutInvalidationFlags formattingReasons =
-				toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::Style ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::DocumentExtent ) |
-				toLayoutInvalidationFlags( LayoutInvalidationReason::Viewport );
-			if ( nonPaint & formattingReasons )
-				tryUpdateLayout();
-			if ( nonPaint & toLayoutInvalidationFlags( LayoutInvalidationReason::OutOfFlowChild ) )
-				updateOutOfFlowPosition();
-			if ( oldSize != getPixelsSize() ) {
-				LayoutInvalidationFlags parentReasons = LayoutInvalidation::ParentChildChange;
-				if ( nonPaint &
-					 toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) )
-					parentReasons |=
-						toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext );
-				notifyLayoutAttrChangeParent( parentReasons );
-			}
-		}
-	} */
+	LayoutInvalidationFlags newReasons = nonPaint & ~mCurrentLayoutReasons;
+	if ( !newReasons )
+		return;
+
+	setLayoutDirty( nonPaint );
 }
 
 void UIRichText::setTextSelectionEnabled( bool active ) {

@@ -56,6 +56,7 @@ class EE_API UILayout : public UIWidget {
 	UnorderedSet<UILayout*> mLayouts;
 	bool mDirtyLayout{ false };
 	LayoutInvalidationFlags mDirtyReasons{ 0 };
+	LayoutInvalidationFlags mCurrentLayoutReasons{ 0 };
 	// True only while updateLayoutTree() is actively updating this layout and walking its
 	// descendants. This is intentionally narrower than mDirtyLayout: code that receives layout
 	// notifications can use it to distinguish "already scheduled for a future pass" from

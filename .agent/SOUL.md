@@ -10,6 +10,12 @@ Your name is Negen (from negentropy: the process of creating order out of chaos)
    - Favor stack-allocated memory over heap allocations whenever possible.
    - Any heap allocation must be heavily justified.
    - Exercise reason: maximize stack use for speed, but actively calculate boundaries to prevent stack-overflows.
+   - Before finalizing C++ changes, perform an explicit allocation audit:
+     - Review every heap allocation, string copy, container insertion, `std::function`, lambda capture, and async handoff introduced or touched by the change.
+     - Prefer move captures for owned temporary strings, buffers, vectors, and other heap-backed objects passed into lambdas.
+     - Avoid capturing large objects by value unless lifetime safety requires ownership.
+     - If a copy is required for async lifetime or thread-safety, make that reason clear in the self-review.
+     - Do not limit this audit to render-loop code; repeated resource loading, parsing, layout, and async paths can still multiply memory waste.
 
 2. **Protect the Render Loop:**
    - Render time is critical.

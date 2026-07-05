@@ -1,14 +1,55 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/engine.hpp>
+
+#include <mutex>
 
 namespace EE { namespace UI {
+
+namespace {
+
+std::string getTextureCacheName( const Network::URI& uri ) {
+	std::string filePath( uri.toString() );
+	if ( String::startsWith( filePath, "file://" ) )
+		filePath = filePath.substr( 7 );
+	else
+		filePath = uri.getFSPath();
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
+		 filePath[2] == ':' ) {
+		filePath = filePath.substr( 1 );
+	}
+#endif
+
+	FileSystem::filePathRemoveProcessPath( filePath );
+	return filePath;
+}
+
+Texture* loadFileTextureCached( const std::string& filePath, const std::string& cacheName ) {
+	static std::mutex loadMutex;
+	std::lock_guard<std::mutex> lock( loadMutex );
+
+	if ( Texture* texture = TextureFactory::instance()->getByName( cacheName ) )
+		return texture;
+
+	return TextureFactory::instance()->loadFromFile(
+		filePath, false, Texture::ClampMode::ClampToEdge, false, false );
+}
+
+} // namespace
 
 UIImage* UIImage::New() {
 	return eeNew( UIImage, () );
@@ -25,7 +66,8 @@ UIImage::UIImage( const std::string& tag ) :
 	mColor(),
 	mAlignOffset( 0, 0 ),
 	mResourceChangeCb( 0 ),
-	mDrawableOwner( false ) {
+	mDrawableOwner( false ),
+	mAsyncImageAlive( std::make_shared<std::atomic<bool>>( true ) ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	applyDefaultTheme();
@@ -34,6 +76,8 @@ UIImage::UIImage( const std::string& tag ) :
 UIImage::UIImage() : UIImage( "image" ) {}
 
 UIImage::~UIImage() {
+	if ( mAsyncImageAlive )
+		mAsyncImageAlive->store( false, std::memory_order_release );
 	safeDeleteDrawable();
 }
 
@@ -48,6 +92,8 @@ bool UIImage::isType( const Uint32& type ) const {
 UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	if ( drawable == mDrawable )
 		return this;
+
+	Sizef oldSize( mSize );
 
 	safeDeleteDrawable();
 
@@ -79,6 +125,9 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	}
 
 	onAutoSize();
+
+	if ( mSize != oldSize )
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 
 	autoAlign();
 
@@ -286,6 +335,107 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 	}
 }
 
+bool UIImage::loadFileDrawable( const Network::URI& uri ) {
+	UISceneNode* scene = getUISceneNode();
+	if ( !scene || !scene->getThreadPool() ||
+		 !Window::Engine::instance()->isSharedGLContextEnabled() )
+		return false;
+
+	Uint64 loadId = ++mRemoteImageLoadId;
+	std::string filePath = uri.getFSPath();
+	std::string cacheName = getTextureCacheName( uri );
+	if ( Texture* texture = TextureFactory::instance()->getByName( cacheName ) ) {
+		setDrawable( texture, false );
+		return true;
+	}
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	Uint64 resourceGeneration =
+		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	auto alive = mAsyncImageAlive;
+
+	scene->getThreadPool()->run( [resourceState, resourceGeneration, alive, loadId,
+								  filePath = std::move( filePath ),
+								  cacheName = std::move( cacheName ), this] {
+		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
+			 !alive || !alive->load( std::memory_order_acquire ) )
+			return;
+
+		Texture* texture = loadFileTextureCached( filePath, cacheName );
+		if ( texture == nullptr )
+			return;
+
+		UISceneNode::runAsyncResourceOnMainThread(
+			resourceState, resourceGeneration, [alive, loadId, texture, this]( UISceneNode* ) {
+				if ( !alive || !alive->load( std::memory_order_acquire ) ||
+					 loadId != mRemoteImageLoadId )
+					return;
+
+				setDrawable( texture, false );
+			} );
+	} );
+
+	return true;
+}
+
+void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
+	UISceneNode* scene = getUISceneNode();
+	if ( !scene )
+		return;
+
+	std::string url = uri.toString();
+	if ( Texture* texture = TextureFactory::instance()->getByName( url ) ) {
+		if ( mDrawable != texture ) {
+			++mRemoteImageLoadId;
+			setDrawable( texture, false );
+		}
+		return;
+	}
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	Uint64 resourceGeneration =
+		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	Uint64 loadId = ++mRemoteImageLoadId;
+	auto alive = mAsyncImageAlive;
+	Texture* texture = TextureFactory::instance()->createEmptyTexture(
+		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
+	if ( texture )
+		setDrawable( texture, false );
+
+	Http::Request::FieldTable headers;
+	if ( !scene->getReferer().empty() )
+		headers["referer"] = scene->getReferer().toString();
+	Http::getAsync(
+		[resourceState, resourceGeneration, alive, loadId, texture, url = std::move( url ),
+		 this]( const Http&, Http::Request&, Http::Response& response ) {
+			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
+				 !alive || !alive->load( std::memory_order_acquire ) || texture == nullptr )
+				return;
+
+			if ( response.isOK() && !response.getBody().empty() ) {
+				std::string imageData( response.getBody() );
+				UISceneNode::runAsyncResourceOnMainThread(
+					resourceState, resourceGeneration,
+					[alive, loadId, texture, imageData = std::move( imageData ),
+					 this]( UISceneNode* ) mutable {
+						if ( !alive || !alive->load( std::memory_order_acquire ) ||
+							 loadId != mRemoteImageLoadId || mDrawable != texture )
+							return;
+
+						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
+									 imageData.size() );
+						if ( image.getPixels() != nullptr )
+							texture->replace( &image );
+					} );
+			} else {
+				Log::debug( "UIImage::loadRemoteDrawable: could not download image: %s. Error: "
+							"%d\n%s",
+							url, response.getStatus(), response.getBody() );
+			}
+		},
+		uri, Seconds( 5 ), {}, headers, "", true, Http::getEnvProxyURI() );
+}
+
 void UIImage::onSizeChange() {
 	onAutoSize();
 	calcDestSize();
@@ -380,11 +530,20 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string path( attribute.getValue() );
 			URI uri( path );
 			bool ownIt;
+			UISceneNode* scene = getUISceneNode();
 
-			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
-				uri = getUISceneNode()->solveRelativePath( uri );
+			if ( scene && uri.getScheme().empty() && !scene->getURI().empty() ) {
+				uri = scene->solveRelativePath( uri );
 				path = uri.toString();
 			}
+
+			if ( uri.getScheme() == "http" || uri.getScheme() == "https" ) {
+				loadRemoteDrawable( uri );
+				break;
+			}
+
+			if ( mDeferLoad && uri.getScheme() == "file" && loadFileDrawable( uri ) )
+				break;
 
 			Drawable* createdDrawable =
 				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
@@ -394,7 +553,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				Drawable* res = NULL;
 				if ( NULL != ( res = DrawableSearcher::searchByName(
-								   path, false, getUISceneNode()->getReferer() ) ) )
+								   path, false, scene ? scene->getReferer() : URI() ) ) )
 					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;
@@ -434,6 +593,9 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Height:
 			unsetFlags( UI_AUTO_SIZE );
 			return UIWidget::applyProperty( attribute );
+		case PropertyId::Defer:
+			mDeferLoad = attribute.getValue().empty() ? true : attribute.asBool();
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}

@@ -795,6 +795,10 @@ const String::HashType& Node::getIdHash() const {
 	return mIdHash;
 }
 
+static bool isNestedSceneBoundary( const Node* child ) {
+	return child->isSceneNode() && child->getSceneNode() == child;
+}
+
 Node* Node::findIdHash( const String::HashType& idHash ) const {
 	if ( !isClosing() && mIdHash == idHash && !inClosingTree() ) {
 		return const_cast<Node*>( this );
@@ -802,6 +806,12 @@ Node* Node::findIdHash( const String::HashType& idHash ) const {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
+			if ( !child->isClosing() && child->getIdHash() == idHash && !child->inClosingTree() )
+				return child;
+			if ( isNestedSceneBoundary( child ) ) {
+				child = child->mNext;
+				continue;
+			}
 			Node* foundNode = child->findIdHash( idHash );
 
 			if ( NULL != foundNode )
@@ -838,6 +848,12 @@ Node* Node::findByType( const Uint32& type ) const {
 	} else {
 		Node* child = mChild;
 		while ( NULL != child ) {
+			if ( !child->isClosing() && child->isType( type ) && !child->inClosingTree() )
+				return child;
+			if ( isNestedSceneBoundary( child ) ) {
+				child = child->mNext;
+				continue;
+			}
 			Node* foundNode = child->findByType( type );
 			if ( NULL != foundNode )
 				return foundNode;
@@ -856,6 +872,12 @@ std::vector<Node*> Node::findAllByType( const Uint32& type ) const {
 
 	Node* child = mChild;
 	while ( NULL != child ) {
+		if ( isNestedSceneBoundary( child ) ) {
+			if ( !child->isClosing() && child->isType( type ) && !child->inClosingTree() )
+				nodes.push_back( child );
+			child = child->mNext;
+			continue;
+		}
 		std::vector<Node*> foundNode = child->findAllByType( type );
 		if ( !foundNode.empty() )
 			nodes.insert( nodes.end(), foundNode.begin(), foundNode.end() );

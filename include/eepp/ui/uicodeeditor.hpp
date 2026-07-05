@@ -910,6 +910,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mKerningEnabled{ false };
 	bool mDisableScrollInvalidation{ false };
 	bool mDynamicTheming{ false };
+	bool mUpdatingScrollBar{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
