@@ -1,6 +1,7 @@
 #ifndef EECTEXTUREFACTORY_H
 #define EECTEXTUREFACTORY_H
 
+#include <eepp/core/containers.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/system/mutex.hpp>
@@ -182,7 +183,7 @@ class EE_API TextureFactory : protected Mutex {
 	void setCurrentTexture( const int& TexId, const Uint32& TextureUnit );
 
 	/** Returns the number of textures loaded */
-	Uint32 getTextureCount() const { return (Uint32)mTextures.size(); }
+	Uint32 getTextureCount();
 
 	/** @return All the active textures */
 	std::vector<Texture*> getTextures();
@@ -211,11 +212,8 @@ class EE_API TextureFactory : protected Mutex {
 	/** Reload all the grabbed textures */
 	void ungrabTextures();
 
-	/** Allocate space for Textures (only works if EE_ALLOC_TEXTURES_ON_VECTOR is defined) */
-	void allocate( const unsigned int& size );
-
 	/** @return The memory used by the textures (in bytes) */
-	unsigned int getTextureMemorySize() { return mMemSize; }
+	unsigned int getTextureMemorySize();
 
 	/** It's possible to create textures outside the texture factory loader, but the library will
 	 * need to know of this texture, so it's necessary to push the texture to the factory.
@@ -263,23 +261,23 @@ class EE_API TextureFactory : protected Mutex {
 
 	std::vector<int> mCurrentTexture;
 
-	std::vector<Texture*> mTextures;
+	UnorderedMap<Uint32, Texture*> mTextures;
 
 	unsigned int mMemSize;
 
-	std::vector<Uint32> mVectorFreeSlots;
+	Uint32 mTextureIdSeq;
 
 	Texture::CoordinateType mLastCoordinateType;
 
 	void unloadTextures();
 
-	Uint32 findFreeSlot();
-
 	bool mErasing;
 
-	const bool& isErasing() const;
+	bool isErasing();
 
 	void removeReference( Texture* Tex );
+
+	void updateMemorySize( Uint32 oldSize, Uint32 newSize );
 };
 
 }} // namespace EE::Graphics

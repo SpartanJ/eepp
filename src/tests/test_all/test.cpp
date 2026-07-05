@@ -141,7 +141,6 @@ void EETest::init() {
 		mWindow->pushResizeCallback( [this]( auto event ) { onWindowResize( event ); } );
 
 		TF = TextureFactory::instance();
-		TF->allocate( 40 );
 
 		Log = Log::instance();
 		KM = mWindow->getInput();

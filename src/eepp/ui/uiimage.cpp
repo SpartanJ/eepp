@@ -21,7 +21,19 @@ namespace EE { namespace UI {
 namespace {
 
 std::string getTextureCacheName( const Network::URI& uri ) {
-	std::string filePath( uri.getFSPath() );
+	std::string filePath( uri.toString() );
+	if ( String::startsWith( filePath, "file://" ) )
+		filePath = filePath.substr( 7 );
+	else
+		filePath = uri.getFSPath();
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
+		 filePath[2] == ':' ) {
+		filePath = filePath.substr( 1 );
+	}
+#endif
+
 	FileSystem::filePathRemoveProcessPath( filePath );
 	return filePath;
 }

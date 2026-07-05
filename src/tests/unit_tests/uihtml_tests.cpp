@@ -1,6 +1,7 @@
 #include "compareimages.hpp"
 #include "utest.hpp"
 
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -4298,11 +4299,11 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	const std::string processPath = Sys::getProcessPath();
 
 	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
 	sceneNode->setURI( URI( "file://" + processPath ) );
 	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
 	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
-	Texture* cached = TextureFactory::instance()->loadFromFile(
-		imageURI.getFSPath(), false, Texture::ClampMode::ClampToEdge, false, false );
+	Drawable* cached = DrawableSearcher::searchByName( imageURI.toString() );
 	ASSERT_TRUE( cached != nullptr );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(

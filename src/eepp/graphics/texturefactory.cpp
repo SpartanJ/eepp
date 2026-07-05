@@ -7,6 +7,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <jpeg-compressor/jpge.h>
 
@@ -17,11 +18,9 @@ SINGLETON_DECLARE_IMPLEMENTATION( TextureFactory )
 TextureFactory::TextureFactory() :
 	mCurrentTexture( EE_MAX_TEXTURE_UNITS ),
 	mMemSize( 0 ),
+	mTextureIdSeq( 0 ),
 	mLastCoordinateType( Texture::CoordinateType::Normalized ),
-	mErasing( false ) {
-	mTextures.clear();
-	mTextures.push_back( NULL );
-}
+	mErasing( false ) {}
 
 const Texture::CoordinateType& TextureFactory::getLastCoordinateType() const {
 	return mLastCoordinateType;
@@ -104,7 +103,7 @@ Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32&
 									  const Texture::ClampMode& ClampMode,
 									  const bool& CompressTexture, const bool& LocalCopy,
 									  const Uint32& MemSize ) {
-	lock();
+	Lock l( *this );
 
 	Texture* Tex = NULL;
 	Uint32 Pos;
@@ -113,7 +112,7 @@ Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32&
 
 	FileSystem::filePathRemoveProcessPath( FPath );
 
-	Pos = findFreeSlot();
+	Pos = ++mTextureIdSeq;
 	Tex = mTextures[Pos] = eeNew( Texture, () );
 
 	Tex->create( TexId, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath, ClampMode,
@@ -127,23 +126,7 @@ Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32&
 
 	mMemSize += MemSize;
 
-	unlock();
-
 	return Tex;
-}
-
-Uint32 TextureFactory::findFreeSlot() {
-	if ( !mVectorFreeSlots.empty() ) {
-		Uint32 Pos = mVectorFreeSlots.front();
-
-		mVectorFreeSlots.erase( mVectorFreeSlots.begin() );
-
-		return Pos;
-	}
-
-	mTextures.push_back( NULL );
-
-	return (Uint32)mTextures.size() - 1;
 }
 
 void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType,
@@ -195,23 +178,29 @@ void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordina
 }
 
 void TextureFactory::unloadTextures() {
+	Lock l( *this );
+
 	mErasing = true;
 
-	for ( Uint32 i = 1; i < mTextures.size(); i++ )
-		eeSAFE_DELETE( mTextures[i] );
+	for ( auto& texture : mTextures )
+		eeSAFE_DELETE( texture.second );
 
 	mErasing = false;
 
 	mTextures.clear();
+	mTextureIdSeq = 0;
 
 	Log::debug( "Textures Unloaded." );
 }
 
 bool TextureFactory::remove( Uint32 TexId ) {
-	Texture* Tex;
+	Lock l( *this );
 
-	if ( TexId < mTextures.size() && NULL != ( Tex = mTextures[TexId] ) ) {
-		removeReference( mTextures[TexId] );
+	Texture* Tex;
+	auto it = mTextures.find( TexId );
+
+	if ( it != mTextures.end() && NULL != ( Tex = it->second ) ) {
+		removeReference( Tex );
 
 		mErasing = true;
 		eeDelete( Tex );
@@ -224,29 +213,51 @@ bool TextureFactory::remove( Uint32 TexId ) {
 }
 
 bool TextureFactory::remove( Texture* texture ) {
-	if ( std::find( mTextures.begin(), mTextures.end(), texture ) != mTextures.end() ) {
+	Lock l( *this );
+
+	auto it = std::find_if( mTextures.begin(), mTextures.end(),
+							[texture]( const auto& pair ) { return pair.second == texture; } );
+	if ( it != mTextures.end() ) {
 		removeReference( texture );
+
+		mErasing = true;
+		eeDelete( texture );
+		mErasing = false;
+
 		return true;
 	}
 	return false;
 }
 
 void TextureFactory::removeReference( Texture* Tex ) {
+	Lock l( *this );
+
+	auto it = mTextures.find( Tex->getTextureId() );
+	if ( it == mTextures.end() || it->second != Tex )
+		return;
+
 	mMemSize -= Tex->getMemSize();
 
 	int glTexId = Tex->getHandle();
 
-	mTextures[Tex->getTextureId()] = NULL;
+	mTextures.erase( it );
 
 	for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 		if ( mCurrentTexture[i] == (Int32)glTexId )
 			mCurrentTexture[i] = 0;
 	}
-
-	mVectorFreeSlots.push_back( Tex->getTextureId() );
 }
 
-const bool& TextureFactory::isErasing() const {
+void TextureFactory::updateMemorySize( Uint32 oldSize, Uint32 newSize ) {
+	Lock l( *this );
+
+	mMemSize -= oldSize;
+	mMemSize += newSize;
+}
+
+bool TextureFactory::isErasing() {
+	Lock l( *this );
+
 	return mErasing;
 }
 
@@ -261,11 +272,13 @@ void TextureFactory::setCurrentTexture( const int& TexId, const Uint32& TextureU
 }
 
 std::vector<Texture*> TextureFactory::getTextures() {
+	Lock l( *this );
+
 	std::vector<Texture*> textures;
 	textures.reserve( mTextures.size() );
 
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+	for ( const auto& texture : mTextures ) {
+		Texture* Tex = texture.second;
 
 		if ( Tex )
 			textures.push_back( Tex );
@@ -275,8 +288,10 @@ std::vector<Texture*> TextureFactory::getTextures() {
 }
 
 void TextureFactory::reloadAllTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+	Lock l( *this );
+
+	for ( const auto& texture : mTextures ) {
+		Texture* Tex = texture.second;
 
 		if ( Tex )
 			Tex->reload();
@@ -286,8 +301,10 @@ void TextureFactory::reloadAllTextures() {
 }
 
 void TextureFactory::grabTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+	Lock l( *this );
+
+	for ( const auto& texture : mTextures ) {
+		Texture* Tex = texture.second;
 
 		if ( Tex && !Tex->hasLocalCopy() ) {
 			Tex->lock();
@@ -297,8 +314,10 @@ void TextureFactory::grabTextures() {
 }
 
 void TextureFactory::ungrabTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+	Lock l( *this );
+
+	for ( const auto& texture : mTextures ) {
+		Texture* Tex = texture.second;
 
 		if ( NULL != Tex && Tex->isGrabbed() ) {
 			Tex->reload();
@@ -320,41 +339,57 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 }
 
 bool TextureFactory::existsId( const Uint32& TexId ) {
-	return ( TexId < mTextures.size() && TexId > 0 && NULL != mTextures[TexId] );
+	Lock l( *this );
+
+	return mTextures.find( TexId ) != mTextures.end();
 }
 
 bool TextureFactory::exists( const Texture* tex ) {
-	return std::find( mTextures.begin(), mTextures.end(), tex ) != mTextures.end();
+	Lock l( *this );
+
+	return std::find_if( mTextures.begin(), mTextures.end(), [tex]( const auto& pair ) {
+			   return pair.second == tex;
+		   } ) != mTextures.end();
 }
 
 Texture* TextureFactory::getTexture( const Uint32& TexId ) {
-	return mTextures[TexId];
-}
+	Lock l( *this );
 
-void TextureFactory::allocate( const unsigned int& size ) {
-	if ( size > mTextures.size() ) {
-		mTextures.resize( size + 1, NULL );
-
-		for ( unsigned int i = 1; i < mTextures.size(); i++ )
-			mVectorFreeSlots.push_back( i );
-	}
+	auto it = mTextures.find( TexId );
+	return it != mTextures.end() ? it->second : NULL;
 }
 
 Texture* TextureFactory::getByName( const std::string& Name ) {
 	return getByHash( String::hash( Name ) );
 }
 
+Uint32 TextureFactory::getTextureCount() {
+	Lock l( *this );
+
+	return (Uint32)mTextures.size();
+}
+
+unsigned int TextureFactory::getTextureMemorySize() {
+	Lock l( *this );
+
+	return mMemSize;
+}
+
 Texture* TextureFactory::getByHash( const String::HashType& hash ) {
-	Texture* tTex = NULL;
+	Lock l( *this );
 
-	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
-		tTex = mTextures[i];
+	Uint32 latestId = 0;
+	Texture* latestTexture = NULL;
+	for ( const auto& texture : mTextures ) {
+		Texture* tTex = texture.second;
 
-		if ( NULL != tTex && tTex->getHashName() == hash )
-			return mTextures[i];
+		if ( NULL != tTex && texture.first > latestId && tTex->getHashName() == hash ) {
+			latestId = texture.first;
+			latestTexture = tTex;
+		}
 	}
 
-	return NULL;
+	return latestTexture;
 }
 
 }} // namespace EE::Graphics

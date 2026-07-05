@@ -481,8 +481,7 @@ void Texture::reload() {
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
 													&height, mChannels, mTexture, flags );
 
-				TextureFactory::instance()->mMemSize -= mSize;
-
+				Uint32 oldSize = mSize;
 				mSize = mWidth * mHeight * mChannels;
 
 				if ( getMipmap() ) {
@@ -496,7 +495,7 @@ void Texture::reload() {
 					}
 				}
 
-				TextureFactory::instance()->mMemSize += mSize;
+				TextureFactory::instance()->updateMemorySize( oldSize, mSize );
 			}
 
 			iTextureFilter( mFilter );
@@ -593,9 +592,9 @@ void Texture::replace( Image* image ) {
 		mHeight = mImgHeight = height;
 		mChannels = image->getChannels();
 
-		TextureFactory::instance()->mMemSize -= mSize;
+		Uint32 oldSize = mSize;
 		mSize = mWidth * mHeight * mChannels;
-		TextureFactory::instance()->mMemSize += mSize;
+		TextureFactory::instance()->updateMemorySize( oldSize, mSize );
 
 		if ( hasLocalCopy() ) {
 			// Renew the local copy
