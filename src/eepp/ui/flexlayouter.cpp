@@ -1222,6 +1222,14 @@ void FlexLayouter::updateLayout() {
 	if ( widget->isInline() || mPacking )
 		return;
 
+	RichText* richText = widget->isType( UI_TYPE_RICHTEXT )
+									   ? widget->asType<UIRichText>()->getRichTextPtr()
+									   : nullptr;
+	bool preserveFloatConstrainedBFCWidth =
+		widget->establishesBlockFormattingContext() &&
+		widget->getLayoutWidthPolicy() == SizePolicy::MatchParent && richText != nullptr &&
+		!richText->getExternalFloatExclusions().empty();
+
 	mPacking = true;
 
 	mContainer->beginAttributesTransaction();
@@ -1230,7 +1238,7 @@ void FlexLayouter::updateLayout() {
 		auto* parent = mContainer->getParent();
 		bool parentIsFlexContainer = parent && parent->isType( UI_TYPE_HTML_WIDGET ) &&
 									 static_cast<UIHTMLWidget*>( parent )->isFlex();
-		if ( !parentIsFlexContainer )
+		if ( !parentIsFlexContainer && !preserveFloatConstrainedBFCWidth )
 			setMatchParentIfNeededVerticalGrowth();
 	}
 
@@ -1333,6 +1341,8 @@ void FlexLayouter::updateLayout() {
 														containerPadding.Right );
 				else if ( widthPolicy == SizePolicy::Fixed )
 					mContainer->setInternalPixelsWidth( containerWidth );
+				else if ( preserveFloatConstrainedBFCWidth )
+					mContainer->setInternalPixelsWidth( containerWidth );
 				else
 					mContainer->setInternalPixelsWidth(
 						mContainer->getParent()
@@ -1354,6 +1364,8 @@ void FlexLayouter::updateLayout() {
 			if ( widthPolicy == SizePolicy::WrapContent )
 				mContainer->setInternalPixelsWidth( totW );
 			else if ( widthPolicy == SizePolicy::Fixed )
+				mContainer->setInternalPixelsWidth( containerWidth );
+			else if ( preserveFloatConstrainedBFCWidth )
 				mContainer->setInternalPixelsWidth( containerWidth );
 			else
 				mContainer->setInternalPixelsWidth(
@@ -1403,6 +1415,13 @@ void FlexLayouter::updateLayout() {
 
 	applyLayout( lines, mainAxis, crossAxis, containerPadding, containerWidth, containerHeight,
 				 widthPolicy, heightPolicy );
+	if ( preserveFloatConstrainedBFCWidth ) {
+		// The parent RichText stream has already resolved this match-parent BFC against active
+		// floats and placed it into a narrowed atomic fragment. Flex layout still needs to run
+		// using that used width, but its normal match-parent finalization would expand back to
+		// the full parent content box and overlap the float.
+		mContainer->setInternalPixelsWidth( containerWidth );
+	}
 
 	// CSS Flexbox §8.5: store the container's baseline for use by outer flex containers.
 	// For row/row-reverse, baseline = first flex line's baseline offset from content top.

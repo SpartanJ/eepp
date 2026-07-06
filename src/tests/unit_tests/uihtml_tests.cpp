@@ -3745,6 +3745,70 @@ UTEST( UIHTML, PaddedHeaderWithNestedFloatsDoesNotOverlapClearedMain ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FlexInfobarAvoidsRightFloat ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "flex infobar avoids right float", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+			<head>
+				<style>
+					body {
+						margin: 0;
+						font: normal 12px verdana;
+					}
+					.side {
+						float: right;
+						width: 300px;
+						height: 120px;
+						margin: 0 5px;
+					}
+					.content {
+						margin: 7px 5px 0 5px;
+					}
+					.infobar {
+						display: flex;
+						overflow: hidden;
+						box-sizing: border-box;
+						height: 124px;
+						margin: 5px;
+						padding: 0;
+					}
+				</style>
+			</head>
+			<body>
+				<div class="side" id="side"></div>
+				<div class="content" id="content">
+					<section class="infobar" id="infobar">
+						<a>Welcome to Reddit.</a>
+					</section>
+				</div>
+			</body>
+		</html>
+	)html" ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+	sceneNode->updateDirtyLayouts();
+
+	auto* side = sceneNode->getRoot()->find( "side" )->asType<UIHTMLWidget>();
+	auto* infobar = sceneNode->getRoot()->find( "infobar" )->asType<UIHTMLWidget>();
+	ASSERT_TRUE( side != nullptr );
+	ASSERT_TRUE( infobar != nullptr );
+
+	const Float sideLeft = side->convertToWorldSpace( { 0, 0 } ).x;
+	const Float infobarRight =
+		infobar->convertToWorldSpace( { 0, 0 } ).x + infobar->getPixelsSize().getWidth();
+
+	EXPECT_LE( infobarRight, sideLeft + 0.5f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, AnchorsSizing ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "anchors sizing", WindowStyle::Default, WindowBackend::Default,
