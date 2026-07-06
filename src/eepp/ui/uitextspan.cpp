@@ -68,7 +68,7 @@ bool UITextSpan::isInline() const {
 }
 
 bool UITextSpan::isInlineBlock() const {
-	return mDisplay == CSSDisplay::InlineBlock && getCSSFloat() == CSSFloat::None && !isOutOfFlow();
+	return mDisplay == CSSDisplay::InlineBlock && !isOutOfFlow();
 }
 
 void UITextSpan::onDisplayChange() {

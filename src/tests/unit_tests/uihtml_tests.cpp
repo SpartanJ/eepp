@@ -3809,6 +3809,193 @@ UTEST( UIHTML, FlexInfobarAvoidsRightFloat ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FloatedInlineBlockButtonKeepsTextInside ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "floated inline-block button text", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+			<head>
+				<style>
+					body {
+						margin: 0;
+						font: normal 12px verdana;
+					}
+					.cta-container {
+						overflow: hidden;
+						width: 425px;
+					}
+					.cta-button {
+						background-color: #4f86b5;
+						color: white;
+						display: inline-block;
+						float: left;
+						font-size: 12px;
+						font-weight: bold;
+						line-height: 20px;
+						margin-right: 12px;
+						padding: 4px 12px 3px;
+						text-transform: uppercase;
+						white-space: nowrap;
+					}
+					.cta-desc {
+						font-size: 12px;
+						margin: 0;
+						padding-top: 5px;
+					}
+				</style>
+			</head>
+			<body>
+				<div class="cta-container" id="cta">
+					<span class="cta-button" id="button">Become a Redditor</span>
+					<p class="cta-desc" id="desc">and subscribe to one of thousands of communities.</p>
+				</div>
+			</body>
+		</html>
+	)html" ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+	sceneNode->updateDirtyLayouts();
+
+	auto* button = sceneNode->getRoot()->find( "button" )->asType<UIHTMLWidget>();
+	ASSERT_TRUE( button != nullptr );
+	auto* buttonRichText = button->getRichTextPtr();
+	ASSERT_TRUE( buttonRichText != nullptr );
+	ASSERT_EQ( buttonRichText->getLines().size(), (size_t)1 );
+	ASSERT_FALSE( buttonRichText->getLines().front().spans.empty() );
+
+	const auto& textSpan = buttonRichText->getLines().front().spans.front();
+	const Rectf padding = button->getPixelsPadding();
+	EXPECT_LE( textSpan.position.x + textSpan.size.getWidth(),
+			   button->getPixelsSize().getWidth() - padding.Left - padding.Right + 0.5f );
+	EXPECT_LE( textSpan.position.y + textSpan.size.getHeight(),
+			   button->getPixelsSize().getHeight() - padding.Top - padding.Bottom + 0.5f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ListingsSignupCtaTextSitsBesideFloatedButton ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "listings signup cta float text", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+			<head>
+				<style>
+					body {
+						margin: 0;
+						font: normal 12px verdana;
+					}
+					.infobar {
+						align-items: center;
+						background-color: #fefbda;
+						display: flex;
+						height: 124px;
+						overflow: hidden;
+						width: 780px;
+					}
+					.container {
+						color: black;
+						display: block;
+						padding: 0 18px;
+						width: 55%;
+					}
+					.title {
+						display: inline-block;
+						font-size: 20px;
+						font-weight: bold;
+						line-height: 1;
+						margin: 0 0.25em 10px 0;
+					}
+					.desc {
+						display: block;
+						font-size: 16px;
+						font-weight: bold;
+						line-height: 1.1;
+						margin: 0 0 14px 0;
+						max-width: 425px;
+					}
+					.cta-container {
+						overflow: hidden;
+					}
+					.cta-button {
+						background-color: #4f86b5;
+						color: white;
+						display: inline-block;
+						float: left;
+						font-size: 12px;
+						font-weight: bold;
+						line-height: 20px;
+						margin-right: 12px;
+						padding: 4px 12px 3px;
+						text-transform: uppercase;
+						white-space: nowrap;
+					}
+					.cta-desc {
+						font-size: 12px;
+						margin: 0;
+						padding-top: 5px;
+					}
+				</style>
+			</head>
+			<body>
+				<section class="infobar" id="infobar">
+					<a class="container" id="container">
+						<h2 class="title">Welcome to Reddit.</h2>
+						<p class="desc">Where a community about your favorite things is waiting for you.</p>
+						<div class="cta-container" id="cta">
+							<span class="cta-button" id="button">Become a Redditor</span>
+							<p class="cta-desc" id="cta-desc">and subscribe to one of thousands of communities.</p>
+						</div>
+					</a>
+				</section>
+			</body>
+		</html>
+	)html" ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+	sceneNode->updateDirtyLayouts();
+
+	auto* cta = sceneNode->getRoot()->find( "cta" )->asType<UIHTMLWidget>();
+	auto* button = sceneNode->getRoot()->find( "button" )->asType<UIHTMLWidget>();
+	auto* desc = sceneNode->getRoot()->find( "cta-desc" )->asType<UIHTMLWidget>();
+	ASSERT_TRUE( cta != nullptr );
+	ASSERT_TRUE( button != nullptr );
+	ASSERT_TRUE( desc != nullptr );
+	auto* buttonRichText = button->getRichTextPtr();
+	ASSERT_TRUE( buttonRichText != nullptr );
+	ASSERT_EQ( buttonRichText->getLines().size(), (size_t)1 );
+	ASSERT_FALSE( buttonRichText->getLines().front().spans.empty() );
+
+	const Vector2f buttonPos = button->convertToWorldSpace( { 0, 0 } );
+	const Vector2f descPos = desc->convertToWorldSpace( { 0, 0 } );
+	const auto& buttonTextSpan = buttonRichText->getLines().front().spans.front();
+	ASSERT_TRUE( desc->getRichTextPtr() != nullptr );
+	ASSERT_FALSE( desc->getRichTextPtr()->getLines().empty() );
+	ASSERT_FALSE( desc->getRichTextPtr()->getLines().front().spans.empty() );
+	const auto& firstDescSpan = desc->getRichTextPtr()->getLines().front().spans.front();
+
+	EXPECT_LE( buttonTextSpan.position.x, 1.f );
+	EXPECT_LE( buttonTextSpan.position.x + buttonTextSpan.size.getWidth(),
+			   button->getPixelsSize().getWidth() - button->getPixelsContentOffset().Left -
+				   button->getPixelsContentOffset().Right + 0.5f );
+	EXPECT_GE( descPos.x + firstDescSpan.position.x,
+			   buttonPos.x + button->getPixelsSize().getWidth() - 0.5f );
+	EXPECT_LT( std::abs( descPos.y - buttonPos.y ), button->getPixelsSize().getHeight() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, AnchorsSizing ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "anchors sizing", WindowStyle::Default, WindowBackend::Default,
