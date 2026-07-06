@@ -552,6 +552,68 @@ UTEST( UIHTMLFloat, rightFloatedInlineSpansAlignAtContainerRightAfterBlock ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<body style="margin:0">
+			<div id="access" style="background:#000;display:block;float:left;width:940px">
+				<div id="menu" class="menu" style="font-size:13px;margin-left:12px;width:928px">
+					<ul id="top" style="list-style:none;margin:0;padding:0">
+						<li id="home" style="float:left;position:relative">
+							<a id="home-a" style="display:block;line-height:38px;padding:0 10px">Home</a>
+						</li>
+						<li id="about" style="float:left;position:relative">
+							<a id="about-a" style="display:block;line-height:38px;padding:0 10px">About</a>
+						</li>
+						<li id="os2" style="float:left;position:relative">
+							<a id="os2-a" style="display:block;line-height:38px;padding:0 10px">OS/2 History</a>
+							<ul id="os2-sub" style="display:none;position:absolute;top:38px;left:0;float:left;width:180px">
+								<li style="min-width:180px"><a style="display:block;line-height:1em;padding:10px;width:160px">OS/2 Beginnings</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</body>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* menu = sceneNode->find<UIWidget>( "menu" );
+	auto* home = sceneNode->find<UIWidget>( "home" );
+	auto* about = sceneNode->find<UIWidget>( "about" );
+	auto* os2 = sceneNode->find<UIWidget>( "os2" );
+	auto* os2Anchor = sceneNode->find<UIWidget>( "os2-a" );
+	ASSERT_TRUE( menu != nullptr );
+	ASSERT_TRUE( home != nullptr );
+	ASSERT_TRUE( about != nullptr );
+	ASSERT_TRUE( os2 != nullptr );
+	ASSERT_TRUE( os2Anchor != nullptr );
+
+	EXPECT_EQ( os2->asType<UIHTMLWidget>()->getCSSFloat(), CSSFloat::Left );
+	EXPECT_LT( os2->getPixelsSize().getWidth(), menu->getPixelsSize().getWidth() * 0.5f );
+	EXPECT_NEAR( os2->getPixelsSize().getWidth(), os2Anchor->getPixelsSize().getWidth(), 1.f );
+	EXPECT_NEAR( os2->getPixelsSize().getHeight(), 38.f, 1.f );
+	EXPECT_NEAR( os2Anchor->getPixelsSize().getHeight(), 38.f, 1.f );
+	auto* os2AnchorRichText = os2Anchor->asType<UIRichText>()->getRichTextPtr();
+	ASSERT_TRUE( os2AnchorRichText != nullptr );
+	ASSERT_EQ( os2AnchorRichText->getLines().size(), (size_t)1 );
+	ASSERT_EQ( os2AnchorRichText->getLines().front().spans.size(), (size_t)1 );
+	const auto& os2TextSpan = os2AnchorRichText->getLines().front().spans.front();
+	EXPECT_GT( os2TextSpan.position.y, 1.f );
+	EXPECT_LT( os2TextSpan.position.y + os2TextSpan.size.getHeight(),
+			   os2Anchor->getPixelsSize().getHeight() - 1.f );
+	EXPECT_NEAR( home->getPixelsPosition().y, os2->getPixelsPosition().y, 1.f );
+	EXPECT_NEAR( about->getPixelsPosition().y, os2->getPixelsPosition().y, 1.f );
+	EXPECT_GE( about->getPixelsPosition().x,
+			   home->getPixelsPosition().x + home->getPixelsSize().getWidth() - 1.f );
+	EXPECT_GE( os2->getPixelsPosition().x,
+			   about->getPixelsPosition().x + about->getPixelsSize().getWidth() - 1.f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

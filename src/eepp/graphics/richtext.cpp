@@ -14,14 +14,31 @@ static Float getTextRunLineHeight( const std::shared_ptr<Text>& text, Float line
 	return lineHeight > 0 ? lineHeight : fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
 }
 
-static Float getTextBaseline( const std::shared_ptr<Text>& text, Float lineHeight ) {
+static Float getTextVisualLineHeight( const std::shared_ptr<Text>& text, Float lineHeight ) {
+	if ( !text || !text->getFontStyleConfig().Font )
+		return lineHeight;
+	const auto& fontStyle = text->getFontStyleConfig();
+	return fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
+}
+
+static Float getTextVisualBaseline( const std::shared_ptr<Text>& text ) {
 	if ( !text || !text->getFontStyleConfig().Font )
 		return 0.f;
 	const auto& fontStyle = text->getFontStyleConfig();
-	Float fontLineSpacing = fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
-	Float usedLineHeight = getTextRunLineHeight( text, lineHeight );
+	return fontStyle.Font->getAscent( fontStyle.CharacterSize );
+}
+
+static Float getTextLineBoxBaselineForHeight( const std::shared_ptr<Text>& text,
+											  Float usedLineHeight ) {
+	if ( !text || !text->getFontStyleConfig().Font )
+		return 0.f;
+	Float fontLineSpacing = getTextVisualLineHeight( text, usedLineHeight );
 	Float leading = eemax( 0.f, usedLineHeight - fontLineSpacing ) * 0.5f;
-	return leading + fontStyle.Font->getAscent( fontStyle.CharacterSize );
+	return leading + getTextVisualBaseline( text );
+}
+
+static Float getTextLineBoxBaseline( const std::shared_ptr<Text>& text, Float lineHeight ) {
+	return getTextLineBoxBaselineForHeight( text, getTextRunLineHeight( text, lineHeight ) );
 }
 
 static Float getFontXHeight( const FontStyleConfig& fontStyle ) {
@@ -839,7 +856,7 @@ class RichTextInlineLayouter {
 			bool isFloat = span.floatType != RichText::InlineFloat::None;
 
 			if ( span.type == RichText::RenderSpan::Type::Text ) {
-				Float baseline = getTextBaseline( span.text, span.lineHeight );
+				Float baseline = getTextVisualBaseline( span.text );
 				RichText::BaselineAlignValue baselineAlign = effectiveInlineBaselineAlign(
 					inlineItems, span.inlinePath, span.baselineAlign );
 				Float offsetY = getBaselineAlignedOffset(
@@ -1749,18 +1766,22 @@ class RichTextInlineLayouter {
 									  const std::vector<RichText::InlineItem>& inlineItems ) {
 		Float maxAscent = 0.f;
 		Float maxDescent = 0.f;
-		bool hasParticipatingAncestorLineHeight = false;
+		bool hasParticipatingLineHeight = forcedLineHeight > 0.f;
 
 		for ( const auto& span : line.spans ) {
 			if ( span.type == RichText::RenderSpan::Type::Text ) {
 				InlineVerticalEdges edges = inlineAncestorLineHeightEdges(
 					inlineItems, span.inlinePath, span.size.getHeight() );
-				hasParticipatingAncestorLineHeight =
-					hasParticipatingAncestorLineHeight || edges.top > 0 || edges.bottom > 0;
-				Float baseline = getTextBaseline( span.text, span.lineHeight );
+				hasParticipatingLineHeight =
+					hasParticipatingLineHeight || edges.top > 0 || edges.bottom > 0;
+				Float lineHeight =
+					span.lineHeight > 0.f
+						? getTextRunLineHeight( span.text, span.lineHeight )
+						: eemax( forcedLineHeight,
+								 getTextRunLineHeight( span.text, span.lineHeight ) );
+				Float baseline = getTextLineBoxBaselineForHeight( span.text, lineHeight );
 				maxAscent = std::max( maxAscent, baseline + edges.top );
-				maxDescent =
-					std::max( maxDescent, span.size.getHeight() - baseline + edges.bottom );
+				maxDescent = std::max( maxDescent, lineHeight - baseline + edges.bottom );
 			} else {
 				bool isFloat = span.floatType != RichText::InlineFloat::None;
 				Float baseline = span.baseline;
@@ -1768,15 +1789,15 @@ class RichTextInlineLayouter {
 					inlineItems, span.inlinePath, span.size.getHeight() );
 				if ( preserveFloatPositions && isFloat )
 					continue;
-				hasParticipatingAncestorLineHeight =
-					hasParticipatingAncestorLineHeight || edges.top > 0 || edges.bottom > 0;
+				hasParticipatingLineHeight =
+					hasParticipatingLineHeight || edges.top > 0 || edges.bottom > 0;
 				maxAscent = std::max( maxAscent, baseline + edges.top );
 				maxDescent =
 					std::max( maxDescent, span.size.getHeight() - baseline + edges.bottom );
 			}
 		}
 
-		if ( !hasParticipatingAncestorLineHeight )
+		if ( !hasParticipatingLineHeight )
 			return;
 
 		line.maxAscent = maxAscent;
@@ -1796,8 +1817,9 @@ class RichTextInlineLayouter {
 		renderSpanText->setStyleConfig( renderStyle );
 		renderSpanText->setTabWidth( payload.text->getTabWidth() );
 
-		Float height = getTextRunLineHeight( payload.text, payload.lineHeight );
-		Float ascent = getTextBaseline( payload.text, payload.lineHeight );
+		Float height = getTextVisualLineHeight( payload.text, payload.lineHeight );
+		Float lineHeight = getTextRunLineHeight( payload.text, payload.lineHeight );
+		Float ascent = getTextLineBoxBaseline( payload.text, payload.lineHeight );
 		Float spanWidth = renderSpanText->getTextWidth();
 
 		RichText::RenderSpan renderSpan;
@@ -1818,7 +1840,7 @@ class RichTextInlineLayouter {
 
 		line.spans.push_back( std::move( renderSpan ) );
 		line.maxAscent = std::max( line.maxAscent, ascent );
-		line.height = std::max( line.height, height );
+		line.height = std::max( line.height, lineHeight );
 
 		curX += spanWidth;
 		line.width += spanWidth;
