@@ -1128,6 +1128,32 @@ UTEST( UIHTMLFloat, floatLeftNonHTMLwidget_NoCrash ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, floatOnlyWrapContentParentIncludesPadding ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	UIRichText* container = UIRichText::New();
+	container->setParent( sceneNode->getRoot() );
+	container->setPixelsPosition( 10, 10 );
+	container->setPaddingPixels( { 10, 10, 10, 10 } );
+	container->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+
+	UIHTMLWidget* floatChild = UIHTMLWidget::New();
+	floatChild->setParent( container );
+	floatChild->setPixelsSize( 10, 10 );
+	floatChild->setCSSFloat( CSSFloat::Left );
+	floatChild->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	sceneNode->updateDirtyLayouts();
+
+	EXPECT_NEAR( container->getPixelsSize().getWidth(), 30.f, 1.f );
+	EXPECT_NEAR( container->getPixelsSize().getHeight(), 30.f, 1.f );
+	EXPECT_NEAR( floatChild->getPixelsPosition().x, 10.f, 1.f );
+	EXPECT_NEAR( floatChild->getPixelsPosition().y, 10.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, floatNotAffectedByTextAlignCenter ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "Float + TextAlign Test",
 													  WindowStyle::Default, WindowBackend::Default,

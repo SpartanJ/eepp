@@ -128,9 +128,38 @@ void BlockLayouter::updateLayout() {
 
 	positionRichTextChildren( rt );
 
+	Sizef contentSize = rt->getSize();
+	if ( mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
+		 mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+		// RichText computes float placement from custom-block sizes captured before the
+		// corresponding widgets are positioned and may be resized by nested layout. For the
+		// intentional HTML-layer hit-test compatibility behavior, wrap-content parents must grow to
+		// the final floated child bounds, including the parent's padding/content offset.
+		const Rectf contentOffset = mContainer->getPixelsContentOffset();
+		Node* child = mContainer->getFirstChild();
+		while ( child != nullptr ) {
+			if ( child->isWidget() && child->isType( UI_TYPE_HTML_WIDGET ) ) {
+				auto* childWidget = child->asType<UIHTMLWidget>();
+				if ( childWidget->isVisible() && !childWidget->isOutOfFlow() &&
+					 childWidget->getCSSFloat() != CSSFloat::None ) {
+					const Rectf margin = childWidget->getNormalFlowLayoutPixelsMargin();
+					const Vector2f pos = childWidget->getPixelsPosition();
+					const Sizef size = childWidget->getPixelsSize();
+					contentSize.setWidth(
+						std::max( contentSize.getWidth(), pos.x - margin.Left + size.getWidth() +
+															  margin.Right - contentOffset.Left ) );
+					contentSize.setHeight( std::max( contentSize.getHeight(),
+													 pos.y - margin.Top + size.getHeight() +
+														 margin.Bottom - contentOffset.Top ) );
+				}
+			}
+			child = child->getNextNode();
+		}
+	}
+
 	Float totW = mContainer->getPixelsSize().getWidth();
 	if ( mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-		totW = rt->getSize().getWidth() + mContainer->getPixelsContentOffset().Left +
+		totW = contentSize.getWidth() + mContainer->getPixelsContentOffset().Left +
 			   mContainer->getPixelsContentOffset().Right;
 		if ( !mContainer->getMaxWidthEq().empty() && totW > mContainer->getMaxSizePx().getWidth() )
 			mContainer->setClipType( ClipType::ContentBox );
@@ -157,7 +186,7 @@ void BlockLayouter::updateLayout() {
 
 	Float totH = mContainer->getPixelsSize().getHeight();
 	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-		totH = rt->getSize().getHeight() + mContainer->getPixelsContentOffset().Top +
+		totH = contentSize.getHeight() + mContainer->getPixelsContentOffset().Top +
 			   mContainer->getPixelsContentOffset().Bottom;
 		if ( !mContainer->getMaxHeightEq().empty() &&
 			 totH > mContainer->getMaxSizePx().getHeight() )

@@ -1365,12 +1365,18 @@ class RichTextInlineLayouter {
 		}
 
 		Float floatBoundsBottom = 0;
-		for ( size_t i = externalLeftFloatCount; i < leftFloats.size(); ++i )
+		Float floatBoundsRight = 0;
+		for ( size_t i = externalLeftFloatCount; i < leftFloats.size(); ++i ) {
 			floatBoundsBottom = std::max( floatBoundsBottom, leftFloats[i].Bottom );
-		for ( size_t i = externalRightFloatCount; i < rightFloats.size(); ++i )
+			floatBoundsRight = std::max( floatBoundsRight, leftFloats[i].Right );
+		}
+		for ( size_t i = externalRightFloatCount; i < rightFloats.size(); ++i ) {
 			floatBoundsBottom = std::max( floatBoundsBottom, rightFloats[i].Bottom );
+			floatBoundsRight = std::max( floatBoundsRight, rightFloats[i].Right );
+		}
 
-		result.size = Sizef( maxWidth, std::max( accumY, floatBoundsBottom ) );
+		result.size =
+			Sizef( std::max( maxWidth, floatBoundsRight ), std::max( accumY, floatBoundsBottom ) );
 		result.totalCharacterCount = curCharIdx;
 		return result;
 	}

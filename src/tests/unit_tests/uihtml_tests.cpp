@@ -3656,6 +3656,95 @@ UTEST( UIHTML, RedditHeaderPagenameBottomAlign ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, PaddedHeaderWithNestedFloatsDoesNotOverlapClearedMain ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 653, "padded header nested floats", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	UI::UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+			<head>
+				<style>
+					#header {
+						padding: 30px 0 0 0;
+						width: 940px;
+					}
+					#masthead {
+						width: 940px;
+					}
+					#branding {
+						float: left;
+						width: 940px;
+						height: 267px;
+					}
+					#access {
+						display: block;
+						float: left;
+						width: 940px;
+					}
+					#access ul {
+						list-style: none;
+						margin: 0;
+						padding: 0;
+					}
+					#access li {
+						float: left;
+					}
+					#access a {
+						display: block;
+						line-height: 38px;
+						padding: 0 10px;
+					}
+					#main {
+						clear: both;
+						padding: 40px 0 0 0;
+						width: 940px;
+					}
+				</style>
+			</head>
+			<body>
+				<div id="header">
+					<div id="masthead">
+						<div id="branding"></div>
+						<div id="access">
+							<ul>
+								<li><a>Home</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div id="main"></div>
+			</body>
+		</html>
+	)html" ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto* header = sceneNode->getRoot()->find( "header" )->asType<UIHTMLWidget>();
+	auto* main = sceneNode->getRoot()->find( "main" )->asType<UIHTMLWidget>();
+	auto* branding = sceneNode->getRoot()->find( "branding" )->asType<UIHTMLWidget>();
+	auto* access = sceneNode->getRoot()->find( "access" )->asType<UIHTMLWidget>();
+	ASSERT_TRUE( header != nullptr );
+	ASSERT_TRUE( main != nullptr );
+	ASSERT_TRUE( branding != nullptr );
+	ASSERT_TRUE( access != nullptr );
+
+	const Float headerBottom =
+		header->convertToWorldSpace( { 0, 0 } ).y + header->getPixelsSize().getHeight();
+	const Float mainTop = main->convertToWorldSpace( { 0, 0 } ).y;
+
+	EXPECT_GE( header->getPixelsSize().getHeight(), header->getPixelsContentOffset().Top +
+														branding->getPixelsSize().getHeight() +
+														access->getPixelsSize().getHeight() );
+	EXPECT_GE( mainTop + 0.5f, headerBottom );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, AnchorsSizing ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "anchors sizing", WindowStyle::Default, WindowBackend::Default,
