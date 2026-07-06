@@ -83,6 +83,14 @@ struct EE_API CSSClearHelper {
 	static CSSClear fromString( std::string_view val );
 };
 
+enum class CSSBoxSizing { ContentBox, BorderBox };
+
+struct EE_API CSSBoxSizingHelper {
+	static std::string toString( CSSBoxSizing val );
+
+	static CSSBoxSizing fromString( std::string_view val );
+};
+
 enum class CSSFlexDirection { Row, RowReverse, Column, ColumnReverse };
 
 struct EE_API CSSFlexDirectionHelper {

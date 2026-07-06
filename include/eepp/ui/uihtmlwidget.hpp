@@ -83,6 +83,10 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void setCSSClear( CSSClear cssClear );
 
+	CSSBoxSizing getBoxSizing() const { return mBoxSizing; }
+
+	void setBoxSizing( CSSBoxSizing boxSizing );
+
 	Rectf getNormalFlowLayoutPixelsMargin() const;
 
 	const CSSBaselineAlignValue& getBaselineAlign() const { return mBaselineAlign; }
@@ -276,6 +280,23 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	Float getBaseline() const;
 
+	Float getContainingBlockContentWidth() const;
+
+	Float getContainingBlockContentHeight() const;
+
+	Float lengthFromValueForCSS( const StyleSheetProperty& property,
+								 const Float& defaultValue = 0 ) const;
+
+	Float cssResolvedLengthToBorderBoxWidth( const Float& resolvedLength ) const;
+
+	Float cssResolvedLengthToBorderBoxHeight( const Float& resolvedLength ) const;
+
+	Float cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const;
+
+	Float cssHeightPropertyToBorderBoxHeight( const StyleSheetProperty& property ) const;
+
+	void updateCSSContentBoxFixedSize();
+
 	virtual void onParentChange();
 
 	virtual void onPositionChange();
@@ -322,6 +343,7 @@ class EE_API UIHTMLWidget : public UILayout {
 	CSSPosition mPosition{ CSSPosition::Static };
 	CSSFloat mFloat{ CSSFloat::None };
 	CSSClear mClear{ CSSClear::None };
+	CSSBoxSizing mBoxSizing{ CSSBoxSizing::ContentBox };
 	CSSBaselineAlignValue mBaselineAlign;
 	CSSVisibility mVisibility{ CSSVisibility::Visible };
 	std::string mTopEq{ "auto" };

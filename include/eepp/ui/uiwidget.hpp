@@ -1388,6 +1388,44 @@ class EE_API UIWidget : public UINode {
 	/**@return The property `height` converted as length */
 	Float getPropertyHeight() const;
 
+	/**
+	 * @brief Converts an already resolved CSS width value into this widget's stored border-box
+	 * width.
+	 *
+	 * The base widget has no CSS box model adjustment, so the value is returned as-is. HTML
+	 * widgets override this to account for box-sizing and content offsets.
+	 */
+	virtual Float cssResolvedLengthToBorderBoxWidth( const Float& resolvedLength ) const;
+
+	/**
+	 * @brief Converts an already resolved CSS height value into this widget's stored border-box
+	 * height.
+	 *
+	 * The base widget has no CSS box model adjustment, so the value is returned as-is. HTML
+	 * widgets override this to account for box-sizing and content offsets.
+	 */
+	virtual Float cssResolvedLengthToBorderBoxHeight( const Float& resolvedLength ) const;
+
+	/**
+	 * @brief Resolves a CSS width property and converts it into this widget's stored border-box
+	 * width.
+	 *
+	 * This is the sizing hook layout code should use when applying a CSS-specified width. Derived
+	 * widgets can override the relative-size resolution or box conversion without layout-specific
+	 * type checks.
+	 */
+	virtual Float cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const;
+
+	/**
+	 * @brief Resolves a CSS height property and converts it into this widget's stored border-box
+	 * height.
+	 *
+	 * This is the sizing hook layout code should use when applying a CSS-specified height. Derived
+	 * widgets can override the relative-size resolution or box conversion without layout-specific
+	 * type checks.
+	 */
+	virtual Float cssHeightPropertyToBorderBoxHeight( const StyleSheetProperty& property ) const;
+
 	/* @return The width of the widget when size policy is match_parent */
 	Float getMatchParentWidth() const;
 

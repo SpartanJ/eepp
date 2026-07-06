@@ -1060,7 +1060,8 @@ void GridLayouter::updateLayout() {
 			}
 			Float resolved = best * pct / 100.f;
 			if ( resolved > 0.f ) {
-				mContainer->setInternalPixelsWidth( resolved );
+				mContainer->setInternalPixelsWidth(
+					grid->cssResolvedLengthToBorderBoxWidth( resolved ) );
 				needResize = true;
 			}
 		}

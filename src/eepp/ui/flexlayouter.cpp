@@ -189,8 +189,11 @@ void FlexLayouter::readItemStyle( UIWidget* child, FlexItem& item ) {
 			// measureFlexItems against the flex container's inner main size.
 			item.flexBasisValue = 0.f;
 		} else {
-			item.flexBasisValue = mContainer->lengthFromValue(
-				val, CSS::PropertyRelativeTarget::ContainingBlockWidth, 0.f );
+			Axis mainAxis = getMainAxis( mDirection );
+			Float resolved = child->lengthFromValue( val, CSS::PropertyRelativeTarget::None, 0.f );
+			item.flexBasisValue = mainAxis.horizontal
+									  ? child->cssResolvedLengthToBorderBoxWidth( resolved )
+									  : child->cssResolvedLengthToBorderBoxHeight( resolved );
 		}
 	}
 
@@ -220,13 +223,13 @@ Float FlexLayouter::resolveFlexBasis( UIWidget* child, CSSFlexDirection, Float f
 				 child->getUIStyle() ) {
 				const auto* wprop = child->getUIStyle()->getProperty( PropertyId::Width );
 				if ( wprop )
-					return child->lengthFromValue( *wprop );
+					return child->cssWidthPropertyToBorderBoxWidth( *wprop );
 			}
 			if ( !mainAxis.horizontal && child->getLayoutHeightPolicy() == SizePolicy::Fixed &&
 				 child->getUIStyle() ) {
 				const auto* hprop = child->getUIStyle()->getProperty( PropertyId::Height );
 				if ( hprop )
-					return child->lengthFromValue( *hprop );
+					return child->cssHeightPropertyToBorderBoxHeight( *hprop );
 			}
 		}
 
@@ -383,7 +386,11 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 				String::replaceAll( pctStr, "%", "" );
 				Float pct = 0.f;
 				String::fromString( pct, pctStr );
-				item.targetMainSize = containerInnerMain * pct / 100.f;
+				Float resolved = containerInnerMain * pct / 100.f;
+				item.targetMainSize =
+					mainAxis.horizontal
+						? item.widget->cssResolvedLengthToBorderBoxWidth( resolved )
+						: item.widget->cssResolvedLengthToBorderBoxHeight( resolved );
 			}
 		} else {
 			item.targetMainSize =
@@ -397,13 +404,13 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 				 item.widget->getUIStyle() ) {
 				const auto* wprop = item.widget->getUIStyle()->getProperty( PropertyId::Width );
 				if ( wprop )
-					item.targetMainSize = item.widget->lengthFromValue( *wprop );
+					item.targetMainSize = item.widget->cssWidthPropertyToBorderBoxWidth( *wprop );
 			} else if ( !mainAxis.horizontal &&
 						item.widget->getLayoutHeightPolicy() == SizePolicy::Fixed &&
 						item.widget->getUIStyle() ) {
 				const auto* hprop = item.widget->getUIStyle()->getProperty( PropertyId::Height );
 				if ( hprop )
-					item.targetMainSize = item.widget->lengthFromValue( *hprop );
+					item.targetMainSize = item.widget->cssHeightPropertyToBorderBoxHeight( *hprop );
 			}
 		}
 
@@ -464,13 +471,13 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 			if ( item.widget->getUIStyle() ) {
 				const auto* minW = item.widget->getUIStyle()->getProperty( PropertyId::MinWidth );
 				if ( minW ) {
-					Float explicitMin = item.widget->lengthFromValue( *minW );
+					Float explicitMin = item.widget->cssWidthPropertyToBorderBoxWidth( *minW );
 					if ( explicitMin > item.minMainSize )
 						item.minMainSize = explicitMin;
 				}
 				const auto* maxW = item.widget->getUIStyle()->getProperty( PropertyId::MaxWidth );
 				if ( maxW )
-					item.maxMainSize = item.widget->lengthFromValue( *maxW );
+					item.maxMainSize = item.widget->cssWidthPropertyToBorderBoxWidth( *maxW );
 				else
 					item.maxMainSize = std::numeric_limits<Float>::max();
 			}
@@ -505,13 +512,13 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 			if ( item.widget->getUIStyle() ) {
 				const auto* minH = item.widget->getUIStyle()->getProperty( PropertyId::MinHeight );
 				if ( minH ) {
-					Float explicitMin = item.widget->lengthFromValue( *minH );
+					Float explicitMin = item.widget->cssHeightPropertyToBorderBoxHeight( *minH );
 					if ( explicitMin > item.minMainSize )
 						item.minMainSize = explicitMin;
 				}
 				const auto* maxH = item.widget->getUIStyle()->getProperty( PropertyId::MaxHeight );
 				if ( maxH )
-					item.maxMainSize = item.widget->lengthFromValue( *maxH );
+					item.maxMainSize = item.widget->cssHeightPropertyToBorderBoxHeight( *maxH );
 				else
 					item.maxMainSize = std::numeric_limits<Float>::max();
 			}
@@ -1241,7 +1248,7 @@ void FlexLayouter::updateLayout() {
 	if ( widthPolicy == SizePolicy::Fixed && mContainer->getUIStyle() ) {
 		const auto* wprop = mContainer->getUIStyle()->getProperty( PropertyId::Width );
 		if ( wprop ) {
-			Float rawWidth = mContainer->lengthFromValue( *wprop );
+			Float rawWidth = widget->cssWidthPropertyToBorderBoxWidth( *wprop );
 			containerWidth =
 				mContainer->fitMinMaxSizePx( Sizef( rawWidth, containerHeight ) ).getWidth();
 		}
@@ -1250,7 +1257,7 @@ void FlexLayouter::updateLayout() {
 	if ( heightPolicy == SizePolicy::Fixed && mContainer->getUIStyle() ) {
 		const auto* hprop = mContainer->getUIStyle()->getProperty( PropertyId::Height );
 		if ( hprop ) {
-			Float rawHeight = mContainer->lengthFromValue( *hprop );
+			Float rawHeight = widget->cssHeightPropertyToBorderBoxHeight( *hprop );
 			containerHeight =
 				mContainer->fitMinMaxSizePx( Sizef( containerWidth, rawHeight ) ).getHeight();
 		}

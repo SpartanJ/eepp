@@ -456,6 +456,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
 	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
 	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
+	registerProperty( "box-sizing", "content-box" ).setType( PropertyType::String );
 	registerProperty( "top", "auto" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );

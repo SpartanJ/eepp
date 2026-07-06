@@ -2907,6 +2907,22 @@ Float UIWidget::getPropertyHeight() const {
 	return 0.f;
 }
 
+Float UIWidget::cssResolvedLengthToBorderBoxWidth( const Float& resolvedLength ) const {
+	return resolvedLength;
+}
+
+Float UIWidget::cssResolvedLengthToBorderBoxHeight( const Float& resolvedLength ) const {
+	return resolvedLength;
+}
+
+Float UIWidget::cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const {
+	return lengthFromValue( property );
+}
+
+Float UIWidget::cssHeightPropertyToBorderBoxHeight( const StyleSheetProperty& property ) const {
+	return lengthFromValue( property );
+}
+
 void UIWidget::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
 	mStyle->setStyleSheetProperties( properties );
 	for ( const auto& [_, property] : properties )

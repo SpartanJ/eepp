@@ -102,6 +102,22 @@ CSSPosition CSSPositionHelper::fromString( std::string_view val ) {
 	return position;
 }
 
+std::string CSSBoxSizingHelper::toString( CSSBoxSizing val ) {
+	switch ( val ) {
+		case CSSBoxSizing::BorderBox:
+			return "border-box";
+		case CSSBoxSizing::ContentBox:
+		default:
+			return "content-box";
+	}
+}
+
+CSSBoxSizing CSSBoxSizingHelper::fromString( std::string_view val ) {
+	if ( val == "border-box" )
+		return CSSBoxSizing::BorderBox;
+	return CSSBoxSizing::ContentBox;
+}
+
 std::string CSSListStyleTypeHelper::toString( CSSListStyleType type ) {
 	switch ( type ) {
 		case CSSListStyleType::Disc:

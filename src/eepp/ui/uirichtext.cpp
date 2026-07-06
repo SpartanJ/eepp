@@ -2051,8 +2051,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						const StyleSheetProperty* wprop =
 							widget->getUIStyle()->getProperty( PropertyId::Width );
 						if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) ) {
-							widget->setPixelsSize( { widget->lengthFromValue( *wprop ),
-													 widget->getPixelsSize().getHeight() } );
+							Float width = widget->cssWidthPropertyToBorderBoxWidth( *wprop );
+							widget->setPixelsSize( { width, widget->getPixelsSize().getHeight() } );
 						}
 					}
 					if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed &&
@@ -2060,8 +2060,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						const StyleSheetProperty* hprop =
 							widget->getUIStyle()->getProperty( PropertyId::Height );
 						if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) ) {
-							widget->setPixelsSize( { widget->getPixelsSize().getWidth(),
-													 widget->lengthFromValue( *hprop ) } );
+							Float height = widget->cssHeightPropertyToBorderBoxHeight( *hprop );
+							widget->setPixelsSize( { widget->getPixelsSize().getWidth(), height } );
 						}
 					}
 				}

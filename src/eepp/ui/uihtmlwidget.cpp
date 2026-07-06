@@ -181,6 +181,115 @@ Float UIHTMLWidget::getBaseline() const {
 	return 0.f;
 }
 
+Float UIHTMLWidget::getContainingBlockContentWidth() const {
+	Node* parent = getParent();
+	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+			static_cast<UIHTMLWidget*>( parent )->isInline() )
+		parent = parent->getParent();
+	if ( !parent )
+		return 0.f;
+
+	Float width = parent->getPixelsSize().getWidth();
+	if ( parent->isWidget() ) {
+		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
+		width -= contentOffset.Left + contentOffset.Right;
+	}
+	return eemax( 0.f, width );
+}
+
+Float UIHTMLWidget::getContainingBlockContentHeight() const {
+	Node* parent = getParent();
+	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+			static_cast<UIHTMLWidget*>( parent )->isInline() )
+		parent = parent->getParent();
+	if ( !parent )
+		return 0.f;
+
+	Float height = parent->getPixelsSize().getHeight();
+	if ( parent->isWidget() ) {
+		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
+		height -= contentOffset.Top + contentOffset.Bottom;
+	}
+	return eemax( 0.f, height );
+}
+
+Float UIHTMLWidget::lengthFromValueForCSS( const StyleSheetProperty& property,
+										   const Float& defaultValue ) const {
+	if ( property.getPropertyDefinition() ) {
+		switch ( property.getPropertyDefinition()->getRelativeTarget() ) {
+			case PropertyRelativeTarget::ContainingBlockWidth:
+				return convertLength(
+					StyleSheetLength::fromString( property.getValue(), defaultValue ),
+					getContainingBlockContentWidth() );
+			case PropertyRelativeTarget::ContainingBlockHeight:
+				return convertLength(
+					StyleSheetLength::fromString( property.getValue(), defaultValue ),
+					getContainingBlockContentHeight() );
+			default:
+				break;
+		}
+	}
+	return lengthFromValue( property, defaultValue );
+}
+
+Float UIHTMLWidget::cssResolvedLengthToBorderBoxWidth( const Float& resolvedLength ) const {
+	if ( mBoxSizing == CSSBoxSizing::BorderBox )
+		return resolvedLength;
+	Rectf contentOffset = getPixelsContentOffset();
+	return resolvedLength + contentOffset.Left + contentOffset.Right;
+}
+
+Float UIHTMLWidget::cssResolvedLengthToBorderBoxHeight( const Float& resolvedLength ) const {
+	if ( mBoxSizing == CSSBoxSizing::BorderBox )
+		return resolvedLength;
+	Rectf contentOffset = getPixelsContentOffset();
+	return resolvedLength + contentOffset.Top + contentOffset.Bottom;
+}
+
+Float UIHTMLWidget::cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const {
+	return cssResolvedLengthToBorderBoxWidth( lengthFromValueForCSS( property ) );
+}
+
+Float UIHTMLWidget::cssHeightPropertyToBorderBoxHeight( const StyleSheetProperty& property ) const {
+	return cssResolvedLengthToBorderBoxHeight( lengthFromValueForCSS( property ) );
+}
+
+void UIHTMLWidget::updateCSSContentBoxFixedSize() {
+	if ( getUIStyle() == nullptr )
+		return;
+
+	Sizef size( getPixelsSize() );
+	bool changed = false;
+
+	if ( getLayoutWidthPolicy() == SizePolicy::Fixed ) {
+		const auto* width = getUIStyle()->getProperty( PropertyId::Width );
+		if ( width && width->value() != "auto" ) {
+			size.setWidth( cssWidthPropertyToBorderBoxWidth( *width ) );
+			changed = true;
+		}
+	}
+
+	if ( getLayoutHeightPolicy() == SizePolicy::Fixed ) {
+		const auto* height = getUIStyle()->getProperty( PropertyId::Height );
+		if ( height && height->value() != "auto" ) {
+			size.setHeight( cssHeightPropertyToBorderBoxHeight( *height ) );
+			changed = true;
+		}
+	}
+
+	if ( changed )
+		setPixelsSize( size );
+}
+
+void UIHTMLWidget::setBoxSizing( CSSBoxSizing boxSizing ) {
+	if ( mBoxSizing != boxSizing ) {
+		mBoxSizing = boxSizing;
+		updateCSSContentBoxFixedSize();
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
+	}
+}
+
 void UIHTMLWidget::setVisibility( CSSVisibility val ) {
 	if ( mVisibility != val ) {
 		mVisibility = val;
@@ -597,6 +706,7 @@ void UIHTMLWidget::setJustifySelf( CSSJustifySelf val ) {
 std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
 	auto local = { PropertyId::Display,
+				   PropertyId::BoxSizing,
 				   PropertyId::Position,
 				   PropertyId::Float,
 				   PropertyId::Clear,
@@ -650,6 +760,8 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Display:
 			return CSSDisplayHelper::toString( mDisplay );
+		case PropertyId::BoxSizing:
+			return CSSBoxSizingHelper::toString( mBoxSizing );
 		case PropertyId::Position:
 			return CSSPositionHelper::toString( mPosition );
 		case PropertyId::Float:
@@ -743,6 +855,10 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setDisplay( CSSDisplayHelper::fromString( attribute.asString() ) );
 			return true;
 		}
+		case PropertyId::BoxSizing: {
+			setBoxSizing( CSSBoxSizingHelper::fromString( attribute.asString() ) );
+			return true;
+		}
 		case PropertyId::Position: {
 			setCSSPosition( CSSPositionHelper::fromString( attribute.asString() ) );
 			return true;
@@ -764,6 +880,20 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 			mOverflowCreatesBlockFormattingContext = val != "visible";
 			return UILayout::applyProperty( attribute );
+		}
+		case PropertyId::Width:
+		case PropertyId::Height:
+		case PropertyId::PaddingLeft:
+		case PropertyId::PaddingRight:
+		case PropertyId::PaddingTop:
+		case PropertyId::PaddingBottom:
+		case PropertyId::BorderLeftWidth:
+		case PropertyId::BorderRightWidth:
+		case PropertyId::BorderTopWidth:
+		case PropertyId::BorderBottomWidth: {
+			bool applied = UILayout::applyProperty( attribute );
+			updateCSSContentBoxFixedSize();
+			return applied;
 		}
 		case PropertyId::ZIndex: {
 			setZIndex( attribute.asInt() );

@@ -99,6 +99,10 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 	return UIHTMLWidget::applyProperty( attribute );
 }
 
+Float UIHTMLTable::cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const {
+	return lengthFromValueForCSS( property );
+}
+
 void UIHTMLTable::computeIntrinsicWidths() const {
 	UILayouter* layouter = const_cast<UIHTMLTable*>( this )->getLayouter();
 	if ( layouter )

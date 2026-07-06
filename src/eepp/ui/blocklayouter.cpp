@@ -108,15 +108,16 @@ void BlockLayouter::updateLayout() {
 	const StyleSheetProperty* prop = nullptr;
 	if ( mContainer->getLayoutWidthPolicy() == SizePolicy::Fixed && mContainer->getUIStyle() &&
 		 ( prop = mContainer->getUIStyle()->getProperty( PropertyId::Width ) ) ) {
-		mContainer->setInternalPixelsSize(
-			{ mContainer->lengthFromValue( *prop ), mContainer->getPixelsSize().getHeight() } );
+		mContainer->setInternalPixelsSize( { mContainer->cssWidthPropertyToBorderBoxWidth( *prop ),
+											 mContainer->getPixelsSize().getHeight() } );
 	}
 
 	if ( !isTableCellInTableRow( mContainer ) &&
 		 mContainer->getLayoutHeightPolicy() == SizePolicy::Fixed && mContainer->getUIStyle() &&
 		 ( prop = mContainer->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
 		mContainer->setInternalPixelsSize(
-			{ mContainer->getPixelsSize().getWidth(), mContainer->lengthFromValue( *prop ) } );
+			{ mContainer->getPixelsSize().getWidth(),
+			  mContainer->cssHeightPropertyToBorderBoxHeight( *prop ) } );
 	}
 
 	UIRichText::rebuildRichText( widget, *rt );
@@ -139,8 +140,8 @@ void BlockLayouter::updateLayout() {
 			 mContainer->getParent()->isWidget() &&
 			 mContainer->getParent()->asType<UIWidget>()->getLayoutWidthPolicy() ==
 				 SizePolicy::WrapContent ) {
-			totW = rt->getSize().getWidth() + mContainer->getPixelsContentOffset().Left +
-				   mContainer->getPixelsContentOffset().Right;
+			const Rectf contentOffset = mContainer->getPixelsContentOffset();
+			totW = rt->getSize().getWidth() + contentOffset.Left + contentOffset.Right;
 			if ( !mContainer->getMaxWidthEq().empty() &&
 				 totW > mContainer->getMaxSizePx().getWidth() )
 				mContainer->setClipType( ClipType::ContentBox );
@@ -167,8 +168,8 @@ void BlockLayouter::updateLayout() {
 			 mContainer->getParent()->isWidget() &&
 			 mContainer->getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
 				 SizePolicy::WrapContent ) {
-			totH = rt->getSize().getHeight() + mContainer->getPixelsContentOffset().Top +
-				   mContainer->getPixelsContentOffset().Bottom;
+			const Rectf contentOffset = mContainer->getPixelsContentOffset();
+			totH = rt->getSize().getHeight() + contentOffset.Top + contentOffset.Bottom;
 			if ( !mContainer->getMaxHeightEq().empty() &&
 				 totH > mContainer->getMaxSizePx().getHeight() )
 				mContainer->setClipType( ClipType::ContentBox );

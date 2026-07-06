@@ -16,7 +16,7 @@ static Float specifiedHeightPx( UIWidget* widget ) {
 	if ( prop == nullptr )
 		return 0.f;
 
-	return sanitizeFloat( widget->lengthFromValue( *prop ) );
+	return sanitizeFloat( widget->cssHeightPropertyToBorderBoxHeight( *prop ) );
 }
 
 static Float normalFlowChildrenBottomPx( UIWidget* widget ) {
@@ -327,13 +327,15 @@ void TableLayouter::updateLayout() {
 	if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed && widget->getUIStyle() &&
 		 ( prop = widget->getUIStyle()->getProperty( PropertyId::Width ) ) ) {
 		widget->asType<UINode>()->setInternalPixelsSize(
-			{ widget->lengthFromValue( *prop ), widget->getPixelsSize().getHeight() } );
+			{ widget->cssWidthPropertyToBorderBoxWidth( *prop ),
+			  widget->getPixelsSize().getHeight() } );
 	}
 
 	if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed && widget->getUIStyle() &&
 		 ( prop = widget->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
 		widget->asType<UINode>()->setInternalPixelsSize(
-			{ widget->getPixelsSize().getWidth(), widget->lengthFromValue( *prop ) } );
+			{ widget->getPixelsSize().getWidth(),
+			  widget->cssHeightPropertyToBorderBoxHeight( *prop ) } );
 	}
 
 	computeIntrinsicWidths();

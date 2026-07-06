@@ -29,6 +29,8 @@ class EE_API UIHTMLTable : public UIHTMLWidget {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	Float cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const;
+
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

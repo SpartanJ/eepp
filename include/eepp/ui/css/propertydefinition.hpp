@@ -212,6 +212,7 @@ enum class PropertyId : Uint32 {
 	BorderBottomLeftRadius = String::hash( "border-bottom-left-radius" ),
 	BorderBottomRightRadius = String::hash( "border-bottom-right-radius" ),
 	BorderSmooth = String::hash( "border-smooth" ),
+	BoxSizing = String::hash( "box-sizing" ),
 	BackgroundSmooth = String::hash( "background-smooth" ),
 	ForegroundSmooth = String::hash( "foreground-smooth" ),
 	TabBarHideOnSingleTab = String::hash( "tabbar-hide-on-single-tab" ),

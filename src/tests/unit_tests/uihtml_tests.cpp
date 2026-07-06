@@ -2779,6 +2779,171 @@ UTEST( UIHTML, InlineBlockExplicitWidth ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FixedBlockWidthUsesContentBoxWithPadding ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Fixed Block Content Box Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	html, body { margin: 0; padding: 0; }
+	#wrapper { width: 300px; padding: 0 20px; }
+	#borderWrapper { box-sizing: border-box; width: 300px; padding: 0 20px; }
+	#child, #borderChild { display: block; width: 100%; height: 10px; }
+</style>
+</head>
+<body>
+	<div id="wrapper">
+		<div id="child"></div>
+	</div>
+	<div id="borderWrapper">
+		<div id="borderChild"></div>
+	</div>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* wrapper = sceneNode->getRoot()->find( "wrapper" )->asType<UIWidget>();
+	auto* child = sceneNode->getRoot()->find( "child" )->asType<UIWidget>();
+	auto* borderWrapper = sceneNode->getRoot()->find( "borderWrapper" )->asType<UIWidget>();
+	auto* borderChild = sceneNode->getRoot()->find( "borderChild" )->asType<UIWidget>();
+
+	ASSERT_TRUE( wrapper != nullptr );
+	ASSERT_TRUE( child != nullptr );
+	ASSERT_TRUE( borderWrapper != nullptr );
+	ASSERT_TRUE( borderChild != nullptr );
+
+	EXPECT_NEAR( wrapper->getPixelsSize().getWidth(), 340.f, 1.f );
+	EXPECT_NEAR( wrapper->getPixelsSize().getWidth() - wrapper->getPixelsContentOffset().Left -
+					 wrapper->getPixelsContentOffset().Right,
+				 300.f, 1.f );
+	EXPECT_NEAR( child->getPixelsPosition().x, 20.f, 1.f );
+	EXPECT_NEAR( child->getPixelsSize().getWidth(), 300.f, 1.f );
+
+	EXPECT_NEAR( borderWrapper->getPixelsSize().getWidth(), 300.f, 1.f );
+	EXPECT_NEAR( borderWrapper->getPixelsSize().getWidth() -
+					 borderWrapper->getPixelsContentOffset().Left -
+					 borderWrapper->getPixelsContentOffset().Right,
+				 260.f, 1.f );
+	EXPECT_NEAR( borderChild->getPixelsPosition().x, 20.f, 1.f );
+	EXPECT_NEAR( borderChild->getPixelsSize().getWidth(), 260.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BoxSizingAppliesToFlexBasis ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Flex Box Sizing Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	html, body { margin: 0; padding: 0; }
+	#flex { display: flex; width: 800px; }
+	.item { flex-grow: 0; flex-shrink: 0; flex-basis: 300px; padding: 0 20px; height: 10px; }
+	#borderItem { box-sizing: border-box; }
+</style>
+</head>
+<body>
+	<div id="flex">
+		<div id="contentItem" class="item"></div>
+		<div id="borderItem" class="item"></div>
+	</div>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* contentItem = sceneNode->getRoot()->find( "contentItem" )->asType<UIWidget>();
+	auto* borderItem = sceneNode->getRoot()->find( "borderItem" )->asType<UIWidget>();
+
+	ASSERT_TRUE( contentItem != nullptr );
+	ASSERT_TRUE( borderItem != nullptr );
+
+	EXPECT_NEAR( contentItem->getPixelsSize().getWidth(), 340.f, 1.f );
+	EXPECT_NEAR( borderItem->getPixelsPosition().x, 340.f, 1.f );
+	EXPECT_NEAR( borderItem->getPixelsSize().getWidth(), 300.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BoxSizingAppliesToGridAndTableContainers ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Grid Table Box Sizing Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	html, body { margin: 0; padding: 0; }
+	.grid { display: grid; grid-template-columns: 1fr; width: 300px; padding: 0 20px; }
+	.table { width: 300px; padding: 0 20px; border-spacing: 0; }
+	.border { box-sizing: border-box; }
+</style>
+</head>
+<body>
+	<div id="gridContent" class="grid"><div></div></div>
+	<div id="gridBorder" class="grid border"><div></div></div>
+	<table id="tableContent" class="table"><tr><td>x</td></tr></table>
+	<table id="tableBorder" class="table border"><tr><td>x</td></tr></table>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* gridContent = sceneNode->getRoot()->find( "gridContent" )->asType<UIWidget>();
+	auto* gridBorder = sceneNode->getRoot()->find( "gridBorder" )->asType<UIWidget>();
+	auto* tableContent = sceneNode->getRoot()->find( "tableContent" )->asType<UIWidget>();
+	auto* tableBorder = sceneNode->getRoot()->find( "tableBorder" )->asType<UIWidget>();
+
+	ASSERT_TRUE( gridContent != nullptr );
+	ASSERT_TRUE( gridBorder != nullptr );
+	ASSERT_TRUE( tableContent != nullptr );
+	ASSERT_TRUE( tableBorder != nullptr );
+
+	EXPECT_NEAR( gridContent->getPixelsSize().getWidth(), 340.f, 1.f );
+	EXPECT_NEAR( gridBorder->getPixelsSize().getWidth(), 300.f, 1.f );
+	EXPECT_NEAR( tableContent->getPixelsSize().getWidth(), 300.f, 1.f );
+	EXPECT_NEAR( tableContent->getPixelsSize().getWidth() -
+					 tableContent->getPixelsContentOffset().Left -
+					 tableContent->getPixelsContentOffset().Right,
+				 260.f, 1.f );
+	EXPECT_NEAR( tableBorder->getPixelsSize().getWidth(), 300.f, 1.f );
+	EXPECT_NEAR( tableBorder->getPixelsSize().getWidth() -
+					 tableBorder->getPixelsContentOffset().Left -
+					 tableBorder->getPixelsContentOffset().Right,
+				 260.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, InlineBlockMixedContent ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 653, "Inline Block Mixed Content Test",
 													  WindowStyle::Default, WindowBackend::Default,
