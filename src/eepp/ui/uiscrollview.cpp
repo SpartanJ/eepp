@@ -219,9 +219,10 @@ void UIScrollView::containerUpdate() {
 		mHScroll->setVisible( false );
 		mHScroll->setEnabled( false );
 	} else {
-		bool visible = mScrollView->getPixelsSize().getWidth() > getPixelsSize().getWidth() -
-																	 getPixelsPadding().Left -
-																	 getPixelsPadding().Right;
+		auto scrollViewWidth = mScrollView->getPixelsSize().getWidth();
+		auto meInnerWidth = std::ceil( getPixelsSize().getWidth() - getPixelsPadding().Left -
+									   getPixelsPadding().Right );
+		auto visible = scrollViewWidth > meInnerWidth;
 
 		mHScroll->setVisible( visible );
 		mHScroll->setEnabled( visible );

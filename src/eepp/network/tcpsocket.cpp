@@ -5,9 +5,14 @@
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/log.hpp>
+#include <limits>
 
 #if EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <sys/select.h>
+#endif
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <poll.h>
 #endif
 
 #ifdef _MSC_VER
@@ -129,15 +134,7 @@ Socket::Status TcpSocket::connect( const IpAddress& remoteAddress, unsigned shor
 
 		// Otherwise, wait until something happens to our socket (success, timeout or error)
 		if ( status == Socket::NotReady ) {
-			#if EE_PLATFORM != EE_PLATFORM_WIN
-			if ( getHandle() >= FD_SETSIZE ) {
-				// The socket FD is too large for select().
-				// You cannot safely use FD_SET.
-				setBlocking( true );
-				return Error;
-			}
-			#endif
-
+#if EE_PLATFORM == EE_PLATFORM_WIN
 			// Setup the selector
 			fd_set selector;
 			FD_ZERO( &selector );
@@ -151,6 +148,21 @@ Socket::Status TcpSocket::connect( const IpAddress& remoteAddress, unsigned shor
 			// Wait for something to write on our socket (which means that the connection request
 			// has returned)
 			if ( select( static_cast<int>( getHandle() + 1 ), NULL, &selector, NULL, &time ) > 0 ) {
+#else
+			pollfd descriptor;
+			descriptor.fd = getHandle();
+			descriptor.events = POLLOUT;
+			descriptor.revents = 0;
+
+			Int64 timeoutMilliseconds = ( timeout.asMicroseconds() + 999 ) / 1000;
+			int pollTimeout = timeoutMilliseconds > std::numeric_limits<int>::max()
+								  ? std::numeric_limits<int>::max()
+								  : static_cast<int>( timeoutMilliseconds );
+
+			// Wait for something to write on our socket (which means that the connection request
+			// has returned). poll() is not limited by FD_SETSIZE, unlike select().
+			if ( poll( &descriptor, 1, pollTimeout ) > 0 ) {
+#endif
 				// At this point the connection may have been either accepted or refused.
 				// To know whether it's a success or a failure, we must check the address of the
 				// connected peer

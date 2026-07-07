@@ -1059,8 +1059,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 										contentLength = 0;
 								}
 
-								if ( mConnection &&
-									 received.getField( "connection" ) == "close" ) {
+								if ( mConnection && received.getField( "connection" ) == "close" ) {
 									mConnection->setConnected( false );
 									mConnection->setTunneled( false );
 								}
@@ -1618,7 +1617,11 @@ Http::HttpConnection::HttpConnection() :
 	mIsKeepAlive( false ) {}
 
 Http::HttpConnection::HttpConnection( TcpSocket* socket ) :
-	mSocket( socket ), mIsConnected( false ), mIsTunneled( false ), mIsSSL( false ) {}
+	mSocket( socket ),
+	mIsConnected( false ),
+	mIsTunneled( false ),
+	mIsSSL( false ),
+	mIsKeepAlive( false ) {}
 
 Http::HttpConnection::~HttpConnection() {
 	eeSAFE_DELETE( mSocket );

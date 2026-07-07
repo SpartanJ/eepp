@@ -654,6 +654,11 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 }
 
 void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef ) {
+	if ( drawableRef == "none" ) {
+		setDrawable( nullptr, false );
+		return;
+	}
+
 	if ( loadRemoteDrawable( drawableRef ) ) {
 		mDrawableRef = drawableRef;
 		return;
