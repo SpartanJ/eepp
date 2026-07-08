@@ -166,8 +166,11 @@ void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	mValue = value;
 	if ( updateHash )
 		mValueHash = String::hash( value );
-	mIsVarValue = String::startsWith( mValue, "var(" );
+	mVarCache.clear();
+	mIsVarValue = false;
+	mIsLightDarkValue = false;
 	createIndexed();
+	checkVars();
 }
 
 bool StyleSheetProperty::isVolatile() const {
@@ -561,6 +564,18 @@ bool StyleSheetProperty::isVarValue() const {
 
 bool StyleSheetProperty::isLightDarkValue() const {
 	return mIsLightDarkValue;
+}
+
+bool StyleSheetProperty::needsValueSubstitution() const {
+	if ( mIsVarValue || mIsLightDarkValue )
+		return true;
+
+	for ( const auto& property : mIndexedProperty ) {
+		if ( property.needsValueSubstitution() )
+			return true;
+	}
+
+	return false;
 }
 
 size_t StyleSheetProperty::getPropertyIndexCount() const {

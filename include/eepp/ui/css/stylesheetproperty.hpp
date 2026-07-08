@@ -144,6 +144,8 @@ class EE_API StyleSheetProperty {
 
 	bool isLightDarkValue() const;
 
+	bool needsValueSubstitution() const;
+
 	size_t getPropertyIndexCount() const;
 
 	const StyleSheetProperty& getPropertyIndex( const Uint32& index ) const;

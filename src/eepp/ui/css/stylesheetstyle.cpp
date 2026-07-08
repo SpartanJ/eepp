@@ -198,9 +198,11 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 	return StyleSheetVariable();
 }
 
-void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
+void StyleSheetStyle::setVariable( const StyleSheetVariable& variable,
+								   bool setSelectorSpecificity ) {
 	mVariables[variable.getNameHash()] = variable;
-	mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
+	if ( setSelectorSpecificity )
+		mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
 }
 
 const MediaQueryList::ptr& StyleSheetStyle::getMediaQueryList() const {

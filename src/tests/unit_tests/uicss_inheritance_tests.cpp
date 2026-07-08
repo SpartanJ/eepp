@@ -7,15 +7,21 @@
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/window/input.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -404,6 +410,499 @@ UTEST( CSSVariables, VariableReferencesSimple ) {
 	EXPECT_TRUE( div != nullptr );
 
 	EXPECT_TRUE( Color( "#FF0000" ) == div->getFontColor() );
+}
+
+UTEST( CSSVariables, StyleSheetPropertyNeedsValueSubstitution ) {
+	EXPECT_FALSE( StyleSheetProperty( "width", "42dp" ).needsValueSubstitution() );
+	EXPECT_TRUE( StyleSheetProperty( "color", "var(--text)" ).needsValueSubstitution() );
+	EXPECT_TRUE( StyleSheetProperty( "color", "light-dark(#000, #fff)" ).needsValueSubstitution() );
+	EXPECT_FALSE( StyleSheetProperty( "width", "calc(100% - 2dp)" ).needsValueSubstitution() );
+	EXPECT_FALSE(
+		StyleSheetProperty( "width", "min(100%, max(20dp, 10vw))" ).needsValueSubstitution() );
+	EXPECT_FALSE( StyleSheetProperty( "width", "clamp(10dp, calc(50% - 1dp), 100dp)" )
+					  .needsValueSubstitution() );
+}
+
+UTEST( CSSVariables, StyleAttributeVarOnRichTextAndTextSpan ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Style Attribute Var Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	std::string xml = R"html(
+<!doctype html>
+<html>
+	<head>
+		<style>
+		:root{--astro-code-background:#1a1714;--astro-code-foreground:#F0EEEC;--astro-code-token-keyword:#F59E0B;--astro-code-token-function:#FDE68A}*,*:before,*:after{margin:0;padding:0;box-sizing:border-box}
+		body{background:var(--astro-code-background);color:var(--astro-code-foreground)}
+		</style>
+	</head>
+<body>
+	<pre id="code" style="background-color: var(--astro-code-background); color: var(--astro-code-foreground);">
+		<code><span class="line"><span id="keyword" style="color:var(--astro-code-token-keyword)">async</span><span id="function" style="color:var(--astro-code-token-function)"> loadDashboard</span><span id="foreground" style="color:var(--astro-code-foreground)">()</span></span></code>
+	</pre>
+</body>
+</html>
+    )html";
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( xml ) );
+	EXPECT_TRUE( root != nullptr );
+
+	UIRichText* code = root->querySelector( "#code" )->asType<UIRichText>();
+	EXPECT_TRUE( code != nullptr );
+
+	UITextSpan* keyword = root->querySelector( "#keyword" )->asType<UITextSpan>();
+	EXPECT_TRUE( keyword != nullptr );
+	UITextSpan* function = root->querySelector( "#function" )->asType<UITextSpan>();
+	EXPECT_TRUE( function != nullptr );
+	UITextSpan* foreground = root->querySelector( "#foreground" )->asType<UITextSpan>();
+	EXPECT_TRUE( foreground != nullptr );
+	UIRichText* body = root->querySelector( "body" )->asType<UIRichText>();
+	EXPECT_TRUE( body != nullptr );
+	UIRichText* html = root->querySelector( "html" )->asType<UIRichText>();
+	EXPECT_TRUE( html != nullptr );
+
+	EXPECT_TRUE( Color( "#1a1714" ) == html->getBackgroundColor() );
+	EXPECT_TRUE( Color( "#F0EEEC" ) == body->getFontColor() );
+	EXPECT_TRUE( Color( "#1a1714" ) == code->getBackgroundColor() );
+	EXPECT_TRUE( Color( "#F0EEEC" ) == code->getFontColor() );
+	EXPECT_TRUE( Color( "#F59E0B" ) == keyword->getFontColor() );
+	EXPECT_TRUE( Color( "#FDE68A" ) == function->getFontColor() );
+	EXPECT_TRUE( Color( "#F0EEEC" ) == foreground->getFontColor() );
+}
+
+UTEST( CSSVariables, StyleAttributeDeclaresAndInheritsCustomProperty ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inline Custom Property Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	std::string xml = R"html(
+<html>
+	<body>
+		<div id="parent" style="--inline-color: #13579B; color: var(--inline-color);">
+			<span id="child" style="color: var(--inline-color)">Child</span>
+		</div>
+	</body>
+</html>
+    )html";
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( xml );
+	EXPECT_TRUE( root != nullptr );
+
+	UIRichText* parent = root->querySelector( "#parent" )->asType<UIRichText>();
+	EXPECT_TRUE( parent != nullptr );
+
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( child != nullptr );
+
+	EXPECT_TRUE( Color( "#13579B" ) == parent->getFontColor() );
+	EXPECT_TRUE( Color( "#13579B" ) == child->getFontColor() );
+}
+
+UTEST( CSSVariables, InheritedPropertyResolvesVarFromParent ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inherited Var Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html>
+	<head>
+		<style>
+			:root { --inherited-color: #0EA5E9; }
+			#parent { color: var(--inherited-color); }
+			#explicit { color: inherit; }
+		</style>
+	</head>
+	<body>
+		<div id="parent">
+			<span id="implicit">Implicit</span>
+			<span id="explicit">Explicit</span>
+			<div id="middle"><span id="deep">Deep</span></div>
+		</div>
+	</body>
+</html>
+    )html" );
+	EXPECT_TRUE( root != nullptr );
+
+	UITextSpan* implicit = root->querySelector( "#implicit" )->asType<UITextSpan>();
+	EXPECT_TRUE( implicit != nullptr );
+	UITextSpan* explicitInherit = root->querySelector( "#explicit" )->asType<UITextSpan>();
+	EXPECT_TRUE( explicitInherit != nullptr );
+	UIRichText* middle = root->querySelector( "#middle" )->asType<UIRichText>();
+	EXPECT_TRUE( middle != nullptr );
+	UITextSpan* deep = root->querySelector( "#deep" )->asType<UITextSpan>();
+	EXPECT_TRUE( deep != nullptr );
+
+	EXPECT_TRUE( Color( "#0EA5E9" ) == implicit->getFontColor() );
+	EXPECT_TRUE( Color( "#0EA5E9" ) == explicitInherit->getFontColor() );
+	EXPECT_TRUE( Color( "#0EA5E9" ) == middle->getFontColor() );
+	EXPECT_TRUE( Color( "#0EA5E9" ) == deep->getFontColor() );
+}
+
+UTEST( CSSVariables, ParentStateChildOpacityReverts ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Parent State Child Opacity Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#parent > #child {
+			opacity: 0;
+		}
+		#parent:selected > #child {
+			opacity: 1;
+		}
+	</style>
+	<div id="parent">
+		<div id="child"></div>
+	</div>
+</vbox>
+    )html" );
+	EXPECT_TRUE( root != nullptr );
+
+	UIWidget* parent = root->querySelector( "#parent" );
+	EXPECT_TRUE( parent != nullptr );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+
+	EXPECT_EQ( child->getAlpha(), 0.f );
+	parent->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	parent->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, ParentStateChildOpacityTransitionReverts ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Parent State Child Opacity Transition Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UISceneNode* sceneNode = app.getUI();
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#parent > #child {
+			opacity: 0;
+			transition: all 0.15s;
+		}
+		#parent:selected > #child {
+			opacity: 1;
+		}
+	</style>
+	<div id="parent">
+		<div id="child"></div>
+	</div>
+</vbox>
+    )html" );
+	EXPECT_TRUE( root != nullptr );
+
+	UIWidget* parent = root->querySelector( "#parent" );
+	EXPECT_TRUE( parent != nullptr );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+
+	EXPECT_EQ( child->getAlpha(), 0.f );
+	parent->pushState( UIState::StateSelected );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	parent->popState( UIState::StateSelected );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, ParentHoverChildOpacityReverts ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Parent Hover Child Opacity Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UISceneNode* sceneNode = app.getUI();
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#parent {
+			width: 100dp;
+			height: 40dp;
+		}
+		#child {
+			width: 20dp;
+			height: 20dp;
+		}
+		#parent > #child {
+			opacity: 0;
+			transition: all 0.15s;
+		}
+		#parent:hover > #child {
+			opacity: 1;
+		}
+	</style>
+	<div id="parent">
+		<div id="child"></div>
+	</div>
+</vbox>
+    )html" );
+	EXPECT_TRUE( root != nullptr );
+
+	UIWidget* parent = root->querySelector( "#parent" );
+	EXPECT_TRUE( parent != nullptr );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+
+	sceneNode->update( Time::Zero );
+	EXPECT_EQ( child->getAlpha(), 0.f );
+
+	Vector2f hoverPos = parent->convertToWorldSpace( { 1.f, 1.f } );
+	EXPECT_EQ( sceneNode->overFind( hoverPos ), child );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( hoverPos.asInt() );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+
+	Vector2f leavePos = parent->convertToWorldSpace(
+		{ parent->getPixelsSize().getWidth() + 10.f, parent->getPixelsSize().getHeight() + 10.f } );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( leavePos.asInt() );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, TabWidgetCloseOpacityRevertsOnHoverLeave ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS TabWidget Close Opacity Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UISceneNode* sceneNode = app.getUI();
+	UIWidget* container = UIWidget::New();
+	container->addClass( "tab_widget_cont" );
+	container->setPixelsSize( 400, 120 );
+	container->setParent( sceneNode->getRoot() );
+
+	sceneNode->setStyleSheet( R"css(
+		:root {
+			--tab-close: #909396;
+			--tab-close-hover: #863d47;
+		}
+		Tab::close {
+			width: 10dp;
+			height: 10dp;
+			foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' d='M2 2h12v12H2z' /></svg>");
+			foreground-tint: var(--tab-close);
+			foreground-size: 10dp 10dp;
+			margin-right: 4dp;
+			transition: all 0.15s;
+		}
+		Tab::close:hover {
+			foreground-tint: var(--tab-close-hover);
+		}
+		TabWidget {
+			tab-height: 24dp;
+		}
+		Tab {
+			width: 120dp;
+			height: 24dp;
+		}
+		Tab::Text {
+			height: 24dp;
+		}
+		.tab_widget_cont TabWidget {
+			max-tab-width: 200dp;
+		}
+		.tab_widget_cont Tab > Tab::Text {
+			text-overflow: ellipsis;
+		}
+		.tab_widget_cont Tab > Tab::close {
+			opacity: 0;
+		}
+		.tab_widget_cont Tab:selected > Tab::close,
+		.tab_widget_cont Tab:hover > Tab::close {
+			opacity: 1;
+		}
+	)css" );
+
+	UITabWidget* tabWidget = UITabWidget::New();
+	tabWidget->setPixelsSize( 300, 80 );
+	tabWidget->setTabsClosable( true );
+	tabWidget->setParent( container );
+
+	UIWidget* ownedWidget0 = UIWidget::New();
+	ownedWidget0->setPixelsSize( 300, 60 );
+	UITab* tab = tabWidget->add( "Test", ownedWidget0 );
+	EXPECT_TRUE( tab != nullptr );
+	UIWidget* close = tab->getCloseButton();
+	EXPECT_TRUE( close != nullptr );
+	EXPECT_TRUE( close->isVisible() );
+
+	UIWidget* ownedWidget1 = UIWidget::New();
+	ownedWidget1->setPixelsSize( 300, 60 );
+	UITab* selectedTab = tabWidget->add( "Selected", ownedWidget1 );
+	EXPECT_TRUE( selectedTab != nullptr );
+	tabWidget->setTabSelected( selectedTab );
+
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( close->getAlpha(), 0.f );
+
+	Vector2f hoverPos =
+		tab->convertToWorldSpace( { 4.f, tab->getPixelsSize().getHeight() * 0.5f } );
+	Node* hitNode = sceneNode->overFind( hoverPos );
+	EXPECT_NE( hitNode, close );
+	EXPECT_EQ( hitNode, tab );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( hoverPos.asInt() );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( close->getAlpha(), 255.f );
+
+	Vector2f leavePos = tab->convertToWorldSpace(
+		{ tab->getPixelsSize().getWidth() + 10.f, tab->getPixelsSize().getHeight() + 10.f } );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( leavePos.asInt() );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( close->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, DropDownForegroundTintVarTransitionKeepsImageStable ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS DropDown Tint Var Transition Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( R"css(
+		:root {
+			--icon: #b6bbc2;
+			--icon-active: #ffffff;
+		}
+		DropDownList {
+			width: 160dp;
+			height: 24dp;
+			transition: all 0.125s;
+			foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
+			foreground-position-x: right 6dp;
+			foreground-position-y: center 1dp;
+			foreground-size: 12dp 16dp;
+			foreground-tint: var(--icon);
+		}
+		DropDownList:hover {
+			foreground-tint: var(--icon-active);
+		}
+	)css" );
+
+	UIDropDownList* dropdown = UIDropDownList::New();
+	dropdown->setPixelsSize( 160, 24 );
+	dropdown->setParent( sceneNode->getRoot() );
+
+	const std::string iconColor = Color( "#b6bbc2" ).toHexString();
+	const std::string activeIconColor = Color( "#ffffff" ).toHexString();
+
+	sceneNode->update( Time::Zero );
+	EXPECT_TRUE( dropdown->getForeground() != nullptr );
+	std::string currentTint = dropdown->getForegroundTint( 0 ).toHexString();
+	EXPECT_STREQ( currentTint.c_str(), iconColor.c_str() );
+	const std::string foregroundImage = dropdown->getForeground()->getLayer( 0 )->getDrawableRef();
+	EXPECT_FALSE( foregroundImage.empty() );
+
+	Vector2f hoverPos = dropdown->convertToWorldSpace( { 4.f, 4.f } );
+	EXPECT_EQ( sceneNode->overFind( hoverPos ), dropdown );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( hoverPos.asInt() );
+	sceneNode->update( Time::Zero );
+
+	const PropertyDefinition* foregroundTint =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::ForegroundTint );
+	auto transitions = dropdown->getActionsByTag( foregroundTint->getId() );
+	EXPECT_EQ( transitions.size(), 1UL );
+	auto* transition = static_cast<StyleSheetPropertyAnimation*>( transitions.front() );
+	EXPECT_FALSE( String::startsWith( transition->getStartValue(), "var(" ) );
+	EXPECT_FALSE( String::startsWith( transition->getEndValue(), "var(" ) );
+	EXPECT_STREQ( transition->getStartValue().c_str(), iconColor.c_str() );
+	EXPECT_STREQ( transition->getEndValue().c_str(), activeIconColor.c_str() );
+	std::string currentForegroundImage = dropdown->getForeground()->getLayer( 0 )->getDrawableRef();
+	EXPECT_STREQ( currentForegroundImage.c_str(), foregroundImage.c_str() );
+
+	sceneNode->update( Seconds( 0.2f ) );
+	currentTint = dropdown->getForegroundTint( 0 ).toHexString();
+	EXPECT_STREQ( currentTint.c_str(), activeIconColor.c_str() );
+	currentForegroundImage = dropdown->getForeground()->getLayer( 0 )->getDrawableRef();
+	EXPECT_STREQ( currentForegroundImage.c_str(), foregroundImage.c_str() );
+
+	Vector2f leavePos =
+		dropdown->convertToWorldSpace( { dropdown->getPixelsSize().getWidth() + 10.f,
+										 dropdown->getPixelsSize().getHeight() + 10.f } );
+	sceneNode->getEventDispatcher()->getInput()->setMousePos( leavePos.asInt() );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Seconds( 0.2f ) );
+	currentTint = dropdown->getForegroundTint( 0 ).toHexString();
+	EXPECT_STREQ( currentTint.c_str(), iconColor.c_str() );
+	currentForegroundImage = dropdown->getForeground()->getLayer( 0 )->getDrawableRef();
+	EXPECT_STREQ( currentForegroundImage.c_str(), foregroundImage.c_str() );
+}
+
+UTEST( CSSVariables, StyleAttributeVarResolvesAfterLateStylesheet ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Late Style Attribute Var Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html>
+	<body>
+		<pre id="code" style="background-color: var(--late-bg); color: var(--late-fg);">
+			<code><span id="keyword" style="color:var(--late-keyword)">async</span></code>
+		</pre>
+	</body>
+</html>
+    )html" );
+	EXPECT_TRUE( root != nullptr );
+
+	UIRichText* code = root->querySelector( "#code" )->asType<UIRichText>();
+	EXPECT_TRUE( code != nullptr );
+	UITextSpan* keyword = root->querySelector( "#keyword" )->asType<UITextSpan>();
+	EXPECT_TRUE( keyword != nullptr );
+
+	app.getUI()->combineStyleSheet( R"css(
+		:root {
+			--late-bg: #1a1714;
+			--late-fg: #F0EEEC;
+			--late-keyword: #F59E0B;
+		}
+	)css" );
+
+	EXPECT_TRUE( Color( "#1a1714" ) == code->getBackgroundColor() );
+	EXPECT_TRUE( Color( "#F0EEEC" ) == code->getFontColor() );
+	EXPECT_TRUE( Color( "#F59E0B" ) == keyword->getFontColor() );
+}
+
+UTEST( CSSVariables, StyleAttributeVarUpdatesAfterLaterStylesheetOverride ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Style Attribute Var Override Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UIWidget* root = app.getUI()->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( R"html(
+<html>
+	<head>
+		<style>:root{--inline-color:#13579B}</style>
+	</head>
+	<body>
+		<span id="child" style="color: var(--inline-color)">Child</span>
+	</body>
+</html>
+    )html" ) );
+	EXPECT_TRUE( root != nullptr );
+
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_TRUE( Color( "#13579B" ) == child->getFontColor() );
+
+	app.getUI()->combineStyleSheet( ":root{--inline-color:#F59E0B}" );
+
+	EXPECT_TRUE( Color( "#F59E0B" ) == child->getFontColor() );
 }
 
 UTEST( CSSVariables, VariableReferencesChain ) {

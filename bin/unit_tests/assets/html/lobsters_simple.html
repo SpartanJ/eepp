@@ -2,11 +2,32 @@
 <html lang=en>
 <style>
     :root {
+        --base-bg: 12 12 12;
+        --base-fg: 255 255 255;
         --font-size-default: 1rem;
         --font-size-tags: 0.66rem;
         --base-shadow: 0 0 0;
         --comment-controls-height: 1.2lh;
-        --input-outline-width: 2px
+        --input-outline-width: 2px;
+        --color-bg: rgb(var(--base-bg));
+        --color-bg-50: rgb(var(--base-bg) / 50%);
+        --color-fg: rgb(var(--base-fg) / var(--opacity-fg)); /* primary text */
+        --color-fg-accent: currentColor;
+        --color-fg-contrast-13: rgb(var(--base-fg) / var(--opacity-fg-contrast-13));
+        --color-fg-contrast-10: rgb(var(--base-fg) / var(--opacity-fg-contrast-10));
+        --color-fg-contrast-7-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-7-5));
+        --color-fg-contrast-6: rgb(var(--base-fg) / var(--opacity-fg-contrast-6));
+        --color-fg-contrast-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-5));
+        --color-fg-contrast-4-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-4-5));
+        --opacity-fg: 87%; /* primary text */
+        --opacity-fg-contrast-13: 87%;
+        --opacity-fg-contrast-10: 87%;
+        --opacity-fg-contrast-7-5: 77%;
+        --opacity-fg-contrast-6: 69%;
+        --opacity-fg-contrast-5: 64%;
+        --opacity-fg-contrast-4-5: 61%;
+        --color-fg-link: rgb(138 177 255);
+        --color-fg-author: rgb(80 112 177);
     }
 
     html {

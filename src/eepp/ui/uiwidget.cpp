@@ -1960,9 +1960,12 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
 	CSS::StyleSheetProperty propToPropagate = property;
 
-	if ( property.getPropertyDefinition() &&
-		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
-		StyleSheetLength length( property.value() );
+	if ( propToPropagate.needsValueSubstitution() && NULL != mStyle )
+		mStyle->applyVarValues( &propToPropagate );
+
+	if ( propToPropagate.getPropertyDefinition() &&
+		 propToPropagate.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( propToPropagate.value() );
 		Float pxSize = 0;
 
 		if ( length.getUnit() == StyleSheetLength::Unit::Rem ) {
@@ -1990,12 +1993,12 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			else
 				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
 		} else {
-			pxSize = lengthFromValue( property );
+			pxSize = lengthFromValue( propToPropagate );
 		}
 
 		propToPropagate = CSS::StyleSheetProperty(
-			property.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
-			property.getSpecificity() );
+			propToPropagate.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
+			propToPropagate.getSpecificity() );
 	}
 
 	Node* child = getFirstChild();
@@ -2005,7 +2008,7 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			UIStyle* childStyle = childWidget->getUIStyle();
 			// Only propagate if the child doesn't explicitly override it
 			if ( childStyle && !childStyle->hasLocalProperty(
-								   property.getPropertyDefinition()->getPropertyId() ) ) {
+								   propToPropagate.getPropertyDefinition()->getPropertyId() ) ) {
 				childWidget->applyProperty( propToPropagate );
 				childWidget->propagateInheritedProperty( propToPropagate );
 			}
@@ -2521,13 +2524,23 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( String::iequals( ait->name(), "style" ) ) {
 			StyleSheetPropertiesParser propertiesParser;
 			propertiesParser.parse( std::string_view{ ait->value() } );
+			if ( NULL != mStyle ) {
+				for ( const auto& [_, variable] : propertiesParser.getVariables() )
+					mStyle->setStyleSheetVariable( variable );
+			}
 			if ( !propertiesParser.getProperties().empty() ) {
 				for ( auto& [_, prop] : propertiesParser.getProperties() ) {
 					auto property( prop );
 					property.setSpecificity( StyleSheetSelectorRule::SpecificityInline );
+					if ( property.needsValueSubstitution() && NULL != mStyle ) {
+						auto propertyToApply( property );
+						mStyle->applyVarValues( &propertyToApply );
+						applyProperty( propertyToApply );
+					} else {
+						applyProperty( property );
+					}
 					if ( NULL != mStyle )
 						mStyle->setStyleSheetProperty( property );
-					applyProperty( property );
 				}
 			}
 			continue;
