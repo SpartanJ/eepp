@@ -590,7 +590,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 					}
 
 					if ( mLineEnding == TextFormat::LineEnding::CRLF && lineBufferSize > 1 &&
-						 lastChar == '\n' ) {
+						 lastChar == '\n' && lineBuffer[lineBuffer.size() - 2] == '\r' ) {
 						lineBuffer[lineBuffer.size() - 2] = '\n';
 						lineBuffer.resize( lineBufferSize - 1 );
 					} else if ( mLineEnding == TextFormat::LineEnding::CR && lineBufferSize > 0 ) {
