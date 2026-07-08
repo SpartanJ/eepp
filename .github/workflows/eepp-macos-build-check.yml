@@ -25,9 +25,39 @@ jobs:
       run: |
         set +e
         cd bin/unit_tests
+        mkdir -p output
+        crash_report_marker="$PWD/output/.unit-test-started"
+        touch "$crash_report_marker"
         ./eepp-unit_tests
         status=$?
         if [ "$status" -ne 0 ]; then
+          echo "::group::macOS crash reports"
+          mkdir -p output/crash-reports
+          crash_report_list="output/crash-reports/reports.txt"
+          for attempt in 1 2 3 4 5; do
+            : > "$crash_report_list"
+            for dir in "$HOME/Library/Logs/DiagnosticReports" "/Library/Logs/DiagnosticReports"; do
+              if [ -d "$dir" ]; then
+                find "$dir" -maxdepth 1 \( -name 'eepp-unit_tests*.crash' -o -name 'eepp-unit_tests*.ips' \) \
+                  -newer "$crash_report_marker" -print >> "$crash_report_list" 2>/dev/null || true
+              fi
+            done
+            if [ -s "$crash_report_list" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ -s "$crash_report_list" ]; then
+            while IFS= read -r report; do
+              [ -n "$report" ] || continue
+              echo "$report"
+              cp "$report" output/crash-reports/ || true
+              cat "$report" || true
+            done < "$crash_report_list"
+          else
+            echo "No eepp-unit_tests crash report found in DiagnosticReports."
+          fi
+          echo "::endgroup::"
           echo "::group::lldb crash backtrace rerun"
           lldb --batch \
             -o "run" \
