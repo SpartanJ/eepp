@@ -81,7 +81,7 @@ h6 { font-size: 0.67em; font-weight: bold; margin: 2.33em 0; }
 p { margin: 1em 0; }
 pre { margin: 1em 0; white-space: pre; }
 blockquote { margin: 1em 0; }
-hr { display: block; border-width: 1px; border-color: gray; margin: 0.5em 0; }
+hr { display: block; border-width: 1px; border-color: gray; margin: 0.5em 0; min-height: 2px; }
 ul, ol, dl { margin: 1em 0; }
 
 b, strong { font-weight: bold; }

@@ -44,7 +44,7 @@ UIScrollView::UIScrollView( const std::string& tag ) :
 	listenParent();
 }
 
-UIScrollView::UIScrollView() : UIScrollView( "webview" ) {}
+UIScrollView::UIScrollView() : UIScrollView( "scrollview" ) {}
 
 UIScrollView::~UIScrollView() {
 	clearListeners();
@@ -219,10 +219,8 @@ void UIScrollView::containerUpdate() {
 		mHScroll->setVisible( false );
 		mHScroll->setEnabled( false );
 	} else {
-		auto scrollViewWidth = mScrollView->getPixelsSize().getWidth();
-		auto meInnerWidth = std::ceil( getPixelsSize().getWidth() - getPixelsPadding().Left -
-									   getPixelsPadding().Right );
-		auto visible = scrollViewWidth > meInnerWidth;
+		bool visible = mScrollView->getSize().getWidth() >
+					   getSize().getWidth() - getPadding().Left - getPadding().Right;
 
 		mHScroll->setVisible( visible );
 		mHScroll->setEnabled( visible );
@@ -235,9 +233,8 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setVisible( false );
 		mVScroll->setEnabled( false );
 	} else {
-		bool visible = mScrollView->getPixelsSize().getHeight() > getPixelsSize().getHeight() -
-																	  getPixelsPadding().Top -
-																	  getPixelsPadding().Bottom;
+		bool visible = mScrollView->getSize().getHeight() >
+					   getSize().getHeight() - getPadding().Top - getPadding().Bottom;
 
 		mVScroll->setVisible( visible );
 		mVScroll->setEnabled( visible );

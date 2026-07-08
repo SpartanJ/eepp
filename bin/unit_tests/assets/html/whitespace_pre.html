@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" class="swup-enabled swup-native">
+  <head>
+    <style>
+      :root {
+        --b-font-main: system-ui, sans-serif;
+        --b-font-mono:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        --b-txt: #dcd7ba;
+        --b-bg-1: #18171f;
+        --b-bg-2: #2d4f67;
+        --b-line: #727169;
+        --b-link: #ffa066;
+        --b-heading: #fff;
+        --b-btn-bg: #2d4f67;
+        --b-btn-txt: #c8c093;
+        --b-focus: #2d4f67;
+        --b-accent-1: #e6c384;
+        --b-accent-2: #c34043;
+        --b-selection-color: #c8c093;
+        --b-selection-bg: #2d4f67;
+      }
+      *,
+      :before,
+      :after {
+        box-sizing: border-box;
+      }
+      ::selection {
+        color: var(--b-selection-color);
+        background-color: var(--b-selection-bg);
+      }
+      body {
+        background: var(--b-bg-1);
+        max-width: 70ch;
+        font-family: var(--b-font-main);
+        font-feature-settings: "lnum" 1;
+        font-variant-numeric: slashed-zero;
+        text-rendering: optimizeLegibility;
+        color: var(--b-txt);
+        -moz-tab-size: 4;
+        tab-size: 4;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        margin: auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      ul,
+      ol,
+      dl,
+      dd,
+      details,
+      blockquote,
+      pre,
+      figure,
+      table,
+      address,
+      hr,
+      fieldset,
+      iframe,
+      audio,
+      video {
+        margin: 0 0 1.5rem;
+      }
+      pre,
+      code,
+      kbd,
+      samp,
+      tt,
+      var {
+        background: var(--b-bg-2);
+        font-family: var(--b-font-mono);
+        border-radius: 0.25rem;
+        padding: 0.125rem 0.25rem;
+        font-size: 0.875em;
+      }
+      pre {
+        white-space: pre;
+        padding: 1rem;
+        overflow: auto;
+      }
+      pre code {
+        background-color: inherit;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div itemprop="ArticleBody text" class="main-content">
+      <pre
+        class="language-json"
+        data-lang="json"
+        style="color: #c0c5ce; background-color: #2b303b"
+      ><code class="language-json" data-lang="json"><span style="color:#65737e">// in the "LSP Settings" file, under "clients[]"
+</span><span>"</span><span style="color:#a3be8c">md-lsp</span><span>": {
+</span><span>  </span><span style="color:#65737e">// default enabled?
+</span><span>  "</span><span style="color:#a3be8c">enabled</span><span>": </span><span style="color:#d08770">true</span><span>,
+</span><span>  "</span><span style="color:#a3be8c">command</span><span>": [
+</span><span>    </span><span style="color:#65737e">// as long as the system path is setup right, we can find this binary
+</span><span>    "</span><span style="color:#a3be8c">md-lsp</span><span>",
+</span><span>  ],
+</span><span>  </span><span style="color:#65737e">// when we see this scope, the LSP will start this server
+</span><span>  "</span><span style="color:#a3be8c">selector</span><span>": "</span><span style="color:#a3be8c">text.html.markdown</span><span>",
+</span><span>},
+</span></code></pre>
+    </div>
+  </body>
+</html>

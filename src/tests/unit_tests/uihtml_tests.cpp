@@ -895,6 +895,35 @@ UTEST( UIHTML, PreCodeBlockFixtureKeepsCompactCodeLines ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, WhiteSpacePreInheritedBySyntaxSpansPreservesEmbeddedBreaks ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	std::string html;
+	ASSERT_TRUE( FileSystem::fileGet( "assets/html/whitespace_pre.html", html ) );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	SceneManager::instance()->update();
+
+	UIRichText* pre = nullptr;
+	sceneNode->getRoot()->forEachNode( [&pre]( Node* node ) {
+		if ( pre == nullptr && node->isWidget() &&
+			 node->asType<UIWidget>()->getElementTag() == "pre" )
+			pre = node->asType<UIRichText>();
+	} );
+	ASSERT_TRUE( pre != nullptr );
+
+	const auto& lines = pre->getRichTextPtr()->getLines();
+	ASSERT_EQ( lines.size(), (size_t)11 );
+	EXPECT_STRINGEQ( uiHtmlLineText( *pre->getRichTextPtr(), 0 ),
+					 "// in the \"LSP Settings\" file, under \"clients[]\"" );
+	EXPECT_STRINGEQ( uiHtmlLineText( *pre->getRichTextPtr(), 1 ), "\"md-lsp\": {" );
+	EXPECT_STRINGEQ( uiHtmlLineText( *pre->getRichTextPtr(), 3 ), "  \"enabled\": true," );
+	EXPECT_STRINGEQ( uiHtmlLineText( *pre->getRichTextPtr(), 10 ), "}," );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, WhiteSpaceCollapsePreLinePreservesBreaksOnly ) {
 	init_ui_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

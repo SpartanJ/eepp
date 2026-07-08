@@ -1483,8 +1483,13 @@ static void addProcessedTextSpan( RichText& richText, ProcessedText&& text,
 static UIRichText::WhiteSpaceCollapse getEffectiveWhiteSpaceCollapse( Node* node,
 																	  UIRichText* fallback ) {
 	for ( Node* cur = node; cur; cur = cur->getParent() ) {
-		if ( cur->isType( UI_TYPE_TEXTSPAN ) || cur->isType( UI_TYPE_RICHTEXT ) )
-			return cur->asType<UIRichText>()->getWhiteSpaceCollapse();
+		if ( cur->isType( UI_TYPE_TEXTSPAN ) || cur->isType( UI_TYPE_RICHTEXT ) ) {
+			auto* richText = cur->asType<UIRichText>();
+			auto* style = richText->getUIStyle();
+			if ( style == nullptr || style->hasLocalProperty( PropertyId::WhiteSpace ) ||
+				 style->hasLocalProperty( PropertyId::WhiteSpaceCollapse ) )
+				return richText->getWhiteSpaceCollapse();
+		}
 	}
 	return fallback ? fallback->getWhiteSpaceCollapse() : UIRichText::WhiteSpaceCollapse::Collapse;
 }
@@ -1842,9 +1847,9 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				return;
 			}
 
-			auto text = processWhiteSpaceForLayout(
-				textNode->getText().view(), collapse, prevIsInline, nextIsInline,
-				lastSpanEndsWithSpace, textNode->getNextNode() == nullptr );
+			auto text =
+				processWhiteSpaceForLayout( textNode->getText().view(), collapse, prevIsInline,
+											nextIsInline, lastSpanEndsWithSpace, next == nullptr );
 			auto tt = getEffectiveTextTransform( textNode );
 			String transformed;
 			if ( tt != TextTransform::None ) {
@@ -1958,7 +1963,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				richText.setWhiteSpaceWrapMode( toRichTextWhiteSpaceWrapMode( collapse ) );
 				auto spanText = processWhiteSpaceForLayout(
 					span->getText().view(), collapse, prevIsInline, nextIsInline,
-					lastSpanEndsWithSpace, span->getFirstChild() == nullptr );
+					lastSpanEndsWithSpace, span->getFirstChild() == nullptr && next == nullptr );
 				auto tt = getEffectiveTextTransform( span );
 				if ( tt != TextTransform::None ) {
 					String transformed = materializeTransformedText( spanText.view, tt );

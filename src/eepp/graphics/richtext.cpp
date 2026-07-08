@@ -968,17 +968,23 @@ class RichTextInlineLayouter {
 						}
 					}
 
+					bool isLastTextSegment = i + 2 == wrapInfo.wraps.size();
+					bool trailingNewlineAlreadyAdvanced =
+						isNewline && isLastTextSegment && result.lines.back().spans.empty() &&
+						i > 0 && wrapInfo.wraps[i - 1] != wrapInfo.wraps[i];
 					if ( i < wrapInfo.wraps.size() - 2 || isNewline ) {
 						if ( isNewline ) {
 							curCharIdx++;
-							if ( i == wrapInfo.wraps.size() - 2 ) {
+							if ( isLastTextSegment ) {
 								addInlineSpacingToCurrentLine(
 									result, curX, inlineEndSpacing( payload, inlineItems ) );
 							}
 						}
-						maxWidth = std::max( maxWidth, curX );
-						result.lines.push_back( RichText::RenderParagraph() );
-						curX = 0;
+						if ( !trailingNewlineAlreadyAdvanced ) {
+							maxWidth = std::max( maxWidth, curX );
+							result.lines.push_back( RichText::RenderParagraph() );
+							curX = 0;
+						}
 					}
 				}
 			} else {
@@ -1189,17 +1195,23 @@ class RichTextInlineLayouter {
 						}
 					}
 
+					bool isLastTextSegment = i + 2 == wrapInfo.wraps.size();
+					bool trailingNewlineAlreadyAdvanced =
+						isNewline && isLastTextSegment && result.lines.back().spans.empty() &&
+						i > 0 && wrapInfo.wraps[i - 1] != wrapInfo.wraps[i];
 					if ( i < wrapInfo.wraps.size() - 2 || isNewline ) {
 						if ( isNewline ) {
 							curCharIdx++;
-							if ( i == wrapInfo.wraps.size() - 2 ) {
+							if ( isLastTextSegment ) {
 								addInlineSpacingToCurrentLine(
 									result, curX, inlineEndSpacing( payload, inlineItems ) );
 							}
 						}
-						maxWidth = std::max( maxWidth, curX );
-						result.lines.push_back( RichText::RenderParagraph() );
-						curX = 0;
+						if ( !trailingNewlineAlreadyAdvanced ) {
+							maxWidth = std::max( maxWidth, curX );
+							result.lines.push_back( RichText::RenderParagraph() );
+							curX = 0;
+						}
 					}
 				}
 			} else {
