@@ -117,6 +117,8 @@ class EE_API WindowSDL : public Window {
   protected:
 	friend class ClipboardSDL;
 
+	void destroySDLResources();
+
 	SDL_Window* mSDLWindow{ nullptr };
 	SDL_GLContext mGLContext{ nullptr };
 	SDL_GLContext mGLContextThread{ nullptr };

@@ -38,18 +38,25 @@ WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 }
 
 WindowSDL::~WindowSDL() {
+	destroySDLResources();
+}
+
+void WindowSDL::destroySDLResources() {
 	if ( nullptr != mGLContext ) {
 		SDL_GL_DestroyContext( mGLContext );
+		mGLContext = nullptr;
 	}
 
 	if ( nullptr != mGLContextThread ) {
 		SDL_GL_DestroyContext( mGLContextThread );
+		mGLContextThread = nullptr;
 	}
 
 	eeSAFE_DELETE( mWMinfo );
 
 	if ( nullptr != mSDLWindow ) {
 		SDL_DestroyWindow( mSDLWindow );
+		mSDLWindow = nullptr;
 	}
 
 #if defined( EE_X11_PLATFORM )
@@ -268,10 +275,7 @@ void WindowSDL::makeCurrent() {
 }
 
 void WindowSDL::close() {
-	SDL_DestroyWindow( mSDLWindow );
-	mSDLWindow = nullptr;
-	mGLContext = nullptr;
-	mGLContextThread = nullptr;
+	destroySDLResources();
 	Window::close();
 }
 
@@ -643,6 +647,9 @@ Rect WindowSDL::getBorderSize() const {
 }
 
 Float WindowSDL::getScale() const {
+	if ( nullptr == mSDLWindow )
+		return PixelDensity::getPixelDensity();
+
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_GetWindowSizeInPixels( mSDLWindow, &realX, &realY );

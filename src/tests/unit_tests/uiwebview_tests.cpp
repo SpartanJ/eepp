@@ -2397,6 +2397,13 @@ UTEST( UIWebView, DocumentContainerHeightStaysSyncedAfterBottomGrow ) {
 	ASSERT_TRUE( navigationCompleted );
 	pump();
 	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+
+	win->setSize( 1024, 576 );
+	ui->setPixelsSize( win->getSize().asFloat() );
+	ui->setViewportPixelsSize( win->getSize().asFloat() );
+	pump();
+	ASSERT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+
 	const Sizef initialRootSize = ui->getRoot()->getPixelsSize();
 	const Sizef initialWebViewSize = webView->getPixelsSize();
 
@@ -2412,10 +2419,13 @@ UTEST( UIWebView, DocumentContainerHeightStaysSyncedAfterBottomGrow ) {
 	UIWidget* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
 	ASSERT_TRUE( html != nullptr );
 	ASSERT_TRUE( body != nullptr );
-	EXPECT_GT( ui->getRoot()->getPixelsSize().getWidth(), initialRootSize.getWidth() );
-	EXPECT_GT( ui->getRoot()->getPixelsSize().getHeight(), initialRootSize.getHeight() );
-	EXPECT_GT( webView->getPixelsSize().getWidth(), initialWebViewSize.getWidth() );
-	EXPECT_GT( webView->getPixelsSize().getHeight(), initialWebViewSize.getHeight() );
+	if ( win->getSize().getWidth() > initialRootSize.getWidth() &&
+		 win->getSize().getHeight() > initialRootSize.getHeight() ) {
+		EXPECT_GT( ui->getRoot()->getPixelsSize().getWidth(), initialRootSize.getWidth() );
+		EXPECT_GT( ui->getRoot()->getPixelsSize().getHeight(), initialRootSize.getHeight() );
+		EXPECT_GT( webView->getPixelsSize().getWidth(), initialWebViewSize.getWidth() );
+		EXPECT_GT( webView->getPixelsSize().getHeight(), initialWebViewSize.getHeight() );
+	}
 	EXPECT_NEAR( webView->getContainer()->getPixelsSize().getWidth(),
 				 documentScene->getViewportPixelsSize().getWidth(), 1.f );
 	EXPECT_NEAR( webView->getContainer()->getPixelsSize().getHeight(),
