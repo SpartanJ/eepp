@@ -775,8 +775,8 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font =
-				getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -871,7 +871,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::SelectionBackColor:
 			return getSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:

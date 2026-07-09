@@ -151,8 +151,8 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font =
-				getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -195,7 +195,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::Text:
 			return getText().toUtf8();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::FontStyle:
@@ -274,6 +274,13 @@ Font* UITextSpan::getFont() const {
 }
 
 UITextSpan* UITextSpan::setFont( Font* font ) {
+	if ( NULL != font ) {
+		const auto& style = mRichText.getFontStyleConfig();
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( font, style.Style, style.Weight ) )
+			font = newFont;
+	}
+
 	if ( mRichText.getFontStyleConfig().Font != font || !( mStyleState & StyleStateFont ) ) {
 		mRichText.getFontStyleConfig().Font = font;
 		mStyleState |= StyleStateFont;
@@ -597,6 +604,15 @@ void UITextSpan::setInheritedStyle( const FontStyleConfig& fontStyleConfig ) {
 		 mRichText.getFontStyleConfig().BackgroundColor != fontStyleConfig.BackgroundColor ) {
 		mRichText.getFontStyleConfig().BackgroundColor = fontStyleConfig.BackgroundColor;
 		fontStyleChanged = true;
+	}
+
+	if ( mRichText.getFontStyleConfig().Font ) {
+		const auto& style = mRichText.getFontStyleConfig();
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( style.Font, style.Style, style.Weight ) ) {
+			mRichText.getFontStyleConfig().Font = newFont;
+			fontChanged = true;
+		}
 	}
 
 	if ( fontChanged || fontStyleChanged )

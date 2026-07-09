@@ -486,7 +486,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getCharacterSize() ), "dp" );
 		case PropertyId::TextDecoration:
@@ -591,8 +591,8 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font =
-				getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 
 			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );

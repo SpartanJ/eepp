@@ -358,6 +358,41 @@ UTEST( FontRendering, fontFaceAuthorFamilyIsSceneScoped ) {
 	Engine::destroySingleton();
 }
 
+UTEST( FontRendering, fontFaceReevaluateStyleUsesAuthorFamily ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "eepp - Font Face Style Reevaluate", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	UISceneNode* scene = UISceneNode::New();
+	SceneManager::instance()->add( scene );
+
+	const std::string processPath( Sys::getProcessPath() );
+	const std::string css =
+		"@font-face { font-family: 'AuthorWeightedFace'; src: url('file://" + processPath +
+		"../assets/fonts/NotoSans-Regular.ttf'); font-weight: normal; font-style: normal; }"
+		"@font-face { font-family: 'AuthorWeightedFace'; src: url('file://" +
+		processPath +
+		"../assets/fonts/NotoSans-Bold.ttf'); font-weight: bold; font-style: normal; }";
+
+	scene->combineStyleSheet( css, false, String::hash( css ), URI() );
+
+	Font* regularFont = scene->getFontFromNamesList( "AuthorWeightedFace" );
+	Font* boldFont =
+		scene->getFontFromNamesList( "AuthorWeightedFace", Text::Bold, FontWeight::Bold );
+	ASSERT_NE( regularFont, nullptr );
+	ASSERT_NE( boldFont, nullptr );
+	EXPECT_NE( regularFont, boldFont );
+
+	Font* reevaluatedFont = scene->reevaluateFontStyle( regularFont, Text::Bold, FontWeight::Bold );
+	EXPECT_EQ( boldFont, reevaluatedFont );
+
+	Engine::destroySingleton();
+}
+
 UTEST( FontRendering, editorTest ) {
 	const auto runTest = [&]() {
 		UIApplication app(

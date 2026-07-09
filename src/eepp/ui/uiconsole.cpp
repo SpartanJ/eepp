@@ -187,7 +187,7 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::FontFamily: {
 			Font* font = getUISceneNode()->getFontFromNamesList(
-				attribute.value(), getFontStyleConfig().getFontStyle() );
+				attribute.value(), getFontStyleConfig().getFontStyle(), getFontWeight() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
@@ -238,7 +238,7 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::SelectionBackColor:
 			return getFontSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:

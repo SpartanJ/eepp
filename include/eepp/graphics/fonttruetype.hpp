@@ -13,6 +13,7 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
+enum class FontWeight : Uint16;
 struct FontDesc;
 
 class EE_API FontTrueType : public Font {
@@ -40,6 +41,9 @@ class EE_API FontTrueType : public Font {
 	bool getFontDesc( FontDesc& desc ) const;
 
 	const Uint32& getFaceIndex() const { return mFaceIndex; }
+
+	/** Sets the OpenType variable font "wght" axis, if available. */
+	bool setVariableFontWeight( FontWeight weight );
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 					Float outlineThickness = 0 ) const;

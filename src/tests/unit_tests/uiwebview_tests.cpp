@@ -16,11 +16,13 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -267,6 +269,88 @@ UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
 		pump();
 		EXPECT_NEAR( titleEm->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
 		EXPECT_NEAR( titlePercent->asType<UITextSpan>()->getFontSize(), 40.f, 1.f );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, FontFaceWeightSurvivesViewportRelayout ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Font Face Weight Relayout", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 640, 420 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	const std::string processPath( Sys::getProcessPath() );
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_font_face_weight.html";
+	FileSystem::fileWrite(
+		path, "<!doctype html><html><head><style>"
+			  "@font-face { font-family: 'RelayoutFace'; src: url('file://" +
+				  processPath +
+				  "../assets/fonts/NotoSans-Regular.ttf'); font-weight: 400; font-style: normal; }"
+				  "@font-face { font-family: 'RelayoutFace'; src: url('file://" +
+				  processPath +
+				  "../assets/fonts/NotoSans-Regular.ttf'); font-weight: 700; font-style: normal; }"
+				  "body { font-family: 'RelayoutFace', monospace; margin: 0; line-height: 1.5; }"
+				  ".container { max-width: 48rem; margin: 0 auto; padding: 6rem 1.5rem; }"
+				  ".page-title { font-size: 3rem; font-weight: 700; text-align: center; }"
+				  "</style></head><body><div class='container'><h1 class='page-title'>No, I Won't "
+				  "Download Your App. The Web Version is A-OK.</h1></div></body></html>" );
+	webView->loadURI( URI( "file://" + path ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]() {
+		for ( int i = 0; i < 30; i++ ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	pump();
+
+	auto* title = documentScene->getRoot()->querySelector( ".page-title" );
+	ASSERT_TRUE( title != nullptr && title->isType( UI_TYPE_HTML_WIDGET ) );
+	auto* titleText = title->asType<UIRichText>();
+	const auto* fontFamilyDef =
+		CSS::StyleSheetSpecification::instance()->getProperty( CSS::PropertyId::FontFamily );
+	Font* initialFont = titleText->getFont();
+	ASSERT_TRUE( initialFont != nullptr );
+	EXPECT_EQ( FontWeight::Bold, titleText->getFontWeight() );
+	EXPECT_NE( 0U, titleText->getFontStyle() & Text::Bold );
+	std::string fontFamilyProperty = titleText->getPropertyString( fontFamilyDef );
+	EXPECT_STREQ( "RelayoutFace", fontFamilyProperty.c_str() );
+	EXPECT_NE( std::string::npos, initialFont->getName().find( "__eepp_font_face_" ) );
+	Font* regularFont = documentScene->getFontFromNamesList( "RelayoutFace" );
+	ASSERT_TRUE( regularFont != nullptr );
+	ASSERT_NE( initialFont, regularFont );
+	titleText->setFont( regularFont );
+	EXPECT_EQ( initialFont, titleText->getFont() );
+
+	for ( int i = 0; i < 3; i++ ) {
+		webView->setPixelsSize( 760, 480 );
+		pump();
+		webView->setPixelsSize( 640, 420 );
+		pump();
+		EXPECT_EQ( FontWeight::Bold, titleText->getFontWeight() );
+		EXPECT_NE( 0U, titleText->getFontStyle() & Text::Bold );
+		fontFamilyProperty = titleText->getPropertyString( fontFamilyDef );
+		EXPECT_STREQ( "RelayoutFace", fontFamilyProperty.c_str() );
+		EXPECT_EQ( initialFont, titleText->getFont() );
 	}
 
 	Engine::destroySingleton();

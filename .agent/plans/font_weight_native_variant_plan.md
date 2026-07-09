@@ -1,262 +1,310 @@
-# Font Weight Native Variant Loading Plan
+# Font Weight Support Plan
 
 ## Goal
 
-Extend `FontTrueType` and `FontFamily` to load and select real font files for
-each `FontWeight` value (100–900), replacing the current binary bold/italic
-variant model. The CSS `font-weight` property already parses and stores arbitrary
-weights in `FontStyleConfig::Weight`; this plan makes the rendering pipeline and
-font backend respect that value by picking the correct `.ttf` file instead of
-falling back to synthetic emboldening for every weight ≥ 600.
+Make CSS `font-weight` select the best available real font representation:
 
-## Current State (Post Phase 1)
+1. An explicit `@font-face` entry for the requested family, style, and weight.
+2. A variable font instance with its `wght` axis set to the requested weight.
+3. A system or locally discovered static font file matching the requested weight.
+4. Synthetic bold only as a fallback when no real bold-capable face exists.
 
-Phase 1 (already merged) added:
+The current implementation already handles the first two cases for HTML
+`@font-face` fonts. This plan is now focused on consolidating that behavior and
+filling the remaining gap: native/static family variants beyond the old
+Regular/Bold/Italic/BoldItalic model.
 
-- `FontWeight Weight` field to `FontStyleConfig`.
-- `Text::stringToFontWeight()` / `Text::fontWeightToString()` conversion.
-- `FontWeight` parameter on `UISceneNode::getFontFromNamesList` and `reevaluateFontStyle`.
-- `setFontWeight()` / `getFontWeight()` on all text-displaying widgets.
-- CSS `font` shorthand correctly preserves numeric weight values.
-- Weight ≥ 600 sets the `Text::Bold` style bit for backward-compatible rendering.
+## Current State
 
-What is **still missing**:
+### Implemented
 
-1. `FontTrueType` only has three variant pointers:
-   `mFontBold`, `mFontItalic`, `mFontBoldItalic`.
-2. `FontTrueType::getGlyph(bool bold, bool italic, ...)` only consults those
-   three pointers; there is no weight-indexed lookup.
-3. `FontFamily::loadFromRegular` only searches for Bold, Italic, and
-   BoldItalic filename suffixes.
-4. `UISceneNode::loadFontStyleVariants` only loads `FontWeight::Bold` and
-   `FontWeight::Normal` variants.
-5. All `Text` drawing code resolves `bool isBold` from `Style & Text::Bold`
-   and passes it to `Font::getGlyph()` – there is no `FontWeight` in the
-   rendering hot path.
+- `FontWeight` exists with CSS weights 100 through 900.
+- `FontStyleConfig` stores `Weight`.
+- `Text::stringToFontWeight()` and `Text::fontWeightToString()` parse and
+  serialize named and numeric weights.
+- Text widgets expose `setFontWeight()` / `getFontWeight()`.
+- `font-weight` CSS updates `Weight` and maps weights >= `SemiBold` to the
+  legacy `Text::Bold` style bit for renderer compatibility.
+- `UISceneNode::getFontFromNamesList()` accepts `FontWeight`.
+- `UISceneNode::loadFontFaces()` registers scene-scoped `@font-face` aliases by:
+  - author family,
+  - `Text::Bold` / `Text::Italic` style bits,
+  - numeric `FontWeight`.
+- `UISceneNode` keeps a reverse `Font* -> author family` map for `@font-face`
+  fonts.
+- `UISceneNode::reevaluateFontStyle()` uses that reverse map to re-resolve the
+  actual `Font*` when style or weight changes after the font was selected.
+- `UISceneNode::getFontFamilyName()` uses the reverse map so
+  `getPropertyString(font-family)` returns the author family instead of the
+  internal `__eepp_font_face_...` name.
+- `FontTrueType::setVariableFontWeight()` applies the OpenType `wght` axis with
+  FreeType and clears glyph/kerning caches.
+- `@font-face` loads call `setVariableFontWeight()`, so multiple CSS weights can
+  point to the same variable WOFF2/TTF file and still render at distinct weights.
+- `SystemFontResolver` is weight-aware at the descriptor/query level.
 
-Consequence: `font-weight: 500` (Medium) sets the config weight but cannot load
-a Medium `.ttf` variant.  `font-weight: 800` (ExtraBold) behaves identically to
-`font-weight: 700` (Bold) — both use the same bold font or synthetic bold.
+### Still True
 
-## Target State
+- The rendering hot path is still binary:
+  - `Font::getGlyph(..., bool bold, bool italic, ...)`
+  - `FontTrueType::getGlyph(..., bool bold, bool italic, ...)`
+  - `Text` / `TextLayout` pass `bool bold` derived from `Text::Bold`.
+- `FontTrueType` still has only three sibling pointers:
+  - `mFontBold`
+  - `mFontItalic`
+  - `mFontBoldItalic`
+- `FontFamily::loadFromRegular()` only discovers Bold, Italic, and BoldItalic
+  siblings by filename.
+- Native non-`@font-face` families do not yet support separate Medium,
+  SemiBold, ExtraBold, Black, etc. files as first-class variants.
+- FontManager naming for native style variants still uses `Family#bold` /
+  `Family#italic`, not a stable numeric weight key.
 
-- `FontTrueType` holds a small weight-indexed map of sibling variants.
-- `FontTrueType::getGlyph()` and the whole `Text` rendering pipeline accept
-  `FontWeight` (or at minimum resolves the correct `FontTrueType*` before
-  reaching `getGlyph`).
-- `FontFamily` scans the font directory for all standard weight suffixes.
-- `UISceneNode::loadFontStyleVariants` loads all discovered weight variants,
-  not just Bold/Italic.
-- `SystemFontResolver` results are used when local file discovery fails.
-- The `Text::Bold` style flag continues to mean "synthetic bold where no
-  variant was found", unchanged – we are adding real variants below it, not
-  replacing it.
+## Design Direction
 
-## Impact Assessment
+Keep real font selection outside the glyph hot path for now.
 
-### Where `bool bold` appears today
+The current architecture works best when a widget's `FontStyleConfig.Font` is
+already the best concrete `Font*` for the requested family, style, and weight.
+The renderer can then continue passing `bool bold` as a compatibility and
+synthetic fallback signal.
 
-Every call path that touches glyph retrieval uses `bool bold, bool italic`:
+Do not start by changing `Font::getGlyph()` to take `FontWeight`. That would
+touch many rendering paths and bitmap/sprite font implementations while not
+solving the main missing piece: discovering and selecting the right concrete
+font object before rendering.
 
-- `Font::getGlyph()` (virtual, declared in `include/eepp/graphics/font.hpp`).
-- `FontTrueType::getGlyph()` and all its private overloads.
-- `FontTrueType::getGlyphDrawable()`, `getGlyphByIndex()`.
-- `Font::getKerning()` (two overloads).
-- `FontTrueType::isBold()`, `isItalic()`, `isBoldItalic()`, `hasBold()`,
-  `hasItalic()`, `hasBoldItalic()`, `getBoldFont()`, `getItalicFont()`,
-  `getBoldItalicFont()`, `setBoldFont()`, `setItalicFont()`,
-  `setBoldItalicFont()`.
-- `Text::draw()` and all private rendering helpers in `text.cpp` (roughly
-  40 call sites that compute `isBold = (style & Text::Bold) != 0` and pass it
-  down).
-- `TextLayout` (harfbuzz shaping path).
-- `FontBMFont` (bitmap font, likely only needs the `bool` bit).
-- `FontSprite` (sprite font, same).
-- `GlyphDrawable` creation.
+Instead:
 
-### Where the Bold flag is set
+- keep `FontWeight` in style/config/resolution layers;
+- improve how native/static font variants are registered and found;
+- keep synthetic emboldening as fallback behavior;
+- only revisit the glyph API if concrete font selection proves insufficient.
 
-- `FontStyleConfig::Style` bitmask.
-- `Text::stringToStyleFlag()` result (used by `StyleSheetProperty::asFontStyle()`).
-- `UISceneNode::getFontFromNamesList()` builds the `"Family#bold"` lookup key.
-- Every widget's `setFontStyle()` and `getTextDecoration()` methods.
-- `Text::styleFlagToString()` serialization.
+## Important Existing Behavior
 
-## Implementation Plan
+`reevaluateFontStyle()` remains necessary.
 
-### Step 1 – Replace variant pointers with a weight map
+CSS and inherited style can arrive in separate steps. A widget can first resolve
+`font-family` while weight is still normal, then later receive
+`font-weight: 700`. At that point the widget holds a `Font*`, not the original
+CSS family string. `reevaluateFontStyle()` bridges back from the current font to
+the author/system family and asks `getFontFromNamesList()` for the correct
+variant.
 
-**Files:** `fonttruetype.hpp`, `fonttruetype.cpp`
+This is especially important for:
 
-Replace:
-```cpp
-FontTrueType* mFontBold{ nullptr };
-FontTrueType* mFontItalic{ nullptr };
-FontTrueType* mFontBoldItalic{ nullptr };
-```
-with:
-```cpp
-UnorderedMap<Uint32, FontTrueType*> mWeightVariants;
-```
+- `UIRichText::setFontWeight()` / `setFontStyle()`;
+- `UITextSpan::setFontWeight()` / `setFontStyle()`;
+- `UITextSpan::setInheritedStyle()`;
+- `UITextView`, `UICodeEditor`, and `UITooltip` weight/style changes;
+- `@font-face` fonts with internal names.
 
-The key is `static_cast<Uint32>(weight) | (italic ? (1u << 31) : 0)`. 9 weights
-× 2 italic states = 18 possible entries.  `UnorderedMap` gives O(1) lookup on
-every glyph retrieval in the hot path.
+## Remaining Work
 
-Add lookup methods:
-```cpp
-FontTrueType* getVariant( FontWeight weight, bool italic ) const;
-void setVariant( FontWeight weight, bool italic, FontTrueType* font );
-```
+### Step 1 - Define Native Variant Keys
 
-Keep the old `getBoldFont()`, `setBoldFont()`, etc. as deprecation wrappers
-that call through to `getVariant(FontWeight::Bold, ...)`.  Over a transition
-period call sites can migrate; afterwards the wrappers can be removed.
+Add one canonical key format for concrete native font instances:
 
-### Step 2 – Pass FontWeight into FontTrueType::getGlyph
-
-**Files:** `fonttruetype.hpp`/`.cpp`, `text.cpp`, `textlayout.cpp`
-
-Add a `FontWeight` overload on `FontTrueType` (not the base `Font` class,
-keeping `Font::getGlyph(bool bold, ...)` unchanged for `FontBMFont`/
-`FontSprite`):
-
-```cpp
-Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, FontWeight weight,
-                bool italic, Float outlineThickness = 0 ) const;
+```text
+Family#w400
+Family#w700
+Family#w700#italic
 ```
 
-Internally this method:
-1. Looks up `mWeightVariants` with key `(weight | italicBit)`.
-2. If a variant exists, delegates to `variant->getGlyphByIndex(...)`.
-3. If no variant exists, calls its own `getGlyphByIndex(..., bold, italic, ...)`
-   where `bold = (weight >= FontWeight::SemiBold)` (synthetic emboldening
-   fallback).
+Requirements:
 
-The call sites in `text.cpp` go from:
+- Keep reading existing `Family#bold`, `Family#italic`, and
+  `Family#bold|italic`/equivalent names during transition.
+- Use numeric weight keys for all new native variant registrations.
+- Keep `@font-face` aliases separate from FontManager names. The scene alias map
+  should remain authoritative for document-scoped author fonts.
+
+Open decision:
+
+- Whether the key should be `Family#w700#italic` or `Family#w700|italic`.
+  Choose one and centralize it in a helper instead of constructing strings at
+  call sites.
+
+### Step 2 - Centralize Font Lookup Name Construction
+
+Create a helper for native font lookup keys, likely in `UISceneNode` or a small
+graphics utility:
+
 ```cpp
-bool isBold = (style & Text::Bold) != 0;
-auto glyph = font->getGlyph(codepoint, fontSize, isBold, isItalic, outline);
-```
-to:
-```cpp
-FontWeight weight = mFontStyleConfig.Weight;
-auto* ttf = static_cast<FontTrueType*>(font);
-auto glyph = ttf->getGlyph(codepoint, fontSize, weight, isItalic, outline);
+std::string makeFontVariantName( std::string_view family, FontWeight weight, bool italic );
+std::string makeLegacyFontStyleName( std::string_view family, Uint32 fontStyle );
 ```
 
-Variant lookup is O(1) hash map inside `getGlyph` — call sites don't repeat it.
-Same pattern applies to `getGlyphDrawable()`, `getKerning()`, and the harfbuzz
-shaping path in `TextLayout`.
+Then update `UISceneNode::getFontFromNamesList()` so lookup order is:
 
-### Step 3 – Expand FontFamily::loadFromRegular
+1. `@font-face` alias by author family/style/weight.
+2. Native numeric key (`Family#wNNN`, plus italic if needed).
+3. Legacy key (`Family#bold`, `Family#italic`, etc.).
+4. Plain family.
+5. Generic/system resolver.
 
-**File:** `fontfamily.cpp`
+This keeps existing applications working while enabling non-binary weights.
 
-Add weight suffix patterns to `findType` searches:
+### Step 3 - Expand Static Sibling Discovery
+
+Update `FontFamily::loadFromRegular()` to discover standard weight files.
+
+Suggested suffix table:
 
 | Weight | Suffixes |
 |--------|----------|
-| Thin (100) | `Thin`, `thin`, `Th`, `Hairline` |
-| ExtraLight (200) | `ExtraLight`, `Extra-Light`, `UltraLight`, `Ultra-Light`, `xl`, `XLt` |
-| Light (300) | `Light`, `light`, `Lt` |
-| Normal (400) | `Regular`, `regular`, `Rg` _(already handled)_ |
-| Medium (500) | `Medium`, `medium`, `Md` |
-| SemiBold (600) | `SemiBold`, `Semi-Bold`, `DemiBold`, `Demi-Bold`, `Sb`, `Dm` |
-| Bold (700) | `Bold`, `bold`, `Bd` _(already handled)_ |
-| ExtraBold (800) | `ExtraBold`, `Extra-Bold`, `UltraBold`, `Ultra-Bold`, `xb`, `XBd` |
-| Black (900) | `Black`, `Heavy`, `Blk`, `Hv` |
+| 100 | `Thin`, `Hairline` |
+| 200 | `ExtraLight`, `Extra-Light`, `UltraLight`, `Ultra-Light` |
+| 300 | `Light` |
+| 400 | `Regular`, `Book` |
+| 500 | `Medium` |
+| 600 | `SemiBold`, `Semi-Bold`, `DemiBold`, `Demi-Bold` |
+| 700 | `Bold` |
+| 800 | `ExtraBold`, `Extra-Bold`, `UltraBold`, `Ultra-Bold` |
+| 900 | `Black`, `Heavy` |
 
-Load all discovered variants via the new `setVariant()` API.
+For each discovered face:
 
-### Step 4 – Update UISceneNode::loadFontStyleVariants
+- load it as a separate `FontTrueType`;
+- register it in `FontManager` under the numeric key;
+- keep populating old `mFontBold`, `mFontItalic`, and `mFontBoldItalic` for
+  compatibility;
+- copy relevant behavior from the regular face:
+  - `setBoldAdvanceSameAsRegular()`;
+  - dynamic monospace configuration;
+  - fallback/emoji/system fallback flags if needed.
 
-**File:** `uiscenenode.cpp`
+Do not introduce a weight map inside `FontTrueType` yet unless a concrete
+rendering bug requires it.
 
-Replace the hardcoded `loadVariant(FontWeight::Bold, false)` and
-`loadVariant(FontWeight::Normal, true)` calls with a loop that attempts
-every supported weight.  For each weight, resolve via
-`SystemFontResolver` (since not all fonts ship files for every weight).
+### Step 4 - Improve System Resolver Integration
 
-### Step 5 – Update font name keys to include weight
+`SystemFontResolver` can already resolve by `FontWeight` and italic. Tighten
+`UISceneNode::getFontFromNamesList()` around that capability:
 
-**Files:** `uiscenenode.cpp`, `fontmanager.cpp`
+- when `SystemFontResolver` returns a `FontDesc`, name/load the result with the
+  numeric key;
+- cache/reuse an existing loaded numeric-key font before loading a new face;
+- link legacy sibling pointers only for bold/italic compatibility;
+- preserve the actual resolved `FontDesc::weight` when available.
 
-Currently the lookup key is `"Family#bold"`.  For a Medium variant the key
-should be `"Family#weight-medium"` or `"Family#w500"`.  Decide on a stable
-encoding:
+This should allow CSS such as:
 
-Proposal (short, grep-friendly):
+```css
+body {
+  font-family: system-ui;
+  font-weight: 500;
+}
 ```
-Family#w400      → weight 400
-Family#w700      → weight 700
-Family#w700|italic → weight 700 + italic
-```
 
-Update `Text::styleFlagToString()` (or add a companion) and all call sites
-that build font names.
+to use a real Medium file when the platform has one.
 
-### Step 6 – Audit call sites that check the Bold flag
+### Step 5 - Audit Style/Weight Synchronization
 
-Every widget's `getTextDecoration()` masks out Bold/Italic from Style:
+Today `setFontWeight()` updates the `Text::Bold` bit, but `setFontStyle()` can
+derive a weight from only the bold bit:
+
 ```cpp
-flags &= ~(Text::Bold | Text::Italic);
+( fontStyle & Text::Bold ) ? FontWeight::Bold : FontWeight::Normal
 ```
-This continues to work unchanged — `Text::Bold` is still a valid flag.
 
-However, `setFontStyle()` callers that pass `Text::Bold` should ideally also
-call `setFontWeight(FontWeight::Bold)` to keep the config consistent.  This can
-be done internally in `setFontStyle()`: if the Bold bit is toggled, also update
-`Weight` to Bold or Normal.  (Low risk, easy to add.)
+Audit all text widgets so style and weight stay coherent:
 
-### Step 7 – Tests
+- If `setFontStyle()` receives `Text::Bold`, set weight to `Bold` unless a more
+  specific weight was already explicitly set by CSS.
+- If `setFontStyle()` only changes italic/decoration bits, preserve the existing
+  `Weight`.
+- Make `UIConsole::setFontWeight()` consistent with the other text widgets:
+  currently it updates style but does not call `reevaluateFontStyle()`.
 
-| Test | Description |
-|------|-------------|
-| `FontRendering.variantLookupByWeight` | `getVariant(Medium, false)` returns the correct `FontTrueType*` |
-| `FontRendering.siblingDiscoveryAllWeights` | `FontFamily::loadFromRegular` discovers Thin through Black |
-| `FontRendering.syntheticBoldFallback` | When no variant exists for weight ≥ 600, synthetic bold is used |
-| `FontRendering.nonBoldWeightNoSynthetic` | Weight 300/400/500 produces no synthetic emboldening |
-| UIHTML font-weight round-trip | CSS `font-weight: 500` → `getFontWeight() == FontWeight::Medium` |
+This should be done carefully because `Text::Bold` is still both:
 
-## Risk Analysis
+- a compatibility style flag;
+- the renderer's synthetic-bold signal.
 
-| Risk | Mitigation |
-|------|-----------|
-| Breaking `Font::getGlyph` API | Use Option A: keep `bool bold`, add weight→variant resolution in `Text` call sites only. |
-| Third-party `Font` subclasses | `FontBMFont` and `FontSprite` don't use FreeType; they can ignore the weight map and keep the `bool bold` path unchanged. |
-| Font name key format changes | Define the new format early, implement both old and new in `FontManager::getByName()` during transition, drop the old format afterwards. |
-| Memory: weight variants double the loaded font count | Stack-weight these as lazy-loaded. `FontTrueType` variants stay `nullptr` until `getVariant()` fires, which triggers a `FontManager` lookup and disk load. |
-| `SystemFontResolver` is expensive | Cache results per (family, weight, italic) tuple.  Already partially cached in `mResolveCache`. |
+### Step 6 - Synthetic Bold Policy
 
-## Migration Sequence
+Keep this policy:
 
-1. Add weight map to `FontTrueType` (backward-compat wrappers around old API).
-2. Add `FontWeight` resolution in `Text::draw()` call sites (Option A).
-3. Expand `FontFamily::loadFromRegular` suffix discovery.
-4. Update `UISceneNode::loadFontStyleVariants`.
-5. Add weight-encoded font name keys.
-6. Sync `setFontStyle()` to update `Weight` when Bold bit changes.
-7. Add tests.
-8. (Future) Migrate `Font::getGlyph` signature to Option B if desired.
+- If a real selected font is already bold (`mIsBold == true`), do not synthesize
+  extra emboldening.
+- If the selected font is not bold and requested weight >= `SemiBold`, allow
+  synthetic emboldening.
+- For weights below `SemiBold`, never synthesize bold.
 
-## Files Affected (estimated)
+The existing `FontTrueType::loadGlyphByIndex()` already avoids emboldening when
+`mIsBold` is true. Tests should make sure future native variant loading does not
+regress this.
 
-| File | Change |
-|------|--------|
-| `include/eepp/graphics/font.hpp` | Add `getVariant()` virtual? Or keep in `FontTrueType` only. |
-| `include/eepp/graphics/fonttruetype.hpp` | WeightEntry struct, vector, new methods. |
-| `src/eepp/graphics/fonttruetype.cpp` | Implementation. |
-| `src/eepp/graphics/fontfamily.cpp` | Extended suffix discovery. |
-| `src/eepp/ui/uiscenenode.cpp` | Weight-aware variant loading. |
-| `src/eepp/graphics/text.cpp` | ~40 call sites: resolve variant by weight before getGlyph. |
-| `src/eepp/graphics/textlayout.cpp` | Same pattern for harfbuzz shaping. |
-| `include/eepp/graphics/text.hpp` | `FontWeight` parameter on internal helpers. |
-| `src/eepp/ui/uitextview.cpp` | `setFontStyle` → sync Weight. |
-| `src/eepp/ui/uicodeeditor.cpp` | Same. |
-| `src/eepp/ui/uitooltip.cpp` | Same. |
-| `src/eepp/ui/uitextspan.cpp` | Same. |
-| `src/eepp/ui/uirichtext.cpp` | Same. |
-| `src/eepp/ui/uiconsole.cpp` | Same. |
-| `src/eepp/graphics/fontmanager.cpp` | Weight-aware name key in lookup. |
-| `src/tests/unit_tests/fontrendering_tests.cpp` | New tests. |
+### Step 7 - Variable Font Follow-Ups
+
+The current `setVariableFontWeight()` only applies the `wght` axis. That is
+enough for the Fira Code repro, but the API should eventually support:
+
+- detecting whether a font has a `wght` axis without mutating it;
+- storing the currently applied variable weight for diagnostics and tests;
+- applying italic/slant axes (`ital`, `slnt`) if needed;
+- using variation coordinates in font descriptions where possible.
+
+This is lower priority than native static weight selection because
+`@font-face` variable weight rendering already works for the known repro.
+
+## Tests To Keep / Extend
+
+Existing relevant tests:
+
+- `FontRendering.fontWeightToString`
+- `FontRendering.stringToFontWeight`
+- `FontRendering.fontWeightInStyleConfig`
+- `FontRendering.fontFaceReevaluateStyleUsesAuthorFamily`
+- `UIWebView.FontFaceWeightSurvivesViewportRelayout`
+- `SystemFontResolver.resolveGenericWeights`
+- `SystemFontResolver.resolveGenericWeightPreference`
+- `SystemFontResolver.resolveBoldFromNamesList`
+
+Add or extend:
+
+| Test | Purpose |
+|------|---------|
+| `FontRendering.nativeWeightKeyLookup` | `Family#w500` resolves before `Family#bold` or plain family. |
+| `FontRendering.siblingDiscoveryAllWeights` | `FontFamily::loadFromRegular()` registers available weight siblings. |
+| `FontRendering.realBoldDoesNotDoubleEmbolden` | A real bold selected face is not synthetically emboldened again. |
+| `FontRendering.syntheticBoldFallback` | Weight >= 600 still emboldens when no real variant exists. |
+| `UIRichText.fontStylePreservesExplicitWeight` | Changing italic/style after `font-weight: 500` preserves weight 500. |
+| `UIConsole.fontWeightReevaluatesFont` | Console weight changes reselect available variants like other widgets. |
+| `UIWebView.fontFamilyPropertyUsesAuthorName` | `getPropertyString(font-family)` never exposes `__eepp_font_face_...`. |
+
+## Non-Goals For The Next Pass
+
+- Do not replace `Font::getGlyph(bool bold, bool italic)` globally.
+- Do not add weight maps to bitmap or sprite fonts.
+- Do not remove legacy `mFontBold`, `mFontItalic`, or `mFontBoldItalic`.
+- Do not remove `reevaluateFontStyle()`.
+- Do not make network-dependent Google Fonts tests permanent unless a local
+  variable-font fixture is added.
+
+## Suggested Implementation Sequence
+
+1. Add centralized native font variant name helpers.
+2. Update `getFontFromNamesList()` to prefer numeric weight keys while keeping
+   legacy names.
+3. Update `FontFamily::loadFromRegular()` to register discovered static weights.
+4. Tighten `SystemFontResolver` loading/caching to use numeric keys.
+5. Audit `setFontStyle()` / `setFontWeight()` consistency across text widgets.
+6. Add tests for native weights, synthetic fallback, and property strings.
+7. Reassess whether the glyph API needs `FontWeight`. Only do that if concrete
+   font selection cannot cover a real use case.
+
+## Allocation / Performance Notes
+
+- Keep variant discovery/load costs outside the draw loop.
+- Numeric key lookup is a `FontManager` lookup during style resolution, not per
+  glyph.
+- Do not add an `UnorderedMap` lookup to every glyph fetch unless measurements
+  show it is necessary and acceptable.
+- Variable font coordinate changes clear glyph/kerning caches and should happen
+  only at load/configuration time.
+- Loading every possible sibling eagerly can increase memory use. Prefer loading
+  files discovered beside an explicitly loaded regular font, and rely on
+  `SystemFontResolver` for platform fonts.

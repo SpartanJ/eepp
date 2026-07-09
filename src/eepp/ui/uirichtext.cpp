@@ -494,8 +494,8 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::FontFamily: {
-			Font* font =
-				getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -616,7 +616,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::FontStyle:
@@ -684,6 +684,13 @@ Font* UIRichText::getFont() const {
 }
 
 UIRichText* UIRichText::setFont( Font* font ) {
+	if ( NULL != font ) {
+		const auto& style = mRichText.getFontStyleConfig();
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( font, style.Style, style.Weight ) )
+			font = newFont;
+	}
+
 	if ( NULL != font && mRichText.getFontStyleConfig().Font != font ) {
 		mRichText.getFontStyleConfig().Font = font;
 		mRichText.invalidate();

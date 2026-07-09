@@ -22,6 +22,7 @@ using namespace EE::Window;
 #include FT_BITMAP_H
 #include FT_STROKER_H
 #include FT_TRUETYPE_TABLES_H
+#include FT_MULTIPLE_MASTERS_H
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
@@ -570,6 +571,51 @@ bool FontTrueType::getFontDesc( FontDesc& desc ) const {
 	desc.italic = isItalic() || isBoldItalic();
 	desc.monospace = isIdentifiedAsMonospace();
 	return !desc.family.empty() && !desc.path.empty();
+}
+
+bool FontTrueType::setVariableFontWeight( FontWeight weight ) {
+	if ( !loaded() || !mFace || !mLibrary )
+		return false;
+
+	FT_Face face = static_cast<FT_Face>( mFace );
+	FT_MM_Var* mmVar = nullptr;
+	if ( FT_Get_MM_Var( face, &mmVar ) != 0 || !mmVar )
+		return false;
+
+	std::vector<FT_Fixed> coords( mmVar->num_axis );
+	bool hasWeightAxis = false;
+	for ( FT_UInt i = 0; i < mmVar->num_axis; i++ ) {
+		const FT_Var_Axis& axis = mmVar->axis[i];
+		coords[i] = axis.def;
+		if ( axis.tag == FT_MAKE_TAG( 'w', 'g', 'h', 't' ) ) {
+			FT_Fixed requested = static_cast<FT_Fixed>(
+				static_cast<Float>( static_cast<Uint16>( weight ) ) * 65536.f );
+			if ( requested < axis.minimum )
+				requested = axis.minimum;
+			else if ( requested > axis.maximum )
+				requested = axis.maximum;
+			coords[i] = requested;
+			hasWeightAxis = true;
+		}
+	}
+
+	bool applied =
+		hasWeightAxis && FT_Set_Var_Design_Coordinates( face, mmVar->num_axis, coords.data() ) == 0;
+	FT_Done_MM_Var( static_cast<FT_Library>( mLibrary ), mmVar );
+
+	if ( !applied )
+		return false;
+
+	mIsBold = weight >= FontWeight::SemiBold;
+	mPages.clear();
+	mKeyCache.clear();
+	mKerningCache.clear();
+	mKerningGlyphCache.clear();
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( mHBFont )
+		hb_ft_font_changed( static_cast<hb_font_t*>( mHBFont ) );
+#endif
+	return true;
 }
 
 void FontTrueType::updateFontInternalId() {

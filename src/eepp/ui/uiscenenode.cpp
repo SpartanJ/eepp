@@ -1476,10 +1476,15 @@ void UISceneNode::resolveStyleSheetRelativeURLs( CSS::StyleSheet& styleSheet, UR
 	}
 }
 
-static std::string normalizeFontFaceFamily( std::string_view family ) {
+static std::string trimFontFaceFamily( std::string_view family ) {
 	std::string normalized{ String::trim( family, ' ' ) };
 	normalized = String::trim( normalized, '\'' );
 	normalized = String::trim( normalized, '"' );
+	return normalized;
+}
+
+static std::string normalizeFontFaceFamily( std::string_view family ) {
+	std::string normalized{ trimFontFaceFamily( family ) };
 	return String::toLower( normalized );
 }
 
@@ -1499,6 +1504,7 @@ void UISceneNode::registerFontFaceAlias( std::string_view family, Uint32 fontSty
 		return;
 
 	mFontFaceAliases[makeFontFaceAliasKey( family, fontStyle, weight )] = font;
+	mFontFaceFamilies[font] = trimFontFaceFamily( family );
 }
 
 Font* UISceneNode::getFontFaceAlias( std::string_view family, Uint32 fontStyle,
@@ -1537,6 +1543,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 								   fontWeight]( FontTrueType* font ) {
 			if ( font == nullptr || !font->loaded() )
 				return false;
+			font->setVariableFontWeight( fontWeight );
 			registerFontFaceAlias( authorFamily, fontStyle, fontWeight, font );
 			mFontFaces.push_back( font );
 			mRoot->reloadFontFamily();
@@ -1612,6 +1619,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 								FontTrueType* font = FontTrueType::New( internalFontName );
 								if ( font->loadFromMemory( &fontData[0], fontData.size() ) &&
 									 font->loaded() ) {
+									font->setVariableFontWeight( fontWeight );
 									scene->registerFontFaceAlias( authorFamily, fontStyle,
 																  fontWeight, font );
 									scene->mFontFaces.push_back( font );
@@ -2109,11 +2117,23 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 	return font;
 }
 
+std::string UISceneNode::getFontFamilyName( Font* font ) const {
+	if ( nullptr == font )
+		return "";
+
+	auto authorFamilyIt = mFontFaceFamilies.find( font );
+	if ( authorFamilyIt != mFontFaceFamilies.end() )
+		return authorFamilyIt->second;
+
+	return font->getName();
+}
+
 void UISceneNode::clearFontFaces() {
-	if ( mFontFaces.empty() && mFontFaceAliases.empty() )
+	if ( mFontFaces.empty() && mFontFaceAliases.empty() && mFontFaceFamilies.empty() )
 		return;
 
 	mFontFaceAliases.clear();
+	mFontFaceFamilies.clear();
 	if ( mRoot )
 		mRoot->reloadFontFamily();
 
@@ -2125,13 +2145,18 @@ void UISceneNode::clearFontFaces() {
 
 Font* UISceneNode::reevaluateFontStyle( Font* currentFont, Uint32 fontStyle,
 										FontWeight weight ) const {
-	if ( !currentFont || !SystemFontResolver::isEnabled() )
+	if ( !currentFont )
 		return nullptr;
 
 	if ( currentFont->getType() != FontType::TTF )
 		return nullptr;
 
-	std::string name = currentFont->getName();
+	auto authorFamilyIt = mFontFaceFamilies.find( currentFont );
+	if ( authorFamilyIt == mFontFaceFamilies.end() && !SystemFontResolver::isEnabled() )
+		return nullptr;
+
+	std::string name =
+		authorFamilyIt != mFontFaceFamilies.end() ? authorFamilyIt->second : currentFont->getName();
 	size_t pos = name.find( '#' );
 	if ( pos != std::string::npos )
 		name = name.substr( 0, pos );

@@ -839,6 +839,8 @@ class EE_API UISceneNode : public SceneNode {
 	Font* getFontFromNamesList( std::string_view names, Uint32 fontStyle = 0,
 								FontWeight weight = FontWeight::Normal ) const;
 
+	std::string getFontFamilyName( Font* font ) const;
+
 	void clearFontFaces();
 
 	Font* reevaluateFontStyle( Font* currentFont, Uint32 fontStyle,
@@ -886,6 +888,7 @@ class EE_API UISceneNode : public SceneNode {
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
+	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;

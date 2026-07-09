@@ -3057,8 +3057,8 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font =
-				getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -3138,7 +3138,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::SelectionBackColor:
 			return getFontSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
