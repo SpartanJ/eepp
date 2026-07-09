@@ -301,53 +301,67 @@ void TextureLoader::loadFromPixels() {
 
 			bool threadedLoad = !Engine::instance()->isMainThread();
 
-			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
-				Engine::instance()->getCurrentWindow()->setGLContextThread();
-			}
+			EE::Window::Window* threadedWindow =
+				threadedLoad && Engine::instance()->isSharedGLContextEnabled()
+					? Engine::instance()->getCurrentWindow()
+					: nullptr;
 
 			{
-				ScopedTexture scopedTexture;
+				struct ScopedThreadGLContext {
+					EE::Window::Window* window{ nullptr };
 
-				if ( !Engine::isEngineRunning() )
-					return;
-
-				if ( mDirectUpload ) {
-					if ( Image::Format::DDS == mImgType ) {
-						tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize,
-																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( Image::Format::PVR == mImgType ) {
-						tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize,
-																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( Image::Format::PKM == mImgType ) {
-						tTexId = SOIL_direct_load_PKM_from_memory( mPixels, mSize,
-																   SOIL_CREATE_NEW_ID, flags );
-					}
-				} else {
-					if ( NULL != mColorKey ) {
-						mChannels = STBI_rgb_alpha;
-
-						Image* tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
-
-						tImg->createMaskFromColor(
-							Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
-
-						tImg->avoidFreeImage( true );
-
-						eeSAFE_DELETE( tImg );
+					explicit ScopedThreadGLContext( EE::Window::Window* window ) :
+						window( window ) {
+						if ( window )
+							window->setGLContextThread();
 					}
 
-					tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels,
-													  SOIL_CREATE_NEW_ID, flags );
+					~ScopedThreadGLContext() {
+						if ( window )
+							window->unsetGLContextThread();
+					}
+				} scopedThreadGLContext( threadedWindow );
+
+				{
+					ScopedTexture scopedTexture;
+
+					if ( !Engine::isEngineRunning() )
+						return;
+
+					if ( mDirectUpload ) {
+						if ( Image::Format::DDS == mImgType ) {
+							tTexId = SOIL_direct_load_DDS_from_memory(
+								mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+						} else if ( Image::Format::PVR == mImgType ) {
+							tTexId = SOIL_direct_load_PVR_from_memory(
+								mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+						} else if ( Image::Format::PKM == mImgType ) {
+							tTexId = SOIL_direct_load_PKM_from_memory( mPixels, mSize,
+																	   SOIL_CREATE_NEW_ID, flags );
+						}
+					} else {
+						if ( NULL != mColorKey ) {
+							mChannels = STBI_rgb_alpha;
+
+							Image* tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
+
+							tImg->createMaskFromColor(
+								Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
+
+							tImg->avoidFreeImage( true );
+
+							eeSAFE_DELETE( tImg );
+						}
+
+						tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels,
+														  SOIL_CREATE_NEW_ID, flags );
+					}
 				}
-			}
 
-			if ( threadedLoad ) {
-				GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to the
-									// GPU VRAM
-			}
-
-			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
-				Engine::instance()->getCurrentWindow()->unsetGLContextThread();
+				if ( threadedLoad ) {
+					GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to
+										// the GPU VRAM
+				}
 			}
 
 			if ( tTexId ) {

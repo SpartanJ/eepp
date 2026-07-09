@@ -1051,15 +1051,29 @@ const std::string& UIWidget::getStyleSheetTag() const {
 }
 
 UIWidget* UIWidget::getStyleSheetParentElement() const {
-	return NULL != mParentNode && mParentNode->isWidget() ? mParentNode->asType<UIWidget>() : NULL;
+	return NULL != mParentNode && mParentNode->isWidget() && getType() != UI_TYPE_HTML_HTML
+			   ? mParentNode->asType<UIWidget>()
+			   : NULL;
 }
 
 UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
-	return NULL != mPrev && mPrev->isWidget() ? mPrev->asType<UIWidget>() : NULL;
+	Node* node = mPrev;
+	while ( NULL != node ) {
+		if ( node->isWidget() && !node->isTextNode() )
+			return node->asType<UIWidget>();
+		node = node->getPrevNode();
+	}
+	return NULL;
 }
 
 UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
-	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>() : NULL;
+	Node* node = mNext;
+	while ( NULL != node ) {
+		if ( node->isWidget() && !node->isTextNode() )
+			return node->asType<UIWidget>();
+		node = node->getNextNode();
+	}
+	return NULL;
 }
 
 std::vector<const char*> UIWidget::getStyleSheetPseudoClassesStrings() const {

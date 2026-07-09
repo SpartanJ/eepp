@@ -298,6 +298,7 @@ void WindowSDL::setGLContextThread() {
 
 void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, nullptr );
+	SDL_CleanupTLS();
 	mGLContextMutex.unlock();
 }
 

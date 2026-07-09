@@ -836,6 +836,7 @@ struct FcLib {
 	using FcBool = int;
 	using FcResult = int;
 
+	struct FcConfig;
 	struct FcPattern;
 	struct FcObjectSet;
 	struct FcFontSet {
@@ -872,11 +873,13 @@ struct FcLib {
 	static constexpr int FC_PROPORTIONAL = 0;
 	static constexpr int FC_MONO = 100;
 
-	FcBool ( *Init )( void );
+	FcConfig* ( *InitLoadConfigAndFonts )( void );
+	void ( *ConfigDestroy )( FcConfig* );
+	void ( *Fini )( void );
 	FcPattern* ( *PatternCreate )( void );
 	FcObjectSet* ( *ObjectSetCreate )( void );
 	FcBool ( *ObjectSetAdd )( FcObjectSet*, const char* );
-	FcFontSet* ( *FontList )( void*, FcPattern*, FcObjectSet* );
+	FcFontSet* ( *FontList )( FcConfig*, FcPattern*, FcObjectSet* );
 	void ( *PatternDestroy )( FcPattern* );
 	void ( *ObjectSetDestroy )( FcObjectSet* );
 	void ( *FontSetDestroy )( FcFontSet* );
@@ -890,7 +893,10 @@ struct FcLib {
 		if ( !handle )
 			return false;
 
-		Init = (decltype( Init ))Sys::loadFunction( handle, "FcInit" );
+		InitLoadConfigAndFonts = (decltype( InitLoadConfigAndFonts ))Sys::loadFunction(
+			handle, "FcInitLoadConfigAndFonts" );
+		ConfigDestroy = (decltype( ConfigDestroy ))Sys::loadFunction( handle, "FcConfigDestroy" );
+		Fini = (decltype( Fini ))Sys::loadFunction( handle, "FcFini" );
 		PatternCreate = (decltype( PatternCreate ))Sys::loadFunction( handle, "FcPatternCreate" );
 		ObjectSetCreate =
 			(decltype( ObjectSetCreate ))Sys::loadFunction( handle, "FcObjectSetCreate" );
@@ -907,9 +913,15 @@ struct FcLib {
 		PatternGetInteger =
 			(decltype( PatternGetInteger ))Sys::loadFunction( handle, "FcPatternGetInteger" );
 
-		return Init && PatternCreate && ObjectSetCreate && ObjectSetAdd && FontList &&
-			   PatternDestroy && ObjectSetDestroy && FontSetDestroy && PatternGetString &&
-			   PatternGetInteger;
+		return InitLoadConfigAndFonts && ConfigDestroy && Fini && PatternCreate &&
+			   ObjectSetCreate && ObjectSetAdd && FontList && PatternDestroy && ObjectSetDestroy &&
+			   FontSetDestroy && PatternGetString && PatternGetInteger;
+	}
+
+	void finish( FcConfig* config ) {
+		if ( config )
+			ConfigDestroy( config );
+		Fini();
 	}
 
 	void unload() {
@@ -970,7 +982,9 @@ void SystemFontResolver::populateFontList() const {
 		populateFontListFallback();
 		return;
 	}
-	if ( !fc.Init() ) {
+	FcLib::FcConfig* config = fc.InitLoadConfigAndFonts();
+	if ( !config ) {
+		fc.finish( nullptr );
 		fc.unload();
 		populateFontListFallback();
 		return;
@@ -978,20 +992,37 @@ void SystemFontResolver::populateFontList() const {
 
 	FcLib::FcPattern* pattern = fc.PatternCreate();
 	FcLib::FcObjectSet* os = fc.ObjectSetCreate();
-	fc.ObjectSetAdd( os, "family" );
-	fc.ObjectSetAdd( os, "file" );
-	fc.ObjectSetAdd( os, "index" );
-	fc.ObjectSetAdd( os, "weight" );
-	fc.ObjectSetAdd( os, "width" );
-	fc.ObjectSetAdd( os, "slant" );
-	fc.ObjectSetAdd( os, "spacing" );
+	if ( !pattern || !os ) {
+		if ( pattern )
+			fc.PatternDestroy( pattern );
+		if ( os )
+			fc.ObjectSetDestroy( os );
+		fc.finish( config );
+		fc.unload();
+		populateFontListFallback();
+		return;
+	}
 
-	FcLib::FcFontSet* fontSet = fc.FontList( nullptr, pattern, os );
+	bool objectSetOk = fc.ObjectSetAdd( os, "family" ) && fc.ObjectSetAdd( os, "file" ) &&
+					   fc.ObjectSetAdd( os, "index" ) && fc.ObjectSetAdd( os, "weight" ) &&
+					   fc.ObjectSetAdd( os, "width" ) && fc.ObjectSetAdd( os, "slant" ) &&
+					   fc.ObjectSetAdd( os, "spacing" );
+	if ( !objectSetOk ) {
+		fc.PatternDestroy( pattern );
+		fc.ObjectSetDestroy( os );
+		fc.finish( config );
+		fc.unload();
+		populateFontListFallback();
+		return;
+	}
+
+	FcLib::FcFontSet* fontSet = fc.FontList( config, pattern, os );
 
 	fc.PatternDestroy( pattern );
 	fc.ObjectSetDestroy( os );
 
 	if ( !fontSet ) {
+		fc.finish( config );
 		fc.unload();
 		populateFontListFallback();
 		return;
@@ -1036,6 +1067,7 @@ void SystemFontResolver::populateFontList() const {
 	}
 
 	fc.FontSetDestroy( fontSet );
+	fc.finish( config );
 	fc.unload();
 }
 
