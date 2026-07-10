@@ -1,6 +1,8 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
+#include <algorithm>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -776,6 +778,20 @@ class EE_API UIWidget : public UINode {
 	 */
 	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
 
+	/** @return Number of sorted unique CSS class hashes cached by this widget. */
+	inline Uint32 getClassHashCount() const { return static_cast<Uint32>( mClassHashes.size() ); }
+
+	/** @return True if all the sorted unique CSS class hashes are applied to this widget. */
+	inline bool hasClassHashes( const std::vector<String::HashType>& requiredHashes ) const {
+		const auto* hashes = mClassHashes.data();
+		const auto* hashesEnd = hashes + mClassHashes.size();
+		for ( auto hash : requiredHashes ) {
+			if ( !std::binary_search( hashes, hashesEnd, hash ) )
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @brief Gets the parent element for CSS styling.
 	 *
@@ -992,6 +1008,9 @@ class EE_API UIWidget : public UINode {
 	 * @return The CSS element tag string.
 	 */
 	inline const std::string& getElementTag() const { return mTag; }
+
+	/** @return The precomputed hash of the CSS element tag. */
+	inline String::HashType getElementTagHash() const { return mTagHash; }
 
 	/**
 	 * @brief Pushes a state onto the widget's state stack.
@@ -1479,6 +1498,7 @@ class EE_API UIWidget : public UINode {
 	SizePolicy mWidthPolicy;
 	SizePolicy mHeightPolicy;
 	PositionPolicy mLayoutPositionPolicy;
+	String::HashType mTagHash{ 0 };
 	UIWidget* mLayoutPositionPolicyWidget;
 	int mAttributesTransactionCount;
 	LayoutInvalidationFlags mPendingLayoutReasons{ 0 };
@@ -1486,6 +1506,7 @@ class EE_API UIWidget : public UINode {
 	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
+	SmallVector<String::HashType, 1> mClassHashes;
 	String mTooltipText;
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
@@ -1493,6 +1514,7 @@ class EE_API UIWidget : public UINode {
 	Uint8 mMarginAuto{ 0 };
 
 	void calculateAutoMargin();
+	void rebuildClassHashes();
 
 	/**
 	 * @brief Default constructor.

@@ -158,6 +158,9 @@ class EE_API StyleSheetSelectorRule {
 	std::string mTagName;
 	std::string mId;
 	std::vector<std::string> mClasses;
+	String::HashType mTagHash{ 0 };
+	String::HashType mIdHash{ 0 };
+	std::vector<String::HashType> mClassHashes;
 	std::vector<std::string> mStructuralPseudoClasses;
 	std::vector<StructuralSelector> mStructuralSelectors;
 	std::vector<AttributeSelector> mAttributeSelectors;

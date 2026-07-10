@@ -7,6 +7,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -25,7 +26,70 @@ static constexpr int numBoxes = 100;
 static constexpr int numSpansPerBox = 20;
 static constexpr int layoutIterations = 50;
 static constexpr int markdownFlushIterations = 1;
+static constexpr int selectorMatchingIterations = 20000;
 static constexpr Float maxWidth = 800;
+
+static int getSelectorMatchingIterations() {
+	if ( const char* env = std::getenv( "EE_CSS_SELECTOR_BENCH_ITERATIONS" ) ) {
+		Int32 val = selectorMatchingIterations;
+		if ( String::fromString( val, std::string( env ) ) )
+			return eemax<Int32>( 1, val );
+	}
+	return selectorMatchingIterations;
+}
+
+UTEST( Benchmark, CSSSelectorMatching ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS selector bench",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+
+	UIWidget* widget = UIWidget::NewWithTag( "div" );
+	widget->setId( "selector-benchmark-target" );
+	widget->setClasses( { "button", "primary", "toolbar-item", "interactive", "selected", "compact",
+						  "theme-light", "enabled" } );
+	widget->setParent( sceneNode->getRoot() );
+
+	static constexpr int selectorCount = 1024;
+	const int matchingIterations = getSelectorMatchingIterations();
+	std::vector<StyleSheetSelector> selectors;
+	selectors.reserve( selectorCount );
+
+	Clock constructionClock;
+	for ( int i = 0; i < selectorCount; ++i ) {
+		if ( i % 16 == 0 )
+			selectors.emplace_back( "div.button.primary" );
+		else if ( i % 16 == 1 )
+			selectors.emplace_back( "#selector-benchmark-target.toolbar-item" );
+		else
+			selectors.emplace_back( ".unmatched-class-" + String::toString( i ) );
+	}
+	const Time constructionElapsed = constructionClock.getElapsedTime();
+
+	Uint64 matchCount = 0;
+	Clock matchingClock;
+	for ( int iteration = 0; iteration < matchingIterations; ++iteration ) {
+		for ( const auto& selector : selectors )
+			matchCount += selector.select( widget, false );
+	}
+	const Time matchingElapsed = matchingClock.getElapsedTime();
+
+	EXPECT_EQ( static_cast<Uint64>( matchingIterations ) * 128u, matchCount );
+	UTEST_PRINT_INFO( String::format( "UIWidget size: %zu bytes", sizeof( UIWidget ) ).c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "StyleSheetSelectorRule size: %zu bytes", sizeof( StyleSheetSelectorRule ) )
+			.c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Selector construction: %lld us", constructionElapsed.asMicroseconds() )
+			.c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Selector matching: %lld us", matchingElapsed.asMicroseconds() ).c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Selector calls: %d", selectorCount * matchingIterations ).c_str() );
+
+	Engine::destroySingleton();
+}
 
 static int getMarkdownFlushIterations() {
 	if ( const char* env = std::getenv( "EE_MARKDOWN_BENCH_FLUSH_ITERATIONS" ) ) {
@@ -107,10 +171,10 @@ UTEST( Benchmark, MarkdownReadme ) {
 	const std::string readmePath = "../../README.md";
 	std::string markdown;
 	if ( !FileSystem::fileGet( readmePath, markdown ) ) {
-		UTEST_PRINT_INFO(
-			String::format( "Failed to load %s from cwd '%s', skipping benchmark",
-							readmePath.c_str(), FileSystem::getCurrentWorkingDirectory().c_str() )
-				.c_str() );
+		UTEST_PRINT_INFO( String::format( "Failed to load %s from cwd '%s', skipping benchmark",
+										  readmePath.c_str(),
+										  FileSystem::getCurrentWorkingDirectory().c_str() )
+							  .c_str() );
 		return;
 	}
 

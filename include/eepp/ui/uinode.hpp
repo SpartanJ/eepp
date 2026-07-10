@@ -1516,10 +1516,10 @@ class EE_API UINode : public Node {
 	mutable UIBorderDrawable* mBorder;
 	Vector2f mDragPoint;
 	Color mSkinColor;
+	UIClip mClip;
 	UISceneNode* mUISceneNode;
 	Rectf mPadding;
 	Rectf mPaddingPx;
-	UIClip mClip;
 	std::string mMinWidthEq;
 	std::string mMinHeightEq;
 	std::string mMaxWidthEq;

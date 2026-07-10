@@ -113,19 +113,23 @@ void StyleSheetSelectorRule::pushSelectorTypeIdentifier( TypeIdentifier selector
 	switch ( selectorTypeIdentifier ) {
 		case GLOBAL:
 			String::toLowerInPlace( name );
+			mTagHash = String::hash( name );
 			mTagName = std::move( name );
 			mSpecificity += SpecificityGlobal;
 			break;
 		case TAG:
 			String::toLowerInPlace( name );
+			mTagHash = String::hash( name );
 			mTagName = std::move( name );
 			mSpecificity += SpecificityTag;
 			break;
 		case CLASS:
+			mClassHashes.push_back( String::hash( name ) );
 			mClasses.push_back( std::move( name ) );
 			mSpecificity += SpecificityClass;
 			break;
 		case ID:
+			mIdHash = String::hash( name );
 			mId = std::move( name );
 			mSpecificity += SpecificityId;
 			break;
@@ -251,6 +255,10 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 	if ( !mClasses.empty() )
 		mRequirementFlags |= Class;
 
+	std::sort( mClassHashes.begin(), mClassHashes.end() );
+	mClassHashes.erase( std::unique( mClassHashes.begin(), mClassHashes.end() ),
+						mClassHashes.end() );
+
 	if ( !mAttributeSelectors.empty() )
 		mRequirementFlags |= Attribute;
 
@@ -312,7 +320,7 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 
 	if ( !mTagName.empty() ) {
 		if ( mTagName != "*" ) {
-			if ( mTagName != element->getElementTag() ) {
+			if ( mTagHash != element->getElementTagHash() ) {
 				return false;
 			} else {
 				flags |= TagName;
@@ -329,23 +337,19 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 	}
 
 	if ( !mId.empty() ) {
-		if ( mId != element->getId() ) {
+		if ( mIdHash != element->getIdHash() ) {
 			return false;
 		} else {
 			flags |= Id;
 		}
 	}
 
-	if ( !mClasses.empty() ) {
-		const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
-		if ( elClasses.empty() )
+	if ( !mClassHashes.empty() ) {
+		if ( element->getClassHashCount() < mClassHashes.size() )
 			return false;
 
-		for ( const auto& cls : mClasses ) {
-			if ( std::find( elClasses.begin(), elClasses.end(), cls ) == elClasses.end() ) {
-				return false;
-			}
-		}
+		if ( !element->hasClassHashes( mClassHashes ) )
+			return false;
 
 		flags |= Class;
 	}

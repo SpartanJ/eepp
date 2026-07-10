@@ -461,6 +461,36 @@ Use these counters to verify each later phase.
 
 # Phase 5: Add Hash-Based Tag/ID/Class Matching
 
+**Status: Implemented**
+
+## Implementation State
+
+- Selector rules cache tag, ID, and sorted unique class hashes.
+- `UIWidget` caches its tag hash and maintains sorted unique class hashes across every class
+  mutation API.
+- Widget class hashes use `SmallVector<String::HashType, 1>`. The zero/one-class cases remain
+  allocation-free, while widgets with multiple classes use indirect storage.
+- `StyleSheetSelectorRule::matches()` compares tag and ID hashes and checks all required class
+  hashes after decoding widget hash storage once per rule match.
+- `UINode` and `UIWidget` members were reordered to reclaim alignment holes introduced or exposed
+  during the cache work.
+- A focused selector benchmark and class-mutation regression test cover the implementation.
+
+## Measured Result
+
+- The release unit-test workload observed 30,431 destroyed widgets: 74.5% had no classes, 19.4%
+  had one, 5.9% had two, and approximately 0.1% had three or more.
+- `sizeof( UIWidget )` is 1144 bytes, equal to the pre-Phase-5 size. `sizeof( UINode )` decreased
+  from 856 to 848 bytes.
+- The focused release selector benchmark measured a median near 111.4 ms versus the Phase 3
+  baseline near 115.1 ms, approximately a 3.2% matching improvement without net `UIWidget`
+  growth.
+- The full release suite passes 734 tests with one skipped test.
+
+Future work should investigate atomized/interned class names as a separate architectural change.
+That could replace both per-widget class strings and the hash cache, but requires explicit
+ownership, collision, API, and cross-scene lifetime design.
+
 ## Motivation
 
 `StyleSheetSelectorRule::matches()` currently compares strings repeatedly and class matching performs a nested linear search:

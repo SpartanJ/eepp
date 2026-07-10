@@ -76,6 +76,7 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mWidthPolicy( SizePolicy::WrapContent ),
 	mHeightPolicy( SizePolicy::WrapContent ),
 	mLayoutPositionPolicy( PositionPolicy::None ),
+	mTagHash( String::hash( tag ) ),
 	mLayoutPositionPolicyWidget( NULL ),
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
@@ -1158,6 +1159,8 @@ void UIWidget::updatePseudoClasses() {
 UIWidget* UIWidget::resetClass() {
 	if ( !mClasses.empty() ) {
 		mClasses.clear();
+		mClassHashes.clear();
+		mClassHashes.shrink_to_fit();
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
 			getUISceneNode()->invalidateStyleState( this );
@@ -1182,6 +1185,7 @@ UIWidget* UIWidget::setClass( const std::string& cls ) {
 				getUISceneNode()->invalidateStyleState( this );
 			}
 		}
+		rebuildClassHashes();
 		if ( oldClassesCount != mClasses.size() || isSet )
 			onClassChange();
 	}
@@ -1202,6 +1206,7 @@ UIWidget* UIWidget::setClass( std::string&& cls ) {
 				getUISceneNode()->invalidateStyleState( this );
 			}
 		}
+		rebuildClassHashes();
 		if ( oldClassesCount != mClasses.size() || isSet )
 			onClassChange();
 	}
@@ -1211,6 +1216,7 @@ UIWidget* UIWidget::setClass( std::string&& cls ) {
 UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
 	if ( mClasses != classes ) {
 		mClasses = classes;
+		rebuildClassHashes();
 
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
@@ -1225,6 +1231,7 @@ UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
 UIWidget* UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
+		rebuildClassHashes();
 
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
@@ -1238,13 +1245,17 @@ UIWidget* UIWidget::addClass( const std::string& cls ) {
 
 UIWidget* UIWidget::addClasses( const std::vector<std::string>& classes ) {
 	if ( !classes.empty() ) {
+		bool classesChanged = false;
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
 
 			if ( !cls.empty() && !hasClass( cls ) ) {
 				mClasses.push_back( cls );
+				classesChanged = true;
 			}
 		}
+		if ( classesChanged )
+			rebuildClassHashes();
 
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
@@ -1259,6 +1270,7 @@ UIWidget* UIWidget::addClasses( const std::vector<std::string>& classes ) {
 UIWidget* UIWidget::removeClass( const std::string& cls ) {
 	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
+		rebuildClassHashes();
 
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
@@ -1272,6 +1284,7 @@ UIWidget* UIWidget::removeClass( const std::string& cls ) {
 
 UIWidget* UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 	if ( !classes.empty() ) {
+		bool classesChanged = false;
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
 
@@ -1280,9 +1293,12 @@ UIWidget* UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 
 				if ( found != mClasses.end() ) {
 					mClasses.erase( found );
+					classesChanged = true;
 				}
 			}
 		}
+		if ( classesChanged )
+			rebuildClassHashes();
 
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
 			getUISceneNode()->invalidateStyle( this );
@@ -1323,6 +1339,7 @@ void UIWidget::setTooltipEnabled( bool enabled ) {
 void UIWidget::setElementTag( const std::string& tag ) {
 	if ( mTag != tag ) {
 		mTag = tag;
+		mTagHash = String::hash( tag );
 		// Some rules are going to be invalidated if the tag is changed
 		mMinWidthEq = "";
 		mMinHeightEq = "";
@@ -1339,6 +1356,17 @@ void UIWidget::setElementTag( const std::string& tag ) {
 
 const std::vector<std::string>& UIWidget::getClasses() const {
 	return mClasses;
+}
+
+void UIWidget::rebuildClassHashes() {
+	mClassHashes.clear();
+	mClassHashes.reserve( mClasses.size() );
+	for ( const auto& cls : mClasses )
+		mClassHashes.push_back( String::hash( cls ) );
+	std::sort( mClassHashes.begin(), mClassHashes.end() );
+	mClassHashes.erase( std::unique( mClassHashes.begin(), mClassHashes.end() ),
+						mClassHashes.end() );
+	mClassHashes.shrink_to_fit();
 }
 
 void UIWidget::pushState( const Uint32& State, bool emitEvent ) {

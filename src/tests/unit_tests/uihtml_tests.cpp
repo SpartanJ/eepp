@@ -2860,6 +2860,60 @@ UTEST( UIHTML, UniversalSelectorRequirements ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, HashedSelectorMatchingAndClassMutation ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Hashed Selector Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body><div id="target" class="foo bar"></div></body></html>
+	)html" ) );
+
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( target != nullptr );
+	EXPECT_EQ( String::hash( "div" ), target->getElementTagHash() );
+	EXPECT_TRUE( target->hasClassHashes( { String::hash( "foo" ) } ) );
+	EXPECT_TRUE( target->hasClassHashes( { String::hash( "bar" ) } ) );
+	EXPECT_EQ( 2u, target->getClassHashCount() );
+
+	EXPECT_TRUE( StyleSheetSelector( ".foo" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( ".foo.bar" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "div.foo" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "#target.foo" ).select( target, false ) );
+	EXPECT_FALSE( StyleSheetSelector( "span.foo" ).select( target, false ) );
+	EXPECT_FALSE( StyleSheetSelector( "#other.foo" ).select( target, false ) );
+
+	target->setClasses( { "alpha", "beta", "alpha" } );
+	EXPECT_EQ( 2u, target->getClassHashCount() );
+	EXPECT_TRUE( StyleSheetSelector( ".alpha.beta" ).select( target, false ) );
+	target->removeClass( "alpha" );
+	EXPECT_TRUE( StyleSheetSelector( ".alpha" ).select( target, false ) );
+	target->removeClass( "alpha" );
+	EXPECT_FALSE( StyleSheetSelector( ".alpha" ).select( target, false ) );
+	target->addClasses( { "gamma", "delta" } );
+	EXPECT_TRUE( StyleSheetSelector( ".beta.gamma.delta" ).select( target, false ) );
+	target->removeClasses( { "beta", "delta" } );
+	EXPECT_FALSE( target->hasClassHashes( { String::hash( "beta" ) } ) );
+	EXPECT_FALSE( target->hasClassHashes( { String::hash( "delta" ) } ) );
+	target->toggleClass( "gamma" );
+	EXPECT_FALSE( StyleSheetSelector( ".gamma" ).select( target, false ) );
+	target->toggleClass( "gamma" );
+	EXPECT_TRUE( StyleSheetSelector( ".gamma" ).select( target, false ) );
+	target->setClass( std::string( "moved" ) );
+	EXPECT_TRUE( StyleSheetSelector( ".moved" ).select( target, false ) );
+	target->resetClass();
+	EXPECT_EQ( 0u, target->getClassHashCount() );
+
+	target->setElementTag( "section" );
+	EXPECT_EQ( String::hash( "section" ), target->getElementTagHash() );
+	EXPECT_TRUE( StyleSheetSelector( "section" ).select( target, false ) );
+	EXPECT_FALSE( StyleSheetSelector( "div" ).select( target, false ) );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, BlockList ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Block List Test",
 													  WindowStyle::Default, WindowBackend::Default,
