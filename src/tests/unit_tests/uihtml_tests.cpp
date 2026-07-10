@@ -1552,6 +1552,10 @@ UTEST( UIHTML, DataProperties ) {
 	EXPECT_EQ( sceneNode->getRoot()->querySelectorAll( "[data-id*=\"ser\"]" ).size(), (size_t)1 );
 	EXPECT_EQ( sceneNode->getRoot()->querySelectorAll( "[data-empty]" ).size(), (size_t)1 );
 	EXPECT_EQ( sceneNode->getRoot()->querySelectorAll( "[data-missing]" ).size(), (size_t)0 );
+	EXPECT_TRUE( StyleSheetSelector( "[width]" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "[width=\"" + target->getPropertyString( "width" ) + "\"]" )
+					 .select( target, false ) );
+	EXPECT_FALSE( StyleSheetSelector( "[unknown-property]" ).select( target, false ) );
 
 	EXPECT_TRUE( target->getDataPropertyString( "data-language" ) == "cpp" );
 

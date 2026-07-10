@@ -114,8 +114,10 @@ class EE_API StyleSheetSelectorRule {
 
 	struct AttributeSelector {
 		std::string name;
-		AttributeOperator op{ AttributeOperator::None };
 		std::string value;
+		const PropertyDefinition* propertyDefinition{ nullptr };
+		AttributeOperator op{ AttributeOperator::None };
+		bool isDataAttribute{ false };
 	};
 
 	static PseudoClasses toPseudoClass( std::string_view cls );

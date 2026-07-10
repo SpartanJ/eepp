@@ -168,8 +168,12 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 				attr.name = String::trim( buffer );
 				attr.op = AttributeOperator::None;
 			}
+			attr.isDataAttribute = isDataAttributeName( attr.name );
+			if ( !attr.isDataAttribute )
+				attr.propertyDefinition =
+					StyleSheetSpecification::instance()->getProperty( String::hash( attr.name ) );
 
-			mAttributeSelectors.push_back( attr );
+			mAttributeSelectors.emplace_back( std::move( attr ) );
 			mSpecificity += SpecificityClass;
 			buffer.clear();
 			return;
@@ -356,57 +360,57 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 
 	if ( !mAttributeSelectors.empty() ) {
 		for ( const auto& attr : mAttributeSelectors ) {
-			bool attrExists = false;
+			const std::string* elVal;
 			std::string elValStorage;
-			const std::string* elVal = &elValStorage;
 
-			if ( element->isType( UI_TYPE_HTML_WIDGET ) && isDataAttributeName( attr.name ) ) {
+			if ( attr.isDataAttribute && element->isType( UI_TYPE_HTML_WIDGET ) ) {
 				auto* htmlElement = element->asType<UIHTMLWidget>();
 				const auto* property = htmlElement->getDataProperty( attr.name );
-				attrExists = property != nullptr;
-				if ( attrExists )
-					elVal = &property->value();
+				if ( property == nullptr )
+					return false;
+				if ( attr.op == AttributeOperator::None )
+					continue;
+				elVal = &property->value();
 			} else {
-				elValStorage = element->getPropertyString( attr.name );
-				attrExists = !elValStorage.empty();
+				elValStorage = element->getPropertyString( attr.propertyDefinition );
+				if ( elValStorage.empty() )
+					return false;
+				if ( attr.op == AttributeOperator::None )
+					continue;
+				elVal = &elValStorage;
 			}
 
-			if ( !attrExists )
-				return false;
-
-			if ( attr.op != AttributeOperator::None ) {
-				switch ( attr.op ) {
-					case AttributeOperator::Exact: // =
-						if ( *elVal != attr.value )
-							return false;
-						break;
-					case AttributeOperator::StartsWith: // ^=
-						if ( !String::startsWith( *elVal, attr.value ) )
-							return false;
-						break;
-					case AttributeOperator::EndsWith: // $=
-						if ( !String::endsWith( *elVal, attr.value ) )
-							return false;
-						break;
-					case AttributeOperator::Contains: // *=
-						if ( elVal->find( attr.value ) == std::string::npos )
-							return false;
-						break;
-					case AttributeOperator::ContainsWord: { // ~= (Space-separated word check)
-						if ( !containsWord( *elVal, attr.value ) ) {
-							return false;
-						}
-						break;
+			switch ( attr.op ) {
+				case AttributeOperator::Exact: // =
+					if ( *elVal != attr.value )
+						return false;
+					break;
+				case AttributeOperator::StartsWith: // ^=
+					if ( !String::startsWith( *elVal, attr.value ) )
+						return false;
+					break;
+				case AttributeOperator::EndsWith: // $=
+					if ( !String::endsWith( *elVal, attr.value ) )
+						return false;
+					break;
+				case AttributeOperator::Contains: // *=
+					if ( elVal->find( attr.value ) == std::string::npos )
+						return false;
+					break;
+				case AttributeOperator::ContainsWord: { // ~= (Space-separated word check)
+					if ( !containsWord( *elVal, attr.value ) ) {
+						return false;
 					}
-					case AttributeOperator::StartsWithDash: // |= (Exact match or starts with value
-															// + "-")
-						if ( !startsWithDashMatch( *elVal, attr.value ) ) {
-							return false;
-						}
-						break;
-					default:
-						break;
+					break;
 				}
+				case AttributeOperator::StartsWithDash: // |= (Exact match or starts with value
+														// + "-")
+					if ( !startsWithDashMatch( *elVal, attr.value ) ) {
+						return false;
+					}
+					break;
+				default:
+					break;
 			}
 		}
 

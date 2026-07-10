@@ -9,12 +9,14 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <array>
 #include <cstdlib>
 
 using namespace EE;
@@ -147,6 +149,53 @@ UTEST( Benchmark, CSSClassIndexLookup ) {
 		String::format( "Class index lookup: %lld us", matchingElapsed.asMicroseconds() ).c_str() );
 	UTEST_PRINT_INFO( String::format( "Stylesheet lookups: %d", matchingIterations ).c_str() );
 
+	Engine::destroySingleton();
+}
+
+UTEST( Benchmark, CSSAttributeSelectorMatching ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS attribute selector bench",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UIHTMLWidget* widget = UIHTMLWidget::New();
+	widget->setDataProperty( "data-empty", "" );
+	widget->setDataProperty( "data-role", "hero" );
+	widget->setDataProperty( "data-tags", "featured primary" );
+	widget->setDataProperty( "data-lang", "en-US" );
+	widget->setDataProperty( "data-id", "user-42" );
+
+	static constexpr int selectorCount = 1024;
+	const std::array<std::string, 8> selectorNames = { "[data-empty]",
+													   "[data-role=\"hero\"]",
+													   "[data-tags~=\"featured\"]",
+													   "[data-lang|=\"en\"]",
+													   "[data-id^=\"user-\"]",
+													   "[data-id$=\"-42\"]",
+													   "[data-id*=\"ser\"]",
+													   "[width]" };
+	std::vector<StyleSheetSelector> selectors;
+	selectors.reserve( selectorCount );
+	for ( int i = 0; i < selectorCount; ++i )
+		selectors.emplace_back( selectorNames[i % selectorNames.size()] );
+
+	const int matchingIterations = getSelectorMatchingIterations();
+	Uint64 matchCount = 0;
+	Clock matchingClock;
+	for ( int iteration = 0; iteration < matchingIterations; ++iteration ) {
+		for ( const auto& selector : selectors )
+			matchCount += selector.select( widget, false );
+	}
+	const Time matchingElapsed = matchingClock.getElapsedTime();
+
+	EXPECT_EQ( static_cast<Uint64>( matchingIterations ) * selectorCount, matchCount );
+	UTEST_PRINT_INFO(
+		String::format( "Attribute selector matching: %lld us", matchingElapsed.asMicroseconds() )
+			.c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Attribute selector calls: %d", selectorCount * matchingIterations )
+			.c_str() );
+
+	widget->close();
 	Engine::destroySingleton();
 }
 

@@ -907,6 +907,23 @@ with both `applyPseudo == false` and `applyPseudo == true` where applicable.
 
 # Phase 8: Reduce Attribute Selector Cost
 
+**Status: Implemented**
+
+## Implementation State
+
+- Attribute names are hashed once during parsing to resolve and cache the standard
+  `PropertyDefinition`, avoiding repeated stylesheet-specification lookups while matching.
+- Data-attribute classification is cached in each parsed attribute selector.
+- Existence-only data selectors return after the map lookup without constructing or reading a
+  value string; value comparisons continue to use the stored `StyleSheetProperty` string directly.
+- Tag, ID, and class checks remain ahead of attribute matching so unrelated elements reject early.
+- Existing coverage exercises all supported data-attribute operators, including empty-value
+  existence. Additional checks cover standard-property existence, exact matching, and unknown
+  properties.
+- `Benchmark.CSSAttributeSelectorMatching` covers all supported operators and a standard property.
+  Across seven release runs of 5.12 million selector calls, the median decreased from 155.9 ms to
+  90.9 ms, a 41.7% reduction.
+
 ## Motivation
 
 Attribute selectors are less common than class selectors but expensive when evaluated.
