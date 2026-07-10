@@ -2914,6 +2914,40 @@ UTEST( UIHTML, HashedSelectorMatchingAndClassMutation ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, ClassIndexedStyleSheetCandidates ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Class Index Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML(
+		R"html(<html><body><div id="target" class="foo bar"></div></body></html>)html" ) );
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( target != nullptr );
+
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view( R"css(
+		* { color: white; }
+		div { background-color: black; }
+		.foo { width: 10px; }
+		.foo.bar { height: 20px; }
+		div.foo { min-width: 5px; }
+		#target.foo { max-width: 50px; }
+		.unrelated { opacity: 0.5; }
+	)css" ) ) );
+
+	auto definition = parser.getStyleSheet().getElementStyles( target, false );
+	ASSERT_TRUE( definition != nullptr );
+	EXPECT_EQ( 6u, definition->getStyles().size() );
+	EXPECT_TRUE( std::none_of( definition->getStyles().begin(), definition->getStyles().end(),
+							   []( const StyleSheetStyle* style ) {
+								   return style->getSelector().getName() == ".unrelated";
+							   } ) );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, BlockList ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Block List Test",
 													  WindowStyle::Default, WindowBackend::Default,

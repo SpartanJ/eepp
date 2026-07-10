@@ -31,7 +31,7 @@ class EE_API StyleSheetSelector {
 
 	bool isStructurallyVolatile() const;
 
-	const StyleSheetSelectorRule& getRule( const Uint32& index );
+	const StyleSheetSelectorRule& getRule( const Uint32& index ) const;
 
 	const std::string& getSelectorId() const;
 

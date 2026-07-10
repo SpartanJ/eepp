@@ -136,6 +136,22 @@ class EE_API StyleSheetSelectorRule {
 
 	bool hasClass( const std::string& cls ) const;
 
+	/** @return True when this rule requires at least one CSS class. */
+	bool hasClasses() const { return !mClassHashes.empty(); }
+
+	/** @return Sorted unique hashes of every CSS class required by this rule. */
+	const std::vector<String::HashType>& getClassHashes() const { return mClassHashes; }
+
+	/**
+	 * @return The mandatory class used to place this rule in the stylesheet candidate index.
+	 * Every matching element must have this class, but the full rule is still validated by
+	 * matches(). The first sorted hash is used for now; a future implementation may choose the
+	 * rarest class to reduce the candidate bucket further.
+	 */
+	String::HashType getBestClassHash() const {
+		return mClassHashes.empty() ? 0 : mClassHashes.front();
+	}
+
 	bool hasPseudoClasses() const;
 
 	bool hasPseudoClass( const std::string& cls ) const;

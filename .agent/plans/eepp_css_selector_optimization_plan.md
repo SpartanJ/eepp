@@ -631,6 +631,28 @@ Ensure class mutation APIs update hashes correctly.
 
 # Phase 6: Add Class-Based Stylesheet Index
 
+**Status: Implemented**
+
+## Implementation State
+
+- `StyleSheet` maintains a class-hash index in addition to the existing global, tag, ID, and
+  tag+ID index.
+- Each style is owned by exactly one candidate bucket. The priority is ID/tag+ID, one rightmost
+  class anchor, tag, then global, so candidate collection does not require a per-element visited
+  allocation.
+- Selector rules expose their sorted class hashes and currently select the first hash as the class
+  anchor.
+- Class index state participates in clear, copy assignment, marker-based removal, and normal style
+  insertion paths.
+- Per-stylesheet source-order metadata is used as the secondary sort key after specificity. This
+  preserves CSS cascade order when candidates originate from different index buckets.
+- A focused candidate test covers global, tag, class-only, compound-class, tag+class, ID+class,
+  and unrelated-class rules.
+- `Benchmark.CSSClassIndexLookup` exercises 1,024 class rules, of which 64 share a class with the
+  target widget. Across ten release runs, the legacy full scan had a 124.1 ms median and indexed
+  lookup had a 45.7 ms median for 20,000 lookups: a 63.2% reduction, or approximately 2.7x faster.
+- The full release suite passes 735 tests with one skipped test.
+
 ## Motivation
 
 This is expected to be the largest real-world win.

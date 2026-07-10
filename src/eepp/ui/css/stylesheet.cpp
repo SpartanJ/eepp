@@ -15,6 +15,9 @@ void StyleSheet::clear() {
 	mMarker = 0;
 	mNodes.clear();
 	mNodeIndex.clear();
+	mClassNodeIndex.clear();
+	mStyleSourceOrder.clear();
+	mNextStyleSourceOrder = 0;
 	mMediaQueryList.clear();
 	mKeyframesMap.clear();
 	mNodeCache.clear();
@@ -57,10 +60,17 @@ void StyleSheet::setMarker( const Uint32& marker ) {
 }
 
 void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
+	std::erase_if( mStyleSourceOrder,
+				   [marker]( const auto& pair ) { return pair.first->getMarker() == marker; } );
 	std::erase_if( mNodeIndex, [marker]( auto& pair ) {
 		std::erase_if( pair.second,
 					   [marker]( const auto& node ) { return node->getMarker() == marker; } );
 		return pair.second.empty(); // If true, the map entry is erased
+	} );
+	std::erase_if( mClassNodeIndex, [marker]( auto& pair ) {
+		std::erase_if( pair.second,
+					   [marker]( const auto& node ) { return node->getMarker() == marker; } );
+		return pair.second.empty();
 	} );
 
 	std::erase_if( mNodes, [marker]( const auto& node ) { return node->getMarker() == marker; } );
@@ -76,10 +86,17 @@ void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
 }
 
 void StyleSheet::removeAllWithoutMarker( const Uint32& marker ) {
+	std::erase_if( mStyleSourceOrder,
+				   [marker]( const auto& pair ) { return pair.first->getMarker() != marker; } );
 	std::erase_if( mNodeIndex, [marker]( auto& pair ) {
 		std::erase_if( pair.second, [marker]( const auto& node ) {
 			return node->getMarker() != marker; // Notice the !=
 		} );
+		return pair.second.empty();
+	} );
+	std::erase_if( mClassNodeIndex, [marker]( auto& pair ) {
+		std::erase_if( pair.second,
+					   [marker]( const auto& node ) { return node->getMarker() != marker; } );
 		return pair.second.empty();
 	} );
 
@@ -165,6 +182,9 @@ StyleSheet& StyleSheet::operator=( const StyleSheet& other ) {
 	mMarker = other.mMarker;
 	mNodes = other.mNodes;
 	mNodeIndex = other.mNodeIndex;
+	mClassNodeIndex = other.mClassNodeIndex;
+	mStyleSourceOrder = other.mStyleSourceOrder;
+	mNextStyleSourceOrder = other.mNextStyleSourceOrder;
 	mMediaQueryList = other.mMediaQueryList;
 	mKeyframesMap = other.mKeyframesMap;
 	mNodeCache = other.mNodeCache;
@@ -172,9 +192,25 @@ StyleSheet& StyleSheet::operator=( const StyleSheet& other ) {
 }
 
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
-	const std::string& id = style->getSelector().getSelectorId();
-	const std::string& tag = style->getSelector().getSelectorTagName();
 	if ( style->hasProperties() || style->hasVariables() ) {
+		const auto& selector = style->getSelector();
+		const std::string& id = selector.getSelectorId();
+		const std::string& tag = selector.getSelectorTagName();
+		if ( id.empty() ) {
+			const auto& rule = selector.getRule( 0 );
+			if ( rule.hasClasses() ) {
+				// Use one mandatory class as the candidate anchor. Indexing every required class
+				// would duplicate the rule for elements that have several of them. The normal
+				// selector match below still validates the tag, all classes, and other constraints.
+				auto& nodes = mClassNodeIndex[rule.getBestClassHash()];
+				if ( std::find( nodes.begin(), nodes.end(), style ) == nodes.end() ) {
+					nodes.push_back( style );
+					return true;
+				}
+				Log::debug( "Ignored style %s", selector.getName().c_str() );
+				return false;
+			}
+		}
 		size_t nodeHash = this->nodeHash( "*" == tag ? "" : tag, id );
 		StyleSheetStyleVector& nodes = mNodeIndex[nodeHash];
 		auto it = std::find( nodes.begin(), nodes.end(), style );
@@ -190,6 +226,7 @@ bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 
 void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
 	if ( addStyleToNodeIndex( node.get() ) ) {
+		mStyleSourceOrder[node.get()] = mNextStyleSourceOrder++;
 		mNodes.push_back( node );
 	}
 	addMediaQueryList( node->getMediaQueryList() );
@@ -229,10 +266,6 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	addKeyframes( styleSheet.getKeyframes() );
 }
 
-inline static bool StyleSheetNodeSort( const StyleSheetStyle* lhs, const StyleSheetStyle* rhs ) {
-	return lhs->getSelector().getSpecificity() < rhs->getSelector().getSpecificity();
-}
-
 // This is based on the RmlUi implementation.
 std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* element,
 																 const bool& applyPseudo ) const {
@@ -266,7 +299,24 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		}
 	}
 
-	std::stable_sort( applicableNodes.begin(), applicableNodes.end(), StyleSheetNodeSort );
+	for ( auto classHash : element->getClassHashes() ) {
+		auto itNodes = mClassNodeIndex.find( classHash );
+		if ( itNodes == mClassNodeIndex.end() )
+			continue;
+		for ( StyleSheetStyle* node : itNodes->second ) {
+			if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) )
+				applicableNodes.push_back( node );
+		}
+	}
+
+	std::sort( applicableNodes.begin(), applicableNodes.end(),
+			   [this]( const auto* lhs, const auto* rhs ) {
+				   const auto lhsSpecificity = lhs->getSelector().getSpecificity();
+				   const auto rhsSpecificity = rhs->getSelector().getSpecificity();
+				   if ( lhsSpecificity != rhsSpecificity )
+					   return lhsSpecificity < rhsSpecificity;
+				   return mStyleSourceOrder.at( lhs ) < mStyleSourceOrder.at( rhs );
+			   } );
 
 	if ( applicableNodes.empty() )
 		return nullptr;

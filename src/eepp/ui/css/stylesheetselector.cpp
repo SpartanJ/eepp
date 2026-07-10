@@ -340,7 +340,7 @@ bool StyleSheetSelector::isStructurallyVolatile() const {
 	return mStructurallyVolatile;
 }
 
-const StyleSheetSelectorRule& StyleSheetSelector::getRule( const Uint32& index ) {
+const StyleSheetSelectorRule& StyleSheetSelector::getRule( const Uint32& index ) const {
 	return mSelectorRules[index];
 }
 

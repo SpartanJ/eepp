@@ -7,6 +7,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -87,6 +88,64 @@ UTEST( Benchmark, CSSSelectorMatching ) {
 		String::format( "Selector matching: %lld us", matchingElapsed.asMicroseconds() ).c_str() );
 	UTEST_PRINT_INFO(
 		String::format( "Selector calls: %d", selectorCount * matchingIterations ).c_str() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( Benchmark, CSSClassIndexLookup ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS class index bench",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+
+	UIWidget* widget = UIWidget::NewWithTag( "div" );
+	widget->setClasses( { "button", "primary", "toolbar-item" } );
+	widget->setParent( sceneNode->getRoot() );
+
+	static constexpr int selectorCount = 1024;
+	std::string css;
+	for ( int i = 0; i < selectorCount; ++i ) {
+		const std::string selector =
+			i % 16 == 0 ? ".button" : ".unmatched-class-" + String::toString( i );
+		css += selector + " { width: " + String::toString( i + 1 ) + "px; }\n";
+	}
+
+	StyleSheetParser parser;
+	Clock constructionClock;
+	ASSERT_TRUE( parser.loadFromString( css ) );
+	const Time constructionElapsed = constructionClock.getElapsedTime();
+
+	const int matchingIterations = getSelectorMatchingIterations();
+	Uint64 legacyMatchCount = 0;
+	Clock legacyMatchingClock;
+	for ( int iteration = 0; iteration < matchingIterations; ++iteration ) {
+		for ( const auto& style : parser.getStyleSheet().getStyles() ) {
+			if ( style->isMediaValid() && style->getSelector().select( widget, false ) )
+				++legacyMatchCount;
+		}
+	}
+	const Time legacyMatchingElapsed = legacyMatchingClock.getElapsedTime();
+
+	Uint64 matchCount = 0;
+	Clock matchingClock;
+	for ( int iteration = 0; iteration < matchingIterations; ++iteration ) {
+		auto definition = parser.getStyleSheet().getElementStyles( widget, false );
+		matchCount += definition ? definition->getStyles().size() : 0;
+	}
+	const Time matchingElapsed = matchingClock.getElapsedTime();
+
+	EXPECT_EQ( static_cast<Uint64>( matchingIterations ) * 64u, legacyMatchCount );
+	EXPECT_EQ( legacyMatchCount, matchCount );
+	UTEST_PRINT_INFO(
+		String::format( "Stylesheet construction: %lld us", constructionElapsed.asMicroseconds() )
+			.c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Legacy full scan: %lld us", legacyMatchingElapsed.asMicroseconds() )
+			.c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "Class index lookup: %lld us", matchingElapsed.asMicroseconds() ).c_str() );
+	UTEST_PRINT_INFO( String::format( "Stylesheet lookups: %d", matchingIterations ).c_str() );
 
 	Engine::destroySingleton();
 }

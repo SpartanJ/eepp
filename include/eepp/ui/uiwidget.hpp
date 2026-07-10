@@ -781,7 +781,10 @@ class EE_API UIWidget : public UINode {
 	/** @return Number of sorted unique CSS class hashes cached by this widget. */
 	inline Uint32 getClassHashCount() const { return static_cast<Uint32>( mClassHashes.size() ); }
 
-	/** @return True if all the sorted unique CSS class hashes are applied to this widget. */
+	/** @return Sorted unique class hashes used for stylesheet candidate lookup and matching. */
+	inline const SmallVector<String::HashType, 1>& getClassHashes() const { return mClassHashes; }
+
+	/** @return True if all the sorted unique required hashes are applied to this widget. */
 	inline bool hasClassHashes( const std::vector<String::HashType>& requiredHashes ) const {
 		const auto* hashes = mClassHashes.data();
 		const auto* hashesEnd = hashes + mClassHashes.size();
