@@ -17,11 +17,15 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
 
 WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
-	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
+	if ( !SDL_GetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS ) )
+		SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
 	// The following hints are not available in SDL3 (or renamed)
-	// SDL_SetHint( SDL_HINT_IME_SHOW_UI, "1" );
-	// SDL_SetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1" );
-	SDL_SetHint( SDL_HINT_FORCE_RAISEWINDOW, "1" );
+	// if ( !SDL_GetHint( SDL_HINT_IME_SHOW_UI ) )
+	//     SDL_SetHint( SDL_HINT_IME_SHOW_UI, "1" );
+	// if ( !SDL_GetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT ) )
+	//     SDL_SetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1" );
+	if ( !SDL_GetHint( SDL_HINT_FORCE_RAISEWINDOW ) )
+		SDL_SetHint( SDL_HINT_FORCE_RAISEWINDOW, "1" );
 }
 
 WindowBackendSDL3::~WindowBackendSDL3() {
