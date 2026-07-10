@@ -154,13 +154,8 @@ void StyleSheetStyle::clearProperties() {
 }
 
 void StyleSheetStyle::clearCachedProperties() {
-	StyleSheetProperties::iterator it;
-	do {
-		it = std::find_if( mProperties.begin(), mProperties.end(),
-						   []( const auto& model ) { return model.second.isCachedProperty(); } );
-		if ( it != mProperties.end() )
-			mProperties.erase( it );
-	} while ( it != mProperties.end() );
+	std::erase_if( mProperties,
+				   []( const auto& property ) { return property.second.isCachedProperty(); } );
 }
 
 bool StyleSheetStyle::hasProperties() const {
