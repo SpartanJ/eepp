@@ -24,6 +24,7 @@ WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
 #endif
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )
 	SDL_SetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1" );
+	SDL_SetHint( SDL_HINT_FORCE_RAISEWINDOW, "1" );
 #endif
 }
 
