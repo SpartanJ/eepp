@@ -13,6 +13,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
@@ -2691,6 +2692,113 @@ ul > li {
 		EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
 		EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
 	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StyleSheetTraversalBoundaries ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "CSS Traversal Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.goog-inline-block { display: inline-block; }
+* html .goog-inline-block { display: inline; }
+</style>
+</head>
+<body>
+	<a id="a" class="goog-inline-block"></a>
+	text
+	<div id="b"></div>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* htmlNode = sceneNode->getRoot()->findByType( UI_TYPE_HTML_HTML )->asType<UIWidget>();
+	auto* body = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* a = sceneNode->getRoot()->find( "a" )->asType<UIHTMLWidget>();
+	auto* b = sceneNode->getRoot()->find( "b" )->asType<UIWidget>();
+	ASSERT_TRUE( htmlNode != nullptr );
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( a != nullptr );
+	ASSERT_TRUE( b != nullptr );
+
+	EXPECT_TRUE( htmlNode->getStyleSheetParentElement() == nullptr );
+	EXPECT_EQ( CSSDisplay::InlineBlock, a->getDisplay() );
+	EXPECT_TRUE( b->getStyleSheetPreviousSiblingElement() == a );
+
+	auto* nativeWidget = UIWidget::New();
+	nativeWidget->setParent( body );
+	auto* nativeChild = UIWidget::New();
+	nativeChild->setParent( nativeWidget );
+	EXPECT_TRUE( nativeWidget->getStyleSheetPreviousSiblingElement() == b );
+	EXPECT_TRUE( nativeChild->getStyleSheetParentElement() == nativeWidget );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StyleSheetSiblingCombinators ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "CSS Sibling Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#a + #b { background-color: red; }
+#b + #a { background-color: blue; }
+#a ~ #c { background-color: green; }
+#c ~ #a { background-color: blue; }
+</style>
+</head>
+<body>
+	<div id="a"></div>
+	text
+	<div id="b"></div>
+	<span></span>
+	<div id="c"></div>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* a = sceneNode->getRoot()->find( "a" )->asType<UIWidget>();
+	auto* b = sceneNode->getRoot()->find( "b" )->asType<UIWidget>();
+	auto* c = sceneNode->getRoot()->find( "c" )->asType<UIWidget>();
+	ASSERT_TRUE( a != nullptr );
+	ASSERT_TRUE( b != nullptr );
+	ASSERT_TRUE( c != nullptr );
+
+	EXPECT_TRUE( b->getBackgroundColor() == Color::Red );
+	EXPECT_TRUE( c->getBackgroundColor() == Color::Green );
+	EXPECT_TRUE( a->getBackgroundColor() != Color::Blue );
+
+	StyleSheetSelector directRelated( "#a:hover + #b" );
+	auto related = directRelated.getRelatedElements( b, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == a );
+
+	StyleSheetSelector futureGeneralSibling( "#c:hover ~ #a" );
+	EXPECT_TRUE( futureGeneralSibling.getRelatedElements( a, false ).empty() );
+
+	StyleSheetSelector inverseSibling( "#b | #a" );
+	EXPECT_TRUE( inverseSibling.select( a ) );
+	EXPECT_FALSE( inverseSibling.select( b ) );
 
 	Engine::destroySingleton();
 }

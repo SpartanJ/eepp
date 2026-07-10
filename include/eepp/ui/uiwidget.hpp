@@ -784,7 +784,11 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the parent element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetParentElement() const;
+	inline UIWidget* getStyleSheetParentElement() const {
+		return NULL != mParentNode && mParentNode->isWidget() && getType() != UI_TYPE_HTML_HTML
+				   ? mParentNode->asType<UIWidget>()
+				   : NULL;
+	}
 
 	/**
 	 * @brief Gets the previous sibling element for CSS styling.
@@ -793,7 +797,15 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the previous sibling element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetPreviousSiblingElement() const;
+	inline UIWidget* getStyleSheetPreviousSiblingElement() const {
+		Node* node = mPrev;
+		while ( NULL != node ) {
+			if ( node->isWidget() && !node->isTextNode() )
+				return node->asType<UIWidget>();
+			node = node->getPrevNode();
+		}
+		return NULL;
+	}
 
 	/**
 	 * @brief Gets the next sibling element for CSS styling.
@@ -802,7 +814,15 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the next sibling element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetNextSiblingElement() const;
+	inline UIWidget* getStyleSheetNextSiblingElement() const {
+		Node* node = mNext;
+		while ( NULL != node ) {
+			if ( node->isWidget() && !node->isTextNode() )
+				return node->asType<UIWidget>();
+			node = node->getNextNode();
+		}
+		return NULL;
+	}
 
 	/**
 	 * @brief Gets the active pseudo-classes for this widget.
@@ -811,7 +831,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Bitmask of active pseudo-classes.
 	 */
-	Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
+	inline Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
 
 	/**
 	 * @brief Gets the pseudo-classes as string array.

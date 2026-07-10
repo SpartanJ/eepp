@@ -189,7 +189,7 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 				break; // continue evaluating
 			}
 			case StyleSheetSelectorRule::PREVIOUS_SIBLING: {
-				curElement = curElement->getStyleSheetPreviousSiblingElement();
+				curElement = curElement->getStyleSheetNextSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
@@ -197,7 +197,7 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 				break; // continue evaluating
 			}
 			case StyleSheetSelectorRule::DIRECT_SIBLING: {
-				curElement = curElement->getStyleSheetNextSiblingElement();
+				curElement = curElement->getStyleSheetPreviousSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
@@ -206,24 +206,13 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 			}
 			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				UIWidget* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				UIWidget* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
-				while ( NULL != prevSibling && !foundSibling ) {
-					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
+				for ( UIWidget* sibling = curElement->getStyleSheetPreviousSiblingElement();
+					  NULL != sibling; sibling = sibling->getStyleSheetPreviousSiblingElement() ) {
+					if ( selectorRule.matches( sibling, applyPseudo ) ) {
+						curElement = sibling;
 						foundSibling = true;
-					} else {
-						prevSibling = prevSibling->getStyleSheetPreviousSiblingElement();
-					}
-				}
-
-				if ( !foundSibling ) {
-					while ( NULL != nextSibling && !foundSibling ) {
-						if ( selectorRule.matches( nextSibling, applyPseudo ) ) {
-							foundSibling = true;
-						} else {
-							nextSibling = nextSibling->getStyleSheetNextSiblingElement();
-						}
+						break;
 					}
 				}
 
@@ -321,26 +310,13 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 			}
 			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				UIWidget* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				UIWidget* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
-				while ( NULL != prevSibling && !foundSibling ) {
-					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
+				for ( UIWidget* sibling = curElement->getStyleSheetPreviousSiblingElement();
+					  NULL != sibling; sibling = sibling->getStyleSheetPreviousSiblingElement() ) {
+					if ( selectorRule.matches( sibling, applyPseudo ) ) {
 						foundSibling = true;
-						curElement = prevSibling;
-					} else {
-						prevSibling = prevSibling->getStyleSheetPreviousSiblingElement();
-					}
-				}
-
-				if ( !foundSibling ) {
-					while ( NULL != nextSibling && !foundSibling ) {
-						if ( selectorRule.matches( nextSibling, applyPseudo ) ) {
-							foundSibling = true;
-							curElement = nextSibling;
-						} else {
-							nextSibling = nextSibling->getStyleSheetNextSiblingElement();
-						}
+						curElement = sibling;
+						break;
 					}
 				}
 

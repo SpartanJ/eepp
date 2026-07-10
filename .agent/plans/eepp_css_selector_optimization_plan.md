@@ -60,6 +60,8 @@ Do not start with a large rewrite. Measure after each phase.
 
 # Phase 1: Inline Tiny Hot-Path Accessors
 
+**Status: Implemented**
+
 ## Motivation
 
 CSS selector matching repeatedly calls small accessors and type checks while walking parents/siblings and matching selector rules. These functions are ideal candidates for header inlining.
@@ -188,6 +190,8 @@ Create an HTML tree containing a normal eepp widget between/inside HTML elements
 ---
 
 # Phase 2: Fix Confirmed Sibling Combinator Direction Bug
+
+**Status: Implemented**
 
 ## Motivation
 
@@ -1142,4 +1146,3 @@ Inlining is worthwhile but not the main algorithmic win. The main problem is can
 - Keep string fields even after adding hashes to avoid breaking public APIs, debug output, CSS serialization, and tests.
 - Prefer minimal changes with tests after each phase.
 - Do not implement signature caching or sort redesign until instrumentation proves they are still needed.
-

@@ -227,10 +227,6 @@ bool Node::isDisabled() const {
 	return !mEnabled;
 }
 
-Node* Node::getParent() const {
-	return mParentNode;
-}
-
 void Node::updateDrawInvalidator( bool force ) {
 	mNodeDrawInvalidator = getDrawInvalidator();
 
@@ -431,14 +427,6 @@ void Node::onClose() {
 	sendCommonEvent( Event::OnClose );
 }
 
-Node* Node::getNextNode() const {
-	return mNext;
-}
-
-Node* Node::getPrevNode() const {
-	return mPrev;
-}
-
 Node* Node::getNextNodeLoop() const {
 	if ( NULL == mNext )
 		return getParent()->getFirstChild();
@@ -525,10 +513,6 @@ Rectf Node::getScreenBounds() const {
 
 Rectf Node::getLocalBounds() const {
 	return Rectf( 0, 0, mSize.getWidth(), mSize.getHeight() );
-}
-
-const Uint32& Node::getNodeFlags() const {
-	return mNodeFlags;
 }
 
 void Node::setNodeFlags( const Uint32& flags ) {
@@ -1092,14 +1076,6 @@ void Node::onSceneChange() {
 		child->onSceneChange();
 		child = child->mNext;
 	}
-}
-
-bool Node::isWidget() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_WIDGET );
-}
-
-bool Node::isTextNode() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_TEXTNODE );
 }
 
 bool Node::isWindow() const {

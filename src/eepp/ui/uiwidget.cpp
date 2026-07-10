@@ -1050,32 +1050,6 @@ const std::string& UIWidget::getStyleSheetTag() const {
 	return mTag;
 }
 
-UIWidget* UIWidget::getStyleSheetParentElement() const {
-	return NULL != mParentNode && mParentNode->isWidget() && getType() != UI_TYPE_HTML_HTML
-			   ? mParentNode->asType<UIWidget>()
-			   : NULL;
-}
-
-UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
-	Node* node = mPrev;
-	while ( NULL != node ) {
-		if ( node->isWidget() && !node->isTextNode() )
-			return node->asType<UIWidget>();
-		node = node->getPrevNode();
-	}
-	return NULL;
-}
-
-UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
-	Node* node = mNext;
-	while ( NULL != node ) {
-		if ( node->isWidget() && !node->isTextNode() )
-			return node->asType<UIWidget>();
-		node = node->getNextNode();
-	}
-	return NULL;
-}
-
 std::vector<const char*> UIWidget::getStyleSheetPseudoClassesStrings() const {
 	return StyleSheetSelectorRule::fromPseudoClass( mPseudoClasses );
 }

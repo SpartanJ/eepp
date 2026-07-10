@@ -215,7 +215,7 @@ class EE_API Node : public Transformable {
 	virtual bool isType( const Uint32& type ) const;
 
 	/** @return True if this node is a UITextNode, false otherwise. */
-	bool isTextNode() const;
+	inline bool isTextNode() const { return 0 != ( mNodeFlags & NODE_FLAG_TEXTNODE ); }
 
 	/**
 	 * @brief Posts a message to this node and its ancestors.
@@ -369,7 +369,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the parent node or nullptr.
 	 */
-	Node* getParent() const;
+	inline Node* getParent() const { return mParentNode; }
 
 	/**
 	 * @brief Sets the parent node.
@@ -429,7 +429,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the next sibling node or nullptr.
 	 */
-	Node* getNextNode() const;
+	inline Node* getNextNode() const { return mNext; }
 
 	/**
 	 * @brief Gets the previous sibling node in the parent's child list.
@@ -439,7 +439,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the previous sibling node or nullptr.
 	 */
-	Node* getPrevNode() const;
+	inline Node* getPrevNode() const { return mPrev; }
 
 	/**
 	 * @brief Gets the next sibling node, wrapping to first if at end.
@@ -525,7 +525,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The flags as a Uint32 bitmask.
 	 */
-	const Uint32& getNodeFlags() const;
+	inline const Uint32& getNodeFlags() const { return mNodeFlags; }
 
 	/**
 	 * @brief Sets the node flags directly.
@@ -571,7 +571,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a UIWidget, false otherwise.
 	 */
-	bool isWidget() const;
+	inline bool isWidget() const { return 0 != ( mNodeFlags & NODE_FLAG_WIDGET ); }
 
 	/**
 	 * @brief Checks if this node is a Window.
