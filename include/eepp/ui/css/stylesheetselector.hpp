@@ -41,14 +41,17 @@ class EE_API StyleSheetSelector {
 	std::string mName;
 	Int64 mSpecificity;
 	std::vector<StyleSheetSelectorRule> mSelectorRules;
-	bool mCacheable;
-	bool mStructurallyVolatile;
+	bool mCacheable{ true };
+	bool mStructurallyVolatile{ false };
+	bool mIsSingleRule{ false };
 
 	void addSelectorRule( std::string& buffer,
 						  StyleSheetSelectorRule::PatternMatch& curPatternMatch,
 						  const StyleSheetSelectorRule::PatternMatch& newPatternMatch );
 
 	void parseSelector( std::string selector );
+
+	bool selectComplex( UIWidget* element, const bool& applyPseudo ) const;
 };
 
 }}} // namespace EE::UI::CSS

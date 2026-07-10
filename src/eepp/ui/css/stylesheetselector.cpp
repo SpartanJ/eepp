@@ -3,12 +3,12 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetSelector::StyleSheetSelector() : mName( "*" ), mSpecificity( 0 ), mCacheable( true ) {
+StyleSheetSelector::StyleSheetSelector() : mName( "*" ), mSpecificity( 0 ) {
 	parseSelector( mName );
 }
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
-	mName( selectorName ), mSpecificity( 0 ), mCacheable( true ), mStructurallyVolatile( false ) {
+	mName( selectorName ), mSpecificity( 0 ) {
 	parseSelector( mName );
 }
 
@@ -136,6 +136,8 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 			}
 		}
 	}
+
+	mIsSingleRule = mSelectorRules.size() == 1;
 }
 
 bool StyleSheetSelector::isCacheable() const {
@@ -150,9 +152,17 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 	if ( mSelectorRules.empty() )
 		return false;
 
-	UIWidget* curElement = element;
+	if ( mIsSingleRule )
+		return mSelectorRules[0].matches( element, applyPseudo );
 
-	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
+	return selectComplex( element, applyPseudo );
+}
+
+bool StyleSheetSelector::selectComplex( UIWidget* element, const bool& applyPseudo ) const {
+	UIWidget* curElement = element;
+	const size_t ruleCount = mSelectorRules.size();
+
+	for ( size_t i = 0; i < ruleCount; i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
 
 		switch ( selectorRule.getPatternMatch() ) {
@@ -235,8 +245,9 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 		return elements;
 
 	UIWidget* curElement = element;
+	const size_t ruleCount = mSelectorRules.size();
 
-	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
+	for ( size_t i = 0; i < ruleCount; i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
 
 		switch ( selectorRule.getPatternMatch() ) {

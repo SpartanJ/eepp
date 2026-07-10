@@ -828,6 +828,19 @@ Use instrumentation from Phase 4 to confirm:
 
 # Phase 7: Add Single-Rule Selector Fast Path
 
+**Status: Implemented**
+
+## Implementation State
+
+- `StyleSheetSelector` records whether parsing produced exactly one rule.
+- Single-rule selectors call `StyleSheetSelectorRule::matches()` directly, while selectors with
+  combinators retain the existing traversal logic in `selectComplex()`.
+- A focused test covers class, ID, tag+class, and pseudo-class selectors with pseudo matching both
+  enabled and disabled.
+- Across seven release benchmark runs, `Benchmark.CSSSelectorMatching` had a 93.0 ms median for
+  20.48 million selector calls. Compared with the earlier Phase 5 median of approximately 111.4 ms,
+  this is an indicative 16.6% reduction.
+
 ## Motivation
 
 Many selectors are simple:

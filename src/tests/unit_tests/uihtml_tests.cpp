@@ -2914,6 +2914,27 @@ UTEST( UIHTML, HashedSelectorMatchingAndClassMutation ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, SingleRuleSelectorMatching ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Single Rule Selector Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML(
+		R"html(<html><body><div id="target" class="foo bar"></div></body></html>)html" ) );
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( target != nullptr );
+
+	EXPECT_TRUE( StyleSheetSelector( ".foo" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "#target" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "div.foo" ).select( target, false ) );
+	EXPECT_TRUE( StyleSheetSelector( ".foo:hover" ).select( target, false ) );
+	EXPECT_FALSE( StyleSheetSelector( ".foo:hover" ).select( target, true ) );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, ClassIndexedStyleSheetCandidates ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Class Index Test",
 													  WindowStyle::Default, WindowBackend::Default,
