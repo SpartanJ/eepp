@@ -307,6 +307,8 @@ Expected:
 
 # Phase 3: Fix Universal Selector Early Return
 
+**Status: Implemented**
+
 ## Motivation
 
 `StyleSheetSelectorRule::matches()` currently returns true early for `*` when `applyPseudo == false`.

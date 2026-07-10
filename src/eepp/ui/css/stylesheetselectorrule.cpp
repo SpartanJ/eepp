@@ -318,10 +318,12 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 				flags |= TagName;
 			}
 		} else {
-			if ( !applyPseudo ) {
+			flags |= TagName;
+
+			const Uint32 nonPseudoRequirements =
+				mRequirementFlags & ~( PseudoClass | StructuralPseudoClass );
+			if ( !applyPseudo && nonPseudoRequirements == TagName ) {
 				return true;
-			} else {
-				flags |= TagName;
 			}
 		}
 	}

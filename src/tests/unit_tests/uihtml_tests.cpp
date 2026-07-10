@@ -2803,6 +2803,63 @@ UTEST( UIHTML, StyleSheetSiblingCombinators ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, UniversalSelectorRequirements ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Universal Selector Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	const std::string html = R"html(
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+*.foo { color: red; }
+*[href] { color: green; }
+</style>
+</head>
+<body>
+	<div id="class-match" class="foo">class match</div>
+	<div id="class-miss">class miss</div>
+	<a id="attribute-match" href="x">attribute match</a>
+	<a id="attribute-miss">attribute miss</a>
+</body>
+</html>
+)html";
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* classMatch = sceneNode->getRoot()->find( "class-match" )->asType<UIRichText>();
+	auto* classMiss = sceneNode->getRoot()->find( "class-miss" )->asType<UIRichText>();
+	auto* attributeMatch = sceneNode->getRoot()->find( "attribute-match" )->asType<UITextSpan>();
+	auto* attributeMiss = sceneNode->getRoot()->find( "attribute-miss" )->asType<UITextSpan>();
+	ASSERT_TRUE( classMatch != nullptr );
+	ASSERT_TRUE( classMiss != nullptr );
+	ASSERT_TRUE( attributeMatch != nullptr );
+	ASSERT_TRUE( attributeMiss != nullptr );
+
+	EXPECT_TRUE( classMatch->getFontColor() == Color::Red );
+	EXPECT_TRUE( classMiss->getFontColor() != Color::Red );
+	EXPECT_TRUE( attributeMatch->getFontColor() == Color::Green );
+	EXPECT_TRUE( attributeMiss->getFontColor() != Color::Green );
+
+	StyleSheetSelector universalClass( "*.foo" );
+	EXPECT_TRUE( universalClass.select( classMatch, false ) );
+	EXPECT_FALSE( universalClass.select( classMiss, false ) );
+
+	StyleSheetSelector universalAttribute( "*[href]" );
+	EXPECT_TRUE( universalAttribute.select( attributeMatch, false ) );
+	EXPECT_FALSE( universalAttribute.select( attributeMiss, false ) );
+
+	StyleSheetSelector pureUniversal( "*" );
+	EXPECT_TRUE( pureUniversal.select( classMiss, false ) );
+	EXPECT_TRUE( pureUniversal.select( attributeMiss, false ) );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, BlockList ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Block List Test",
 													  WindowStyle::Default, WindowBackend::Default,
