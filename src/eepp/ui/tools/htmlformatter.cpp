@@ -160,8 +160,17 @@ std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
 	if ( layoutString.empty() )
 		return "";
 
+	// Strip UTF-8 BOM if present (Gumbo does not strip it, which corrupts the parse -
+	// head children end up moved to body)
+	size_t offset = 0;
+	if ( layoutString.size() >= 3 && static_cast<unsigned char>( layoutString[0] ) == 0xEF &&
+		 static_cast<unsigned char>( layoutString[1] ) == 0xBB &&
+		 static_cast<unsigned char>( layoutString[2] ) == 0xBF ) {
+		offset = 3;
+	}
+
 	// 1. Parse the dirty HTML into a Gumbo AST
-	GumboOutput* output = gumbo_parse( layoutString.c_str() );
+	GumboOutput* output = gumbo_parse( layoutString.c_str() + offset );
 
 	// 2. Serialize the AST into strict XML
 	std::string strict_xml;
