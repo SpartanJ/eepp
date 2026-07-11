@@ -19,7 +19,6 @@ UIHTMLTable::UIHTMLTable() : UIHTMLWidget( "table" ) {
 Uint32 UIHTMLTable::getType() const {
 	return UI_TYPE_HTML_TABLE;
 }
-
 bool UIHTMLTable::isType( const Uint32& type ) const {
 	return UIHTMLTable::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -196,7 +195,6 @@ UIHTMLTableRow::UIHTMLTableRow() : UIHTMLWidget( "tr" ) {
 Uint32 UIHTMLTableRow::getType() const {
 	return UI_TYPE_HTML_TABLE_ROW;
 }
-
 bool UIHTMLTableRow::isType( const Uint32& type ) const {
 	return UIHTMLTableRow::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -214,7 +212,6 @@ UIHTMLTableCell::UIHTMLTableCell( const std::string& tag ) : UIRichText( tag ) {
 Uint32 UIHTMLTableCell::getType() const {
 	return UI_TYPE_HTML_TABLE_CELL;
 }
-
 bool UIHTMLTableCell::isType( const Uint32& type ) const {
 	return UIHTMLTableCell::getType() == type || UIRichText::isType( type );
 }
@@ -292,7 +289,6 @@ UIHTMLTableHead::UIHTMLTableHead() : UIHTMLWidget( "thead" ) {
 Uint32 UIHTMLTableHead::getType() const {
 	return UI_TYPE_HTML_TABLE_HEAD;
 }
-
 bool UIHTMLTableHead::isType( const Uint32& type ) const {
 	return UIHTMLTableHead::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -310,7 +306,6 @@ UIHTMLTableBody::UIHTMLTableBody() : UIHTMLWidget( "tbody" ) {
 Uint32 UIHTMLTableBody::getType() const {
 	return UI_TYPE_HTML_TABLE_BODY;
 }
-
 bool UIHTMLTableBody::isType( const Uint32& type ) const {
 	return UIHTMLTableBody::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -328,7 +323,6 @@ UIHTMLTableFooter::UIHTMLTableFooter() : UIHTMLWidget( "tfoot" ) {
 Uint32 UIHTMLTableFooter::getType() const {
 	return UI_TYPE_HTML_TABLE_FOOTER;
 }
-
 bool UIHTMLTableFooter::isType( const Uint32& type ) const {
 	return UIHTMLTableFooter::getType() == type || UIHTMLWidget::isType( type );
 }

@@ -44,22 +44,6 @@ enum PercentagePositions : String::HashType {
 	None = 0,
 };
 
-static std::string positionToPercentage( const PercentagePositions& pos ) {
-	switch ( pos ) {
-		case Center:
-			return "50%";
-		case Left:
-		case Top:
-			return "0%";
-		case Right:
-		case Bottom:
-			return "100%";
-		default:
-		case None:
-			return "";
-	}
-}
-
 static PercentagePositions isPercentagePosition( const String::HashType& strHash ) {
 	switch ( strHash ) {
 		case PercentagePositions::Center:
@@ -74,6 +58,45 @@ static PercentagePositions isPercentagePosition( const String::HashType& strHash
 			return PercentagePositions::Bottom;
 	}
 	return PercentagePositions::None;
+}
+
+static size_t numericPrefixLength( std::string_view value ) {
+	if ( value.empty() )
+		return 0;
+	size_t pos = 0;
+	if ( value[pos] == '-' || value[pos] == '+' )
+		pos++;
+
+	bool hasDigit = false;
+	bool hasDot = false;
+	while ( pos < value.size() ) {
+		const char c = value[pos];
+		if ( c >= '0' && c <= '9' ) {
+			hasDigit = true;
+			pos++;
+		} else if ( c == '.' && !hasDot ) {
+			hasDot = true;
+			pos++;
+		} else {
+			break;
+		}
+	}
+
+	if ( !hasDigit )
+		return 0;
+
+	if ( pos < value.size() && ( value[pos] == 'e' || value[pos] == 'E' ) ) {
+		size_t expPos = pos + 1;
+		if ( expPos < value.size() && ( value[expPos] == '-' || value[expPos] == '+' ) )
+			expPos++;
+		const size_t expDigits = expPos;
+		while ( expPos < value.size() && value[expPos] >= '0' && value[expPos] <= '9' )
+			expPos++;
+		if ( expPos != expDigits )
+			pos = expPos;
+	}
+
+	return pos;
 }
 
 StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string_view unitStr ) {
@@ -187,40 +210,9 @@ bool StyleSheetLength::isLength( std::string_view unitStr ) {
 	if ( isFunctionString( unitStr ) )
 		return true;
 
-	size_t pos = 0;
-	if ( unitStr[pos] == '-' || unitStr[pos] == '+' )
-		pos++;
-
-	bool hasDigit = false;
-	bool hasDot = false;
-	while ( pos < unitStr.size() ) {
-		char c = unitStr[pos];
-		if ( c >= '0' && c <= '9' ) {
-			hasDigit = true;
-			pos++;
-		} else if ( c == '.' && !hasDot ) {
-			hasDot = true;
-			pos++;
-		} else {
-			break;
-		}
-	}
-
-	if ( !hasDigit )
+	const size_t pos = numericPrefixLength( unitStr );
+	if ( pos == 0 )
 		return false;
-
-	if ( pos < unitStr.size() && ( unitStr[pos] == 'e' || unitStr[pos] == 'E' ) ) {
-		size_t expPos = pos + 1;
-		if ( expPos < unitStr.size() && ( unitStr[expPos] == '-' || unitStr[expPos] == '+' ) )
-			expPos++;
-		bool hasExpDigit = false;
-		while ( expPos < unitStr.size() && unitStr[expPos] >= '0' && unitStr[expPos] <= '9' ) {
-			hasExpDigit = true;
-			expPos++;
-		}
-		if ( hasExpDigit )
-			pos = expPos;
-	}
 
 	std::string_view unit = unitStr.substr( pos );
 	if ( unit.empty() )
@@ -390,14 +382,11 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val ) {
 
 StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue,
 											   bool pxAsDp ) {
-	PercentagePositions isPercentage = isPercentagePosition( String::hashToLower( str ) );
-	if ( PercentagePositions::None != isPercentage )
-		return fromString( positionToPercentage( isPercentage ), defaultValue );
-
 	StyleSheetLength length;
 	length.setValue( defaultValue, Unit::Px );
+	const std::string_view value = String::trim( std::string_view( str ) );
 
-	if ( isFunctionString( str ) ) {
+	if ( isFunctionString( value ) ) {
 		Unit funcUnit = Unit::Px;
 		Arguments args;
 		if ( parseFunction( str, funcUnit, args ) ) {
@@ -409,28 +398,37 @@ StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Flo
 		return length;
 	}
 
-	std::string num;
-	std::string unit;
-
-	for ( std::size_t i = 0; i < str.size(); i++ ) {
-		char c = str[i];
-		if ( String::isNumber( c, true, true ) || ( '-' == c && i == 0 ) ||
-			 ( '+' == c && i == 0 ) ) {
-			num += c;
+	if ( !value.empty() ) {
+		const char first = value.front();
+		const bool startsNumeric =
+			( first >= '0' && first <= '9' ) || first == '.' || first == '-' || first == '+';
+		if ( startsNumeric ) {
+			const size_t numberLength = numericPrefixLength( value );
+			if ( numberLength != 0 ) {
+				std::string_view number = value.substr( 0, numberLength );
+				if ( number.front() == '+' )
+					number.remove_prefix( 1 );
+				Float parsedValue = 0;
+				if ( String::fromString( parsedValue, number ) )
+					length.setValue( parsedValue, unitFromString( value.substr( numberLength ) ) );
+			}
 		} else {
-			unit = str.substr( i );
-			break;
+			switch ( isPercentagePosition( String::hashToLower( value ) ) ) {
+				case PercentagePositions::Center:
+					length.setValue( 50, Unit::Percentage );
+					break;
+				case PercentagePositions::Right:
+				case PercentagePositions::Bottom:
+					length.setValue( 100, Unit::Percentage );
+					break;
+				case PercentagePositions::Left:
+				case PercentagePositions::Top:
+					length.setValue( 0, Unit::Percentage );
+					break;
+				case PercentagePositions::None:
+					break;
+			}
 		}
-	}
-
-	if ( !num.empty() ) {
-		Float val = 0;
-		while ( !num.empty() && !String::fromString( val, num ) ) {
-			unit = num.back() + unit;
-			num.pop_back();
-		}
-		if ( !num.empty() )
-			length.setValue( val, unitFromString( unit ) );
 	}
 
 	if ( pxAsDp && length.getUnit() == Unit::Px )

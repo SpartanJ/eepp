@@ -39,16 +39,16 @@ UILinearLayout::UILinearLayout( const std::string& tag, const UIOrientation& ori
 	setClipType( ClipType::ContentBox );
 }
 
+UIOrientation UILinearLayout::getOrientation() const {
+	return mOrientation;
+}
+
 Uint32 UILinearLayout::getType() const {
 	return UI_TYPE_LINEAR_LAYOUT;
 }
 
 bool UILinearLayout::isType( const Uint32& type ) const {
-	return UILinearLayout::getType() == type ? true : UILayout::isType( type );
-}
-
-UIOrientation UILinearLayout::getOrientation() const {
-	return mOrientation;
+	return UILinearLayout::getType() == type || UILayout::isType( type );
 }
 
 UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation ) {

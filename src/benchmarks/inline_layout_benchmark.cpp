@@ -7,6 +7,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
@@ -197,6 +198,28 @@ UTEST( Benchmark, CSSAttributeSelectorMatching ) {
 
 	widget->close();
 	Engine::destroySingleton();
+}
+
+UTEST( Benchmark, CSSLengthParsing ) {
+	const std::array<std::string, 16> values = {
+		"0",	  "12px", "-1.5em", "+24dp",  "100%", ".75rem", "50vw", "25vh",
+		"2.54cm", "12pt", "1e3px",	"center", "left", "10vmin", "4ch",	"8dpr" };
+	const int iterations = getSelectorMatchingIterations();
+	Float parsedValueSum = 0;
+	Clock parsingClock;
+	for ( int iteration = 0; iteration < iterations; ++iteration ) {
+		for ( const auto& value : values ) {
+			const auto length = StyleSheetLength::fromString( value );
+			parsedValueSum += length.getValue();
+		}
+	}
+	const Time parsingElapsed = parsingClock.getElapsedTime();
+
+	EXPECT_TRUE( parsedValueSum > 0 );
+	UTEST_PRINT_INFO(
+		String::format( "CSS length parsing: %lld us", parsingElapsed.asMicroseconds() ).c_str() );
+	UTEST_PRINT_INFO(
+		String::format( "CSS length values: %d", iterations * values.size() ).c_str() );
 }
 
 static int getMarkdownFlushIterations() {

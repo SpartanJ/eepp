@@ -434,14 +434,6 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 }
 
-Uint32 UIRichText::getType() const {
-	return UI_TYPE_RICHTEXT;
-}
-
-bool UIRichText::isType( const Uint32& type ) const {
-	return UIRichText::getType() == type ? true : UIHTMLWidget::isType( type );
-}
-
 const RichText& UIRichText::getRichText() {
 	return mRichText;
 }

@@ -89,14 +89,6 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	}
 }
 
-Uint32 UINode::getType() const {
-	return UI_TYPE_UINODE;
-}
-
-bool UINode::isType( const Uint32& type ) const {
-	return UINode::getType() == type || Node::isType( type );
-}
-
 void UINode::setInternalPosition( const Vector2f& Pos ) {
 	mDpPos = Pos;
 	Transformable::setPosition( PixelDensity::dpToPx( Pos ) );

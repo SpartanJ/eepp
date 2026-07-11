@@ -117,7 +117,7 @@ class EE_API UINode : public Node {
 	 *
 	 * @return The node type as a Uint32.
 	 */
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_UINODE; }
 
 	/**
 	 * @brief Checks if the node is of a specific type.
@@ -127,7 +127,9 @@ class EE_API UINode : public Node {
 	 * @param type The type identifier to check.
 	 * @return True if the node is of the specified type, false otherwise.
 	 */
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UINode::getType() == type || Node::isType( type );
+	}
 
 	/**
 	 * @brief Sets the node position in density-independent pixels (dp).

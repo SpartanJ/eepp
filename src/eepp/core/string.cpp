@@ -54,7 +54,7 @@
 
 namespace EE {
 
-template <typename T> static bool _fromString( T& t, const std::string& s, int base = 10 ) {
+template <typename T> static bool _fromString( T& t, std::string_view s, int base = 10 ) {
 	const char* begin = s.data();
 	const char* end = s.data() + s.size();
 
@@ -109,83 +109,123 @@ template <class T> static std::string _toString( const T& value, size_t digitsAf
 }
 
 bool String::fromString( Int8& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int16& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int32& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int64& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint8& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint16& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint32& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint64& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( float& t, const std::string& s ) {
-	return _fromString<>( t, s );
+	return fromString( t, std::string_view( s ) );
 }
 
 bool String::fromString( double& t, const std::string& s ) {
+	return fromString( t, std::string_view( s ) );
+}
+
+bool String::fromString( Int8& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, std::string_view s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, std::string_view s ) {
 	return _fromString<>( t, s );
 }
 
 bool String::fromString( Int8& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int16& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int32& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int64& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint8& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint16& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint32& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint64& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( float& t, const String& s ) {
-	return _fromString<>( t, s );
+	return _fromString<>( t, s.toUtf8() );
 }
 
 bool String::fromString( double& t, const String& s ) {
-	return _fromString<>( t, s );
+	return _fromString<>( t, s.toUtf8() );
 }
 
 std::string String::toString( const Int8& i ) {

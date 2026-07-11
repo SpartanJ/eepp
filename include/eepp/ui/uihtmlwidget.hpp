@@ -53,9 +53,11 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual ~UIHTMLWidget();
 
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_HTML_WIDGET; }
 
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UIHTMLWidget::getType() == type || UILayout::isType( type );
+	}
 
 	UILayouter* getLayouter();
 
@@ -67,9 +69,13 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void setDisplay( CSSDisplay display );
 
-	bool isFlex() const;
+	inline bool isFlex() const {
+		return mDisplay == CSSDisplay::Flex || mDisplay == CSSDisplay::InlineFlex;
+	}
 
-	bool isGrid() const;
+	inline bool isGrid() const {
+		return mDisplay == CSSDisplay::Grid || mDisplay == CSSDisplay::InlineGrid;
+	}
 
 	CSSPosition getCSSPosition() const { return mPosition; }
 
@@ -317,7 +323,9 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual void invalidateIntrinsicSize();
 
-	bool isOutOfFlow() const;
+	inline bool isOutOfFlow() const {
+		return mPosition == CSSPosition::Absolute || mPosition == CSSPosition::Fixed;
+	}
 
 	bool establishesBlockFormattingContext() const;
 

@@ -18,9 +18,11 @@ class EE_API UILayout : public UIWidget {
 		Uint64 treeUpdates{ 0 };
 	};
 
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_LAYOUT; }
 
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UILayout::getType() == type || UIWidget::isType( type );
+	}
 
 	virtual const Sizef& getSize() const;
 

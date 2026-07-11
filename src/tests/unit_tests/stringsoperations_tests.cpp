@@ -18,6 +18,18 @@ UTEST( String, countLines ) {
 	EXPECT_EQ( static_cast<size_t>( 3 ), String::countLines( "\n\n" ) );
 }
 
+UTEST( String, fromStringView ) {
+	const std::string values = "1234.5px";
+	Float floatValue = 0;
+	EXPECT_TRUE( String::fromString( floatValue, std::string_view( values ).substr( 0, 6 ) ) );
+	EXPECT_NEAR( 1234.5f, floatValue, 0.0001f );
+	EXPECT_FALSE( String::fromString( floatValue, std::string_view( values ) ) );
+
+	Int32 intValue = 0;
+	EXPECT_TRUE( String::fromString( intValue, std::string_view( values ).substr( 0, 4 ) ) );
+	EXPECT_EQ( 1234, intValue );
+}
+
 UTEST( FileSystem, fileCountLines ) {
 	std::string path = Sys::getTempPath() + "eepp_test_count_lines.txt";
 	FileSystem::fileWrite( path, "A\nB\nC" );
@@ -153,7 +165,8 @@ UTEST( String, isLatin1 ) {
 	EXPECT_TRUE( str255.isLatin1() );
 
 	// Complex string with Latin1 chars
-	String complexLatin1 = String::fromUtf8( "Héllø Wørld"sv ); // Assuming these are in Latin1 range
+	String complexLatin1 =
+		String::fromUtf8( "Héllø Wørld"sv ); // Assuming these are in Latin1 range
 	// Note: 'ø' is 0xF8 (248), 'é' is 0xE9 (233). Both in Latin1.
 	EXPECT_TRUE( complexLatin1.isLatin1() );
 
@@ -162,7 +175,6 @@ UTEST( String, isLatin1 ) {
 		// 32 chars of 255
 		String longLatin1( 32, (String::StringBaseType)255 );
 		EXPECT_TRUE( longLatin1.isLatin1() );
-
 	}
 }
 
@@ -187,14 +199,15 @@ UTEST( String, isAsciiHighBit ) {
 UTEST( String, isAsciiPatterns ) {
 	// Alternating
 	String alt;
-	for (int i = 0; i < 100; i++) {
-		alt += (i % 2 == 0) ? 'a' : (char)128;
+	for ( int i = 0; i < 100; i++ ) {
+		alt += ( i % 2 == 0 ) ? 'a' : (char)128;
 	}
 	EXPECT_FALSE( alt.isAscii() );
 
 	// Block of invalid in middle of valid
-	String block(100, 'a');
-	for(int i=40; i<60; i++) block[i] = 200;
+	String block( 100, 'a' );
+	for ( int i = 40; i < 60; i++ )
+		block[i] = 200;
 	EXPECT_FALSE( block.isAscii() );
 }
 

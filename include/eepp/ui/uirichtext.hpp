@@ -68,9 +68,11 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_RICHTEXT; }
 
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UIRichText::getType() == type || UIHTMLWidget::isType( type );
+	}
 
 	virtual void draw();
 

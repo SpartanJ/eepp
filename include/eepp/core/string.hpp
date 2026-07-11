@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <uchar.h>
 #include <vector>
 
@@ -538,6 +539,18 @@ class EE_API String {
 	static bool fromString( Uint64& t, const std::string& s, int base = 10 );
 	static bool fromString( float& t, const std::string& s );
 	static bool fromString( double& t, const std::string& s );
+
+	/** Converts from a string view to type */
+	static bool fromString( Int8& t, std::string_view s, int base = 10 );
+	static bool fromString( Int16& t, std::string_view s, int base = 10 );
+	static bool fromString( Int32& t, std::string_view s, int base = 10 );
+	static bool fromString( Int64& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint8& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint16& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint32& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint64& t, std::string_view s, int base = 10 );
+	static bool fromString( float& t, std::string_view s );
+	static bool fromString( double& t, std::string_view s );
 
 	/** Converts from a String to type */
 	static bool fromString( Int8& t, const String& s, int base = 10 );

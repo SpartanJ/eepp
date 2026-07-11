@@ -1349,6 +1349,33 @@ UTEST( CSSFunctions, ClampResolvesPixels ) {
 	EXPECT_EQ( 50, resolved );
 }
 
+UTEST( CSSLength, ScalarParsing ) {
+	auto expectLength = [&]( const std::string& value, Float expectedValue,
+							 StyleSheetLength::Unit expectedUnit ) {
+		const auto length = StyleSheetLength::fromString( value );
+		EXPECT_NEAR( expectedValue, length.getValue(), 0.0001f );
+		EXPECT_EQ( expectedUnit, length.getUnit() );
+	};
+
+	expectLength( "12px", 12, StyleSheetLength::Unit::Px );
+	expectLength( "-1.5em", -1.5f, StyleSheetLength::Unit::Em );
+	expectLength( "+24dp", 24, StyleSheetLength::Unit::Dp );
+	expectLength( ".75rem", 0.75f, StyleSheetLength::Unit::Rem );
+	expectLength( "1e3px", 1000, StyleSheetLength::Unit::Px );
+	expectLength( " 50% ", 50, StyleSheetLength::Unit::Percentage );
+	expectLength( " center ", 50, StyleSheetLength::Unit::Percentage );
+	expectLength( "left", 0, StyleSheetLength::Unit::Percentage );
+	expectLength( "bottom", 100, StyleSheetLength::Unit::Percentage );
+	expectLength( "10", 10, StyleSheetLength::Unit::Dp );
+	expectLength( "10unknown", 10, StyleSheetLength::Unit::Dp );
+	const auto invalid = StyleSheetLength::fromString( "invalid", 7 );
+	EXPECT_EQ( 7, invalid.getValue() );
+	EXPECT_EQ( StyleSheetLength::Unit::Px, invalid.getUnit() );
+
+	const auto pxAsDp = StyleSheetLength::fromString( "12px", 0, true );
+	EXPECT_EQ( StyleSheetLength::Unit::Dp, pxAsDp.getUnit() );
+}
+
 UTEST( CSSFunctions, ClampHonorsMinimum ) {
 	auto len = StyleSheetLength::fromString( "clamp(40px, 30px, 100px)" );
 	Float resolved = len.asPixels( 0, Sizef::Zero, 96, 12, 12, nullptr );

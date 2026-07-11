@@ -10,6 +10,21 @@ Session analyzed:
 /home/downloads/2026-07-09_19-52-19_eepp-unit_tests.slp
 ```
 
+Current baseline capture after CSS selector phases 1-8:
+
+```text
+/tmp/eepp-unit-tests-current-final-2026-07-10.linux
+```
+
+Accessor-inlining comparison capture:
+
+```text
+/tmp/eepp-unit-tests-inline-accessors-2026-07-10.linux
+```
+
+Both current captures ran all 737 release tests at 500 Hz. The post-change run passed 736 tests
+with one skipped test.
+
 MCP could not open the packaged `.slp` directly, so it was extracted to `/tmp/superluminal-eepp-unit-tests` and the contained `.session` was queried.
 
 ## Capture Notes
@@ -107,6 +122,33 @@ Validation:
 - Add a nested span test with inherited `white-space`, local `white-space-collapse`, and nested text-transform override.
 
 ### 3. Fast-parse common CSS lengths without allocations
+
+**Status: Implemented and measured**
+
+`StyleSheetLength::fromString()` now trims once, scans scalar numeric prefixes directly from a
+`std::string_view`, and converts the numeric subview through `String::fromString()`. The core string
+API exposes `std::string_view` numeric overloads while retaining exact `std::string` forwarding
+overloads for source and ABI compatibility with the implicitly constructible `EE::String` type.
+The CSS parser no longer builds separate number/unit strings or retries parsing by removing
+characters. Function expressions retain the existing parser, and position keywords map directly
+to percentage lengths without recursive string construction.
+
+Validation includes signed values, leading-dot decimals, scientific notation, surrounding
+whitespace, position keywords, unitless and unknown units, `pxAsDp`, all existing CSS function
+tests, and a dedicated release benchmark.
+
+- Final focused benchmark median for 320,000 mixed values: 13.67 ms to 10.10 ms, a 26.1%
+  reduction.
+- Before numeric conversion was centralized in `String`, the full-suite capture measured 105.4 ms
+  inclusive / 44.6 ms exclusive to 46.5 ms / 12.4 ms. A future full capture should refresh those
+  aggregate numbers for the final implementation.
+- Post-change full release suite: 737 passed, one skipped.
+
+Comparison capture:
+
+```text
+/tmp/eepp-unit-tests-length-fast-path-2026-07-10.linux
+```
 
 Files:
 
@@ -304,6 +346,25 @@ Validation:
 - HTML fixture tests involving inherited color/font/white-space and immediate layout after load.
 
 ### 10. Broaden hot accessor/type-check inlining beyond selector code
+
+**Status: Core hierarchy implemented and measured**
+
+The trivial `getType()` / `isType()` implementations for `Node`, `UINode`, `UIWidget`,
+`UILayout`, `UIHTMLWidget`, and `UIRichText` are now inline, along with `Node::isLayout()`.
+
+In the comparable full-suite captures:
+
+- `UISceneNode::invalidateLayout()` decreased from 86.1 ms inclusive / 41.5 ms exclusive to
+  26.3 ms total.
+- Base type accessor symbols largely disappeared from the hot function list.
+- `getEffectiveWhiteSpaceCollapse()` decreased from 344.0 ms to 162.9 ms inclusive, partly
+  because its repeated type checks became cheaper.
+- Unit-test process CPU time decreased from 20.12 s to 19.88 s, approximately 1.2%. Treat this
+  whole-process result as directional because the full suite contains rendering and image-diff
+  noise.
+
+Further subclass inlining remains possible, especially table widgets, but the next independent
+high-value target is CSS length parsing.
 
 Files:
 

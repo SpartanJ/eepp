@@ -51,14 +51,6 @@ void UILayout::onLayoutUpdate() {
 	sendCommonEvent( Event::OnLayoutUpdate );
 }
 
-Uint32 UILayout::getType() const {
-	return UI_TYPE_LAYOUT;
-}
-
-bool UILayout::isType( const Uint32& type ) const {
-	return UILayout::getType() == type ? true : UIWidget::isType( type );
-}
-
 const Sizef& UILayout::getSize() const {
 	if ( mDirtyLayout )
 		const_cast<UILayout*>( this )->updateLayout();

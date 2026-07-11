@@ -105,14 +105,6 @@ UIWidget::~UIWidget() {
 	eeSAFE_DELETE( mTooltip );
 }
 
-Uint32 UIWidget::getType() const {
-	return UI_TYPE_WIDGET;
-}
-
-bool UIWidget::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UINode::isType( type );
-}
-
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentNode ) {
 		mDistToBorder = Rect( mPosition.x, mPosition.y,

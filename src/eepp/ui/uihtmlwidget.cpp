@@ -93,14 +93,6 @@ UILayouter* UIHTMLWidget::getLayouter() {
 	return mLayouter;
 }
 
-Uint32 UIHTMLWidget::getType() const {
-	return UI_TYPE_HTML_WIDGET;
-}
-
-bool UIHTMLWidget::isType( const Uint32& type ) const {
-	return UIHTMLWidget::getType() == type ? true : UILayout::isType( type );
-}
-
 bool UIHTMLWidget::isPacking() const {
 	UILayouter* layouter = const_cast<UIHTMLWidget*>( this )->getLayouter();
 	if ( layouter )
@@ -155,14 +147,6 @@ void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 
 		onDisplayChange();
 	}
-}
-
-bool UIHTMLWidget::isFlex() const {
-	return mDisplay == CSSDisplay::Flex || mDisplay == CSSDisplay::InlineFlex;
-}
-
-bool UIHTMLWidget::isGrid() const {
-	return mDisplay == CSSDisplay::Grid || mDisplay == CSSDisplay::InlineGrid;
 }
 
 Float UIHTMLWidget::getBaseline() const {
@@ -1339,10 +1323,6 @@ void UIHTMLWidget::invalidateIntrinsicSize() {
 	if ( mLayouter )
 		mLayouter->invalidateIntrinsicWidths();
 	UIWidget::invalidateIntrinsicSize();
-}
-
-bool UIHTMLWidget::isOutOfFlow() const {
-	return mPosition == CSSPosition::Absolute || mPosition == CSSPosition::Fixed;
 }
 
 bool UIHTMLWidget::establishesBlockFormattingContext() const {

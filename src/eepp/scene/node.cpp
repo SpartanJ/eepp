@@ -96,14 +96,6 @@ void Node::nodeToWorldTranslation( Vector2f& Pos ) const {
 	}
 }
 
-Uint32 Node::getType() const {
-	return 0;
-}
-
-bool Node::isType( const Uint32& type ) const {
-	return Node::getType() == type;
-}
-
 void Node::messagePost( const NodeMessage* Msg ) {
 	Node* node = this;
 	while ( NULL != node ) {
@@ -164,14 +156,6 @@ void Node::setInternalHeight( const Float& height ) {
 	setInternalSize( Sizef( getSize().getWidth(), height ) );
 }
 
-const Sizef& Node::getSize() const {
-	return mSize;
-}
-
-const Sizef& Node::getPixelsSize() const {
-	return mSize;
-}
-
 Node* Node::setVisible( const bool& visible, bool emitEventNotification ) {
 	if ( mVisible != visible ) {
 		mVisible = visible;
@@ -197,10 +181,6 @@ Node* Node::setChildrenVisibility( bool visible, bool emitEventNotification ) {
 	return this;
 }
 
-bool Node::isVisible() const {
-	return mVisible;
-}
-
 bool Node::hasVisibility() const {
 	const Node* cur = this;
 	while ( cur ) {
@@ -217,14 +197,6 @@ Node* Node::setEnabled( const bool& enabled ) {
 		onEnabledChange();
 	}
 	return this;
-}
-
-bool Node::isEnabled() const {
-	return mEnabled;
-}
-
-bool Node::isDisabled() const {
-	return !mEnabled;
 }
 
 void Node::updateDrawInvalidator( bool force ) {
@@ -251,10 +223,6 @@ void Node::unsubscribeScheduledUpdate() {
 		mSceneNode->unsubscribeScheduledUpdate( this );
 		writeNodeFlag( NODE_FLAG_SCHEDULED_UPDATE, 0 );
 	}
-}
-
-bool Node::isSubscribedForScheduledUpdate() {
-	return 0 != ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE );
 }
 
 Node* Node::setParent( Node* parent ) {
@@ -370,14 +338,6 @@ Uint32 Node::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-bool Node::isMouseOver() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER );
-}
-
-bool Node::isMouseOverMeOrChildren() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
-}
-
 Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseDoubleClick, Pos, Flags );
 	return 1;
@@ -440,10 +400,6 @@ Node* Node::setData( const UintPtr& data ) {
 		sendCommonEvent( Event::OnDataChanged );
 	}
 	return this;
-}
-
-const UintPtr& Node::getData() const {
-	return mData;
 }
 
 Node* Node::setBlendMode( const BlendMode& blend ) {
@@ -755,10 +711,6 @@ void Node::onIdChange() {
 	sendCommonEvent( Event::OnIdChange );
 }
 
-bool Node::isClosing() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
-}
-
 bool Node::inClosingTree() const {
 	if ( isClosing() )
 		return true;
@@ -769,14 +721,6 @@ bool Node::inClosingTree() const {
 		parent = parent->mParentNode;
 	}
 	return false;
-}
-
-bool Node::isClosingChildren() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_CLOSING_CHILDREN );
-}
-
-const String::HashType& Node::getIdHash() const {
-	return mIdHash;
 }
 
 static bool isNestedSceneBoundary( const Node* child ) {
@@ -933,10 +877,6 @@ void Node::setLoadingState( bool loading ) {
 	writeNodeFlag( NODE_FLAG_LOADING, loading ? 1 : 0 );
 }
 
-bool Node::isLoadingState() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_LOADING );
-}
-
 Uint32 Node::getChildCount() const {
 	Node* child = mChild;
 	Uint32 count = 0;
@@ -1000,14 +940,6 @@ Uint32 Node::getNodeOfTypeIndex() const {
 		};
 	}
 	return nodeIndex;
-}
-
-Node* Node::getFirstChild() const {
-	return mChild;
-}
-
-Node* Node::getLastChild() const {
-	return mChildLast;
 }
 
 Node* Node::overFind( const Vector2f& point ) {
@@ -1076,42 +1008,6 @@ void Node::onSceneChange() {
 		child->onSceneChange();
 		child = child->mNext;
 	}
-}
-
-bool Node::isWindow() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_WINDOW );
-}
-
-bool Node::isLayout() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_LAYOUT );
-}
-
-bool Node::isClipped() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_CLIP_ENABLE );
-}
-
-bool Node::isRotated() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_ROTATED );
-}
-
-bool Node::isScaled() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_SCALED );
-}
-
-bool Node::isFrameBuffer() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER );
-}
-
-bool Node::isSceneNode() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_SCENENODE );
-}
-
-bool Node::isUISceneNode() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_UISCENENODE );
-}
-
-bool Node::isUINode() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_UINODE );
 }
 
 bool Node::isMeOrParentTreeVisible() const {
@@ -1342,10 +1238,6 @@ void Node::nodeToWorld( Vector2f& pos ) const {
 	pos = Vector2f( toPos.x, toPos.y );
 }
 
-bool Node::isReverseDraw() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_REVERSE_DRAW );
-}
-
 void Node::setReverseDraw( bool reverseDraw ) {
 	writeNodeFlag( NODE_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
 	invalidateDraw();
@@ -1355,10 +1247,6 @@ void Node::invalidateDraw() {
 	if ( NULL != mNodeDrawInvalidator ) {
 		mNodeDrawInvalidator->invalidate( this );
 	}
-}
-
-SceneNode* Node::getSceneNode() const {
-	return mSceneNode;
 }
 
 SceneNode* Node::findSceneNode() {
@@ -1745,10 +1633,6 @@ Uint32 Node::onFocusLoss() {
 	invalidateDraw();
 
 	return 1;
-}
-
-bool Node::hasFocus() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
 }
 
 bool Node::hasFocusWithin() const {

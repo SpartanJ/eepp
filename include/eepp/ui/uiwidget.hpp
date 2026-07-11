@@ -80,7 +80,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return The widget type as a Uint32.
 	 */
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_WIDGET; }
 
 	/**
 	 * @brief Checks if the widget is of a specific type.
@@ -90,7 +90,9 @@ class EE_API UIWidget : public UINode {
 	 * @param type The type identifier to check.
 	 * @return True if the widget is of the specified type, false otherwise.
 	 */
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UIWidget::getType() == type || UINode::isType( type );
+	}
 
 	/**
 	 * @brief Sets multiple flags on the widget.
