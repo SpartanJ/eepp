@@ -1685,8 +1685,14 @@ Http::Pool::~Pool() {
 }
 
 void Http::Pool::clear() {
-	Lock l( mMutex );
-	mHttps.clear();
+	decltype( mHttps ) https;
+	{
+		Lock l( mMutex );
+		https.swap( mHttps );
+	}
+	// Http destruction joins local request threads and callbacks can re-enter the global pool.
+	// Never run either operation while holding the pool mutex.
+	https.clear();
 }
 
 std::string Http::Pool::getHostKey( const URI& host, const URI& proxy ) {

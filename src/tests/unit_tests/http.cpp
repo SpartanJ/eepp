@@ -1,6 +1,9 @@
 #include "utest.h"
 
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -76,6 +79,93 @@ UTEST( Http, responseHeaderLineLargerThanReceiveBuffer ) {
 	EXPECT_TRUE( serverOk );
 	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
 	EXPECT_TRUE( response.getBody() == "hello" );
+}
+
+UTEST( Http, poolClearAllowsCallbackReentry ) {
+	Http::setThreadPool( nullptr );
+	Http::Pool::getGlobal().clear();
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+
+	std::thread server( [&listener] {
+		TcpSocket client;
+		if ( listener.accept( client ) != Socket::Done )
+			return;
+
+		std::string request;
+		char buffer[1024];
+		std::size_t received = 0;
+		while ( request.find( "\r\n\r\n" ) == std::string::npos ) {
+			if ( client.receive( buffer, sizeof( buffer ), received ) != Socket::Done )
+				return;
+			request.append( buffer, received );
+		}
+
+		const std::string response = "HTTP/1.1 200 OK\r\n"
+									 "Content-Length: 2\r\n"
+									 "Connection: close\r\n\r\n"
+									 "ok";
+		client.send( response.data(), response.size() );
+		client.disconnect();
+	} );
+
+	const URI uri( String::format( "http://127.0.0.1:%u/", listener.getLocalPort() ) );
+	auto http = Http::Pool::getGlobal().get( uri );
+	std::mutex callbackMutex;
+	std::condition_variable callbackCondition;
+	bool callbackEntered = false;
+	bool allowPoolReentry = false;
+	bool callbackCompleted = false;
+	bool callbackResponseOk = false;
+
+	http->sendAsyncRequest(
+		[&]( const Http&, Http::Request&, Http::Response& response ) {
+			{
+				std::unique_lock<std::mutex> lock( callbackMutex );
+				callbackResponseOk = response.getStatus() == Http::Response::Ok;
+				callbackEntered = true;
+				callbackCondition.notify_all();
+				callbackCondition.wait( lock, [&] { return allowPoolReentry; } );
+			}
+
+			// Pool::clear() is concurrently destroying and joining this Http. It must not hold the
+			// Pool mutex while waiting for this callback.
+			Http::Pool::getGlobal().get( uri );
+			{
+				std::lock_guard<std::mutex> lock( callbackMutex );
+				callbackCompleted = true;
+			}
+			callbackCondition.notify_all();
+		},
+		Http::Request( "/" ), Seconds( 5 ) );
+
+	http.reset(); // Leave the Pool as the only Http owner.
+	{
+		std::unique_lock<std::mutex> lock( callbackMutex );
+		ASSERT_TRUE( callbackCondition.wait_for( lock, std::chrono::seconds( 5 ),
+												 [&] { return callbackEntered; } ) );
+	}
+
+	std::thread clearThread( [] { Http::Pool::getGlobal().clear(); } );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	{
+		std::lock_guard<std::mutex> lock( callbackMutex );
+		allowPoolReentry = true;
+	}
+	callbackCondition.notify_all();
+
+	{
+		std::unique_lock<std::mutex> lock( callbackMutex );
+		ASSERT_TRUE( callbackCondition.wait_for( lock, std::chrono::seconds( 5 ),
+												 [&] { return callbackCompleted; } ) );
+	}
+
+	clearThread.join();
+	server.join();
+	listener.close();
+	Http::Pool::getGlobal().clear();
+	EXPECT_TRUE( callbackResponseOk );
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
