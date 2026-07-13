@@ -909,6 +909,18 @@ function eepp_module_physics_add()
 	incdirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
+function eepp_module_backward_add( ecode_mode )
+	files { "src/modules/backward/src/backward.cpp" }
+	if ecode_mode then
+		defines { "EE_BACKWARD_ECODE_MODE" }
+	end
+	filter "system:windows"
+		links { "dbghelp", "psapi" }
+	filter "system:linux or system:bsd"
+		linkoptions { "-rdynamic" }
+	filter {}
+end
+
 function build_eepp( build_name )
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
@@ -1805,6 +1817,7 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
+		eepp_module_backward_add( true )
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
 		build_link_configuration( "ecode", false )
@@ -1829,14 +1842,10 @@ workspace "eepp"
 			links { "util" }
 			if os_findlib("dw") then
 				links { "dw" }
-				defines { "ECODE_HAS_DW" }
+				defines { "EE_BACKWARD_HAS_DW" }
 			end
 		filter { "system:linux or system:macosx or system:haiku or system:bsd", "configurations:release*" }
 			buildoptions { "-g1", "-fvisibility=default" }
-		filter { "system:linux or system:bsd", "configurations:release*" }
-			linkoptions { "-rdynamic" }
-		filter { "system:windows" }
-			links { "dbghelp", "psapi" }
 		filter "system:haiku"
 			links { "bsd", "network" }
 		filter "system:bsd"
@@ -1901,6 +1910,7 @@ workspace "eepp"
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
+		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

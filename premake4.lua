@@ -1010,6 +1010,21 @@ function eepp_module_physics_add()
 	includedirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
+function eepp_module_backward_add( ecode_mode )
+	files { "src/modules/backward/src/backward.cpp" }
+	if ecode_mode then
+		defines { "EE_BACKWARD_ECODE_MODE" }
+	end
+	configuration {}
+	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+		links { "dbghelp", "psapi" }
+	end
+	if os.is_real("linux") or os.is_real("bsd") then
+		linkoptions { "-rdynamic" }
+	end
+	configuration {}
+end
+
 function build_eepp( build_name )
 	includedirs {
 		"include",
@@ -1818,6 +1833,7 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
+		eepp_module_backward_add( true )
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
 		if os.is("windows") then
@@ -1835,11 +1851,8 @@ solution "eepp"
 
 			if os_findlib("dw") then
 				links { "dw" }
-				defines { "ECODE_HAS_DW" }
+				defines { "EE_BACKWARD_HAS_DW" }
 			end
-		end
-		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
-			links { "dbghelp", "psapi" }
 		end
 		if os.is("haiku") then
 			links { "bsd", "network" }
@@ -1861,9 +1874,6 @@ solution "eepp"
 		configuration { "release" }
 			if os.is_real("linux") or os.is_real("macosx") or os.is_real("bsd") or os.is_real("haiku") then
 				buildoptions { "-g1", "-fvisibility=default" }
-			end
-			if os.is_real("linux") or os.is_real("bsd") then
-				linkoptions { "-rdynamic" }
 			end
 
 	project "eterm"
@@ -1925,6 +1935,7 @@ solution "eepp"
 		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
+		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

@@ -8,15 +8,15 @@ using namespace EE::System;
 
 #if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
 
-#if defined( ECODE_HAS_DW )
+#if defined( EE_BACKWARD_HAS_DW )
 #define BACKWARD_HAS_DW 1
 #endif
 
 #include <backward-cpp/backward.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#include <windows.h>
 #include <shellapi.h> // Added for ShellExecuteW
+#include <windows.h>
 #endif
 
 namespace backward {
@@ -165,6 +165,8 @@ class WindowsSignalHandling {
 			cv().wait( lk, [] { return crashed() != crash_status::crashed; } );
 		}
 	}
+
+#if defined( EE_BACKWARD_ECODE_MODE )
 	// Helper to safely convert UTF-8 strings to std::wstring for the Windows API
 	static std::wstring utf8_to_wstring( const std::string& str ) {
 		if ( str.empty() )
@@ -235,10 +237,11 @@ class WindowsSignalHandling {
 		SendMessage( hLabel, WM_SETFONT, (WPARAM)hFont, TRUE );
 
 		// 4. Add the Text Area (Edit Control) for the Stack Trace
-		HWND hEdit = CreateWindowExW( 0, L"EDIT", utf8_to_wstring( stackTrace ).c_str(),
-							WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | WS_BORDER |
-							ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-									  10, 68, 600, 320, hwnd, NULL, hInstance, NULL );
+		HWND hEdit =
+			CreateWindowExW( 0, L"EDIT", utf8_to_wstring( stackTrace ).c_str(),
+							 WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | WS_BORDER |
+								 ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+							 10, 68, 600, 320, hwnd, NULL, hInstance, NULL );
 		SendMessage( hEdit, WM_SETFONT, (WPARAM)hFont, TRUE );
 
 		// 5. Add "Close" Button (Now on the left)
@@ -260,14 +263,24 @@ class WindowsSignalHandling {
 			DispatchMessage( &msg );
 		}
 	}
+#endif
 
 	static void handle_stacktrace( int skip_frames = 0 ) {
+#if defined( EE_BACKWARD_ECODE_MODE )
 		const auto appendCrashesPath = []( std::string& crashesPath ) {
 			FileSystem::dirAddSlashAtEnd( crashesPath );
 			crashesPath += "crashes";
 			FileSystem::dirAddSlashAtEnd( crashesPath );
 		};
+#endif
 
+#if !defined( EE_BACKWARD_ECODE_MODE )
+		std::string crashesPath( Sys::getProcessPath() );
+		FileSystem::dirAddSlashAtEnd( crashesPath );
+		crashesPath += "output";
+		FileSystem::dirAddSlashAtEnd( crashesPath );
+		FileSystem::makeDir( crashesPath, true );
+#else
 		std::string crashesPath( Sys::getConfigPath( "ecode" ) );
 		appendCrashesPath( crashesPath );
 
@@ -276,6 +289,7 @@ class WindowsSignalHandling {
 			appendCrashesPath( crashesPath );
 			FileSystem::makeDir( crashesPath, true );
 		}
+#endif
 
 		std::string dateTimeStr( Sys::getDateTimeStr() );
 		String::replaceAll( dateTimeStr, " ", "_" );
@@ -304,28 +318,35 @@ class WindowsSignalHandling {
 		// Write string to file
 		std::ofstream outFile( crashFilePath );
 		if ( !outFile.is_open() ) {
-			print_to_console( "Error: Failed to open " + crashFilePath + 
-				" for writing stack trace\n" + stackTraceStr );
+			print_to_console( "Error: Failed to open " + crashFilePath +
+							  " for writing stack trace\n" + stackTraceStr );
 		} else {
 			outFile << stackTraceStr;
 			outFile.close();
 		}
 
-		// Display the custom Windows dialog
+		// The generic crash handler is non-interactive; only ecode opts into its branded dialog.
+#if defined( EE_BACKWARD_ECODE_MODE )
 		String::replaceAll( stackTraceStr, "\n", "\r\n" );
 		display_crash_message( crashFilePath, stackTraceStr );
+#endif
 	}
 
 	static void print_to_console( const std::string& message ) {
-		if ( AttachConsole( ATTACH_PARENT_PROCESS ) ) {
+		const bool attached = AttachConsole( ATTACH_PARENT_PROCESS ) != FALSE;
+		if ( attached ) {
 			FILE* console = nullptr;
 			freopen_s( &console, "CONOUT$", "w", stderr );
-			if ( console ) {
-				std::cerr << message;
-				fflush( stderr );
-			}
-			FreeConsole();
 		}
+
+		// Console applications already attached to their parent make AttachConsole() fail with
+		// ERROR_ACCESS_DENIED, but their stderr stream remains valid and must still receive the
+		// trace.
+		std::cerr << message;
+		std::cerr.flush();
+
+		if ( attached )
+			FreeConsole();
 	}
 };
 
