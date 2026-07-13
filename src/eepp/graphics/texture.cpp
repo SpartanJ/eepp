@@ -41,24 +41,6 @@ Texture::Texture() :
 	mFilter( Filter::Linear ),
 	mCoordinateType( CoordinateType::Normalized ) {}
 
-Texture::Texture( const Texture& Copy ) :
-	DrawableResource( Drawable::TEXTURE, Copy.mName ),
-	Image(),
-	mFilepath( Copy.mFilepath ),
-	mTexture( Copy.mTexture ),
-	mImgWidth( Copy.mImgWidth ),
-	mImgHeight( Copy.mImgHeight ),
-	mFlags( Copy.mFlags ),
-	mClampMode( Copy.mClampMode ),
-	mFilter( Copy.mFilter ) {
-	mWidth = Copy.mWidth;
-	mHeight = Copy.mHeight;
-	mChannels = Copy.mChannels;
-	mSize = Copy.mSize;
-
-	setPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
-}
-
 Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height,
 				  const unsigned int& imgwidth, const unsigned int& imgheight,
 				  const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath,

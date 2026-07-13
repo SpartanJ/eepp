@@ -1,8 +1,10 @@
 #ifndef EE_SYSTEMCRESOURCELOADER
 #define EE_SYSTEMCRESOURCELOADER
 
+#include <atomic>
 #include <eepp/core.hpp>
 #include <eepp/system/thread.hpp>
+#include <mutex>
 #include <vector>
 
 namespace EE { namespace System {
@@ -61,12 +63,13 @@ class EE_API ResourceLoader {
 	Uint32 getCount() const;
 
   protected:
-	bool mLoaded;
-	bool mLoading;
-	bool mThreaded;
+	std::atomic<bool> mLoaded;
+	std::atomic<bool> mLoading;
+	std::atomic<bool> mThreaded;
 	Uint32 mThreads;
-	Uint32 mTotalLoaded;
+	std::atomic<Uint32> mTotalLoaded;
 	Thread mThread;
+	mutable std::mutex mMutex;
 
 	std::vector<ResLoadCallback> mLoadCbs;
 	std::vector<ObjectLoaderTask> mTasks;

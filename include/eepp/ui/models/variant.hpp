@@ -40,7 +40,9 @@ class EE_API Variant {
 	explicit Variant( const String& string ) : mType( Type::String ) {
 		mValue.asString = eeNew( String, ( string ) );
 	}
-	explicit Variant( const String* string ) : mType( Type::StringPtr ) { mValue.asStringPtr = string; }
+	explicit Variant( const String* string ) : mType( Type::StringPtr ) {
+		mValue.asStringPtr = string;
+	}
 	Variant( Drawable* drawable, bool ownDrawable = false ) : mType( Type::Drawable ) {
 		mValue.asDrawable = drawable;
 		mOwnsObject = ownDrawable;
@@ -54,7 +56,7 @@ class EE_API Variant {
 	Variant( bool val ) : mType( Type::Bool ) { mValue.asBool = val; }
 	Variant( const Float& val ) : mType( Type::Float ) { mValue.asFloat = val; }
 	Variant( const int& val ) : mType( Type::Int ) { mValue.asInt = val; }
-	Variant( const unsigned int& val ) : mType( Type::Int ) { mValue.asUint = val; }
+	Variant( const unsigned int& val ) : mType( Type::Uint ) { mValue.asUint = val; }
 	Variant( const Int64& val ) : mType( Type::Int64 ) { mValue.asInt64 = val; }
 	Variant( const Uint64& val ) : mType( Type::Uint64 ) { mValue.asUint64 = val; }
 	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }

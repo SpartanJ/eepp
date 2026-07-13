@@ -340,7 +340,9 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 			 const Texture::ClampMode& clampMode, const bool& CompressedTexture,
 			 const Uint32& memSize = 0, const Uint8* data = NULL );
 
-	Texture( const Texture& copy );
+	Texture( const Texture& copy ) = delete;
+
+	Texture& operator=( const Texture& copy ) = delete;
 
 	void create( const Uint32& texture, const unsigned int& width, const unsigned int& height,
 				 const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap,

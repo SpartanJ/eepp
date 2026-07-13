@@ -23,19 +23,7 @@ void operator delete( void* p ) throw() {
 }
 #endif
 
-#ifdef EE_MEMORY_MANAGER
-static bool sHasInit = false;
-#else
-static bool sHasInit = true;
-#endif
-
 namespace EE {
-
-static AllocatedPointerMap sMapPointers;
-static size_t sTotalMemoryUsage = 0;
-static size_t sPeakMemoryUsage = 0;
-static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
-static Mutex sAllocMutex;
 
 AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int line, size_t memory,
 									bool track ) {
@@ -46,6 +34,26 @@ AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int lin
 	mTrack = track;
 }
 
+namespace {
+
+struct MemoryManagerState {
+	AllocatedPointerMap pointers;
+	size_t totalMemoryUsage{ 0 };
+	size_t peakMemoryUsage{ 0 };
+	AllocatedPointer biggestAllocation{ NULL, "", 0, 0 };
+	Mutex allocationMutex;
+};
+
+MemoryManagerState& getMemoryManagerState() {
+	// The tracker must remain valid through process-static destruction. Function-local
+	// initialization makes its first concurrent use safe; intentionally retaining the state avoids
+	// reintroducing a static-destruction-order dependency for late eeDelete() calls.
+	static MemoryManagerState* state = new MemoryManagerState;
+	return *state;
+}
+
+} // namespace
+
 void* MemoryManager::allocate( size_t size ) {
 	return malloc( size );
 }
@@ -55,9 +63,11 @@ void* MemoryManager::reallocate( void* ptr, size_t size ) {
 }
 
 void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer ) {
-	AllocatedPointerMapIt it = sMapPointers.find( place );
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
+	AllocatedPointerMapIt it = state.pointers.find( place );
 
-	if ( it != sMapPointers.end() ) {
+	if ( it != state.pointers.end() ) {
 		removePointer( place, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
 	}
 
@@ -65,42 +75,40 @@ void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAl
 }
 
 void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
-	ConditionalLock l( sHasInit, &sAllocMutex );
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
 
-	sMapPointers.insert(
+	state.pointers.insert(
 		AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
 
-	sTotalMemoryUsage += aAllocatedPointer.mMemory;
+	state.totalMemoryUsage += aAllocatedPointer.mMemory;
 
-	if ( sPeakMemoryUsage < sTotalMemoryUsage ) {
-		sPeakMemoryUsage = sTotalMemoryUsage;
+	if ( state.peakMemoryUsage < state.totalMemoryUsage ) {
+		state.peakMemoryUsage = state.totalMemoryUsage;
 	}
 
-	if ( aAllocatedPointer.mMemory > sBiggestAllocation.mMemory ) {
-		sBiggestAllocation = aAllocatedPointer;
+	if ( aAllocatedPointer.mMemory > state.biggestAllocation.mMemory ) {
+		state.biggestAllocation = aAllocatedPointer;
 	}
 
 	if ( aAllocatedPointer.mTrack )
 		eePRINTL( "Allocating pointer %p at '%s' %d", aAllocatedPointer.mData,
 				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
 
-#ifdef EE_MEMORY_MANAGER
-	sHasInit = true;
-#endif
-
 	return aAllocatedPointer.mData;
 }
 
 void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer ) {
-	Lock l( sAllocMutex );
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
 
-	AllocatedPointerMapIt it = sMapPointers.find( data );
+	AllocatedPointerMapIt it = state.pointers.find( data );
 
-	if ( it != sMapPointers.end() && it->second.mTrack )
+	if ( it != state.pointers.end() && it->second.mTrack )
 		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile.c_str(),
 				  aAllocatedPointer.mLine );
 
-	if ( it == sMapPointers.end() )
+	if ( it == state.pointers.end() )
 		return addPointer( aAllocatedPointer );
 
 	if ( aAllocatedPointer.mTrack )
@@ -111,20 +119,20 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 		removePointer( data, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
 		addPointer( aAllocatedPointer );
 	} else {
-		sTotalMemoryUsage -= it->second.mMemory;
+		state.totalMemoryUsage -= it->second.mMemory;
 		it->second.mMemory = aAllocatedPointer.mMemory;
 		it->second.mFile = aAllocatedPointer.mFile;
 		it->second.mLine = aAllocatedPointer.mLine;
 		it->second.mTrack = aAllocatedPointer.mTrack;
 
-		sTotalMemoryUsage += aAllocatedPointer.mMemory;
+		state.totalMemoryUsage += aAllocatedPointer.mMemory;
 
-		if ( sPeakMemoryUsage < sTotalMemoryUsage ) {
-			sPeakMemoryUsage = sTotalMemoryUsage;
+		if ( state.peakMemoryUsage < state.totalMemoryUsage ) {
+			state.peakMemoryUsage = state.totalMemoryUsage;
 		}
 
-		if ( aAllocatedPointer.mMemory > sBiggestAllocation.mMemory ) {
-			sBiggestAllocation = aAllocatedPointer;
+		if ( aAllocatedPointer.mMemory > state.biggestAllocation.mMemory ) {
+			state.biggestAllocation = aAllocatedPointer;
 		}
 	}
 
@@ -132,11 +140,12 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 }
 
 bool MemoryManager::removePointer( void* data, const char* file, const size_t& line ) {
-	Lock l( sAllocMutex );
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
 
-	AllocatedPointerMapIt it = sMapPointers.find( data );
+	AllocatedPointerMapIt it = state.pointers.find( data );
 
-	if ( it == sMapPointers.end() ) {
+	if ( it == state.pointers.end() ) {
 		eePRINTL( "Trying to delete pointer %p created that does not exist!", data );
 		eeASSERT( false );
 		return false;
@@ -145,23 +154,29 @@ bool MemoryManager::removePointer( void* data, const char* file, const size_t& l
 	if ( it->second.mTrack )
 		eePRINTL( "Deleting pointer %p at '%s' %d", data, file, line );
 
-	sTotalMemoryUsage -= it->second.mMemory;
+	state.totalMemoryUsage -= it->second.mMemory;
 
-	sMapPointers.erase( it );
+	state.pointers.erase( it );
 
 	return true;
 }
 
 size_t MemoryManager::getPeakMemoryUsage() {
-	return sPeakMemoryUsage;
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
+	return state.peakMemoryUsage;
 }
 
 size_t MemoryManager::getTotalMemoryUsage() {
-	return sTotalMemoryUsage;
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
+	return state.totalMemoryUsage;
 }
 
-const AllocatedPointer& MemoryManager::getBiggestAllocation() {
-	return sBiggestAllocation;
+AllocatedPointer MemoryManager::getBiggestAllocation() {
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
+	return state.biggestAllocation;
 }
 
 void MemoryManager::showResults() {
@@ -173,11 +188,13 @@ void MemoryManager::showResults() {
 	}
 
 	Engine::destroySingleton();
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
 
 	eePRINTL( "\n|--Memory Manager Report-------------------------------------|" );
 	eePRINTL( "|" );
 
-	if ( sMapPointers.empty() ) {
+	if ( state.pointers.empty() ) {
 		eePRINTL( "| No memory leaks detected." );
 	} else {
 		eePRINTL( "| Memory leaks detected: " );
@@ -186,9 +203,9 @@ void MemoryManager::showResults() {
 
 		// Get max length of file name
 		int lMax = 0;
-		AllocatedPointerMapIt it = sMapPointers.begin();
+		AllocatedPointerMapIt it = state.pointers.begin();
 
-		for ( ; it != sMapPointers.end(); ++it ) {
+		for ( ; it != state.pointers.end(); ++it ) {
 			AllocatedPointer& ap = it->second;
 
 			if ( (int)ap.mFile.length() > lMax )
@@ -204,9 +221,9 @@ void MemoryManager::showResults() {
 
 		eePRINTL( "|-----------------------------------------------------------|" );
 
-		it = sMapPointers.begin();
+		it = state.pointers.begin();
 
-		for ( ; it != sMapPointers.end(); ++it ) {
+		for ( ; it != state.pointers.end(); ++it ) {
 			AllocatedPointer& ap = it->second;
 
 			eePRINT( "| %p\t %s", ap.mData, ap.mFile.c_str() );
@@ -220,12 +237,13 @@ void MemoryManager::showResults() {
 
 	eePRINTL( "|" );
 	eePRINTL( "| Memory left: %s",
-			  FileSystem::sizeToString( static_cast<Int64>( sTotalMemoryUsage ) ).c_str() );
+			  FileSystem::sizeToString( static_cast<Int64>( state.totalMemoryUsage ) ).c_str() );
 	eePRINTL( "| Biggest allocation:" );
 	eePRINTL( "| %s in file: %s at line: %d",
-			  FileSystem::sizeToString( sBiggestAllocation.mMemory ).c_str(),
-			  sBiggestAllocation.mFile.c_str(), sBiggestAllocation.mLine );
-	eePRINTL( "| Peak Memory Usage: %s", FileSystem::sizeToString( sPeakMemoryUsage ).c_str() );
+			  FileSystem::sizeToString( state.biggestAllocation.mMemory ).c_str(),
+			  state.biggestAllocation.mFile.c_str(), state.biggestAllocation.mLine );
+	eePRINTL( "| Peak Memory Usage: %s",
+			  FileSystem::sizeToString( state.peakMemoryUsage ).c_str() );
 	eePRINTL( "|------------------------------------------------------------|\n" );
 
 #endif

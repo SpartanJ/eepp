@@ -64,7 +64,7 @@ class EE_API MemoryManager {
 
 	static size_t getTotalMemoryUsage();
 
-	static const AllocatedPointer& getBiggestAllocation();
+	static AllocatedPointer getBiggestAllocation();
 };
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop

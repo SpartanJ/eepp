@@ -155,6 +155,22 @@ Regression coverage:
 
 ## 4. Priority C: loader and callback lifetime
 
+### C0. MemoryManager first-use synchronization
+
+Current behavior:
+
+`MemoryManager::addPointer()` skips its mutex until `sHasInit` becomes true. Two concurrent first
+tracked allocations can therefore race on the initialization flag, allocation map, and accounting
+counters.
+
+Fix:
+
+- Use thread-safe function-local initialization for process-lifetime tracker state.
+- Always lock map and accounting operations.
+- Keep tracker state valid through process-static destruction.
+
+Status: fixed, 2026-07-13. Unsuppressed focused TSAN coverage passes after the change.
+
 ### C1. TextureAtlasLoader member destruction order
 
 Current behavior:
@@ -164,13 +180,16 @@ reverse declaration order, so that state dies before mRL joins its work.
 
 Fix:
 
-- Add an explicit destructor shutdown/join before any callback-visible member is destroyed, or move
-  async operation state into a lifetime object that outlives execution.
-- Do not rely only on member declaration order without an explicit invariant comment/test.
+- Declare `mRL` last so its destructor joins before callback-visible members are destroyed.
+- Document and regression-test the member-order invariant.
 
 Regression coverage:
 
 - Destroy a loader immediately with queued texture tasks and completion callbacks.
+
+Status: fixed, 2026-07-13. `TextureAtlasLoader` now declares `mRL` last, causing its worker join to
+run before callback-visible members are destroyed. Loader status/progress synchronization and a
+focused ASAN lifetime test were added as part of the same fix.
 
 ### C2. TextureLoader static callback registry is unsynchronized and process-persistent
 
