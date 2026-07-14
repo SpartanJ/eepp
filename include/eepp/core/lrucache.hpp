@@ -147,7 +147,9 @@ class StaticLRU {
 		push_front( target_idx );
 	}
 
-	void clear() noexcept {
+	void clear() {
+		for ( std::size_t i = 0; i < used_; ++i )
+			vals_[i] = ValueT{};
 		std::fill( table_.begin(), table_.end(), Entry{ NONE } );
 		std::fill( prev_.begin(), prev_.end(), NONE );
 		std::fill( next_.begin(), next_.end(), NONE );

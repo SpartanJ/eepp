@@ -2,11 +2,25 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/resourceloader.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/ui/models/variant.hpp>
+#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 #include <limits>
@@ -17,6 +31,8 @@
 
 using namespace EE;
 using namespace EE::Graphics;
+using namespace EE::Scene;
+using namespace EE::UI;
 using namespace EE::UI::Models;
 using namespace EE::Window;
 
@@ -172,4 +188,51 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderWaitsBeforeDestroyingCallbackSta
 	destroyThread.join();
 
 	EXPECT_TRUE( *callbackCompleted );
+}
+
+UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcrossRestarts ) {
+	for ( int cycle = 0; cycle < 2; ++cycle ) {
+		Engine::instance()->createWindow(
+			WindowSettings( 64, 64, "Engine teardown test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+		Texture* texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
+		ASSERT_TRUE( texture != nullptr );
+
+		NinePatch* ninePatch = NinePatchManager::instance()->add(
+			NinePatch::New( texture, 1, 1, 1, 1, 1, "engine-teardown-nine-patch" ) );
+		ASSERT_TRUE( ninePatch != nullptr );
+
+		auto* scene = UISceneNode::New();
+		SceneManager::instance()->add( scene );
+		scene->enableFrameBuffer();
+		UIImage::New()->setDrawable( ninePatch )->setParent( scene->getRoot() );
+
+		auto* font = FontTrueType::New( "engine-teardown-font" );
+		ASSERT_TRUE(
+			font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+		auto layout = TextLayout::layout( String( "cached before Engine teardown" ), font, 14, 0 );
+		std::weak_ptr<const TextLayout> layoutWeak = layout;
+		layout.reset();
+
+		auto* batch = GlobalBatchRenderer::instance();
+		batch->setTexture( texture );
+		batch->batchQuad( 0, 0, 4, 4 );
+
+		Engine::destroySingleton();
+
+		EXPECT_TRUE( layoutWeak.expired() );
+		EXPECT_TRUE( Engine::existsSingleton() == nullptr );
+		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
+		EXPECT_TRUE( NinePatchManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( FontManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( TextureAtlasManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
+		EXPECT_TRUE( ShaderProgramManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::FrameBufferManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::VertexBufferManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( Renderer::existsSingleton() == nullptr );
+	}
 }

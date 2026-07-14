@@ -75,40 +75,52 @@ Engine::Engine() :
 Engine::~Engine() {
 	mIsShuttingDown = true;
 
-	GlobalBatchRenderer::destroySingleton();
-
-	NinePatchManager::destroySingleton();
+	// Stop and join pool-owned HTTP clients before any scene or graphics resource their callbacks
+	// can reach is destroyed.
+	Network::Http::Pool::getGlobal().clear();
+	if ( mWindow )
+		mWindow->setCurrent();
 
 	Scene::SceneManager::destroySingleton();
+
+	// Scene destruction can leave borrowed textures in the batch. Destroying the batch explicitly
+	// discards those submissions while their resource managers are still alive.
+	GlobalBatchRenderer::destroySingleton();
+
+	// Cached layouts retain shaped runs that refer to managed fonts.
+	TextLayout::clearLayoutCache();
 
 	CSS::StyleSheetSpecification::destroySingleton();
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
+	NinePatchManager::destroySingleton();
+
 	FontManager::destroySingleton();
 
 	TextureAtlasManager::destroySingleton();
-
-	TextureFactory::destroySingleton();
-
-	Graphics::Renderer::destroySingleton();
-
-	ShaderProgramManager::destroySingleton();
-
-	PackManager::destroySingleton();
 
 	Graphics::Private::FrameBufferManager::destroySingleton();
 
 	Graphics::Private::VertexBufferManager::destroySingleton();
 
-	VirtualFileSystem::destroySingleton();
+	TextureFactory::destroySingleton();
+
+	// Shader and renderer destructors issue GL commands. Programs must go first while GLi and the
+	// current window context are still valid.
+	ShaderProgramManager::destroySingleton();
+
+	Graphics::Renderer::destroySingleton();
+
+	PackManager::destroySingleton();
 
 #ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();
 #endif
 
-	Network::Http::Pool::getGlobal().clear();
+	VirtualFileSystem::destroySingleton();
 
+	// Windows own the GL contexts and must outlive every GPU resource and graphics manager above.
 	destroy();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -121,15 +133,13 @@ Engine::~Engine() {
 
 	eeSAFE_DELETE( mBackend );
 
+	SystemFontResolver::destroySingleton();
+
 	RegExCache::destroySingleton();
 
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
-
-	TextLayout::clearLayoutCache();
-
-	SystemFontResolver::destroySingleton();
 }
 
 void Engine::destroy() {

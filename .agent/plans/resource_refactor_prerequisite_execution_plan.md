@@ -1,6 +1,7 @@
 # Resource-refactor prerequisite bug-fix execution plan
 
-Status: active; work packages 1 and 2 completed, 2026-07-13.
+Status: active; work packages 1 and 2 completed; Work Package 4 deterministic ordering implemented,
+2026-07-13.
 
 This plan defines the bounded correctness work to complete before Stage 1 of the shared-resource
 ownership refactor. It turns the findings in `resource_refactor_prerequisite_bugfixes.md` into an
@@ -142,6 +143,23 @@ Fix:
 Status: implemented. The focused TSAN suite initially reproduced the race in
 `MemoryManager::addPointer()`. After the fix, all six `ResourcePrerequisites` tests pass under
 TSAN without suppressions. The ASAN build and focused tests also pass.
+
+### 3.6 StaticLRU clear retains non-trivial values
+
+Current defect found during Work Package 4 validation:
+
+`StaticLRU::clear()` resets its hash/list metadata and active count but leaves values in its backing
+array. For `TextLayout::Cache`, this means `TextLayout::clearLayoutCache()` does not release cached
+layouts or their raw font references.
+
+Fix:
+
+- Reset only the active value slots before clearing StaticLRU metadata.
+- Keep the operation proportional to the number of live entries rather than total capacity.
+- Verify cache release through a weak TextLayout handle during repeated Engine teardown.
+
+Status: implemented. The cached layout expires before FontManager destruction in both tested
+Engine lifecycles.
 
 Work-package exit criteria:
 
@@ -294,6 +312,14 @@ Work-package exit criteria:
 - All asynchronous producers are behind a shutdown barrier before their consumers are destroyed.
 - Every GPU-owning manager is destroyed while its required Renderer/context services remain valid.
 - Repeated Engine lifecycle tests pass.
+
+Status: the deterministic dependency order is implemented. Engine clears pool-owned HTTP clients
+first, makes the selected context current, destroys scenes, explicitly discards batch state, clears
+TextLayout, releases high-level Graphics managers in dependency order, destroys shaders before
+Renderer, and only then destroys windows/contexts. A focused test covers two Engine lifecycles with
+a live UI scene, framebuffer, nine-patch, texture, font/layout cache, shaders, and pending batch.
+The complete asynchronous-producer exit criterion remains pending Work Packages 3 and 5.
+The complete ASAN unit suite passes: 746 tests passed and one opt-in visual test was skipped.
 
 ## 7. Work package 5: UISceneNode async delivery lifecycle
 

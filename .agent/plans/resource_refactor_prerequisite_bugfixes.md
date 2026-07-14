@@ -1,6 +1,6 @@
 # Resource-refactor prerequisite bug fixes
 
-Status: active defect track, 2026-07-12.
+Status: active defect track, updated 2026-07-13.
 
 This document isolates correctness defects discovered during the shared-resource ownership audit.
 They should be fixed before the public resource API refactor wherever practical. Fixes in this track
@@ -86,6 +86,10 @@ Regression coverage:
 - Repeat Engine creation/destruction in the same test process.
 - Assert no callback touches the destroyed scene/factory and no singleton is recreated.
 
+Status: Engine now clears pool-owned HTTP clients before scene/Graphics teardown. The complete
+producer barrier remains pending A2 and A4 because shared-executor operations and static UI
+deliveries do not yet have complete close/reject semantics.
+
 ### A4. UISceneNode static delivery queue lacks shutdown semantics
 
 Current behavior:
@@ -122,20 +126,28 @@ Regression coverage:
 
 - Create/link programs, destroy Engine, and repeat under ASAN.
 
+Status: fixed, 2026-07-13. ShaderProgramManager is destroyed before Renderer while the selected
+window and context are still alive.
+
 ### B2. TextLayout cache destroyed after FontManager
 
 Current behavior:
 
 Cached shaped glyphs retain raw FontTrueType pointers. The global TextLayout cache is currently
-cleared after FontManager destruction.
+cleared after FontManager destruction. `StaticLRU::clear()` also resets only its indexes, leaving
+non-trivial cached values such as shared TextLayout pointers alive in its backing array.
 
 Fix:
 
 - Clear TextLayout and related shaped-font caches before FontManager.
+- Release every active StaticLRU value when clearing the cache.
 
 Regression coverage:
 
 - Populate shaped-layout cache, destroy Engine, and verify repeated Engine lifecycle under ASAN.
+
+Status: fixed, 2026-07-13. TextLayout is cleared before FontManager, and StaticLRU now resets its
+active values. A weak cached layout expires during each tested Engine teardown.
 
 ### B3. Scene/global resource manager order
 
@@ -152,6 +164,10 @@ Fix requirements:
 Regression coverage:
 
 - Destroy an Engine with live scene widgets using nine-patches and a non-empty batch.
+
+Status: fixed, 2026-07-13. Scenes are destroyed first, BatchRenderer destruction explicitly drops
+queued vertices and borrowed texture state without GL work, and global drawable/resource managers
+remain alive until scene destruction completes.
 
 ## 4. Priority C: loader and callback lifetime
 

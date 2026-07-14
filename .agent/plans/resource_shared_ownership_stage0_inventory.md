@@ -342,6 +342,13 @@ TextLayout cache
 SystemFontResolver
 ```
 
+This list records the pre-prerequisite order found by the audit. On 2026-07-13 the deterministic
+portion was corrected: pool-owned HTTP clients stop first; the selected context is made current;
+scenes precede GlobalBatchRenderer and global resource managers; TextLayout precedes FontManager;
+ShaderProgramManager precedes Renderer; and windows/contexts remain until all Graphics singleton
+teardown is complete. Complete shared-executor and static UI-delivery barriers remain assigned to
+their prerequisite work packages.
+
 Concrete violations:
 
 | Current edge/order | Violation |

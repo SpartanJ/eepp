@@ -335,6 +335,9 @@ class EE_API BatchRenderer {
 
 	void flush();
 
+	/** Discard queued vertices and borrowed draw state without issuing graphics commands. */
+	void discard();
+
 	void init();
 
 	void addVertices( const unsigned int& num );
