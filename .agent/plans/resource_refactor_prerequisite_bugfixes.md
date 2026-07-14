@@ -65,6 +65,17 @@ Regression coverage:
 - Running and queued variants complete/cancel without UAF under ASAN.
 - Callback re-entry does not deadlock.
 
+Status: implemented. Shared-executor requests are registered before submission and retained by a
+heap-backed operation. The operation destructor unregisters it both after execution and when the
+external executor discards queued work. `Http::shutdown()` atomically rejects new work,
+cancels registered requests, and waits without holding Pool or request-map locks. Callback-initiated
+Pool clearing cannot wait for work queued behind that callback, so it requests cancellation and
+lets shared operations defer destruction until the shared queue drains. `Request` cancellation is
+shared and atomic across request copies. Focused ASAN coverage exercises queued memory, stream, and
+file requests, running cancellation, concurrent Pool clearing, and Pool clearing from a callback
+with another request queued behind it. All six focused HTTP tests pass under ASAN and unsuppressed
+TSAN.
+
 ### A3. Engine stops HTTP/resource producers too late
 
 Current behavior:
@@ -86,8 +97,9 @@ Regression coverage:
 - Repeat Engine creation/destruction in the same test process.
 - Assert no callback touches the destroyed scene/factory and no singleton is recreated.
 
-Status: Engine now clears pool-owned HTTP clients before scene/Graphics teardown. The complete
-producer barrier remains pending A2 and A4 because shared-executor operations and static UI
+Status: Engine now clears pool-owned HTTP clients before scene/Graphics teardown. Shared-executor
+HTTP operations are covered by A2's explicit Pool barrier. The complete producer barrier remains
+pending A4 because static UI
 deliveries do not yet have complete close/reject semantics.
 
 ### A4. UISceneNode static delivery queue lacks shutdown semantics

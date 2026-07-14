@@ -31,7 +31,8 @@ Socket::Status UdpSocket::bind( unsigned short port, const IpAddress& address ) 
 	close();
 
 	// Create the internal socket if it doesn't exist
-	create();
+	if ( !create() )
+		return Error;
 
 	// Check if the address is valid
 	if ( ( address == IpAddress::None ) || ( address == IpAddress::Broadcast ) )
@@ -55,7 +56,8 @@ void UdpSocket::unbind() {
 Socket::Status UdpSocket::send( const void* data, std::size_t size, const IpAddress& remoteAddress,
 								unsigned short remotePort ) {
 	// Create the internal socket if it doesn't exist
-	create();
+	if ( !create() )
+		return Error;
 
 	// Make sure that all the data will fit in one datagram
 	if ( size > MaxDatagramSize ) {

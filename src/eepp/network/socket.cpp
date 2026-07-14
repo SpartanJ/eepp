@@ -1,3 +1,5 @@
+#include <cerrno>
+#include <cstring>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/socket.hpp>
 #include <eepp/system/log.hpp>
@@ -28,12 +30,24 @@ SocketHandle Socket::getHandle() const {
 	return mSocket;
 }
 
-void Socket::create() {
+bool Socket::create() {
 	// Don't create the socket if it already exists
 	if ( mSocket == Private::SocketImpl::invalidSocket() ) {
 		SocketHandle handle = socket( PF_INET, mType == Tcp ? SOCK_STREAM : SOCK_DGRAM, 0 );
+		if ( handle == Private::SocketImpl::invalidSocket() ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			Log::error( "Failed to create %s socket (Winsock error %d)",
+						mType == Tcp ? "TCP" : "UDP", WSAGetLastError() );
+#else
+			const int errorCode = errno;
+			Log::error( "Failed to create %s socket: %s (errno %d)", mType == Tcp ? "TCP" : "UDP",
+						std::strerror( errorCode ), errorCode );
+#endif
+			return false;
+		}
 		create( handle );
 	}
+	return true;
 }
 
 void Socket::create( SocketHandle handle ) {

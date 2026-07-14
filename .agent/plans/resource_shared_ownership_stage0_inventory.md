@@ -43,6 +43,11 @@ The architecture contracts can proceed with these refinements:
      Members are destroyed in reverse declaration order, so the loader is destroyed last and can
      run against already-destroyed state.
    These are prerequisite bugs and should be fixed independently before the ownership refactor.
+
+   Status: the HTTP Pool lock-order defect and shared-ThreadPool operation lifetime defect are
+   fixed. Pool clearing now establishes an operation barrier without owning the executor, including
+   callback-initiated clearing and executor-discarded queued work. The TextureAtlasLoader lifetime
+   defect is also fixed and covered by sanitizer-backed regression tests.
 6. `isStateful()` is unusable as a shareability test. Every current Drawable inherits mutable color
    and position, and several classes reporting false mutate themselves or children during draw.
 7. Stage 2 must migrate texture holders, loaders, ID-based construction, and queued batches in one

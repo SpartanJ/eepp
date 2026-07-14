@@ -6,6 +6,10 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+#include <dirent.h>
+#endif
+
 using namespace EE;
 using namespace EE::Graphics;
 using namespace EE::System;
@@ -13,6 +17,22 @@ using namespace EE::System;
 static std::string getFontsDir() {
 	return Sys::getProcessPath() + "../assets/fonts/";
 }
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+static std::size_t getOpenFileDescriptorCount() {
+	DIR* directory = opendir( "/proc/self/fd" );
+	if ( !directory )
+		return 0;
+
+	std::size_t count = 0;
+	while ( dirent* entry = readdir( directory ) ) {
+		if ( entry->d_name[0] != '.' )
+			++count;
+	}
+	closedir( directory );
+	return count;
+}
+#endif
 
 UTEST( SystemFontResolver, singletonLifecycle ) {
 	SystemFontResolver::setEnabled( true );
@@ -241,6 +261,27 @@ UTEST( SystemFontResolver, getFallbackForCodepoint ) {
 	SystemFontResolver::setEnabled( false );
 	SystemFontResolver::destroySingleton();
 }
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+UTEST( SystemFontResolver, fallbackProbeDoesNotRetainFontDescriptors ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+	resolver->enumerate();
+
+	const std::size_t descriptorsBefore = getOpenFileDescriptorCount();
+	resolver->getFallbackForCodepoint( 0x10FFFF, FontWeight::Normal, false );
+	const std::size_t descriptorsAfter = getOpenFileDescriptorCount();
+
+	EXPECT_TRUE_MSG( descriptorsAfter <= descriptorsBefore + 4,
+					 String::format( "Fallback probing changed the descriptor count by %lld",
+									 static_cast<long long>( descriptorsAfter ) -
+										 static_cast<long long>( descriptorsBefore ) )
+						 .c_str() );
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
+}
+#endif
 
 UTEST( SystemFontResolver, invalidateCache ) {
 	SystemFontResolver::setEnabled( true );

@@ -41,7 +41,7 @@ void UITextureViewer::init() {
 		</ScrollView>
 		<RelativeLayout class="image_container" lw="mp" lh="mp" visible="false" enabled="false" background-color="black">
 			<Image lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="false" lg="center" />
-			<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="false" />
+			<Image id="image_close" lw="22dp" lh="22dp" icon="icon(document-close, 22dp)" lg="top|right" enabled="false" />
 		</RelativeLayout>
 	)xml",
 		this );

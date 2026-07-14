@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <eepp/core/lrucache.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
@@ -88,6 +89,29 @@ class TestTextureAtlasLoader : public TextureAtlasLoader {
 
 static_assert( !std::is_copy_constructible<Texture>::value, "Texture must not be copyable" );
 static_assert( !std::is_copy_assignable<Texture>::value, "Texture must not be copy-assignable" );
+
+UTEST( ResourcePrerequisites, lruCacheEvictsOnlyLeastRecentlyUsedAndReleasesKeys ) {
+	LRUCache<2, int, bool> recencyCache;
+	recencyCache.put( 1, true );
+	recencyCache.put( 2, false );
+	ASSERT_TRUE( recencyCache.get( 1 ).has_value() );
+	recencyCache.put( 3, true );
+
+	EXPECT_TRUE( !recencyCache.get( 2 ).has_value() );
+	EXPECT_TRUE( recencyCache.get( 1 ).has_value() );
+	EXPECT_TRUE( recencyCache.get( 3 ).has_value() );
+
+	auto ownedKey = std::make_shared<int>( 1 );
+	std::weak_ptr<int> weakKey = ownedKey;
+	LRUCache<2, std::shared_ptr<int>, bool> owningKeyCache;
+	static_assert( decltype( owningKeyCache )::is_static() );
+	owningKeyCache.put( ownedKey, true );
+	ownedKey.reset();
+	ASSERT_TRUE( !weakKey.expired() );
+
+	owningKeyCache.clear();
+	EXPECT_TRUE( weakKey.expired() );
+}
 
 UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
 	Engine::instance()->createWindow( WindowSettings( 64, 64, "TextureAtlasLoader filter test",

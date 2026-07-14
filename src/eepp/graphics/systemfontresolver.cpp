@@ -5,6 +5,7 @@
 #undef Rect
 #endif
 
+#include <eepp/core/lrucache.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
@@ -52,42 +53,93 @@
 
 using namespace EE::System;
 
+namespace EE::Graphics::SystemFontResolverDetail {
+
+enum class FontProbeKind : Uint8 { Codepoint, SfntTable };
+
+struct FontProbeKey {
+	std::string path;
+	FT_ULong value;
+	FontProbeKind kind;
+
+	bool operator==( const FontProbeKey& other ) const {
+		return value == other.value && kind == other.kind && path == other.path;
+	}
+};
+
+} // namespace EE::Graphics::SystemFontResolverDetail
+
+namespace std {
+
+template <> struct hash<EE::Graphics::SystemFontResolverDetail::FontProbeKey> {
+	std::size_t
+	operator()( const EE::Graphics::SystemFontResolverDetail::FontProbeKey& key ) const noexcept {
+		return hashCombine( std::hash<std::string>{}( key.path ),
+							std::hash<FT_ULong>{}( key.value ),
+							static_cast<std::size_t>( key.kind ) );
+	}
+};
+
+} // namespace std
+
 namespace {
 
+using FontProbeKey = EE::Graphics::SystemFontResolverDetail::FontProbeKey;
+using FontProbeKind = EE::Graphics::SystemFontResolverDetail::FontProbeKind;
+
 struct FreeTypeState {
+	static constexpr std::size_t MaxCachedProbes = 4096;
+
 	FT_Library library{ nullptr };
-	EE::UnorderedMap<std::string, FT_Face> faceCache;
 	Mutex mutex;
+	EE::LRUCache<MaxCachedProbes, FontProbeKey, bool> probeCache;
 
 	FreeTypeState() { FT_Init_FreeType( &library ); }
 
 	~FreeTypeState() {
 		Lock lock( mutex );
-
-		for ( auto& pair : faceCache ) {
-			FT_Done_Face( pair.second );
-		}
-
-		if ( library ) {
+		if ( library )
 			FT_Done_FreeType( library );
-		}
 	}
 
-	FT_Face getFace( const std::string& path ) {
+	bool containsCodepoint( const std::string& path, EE::Uint32 codepoint ) {
 		Lock lock( mutex );
+		FontProbeKey key{ path, codepoint, FontProbeKind::Codepoint };
+		if ( auto cached = probeCache.get( key ) )
+			return *cached;
 
-		auto it = faceCache.find( path );
-		if ( it != faceCache.end() ) {
-			return it->second;
+		FT_Face face{ nullptr };
+		bool contains = false;
+		if ( library && FT_New_Face( library, path.c_str(), 0, &face ) == 0 ) {
+			contains = FT_Get_Char_Index( face, codepoint ) != 0;
+			FT_Done_Face( face );
 		}
 
-		FT_Face face;
-		if ( FT_New_Face( library, path.c_str(), 0, &face ) == 0 ) {
-			faceCache[path] = face;
-			return face;
+		probeCache.put( std::move( key ), contains );
+		return contains;
+	}
+
+	bool hasSfntTable( const std::string& path, FT_ULong tag ) {
+		Lock lock( mutex );
+		FontProbeKey key{ path, tag, FontProbeKind::SfntTable };
+		if ( auto cached = probeCache.get( key ) )
+			return *cached;
+
+		FT_Face face{ nullptr };
+		bool found = false;
+		if ( library && FT_New_Face( library, path.c_str(), 0, &face ) == 0 ) {
+			FT_ULong length = 0;
+			found = FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length ) == 0 && length > 0;
+			FT_Done_Face( face );
 		}
 
-		return nullptr;
+		probeCache.put( std::move( key ), found );
+		return found;
+	}
+
+	void clearProbeCache() {
+		Lock lock( mutex );
+		probeCache.clear();
 	}
 };
 
@@ -106,17 +158,19 @@ void destroyFTState() {
 	gFtState.reset();
 }
 
+void clearFTProbeCache() {
+	std::shared_ptr<FreeTypeState> state;
+	{
+		Lock lock( gStateInitMutex );
+		state = gFtState;
+	}
+	if ( state )
+		state->clearProbeCache();
+}
+
 bool fontHasSfntTable( const std::string& path, FT_ULong tag ) {
 	std::shared_ptr<FreeTypeState> state = getFTState();
-	if ( !state )
-		return false;
-
-	FT_Face face = state->getFace( path );
-	if ( !face )
-		return false;
-
-	FT_ULong length = 0;
-	return FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length ) == 0 && length > 0;
+	return state && state->hasSfntTable( path, tag );
 }
 
 bool fontHasSvgTable( const std::string& path ) {
@@ -147,13 +201,16 @@ bool SystemFontResolver::isEnabled() {
 }
 
 void SystemFontResolver::invalidateCache() {
-	Lock lock( mMutex );
-	mResolveCache.clear();
-	mGenericCache.clear();
-	mCodepointFallbackCache.clear();
-	mFontList.clear();
-	mGenericFallbacks.clear();
-	mFontListPopulated = false;
+	{
+		Lock lock( mMutex );
+		mResolveCache.clear();
+		mGenericCache.clear();
+		mCodepointFallbackCache.clear();
+		mFontList.clear();
+		mGenericFallbacks.clear();
+		mFontListPopulated = false;
+	}
+	clearFTProbeCache();
 }
 
 static std::string normalizeFamily( const std::string& family ) {
@@ -436,14 +493,7 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 
 bool SystemFontResolver::fontContainsCodepoint( const std::string& path, Uint32 codepoint ) {
 	std::shared_ptr<FreeTypeState> state = getFTState();
-	if ( !state )
-		return false;
-
-	FT_Face face = state->getFace( path );
-	if ( !face )
-		return false;
-
-	return FT_Get_Char_Index( face, codepoint ) != 0;
+	return state && state->containsCodepoint( path, codepoint );
 }
 
 void SystemFontResolver::populateGenericFallbacks() const {

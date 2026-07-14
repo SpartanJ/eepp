@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -11,11 +12,14 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -39,7 +43,7 @@ using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
 
-static bool readHttpRequestHeaders( TcpSocket& client ) {
+static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nullptr ) {
 	std::string request;
 	char buffer[1024];
 	std::size_t received = 0;
@@ -49,6 +53,8 @@ static bool readHttpRequestHeaders( TcpSocket& client ) {
 			return false;
 		request.append( buffer, received );
 	}
+	if ( headers )
+		*headers = std::move( request );
 	return true;
 }
 
@@ -3097,6 +3103,174 @@ UTEST( UIWebView, NewerNavigationSupersedesStartedLoad ) {
 	EXPECT_TRUE( doc->getRoot()->find( "old-doc" ) == nullptr );
 	EXPECT_TRUE( doc->getRoot()->find( "new-doc" ) != nullptr );
 	EXPECT_TRUE( webView->getCurrentURI().toString().find( "stale_new" ) != std::string::npos );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, RepeatedRemoteNavigationHandlesSubresourceFanOut ) {
+	constexpr int NavigationCount = 6;
+	constexpr int ImagesPerDocument = 100;
+	constexpr int StyleSheetsPerDocument = 4;
+	constexpr int ResourcesPerDocument = ImagesPerDocument + StyleSheetsPerDocument;
+
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Subresource Fan-out Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	std::string imageData;
+	const std::string imagePath =
+		Sys::getProcessPath() + "assets/html/reddit_old_thread_files/pixel.png";
+	ASSERT_TRUE( FileSystem::fileGet( imagePath, imageData ) );
+	ASSERT_FALSE( imageData.empty() );
+
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	const unsigned short serverPort = listener.getLocalPort();
+	std::atomic<bool> stopServer{ false };
+	std::atomic<bool> serverOk{ true };
+	std::atomic<int> documentRequests{ 0 };
+	std::atomic<int> resourceRequests{ 0 };
+
+	std::thread server( [&] {
+		while ( !stopServer.load( std::memory_order_acquire ) ) {
+			TcpSocket client;
+			if ( listener.accept( client ) != Socket::Done ) {
+				if ( !stopServer.load( std::memory_order_acquire ) )
+					serverOk.store( false, std::memory_order_release );
+				break;
+			}
+
+			if ( stopServer.load( std::memory_order_acquire ) )
+				break;
+
+			std::string requestHeaders;
+			if ( !readHttpRequestHeaders( client, &requestHeaders ) ) {
+				serverOk.store( false, std::memory_order_release );
+				break;
+			}
+
+			std::string body;
+			std::string contentType;
+			if ( String::startsWith( requestHeaders, "GET /page/" ) ) {
+				const int document = documentRequests.fetch_add( 1, std::memory_order_acq_rel );
+				contentType = "text/html";
+				body = "<!doctype html><html><head>";
+				for ( int i = 0; i < StyleSheetsPerDocument; ++i )
+					body += "<link rel='stylesheet' href='/style.css?document=" +
+							String::toString( document ) + "&amp;sheet=" + String::toString( i ) +
+							"'>";
+				body += "</head><body><div id='document-" + String::toString( document ) + "'>";
+				for ( int i = 0; i < ImagesPerDocument; ++i )
+					body += "<img src='/pixel.png?document=" + String::toString( document ) +
+							"&amp;image=" + String::toString( i ) + "'>";
+				body += "</div></body></html>";
+			} else if ( String::startsWith( requestHeaders, "GET /style.css?" ) ) {
+				resourceRequests.fetch_add( 1, std::memory_order_acq_rel );
+				contentType = "text/css";
+				body = "body { color: #223344; }";
+			} else if ( String::startsWith( requestHeaders, "GET /pixel.png?" ) ) {
+				resourceRequests.fetch_add( 1, std::memory_order_acq_rel );
+				contentType = "image/png";
+				body = imageData;
+			} else {
+				serverOk.store( false, std::memory_order_release );
+				break;
+			}
+
+			const std::string response =
+				"HTTP/1.1 200 OK\r\nContent-Type: " + contentType +
+				"\r\nContent-Length: " + String::toString( static_cast<Uint64>( body.size() ) ) +
+				"\r\nConnection: close\r\n\r\n" + body;
+			if ( client.send( response.data(), response.size() ) != Socket::Done ) {
+				serverOk.store( false, std::memory_order_release );
+				break;
+			}
+			client.disconnect();
+		}
+	} );
+
+	auto httpThreadPool = ThreadPool::createShared( 8 );
+	Http::Pool::getGlobal().clear();
+	Http::setThreadPool( httpThreadPool );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	sceneNode->setThreadPool( httpThreadPool );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 640, 420 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto pumpUntil = [&]( const std::function<bool()>& condition, Time timeout ) {
+		Clock clock;
+		while ( !condition() && clock.getElapsedTime() < timeout ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+			Sys::sleep( Milliseconds( 1 ) );
+		}
+		return condition();
+	};
+
+	bool allNavigationsStarted = true;
+	for ( int navigation = 0; navigation < NavigationCount; ++navigation ) {
+		webView->loadURI(
+			URI( String::format( "http://127.0.0.1:%u/page/%d", serverPort, navigation ) ) );
+		const int minimumResources = navigation * ResourcesPerDocument + 8;
+		if ( !pumpUntil(
+				 [&] {
+					 return documentRequests.load( std::memory_order_acquire ) >= navigation + 1 &&
+							resourceRequests.load( std::memory_order_acquire ) >= minimumResources;
+				 },
+				 Seconds( 10 ) ) ) {
+			allNavigationsStarted = false;
+			break;
+		}
+	}
+
+	const int expectedResourceRequests = NavigationCount * ResourcesPerDocument;
+	const bool allResourcesLoaded =
+		allNavigationsStarted &&
+		pumpUntil(
+			[&] {
+				return resourceRequests.load( std::memory_order_acquire ) ==
+					   expectedResourceRequests;
+			},
+			Seconds( 15 ) );
+
+	for ( int i = 0; i < 30; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+
+	Http::Pool::getGlobal().clear();
+	Http::setThreadPool( nullptr );
+	httpThreadPool.reset();
+	stopServer.store( true, std::memory_order_release );
+	TcpSocket wakeServer;
+	wakeServer.connect( IpAddress::LocalHost, serverPort, Seconds( 1 ) );
+	wakeServer.disconnect();
+	listener.close();
+	if ( server.joinable() )
+		server.join();
+
+	EXPECT_TRUE( serverOk.load( std::memory_order_acquire ) );
+	EXPECT_TRUE( allNavigationsStarted );
+	EXPECT_TRUE( allResourcesLoaded );
+	EXPECT_EQ( NavigationCount, documentRequests.load( std::memory_order_acquire ) );
+	EXPECT_EQ( expectedResourceRequests, resourceRequests.load( std::memory_order_acquire ) );
+	EXPECT_TRUE( webView->getCurrentURI().toString().find( "/page/5" ) != std::string::npos );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	EXPECT_TRUE( documentScene->getRoot()->find( "document-5" ) != nullptr );
 
 	Engine::destroySingleton();
 }

@@ -91,7 +91,8 @@ Socket::Status TcpSocket::connect( const IpAddress& remoteAddress, unsigned shor
 	disconnect();
 
 	// Create the internal socket if it doesn't exist
-	create();
+	if ( !create() )
+		return Error;
 
 	// Create the remote address
 	sockaddr_in address =

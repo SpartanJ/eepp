@@ -59,6 +59,7 @@ bool MbedTLSSocket::end() {
 
 MbedTLSSocket::MbedTLSSocket( SSLSocket* socket ) :
 	SSLSocketImpl( socket ),
+	mInitialized( false ),
 	mConnected( false ),
 	mSessionOwner( false ),
 	mStatus( Socket::Disconnected ),
@@ -110,9 +111,9 @@ int MbedTLSSocket::bio_recv( void* ctx, unsigned char* buf, size_t len ) {
 
 Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 									   unsigned short /*remotePort*/, Time timeout ) {
-	if ( mConnected ) {
-		disconnect();
-	}
+	// A previous handshake may have initialized TLS state without ever reaching Connected.
+	// Always release it before starting a new handshake.
+	disconnect();
 
 	bool isBlocking = mSSLSocket->isBlocking();
 	if ( isBlocking && timeout != Time::Zero ) {
@@ -129,12 +130,15 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 	mbedtls_ssl_config_init( &mSSLConfig );
 	mbedtls_ctr_drbg_init( &mCtrDrbg );
 	mbedtls_entropy_init( &mEntropy );
+	mInitialized = true;
 
 	ret = mbedtls_ctr_drbg_seed( &mCtrDrbg, mbedtls_entropy_func, &mEntropy, NULL, 0 );
 
 	if ( ret != 0 ) {
 		Log::error( " failed\n  ! mbedtls_ctr_drbg_seed returned an error: %d", ret );
-		return Socket::Error;
+		disconnect();
+		mStatus = Socket::Error;
+		return mStatus;
 	}
 
 	mbedtls_ssl_config_defaults( &mSSLConfig, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
@@ -167,18 +171,22 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 			mSSLSocket->setSendTimeout( Time::Zero );
 		}
 
-		if ( mStatus == Socket::Error )
+		if ( mStatus == Socket::Error ) {
+			disconnect();
+			mStatus = Socket::Error;
 			return mStatus;
+		}
 
 		mSSLSession = (mbedtls_ssl_session*)eeMalloc( sizeof( mbedtls_ssl_session ) );
-		mbedtls_ssl_session_init( mSSLSession );
-		ret = mbedtls_ssl_get_session( &mSSLContext, mSSLSession );
-		if ( ret ) {
-			if ( ret != MBEDTLS_ERR_SSL_ALLOC_FAILED )
+		if ( mSSLSession ) {
+			mbedtls_ssl_session_init( mSSLSession );
+			ret = mbedtls_ssl_get_session( &mSSLContext, mSSLSession );
+			if ( ret ) {
 				mbedtls_ssl_session_free( mSSLSession );
-			eeSAFE_FREE( mSSLSession );
-		} else {
-			mSessionOwner = true;
+				eeSAFE_FREE( mSSLSession );
+			} else {
+				mSessionOwner = true;
+			}
 		}
 	} else {
 		MbedTLSSocket* oldSocket =
@@ -193,19 +201,21 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 }
 
 void MbedTLSSocket::disconnect() {
-	if ( !mConnected )
-		return;
-
-	mbedtls_ssl_free( &mSSLContext );
-	mbedtls_ssl_config_free( &mSSLConfig );
-	mbedtls_ctr_drbg_free( &mCtrDrbg );
-	mbedtls_entropy_free( &mEntropy );
+	if ( mInitialized ) {
+		mbedtls_ssl_free( &mSSLContext );
+		mbedtls_ssl_config_free( &mSSLConfig );
+		mbedtls_ctr_drbg_free( &mCtrDrbg );
+		mbedtls_entropy_free( &mEntropy );
+		mInitialized = false;
+	}
 
 	if ( mSessionOwner && NULL != mSSLSession ) {
 		mbedtls_ssl_session_free( mSSLSession );
 		eeSAFE_FREE( mSSLSession );
 	}
 
+	mConnected = false;
+	mSessionOwner = false;
 	mStatus = Socket::Disconnected;
 }
 

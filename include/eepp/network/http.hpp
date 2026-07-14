@@ -1,6 +1,7 @@
 #ifndef EE_NETWORKCHTTP_HPP
 #define EE_NETWORKCHTTP_HPP
 
+#include <condition_variable>
 #include <eepp/core.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/network/ipaddress.hpp>
@@ -13,6 +14,8 @@
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <string>
 
 namespace EE { namespace System {
@@ -24,7 +27,7 @@ using namespace EE::System;
 namespace EE { namespace Network {
 
 /** @brief A HTTP client */
-class EE_API Http : NonCopyable {
+class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
   public:
 	/** @brief Define a HTTP response */
 	class EE_API Response {
@@ -188,11 +191,11 @@ class EE_API Http : NonCopyable {
 
 		/** @brief Enumerate the available states for a request */
 		enum Status {
-			Connected,		///< Connected to server.
-			Sent,			///< Request sent to the server.
-			HeaderReceived, ///< Header received.
+			Connected,		 ///< Connected to server.
+			Sent,			 ///< Request sent to the server.
+			HeaderReceived,	 ///< Header received.
 			ContentReceived, ///< Content received.
-			Redirect, ///< A redirect has been handled
+			Redirect,		 ///< A redirect has been handled
 		};
 
 		static std::string statusToString( Status status );
@@ -346,11 +349,12 @@ class EE_API Http : NonCopyable {
 		/** Get the cancel callback */
 		const CancelCallback& getCancelCallback() const;
 
-		/** Cancels the current request if being processed */
+		/** Cancels the current request if being processed. When resetCancelCallback is true,
+		 * progress and cancellation callbacks are also released. */
 		void cancel( bool resetCancelCallback = false );
 
 		/** @return True if the current request was cancelled */
-		const bool& isCancelled() const;
+		bool isCancelled() const;
 
 		/** @return If requests a compressed response */
 		const bool& isCompressedResponse() const;
@@ -400,11 +404,11 @@ class EE_API Http : NonCopyable {
 		bool mFollowRedirect;		///< Follows redirect response codes
 		bool mCompressedResponse;	///< Request compressed response
 		bool mContinue;				///< Resume download
-		mutable bool mCancel;		///< Cancel state of current request
-		bool mVerbose{ false };		///< Enable/Disable verbosity
-		ProgressCallback mProgressCallback;		///< Progress callback
-		CancelCallback mCancelCallback;			///< Cancel callback
-		unsigned int mMaxRedirections;			///< Maximum number of redirections allowed
+		std::shared_ptr<std::atomic<bool>> mCancel; ///< Cancel state shared by request copies
+		bool mVerbose{ false };						///< Enable/Disable verbosity
+		ProgressCallback mProgressCallback;			///< Progress callback
+		CancelCallback mCancelCallback;				///< Cancel callback
+		unsigned int mMaxRedirections;				///< Maximum number of redirections allowed
 		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request
 		URI mProxy;								///< Proxy information
 	};
@@ -503,26 +507,31 @@ class EE_API Http : NonCopyable {
 	Response downloadRequest( const Request& request, std::string writePath,
 							  Time timeout = Time::Zero );
 
-	/** Definition of the async callback response */
+	/** Definition of the async callback response.
+	 *
+	 * Pool/shared-owned clients are retained through operation completion. Destroying any other
+	 * Http from a different thread cancels and joins its operations. A raw or stack Http must not
+	 * be destroyed from one of its own callbacks. */
 	typedef std::function<void( const Http&, Http::Request&, Http::Response& )>
 		AsyncResponseCallback;
 
-	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	 ** to the callback. *	This function does not lock the caller thread.
+	/** @brief Schedules the request asynchronously and passes the response to the callback.
+	 ** This function does not lock the caller thread.
 	 ** @see sendRequest
 	 ** @return Unique Id of the request added */
 	Uint64 sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 							 Time timeout = Time::Zero );
 
-	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	 *to the callback. *	This function does not lock the caller thread.
+	/** @brief Schedules the request asynchronously and passes the response to the callback.
+	 ** This function does not lock the caller thread.
+	 **  The caller must keep writeTo alive until the callback or an Http/Pool operation barrier.
 	 **  @see downloadRequest
 	 **  @return Unique Id of the request added */
 	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 								 IOStream& writeTo, Time timeout = Time::Zero );
 
-	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	 *to the callback. *	This function does not lock the caller thread.
+	/** @brief Schedules the request asynchronously and passes the response to the callback.
+	 ** This function does not lock the caller thread.
 	 **  @see downloadRequest
 	 **  @return Unique Id of the request added */
 	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
@@ -626,7 +635,9 @@ class EE_API Http : NonCopyable {
 
 		~Pool();
 
-		/** Clear all the HTTP Clients */
+		/** Cancel and clear all HTTP clients. Outside an HTTP callback this is an operation
+		 * barrier. From a shared-pool callback, completion is deferred to avoid waiting for work
+		 * queued behind the current callback. */
 		void clear();
 
 		/** @return True if the client already exists in the pool
@@ -709,7 +720,8 @@ class EE_API Http : NonCopyable {
 	/** It will try to get the proxy from the environment variables. */
 	static URI getEnvProxyURI();
 
-	/** Set the thread pool to consume for async requests, otherwise it will use its own */
+	/** Set the externally owned thread pool used for async requests, otherwise each Http uses its
+	 * own threads. Http cancellation and destruction do not stop or drain this pool. */
 	static void setThreadPool( std::shared_ptr<ThreadPool> pool );
 
   private:
@@ -734,6 +746,10 @@ class EE_API Http : NonCopyable {
 
 		void cancel( bool resetCancelCallback = false );
 
+		static AsyncRequest* current();
+
+		bool fromLocalPool() const { return mFromLocalPool; }
+
 	  protected:
 		friend class Http;
 		Uint64 mId{ 0 };
@@ -741,11 +757,26 @@ class EE_API Http : NonCopyable {
 		AsyncResponseCallback mCb;
 		Http::Request mRequest;
 		Time mTimeout;
-		bool mRunning;
 		bool mStreamed;
 		bool mStreamOwned;
 		bool mFromLocalPool;
 		IOStream* mStream;
+
+		static thread_local AsyncRequest* sCurrent;
+	};
+
+	class SharedRequestOperation {
+	  public:
+		SharedRequestOperation( Http& http, std::shared_ptr<AsyncRequest> request );
+
+		~SharedRequestOperation();
+
+		void run();
+
+	  private:
+		Http& mHttp;
+		std::shared_ptr<Http> mOwner;
+		std::shared_ptr<AsyncRequest> mRequest;
 	};
 
 	class HttpConnection {
@@ -797,10 +828,21 @@ class EE_API Http : NonCopyable {
 	bool mHostSolved;
 	std::atomic<bool> mShuttingDown{ false };
 	URI mProxy;
-	Mutex mCurRequestsMutex;
+	std::mutex mRequestsMutex;
+	std::condition_variable mRequestsComplete;
 	std::unordered_map<Uint64, AsyncRequest*> mCurRequests;
+	std::unordered_map<Uint64, std::shared_ptr<AsyncRequest>> mSharedRequests;
 
-	void removeAsyncRequest( AsyncRequest* req );
+	bool removeAsyncRequest( AsyncRequest* req );
+
+	bool registerSharedRequest( const std::shared_ptr<AsyncRequest>& request );
+
+	void completeSharedRequest( const std::shared_ptr<AsyncRequest>& request );
+
+	bool scheduleSharedRequest( const std::shared_ptr<ThreadPool>& threadPool,
+								const std::shared_ptr<AsyncRequest>& request );
+
+	void shutdown( bool waitForSharedRequests = true );
 
 	Request prepareFields( const Http::Request& request );
 

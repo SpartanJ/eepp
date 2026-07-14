@@ -22,6 +22,8 @@ template <std::size_t Capacity, typename KeyT = std::uint64_t,
 		  typename ValueT = std::array<char, 64>>
 class DynamicLRU {
   private:
+	static_assert( Capacity > 0, "Capacity must be greater than zero for DynamicLRU" );
+
 	using ListPair = std::pair<KeyT, ValueT>;
 	std::list<ListPair> mCacheList;
 	UnorderedMap<KeyT, typename std::list<ListPair>::iterator> mCacheMap;
@@ -76,6 +78,7 @@ template <std::size_t Capacity, typename KeyT = std::uint64_t,
 		  typename ValueT = std::array<char, 64>>
 class StaticLRU {
   public:
+	static_assert( Capacity > 0, "Capacity must be greater than zero for StaticLRU" );
 	static_assert( Capacity < ( 1 << 16 ) - 2, "Capacity must be less than 65534 for StaticLRU" );
 	static constexpr std::size_t N = Capacity;
 	static constexpr std::size_t HASH_SZ = 2 * N; // Load factor <= 0.5
@@ -94,7 +97,7 @@ class StaticLRU {
 
 	std::optional<ValueT> get( const KeyT& key ) noexcept {
 		const std::uint16_t idx = find_index( key );
-		if ( idx == NONE )
+		if ( idx >= N )
 			return std::nullopt;
 
 		unlink( idx );
@@ -106,7 +109,7 @@ class StaticLRU {
 		const std::uint16_t idx = find_index( key );
 
 		// Hit: update existing entry and move to front
-		if ( idx != NONE ) {
+		if ( idx < N ) {
 			vals_[idx] = std::move( value );
 			unlink( idx );
 			push_front( idx );
@@ -121,9 +124,13 @@ class StaticLRU {
 		} else {
 			// Cache is full, evict the least recently used item (tail)
 			target_idx = tail_;
+			if ( target_idx >= N )
+				return;
 
 			// O(1) removal from hash table using pre-stored position and a tombstone
 			const std::uint16_t old_pos = hash_pos_[target_idx];
+			if ( old_pos >= HASH_SZ )
+				return;
 			table_[old_pos].idx = DELETED_IDX;
 
 			unlink( target_idx );
@@ -148,8 +155,10 @@ class StaticLRU {
 	}
 
 	void clear() {
-		for ( std::size_t i = 0; i < used_; ++i )
+		for ( std::size_t i = 0; i < used_; ++i ) {
+			keys_[i] = KeyT{};
 			vals_[i] = ValueT{};
+		}
 		std::fill( table_.begin(), table_.end(), Entry{ NONE } );
 		std::fill( prev_.begin(), prev_.end(), NONE );
 		std::fill( next_.begin(), next_.end(), NONE );
@@ -177,20 +186,28 @@ class StaticLRU {
 	alignas( 64 ) std::array<std::uint16_t, N> hash_pos_{};
 
 	void unlink( std::uint16_t i ) noexcept {
-		if ( prev_[i] != NONE )
-			next_[prev_[i]] = next_[i];
-		if ( next_[i] != NONE )
-			prev_[next_[i]] = prev_[i];
+		if ( i >= N )
+			return;
+
+		const std::uint16_t previous = prev_[i];
+		const std::uint16_t next = next_[i];
+		if ( previous < N )
+			next_[previous] = next;
+		if ( next < N )
+			prev_[next] = previous;
 		if ( head_ == i )
-			head_ = next_[i];
+			head_ = next;
 		if ( tail_ == i )
-			tail_ = prev_[i];
+			tail_ = previous;
 	}
 
 	void push_front( std::uint16_t i ) noexcept {
+		if ( i >= N )
+			return;
+
 		prev_[i] = NONE;
 		next_[i] = head_;
-		if ( head_ != NONE )
+		if ( head_ < N )
 			prev_[head_] = i;
 		head_ = i;
 		if ( tail_ == NONE )
@@ -209,7 +226,7 @@ class StaticLRU {
 				// Empty slot means the key cannot be further down the probe chain.
 				return NONE;
 			}
-			if ( entry.idx != DELETED_IDX && keys_[entry.idx] == key ) {
+			if ( entry.idx < N && keys_[entry.idx] == key ) {
 				// Found the key.
 				return entry.idx;
 			}
@@ -226,6 +243,8 @@ template <std::size_t Capacity, typename KeyT = std::uint64_t,
 		  typename ValueT = std::array<char, 64>>
 class LRUCache {
   private:
+	static_assert( Capacity > 0, "Capacity must be greater than zero for LRUCache" );
+
 	// Threshold for choosing the static implementation. If the estimated memory usage
 	// is below this, the faster, allocation-free StaticLRU is used.
 	static constexpr std::size_t STATIC_THRESHOLD_BYTES = 1 << 20; // 1 MB
@@ -234,7 +253,7 @@ class LRUCache {
 		constexpr std::size_t key_size = sizeof( KeyT );
 		constexpr std::size_t val_size = sizeof( ValueT );
 		constexpr std::size_t idx_size = sizeof( std::uint16_t );
-		constexpr std::size_t entry_size = sizeof( typename StaticLRU<0, KeyT, ValueT>::Entry );
+		constexpr std::size_t entry_size = sizeof( std::uint16_t );
 
 		constexpr std::size_t data_mem = ( key_size + val_size ) * Capacity;
 		constexpr std::size_t lru_mem = ( idx_size * 2 ) * Capacity;	// prev/next

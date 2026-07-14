@@ -108,7 +108,7 @@ Http::Request::Request( const std::string& uri, Method method, const std::string
 	mFollowRedirect( followRedirect ),
 	mCompressedResponse( compressedResponse ),
 	mContinue( false ),
-	mCancel( false ),
+	mCancel( std::make_shared<std::atomic<bool>>( false ) ),
 	mMaxRedirections( 10 ),
 	mRedirectionCount( 0 ) {
 	setMethod( method );
@@ -215,14 +215,15 @@ const Http::Request::CancelCallback& Http::Request::getCancelCallback() const {
 }
 
 void Http::Request::cancel( bool resetCancelCallback ) {
-	mCancel = true;
-	setProgressCallback( {} );
-	if ( resetCancelCallback )
+	mCancel->store( true, std::memory_order_release );
+	if ( resetCancelCallback ) {
+		setProgressCallback( {} );
 		setCancelCallback( {} );
+	}
 }
 
-const bool& Http::Request::isCancelled() const {
-	return mCancel;
+bool Http::Request::isCancelled() const {
+	return mCancel->load( std::memory_order_acquire );
 }
 
 std::string Http::Request::prepareTunnel( const Http& http ) {
@@ -625,6 +626,12 @@ void Http::Response::parseFields( std::istream& in ) {
 static Http::Pool sGlobalHttpPool = Http::Pool();
 
 static std::shared_ptr<ThreadPool> sGlobalThreadPool = nullptr;
+static std::mutex sGlobalThreadPoolMutex;
+
+static std::shared_ptr<ThreadPool> getGlobalThreadPool() {
+	std::lock_guard<std::mutex> lock( sGlobalThreadPoolMutex );
+	return sGlobalThreadPool;
+}
 
 Http::Response Http::request( const URI& uri, Request::Method method, const Time& timeout,
 							  const Http::Request::ProgressCallback& progressCallback,
@@ -709,23 +716,7 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-	mShuttingDown = true;
-
-	{
-		Lock l( mCurRequestsMutex );
-		for ( auto [_, req] : mCurRequests )
-			req->cancel();
-	}
-
-	{
-		Lock l( mThreadsMutex );
-		// First we wait to finish any request pending
-		for ( auto& thread : mThreads ) {
-			thread->cancel();
-			thread->wait();
-			eeDelete( thread );
-		}
-	}
+	shutdown();
 
 	// Then we destroy the last open connection
 	HttpConnection* connection = mConnection;
@@ -796,6 +787,8 @@ Http::Response Http::sendRequest( const Http::Request& request, Time timeout ) {
 static bool sendProgress( const Http& http, const Http::Request& request,
 						  const Http::Response& response, const Http::Request::Status& status,
 						  const std::size_t& totalBytes, const std::size_t& currentBytes ) {
+	if ( request.isCancelled() )
+		return false;
 	if ( request.getProgressCallback() )
 		return request.getProgressCallback()( http, request, response, status, totalBytes,
 											  currentBytes );
@@ -978,7 +971,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									requestStr.c_str(), requestStr.size() ) == Socket::Done ) {
 				if ( !request.isCancelled() &&
 					 !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
-					request.mCancel = true;
+					request.mCancel->store( true, std::memory_order_release );
 				}
 
 				// Wait for the server's response
@@ -1089,7 +1082,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											 !sendProgress( *this, request, received,
 															Request::Redirect, contentLength,
 															currentTotalBytes ) ) {
-											request.mCancel = true;
+											request.mCancel->store( true,
+																	std::memory_order_release );
 										} else {
 											Http::Request newRequest( request );
 											newRequest.setUri( uri.getPathAndQuery() );
@@ -1129,7 +1123,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 								if ( !request.isCancelled() &&
 									 !sendProgress( *this, request, received,
 													Request::HeaderReceived, contentLength, 0 ) ) {
-									request.mCancel = true;
+									request.mCancel->store( true, std::memory_order_release );
 								}
 
 								// Move the response body bytes already read into the socket buffer.
@@ -1155,7 +1149,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 						if ( !request.isCancelled() &&
 							 !sendProgress( *this, request, received, Request::ContentReceived,
 											contentLength, currentTotalBytes ) ) {
-							request.mCancel = true;
+							request.mCancel->store( true, std::memory_order_release );
 							break;
 						}
 
@@ -1241,10 +1235,12 @@ Http::Response Http::downloadRequest( const Http::Request& request, std::string 
 }
 
 void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {
+	std::lock_guard<std::mutex> lock( sGlobalThreadPoolMutex );
 	sGlobalThreadPool = pool;
 }
 
 std::atomic<Uint64> Http::AsyncRequest::IdCounter = 1;
+thread_local Http::AsyncRequest* Http::AsyncRequest::sCurrent = nullptr;
 
 Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
 								  Http::Request request, Time timeout, bool fromLocalPool ) :
@@ -1253,7 +1249,6 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mCb( cb ),
 	mRequest( request ),
 	mTimeout( timeout ),
-	mRunning( true ),
 	mStreamed( false ),
 	mStreamOwned( false ),
 	mFromLocalPool( fromLocalPool ),
@@ -1267,7 +1262,6 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mCb( cb ),
 	mRequest( request ),
 	mTimeout( timeout ),
-	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( false ),
 	mFromLocalPool( fromLocalPool ),
@@ -1281,7 +1275,6 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mCb( cb ),
 	mRequest( request ),
 	mTimeout( timeout ),
-	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( true ),
 	mFromLocalPool( fromLocalPool ),
@@ -1297,6 +1290,9 @@ void Http::AsyncRequest::cancel( bool resetCancelCallback ) {
 }
 
 void Http::AsyncRequest::run() {
+	AsyncRequest* previousRequest = sCurrent;
+	sCurrent = this;
+
 	Http::Response response = mStreamed ? mHttp->downloadRequest( mRequest, *mStream, mTimeout )
 										: mHttp->sendRequest( mRequest, mTimeout );
 
@@ -1307,27 +1303,120 @@ void Http::AsyncRequest::run() {
 		eeSAFE_DELETE( mStream );
 	}
 
-	mRunning = false;
-
-	if ( mFromLocalPool && !mHttp->mShuttingDown ) {
-		mHttp->removeAsyncRequest( this );
+	if ( mFromLocalPool && mHttp->removeAsyncRequest( this ) ) {
 		auto me = this;
+		sCurrent = previousRequest;
 		eeSAFE_DELETE( me );
+		return;
 	}
+
+	sCurrent = previousRequest;
 }
 
-void Http::removeAsyncRequest( AsyncRequest* req ) {
+Http::AsyncRequest* Http::AsyncRequest::current() {
+	return sCurrent;
+}
+
+Http::SharedRequestOperation::SharedRequestOperation( Http& http,
+													  std::shared_ptr<AsyncRequest> request ) :
+	mHttp( http ), mOwner( http.weak_from_this().lock() ), mRequest( std::move( request ) ) {}
+
+Http::SharedRequestOperation::~SharedRequestOperation() {
+	mHttp.completeSharedRequest( mRequest );
+}
+
+void Http::SharedRequestOperation::run() {
+	mRequest->run();
+}
+
+bool Http::removeAsyncRequest( AsyncRequest* req ) {
 	{
-		Lock l( mCurRequestsMutex );
+		std::lock_guard<std::mutex> lock( mRequestsMutex );
 		mCurRequests.erase( req->id() );
 	}
 
+	Lock l( mThreadsMutex );
+	if ( mShuttingDown.load( std::memory_order_acquire ) )
+		return false;
+	auto found = std::find( mThreads.begin(), mThreads.end(), req );
+	if ( found == mThreads.end() )
+		return false;
+	mThreads.erase( found );
+	return true;
+}
+
+bool Http::registerSharedRequest( const std::shared_ptr<AsyncRequest>& request ) {
+	std::lock_guard<std::mutex> lock( mRequestsMutex );
+	if ( mShuttingDown.load( std::memory_order_acquire ) )
+		return false;
+	mCurRequests[request->id()] = request.get();
+	mSharedRequests[request->id()] = request;
+	return true;
+}
+
+void Http::completeSharedRequest( const std::shared_ptr<AsyncRequest>& request ) {
+	{
+		std::lock_guard<std::mutex> lock( mRequestsMutex );
+		mCurRequests.erase( request->id() );
+		mSharedRequests.erase( request->id() );
+	}
+	mRequestsComplete.notify_all();
+}
+
+bool Http::scheduleSharedRequest( const std::shared_ptr<ThreadPool>& threadPool,
+								  const std::shared_ptr<AsyncRequest>& request ) {
+	if ( !registerSharedRequest( request ) ) {
+		request->cancel();
+		return false;
+	}
+
+	// The executor is externally owned and may discard queued work. The operation reports
+	// completion when the queued function releases it, whether or not run() was called.
+	auto operation = std::make_shared<SharedRequestOperation>( *this, request );
+	threadPool->run( [operation] { operation->run(); } );
+	return true;
+}
+
+void Http::shutdown( bool waitForSharedRequests ) {
+	std::vector<std::shared_ptr<AsyncRequest>> sharedRequests;
+	{
+		std::lock_guard<std::mutex> lock( mRequestsMutex );
+		mShuttingDown.store( true, std::memory_order_release );
+		sharedRequests.reserve( mSharedRequests.size() );
+		for ( const auto& [_, request] : mSharedRequests )
+			sharedRequests.emplace_back( request );
+	}
+
+	for ( const auto& request : sharedRequests )
+		request->cancel();
+
+	std::vector<AsyncRequest*> threads;
 	{
 		Lock l( mThreadsMutex );
-		auto found = std::find( mThreads.begin(), mThreads.end(), req );
-		if ( found != mThreads.end() )
-			mThreads.erase( found );
+		threads.swap( mThreads );
 	}
+	for ( auto* thread : threads ) {
+		thread->cancel();
+		thread->wait();
+		{
+			std::lock_guard<std::mutex> lock( mRequestsMutex );
+			mCurRequests.erase( thread->id() );
+		}
+		eeDelete( thread );
+	}
+	if ( !waitForSharedRequests )
+		return;
+
+	AsyncRequest* currentRequest = AsyncRequest::current();
+	std::unique_lock<std::mutex> lock( mRequestsMutex );
+	mRequestsComplete.wait( lock, [this, currentRequest] {
+		if ( currentRequest && currentRequest->mHttp == this && !currentRequest->mFromLocalPool ) {
+			return mSharedRequests.empty() ||
+				   ( mSharedRequests.size() == 1 &&
+					 mSharedRequests.begin()->second.get() == currentRequest );
+		}
+		return mSharedRequests.empty();
+	} );
 }
 
 Http::Request Http::prepareFields( const Http::Request& request ) {
@@ -1388,7 +1477,7 @@ bool Http::isProxied() const {
 }
 
 bool Http::setCancelRequest( Uint64 reqId, bool resetCancelCallback ) {
-	Lock l( mCurRequestsMutex );
+	std::lock_guard<std::mutex> lock( mRequestsMutex );
 	auto found = mCurRequests.find( reqId );
 	if ( found != mCurRequests.end() ) {
 		found->second->cancel( resetCancelCallback );
@@ -1469,30 +1558,25 @@ Uint64 Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http
 								 emscripten_async_wget2_got_error_data, NULL );
 	return id;
 #else
-	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, timeout, id] {
-			AsyncRequest asyncRequest( id, this, cb, request, timeout, false );
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests[id] = &asyncRequest;
-			}
-			asyncRequest.run();
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests.erase( id );
-			}
-		} );
+	auto threadPool = getGlobalThreadPool();
+	if ( threadPool ) {
+		auto asyncRequest = std::make_shared<AsyncRequest>( id, this, cb, request, timeout, false );
+		scheduleSharedRequest( threadPool, asyncRequest );
 		return id;
 	}
 	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, timeout, true ) );
 	{
-		Lock l( mCurRequestsMutex );
-		mCurRequests[id] = thread;
-	}
-	thread->launch();
-	{
-		Lock l( mThreadsMutex );
+		Lock threadsLock( mThreadsMutex );
+		{
+			std::lock_guard<std::mutex> requestsLock( mRequestsMutex );
+			if ( mShuttingDown.load( std::memory_order_acquire ) ) {
+				eeDelete( thread );
+				return id;
+			}
+			mCurRequests[id] = thread;
+		}
 		mThreads.push_back( thread );
+		thread->launch();
 	}
 	return id;
 #endif
@@ -1514,30 +1598,26 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 								 emscripten_async_wget2_got_error_data, NULL );
 	return id;
 #else
-	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout, id] {
-			AsyncRequest asyncRequest( id, this, cb, request, writeTo, timeout, false );
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests[id] = &asyncRequest;
-			}
-			asyncRequest.run();
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests.erase( id );
-			}
-		} );
+	auto threadPool = getGlobalThreadPool();
+	if ( threadPool ) {
+		auto asyncRequest =
+			std::make_shared<AsyncRequest>( id, this, cb, request, writeTo, timeout, false );
+		scheduleSharedRequest( threadPool, asyncRequest );
 		return id;
 	}
 	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, writeTo, timeout, true ) );
 	{
-		Lock l( mCurRequestsMutex );
-		mCurRequests[id] = thread;
-	}
-	thread->launch();
-	{
-		Lock l( mThreadsMutex );
+		Lock threadsLock( mThreadsMutex );
+		{
+			std::lock_guard<std::mutex> requestsLock( mRequestsMutex );
+			if ( mShuttingDown.load( std::memory_order_acquire ) ) {
+				eeDelete( thread );
+				return id;
+			}
+			mCurRequests[id] = thread;
+		}
 		mThreads.push_back( thread );
+		thread->launch();
 	}
 	return id;
 #endif
@@ -1558,31 +1638,27 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 							emscripten_async_wget2_got_file, emscripten_async_wget2_got_error_file,
 							NULL );
 #else
-	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, writePath, timeout, id] {
-			AsyncRequest asyncRequest( id, this, cb, request, writePath, timeout, false );
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests[id] = &asyncRequest;
-			}
-			asyncRequest.run();
-			{
-				Lock l( mCurRequestsMutex );
-				mCurRequests.erase( id );
-			}
-		} );
+	auto threadPool = getGlobalThreadPool();
+	if ( threadPool ) {
+		auto asyncRequest =
+			std::make_shared<AsyncRequest>( id, this, cb, request, writePath, timeout, false );
+		scheduleSharedRequest( threadPool, asyncRequest );
 		return id;
 	}
 	AsyncRequest* thread =
 		eeNew( AsyncRequest, ( id, this, cb, request, writePath, timeout, true ) );
 	{
-		Lock l( mCurRequestsMutex );
-		mCurRequests[id] = thread;
-	}
-	thread->launch();
-	{
-		Lock l( mThreadsMutex );
+		Lock threadsLock( mThreadsMutex );
+		{
+			std::lock_guard<std::mutex> requestsLock( mRequestsMutex );
+			if ( mShuttingDown.load( std::memory_order_acquire ) ) {
+				eeDelete( thread );
+				return id;
+			}
+			mCurRequests[id] = thread;
+		}
 		mThreads.push_back( thread );
+		thread->launch();
 	}
 #endif
 	return id;
@@ -1690,8 +1766,15 @@ void Http::Pool::clear() {
 		Lock l( mMutex );
 		https.swap( mHttps );
 	}
-	// Http destruction joins local request threads and callbacks can re-enter the global pool.
-	// Never run either operation while holding the pool mutex.
+	// Requests may keep their Http alive while running on the shared ThreadPool. Establish the
+	// operation barrier explicitly before releasing the Pool's ownership. Callbacks can re-enter
+	// the global Pool, so never wait while holding the Pool mutex. A shared-pool callback also
+	// cannot wait for requests queued behind itself; their shared operations retain each Http until
+	// drained.
+	AsyncRequest* currentRequest = AsyncRequest::current();
+	const bool waitForSharedRequests = !currentRequest || currentRequest->fromLocalPool();
+	for ( const auto& [_, http] : https )
+		http->shutdown( waitForSharedRequests );
 	https.clear();
 }
 

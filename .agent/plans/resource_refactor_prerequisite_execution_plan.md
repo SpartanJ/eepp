@@ -264,6 +264,16 @@ Work-package exit criteria:
 - No shared-pool lambda depends on an untracked raw Http lifetime.
 - Http destruction provides a complete operation barrier without taking ownership of the executor.
 
+Status: implemented. Shared-pool operations are heap-backed, registered before executor
+submission, and unregister from their destructor even when queued work is discarded. Pool-managed
+Http instances remain alive through callback completion, while stack/raw
+instances use the destructor barrier. Pool clearing requests cancellation and waits outside the
+Pool mutex. When clearing is initiated by a shared-pool callback, it defers the shared-operation
+barrier because queued work may require the current executor thread; shared operations retain the
+clients until that work drains. Cancellation state is atomic and shared by request copies. Focused
+ASAN coverage for all three async output forms, running cancellation, and callback-initiated
+clearing with queued work passes. All six focused HTTP tests also pass under unsuppressed TSAN.
+
 ## 6. Work package 4: deterministic Engine shutdown
 
 Reorder shutdown only after HTTP and loader barriers are reliable.
@@ -318,8 +328,8 @@ first, makes the selected context current, destroys scenes, explicitly discards 
 TextLayout, releases high-level Graphics managers in dependency order, destroys shaders before
 Renderer, and only then destroys windows/contexts. A focused test covers two Engine lifecycles with
 a live UI scene, framebuffer, nine-patch, texture, font/layout cache, shaders, and pending batch.
-The complete asynchronous-producer exit criterion remains pending Work Packages 3 and 5.
-The complete ASAN unit suite passes: 746 tests passed and one opt-in visual test was skipped.
+The complete asynchronous-producer exit criterion remains pending Work Package 5.
+The complete ASAN unit suite passes: 749 tests passed and one opt-in visual test was skipped.
 
 ## 7. Work package 5: UISceneNode async delivery lifecycle
 
