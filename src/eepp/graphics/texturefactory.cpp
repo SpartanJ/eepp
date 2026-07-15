@@ -137,17 +137,16 @@ Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32&
 	FileSystem::filePathRemoveProcessPath( FPath );
 
 	const ResourceId resourceId = nextResourceId();
-	auto metrics = std::make_shared<ResourceMetrics>();
 	TexturePtr texture( eeNew( Texture, () ), TextureDeleter() );
 	Texture* Tex = texture.get();
-	Tex->setResourceData( resourceId, metrics );
+	Tex->setTextureId( resourceId );
 
 	Tex->create( textureHandle, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath,
 				 ClampMode, CompressTexture, MemSize );
 	TextureWeakPtr weakTexture( texture );
 	mTextures.emplace( resourceId.value(), std::move( texture ) );
 	mLiveTextures.emplace( resourceId.value(),
-						   LiveTextureRecord{ resourceId, std::move( weakTexture ), metrics } );
+						   LiveTextureRecord{ resourceId, std::move( weakTexture ) } );
 	mLiveTextureGeneration.fetch_add( 1, std::memory_order_release );
 
 	if ( LocalCopy ) {
@@ -319,8 +318,8 @@ TextureRegistrySnapshot TextureFactory::snapshotTextures() {
 	TextureRegistrySnapshot snapshot;
 	snapshot.reserve( liveTextures.size() );
 	for ( const auto& live : liveTextures ) {
-		snapshot.push_back(
-			{ live.record.id, live.texture->getName(), live.record.texture, live.record.metrics } );
+		snapshot.push_back( { live.record.id, live.texture->getName(), live.record.texture,
+							  live.texture->getMemSize() } );
 	}
 	return snapshot;
 }
@@ -454,8 +453,8 @@ unsigned int TextureFactory::getTextureMemorySize() {
 
 	std::size_t memorySize = 0;
 	for ( const auto& texture : mLiveTextures ) {
-		if ( !texture.second.texture.expired() )
-			memorySize += texture.second.metrics->getMemoryBytes();
+		if ( TexturePtr liveTexture = texture.second.texture.lock() )
+			memorySize += liveTexture->getMemSize();
 	}
 	return static_cast<unsigned int>( memorySize );
 }

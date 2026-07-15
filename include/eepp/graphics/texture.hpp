@@ -297,9 +297,6 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	/** @return The process-wide identity assigned to this texture. */
 	ResourceId getTextureId() const;
 
-	/** @return Shared diagnostic memory accounting for this texture. */
-	const std::shared_ptr<ResourceMetrics>& getResourceMetrics() const;
-
 	/** Reload the texture from the current local copy. */
 	void reload();
 
@@ -357,7 +354,6 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	std::string mFilepath;
 	ResourceId mTextureId;
-	std::shared_ptr<ResourceMetrics> mResourceMetrics;
 	int mTexture;
 
 	unsigned int mImgWidth;
@@ -377,9 +373,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	void iTextureFilter( const Filter& filter );
 
-	void setResourceData( ResourceId resourceId, std::shared_ptr<ResourceMetrics> resourceMetrics );
-
-	void updateResourceMemorySize();
+	void setTextureId( ResourceId textureId );
 };
 
 }} // namespace EE::Graphics

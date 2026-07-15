@@ -1,6 +1,7 @@
 #ifndef EECTEXTUREFACTORY_H
 #define EECTEXTUREFACTORY_H
 
+#include <cstddef>
 #include <eepp/core/containers.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -15,7 +16,7 @@ struct TextureRegistryRecord {
 	ResourceId id;
 	std::string displayName;
 	TextureWeakPtr texture;
-	std::shared_ptr<ResourceMetrics> metrics;
+	std::size_t memoryBytes{ 0 };
 };
 
 using TextureRegistrySnapshot = std::vector<TextureRegistryRecord>;
@@ -277,7 +278,6 @@ class EE_API TextureFactory : protected Mutex {
 	struct LiveTextureRecord {
 		ResourceId id;
 		TextureWeakPtr texture;
-		std::shared_ptr<ResourceMetrics> metrics;
 	};
 
 	struct TextureDeleter {

@@ -91,7 +91,6 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	mImgWidth = imgwidth;
 	mImgHeight = imgheight;
 	mSize = MemSize;
-	updateResourceMemorySize();
 	mClampMode = ClampMode;
 	mFilter = Filter::Linear;
 
@@ -234,8 +233,6 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 
 		if ( !KeepData )
 			clearCache();
-
-		updateResourceMemorySize();
 
 		mFlags &= ~TEX_FLAG_LOCKED;
 
@@ -429,20 +426,9 @@ ResourceId Texture::getTextureId() const {
 	return mTextureId;
 }
 
-const std::shared_ptr<ResourceMetrics>& Texture::getResourceMetrics() const {
-	return mResourceMetrics;
-}
-
-void Texture::setResourceData( ResourceId resourceId,
-							   std::shared_ptr<ResourceMetrics> resourceMetrics ) {
+void Texture::setTextureId( ResourceId textureId ) {
 	eeASSERT( !mTextureId );
-	mTextureId = resourceId;
-	mResourceMetrics = std::move( resourceMetrics );
-}
-
-void Texture::updateResourceMemorySize() {
-	if ( mResourceMetrics )
-		mResourceMetrics->setMemoryBytes( mSize );
+	mTextureId = textureId;
 }
 
 void Texture::reload() {
@@ -487,8 +473,6 @@ void Texture::reload() {
 						mSize += ( w * h * mChannels );
 					}
 				}
-
-				updateResourceMemorySize();
 			}
 
 			iTextureFilter( mFilter );
@@ -586,7 +570,6 @@ void Texture::replace( Image* image ) {
 		mChannels = image->getChannels();
 
 		mSize = mWidth * mHeight * mChannels;
-		updateResourceMemorySize();
 
 		if ( hasLocalCopy() ) {
 			// Renew the local copy

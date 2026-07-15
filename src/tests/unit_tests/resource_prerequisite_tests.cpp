@@ -229,11 +229,14 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 					  [firstId]( const auto& record ) { return record.id == firstId; } );
 	ASSERT_TRUE( firstRecord != snapshot.end() );
 	EXPECT_TRUE( firstRecord->displayName == "registry-first-renamed" );
-	ASSERT_TRUE( firstRecord->metrics != nullptr );
-	EXPECT_EQ( firstRecord->metrics->getMemoryBytes(), static_cast<std::size_t>( 2 * 3 * 4 ) );
+	EXPECT_EQ( firstRecord->memoryBytes, static_cast<std::size_t>( 2 * 3 * 4 ) );
 	EXPECT_EQ( factory->getTextureMemorySize(), 2u * 3u * 4u + 4u );
 	first->resize( 4, 3 );
-	EXPECT_EQ( firstRecord->metrics->getMemoryBytes(), static_cast<std::size_t>( 4 * 3 * 4 ) );
+	snapshot = factory->snapshotTextures();
+	firstRecord = std::find_if( snapshot.begin(), snapshot.end(),
+								[firstId]( const auto& record ) { return record.id == firstId; } );
+	ASSERT_TRUE( firstRecord != snapshot.end() );
+	EXPECT_EQ( firstRecord->memoryBytes, static_cast<std::size_t>( 4 * 3 * 4 ) );
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
 
 	TextureWeakPtr firstWeak = firstRecord->texture;

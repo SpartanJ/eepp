@@ -166,7 +166,7 @@ struct TextureRecord {
 	ResourceKey creationKey;
 	std::string displayName;
 	TextureWeakPtr texture;
-	std::shared_ptr<ResourceMetrics> metrics;
+	std::size_t memoryBytes;
 	ResourceFlags flags;
 };
 ```
@@ -187,13 +187,11 @@ render operation and may strongly retain only a user-selected texture.
 
 Destruction, callbacks, and GL operations never occur while a registry lock is held.
 
-### 4.2 ResourceMetrics
+Snapshot metadata, including texture memory usage, is copied from the texture while the registry
+temporarily locks its weak handle. Texture keeps its existing memory size as the single source of
+truth; accounting does not require separate shared state or callbacks into the factory.
 
-Texture memory accounting is held in shared record state captured at creation. Texture upload,
-resize, replacement, and CPU-copy changes update atomics on that state directly; they never find a
-factory singleton. Registry snapshots can read metrics even while expiration races with inspection.
-
-### 4.3 ResourceCatalog
+### 4.2 ResourceCatalog
 
 A catalog maps complete canonical keys/aliases to strong handles. It provides semantic lookup and
 intentional persistence:
@@ -216,7 +214,7 @@ there is no shared boolean or one global `strong` field.
 A higher-level scope convenience may accept a retention option and publish into that scope's catalog,
 but texture creation and decoding remain unpinned operations.
 
-### 4.4 ResourceScope
+### 4.3 ResourceScope
 
 `Graphics::ResourceScope` performs Graphics-only lookup and loading:
 
@@ -244,7 +242,7 @@ Frozen lookup rules:
 Pure `EE::Graphics` users may use TextureFactory for unpinned creation or Engine's default Graphics
 scope/catalog for named persistent resources. No UISceneNode is involved.
 
-### 4.5 TextureFactory final API role
+### 4.4 TextureFactory final API role
 
 TextureFactory creates, decodes, uploads, and updates textures. Creation names return `TexturePtr`
 directly and do not retain it:
@@ -538,8 +536,8 @@ Drawable ownership defects remain assigned to their structural Stage 4 replaceme
 
 ### Stage 1: texture lifetime scaffolding, with old factory retention still active
 
-Status: complete, 2026-07-15. Stable process-wide ResourceId, shared ResourceMetrics,
-eepp-compatible resource aliases/deleter, and TextureFactory's weak live-texture registry are
+Status: complete, 2026-07-15. Stable process-wide ResourceId, eepp-compatible resource
+aliases/deleter, and TextureFactory's weak live-texture registry are
 implemented.
 `Texture::getTextureId()` now returns that ResourceId directly, and every identity-based texture
 API and stored consumer uses ResourceId; the only other texture identifier is the OpenGL handle.
@@ -554,8 +552,8 @@ external handles. TextureLoader's static callback registry is removed. UITexture
 weak snapshots only when the atomic live-registry generation changes and strongly retains only the
 currently enlarged texture.
 
-Implement stable ResourceId, ResourceMetrics, centralized eepp-compatible handle creation, the weak
-TextureFactory live registry, TextureFactory's deferred released-texture queue, shutdown diagnostics,
+Implement stable ResourceId, centralized eepp-compatible handle creation, the weak TextureFactory
+live registry, TextureFactory's deferred released-texture queue, shutdown diagnostics,
 and graphics-thread assertions. Integrate collection into Window::display() after batch flush and
 into Engine shutdown before Renderer/context destruction. Reorder Engine teardown using the audited
 dependency graph. Do not generalize this substrate to self-contained GPU resource classes.
