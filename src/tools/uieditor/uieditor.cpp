@@ -151,7 +151,7 @@ void App::loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
 	Texture* tex = TextureFactory::instance()->loadFromFile( path );
 	if ( tex ) {
-		Uint32 texId = tex->getTextureId();
+		ResourceId texId = tex->getTextureId();
 		TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
 		mImagesLoaded[texId] = texRegion;
 	}

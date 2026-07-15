@@ -26,36 +26,36 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 
 	/** Creates and add to the texture atlas a TextureRegion from a Texture. It will use the full
 	 *Texture as a TextureRegion.
-	 *	@param TexId The texture id
+	 *	@param textureId The texture identity
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( const Uint32& TexId, const std::string& Name = "" );
+	TextureRegion* add( ResourceId textureId, const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param textureId The texture identity
 	 *	@param SrcRect The texture part that will be used as the TextureRegion.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
+	TextureRegion* add( ResourceId textureId, const Rect& SrcRect, const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param textureId The texture identity
 	 *	@param SrcRect The texture part that will be used as the TextureRegion.
 	 *	@param DestSize The destination size that the TextureRegion will have when rendered.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+	TextureRegion* add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
 						const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param textureId The texture identity
 	 *	@param SrcRect The texture part that will be used as the TextureRegion.
 	 *	@param DestSize The destination size that the TextureRegion will have when rendered.
 	 *	@param Offset The offset that will be added to the position passed when any Draw call is
 	 *used.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+	TextureRegion* add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
 						const Vector2i& Offset, const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion from a Texture. It will use the full

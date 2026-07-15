@@ -461,6 +461,8 @@ void Window::clear() {
 
 void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->draw();
+	if ( TextureFactory* textureFactory = TextureFactory::existsSingleton() )
+		textureFactory->collectReleasedTextures();
 
 	swapBuffers();
 

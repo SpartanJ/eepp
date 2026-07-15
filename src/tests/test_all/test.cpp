@@ -1977,9 +1977,6 @@ void EETest::input() {
 			mWindow->maximize();
 	}
 
-	if ( KM->isKeyUp( KEY_F4 ) )
-		TF->reloadAllTextures();
-
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_RETURN ) ) {
 		mWindow->toggleFullscreen();
 	}

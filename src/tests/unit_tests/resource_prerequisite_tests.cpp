@@ -1,5 +1,6 @@
 #include "utest.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <eepp/core/lrucache.hpp>
@@ -201,6 +202,99 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAcceptsFilterBeforeAtlasExists )
 	loader.setTextureFilter( Texture::Filter::Nearest );
 	EXPECT_EQ( static_cast<Texture::Filter>( loader.getTextureAtlasHeader().TextureFilter ),
 			   Texture::Filter::Nearest );
+}
+
+UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithoutOwning ) {
+	createLifecycleTestWindow( "Texture registry identity test" );
+	TextureFactory* factory = TextureFactory::instance();
+	Texture* first = factory->createEmptyTexture( 2, 3, 4, Color::Transparent, false,
+												  Texture::ClampMode::ClampToEdge, false, false,
+												  "registry-first" );
+	Texture* second = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
+												   Texture::ClampMode::ClampToEdge, false, false,
+												   "registry-second" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+
+	const ResourceId firstId = first->getTextureId();
+	const ResourceId secondId = second->getTextureId();
+	EXPECT_TRUE( static_cast<bool>( firstId ) );
+	EXPECT_TRUE( static_cast<bool>( secondId ) );
+	EXPECT_TRUE( firstId != secondId );
+
+	first->setName( "registry-first-renamed" );
+	TextureRegistrySnapshot snapshot = factory->snapshotTextures();
+	auto firstRecord =
+		std::find_if( snapshot.begin(), snapshot.end(),
+					  [firstId]( const auto& record ) { return record.id == firstId; } );
+	ASSERT_TRUE( firstRecord != snapshot.end() );
+	EXPECT_TRUE( firstRecord->displayName == "registry-first-renamed" );
+	ASSERT_TRUE( firstRecord->metrics != nullptr );
+	EXPECT_EQ( firstRecord->metrics->getMemoryBytes(), static_cast<std::size_t>( 2 * 3 * 4 ) );
+	EXPECT_EQ( factory->getTextureMemorySize(), 2u * 3u * 4u + 4u );
+	first->resize( 4, 3 );
+	EXPECT_EQ( firstRecord->metrics->getMemoryBytes(), static_cast<std::size_t>( 4 * 3 * 4 ) );
+	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
+
+	TextureWeakPtr firstWeak = firstRecord->texture;
+	TexturePtr retainedFirst = firstWeak.lock();
+	ASSERT_TRUE( retainedFirst != nullptr );
+	ASSERT_TRUE( factory->remove( first ) );
+	EXPECT_FALSE( firstWeak.expired() );
+	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
+	retainedFirst.reset();
+	EXPECT_TRUE( firstWeak.expired() );
+
+	snapshot = factory->snapshotTextures();
+	EXPECT_TRUE( std::none_of( snapshot.begin(), snapshot.end(),
+							   [firstId]( const auto& record ) { return record.id == firstId; } ) );
+	EXPECT_EQ( factory->getTextureMemorySize(), 4u );
+
+	Engine::destroySingleton();
+
+	createLifecycleTestWindow( "Texture registry identity restart test" );
+	Texture* afterRestart = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( afterRestart != nullptr );
+	EXPECT_TRUE( secondId < afterRestart->getTextureId() );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture deferred release test" );
+	TextureFactory* factory = TextureFactory::instance();
+	Texture* texture = factory->createEmptyTexture( 2, 2 );
+	ASSERT_TRUE( texture != nullptr );
+
+	bool unloaded = false;
+	texture->pushResourceChangeCallback(
+		[&unloaded]( Uint32, DrawableResource::Event event, DrawableResource* ) {
+			if ( event == DrawableResource::Event::Unload )
+				unloaded = true;
+		} );
+
+	TextureRegistrySnapshot snapshot = factory->snapshotTextures();
+	auto record = std::find_if( snapshot.begin(), snapshot.end(), [texture]( const auto& entry ) {
+		return entry.id == texture->getTextureId();
+	} );
+	ASSERT_TRUE( record != snapshot.end() );
+	TextureWeakPtr weakTexture = record->texture;
+	TexturePtr retainedTexture = weakTexture.lock();
+	ASSERT_TRUE( retainedTexture != nullptr );
+
+	ASSERT_TRUE( factory->remove( texture ) );
+	GlobalBatchRenderer::instance()->setTexture( texture );
+	GlobalBatchRenderer::instance()->batchQuad( 0, 0, 2, 2 );
+	retainedTexture.reset();
+
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_FALSE( unloaded );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
+
+	window->display( false );
+
+	EXPECT_TRUE( unloaded );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
 }
 
 UTEST( ResourcePrerequisites, unsignedVariantPreservesTypeAndValue ) {

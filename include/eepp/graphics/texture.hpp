@@ -5,10 +5,15 @@
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/graphics/drawableresource.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/math/originpoint.hpp>
 #include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
+
+class Texture;
+using TexturePtr = ResourcePtr<Texture>;
+using TextureWeakPtr = ResourceWeakPtr<Texture>;
 
 class EE_API Texture : public DrawableResource, public Image, private NonCopyable {
   public:
@@ -154,7 +159,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	**	@param y Y offset in the texture where to copy the source image */
 	void update( Image* image, Uint32 x = 0, Uint32 y = 0 );
 
-	/** Replaces the current texture with the image provided, reusing the current texture id. */
+	/** Replaces the current texture with the image provided, reusing the current OpenGL handle. */
 	void replace( Image* image );
 
 	/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real
@@ -289,11 +294,11 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	virtual bool isStateful() { return false; }
 
-	/** Set the texture factory internal id of the texture */
-	void setTextureId( const Uint32& id );
+	/** @return The process-wide identity assigned to this texture. */
+	ResourceId getTextureId() const;
 
-	/** @return The texture factory internal id of the texture */
-	const Uint32& getTextureId() const;
+	/** @return Shared diagnostic memory accounting for this texture. */
+	const std::shared_ptr<ResourceMetrics>& getResourceMetrics() const;
 
 	/** Reload the texture from the current local copy. */
 	void reload();
@@ -351,7 +356,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 				 const Uint32& memSize = 0, const Uint8* data = NULL );
 
 	std::string mFilepath;
-	Uint32 mTexId;
+	ResourceId mTextureId;
+	std::shared_ptr<ResourceMetrics> mResourceMetrics;
 	int mTexture;
 
 	unsigned int mImgWidth;
@@ -370,6 +376,10 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	Uint8* iLock( const bool& ForceRGBA, const bool& KeepFormat );
 
 	void iTextureFilter( const Filter& filter );
+
+	void setResourceData( ResourceId resourceId, std::shared_ptr<ResourceMetrics> resourceMetrics );
+
+	void updateResourceMemorySize();
 };
 
 }} // namespace EE::Graphics

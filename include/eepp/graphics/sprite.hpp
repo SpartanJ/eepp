@@ -33,7 +33,7 @@ class EE_API Sprite : public Drawable {
 
 	static Sprite* New( TextureRegion* TextureRegion );
 
-	static Sprite* New( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
+	static Sprite* New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
 						const Vector2i& offset = Vector2i( 0, 0 ),
 						const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -61,12 +61,12 @@ class EE_API Sprite : public Drawable {
 	Sprite( TextureRegion* TextureRegion );
 
 	/** Creates a Sprite instance that holds a new TextureRegion from a texture already loaded.
-	 *	@param TexId The texture Id used to create the TextureRegion
+	 *	@param textureId The texture identity used to create the TextureRegion
 	 *	@param DestSize The destination size of the TextureRegion created
 	 *	@param offset The offset added to the position of the frame ( the TextureRegion )
 	 *	@param TexSector The sector of the texture used by the TextureRegion to be rendered
 	 */
-	Sprite( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
+	Sprite( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
 			const Vector2i& offset = Vector2i( 0, 0 ), const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
 	virtual ~Sprite();
@@ -194,13 +194,13 @@ class EE_API Sprite : public Drawable {
 	bool createStatic( TextureRegion* TextureRegion );
 
 	/** Creates an static sprite (no animation). It creates a new TextureRegion.
-	 * @param TexId The internal Texture Id
+	 * @param textureId The texture identity
 	 * @param DestSize The destination size of the TextureRegion created
 	 * @param offset The offset added to the position of the frame ( the TextureRegion )
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool createStatic( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
+	bool createStatic( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
 					   const Vector2i& offset = Vector2i( 0, 0 ),
 					   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -221,13 +221,13 @@ class EE_API Sprite : public Drawable {
 	void createAnimation( const unsigned int& SubFramesNum = 1 );
 
 	/** Add a frame to the sprite (on the current sub frame)
-	 * @param TexId The internal Texture Id
+	 * @param textureId The texture identity
 	 * @param DestSize The destination size of the frame
 	 * @param offset The offset added to the position of the frame
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return The frame position or 0 if fails
 	 */
-	unsigned int addFrame( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
+	unsigned int addFrame( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
 						   const Vector2i& offset = Vector2i( 0, 0 ),
 						   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -275,7 +275,7 @@ class EE_API Sprite : public Drawable {
 					  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
 	/** Add a frame on an specific subframe to the sprite
-	 * @param TexId The internal Texture Id
+	 * @param textureId The texture identity
 	 * @param NumFrame The Frame Number
 	 * @param NumSubFrame The Sub Frame Number
 	 * @param DestSize The destination size of the frame
@@ -283,7 +283,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool addSubFrame( const Uint32& TexId, const unsigned int& NumFrame,
+	bool addSubFrame( ResourceId textureId, const unsigned int& NumFrame,
 					  const unsigned int& NumSubFrame, const Sizef& DestSize = Sizef( 0, 0 ),
 					  const Vector2i& offset = Vector2i( 0, 0 ),
 					  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );

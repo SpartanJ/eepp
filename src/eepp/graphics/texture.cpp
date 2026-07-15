@@ -33,6 +33,7 @@ Texture::Texture() :
 	DrawableResource( Drawable::TEXTURE ),
 	Image(),
 	mFilepath( "" ),
+	mTextureId(),
 	mTexture( 0 ),
 	mImgWidth( 0 ),
 	mImgHeight( 0 ),
@@ -53,10 +54,6 @@ Texture::Texture( const Uint32& texture, const unsigned int& width, const unsign
 
 Texture::~Texture() {
 	deleteTexture();
-
-	if ( !TextureFactory::instance()->isErasing() ) {
-		TextureFactory::instance()->removeReference( this );
-	}
 }
 
 void Texture::deleteTexture() {
@@ -94,6 +91,7 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	mImgWidth = imgwidth;
 	mImgHeight = imgheight;
 	mSize = MemSize;
+	updateResourceMemorySize();
 	mClampMode = ClampMode;
 	mFilter = Filter::Linear;
 
@@ -214,7 +212,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 #ifndef EE_GLES
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = mWidth, height = mHeight;
-		unsigned int NTexId = 0;
+		unsigned int textureHandle = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) ) {
 			ScopedTexture saver( mTexture );
@@ -223,8 +221,8 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 			flags = ( mClampMode == ClampMode::ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS )
 															 : flags;
 
-			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
-											  &height, mChannels, mTexture, flags );
+			textureHandle = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ),
+													 &width, &height, mChannels, mTexture, flags );
 
 			iTextureFilter( mFilter );
 
@@ -237,9 +235,11 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 		if ( !KeepData )
 			clearCache();
 
+		updateResourceMemorySize();
+
 		mFlags &= ~TEX_FLAG_LOCKED;
 
-		if ( (int)NTexId == mTexture || !Modified )
+		if ( (int)textureHandle == mTexture || !Modified )
 			return true;
 	}
 
@@ -425,12 +425,24 @@ void Texture::applyClampMode() {
 	}
 }
 
-void Texture::setTextureId( const Uint32& id ) {
-	mTexId = id;
+ResourceId Texture::getTextureId() const {
+	return mTextureId;
 }
 
-const Uint32& Texture::getTextureId() const {
-	return mTexId;
+const std::shared_ptr<ResourceMetrics>& Texture::getResourceMetrics() const {
+	return mResourceMetrics;
+}
+
+void Texture::setResourceData( ResourceId resourceId,
+							   std::shared_ptr<ResourceMetrics> resourceMetrics ) {
+	eeASSERT( !mTextureId );
+	mTextureId = resourceId;
+	mResourceMetrics = std::move( resourceMetrics );
+}
+
+void Texture::updateResourceMemorySize() {
+	if ( mResourceMetrics )
+		mResourceMetrics->setMemoryBytes( mSize );
 }
 
 void Texture::reload() {
@@ -463,7 +475,6 @@ void Texture::reload() {
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
 													&height, mChannels, mTexture, flags );
 
-				Uint32 oldSize = mSize;
 				mSize = mWidth * mHeight * mChannels;
 
 				if ( getMipmap() ) {
@@ -477,7 +488,7 @@ void Texture::reload() {
 					}
 				}
 
-				TextureFactory::instance()->updateMemorySize( oldSize, mSize );
+				updateResourceMemorySize();
 			}
 
 			iTextureFilter( mFilter );
@@ -574,9 +585,8 @@ void Texture::replace( Image* image ) {
 		mHeight = mImgHeight = height;
 		mChannels = image->getChannels();
 
-		Uint32 oldSize = mSize;
 		mSize = mWidth * mHeight * mChannels;
-		TextureFactory::instance()->updateMemorySize( oldSize, mSize );
+		updateResourceMemorySize();
 
 		if ( hasLocalCopy() ) {
 			// Renew the local copy

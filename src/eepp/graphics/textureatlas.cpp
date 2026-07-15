@@ -37,23 +37,23 @@ TextureRegion* TextureAtlas::add( TextureRegion* textureRegion ) {
 	return ResourceManager<TextureRegion>::add( textureRegion );
 }
 
-TextureRegion* TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
-	return add( TextureRegion::New( TexId, Name ) );
+TextureRegion* TextureAtlas::add( ResourceId textureId, const std::string& Name ) {
+	return add( TextureRegion::New( textureId, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect,
+TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect,
 								  const std::string& Name ) {
-	return add( TextureRegion::New( TexId, SrcRect, Name ) );
+	return add( TextureRegion::New( textureId, SrcRect, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
 								  const std::string& Name ) {
-	return add( TextureRegion::New( TexId, SrcRect, DestSize, Name ) );
+	return add( TextureRegion::New( textureId, SrcRect, DestSize, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
 								  const Vector2i& Offset, const std::string& Name ) {
-	return add( TextureRegion::New( TexId, SrcRect, DestSize, Offset, Name ) );
+	return add( TextureRegion::New( textureId, SrcRect, DestSize, Offset, Name ) );
 }
 
 TextureRegion* TextureAtlas::add( Texture* tex, const std::string& Name ) {

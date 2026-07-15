@@ -1,5 +1,4 @@
 #include "uitextureviewer.hpp"
-#include <eepp/graphics/textureloader.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiloader.hpp>
@@ -11,26 +10,26 @@ UITextureViewer* UITextureViewer::New() {
 	return eeNew( UITextureViewer, () );
 }
 
-UITextureViewer::~UITextureViewer() {
-	TextureLoader::popLoadedCallback( mLoaderCb );
-	for ( const auto& cb : mCbs ) {
-		if ( !cb.first->popResourceChangeCallback( cb.second ) ) {
-			eePRINTL( "UITextureViewer::~UITextureViewer popResourceChangeCallback failed" );
-			eeASSERT( false );
-		}
-	}
-}
+UITextureViewer::~UITextureViewer() {}
 
 UITextureViewer::UITextureViewer() : UIRelativeLayout( "textureviewer" ) {
 	init();
 }
 
-void UITextureViewer::setImage( Drawable* drawable ) {
+void UITextureViewer::setImage( TexturePtr texture ) {
 	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
 	if ( imageView == nullptr )
 		return;
+	mSelectedTexture = std::move( texture );
 	mImageLayout->setEnabled( true )->setVisible( true );
-	imageView->setDrawable( drawable );
+	imageView->setDrawable( mSelectedTexture.get() );
+}
+
+void UITextureViewer::clearSelectedTexture() {
+	if ( UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE ) )
+		imageView->setDrawable( nullptr );
+	mSelectedTexture.reset();
+	mImageLayout->setEnabled( false )->setVisible( false );
 }
 
 void UITextureViewer::init() {
@@ -48,21 +47,15 @@ void UITextureViewer::init() {
 
 	mGridLayout = findByType<UIGridLayout>( UI_TYPE_GRID_LAYOUT );
 	mImageLayout = findByClass<UIRelativeLayout>( "image_container" );
-	auto hideImg = [this]( const Event* ) {
-		mImageLayout->setEnabled( false )->setVisible( false );
-	};
+	auto hideImg = [this]( const Event* ) { clearSelectedTexture(); };
 	mImageLayout->on( Event::MouseClick, hideImg );
 	mImageLayout->on( Event::KeyDown, [hideImg]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
 			hideImg( event );
 	} );
 
-	std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
-	for ( Texture* texture : textures )
-		insertTexture( texture );
-
-	mLoaderCb = TextureLoader::pushLoadedCallback(
-		[this]( Uint32, Texture* tex ) { insertTexture( tex ); } );
+	refreshTextures();
+	subscribeScheduledUpdate();
 }
 
 static std::string getTextureDescription( Texture* tex ) {
@@ -70,28 +63,65 @@ static std::string getTextureDescription( Texture* tex ) {
 						   tex->getHeight() );
 }
 
-void UITextureViewer::insertTexture( Texture* tex ) {
+void UITextureViewer::scheduledUpdate( const Time& ) {
+	TextureFactory* textureFactory = TextureFactory::existsSingleton();
+	if ( textureFactory && textureFactory->getLiveTextureGeneration() != mLastRegistryGeneration )
+		refreshTextures();
+}
+
+void UITextureViewer::refreshTextures() {
+	TextureFactory* textureFactory = TextureFactory::existsSingleton();
+	if ( !textureFactory )
+		return;
+
+	const Uint64 registryGeneration = textureFactory->getLiveTextureGeneration();
+	TextureRegistrySnapshot textures = textureFactory->snapshotTextures();
+	for ( auto& texture : mTextures )
+		texture.second.seen = false;
+
+	for ( const TextureRegistryRecord& texture : textures ) {
+		auto found = mTextures.find( texture.id.value() );
+		if ( found == mTextures.end() ) {
+			insertTexture( texture );
+		} else {
+			found->second.seen = true;
+			found->second.texture = texture.texture;
+		}
+	}
+
+	for ( auto texture = mTextures.begin(); texture != mTextures.end(); ) {
+		if ( !texture->second.seen || texture->second.texture.expired() ) {
+			if ( texture->second.preview )
+				texture->second.preview->close();
+			texture = mTextures.erase( texture );
+		} else {
+			++texture;
+		}
+	}
+
+	mLastRegistryGeneration = registryGeneration;
+}
+
+void UITextureViewer::insertTexture( const TextureRegistryRecord& record ) {
+	TexturePtr texture = record.texture.lock();
+	if ( !texture )
+		return;
+
 	UIImage* img = UIImage::New();
-	std::string uid( String::format( "%llu", reinterpret_cast<Uint64>( tex ) ) );
-	img->setDrawable( tex )
+	std::string uid(
+		String::format( "texture-%llu", static_cast<unsigned long long>( record.id.value() ) ) );
+	img->setDrawable( texture.get() )
 		->setScaleType( UIScaleType::FitInside )
 		->setClasses( { "texture-preview", uid } )
-		->setTooltipText( getTextureDescription( tex ) )
+		->setTooltipText( getTextureDescription( texture.get() ) )
 		->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 		->setEnabled( true )
 		->setParent( mGridLayout )
-		->onClick( [this, tex]( auto ) { setImage( tex ); } );
-	Uint32 cb = tex->pushResourceChangeCallback(
-		[this, uid]( Uint32, DrawableResource::Event event, DrawableResource* res ) {
-			if ( event == DrawableResource::Event::Unload ) {
-				auto found = mGridLayout->findByClass( uid );
-				if ( found && mCbs.erase( static_cast<Texture*>( res ) ) )
-					found->close();
-			} else if ( event == DrawableResource::Change ) {
-				getTextureDescription( static_cast<Texture*>( res ) );
-			}
+		->onClick( [this, weakTexture = record.texture]( auto ) {
+			if ( TexturePtr selectedTexture = weakTexture.lock() )
+				setImage( std::move( selectedTexture ) );
 		} );
-	mCbs.insert( { tex, cb } );
+	mTextures.emplace( record.id.value(), TextureEntry{ record.texture, img, true } );
 }
 
 }}} // namespace EE::UI::Tools

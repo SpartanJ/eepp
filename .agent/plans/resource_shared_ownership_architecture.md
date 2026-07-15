@@ -1,7 +1,7 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0 and prerequisite fixes complete; Stage 1 is next,
-2026-07-14.
+Status: active implementation baseline; Stage 0, prerequisite fixes, and Stage 1 complete;
+Stage 2 is next, 2026-07-15.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -114,7 +114,9 @@ destruction contract used by scene nodes; it is not a general arbitrary-thread G
 
 These concepts are distinct:
 
-- `ResourceId` is immutable and process-unique across Engine recreation in tests.
+- `ResourceId` is immutable and process-unique across Engine recreation in tests. For textures it
+  is the value returned by `Texture::getTextureId()`; there is no separate factory-internal texture
+  ID.
 - `ResourceKey` is the immutable canonical semantic lookup key. Equality compares the complete key,
   never only a hash.
 - `displayName` is diagnostic text and may change without changing identity or catalog indexes.
@@ -536,6 +538,22 @@ Drawable ownership defects remain assigned to their structural Stage 4 replaceme
 
 ### Stage 1: texture lifetime scaffolding, with old factory retention still active
 
+Status: complete, 2026-07-15. Stable process-wide ResourceId, shared ResourceMetrics,
+eepp-compatible resource aliases/deleter, and TextureFactory's weak live-texture registry are
+implemented.
+`Texture::getTextureId()` now returns that ResourceId directly, and every identity-based texture
+API and stored consumer uses ResourceId; the only other texture identifier is the OpenGL handle.
+The factory now retains the single TexturePtr control block internally while public texture APIs
+still return raw pointers, preserving its old strong-retention behavior until Stage 2. Texture
+memory updates no longer reach the factory singleton, and texture destruction no longer unregisters
+itself through a singleton callback. Final handle release now queues Texture destruction in the
+factory; `Window::display()` collects only after batch flush, and Engine shutdown performs a final
+collection while its context remains valid. Debug assertions enforce graphics-thread release and
+collection, while shutdown diagnostics report and defensively release GPU payloads from surviving
+external handles. TextureLoader's static callback registry is removed. UITextureViewer reconciles
+weak snapshots only when the atomic live-registry generation changes and strongly retains only the
+currently enlarged texture.
+
 Implement stable ResourceId, ResourceMetrics, centralized eepp-compatible handle creation, the weak
 TextureFactory live registry, TextureFactory's deferred released-texture queue, shutdown diagnostics,
 and graphics-thread assertions. Integrate collection into Window::display() after batch flush and
@@ -722,12 +740,10 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 - `EE_MEMORY_MANAGER`, supported debug/release configurations, static builds, and shared-library
   builds.
 
-## 12. First implementation deliverable
+## 12. Next implementation deliverable
 
-The next coding deliverable is Stage 1 TextureFactory-specific lifetime scaffolding. It adds weak
-live-texture observation and deferred texture collection while preserving current factory retention,
-removes TextureLoader's static callback registry, and migrates UITextureViewer to the live registry.
-
-Stage 1 must also audit TextureFactory's uncalled context-recovery-era reload/grab/ungrab APIs and
-remove them if repository and history inspection confirm they are obsolete. Stage 2 then changes
-public texture APIs and migrates all holders in one cut.
+Stage 1 is complete, including removal of the obsolete context-recovery APIs and TextureLoader
+callback registry, weak UITextureViewer observation, and display/shutdown texture collection. The
+next coding deliverable is the complete Stage 2 TexturePtr ownership cut described above: change
+the public APIs and migrate every texture holder while temporary factory retention keeps the
+repository behavior stable.

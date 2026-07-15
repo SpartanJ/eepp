@@ -112,6 +112,9 @@ Engine::~Engine() {
 
 	Graphics::Private::VertexBufferManager::destroySingleton();
 
+	if ( TextureFactory* textureFactory = TextureFactory::existsSingleton() )
+		textureFactory->collectReleasedTextures();
+
 	TextureFactory::destroySingleton();
 
 	// Shader and renderer destructors issue GL commands. Programs must go first while GLi and the

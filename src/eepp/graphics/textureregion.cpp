@@ -14,25 +14,25 @@ TextureRegion* TextureRegion::New() {
 	return eeNew( TextureRegion, () );
 }
 
-TextureRegion* TextureRegion::New( const Uint32& TexId, const std::string& name ) {
-	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( TexId ), name ) );
+TextureRegion* TextureRegion::New( ResourceId textureId, const std::string& name ) {
+	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), name ) );
 }
 
-TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect,
+TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect,
 								   const std::string& name ) {
 	return eeNew( TextureRegion,
-				  ( TextureFactory::instance()->getTexture( TexId ), srcRect, name ) );
+				  ( TextureFactory::instance()->getTexture( textureId ), srcRect, name ) );
 }
 
-TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
+TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& name ) {
-	return eeNew( TextureRegion,
-				  ( TextureFactory::instance()->getTexture( TexId ), srcRect, destSize, name ) );
+	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), srcRect,
+								   destSize, name ) );
 }
 
-TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
+TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
 								   const Vector2i& offset, const std::string& name ) {
-	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( TexId ), srcRect,
+	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), srcRect,
 								   destSize, offset, name ) );
 }
 
@@ -117,8 +117,8 @@ TextureRegion::~TextureRegion() {
 	clearCache();
 }
 
-void TextureRegion::setTextureId( const Uint32& TexId ) {
-	mTexture = TextureFactory::instance()->getTexture( TexId );
+void TextureRegion::setTextureId( ResourceId textureId ) {
+	mTexture = TextureFactory::instance()->getTexture( textureId );
 }
 
 void TextureRegion::setTexture( Texture* texture ) {
