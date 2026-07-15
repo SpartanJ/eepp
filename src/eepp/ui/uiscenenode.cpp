@@ -47,13 +47,20 @@ struct PendingAsyncResourceMainThread {
 	Clock clock;
 };
 
+enum class AsyncResourceMainThreadQueueState : Uint8 { Closed, Open, Closing };
+
 std::mutex sAsyncResourceMainThreadMutex;
 std::vector<PendingAsyncResourceMainThread> sAsyncResourceMainThreadQueue;
+std::atomic<AsyncResourceMainThreadQueueState> sAsyncResourceMainThreadQueueState{
+	AsyncResourceMainThreadQueueState::Closed };
 
 void drainAsyncResourceMainThreadQueue() {
 	std::vector<PendingAsyncResourceMainThread> pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		if ( sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed ) !=
+			 AsyncResourceMainThreadQueueState::Open )
+			return;
 		pending.swap( sAsyncResourceMainThreadQueue );
 	}
 
@@ -74,8 +81,11 @@ void drainAsyncResourceMainThreadQueue() {
 
 	if ( !delayed.empty() ) {
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
-		for ( auto& item : delayed )
-			sAsyncResourceMainThreadQueue.emplace_back( std::move( item ) );
+		if ( sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed ) !=
+			 AsyncResourceMainThreadQueueState::Closed ) {
+			for ( auto& item : delayed )
+				sAsyncResourceMainThreadQueue.emplace_back( std::move( item ) );
+		}
 	}
 }
 
@@ -1993,7 +2003,9 @@ UISceneNode::getAsyncResourceLoadState() const {
 
 bool UISceneNode::isAsyncResourceLoadCurrent(
 	const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation ) {
-	if ( !resourceState || !resourceState->alive.load( std::memory_order_acquire ) ||
+	if ( sAsyncResourceMainThreadQueueState.load( std::memory_order_acquire ) !=
+			 AsyncResourceMainThreadQueueState::Open ||
+		 !resourceState || !resourceState->alive.load( std::memory_order_acquire ) ||
 		 resourceState->generation.load( std::memory_order_acquire ) != generation )
 		return false;
 
@@ -2003,10 +2015,11 @@ bool UISceneNode::isAsyncResourceLoadCurrent(
 void UISceneNode::runAsyncResourceOnMainThread(
 	const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation,
 	AsyncResourceMainThreadFunc func, const Time& delay ) {
-	if ( !func || !isAsyncResourceLoadCurrent( resourceState, generation ) )
+	if ( !func )
 		return;
 
-	if ( Engine::isMainThread() && delay <= Time::Zero ) {
+	if ( isAsyncResourceLoadCurrent( resourceState, generation ) && Engine::isMainThread() &&
+		 delay <= Time::Zero ) {
 		UISceneNode* owner = resourceState->owner.load( std::memory_order_acquire );
 		if ( owner )
 			func( owner );
@@ -2015,8 +2028,40 @@ void UISceneNode::runAsyncResourceOnMainThread(
 
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
-		sAsyncResourceMainThreadQueue.push_back(
-			{ resourceState, generation, std::move( func ), delay, Clock() } );
+		const auto queueState =
+			sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed );
+		if ( queueState == AsyncResourceMainThreadQueueState::Closing ||
+			 ( queueState == AsyncResourceMainThreadQueueState::Open &&
+			   isAsyncResourceLoadCurrent( resourceState, generation ) ) ) {
+			sAsyncResourceMainThreadQueue.push_back(
+				{ resourceState, generation, std::move( func ), delay, Clock() } );
+		}
+	}
+}
+
+void UISceneNode::openAsyncResourceMainThreadQueue() {
+	std::vector<PendingAsyncResourceMainThread> stale;
+	{
+		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		stale.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Open,
+												  std::memory_order_release );
+	}
+}
+
+void UISceneNode::beginAsyncResourceMainThreadQueueShutdown() {
+	std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+	sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closing,
+											  std::memory_order_release );
+}
+
+void UISceneNode::finishAsyncResourceMainThreadQueueShutdown() {
+	std::vector<PendingAsyncResourceMainThread> pending;
+	{
+		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closed,
+												  std::memory_order_release );
+		pending.swap( sAsyncResourceMainThreadQueue );
 	}
 }
 

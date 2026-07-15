@@ -67,7 +67,7 @@ static void init_ui_test() {
 	monospace->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 	FontFamily::loadFromRegular( monospace );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	sceneNode->setColorSchemePreference( ColorSchemePreference::Light );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
@@ -116,7 +116,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -177,7 +177,7 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -236,7 +236,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1033,7 +1033,7 @@ UTEST( UIRichText, anchorMargins ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1075,7 +1075,7 @@ UTEST( UIRichText, spanPadding ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1109,7 +1109,7 @@ UTEST( UIRichText, anchorPadding ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1149,7 +1149,7 @@ UTEST( UIRichText, anchorPaddingLineHeight ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1189,7 +1189,7 @@ UTEST( UIHTML, InlineBaselineAlignmentProperties ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 	sceneNode->loadLayoutFromString( R"html(
@@ -1242,7 +1242,7 @@ UTEST( UIHTML, InlineBlockVerticalAlignDoesNotInflateOwnTextLine ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 	sceneNode->loadLayoutFromString( R"html(
@@ -1291,7 +1291,7 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1324,7 +1324,7 @@ UTEST( UIHTMLTable, nestedPerformance ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1375,7 +1375,7 @@ UTEST( UIHTMLTable, specifiedWidth ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1415,7 +1415,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1960,7 +1960,7 @@ UTEST( UIHTMLTable, tableLayoutFixed ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -2008,7 +2008,7 @@ UTEST( UIHTMLBody, backgroundColorPropagation ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -2040,7 +2040,7 @@ UTEST( UIHTMLBody, maxWidthResizingBug ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 
 	UI::CSS::StyleSheetParser parser;
@@ -2085,7 +2085,7 @@ UTEST( UILayout, marginAuto ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -2352,7 +2352,7 @@ UTEST( UIHTMLDetails, lobstersInlineBlockCachesWidth ) {
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -2533,7 +2533,7 @@ UTEST( UIBorder, renderingVariations ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -2567,7 +2567,7 @@ UTEST( UIBorder, renderingVariations2 ) {
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -3287,7 +3287,7 @@ UTEST( UIHTML, InlineBlockWrapIssue ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	std::string html;
 	FileSystem::fileGet( "assets/html/inline_block_wrap.html", html );
@@ -3313,7 +3313,7 @@ UTEST( UIHTML, DeferredInlineBlockListDoesNotWrapItems ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	auto* win = Engine::instance()->getCurrentWindow();
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	UIWebView* webView = UIWebView::New();
 	webView->setParent( sceneNode->getRoot() );
@@ -3398,7 +3398,7 @@ UTEST( UIHTML, InlineBlockBrowserTest ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	std::string html;
 	FileSystem::fileGet( "assets/html/is_inline_block.html", html );
 
@@ -3431,7 +3431,7 @@ UTEST( UIHTML, HeightExpansion ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/ensoft/" );
 
 	std::string html;
@@ -3481,7 +3481,7 @@ UTEST( UIHTML, HeightExpansion_FixedDoesNotExpand ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	const std::string html = R"html(
 <!DOCTYPE html>
@@ -3514,7 +3514,7 @@ UTEST( UIHTML, BodyHeightMiscalculationFixture ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
 	std::string html;
@@ -3572,7 +3572,7 @@ UTEST( UIHTML, ContactFormLayout ) {
 													  32, {}, 1, false, true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/ensoft/" );
 
 	std::string html;
@@ -3633,7 +3633,7 @@ UTEST( UIBackground, imageAtlasPositioning ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
@@ -3678,7 +3678,7 @@ UTEST( UIBackground, inlineSpanColorRendersBehindBackgroundImage ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/ensoft/" );
 
 	std::string html;
@@ -3749,7 +3749,7 @@ UTEST( UIBackground, imageAtlasPositioningPixelDensity2 ) {
 	EE::Graphics::PixelDensity::setPixelDensity( 2.0f );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
 	std::string html;
@@ -3855,7 +3855,7 @@ UTEST( UIBackground, InlineBlockImageSpans ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
@@ -3899,7 +3899,7 @@ UTEST( UIBackground, InlineBlockImageFixedSize ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
@@ -3934,7 +3934,7 @@ UTEST( UIHTML, RedditHeaderPagenameBottomAlign ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
 	std::string html;
@@ -3970,7 +3970,7 @@ UTEST( UIHTML, PaddedHeaderWithNestedFloatsDoesNotOverlapClearedMain ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<html>
 			<head>
@@ -4059,7 +4059,7 @@ UTEST( UIHTML, FlexInfobarAvoidsRightFloat ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<html>
 			<head>
@@ -4123,7 +4123,7 @@ UTEST( UIHTML, FloatedInlineBlockButtonKeepsTextInside ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<html>
 			<head>
@@ -4193,7 +4193,7 @@ UTEST( UIHTML, ListingsSignupCtaTextSitsBesideFloatedButton ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<html>
 			<head>
@@ -4310,7 +4310,7 @@ UTEST( UIHTML, AnchorsSizing ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 
@@ -4360,7 +4360,7 @@ static UISceneNode* createWinAndLoadHTML( std::string winName, std::string htmlP
 		return nullptr;
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -4434,7 +4434,7 @@ UTEST( FontTrueType, glyphScaleZeroDimensionsNoCrash ) {
 		}
 	}
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -4470,7 +4470,7 @@ UTEST( UIHTML, LiFloatLeft ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	UI::UISceneNode* sceneNode = init_test_inline_block();
+	UISceneNode* sceneNode = init_test_inline_block();
 
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 

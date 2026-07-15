@@ -284,7 +284,7 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 
 	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 

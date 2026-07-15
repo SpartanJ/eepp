@@ -14,7 +14,7 @@ namespace ecode {
 
 DateTimeController::DateTimeController( PluginContextProvider* context ) : mContext( context ) {}
 
-void DateTimeController::registerCommands( EE::UI::Doc::TextDocument& doc ) {
+void DateTimeController::registerCommands( TextDocument& doc ) {
 	doc.setCommand( "insert-date-dd-mm-yyyy", [this] { insertDate( "%d.%m.%Y" ); } );
 	doc.setCommand( "insert-date-mm-dd-yyyy", [this] { insertDate( "%m.%d.%Y" ); } );
 	doc.setCommand( "insert-date-yyyy-mm-dd", [this] { insertDate( "%Y/%m/%d" ); } );

@@ -35,7 +35,7 @@ static UISceneNode* initFormTest( const std::string& title ) {
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 	return sceneNode;

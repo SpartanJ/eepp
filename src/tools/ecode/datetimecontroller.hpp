@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 class UIMessageBox;
 }} // namespace EE::UI
 
+using namespace EE::UI::Doc;
+
 namespace ecode {
 
 class PluginContextProvider;
@@ -16,7 +18,7 @@ class DateTimeController {
   public:
 	explicit DateTimeController( PluginContextProvider* context );
 
-	void registerCommands( EE::UI::Doc::TextDocument& doc );
+	void registerCommands( TextDocument& doc );
 
   private:
 	PluginContextProvider* mContext{ nullptr };

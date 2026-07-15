@@ -8,6 +8,7 @@
 #include <eepp/ui/models/itemlistmodel.hpp>
 
 using namespace EE;
+using namespace EE::UI;
 using namespace EE::UI::Models;
 using namespace EE::System;
 
@@ -22,10 +23,10 @@ class CommandPalette {
 	typedef std::function<void( std::shared_ptr<CommandPaletteModel> )> MatchResultCb;
 
 	static std::vector<std::vector<std::string>> build( const std::vector<std::string>& commandList,
-														const EE::UI::KeyBindings& keybindings );
+														const KeyBindings& keybindings );
 
 	static std::shared_ptr<CommandPaletteModel>
-	asModel( const std::vector<std::string>& commandList, const EE::UI::KeyBindings& keybindings );
+	asModel( const std::vector<std::string>& commandList, const KeyBindings& keybindings );
 
 	void asyncFuzzyMatch( const std::string& pattern, const size_t& max, MatchResultCb res ) const;
 
@@ -34,7 +35,7 @@ class CommandPalette {
 				const size_t& max ) const;
 
 	void setCommandPalette( const std::vector<std::string>& commandList,
-							const EE::UI::KeyBindings& keybindings );
+							const KeyBindings& keybindings );
 
 	const std::vector<std::vector<std::string>>& getCommandPalette() const;
 
@@ -45,7 +46,7 @@ class CommandPalette {
 	bool isEditorSet() const { return !mCommandPaletteEditor.empty(); }
 
 	void setEditorCommandPalette( const std::vector<std::string>& commandList,
-								  const EE::UI::KeyBindings& keybindings );
+								  const KeyBindings& keybindings );
 
 	const std::shared_ptr<CommandPaletteModel>& getCurModel() const;
 

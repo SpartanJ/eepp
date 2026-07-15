@@ -51,10 +51,6 @@ class EE_API FrameBuffer {
 	/** @brief Clears the frame buffer pixels to the default frame buffer clear color. */
 	void clear();
 
-	/** @brief Recreates the frame buffer ( delete the current and creates a new one ).
-	**	This is needed by the engine to recover any context lost. */
-	virtual void reload() = 0;
-
 	/** @brief Resizes the current Frame Buffer */
 	virtual void resize( const Uint32& Width, const Uint32& Height ) = 0;
 

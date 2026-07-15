@@ -208,11 +208,6 @@ void FrameBufferFBO::unbind() {
 	}
 }
 
-void FrameBufferFBO::reload() {
-	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer,
-			mHasColorBuffer, mChannels );
-}
-
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	if ( Sizei( Width, Height ) == mSize )
 		return;

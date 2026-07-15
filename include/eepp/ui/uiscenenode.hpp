@@ -22,6 +22,10 @@ namespace EE { namespace Graphics {
 class Font;
 }} // namespace EE::Graphics
 
+namespace EE { namespace Window {
+class Engine;
+}} // namespace EE::Window
+
 namespace EE { namespace UI {
 
 class UITheme;
@@ -874,6 +878,14 @@ class EE_API UISceneNode : public SceneNode {
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
+	friend class EE::Window::Engine;
+
+	// Engine lifecycle boundary for process-static main-thread resource deliveries. Shutdown first
+	// rejects execution while retaining captures, then purges them after scene-owned producers have
+	// joined. A recreated Engine explicitly reopens the queue.
+	static void openAsyncResourceMainThreadQueue();
+	static void beginAsyncResourceMainThreadQueueShutdown();
+	static void finishAsyncResourceMainThreadQueueShutdown();
 
 	UIRoot* mRoot{ nullptr };
 	Sizef mDpSize;

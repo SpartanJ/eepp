@@ -1,17 +1,11 @@
 # eepp shared-resource ownership architecture
 
-Status: architecture baseline, revised after lifetime-contract review, 2026-07-12.
+Status: active implementation baseline; Stage 0 and prerequisite fixes complete; Stage 1 is next,
+2026-07-14.
 
-Stage 0 inventory and shutdown dependency graph:
-`resource_shared_ownership_stage0_inventory.md`.
-
-Prerequisite defect track:
-`resource_refactor_prerequisite_bugfixes.md`.
-
-This document supersedes `resource_shared_ownership_refactor_plan.md`. It incorporates the review
-of that draft and freezes the contracts that must be true before the public texture API is changed.
-The implementation may refine names and small mechanics, but changing an invariant below requires
-an explicit architecture revision.
+This document freezes the contracts that must be true before the public texture API is changed. The
+implementation may refine names and small mechanics, but changing an invariant below requires an
+explicit architecture revision.
 
 ## 1. Objective
 
@@ -21,7 +15,7 @@ explicit shared ownership throughout eepp and all in-repository consumers.
 The final model is:
 
 - Consumers, immutable source objects, catalogs, and caches own resources with strong handles.
-- A live registry observes resources weakly for diagnostics, accounting, context recovery, and leak
+- A live registry observes resources weakly for diagnostics, accounting, and leak
   reporting. It is never searched for semantic names.
 - Catalogs define names and persistence.
 - Scopes define which catalogs and typed caches are visible.
@@ -157,7 +151,7 @@ UI/Network::WebResourceCache
 ```
 
 Engine coordinates the Graphics lifetime roots directly. TextureFactory coordinates texture
-creation, weak observation, reload and deferred destruction, but does not provide semantic lookup or
+creation, weak observation, and deferred destruction, but does not provide semantic lookup or
 normal strong retention. No Graphics class depends on UI.
 
 ### 4.1 LiveResourceRegistry
@@ -189,9 +183,7 @@ void purgeExpired();
 Opening `UITextureViewer` must not retain all textures. The viewer may lock a weak handle for one
 render operation and may strongly retain only a user-selected texture.
 
-For context loss/reload, the registry locks live weak handles into a temporary strong vector while
-holding its mutex, releases the mutex, and then performs device work. Destruction, callbacks, and GL
-operations never occur while a registry lock is held.
+Destruction, callbacks, and GL operations never occur while a registry lock is held.
 
 ### 4.2 ResourceMetrics
 
@@ -509,7 +501,7 @@ the feature branch to keep behavior valid while the repository-wide API break is
 
 ### Stage 0: contract freeze and inventories
 
-Status: complete. See `resource_shared_ownership_stage0_inventory.md`.
+Status: complete. Its accepted conclusions are incorporated into this architecture baseline.
 
 Deliverables:
 
@@ -527,8 +519,8 @@ or drawable-sharing contract blocks substrate implementation.
 
 ### Stage 0.5: prerequisite bug fixes
 
-Land defects discovered by the ownership audit independently of the API refactor. Each fix receives
-focused regression coverage and preserves current raw factory ownership. Initial set:
+Status: complete, 2026-07-14. Concrete defects discovered by the ownership audit were fixed with
+focused regression coverage while preserving current raw factory ownership:
 
 - HTTP Pool clears clients outside its mutex so joined callbacks can re-enter without deadlock.
 - Externally executed HTTP tasks cannot retain a dangling raw Http after Pool destruction.
@@ -537,9 +529,10 @@ focused regression coverage and preserves current raw factory ownership. Initial
 - Engine destroys ShaderProgramManager before Renderer and clears TextLayout before FontManager.
 - Engine stops asynchronous resource producers before resource consumers and GPU managers.
 - UISceneNode's static async delivery queue has an explicit shutdown purge/rejection boundary.
-- TextureLoader's process-static callback registry receives a synchronization/reset contract.
-- Models::Variant drawable copying and UISkin/StateListDrawable shallow ownership bugs receive
-  immediate containment or regression tests before their structural Stage 4 replacement.
+- Obsolete FrameBuffer context-loss reload APIs were removed.
+
+TextureLoader's static callback registry is deliberately removed with Stage 1 live observation.
+Drawable ownership defects remain assigned to their structural Stage 4 replacement.
 
 ### Stage 1: texture lifetime scaffolding, with old factory retention still active
 
@@ -548,6 +541,9 @@ TextureFactory live registry, TextureFactory's deferred released-texture queue, 
 and graphics-thread assertions. Integrate collection into Window::display() after batch flush and
 into Engine shutdown before Renderer/context destruction. Reorder Engine teardown using the audited
 dependency graph. Do not generalize this substrate to self-contained GPU resource classes.
+
+Remove TextureLoader's static callback registry in the same change and migrate UITextureViewer to
+the weak live registry. Do not add an intermediate synchronization/reset contract to the old API.
 
 The old raw factory ownership remains temporarily so this internal stage cannot make resources
 disappear. Public texture APIs have not switched yet; the deferred shared-pointer deleter becomes
@@ -580,7 +576,7 @@ At minimum migrate:
 - SVG raster caches and UI icons
 - sprites and particle systems that retain textures/regions
 - UIImage and UINodeDrawable texture paths
-- context reload and debug texture viewer
+- debug texture viewer and live-resource diagnostics
 - eepp, ecode, modules, examples, tools, and tests
 
 Every stored raw Texture pointer is classified as strong, weak, or a short borrow dominated by a
@@ -591,7 +587,6 @@ Exit criteria:
 - Regions, atlases, framebuffers, fonts, glyphs, UI consumers, and async work retain dependencies.
 - No ignored factory load result is relied upon for later global lookup.
 - No public texture delete/remove API remains.
-- Live registry reload sees externally owned textures.
 - Diagnostic snapshots do not pin resources.
 - Temporary factory retention can be removed without failing ownership tests.
 
@@ -676,7 +671,6 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 - Catalog publication retains; erasing one catalog entry does not invalidate other owners.
 - Independent catalog/pin leases do not interfere.
 - Registry snapshot and UITextureViewer do not retain all resources.
-- Context reload includes resources owned only by external handles.
 - Registry creation, snapshot, expiration, and purging are race-safe.
 
 ### GPU/thread lifetime
@@ -686,7 +680,6 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 - Display flushes batches before collecting released textures under the current context.
 - Engine shutdown performs a final collection before TextureFactory/Renderer/context destruction.
 - No deletion/callback occurs while registry/cache locks are held.
-- Context loss/reload includes resources owned only by external handles.
 - Repeated test-only Engine creation starts with no prior texture handles or registry state.
 - Relevant suites run under TSAN as well as ASAN/LSAN.
 
@@ -731,9 +724,10 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. First implementation deliverable
 
-The next coding deliverable is Stage 0.5 prerequisite bug fixing. The Stage 0 inventories and
-shutdown dependency graph are complete and linked above. Bug fixes land with focused tests while
-preserving current public APIs and factory ownership.
+The next coding deliverable is Stage 1 TextureFactory-specific lifetime scaffolding. It adds weak
+live-texture observation and deferred texture collection while preserving current factory retention,
+removes TextureLoader's static callback registry, and migrates UITextureViewer to the live registry.
 
-Only after those fixes are isolated should Stage 1 add TextureFactory-specific lifetime scaffolding.
-Stage 2 then changes public texture APIs and migrates all holders in one cut.
+Stage 1 must also audit TextureFactory's uncalled context-recovery-era reload/grab/ungrab APIs and
+remove them if repository and history inspection confirm they are obsolete. Stage 2 then changes
+public texture APIs and migrates all holders in one cut.

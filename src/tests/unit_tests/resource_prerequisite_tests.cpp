@@ -85,6 +85,63 @@ class TestTextureAtlasLoader : public TextureAtlasLoader {
 	}
 };
 
+class AsyncDeliveryProducerScene : public UISceneNode {
+  public:
+	static AsyncDeliveryProducerScene* New( EE::Window::Window* window ) {
+		return eeNew( AsyncDeliveryProducerScene, ( window ) );
+	}
+
+	~AsyncDeliveryProducerScene() override {
+		mStop.store( true, std::memory_order_release );
+		if ( mProducer.joinable() )
+			mProducer.join();
+	}
+
+	void startProducing( std::shared_ptr<int> retained,
+						 const std::shared_ptr<std::atomic<int>>& executed ) {
+		auto resourceState = getAsyncResourceLoadState();
+		const Uint64 generation = resourceState->generation.load( std::memory_order_acquire );
+		mProducer = std::thread( [this, resourceState = std::move( resourceState ), generation,
+								  retained = std::move( retained ), executed] {
+			while ( !mStop.load( std::memory_order_acquire ) ) {
+				UISceneNode::runAsyncResourceOnMainThread(
+					resourceState, generation, [retained, executed]( UISceneNode* ) {
+						(void)retained;
+						executed->fetch_add( 1, std::memory_order_relaxed );
+					} );
+				if ( mSubmitted.fetch_add( 1, std::memory_order_release ) == 0 ) {
+					std::lock_guard<std::mutex> lock( mSubmittedMutex );
+					mSubmittedCondition.notify_all();
+				}
+				std::this_thread::yield();
+			}
+		} );
+	}
+
+	void waitUntilSubmitted() {
+		std::unique_lock<std::mutex> lock( mSubmittedMutex );
+		mSubmittedCondition.wait(
+			lock, [this] { return mSubmitted.load( std::memory_order_acquire ) != 0; } );
+	}
+
+  protected:
+	explicit AsyncDeliveryProducerScene( EE::Window::Window* window ) : UISceneNode( window ) {}
+
+  private:
+	std::atomic<bool> mStop{ false };
+	std::atomic<Uint32> mSubmitted{ 0 };
+	std::mutex mSubmittedMutex;
+	std::condition_variable mSubmittedCondition;
+	std::thread mProducer;
+};
+
+EE::Window::Window* createLifecycleTestWindow( const std::string& title ) {
+	return Engine::instance()->createWindow(
+		WindowSettings( 64, 64, title, WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+						false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+}
+
 } // namespace
 
 static_assert( !std::is_copy_constructible<Texture>::value, "Texture must not be copyable" );
@@ -214,12 +271,83 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderWaitsBeforeDestroyingCallbackSta
 	EXPECT_TRUE( *callbackCompleted );
 }
 
+UTEST( ResourcePrerequisites, asyncResourceDeliveriesArePurgedAcrossEngineRestarts ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Async delivery lifecycle test" );
+	auto* scene = UISceneNode::New( window );
+	SceneManager::instance()->add( scene );
+
+	auto resourceState = scene->getAsyncResourceLoadState();
+	const Uint64 generation = resourceState->generation.load( std::memory_order_acquire );
+	std::atomic<int> executed{ 0 };
+	auto immediateCapture = std::make_shared<int>( 1 );
+	auto delayedCapture = std::make_shared<int>( 2 );
+	std::weak_ptr<int> immediateCaptureWeak = immediateCapture;
+	std::weak_ptr<int> delayedCaptureWeak = delayedCapture;
+
+	std::thread producer( [resourceState, generation, immediateCapture, &executed] {
+		UISceneNode::runAsyncResourceOnMainThread(
+			resourceState, generation, [immediateCapture, &executed]( UISceneNode* ) {
+				(void)immediateCapture;
+				executed.fetch_add( 1, std::memory_order_relaxed );
+			} );
+	} );
+	producer.join();
+
+	UISceneNode::runAsyncResourceOnMainThread(
+		resourceState, generation,
+		[delayedCapture, &executed]( UISceneNode* ) {
+			(void)delayedCapture;
+			executed.fetch_add( 1, std::memory_order_relaxed );
+		},
+		Seconds( 60 ) );
+	immediateCapture.reset();
+	delayedCapture.reset();
+	EXPECT_FALSE( immediateCaptureWeak.expired() );
+	EXPECT_FALSE( delayedCaptureWeak.expired() );
+
+	Engine::destroySingleton();
+
+	EXPECT_TRUE( immediateCaptureWeak.expired() );
+	EXPECT_TRUE( delayedCaptureWeak.expired() );
+	EXPECT_EQ( executed.load( std::memory_order_relaxed ), 0 );
+
+	window = createLifecycleTestWindow( "Async delivery lifecycle restart test" );
+	auto* recreatedScene = UISceneNode::New( window );
+	SceneManager::instance()->add( recreatedScene );
+	recreatedScene->update( Time::Zero );
+
+	EXPECT_EQ( executed.load( std::memory_order_relaxed ), 0 );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, asyncResourceQueueShutdownRacesProducerSafely ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Async delivery shutdown race test" );
+	auto* scene = AsyncDeliveryProducerScene::New( window );
+	SceneManager::instance()->add( scene );
+
+	auto retained = std::make_shared<int>( 1 );
+	std::weak_ptr<int> retainedWeak = retained;
+	auto executed = std::make_shared<std::atomic<int>>( 0 );
+	scene->startProducing( std::move( retained ), executed );
+	scene->waitUntilSubmitted();
+
+	Engine::destroySingleton();
+
+	EXPECT_TRUE( retainedWeak.expired() );
+	EXPECT_EQ( executed->load( std::memory_order_relaxed ), 0 );
+
+	window = createLifecycleTestWindow( "Async delivery shutdown race restart test" );
+	auto* recreatedScene = UISceneNode::New( window );
+	SceneManager::instance()->add( recreatedScene );
+	recreatedScene->update( Time::Zero );
+
+	EXPECT_EQ( executed->load( std::memory_order_relaxed ), 0 );
+	Engine::destroySingleton();
+}
+
 UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcrossRestarts ) {
 	for ( int cycle = 0; cycle < 2; ++cycle ) {
-		Engine::instance()->createWindow(
-			WindowSettings( 64, 64, "Engine teardown test", WindowStyle::Default,
-							WindowBackend::Default, 32, {}, 1, false, true ),
-			ContextSettings( false, 0, 0, GLv_default, true, false ) );
+		createLifecycleTestWindow( "Engine teardown test" );
 
 		Texture* texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
 		ASSERT_TRUE( texture != nullptr );

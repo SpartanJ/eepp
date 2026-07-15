@@ -16,8 +16,6 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
   public:
 	virtual ~FrameBufferManager();
 
-	void reload();
-
 	FrameBuffer* getCurrentlyBound();
 
 	FrameBuffer* getFromName( const std::string& name );

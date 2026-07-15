@@ -22,6 +22,7 @@
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
@@ -70,6 +71,7 @@ Engine::Engine() :
 #endif
 
 	TextureAtlasManager::createSingleton();
+	UISceneNode::openAsyncResourceMainThreadQueue();
 }
 
 Engine::~Engine() {
@@ -78,10 +80,16 @@ Engine::~Engine() {
 	// Stop and join pool-owned HTTP clients before any scene or graphics resource their callbacks
 	// can reach is destroyed.
 	Network::Http::Pool::getGlobal().clear();
+
+	// Reject new UI resource deliveries before scenes begin destruction. Rejected closures remain
+	// queued until scene-owned producers have joined, allowing their captures to be released here
+	// on the Engine/main thread.
+	UISceneNode::beginAsyncResourceMainThreadQueueShutdown();
 	if ( mWindow )
 		mWindow->setCurrent();
 
 	Scene::SceneManager::destroySingleton();
+	UISceneNode::finishAsyncResourceMainThreadQueueShutdown();
 
 	// Scene destruction can leave borrowed textures in the batch. Destroying the batch explicitly
 	// discards those submissions while their resource managers are still alive.

@@ -34,7 +34,7 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
 
-static UI::UISceneNode* createRichTextScene() {
+static UISceneNode* createRichTextScene() {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ) );
@@ -48,12 +48,12 @@ static UI::UISceneNode* createRichTextScene() {
 	}
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 	return sceneNode;
 }
 
-static void destroyRichTextScene( UI::UISceneNode* sceneNode ) {
+static void destroyRichTextScene( UISceneNode* sceneNode ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }

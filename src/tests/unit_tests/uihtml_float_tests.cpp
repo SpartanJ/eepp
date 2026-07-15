@@ -30,7 +30,7 @@ static void init_float_test() {
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
@@ -1165,7 +1165,7 @@ UTEST( UIHTMLFloat, floatNotAffectedByTextAlignCenter ) {
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
