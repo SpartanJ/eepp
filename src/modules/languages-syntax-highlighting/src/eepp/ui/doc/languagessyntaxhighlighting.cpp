@@ -500,7 +500,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"Meson",
 		[]() -> SyntaxDefinition& { return addMeson(); },
-		{ "meson%.build$", "^meson_options%.txt$" },
+		{ "%.meson$", "meson%.build$", "^meson_options%.txt$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -800,7 +800,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"Vala",
 		[]() -> SyntaxDefinition& { return addVala(); },
-		{ "%.vala$", "%.genie$" },
+		{ "%.vala$", "%.vapi$" },
 	} );
 
 	sdm->addPreDefinition( {
