@@ -8,7 +8,7 @@ SyntaxDefinition& addVala() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Vala",
-		  { "%.vala$", "%.genie$", "%.vapi$", "%.gs$" },
+		  { "%.vala$", "%.vapi$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
