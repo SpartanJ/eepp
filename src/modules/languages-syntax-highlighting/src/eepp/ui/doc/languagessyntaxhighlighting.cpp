@@ -248,7 +248,7 @@ static void preDefinitionLangsChunk1( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"CMake",
 		[]() -> SyntaxDefinition& { return addCMake(); },
-		{ "%.cmake$", "CMakeLists%.txt$" },
+		{ "%.cmake$", "CMakeLists%.txt$", "%.cmake.in$" },
 		{ "^cmake_minimum_required.*%c" },
 
 	} );

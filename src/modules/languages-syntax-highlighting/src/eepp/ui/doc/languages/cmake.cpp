@@ -9,7 +9,7 @@ SyntaxDefinition& addCMake() {
 		->add(
 
 			{ "CMake",
-			  { "%.cmake$", "CMakeLists%.txt$" },
+			  { "%.cmake$", "CMakeLists%.txt$", "%.cmake.in$" },
 			  {
 				  { { "#", "\n" }, "comment" },
 				  { { "\"", "\"", "\\" }, "string" },

@@ -28,7 +28,7 @@ SyntaxDefinition& addVala() {
 				SyntaxPatternMatchType::RegEx },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "[%+%-/%*%<>!=%^&|?~:;%.%(%)%[%]{}]" }, "operator" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "[%a_][%w_]*%s*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {

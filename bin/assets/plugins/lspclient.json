@@ -284,7 +284,7 @@
       "url": "https://github.com/neocmakelsp/neocmakelsp",
       "command": "neocmakelsp",
       "command_parameters": "stdio",
-      "file_patterns": ["%.cmake$", "CMakeLists%.txt$"],
+      "file_patterns": ["%.cmake$", "CMakeLists%.txt$", "%.cmake.in$"],
       "rootIndicationFileNames": ["build"]
     },
     {
