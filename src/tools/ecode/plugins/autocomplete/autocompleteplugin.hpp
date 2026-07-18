@@ -27,6 +27,7 @@ class AutoCompletePlugin : public Plugin {
 		std::string sortText;
 		TextRange range;
 		std::string insertText;
+		LSPInsertTextFormat insertTextFormat{ LSPInsertTextFormat::PlainText };
 		double score{ 0 };
 		LSPMarkupContent documentation;
 
@@ -38,13 +39,15 @@ class AutoCompletePlugin : public Plugin {
 
 		Suggestion( LSPCompletionItemKind kind, std::string&& text, std::string&& detail,
 					std::string&& sortText, const TextRange& range, std::string&& insertText,
-					LSPMarkupContent&& doc ) :
+					LSPMarkupContent&& doc,
+					LSPInsertTextFormat insertTextFormat ) :
 			kind( kind ),
 			text( std::move( text ) ),
 			detail( std::move( detail ) ),
 			sortText( sortText.empty() ? std::string{ this->text } : std::move( sortText ) ),
 			range( range ),
 			insertText( std::move( insertText ) ),
+			insertTextFormat( insertTextFormat ),
 			documentation( doc ) {};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }

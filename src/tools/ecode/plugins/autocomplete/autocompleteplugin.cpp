@@ -21,7 +21,7 @@ using namespace std::literals;
 namespace ecode {
 
 static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
-static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-]+)}"sv;
+static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-_]+)}"sv;
 static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
 
 static json getURIJSON( TextDocument* doc, const PluginIDType& id ) {
@@ -789,12 +789,13 @@ void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICod
 }
 
 bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
-	if ( suggestion.kind != LSPCompletionItemKind::Snippet )
-		return false;
-	if ( LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN1 ) ||
-		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN2 ) ||
-		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
-		return true;
+	if ( suggestion.kind == LSPCompletionItemKind::Snippet ||
+		 suggestion.insertTextFormat == LSPInsertTextFormat::Snippet ) {
+		if ( LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN1 ) ||
+			 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN2 ) ||
+			 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -809,15 +810,17 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 	LSPCompletionList& wcompletion = const_cast<LSPCompletionList&>( completion );
 	for ( auto& item : wcompletion.items ) {
 		if ( !item.textEdit.text.empty() ) {
-			suggestions.push_back(
-				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
-				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
-				  std::move( item.textEdit.text ), std::move( item.documentation ) } );
+			suggestions.push_back( { item.kind,
+									 std::move( item.label.empty() ? item.insertText : item.label ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::move( item.textEdit.text ),
+									 std::move( item.documentation ), item.insertTextFormat } );
 		} else if ( !item.insertText.empty() ) {
-			suggestions.push_back(
-				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
-				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
-				  std::string{ item.insertText }, std::move( item.documentation ) } );
+			suggestions.push_back( { item.kind,
+									 std::move( item.label.empty() ? item.insertText : item.label ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::string{ item.insertText },
+									 std::move( item.documentation ), item.insertTextFormat } );
 		} else {
 			suggestions.push_back( { item.kind,
 									 std::move( item.filterText ),
@@ -825,7 +828,8 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 									 std::move( item.sortText ),
 									 {},
 									 "",
-									 std::move( item.documentation ) } );
+									 std::move( item.documentation ),
+									 item.insertTextFormat } );
 		}
 	}
 	if ( suggestions.empty() || !mSuggestionsEditor )
