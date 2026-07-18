@@ -1909,7 +1909,8 @@ workspace "eepp"
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
-		files { "src/tests/unit_tests/*.cpp" }
+		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 

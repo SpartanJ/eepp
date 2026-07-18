@@ -4430,11 +4430,11 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	}
 }
 
-std::vector<Rectf> UICodeEditor::getTextRangeRectangles(
+SmallVector<Rectf, 4> UICodeEditor::getTextRangeRectangles(
 	const TextRange& range, const Vector2f& startScroll,
 	std::optional<const DocumentLineRange> lineRange, std::optional<Float> lineHeight,
 	std::optional<DocumentViewLineRange> visibleLineRange, bool visualizeNewLines ) {
-	std::vector<Rectf> rects;
+	SmallVector<Rectf, 4> rects;
 	Float lh = lineHeight ? *lineHeight : getLineHeight();
 	Int64 startLine =
 		eemax<Int64>( lineRange ? lineRange->first : range.start().line(), range.start().line() );

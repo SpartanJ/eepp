@@ -85,6 +85,8 @@ class EE_API RegEx : public PatternMatcher {
 
 	virtual const size_t& getNumMatches() const override;
 
+	int getCaptureCount() const;
+
 	const std::string_view& getPattern() const override { return mPattern; }
 
   protected:

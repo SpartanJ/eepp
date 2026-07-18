@@ -42,6 +42,7 @@ UTEST( RegEx, cacheHit ) {
 
 UTEST( RegEx, captures ) {
 	RegEx regex( "(\\d+) and (\\d+)" );
+	EXPECT_EQ( regex.getCaptureCount(), 2 );
 	std::string testStr = "The number is 42 and 23.";
 	PatternMatcher::Range matches[10];
 	regex.matches( testStr, matches );

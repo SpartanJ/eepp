@@ -1,6 +1,7 @@
 ﻿#ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
@@ -544,7 +545,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;
 
-	std::vector<Rectf>
+	SmallVector<Rectf, 4>
 	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
 							std::optional<const DocumentLineRange> lineRange = {},
 							std::optional<Float> lineHeight = {},

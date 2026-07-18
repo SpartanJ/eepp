@@ -270,6 +270,18 @@ const size_t& RegEx::getNumMatches() const {
 	return mMatchNum;
 }
 
+int RegEx::getCaptureCount() const {
+	if ( !mCompiledPattern )
+		return 0;
+	if ( mOptions & Options::UseOniguruma )
+		return onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern ) );
+	int captureCount = 0;
+	return pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
+							   PCRE2_INFO_CAPTURECOUNT, &captureCount ) == 0
+			   ? captureCount
+			   : 0;
+}
+
 bool RegEx::initWithOnigumura( std::string_view pattern, bool useCache ) {
 	OnigOptionType opt = ONIG_OPTION_NONE;
 
