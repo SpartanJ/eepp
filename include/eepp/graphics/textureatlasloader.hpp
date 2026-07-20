@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/iostream.hpp>
@@ -161,6 +162,11 @@ class EE_API TextureAtlasLoader {
 
 	void setTextureFilter( const Texture::Filter& textureFilter );
 
+	/** Sets the semantic texture lookup boundary used by subsequent loads. */
+	void setResourceScope( ResourceScopePtr resourceScope );
+
+	const ResourceScopePtr& getResourceScope() const;
+
   protected:
 	std::string mTextureAtlasPath;
 	bool mThreaded;
@@ -170,6 +176,7 @@ class EE_API TextureAtlasLoader {
 	std::atomic<bool> mIsLoading;
 	TextureAtlas* mTextureAtlas;
 	GLLoadCallback mLoadCallback;
+	ResourceScopePtr mResourceScope;
 	std::vector<TexturePtr> mTexturesLoaded;
 
 	struct sTempTexAtlas {

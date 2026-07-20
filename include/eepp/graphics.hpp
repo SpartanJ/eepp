@@ -47,6 +47,8 @@
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 #include <eepp/graphics/rendermode.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/graphics/resourcecatalog.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/graphics/shader.hpp>

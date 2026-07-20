@@ -1,6 +1,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
@@ -33,7 +34,7 @@ static Drawable* getSprite( const std::string& sprite ) {
 	return NULL;
 }
 
-static Drawable* searchByNameInternal( const std::string& name ) {
+static Drawable* searchByNameInternal( const std::string& name, ResourceScope& resourceScope ) {
 	String::HashType id = String::hash( name );
 	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
@@ -42,15 +43,15 @@ static Drawable* searchByNameInternal( const std::string& name ) {
 	}
 
 	if ( NULL == drawable ) {
-		drawable = TextureFactory::instance()->getByHash( id ).get();
+		drawable = resourceScope.findTexture( name ).get();
 	}
 
 	return drawable;
 }
 
-static Drawable* parseDataURI( const std::string& name ) {
+static Drawable* parseDataURI( const std::string& name, ResourceScope& scope ) {
 	auto hash = MD5::fromString( name ).toHexString();
-	TexturePtr texture = TextureFactory::instance()->getByName( hash );
+	TexturePtr texture = scope.findTexture( hash );
 	Drawable* drawable = texture.get();
 	std::string::size_type formatAndEncSep;
 	if ( nullptr == drawable &&
@@ -101,6 +102,7 @@ static Drawable* parseDataURI( const std::string& name ) {
 
 		if ( tex ) {
 			tex->setName( hash );
+			scope.publishLocal( hash, tex );
 			drawable = tex.get();
 		}
 	}
@@ -108,10 +110,13 @@ static Drawable* parseDataURI( const std::string& name ) {
 }
 
 Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite,
-										  Network::URI referer ) {
+										  Network::URI referer,
+										  ResourceScope* requestedResourceScope ) {
 	Drawable* drawable = NULL;
 
 	if ( name.size() ) {
+		ResourceScope& resourceScope =
+			requestedResourceScope ? *requestedResourceScope : defaultResourceScope();
 		bool searchedSprite = false;
 
 		if ( firstSearchSprite ) {
@@ -133,17 +138,17 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 				drawable =
 					TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
-				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) ).get();
+				drawable = resourceScope.findTexture( name.substr( 7 ) ).get();
 			} else if ( String::startsWith( name, "@texture/" ) ) {
-				drawable = TextureFactory::instance()->getByName( name.substr( 9 ) ).get();
+				drawable = resourceScope.findTexture( name.substr( 9 ) ).get();
 			} else if ( String::startsWith( name, "@sprite/" ) && !searchedSprite ) {
 				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
-				drawable = searchByNameInternal( name.substr( 10 ) );
+				drawable = searchByNameInternal( name.substr( 10 ), resourceScope );
 			} else if ( String::startsWith( name, "@9p/" ) ) {
 				drawable = NinePatchManager::instance()->getByName( name.substr( 4 ) );
 			} else {
-				drawable = searchByNameInternal( name );
+				drawable = searchByNameInternal( name, resourceScope );
 			}
 		} else if ( String::startsWith( name, "file://" ) ) {
 			std::string filePath( name.substr( 7 ) );
@@ -157,22 +162,26 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 			FileSystem::filePathRemoveProcessPath( filePath );
 
-			drawable = TextureFactory::instance()->getByName( filePath ).get();
+			drawable = resourceScope.findTexture( filePath ).get();
 
 			if ( NULL == drawable ) {
 				TexturePtr tex = TextureFactory::instance()->loadFromFile( filePath );
 
-				if ( tex )
+				if ( tex ) {
+					resourceScope.publishLocal( filePath, tex );
 					drawable = tex.get();
+				}
 			}
 		} else if ( String::startsWith( name, "http://" ) ||
 					String::startsWith( name, "https://" ) ) {
-			TexturePtr texture = TextureFactory::instance()->getByName( name );
+			TexturePtr texture = resourceScope.findTexture( name );
 
 			if ( NULL == texture && Engine::instance()->isSharedGLContextEnabled() ) {
 				texture = TextureFactory::instance()->createEmptyTexture(
 					1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false,
 					false, name );
+				if ( texture )
+					resourceScope.publishLocal( name, texture );
 
 				std::map<std::string, std::string> headers;
 				if ( !referer.empty() )
@@ -197,9 +206,9 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 			drawable = texture.get();
 		} else if ( String::startsWith( name, "data:image/" ) ) {
-			drawable = parseDataURI( name );
+			drawable = parseDataURI( name, resourceScope );
 		} else {
-			drawable = searchByNameInternal( name );
+			drawable = searchByNameInternal( name, resourceScope );
 		}
 	}
 
@@ -211,10 +220,6 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 Drawable* DrawableSearcher::searchById( const Uint32& id ) {
 	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
-
-	if ( NULL == drawable ) {
-		drawable = TextureFactory::instance()->getByHash( id ).get();
-	}
 
 	if ( NULL == drawable && sPrintWarnings )
 		Log::warning( "DrawableSearcher::searchById: \"%ld\" not found", id );

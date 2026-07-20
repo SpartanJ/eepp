@@ -117,11 +117,14 @@ void SettingsActions::aboutEcode() {
 	UIImage* image = UIImage::New();
 	image->setParent( msgBox->getContainer()->getFirstChild() );
 	auto tf = TextureFactory::instance();
-	TexturePtr tex = tf->getByName( "ecode-logo" );
+	auto resourceScope = mApp->getUISceneNode()->getResourceScope();
+	TexturePtr tex = resourceScope->findTexture( "ecode-logo" );
 	if ( tex == nullptr ) {
 		tex = tf->loadFromFile( mApp->resPath() + "icon/ecode.png" );
-		if ( tex )
+		if ( tex ) {
 			tex->setName( "ecode-logo" );
+			resourceScope->publishLocal( "ecode-logo", tex );
+		}
 	}
 	image->setDrawable( std::move( tex ) );
 	image->setLayoutGravity( UI_NODE_ALIGN_CENTER );

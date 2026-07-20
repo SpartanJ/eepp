@@ -3825,6 +3825,7 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
+	sceneNode->getResourceScope()->publishLocal( imageURL, cached );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<body>
@@ -5117,7 +5118,8 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	sceneNode->setURI( URI( "file://" + processPath ) );
 	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
 	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
-	Drawable* cached = DrawableSearcher::searchByName( imageURI.toString() );
+	Drawable* cached = DrawableSearcher::searchByName(
+		imageURI.toString(), false, sceneNode->getReferer(), sceneNode->getResourceScope().get() );
 	ASSERT_TRUE( cached != nullptr );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
@@ -5160,6 +5162,7 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
+	sceneNode->getResourceScope()->publishLocal( imageURL, cached );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<!doctype html>

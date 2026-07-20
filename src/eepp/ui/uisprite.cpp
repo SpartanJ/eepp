@@ -3,6 +3,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisprite.hpp>
 
 namespace EE { namespace UI {
@@ -238,7 +239,14 @@ bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 			}
 
 			Drawable* res = NULL;
-			if ( NULL != ( res = DrawableSearcher::searchByName( path, true ) ) ) {
+			UISceneNode* scene = getUISceneNode();
+			if ( scene )
+				res = DrawableSearcher::searchByName( path, true, scene->getReferer(),
+													  scene->getResourceScope().get() );
+			else
+				res = DrawableSearcher::searchByName( path, true );
+
+			if ( NULL != res ) {
 				setIsSpriteOwner( true );
 
 				if ( res->getDrawableType() == Drawable::SPRITE ) {

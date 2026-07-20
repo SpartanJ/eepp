@@ -38,15 +38,19 @@ std::string getTextureCacheName( const Network::URI& uri ) {
 	return filePath;
 }
 
-TexturePtr loadFileTextureCached( const std::string& filePath, const std::string& cacheName ) {
+TexturePtr loadFileTextureCached( const ResourceScopePtr& scope, const std::string& filePath,
+								  const std::string& cacheName ) {
 	static std::mutex loadMutex;
 	std::lock_guard<std::mutex> lock( loadMutex );
 
-	if ( TexturePtr texture = TextureFactory::instance()->getByName( cacheName ) )
+	if ( TexturePtr texture = scope->findTexture( cacheName ) )
 		return texture;
 
-	return TextureFactory::instance()->loadFromFile(
+	TexturePtr texture = TextureFactory::instance()->loadFromFile(
 		filePath, false, Texture::ClampMode::ClampToEdge, false, false );
+	if ( texture )
+		scope->publishLocal( cacheName, texture );
+	return texture;
 }
 
 } // namespace
@@ -353,7 +357,8 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 	Uint64 loadId = ++mRemoteImageLoadId;
 	std::string filePath = uri.getFSPath();
 	std::string cacheName = getTextureCacheName( uri );
-	if ( TexturePtr texture = TextureFactory::instance()->getByName( cacheName ) ) {
+	ResourceScopePtr resourceScope = scene->getResourceScope();
+	if ( TexturePtr texture = resourceScope->findTexture( cacheName ) ) {
 		setDrawable( std::move( texture ) );
 		return true;
 	}
@@ -363,14 +368,14 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	auto alive = mAsyncImageAlive;
 
-	scene->getThreadPool()->run( [resourceState, resourceGeneration, alive, loadId,
+	scene->getThreadPool()->run( [resourceState, resourceGeneration, resourceScope, alive, loadId,
 								  filePath = std::move( filePath ),
 								  cacheName = std::move( cacheName ), this] {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
 			 !alive || !alive->load( std::memory_order_acquire ) )
 			return;
 
-		TexturePtr texture = loadFileTextureCached( filePath, cacheName );
+		TexturePtr texture = loadFileTextureCached( resourceScope, filePath, cacheName );
 		if ( texture == nullptr )
 			return;
 
@@ -393,7 +398,8 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 		return;
 
 	std::string url = uri.toString();
-	if ( TexturePtr texture = TextureFactory::instance()->getByName( url ) ) {
+	ResourceScopePtr resourceScope = scene->getResourceScope();
+	if ( TexturePtr texture = resourceScope->findTexture( url ) ) {
 		if ( mDrawable != texture.get() ) {
 			++mRemoteImageLoadId;
 			setDrawable( std::move( texture ) );
@@ -408,8 +414,10 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 	auto alive = mAsyncImageAlive;
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
-	if ( texture )
+	if ( texture ) {
+		resourceScope->publishLocal( url, texture );
 		setDrawable( texture );
+	}
 
 	Http::Request::FieldTable headers;
 	if ( !scene->getReferer().empty() )
@@ -562,7 +570,8 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				Drawable* res = NULL;
 				if ( NULL != ( res = DrawableSearcher::searchByName(
-								   path, false, scene ? scene->getReferer() : URI() ) ) )
+								   path, false, scene ? scene->getReferer() : URI(),
+								   scene ? scene->getResourceScope().get() : nullptr ) ) )
 					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;

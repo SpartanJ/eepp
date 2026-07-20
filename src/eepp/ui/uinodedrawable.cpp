@@ -712,7 +712,8 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 		return true;
 
 	std::string url = uri.toString();
-	if ( TexturePtr texture = TextureFactory::instance()->getByName( url ) ) {
+	ResourceScopePtr resourceScope = scene->getResourceScope();
+	if ( TexturePtr texture = resourceScope->findTexture( url ) ) {
 		if ( mDrawable != texture.get() ) {
 			++mRemoteDrawableLoadId;
 			setDrawable( std::move( texture ) );
@@ -727,8 +728,10 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	auto alive = mAsyncDrawableAlive;
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
-	if ( texture )
+	if ( texture ) {
+		resourceScope->publishLocal( url, texture );
 		setDrawable( texture );
+	}
 
 	Http::Request::FieldTable headers;
 	if ( !scene->getReferer().empty() )

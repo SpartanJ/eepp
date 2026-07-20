@@ -2,6 +2,8 @@
 #define EE_GRAPHICS_RESOURCE_HPP
 
 #include <memory>
+#include <string>
+#include <utility>
 
 #include <eepp/core.hpp>
 
@@ -23,6 +25,22 @@ class ResourceId {
 
   private:
 	Uint64 mValue{ 0 };
+};
+
+/** Immutable semantic lookup key. Catalog equality always compares the complete key value. */
+class ResourceKey {
+  public:
+	ResourceKey() = default;
+	explicit ResourceKey( std::string value ) : mValue( std::move( value ) ) {}
+
+	const std::string& value() const { return mValue; }
+	bool empty() const { return mValue.empty(); }
+
+	bool operator==( const ResourceKey& other ) const { return mValue == other.mValue; }
+	bool operator!=( const ResourceKey& other ) const { return !( *this == other ); }
+
+  private:
+	std::string mValue;
 };
 
 template <typename T> using ResourcePtr = std::shared_ptr<T>;

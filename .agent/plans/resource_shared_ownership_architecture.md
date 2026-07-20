@@ -1,7 +1,7 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0, prerequisite fixes, Stage 1, and Stage 2 complete;
-Stage 3 is next, 2026-07-19.
+Status: active implementation baseline; Stage 0 through Stage 3 complete; Stage 4 is next,
+2026-07-19.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -19,9 +19,9 @@ The final model is:
   reporting. It is never searched for semantic names.
 - Catalogs define names and persistence.
 - Scopes define which catalogs and typed caches are visible.
-- GPU resources remain graphics-thread-affine. The project contract requires final owning releases
-  and destruction to run through the graphics/update lifecycle rather than supporting arbitrary
-  last-release threads.
+- GPU resources remain graphics-thread-affine. A final owning release may happen on a worker, but
+  the texture deleter only performs a thread-safe handoff to TextureFactory. Actual destruction runs
+  through the graphics/display lifecycle.
 - UI drawable resolution is layered over Graphics resource lookup; browser caching and navigation
   remain outside Graphics.
 - A UISceneNode can own a scope and resolver, but neither texture lifetime nor pure Graphics usage
@@ -105,10 +105,10 @@ Factories use an equivalent private helper for protected constructors. `std::mak
 used for tracked eepp resources unless the memory manager is redesigned to understand its combined
 allocation. No second control block may be created from `handle.get()`.
 
-Texture is the deliberate exception to immediate `eeDelete`: its factory-controlled deleter queues
-the final raw object for graphics-thread destruction. `TextureFactory::collectReleasedTextures()`
-performs the eventual `eeDelete` after queued rendering has been flushed. This is the same deferred
-destruction contract used by scene nodes; it is not a general arbitrary-thread GPU disposal system.
+Texture is the deliberate exception to immediate `eeDelete`: its factory-controlled deleter may
+queue the final raw object from any thread. `TextureFactory::collectReleasedTextures()` performs the
+eventual `eeDelete` on the graphics thread after queued rendering has been flushed. This is the same
+deferred destruction contract used by scene nodes; it is not a general GPU disposal system.
 
 ### 3.3 Identity, keys, and labels
 
@@ -270,14 +270,14 @@ performs the same collection explicitly because no later display is guaranteed.
 
 ### 5.1 Graphics-thread lifetime contract
 
-GPU resources are graphics-thread-affine. Creating, mutating and finally releasing owning handles
-must follow the engine's graphics/update lifecycle. `std::shared_ptr` provides ownership safety; it
-does not expand eepp's supported threading contract. Async CPU decoding may run elsewhere, but
-ownership handoff and final release are marshalled to the main/scene update path unless an existing
-API explicitly acquires a shared GL context.
+GPU operations remain graphics-context-affine and follow the existing graphics/update or explicitly
+shared-context rules. Releasing the final `TexturePtr` is different: it performs no GPU operation and
+may enqueue the raw texture from any thread. Only collection and actual destruction require the
+graphics thread and a current context.
 
-Debug builds should assert this contract at factory release and collection boundaries. The design
-does not add a generic device state, epoch or arbitrary-thread disposal queue for unsupported usage.
+Debug builds assert the collection boundary. The design does not add a generic device state, epoch,
+or disposal mechanism for other GPU resource families; TextureFactory's small deferred-release queue
+is the texture-specific lifetime boundary already required by batched rendering.
 
 ### 5.2 Texture deferred destruction
 
@@ -571,7 +571,7 @@ Exit tests:
 - Pending batches flush before texture collection.
 - Engine teardown leaves no pending released textures or unexpected live registry entries.
 - Repeated test-only Engine create/destroy cycles start with empty resource state.
-- Wrong-thread final release triggers the documented debug contract assertion.
+- Worker-thread final release only queues the texture; it does not run GL or destruction work.
 - `EE_MEMORY_MANAGER` accurately removes texture allocations through the factory-controlled deleter.
 
 ### Stage 2: one complete TexturePtr ownership cut
@@ -618,6 +618,15 @@ Exit criteria:
 - Temporary factory retention can be removed without failing ownership tests.
 
 ### Stage 3: catalog and scope ownership cutover
+
+Status: complete, 2026-07-19. Engine now owns the global catalog and default Graphics scope;
+UISceneNode owns an isolated scope that can be shared explicitly. TextureFactory is an unpinned
+creator and weak live registry with no semantic name/hash lookup. Atlas, map, UI image/background,
+DrawableSearcher, ecode, tests, and other name-based consumers publish to and resolve through their
+explicit scope. Catalog aliases and imports provide intentional persistence and deterministic
+sharing. Worker-thread final TexturePtr release is handed to the factory's thread-safe queue and
+actual deletion remains display/shutdown-bound. The full cut also corrected TextureLoader's decoder
+pixel allocator provenance, which asynchronous scoped loading exposed.
 
 Implement the global catalog, default Graphics scope, application/scene catalogs, explicit imports,
 immutable keys, and aliases. Move intended persistent resources from temporary factory retention into
@@ -703,7 +712,7 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 ### GPU/thread lifetime
 
 - Final texture release on the graphics thread queues rather than immediately deleting.
-- Wrong-thread final release is detected as a project-contract violation in debug builds.
+- Worker-thread final release safely queues; display performs the destruction with a current context.
 - Display flushes batches before collecting released textures under the current context.
 - Engine shutdown performs a final collection before TextureFactory/Renderer/context destruction.
 - No deletion/callback occurs while registry/cache locks are held.

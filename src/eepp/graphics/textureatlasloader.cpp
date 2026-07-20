@@ -10,7 +10,10 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/window/engine.hpp>
 #include <iterator>
+
+using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
@@ -123,7 +126,18 @@ void TextureAtlasLoader::setTextureFilter( const Texture::Filter& textureFilter 
 		mTextureAtlas->getTexture( i )->setFilter( textureFilter );
 }
 
+void TextureAtlasLoader::setResourceScope( ResourceScopePtr resourceScope ) {
+	mResourceScope = std::move( resourceScope );
+}
+
+const ResourceScopePtr& TextureAtlasLoader::getResourceScope() const {
+	return mResourceScope;
+}
+
 void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
+	if ( !mResourceScope )
+		mResourceScope = Engine::instance()->getDefaultResourceScope();
+
 	mRL.setThreaded( mThreaded );
 
 	if ( IOS.isOpen() ) {
@@ -143,22 +157,28 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				std::string name( &tTextureHdr.Name[0] );
 				std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
+				FileSystem::filePathRemoveProcessPath( path );
 
 				//! Checks if the texture is already loaded
-				TexturePtr tTex = TextureFactory::instance()->getByName( path );
+				TexturePtr tTex = mResourceScope->findTexture( path );
 				tTexAtlas.LoadedTexture = tTex;
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					const std::size_t textureIndex = mTempAtlass.size();
 					if ( NULL != mPack ) {
 						mRL.add( [this, textureIndex, path = std::move( path )] {
-							mTempAtlass[textureIndex].LoadedTexture =
+							TexturePtr texture =
 								TextureFactory::instance()->loadFromPack( mPack, path );
+							if ( texture )
+								mResourceScope->publishLocal( path, texture );
+							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );
 						} );
 					} else {
 						mRL.add( [this, textureIndex, path = std::move( path )] {
-							mTempAtlass[textureIndex].LoadedTexture =
-								TextureFactory::instance()->loadFromFile( path );
+							TexturePtr texture = TextureFactory::instance()->loadFromFile( path );
+							if ( texture )
+								mResourceScope->publishLocal( path, texture );
+							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );
 						} );
 					}
 				}

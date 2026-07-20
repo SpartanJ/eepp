@@ -14,6 +14,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/system/packmanager.hpp>
@@ -124,11 +125,12 @@ void TileMap::createEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives
 	//! because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory* TF = TextureFactory::instance();
+	ResourceScope& resourceScope = defaultResourceScope();
 
 	std::string tileName( String::format( "maptile-%dx%d-%u", mTileSize.getWidth(),
 										  mTileSize.getHeight(), mGridLinesColor.getValue() ) );
 
-	TexturePtr texture = TF->getByName( tileName );
+	TexturePtr texture = resourceScope.findTexture( tileName );
 
 	if ( NULL == texture ) {
 		Uint32 x, y;
@@ -151,6 +153,8 @@ void TileMap::createEmptyTile() {
 		mTileTex = TF->loadFromPixels( Img.getPixelsPtr(), Img.getWidth(), Img.getHeight(),
 									   Img.getChannels(), true, Texture::ClampMode::ClampToEdge,
 									   false, false, tileName );
+		if ( mTileTex )
+			resourceScope.publishLocal( tileName, mTileTex );
 	} else {
 		mTileTex = std::move( texture );
 	}

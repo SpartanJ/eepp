@@ -10,6 +10,8 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcecatalog.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlas.hpp>
@@ -250,6 +252,7 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
 	retainedFirst.reset();
 	EXPECT_TRUE( firstWeak.expired() );
+	EXPECT_TRUE( factory->getTexture( firstId ) == nullptr );
 
 	snapshot = factory->snapshotTextures();
 	EXPECT_TRUE( std::none_of( snapshot.begin(), snapshot.end(),
@@ -264,6 +267,123 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 	ASSERT_TRUE( afterRestart != nullptr );
 	EXPECT_TRUE( secondId < afterRestart->getTextureId() );
 	afterRestart.reset();
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, resourceCatalogOwnsPublishedTextures ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Resource catalog ownership test" );
+	TextureFactory* factory = TextureFactory::instance();
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TexturePtr texture = factory->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	catalog->publish( "catalog-texture", texture );
+	catalog->publish( "catalog-texture-alias", texture );
+	texture.reset();
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( catalog->findTexture( "catalog-texture" ) != nullptr );
+
+	EXPECT_TRUE( catalog->erase( "catalog-texture" ) );
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( catalog->erase( "catalog-texture-alias" ) );
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+
+	catalog.reset();
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImportedCatalogs ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Resource scope isolation test" );
+	TextureFactory* factory = TextureFactory::instance();
+	ResourceScopePtr firstScope = ResourceScope::New();
+	ResourceScopePtr secondScope = ResourceScope::New();
+	ResourceCatalogPtr sharedCatalog = ResourceCatalog::New();
+	ResourceCatalogPtr laterCatalog = ResourceCatalog::New();
+	TexturePtr first = factory->createEmptyTexture( 1, 1 );
+	TexturePtr second = factory->createEmptyTexture( 1, 1 );
+	TexturePtr shared = factory->createEmptyTexture( 1, 1 );
+	TexturePtr later = factory->createEmptyTexture( 1, 1 );
+	TexturePtr observedOnly = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
+														   Texture::ClampMode::ClampToEdge, false,
+														   false, "observed-only" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( shared != nullptr );
+	ASSERT_TRUE( later != nullptr );
+	ASSERT_TRUE( observedOnly != nullptr );
+
+	firstScope->publishLocal( "same-name", first );
+	secondScope->publishLocal( "same-name", second );
+	sharedCatalog->publish( "shared-name", shared );
+	laterCatalog->publish( "shared-name", later );
+	firstScope->importCatalog( sharedCatalog );
+	firstScope->importCatalog( laterCatalog );
+
+	EXPECT_EQ( first.get(), firstScope->findTexture( "same-name" ).get() );
+	EXPECT_EQ( second.get(), secondScope->findTexture( "same-name" ).get() );
+	EXPECT_EQ( shared.get(), firstScope->findTexture( "shared-name" ).get() );
+	EXPECT_TRUE( secondScope->findTexture( "shared-name" ) == nullptr );
+	EXPECT_TRUE( firstScope->findTexture( "observed-only" ) == nullptr );
+	EXPECT_TRUE( secondScope->findTexture( "observed-only" ) == nullptr );
+	EXPECT_TRUE( firstScope->removeCatalog( sharedCatalog ) );
+	EXPECT_EQ( later.get(), firstScope->findTexture( "shared-name" ).get() );
+	EXPECT_FALSE( firstScope->removeCatalog( sharedCatalog ) );
+
+	TextureWeakPtr externallyRetainedWeak = first;
+	TexturePtr externallyRetained = first;
+	firstScope.reset();
+	EXPECT_FALSE( externallyRetainedWeak.expired() );
+
+	first.reset();
+	second.reset();
+	shared.reset();
+	later.reset();
+	observedOnly.reset();
+	externallyRetained.reset();
+	secondScope.reset();
+	sharedCatalog.reset();
+	laterCatalog.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, defaultResourceScopeImportsGlobalCatalog ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Default resource scope test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	globalResourceCatalog().publish( "global-texture", texture );
+
+	EXPECT_EQ( texture.get(), defaultResourceScope().findTexture( "global-texture" ).get() );
+	ResourceScopePtr isolatedScope = ResourceScope::New();
+	EXPECT_TRUE( isolatedScope->findTexture( "global-texture" ) == nullptr );
+
+	texture.reset();
+	isolatedScope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiScenesOwnIsolatedScopesThatCanBeSharedExplicitly ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI scene resource scope test" );
+	UISceneNode* firstScene = UISceneNode::New( window );
+	UISceneNode* secondScene = UISceneNode::New( window );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+
+	firstScene->getResourceScope()->publishLocal( "scene-texture", texture );
+	EXPECT_TRUE( secondScene->getResourceScope()->findTexture( "scene-texture" ) == nullptr );
+	secondScene->setResourceScope( firstScene->getResourceScope() );
+	EXPECT_EQ( texture.get(),
+			   secondScene->getResourceScope()->findTexture( "scene-texture" ).get() );
+
+	texture.reset();
+	eeDelete( secondScene );
+	eeDelete( firstScene );
+	window->display( false );
 	Engine::destroySingleton();
 }
 
@@ -307,6 +427,38 @@ UTEST( ResourcePrerequisites, pendingBatchRetainsTextureUntilDisplayCollection )
 	EXPECT_TRUE( weakTexture.expired() );
 	EXPECT_TRUE( unloaded );
 	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, workerFinalReleaseDefersDestructionUntilDisplay ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Worker texture release test" );
+	TextureFactory* factory = TextureFactory::instance();
+	TexturePtr texture = factory->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	std::thread worker( [texture = std::move( texture )]() mutable { texture.reset(); } );
+	worker.join();
+
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, workerFileTextureLoadReleasesDecoderPixelsCorrectly ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Worker file texture load test" );
+	TexturePtr texture;
+	std::thread worker( [&texture] {
+		texture = TextureFactory::instance()->loadFromFile( Sys::getProcessPath() +
+															"../assets/atlases/bnb/007.png" );
+	} );
+	worker.join();
+	ASSERT_TRUE( texture != nullptr );
+
+	texture.reset();
+	window->display( false );
 	Engine::destroySingleton();
 }
 

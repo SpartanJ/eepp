@@ -32,7 +32,6 @@ const Texture::CoordinateType& TextureFactory::getLastCoordinateType() const {
 }
 
 TextureFactory::~TextureFactory() {
-	unloadTextures();
 	collectReleasedTextures();
 	diagnoseLiveTexturesAtShutdown();
 }
@@ -142,7 +141,6 @@ TexturePtr TextureFactory::pushTexture( const std::string& Filepath, const Uint3
 	Tex->create( textureHandle, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath,
 				 ClampMode, CompressTexture, MemSize );
 	TextureWeakPtr weakTexture( texture );
-	mTextures.emplace( resourceId.value(), texture );
 	mLiveTextures.emplace( resourceId.value(),
 						   LiveTextureRecord{ resourceId, std::move( weakTexture ) } );
 	mLiveTextureGeneration.fetch_add( 1, std::memory_order_release );
@@ -201,38 +199,6 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 void TextureFactory::bind( ResourceId textureId, Texture::CoordinateType coordinateType,
 						   const Uint32& textureUnit, const bool& forceRebind ) {
 	bind( getTexture( textureId ).get(), coordinateType, textureUnit, forceRebind );
-}
-
-void TextureFactory::unloadTextures() {
-	TextureMap textures;
-	{
-		Lock l( *this );
-		textures = std::move( mTextures );
-		std::fill( mCurrentTexture.begin(), mCurrentTexture.end(), 0 );
-	}
-
-	// DrawableResource destruction emits callbacks, so release factory ownership without holding
-	// the registry/factory mutex.
-	textures.clear();
-
-	Log::debug( "Textures Unloaded." );
-}
-
-bool TextureFactory::releaseRetainedTexture( ResourceId textureId ) {
-	TexturePtr texture;
-	{
-		Lock l( *this );
-		auto it = mTextures.find( textureId.value() );
-		if ( it == mTextures.end() )
-			return false;
-
-		texture = std::move( it->second );
-		mTextures.erase( it );
-		resetTextureBinding( texture.get() );
-	}
-
-	texture.reset();
-	return true;
 }
 
 void TextureFactory::resetTextureBinding( const Texture* texture ) {
@@ -302,9 +268,6 @@ Uint64 TextureFactory::getLiveTextureGeneration() const {
 }
 
 void TextureFactory::queueReleasedTexture( Texture* texture ) {
-	eeASSERTM( Window::Engine::existsSingleton() && Window::Engine::isMainThread(),
-			   Texture_final_release_must_run_on_the_graphics_thread );
-
 	Lock l( *this );
 	mReleasedTextures.push_back( texture );
 	mLiveTextureGeneration.fetch_add( 1, std::memory_order_release );
@@ -382,53 +345,38 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 
 bool TextureFactory::existsId( ResourceId textureId ) {
 	Lock l( *this );
-
-	return mTextures.find( textureId.value() ) != mTextures.end();
+	auto it = mLiveTextures.find( textureId.value() );
+	return it != mLiveTextures.end() && !it->second.texture.expired();
 }
 
 TexturePtr TextureFactory::getTexture( ResourceId textureId ) {
 	Lock l( *this );
 
-	auto it = mTextures.find( textureId.value() );
-	return it != mTextures.end() ? it->second : TexturePtr{};
-}
-
-TexturePtr TextureFactory::getByName( const std::string& Name ) {
-	return getByHash( String::hash( Name ) );
+	auto it = mLiveTextures.find( textureId.value() );
+	return it != mLiveTextures.end() ? it->second.texture.lock() : TexturePtr{};
 }
 
 Uint32 TextureFactory::getTextureCount() {
+	purgeExpiredTextures();
 	Lock l( *this );
-
-	return (Uint32)mTextures.size();
+	return static_cast<Uint32>( mLiveTextures.size() );
 }
 
 unsigned int TextureFactory::getTextureMemorySize() {
-	Lock l( *this );
-
-	std::size_t memorySize = 0;
-	for ( const auto& texture : mLiveTextures ) {
-		if ( TexturePtr liveTexture = texture.second.texture.lock() )
-			memorySize += liveTexture->getMemSize();
-	}
-	return static_cast<unsigned int>( memorySize );
-}
-
-TexturePtr TextureFactory::getByHash( const String::HashType& hash ) {
-	Lock l( *this );
-
-	Uint64 latestId = 0;
-	TexturePtr latestTexture;
-	for ( const auto& texture : mTextures ) {
-		const TexturePtr& tTex = texture.second;
-
-		if ( NULL != tTex && texture.first > latestId && tTex->getHashName() == hash ) {
-			latestId = texture.first;
-			latestTexture = tTex;
+	std::vector<TexturePtr> liveTextures;
+	{
+		Lock l( *this );
+		liveTextures.reserve( mLiveTextures.size() );
+		for ( const auto& record : mLiveTextures ) {
+			if ( TexturePtr texture = record.second.texture.lock() )
+				liveTextures.emplace_back( std::move( texture ) );
 		}
 	}
 
-	return latestTexture;
+	std::size_t memorySize = 0;
+	for ( const TexturePtr& texture : liveTextures )
+		memorySize += texture->getMemSize();
+	return static_cast<unsigned int>( memorySize );
 }
 
 }} // namespace EE::Graphics

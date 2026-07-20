@@ -137,12 +137,14 @@ class EE_API TextureLoader {
 	bool mLoaded{ false };
 	bool mTexLoaded{ false };
 	bool mDirectUpload{ false };
+	bool mPixelsUseSystemFree{ false };
 	Image::Format mImgType{ 0 };
 	int mIsCompressed{ 0 };
 
 	Clock mTE;
 
 	void loadFile();
+	void freePixels();
 	void loadFromFile();
 	void loadFromMemory();
 	void loadFromPack();

@@ -929,7 +929,7 @@ void Image::webpLoad( const Uint8* imageData, size_t imageDataSize ) {
 	}
 
 	if ( errdec || nullptr == dstImage ) {
-		eeSAFE_FREE( dstImage );
+		free( dstImage );
 		return;
 	}
 

@@ -1,6 +1,7 @@
 #ifndef EE_UISCENENODE_HPP
 #define EE_UISCENENODE_HPP
 
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/network/cookiemanager.hpp>
 #include <eepp/network/uri.hpp>
@@ -153,8 +154,8 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * Copies only shared platform/configuration services: dispatcher, DPI/window pointer,
 	 * thread pool, color/contrast preferences, and default font/theme pointers. Stylesheets,
-	 * URI, referer, cookies, navigation callbacks, actions, roots, and dirty queues remain owned
-	 * by this scene.
+	 * URI, referer, cookies, navigation callbacks, actions, roots, resource scope, and dirty queues
+	 * remain owned by this scene.
 	 */
 	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 
@@ -770,6 +771,12 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
 
+	/** @return The Graphics resource lookup and ownership boundary of this scene. */
+	const Graphics::ResourceScopePtr& getResourceScope() const;
+
+	/** Replaces this scene's resource boundary, allowing intentional sharing between scenes. */
+	UISceneNode* setResourceScope( Graphics::ResourceScopePtr resourceScope );
+
 	/**
 	 * @brief Sets the theme for the entire UI scene.
 	 *
@@ -902,6 +909,7 @@ class EE_API UISceneNode : public SceneNode {
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
 	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
+	Graphics::ResourceScopePtr mResourceScope;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;

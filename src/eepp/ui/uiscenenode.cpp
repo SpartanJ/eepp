@@ -33,6 +33,7 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+using namespace EE::Graphics;
 using namespace EE::Network;
 
 namespace EE { namespace UI {
@@ -140,6 +141,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mAsyncResourceLoadState( std::make_shared<AsyncResourceLoadState>() ),
+	mResourceScope( ResourceScope::New() ),
 	mKeyBindings( mWindow->getInput() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
 	// the required events to its children.
@@ -748,6 +750,15 @@ std::shared_ptr<ThreadPool> UISceneNode::getThreadPool() {
 
 void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
 	mThreadPool = threadPool;
+}
+
+const ResourceScopePtr& UISceneNode::getResourceScope() const {
+	return mResourceScope;
+}
+
+UISceneNode* UISceneNode::setResourceScope( ResourceScopePtr resourceScope ) {
+	mResourceScope = resourceScope ? std::move( resourceScope ) : ResourceScope::New();
+	return this;
 }
 
 static std::string getErrorContext( size_t offset, std::string_view content ) {

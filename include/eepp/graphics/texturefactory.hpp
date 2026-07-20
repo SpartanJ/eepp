@@ -21,7 +21,7 @@ struct TextureRegistryRecord {
 
 using TextureRegistrySnapshot = std::vector<TextureRegistryRecord>;
 
-/** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
+/** Creates textures and weakly observes every live texture for diagnostics. */
 class EE_API TextureFactory : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( TextureFactory )
 
@@ -172,7 +172,7 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	void setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit );
 
-	/** Returns the number of textures loaded */
+	/** Returns the number of currently live textures. */
 	Uint32 getTextureCount();
 
 	/** @return A non-owning diagnostic snapshot of every currently live texture. */
@@ -201,10 +201,10 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	unsigned int getValidTextureSize( const unsigned int& Size );
 
-	/** Determines whether the texture identity exists in the factory. */
+	/** Determines whether the texture identity is currently live. */
 	bool existsId( ResourceId textureId );
 
-	/** @return The texture matching @p textureId, or null if it is not factory-retained. */
+	/** @return The live texture matching @p textureId, or null if it has expired. */
 	TexturePtr getTexture( ResourceId textureId );
 
 	/** @return The memory used by the textures (in bytes) */
@@ -233,31 +233,16 @@ class EE_API TextureFactory : protected Mutex {
 							const Texture::ClampMode& ClampMode, const bool& CompressTexture,
 							const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 
-	/** Return a texture by it file path name
-	 * @param Name File path name
-	 * @return The texture, NULL if not exists.
-	 */
-	TexturePtr getByName( const std::string& Name );
-
-	/** Return a texture by it hash path name
-	 * @param Hash The file path hash
-	 * @return The texture, NULL if not exists
-	 */
-	TexturePtr getByHash( const String::HashType& hash );
-
 	~TextureFactory();
 
 	const Texture::CoordinateType& getLastCoordinateType() const;
 
   protected:
 	friend class Texture;
-	friend class TextureLoader;
 
 	TextureFactory();
 
 	std::vector<int> mCurrentTexture;
-
-	using TextureMap = UnorderedMap<Uint64, TexturePtr>;
 
 	struct LiveTextureRecord {
 		ResourceId id;
@@ -268,19 +253,16 @@ class EE_API TextureFactory : protected Mutex {
 		void operator()( Texture* texture ) const noexcept;
 	};
 
-	TextureMap mTextures;
 	UnorderedMap<Uint64, LiveTextureRecord> mLiveTextures;
 	std::vector<Texture*> mReleasedTextures;
 	std::atomic<Uint64> mLiveTextureGeneration{ 0 };
 
 	Texture::CoordinateType mLastCoordinateType;
 
-	void unloadTextures();
-
 	void resetTextureBinding( const Texture* texture );
 
-	bool releaseRetainedTexture( ResourceId textureId );
-
+	/** Thread-safe final-handle handoff. Actual Texture destruction remains graphics-thread-only.
+	 */
 	void queueReleasedTexture( Texture* texture );
 
 	void diagnoseLiveTexturesAtShutdown();

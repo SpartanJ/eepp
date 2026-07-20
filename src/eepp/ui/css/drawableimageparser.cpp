@@ -166,7 +166,8 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 		if ( exists( functionType.getName() ) )
 			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
 	} else if ( NULL != ( res = DrawableSearcher::searchByName(
-							  value, false, node->getUISceneNode()->getReferer() ) ) ) {
+							  value, false, node->getUISceneNode()->getReferer(),
+							  node->getUISceneNode()->getResourceScope().get() ) ) ) {
 		if ( res->getDrawableType() == Drawable::SPRITE )
 			ownIt = true;
 		return res;
@@ -926,7 +927,8 @@ void DrawableImageParser::registerBaseParsers() {
 			 !String::startsWith( param, "data:image/" ) ) {
 			return DrawableSearcher::searchByName(
 				node->getUISceneNode()->solveRelativePath( param ).toString(), false,
-				node->getUISceneNode()->getReferer() );
+				node->getUISceneNode()->getReferer(),
+				node->getUISceneNode()->getResourceScope().get() );
 		} else if ( functionType.getParameters().size() > 1 &&
 					String::startsWith( param, "data:image/" ) ) {
 			auto cparam = functionType.getParameters().at( 0 );
@@ -934,10 +936,12 @@ void DrawableImageParser::registerBaseParsers() {
 				cparam += ',';
 				cparam += functionType.getParameters().at( i );
 			}
-			return DrawableSearcher::searchByName( cparam, false,
-												   node->getUISceneNode()->getReferer() );
+			return DrawableSearcher::searchByName(
+				cparam, false, node->getUISceneNode()->getReferer(),
+				node->getUISceneNode()->getResourceScope().get() );
 		}
-		return DrawableSearcher::searchByName( param, false, node->getUISceneNode()->getReferer() );
+		return DrawableSearcher::searchByName( param, false, node->getUISceneNode()->getReferer(),
+											   node->getUISceneNode()->getResourceScope().get() );
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,

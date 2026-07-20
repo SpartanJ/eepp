@@ -7,10 +7,13 @@
 
 namespace EE { namespace Graphics {
 
+class ResourceScope;
+
 class EE_API DrawableSearcher {
   public:
 	static Drawable* searchByName( const std::string& name, bool firstSearchSprite = false,
-								   Network::URI referer = "" );
+								   Network::URI referer = "",
+								   ResourceScope* resourceScope = nullptr );
 
 	static Drawable* searchById( const Uint32& id );
 
