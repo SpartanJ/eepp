@@ -35,6 +35,8 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	virtual bool isStateful();
 
+	DrawablePtr createInstance() const;
+
 	/** @return The texture instance used by the GlyphDrawable. */
 	const TexturePtr& getTexture() const;
 

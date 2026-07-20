@@ -3,18 +3,19 @@
 
 namespace EE { namespace UI {
 
-UISkinState* UISkinState::New( UISkin* skin ) {
-	return eeNew( UISkinState, ( skin ) );
+UISkinState* UISkinState::New( ResourcePtr<UISkin> skin ) {
+	return eeNew( UISkinState, ( std::move( skin ) ) );
 }
 
-UISkinState::UISkinState( UISkin* Skin ) : mSkin( Skin ), mCurrentColor( Color::White ) {
+UISkinState::UISkinState( ResourcePtr<UISkin> skin ) :
+	mSkin( std::move( skin ) ), mCurrentColor( Color::White ) {
 	eeASSERT( NULL != mSkin );
 }
 
 UISkinState::~UISkinState() {}
 
 UISkin* UISkinState::getSkin() const {
-	return mSkin;
+	return mSkin.get();
 }
 
 bool UISkinState::stateExists( const Uint32& State ) const {

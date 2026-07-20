@@ -1,6 +1,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uiicon.hpp>
+#include <limits>
 
 namespace EE { namespace UI {
 
@@ -16,39 +17,48 @@ const std::string& UIIcon::getName() const {
 	return mName;
 }
 
-Drawable* UIIcon::getSize( const int& size ) const {
+const DrawablePtr& UIIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
 	auto it = mSizes.find( size );
 	if ( it != mSizes.end() )
 		return it->second;
-	int distance = UINT32_MAX;
-	Drawable* closest = nullptr;
+	int distance = std::numeric_limits<int>::max();
+	const DrawablePtr* closest = nullptr;
 	for ( const auto& sit : mSizes ) {
 		int diff = abs( sit.first - size );
 		if ( diff < distance ) {
 			distance = diff;
-			closest = sit.second;
+			closest = &sit.second;
 		}
 	}
-	return closest;
+	return closest ? *closest : empty;
 }
 
-void UIIcon::setSize( const int& size, Drawable* drawable ) {
-	mSizes[size] = drawable;
+DrawablePtr UIIcon::createDrawable( const int& size ) const {
+	const DrawablePtr& source = getSource( size );
+	return source ? source->createInstance() : DrawablePtr{};
+}
+
+void UIIcon::setSource( const int& size, DrawablePtr drawable ) {
+	mSizes[size] = std::move( drawable );
 }
 
 UIIcon* UIGlyphIcon::New( const std::string& name, FontTrueType* font, const Uint32& codePoint ) {
 	return eeNew( UIGlyphIcon, ( name, font, codePoint ) );
 }
 
-Drawable* UIGlyphIcon::getSize( const int& size ) const {
+const DrawablePtr& UIGlyphIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
 	if ( !mFont )
-		return nullptr;
+		return empty;
 	auto it = mSizes.find( size );
 	if ( it != mSizes.end() )
 		return it->second;
 	GlyphDrawable* drawable = mFont->getGlyphDrawable( mCodePoint, size );
-	const_cast<UIGlyphIcon*>( this )->setSize( size, drawable );
-	return drawable;
+	if ( !drawable )
+		return empty;
+	const_cast<UIGlyphIcon*>( this )->setSource( size, drawable->createInstance() );
+	return UIIcon::getSource( size );
 }
 
 UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint ) :
@@ -74,10 +84,11 @@ UIIcon* UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
 
 UISVGIcon::~UISVGIcon() {}
 
-Drawable* UISVGIcon::getSize( const int& size ) const {
-	auto it = mSVGs.find( size );
-	if ( it != mSVGs.end() )
-		return it->second.get();
+const DrawablePtr& UISVGIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
+	auto it = mSizes.find( size );
+	if ( it != mSizes.end() )
+		return it->second;
 
 	Image::FormatConfiguration format;
 	if ( mOriSize == Sizei::Zero ) {
@@ -87,7 +98,7 @@ Drawable* UISVGIcon::getSize( const int& size ) const {
 			mOriSize = { w, h };
 			mOriChannels = c;
 		} else {
-			return nullptr;
+			return empty;
 		}
 	}
 	format.svgScale( size / (Float)eemax( mOriSize.x, mOriSize.y ) );
@@ -95,8 +106,10 @@ Drawable* UISVGIcon::getSize( const int& size ) const {
 		(const unsigned char*)&mSVGXml[0], mSVGXml.size(), false, Texture::ClampMode::ClampToEdge,
 		false, false, format );
 
-	mSVGs[size] = texture;
-	return texture.get();
+	if ( !texture )
+		return empty;
+	const_cast<UISVGIcon*>( this )->setSource( size, std::move( texture ) );
+	return UIIcon::getSource( size );
 }
 
 UISVGIcon::UISVGIcon( const std::string& name, const std::string& svgXML ) :

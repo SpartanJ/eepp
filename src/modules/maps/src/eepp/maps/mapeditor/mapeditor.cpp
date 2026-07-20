@@ -1440,15 +1440,17 @@ GameObject* MapEditor::createGameObject() {
 
 		if ( mChkAnim->isChecked() ) {
 
-			Sprite* tAnimSprite = Sprite::New(
+			SpritePtr tAnimSprite = Sprite::New(
 				String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) );
-			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 			tAnimSprite->setAutoAnimate( false );
+			tObj = eeNew( GameObjectSprite,
+						  ( mCurGOFlags, mCurLayer, std::move( tAnimSprite ) ) );
 
 		} else {
 
-			Sprite* tStaticSprite = Sprite::New( mGfxPreview->getTextureRegion() );
-			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStaticSprite ) );
+			SpritePtr tStaticSprite = Sprite::New( mGfxPreview->getTextureRegion() );
+			tObj = eeNew( GameObjectSprite,
+						  ( mCurGOFlags, mCurLayer, std::move( tStaticSprite ) ) );
 		}
 	} else {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and

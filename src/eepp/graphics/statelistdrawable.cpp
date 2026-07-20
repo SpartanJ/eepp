@@ -13,27 +13,29 @@ StateListDrawable::StateListDrawable( Type type, const std::string& name ) :
 StateListDrawable::StateListDrawable( const std::string& name ) :
 	StatefulDrawable( STATELIST, name ), mCurrentState( 0 ), mCurrentDrawable( NULL ) {}
 
-StateListDrawable::~StateListDrawable() {
-	clearDrawables();
-}
+StateListDrawable::~StateListDrawable() {}
 
 void StateListDrawable::clearDrawables() {
-	std::vector<Drawable*> removeOwnershipState;
+	mCurrentDrawable = nullptr;
+	mDrawables.clear();
+}
 
-	for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
-		Drawable* drawable = it->second;
-
-		if ( mDrawablesOwnership[drawable] ) {
-			removeOwnershipState.push_back( drawable );
-			eeSAFE_DELETE( drawable );
+DrawablePtr StateListDrawable::createInstance() const {
+	auto instance = ResourcePtr<StateListDrawable>( eeNew( StateListDrawable, ( mName ) ),
+													ResourceDeleter<StateListDrawable>() );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	for ( const auto& state : mDrawables ) {
+		if ( state.second ) {
+			DrawablePtr drawable = state.second->createInstance();
+			if ( !drawable )
+				return {};
+			instance->setStateDrawable( state.first, std::move( drawable ) );
 		}
 	}
-
-	for ( auto& removeOwnership : removeOwnershipState ) {
-		mDrawablesOwnership.erase( removeOwnership );
-	}
-
-	mDrawables.clear();
+	instance->mDrawableColors = mDrawableColors;
+	instance->setState( mCurrentState );
+	return instance;
 }
 
 Sizef StateListDrawable::getSize() {
@@ -94,17 +96,11 @@ bool StateListDrawable::isStateful() {
 }
 
 StatefulDrawable* StateListDrawable::setState( Uint32 state ) {
-	if ( state != mCurrentState || mCurrentDrawable == NULL ||
-		 mCurrentDrawable != mDrawables[mCurrentState] ) {
+	auto current = mDrawables.find( state );
+	Drawable* stateDrawable = current != mDrawables.end() ? current->second.get() : nullptr;
+	if ( state != mCurrentState || mCurrentDrawable != stateDrawable ) {
 		mCurrentState = state;
-
-		auto it = mDrawables.find( state );
-
-		if ( it != mDrawables.end() ) {
-			mCurrentDrawable = it->second;
-		} else {
-			mCurrentDrawable = NULL;
-		}
+		mCurrentDrawable = stateDrawable;
 	}
 
 	return this;
@@ -116,28 +112,21 @@ const Uint32& StateListDrawable::getState() const {
 
 Drawable* StateListDrawable::getStateDrawable( const Uint32& state ) {
 	if ( hasDrawableState( state ) )
-		return mDrawables[state];
+		return mDrawables[state].get();
 
 	return NULL;
 }
 
-StateListDrawable* StateListDrawable::setStateDrawable( const Uint32& state, Drawable* drawable,
-														bool ownIt ) {
+StateListDrawable* StateListDrawable::setStateDrawable( const Uint32& state,
+														DrawablePtr drawable ) {
 	if ( NULL != drawable ) {
-		if ( hasDrawableState( state ) && mDrawablesOwnership[mDrawables[state]] ) {
+		if ( hasDrawableState( state ) && mCurrentDrawable == mDrawables[state].get() )
+			mCurrentDrawable = NULL;
 
-			if ( mCurrentDrawable == mDrawables[state] )
-				mCurrentDrawable = NULL;
-
-			mDrawablesOwnership.erase( mDrawables[state] );
-			eeDelete( mDrawables[state] );
-		}
-
-		mDrawables[state] = drawable;
-		mDrawablesOwnership[drawable] = ownIt;
+		mDrawables[state] = std::move( drawable );
 
 		if ( hasDrawableStateColor( state ) )
-			drawable->setColor( mDrawableColors[state] );
+			mDrawables[state]->setColor( mDrawableColors[state] );
 
 		if ( state == mCurrentState )
 			setState( state );
@@ -194,9 +183,9 @@ bool StateListDrawable::hasDrawableStateColor( const Uint32& state ) const {
 
 void StateListDrawable::onColorFilterChange() {
 	for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
-		Drawable* drawable = it->second;
-
-		drawable->setColor( mColor );
+		Drawable* drawable = it->second.get();
+		if ( drawable )
+			drawable->setColor( mColor );
 	}
 }
 

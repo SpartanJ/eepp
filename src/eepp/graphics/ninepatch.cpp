@@ -25,9 +25,6 @@ NinePatch::NinePatch( TexturePtr tex, int left, int top, int right, int bottom,
 	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
 	mPixelDensity( pixelDensity ) {
-	for ( Int32 i = 0; i < SideCount; i++ )
-		mDrawable[i] = NULL;
-
 	if ( NULL != tex ) {
 		mSize = tex->getPixelsSize();
 
@@ -40,9 +37,6 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
 	mPixelDensity( 1 ) {
-	for ( Int32 i = 0; i < SideCount; i++ )
-		mDrawable[i] = NULL;
-
 	if ( NULL != textureRegion && textureRegion->getTexture() != NULL ) {
 		mPixelDensity = textureRegion->getPixelDensity();
 
@@ -53,7 +47,7 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 		createFromTexture( textureRegion->getTexture(), left, top, right, bottom );
 
 		for ( int i = 0; i < SideCount; i++ ) {
-			TextureRegion* side = static_cast<TextureRegion*>( mDrawable[i] );
+			TextureRegion* side = mDrawable[i].get();
 
 			side->setPixelDensity( textureRegion->getPixelDensity() );
 
@@ -69,9 +63,27 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 	}
 }
 
-NinePatch::~NinePatch() {
-	for ( Int32 i = 0; i < SideCount; i++ )
-		eeSAFE_DELETE( mDrawable[i] );
+NinePatch::~NinePatch() {}
+
+DrawablePtr NinePatch::createInstance() const {
+	if ( !mDrawable[Center] )
+		return {};
+	auto instance = makeResource<NinePatch>( mDrawable[Center]->getTexture(), mRect.Left, mRect.Top,
+											 mRect.Right, mRect.Bottom, mPixelDensity, mName );
+	for ( int i = 0; i < SideCount; ++i ) {
+		instance->mDrawable[i] =
+			mDrawable[i] ? std::static_pointer_cast<TextureRegion>( mDrawable[i]->createInstance() )
+						 : TextureRegionPtr{};
+		if ( mDrawable[i] && !instance->mDrawable[i] )
+			return {};
+	}
+	instance->mRect = mRect;
+	instance->mRectf = mRectf;
+	instance->mSize = mSize;
+	instance->mDestSize = mDestSize;
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
 }
 
 Sizef NinePatch::getSize() {
@@ -115,7 +127,7 @@ void NinePatch::draw( const Vector2f& position, const Sizef& size ) {
 
 TextureRegion* NinePatch::getTextureRegion( const int& side ) {
 	if ( side < SideCount )
-		return mDrawable[side];
+		return mDrawable[side].get();
 	return NULL;
 }
 
@@ -123,24 +135,24 @@ void NinePatch::createFromTexture( const TexturePtr& tex, int left, int top, int
 								   int bottom ) {
 	Rect r;
 	r = Rect( 0, top, left, mSize.getHeight() - bottom );
-	mDrawable[Left] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[Left] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( mSize.getWidth() - right, top, mSize.getWidth(), mSize.getHeight() - bottom );
-	mDrawable[Right] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[Right] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( left, mSize.getHeight() - bottom, mSize.getWidth() - right, mSize.getHeight() );
-	mDrawable[Down] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[Down] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( left, 0, mSize.getWidth() - right, top );
-	mDrawable[Up] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[Up] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( 0, 0, left, top );
-	mDrawable[UpLeft] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[UpLeft] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( mSize.getWidth() - right, 0, mSize.getWidth(), top );
-	mDrawable[UpRight] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[UpRight] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() );
-	mDrawable[DownLeft] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[DownLeft] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(),
 			  mSize.getHeight() );
-	mDrawable[DownRight] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[DownRight] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 	r = Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom );
-	mDrawable[Center] = TextureRegion::New( tex, r, r.getSize().asFloat() );
+	mDrawable[Center] = makeResource<TextureRegion>( tex, r, r.getSize().asFloat() );
 
 	mRect = Rect( left, top, right, bottom );
 

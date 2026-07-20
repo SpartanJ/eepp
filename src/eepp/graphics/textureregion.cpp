@@ -117,6 +117,15 @@ TextureRegion::~TextureRegion() {
 	clearCache();
 }
 
+DrawablePtr TextureRegion::createInstance() const {
+	auto instance = makeResource<TextureRegion>( mTexture, mSrcRect, mDestSize, mOffset, mName );
+	instance->setOriDestSize( mOriDestSize );
+	instance->setPixelDensity( mPixelDensity );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
+
 void TextureRegion::setTextureId( ResourceId textureId ) {
 	mTexture = TextureFactory::instance()->getTexture( textureId );
 }

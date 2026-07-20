@@ -1,7 +1,6 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0 through Stage 3 complete; Stage 4 is next,
-2026-07-19.
+Status: active implementation baseline; Stage 0 through Stage 4 complete, 2026-07-20.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -344,34 +343,72 @@ fixed:
 Shared lifetime and shareable instance state are separate concerns. `isStateful()` is not a sharing
 contract and will not be used as one.
 
-### 7.1 Frozen source/instance split
+### 7.1 Source/instance split
 
 Resource resolution caches immutable source data. UI consumers own per-consumer drawable instances:
 
 ```cpp
-using DrawableSourcePtr = ResourcePtr<const DrawableSource>;
 using DrawablePtr = ResourcePtr<Drawable>;
 
-DrawableSourcePtr DrawableResolver::findSource( const DrawableRequest& request );
+DrawablePtr Drawable::createInstance() const;
 DrawablePtr DrawableResolver::createDrawable( const DrawableRequest& request );
 ```
+
+Stage 4 established this contract without introducing a parallel `DrawableSource` class hierarchy.
+Existing drawable resource types serve as source prototypes while retained by an atlas, theme,
+icon, catalog, or resolver. A prototype is never handed directly to an unrelated consumer:
+`createInstance()` returns independently mutable presentation state while sharing underlying
+texture/resource handles. This is simpler than duplicating every drawable type into source and
+instance classes and remains compatible with introducing immutable source-only types later when a
+concrete resource requires one.
+
+eepp continues to use `Drawable::Type` for runtime drawable dispatch. Generic handle conversion
+checks that tag and then uses `static_pointer_cast`; cloning code for a statically known concrete
+type also uses `static_pointer_cast`. The ownership migration does not introduce RTTI casts.
 
 Representative split:
 
 - `Texture` is shared GPU/resource data, not a globally shared mutable drawable instance.
-- `TextureRegionSource` contains a TexturePtr, immutable source rectangle, offset, and intrinsic size.
-- `NinePatchSource` contains immutable region and border data.
-- `TextureDrawable`/`TextureRegionDrawable` hold per-consumer destination size, tint, alpha, position,
-  and other presentation state while retaining their source.
+- `TextureRegion` prototypes and instances retain a TexturePtr; instances copy rectangle, offset,
+  intrinsic size, destination size, tint, and position.
+- `NinePatch` instances clone their nine mutable region children while sharing the textures.
+- `TextureDrawable` holds per-consumer destination size, tint, alpha, and position while retaining
+  the shared TexturePtr.
 - `StateListDrawable`, `DrawableGroup`, and `Sprite` are per-consumer state machines/instances that
   refer to source handles or private child instances.
 
 `DrawableImageParser::createDrawable()` always returns a fresh consumer instance for CSS-generated
 or resolved content, even when its immutable source came from a cache.
 
+`UIIcon`, `UIGlyphIcon`, and `UISVGIcon` expose the split directly:
+
+```cpp
+const DrawablePtr& UIIcon::getSource( int size ) const;
+DrawablePtr UIIcon::createDrawable( int size ) const;
+```
+
+`getSource()` supports lookup and measurement without cloning an existing prototype. Glyph and SVG
+icons may materialize and cache a missing size source once. `createDrawable()` is the explicit
+consumer-instance boundary. Callers retain its result for as long as they render that icon.
+
 The migration will remove draw-time mutation of shared child/source objects. Rendering APIs may use
 external draw parameters where that simplifies an implementation, but no shared source can be
 temporarily recolored, resized, repositioned, or advanced by a consumer.
+
+No rendering callback may call `createInstance()`, `UIIcon::createDrawable()`, or an API that
+performs either operation internally. Rendered instances are prepared during assignment,
+deserialization, style/resource resolution, scheduled update, or plugin update and retained by the
+consumer. The Stage 4 call-site audit classifies all remaining direct `createInstance()` calls as:
+
+- implementations recursively cloning their private child state;
+- constructors and setters adopting a private region/sprite/map instance;
+- theme, skin, icon, CSS, and name-resolution source-to-instance boundaries;
+- widget deserialization and one-time assignment; or
+- focused ownership tests.
+
+The code editor lock icon and ecode debugger, linter, LSP breadcrumb, and autocomplete icon paths
+retain instances populated before drawing. Draw callbacks only look up and render those retained
+instances; a cache miss skips the icon for that frame instead of cloning while rendering.
 
 ### 7.2 Consumer API
 
@@ -644,6 +681,25 @@ Exit criteria:
 - Scope destruction does not invalidate externally retained resources.
 
 ### Stage 4: drawable source/instance conversion
+
+Status: complete, 2026-07-20. Drawable ownership
+now uses `DrawablePtr`; textures create private
+`TextureDrawable` wrappers; mutable prototypes implement `createInstance()`; sprites, state lists,
+skins, groups, nine-patches, regions, glyphs, gradients, and primitive drawables clone their
+presentation state. UIImage, UINodeDrawable, menus/icons/themes, parsers, editor/tool consumers,
+maps, physics, ecode, and eeiv were migrated in the same API cut.
+
+`DrawableResource::Unload` and callback IDs were replaced by Change-only RAII connections.
+`Variant` stores DrawablePtr outside its scalar union. UITextureRegion and ScrollParallax render
+with local geometry rather than temporarily resizing shared source regions; region-based map
+objects retain private instances. `DrawableSearcher` already returns fresh instances as a safe
+bridge, but its replacement by the layered UI resolver remains Stage 5.
+
+`UIIcon::getSource()` now returns a cached source/prototype for lookup and measurement, while
+`UIIcon::createDrawable()` explicitly creates one private consumer instance. `UIGlyphIcon` and
+`UISVGIcon` cache their lazily materialized sources under the same contract. The complete
+`createInstance()` call-site audit found no remaining render-loop cloning; previously hot code
+editor, debugger, linter, LSP breadcrumb, and autocomplete paths retain update-time instances.
 
 Introduce source types and per-consumer instances, remove shared draw-state mutation, replace manual
 ownership with DrawablePtr, remove Unload lifetime callbacks, add RAII change connections, and

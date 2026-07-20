@@ -336,12 +336,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables background fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setBackgroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setBackgroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a background drawable from a skin name.
@@ -521,12 +520,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables foreground fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setForegroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setForegroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a foreground drawable from a skin name.

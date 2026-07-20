@@ -28,14 +28,15 @@ class EE_API StateListDrawable : public StatefulDrawable {
 
 	virtual bool isStateful();
 
+	DrawablePtr createInstance() const;
+
 	virtual StatefulDrawable* setState( Uint32 state );
 
 	virtual const Uint32& getState() const;
 
 	virtual Drawable* getStateDrawable( const Uint32& state );
 
-	virtual StateListDrawable* setStateDrawable( const Uint32& state, Drawable* drawable,
-												 bool ownIt = false );
+	virtual StateListDrawable* setStateDrawable( const Uint32& state, DrawablePtr drawable );
 
 	virtual Sizef getStateSize( const Uint32& state );
 
@@ -56,8 +57,7 @@ class EE_API StateListDrawable : public StatefulDrawable {
   protected:
 	Uint32 mCurrentState;
 	Drawable* mCurrentDrawable;
-	std::map<Uint32, Drawable*> mDrawables;
-	std::map<Drawable*, bool> mDrawablesOwnership;
+	std::map<Uint32, DrawablePtr> mDrawables;
 	std::map<Uint32, Color> mDrawableColors;
 
 	explicit StateListDrawable( const std::string& name = "" );

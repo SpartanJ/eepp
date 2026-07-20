@@ -138,6 +138,10 @@ class DebuggerPlugin : public PluginBase {
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
 	std::vector<std::string> mRegisteredCommands;
+	UIIcon* mBreakpointIcon{ nullptr };
+	UnorderedMap<int, DrawablePtr> mBreakpointDrawables;
+	UIIcon* mStackFrameIcon{ nullptr };
+	UnorderedMap<int, DrawablePtr> mStackFrameDrawables;
 
 	class DebuggerPluginClient : public TextDocument::Client {
 	  public:
@@ -213,6 +217,8 @@ class DebuggerPlugin : public PluginBase {
 	void onUnregisterEditor( UICodeEditor* ) override;
 
 	void onRegisterDocument( TextDocument* doc ) override;
+
+	void update( UICodeEditor* editor ) override;
 
 	void drawLineNumbersBefore( UICodeEditor* editor, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Vector2f& screenStart,

@@ -268,7 +268,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 };
 
 }} // namespace EE::UI

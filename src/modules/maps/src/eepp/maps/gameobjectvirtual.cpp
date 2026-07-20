@@ -10,23 +10,16 @@ namespace EE { namespace Maps {
 
 GameObjectVirtual::GameObjectVirtual( Uint32 DataId, MapLayer* Layer, const Uint32& Flags,
 									  Uint32 Type, const Vector2f& Pos ) :
-	GameObject( Flags, Layer ),
-	mType( Type ),
-	mDataId( DataId ),
-	mPos( Pos ),
-	mLayer( NULL ),
-	mTextureRegion( NULL ) {}
+	GameObject( Flags, Layer ), mType( Type ), mDataId( DataId ), mPos( Pos ), mLayer( NULL ) {}
 
 GameObjectVirtual::GameObjectVirtual( TextureRegion* TextureRegion, MapLayer* Layer,
 									  const Uint32& Flags, Uint32 Type, const Vector2f& Pos ) :
-	GameObject( Flags, Layer ),
-	mType( Type ),
-	mDataId( 0 ),
-	mPos( Pos ),
-	mLayer( Layer ),
-	mTextureRegion( TextureRegion ) {
-	if ( NULL != TextureRegion )
+	GameObject( Flags, Layer ), mType( Type ), mDataId( 0 ), mPos( Pos ), mLayer( Layer ) {
+	if ( NULL != TextureRegion ) {
 		mDataId = TextureRegion->getId();
+		mTextureRegion = std::static_pointer_cast<EE::Graphics::TextureRegion>(
+			TextureRegion->createInstance() );
+	}
 }
 
 GameObjectVirtual::~GameObjectVirtual() {}
@@ -86,9 +79,10 @@ void GameObjectVirtual::draw() {
 							Vector2f( mPos.x + mTextureRegion->getDestSize().x, mPos.y ) ),
 						getBlendModeFromFlags(), getRenderModeFromFlags() );
 				} else {
-					mTextureRegion->draw(
-						mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						getRotation(), Vector2f::One, BlendMode::Alpha(), getRenderModeFromFlags() );
+					mTextureRegion->draw( mPos.x, mPos.y,
+										  LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
+										  getRotation(), Vector2f::One, BlendMode::Alpha(),
+										  getRenderModeFromFlags() );
 				}
 			}
 		} else {

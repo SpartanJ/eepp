@@ -7,34 +7,31 @@
 namespace EE { namespace Physics {
 
 ShapePolySprite* ShapePolySprite::New( Physics::Body* body, int numVerts, cVect* verts,
-									   cVect offset, Sprite* Sprite, bool AutoDeleteSprite ) {
-	return eeNew( ShapePolySprite, ( body, numVerts, verts, offset, Sprite, AutoDeleteSprite ) );
+									   cVect offset, SpritePtr sprite ) {
+	return eeNew( ShapePolySprite,
+				  ( body, numVerts, verts, offset, std::move( sprite ) ) );
 }
 
 ShapePolySprite* ShapePolySprite::New( Physics::Body* body, cpFloat width, cpFloat height,
-									   Sprite* Sprite, bool AutoDeleteSprite ) {
-	return eeNew( ShapePolySprite, ( body, width, height, Sprite, AutoDeleteSprite ) );
+									   SpritePtr sprite ) {
+	return eeNew( ShapePolySprite, ( body, width, height, std::move( sprite ) ) );
 }
 
 ShapePolySprite::ShapePolySprite( Physics::Body* body, int numVerts, cVect* verts, cVect offset,
-								  Sprite* Sprite, bool AutoDeleteSprite ) :
+								  SpritePtr sprite ) :
 	ShapePoly( body, numVerts, verts, offset ),
-	mSprite( Sprite ),
-	mSpriteAutoDelete( AutoDeleteSprite ) {
+	mSprite( std::move( sprite ) ) {
 	offsetSet( centroid( numVerts, verts ) );
 }
 
 ShapePolySprite::ShapePolySprite( Physics::Body* body, cpFloat width, cpFloat height,
-								  Sprite* Sprite, bool AutoDeleteSprite ) :
-	ShapePoly( body, width, height ), mSprite( Sprite ), mSpriteAutoDelete( AutoDeleteSprite ) {
+								  SpritePtr sprite ) :
+	ShapePoly( body, width, height ), mSprite( std::move( sprite ) ) {
 	mSprite->setSize( Sizef( width, height ) );
 	offsetSet( cVectNew( width / 2, height / 2 ) );
 }
 
-ShapePolySprite::~ShapePolySprite() {
-	if ( mSpriteAutoDelete )
-		eeSAFE_DELETE( mSprite );
-}
+ShapePolySprite::~ShapePolySprite() {}
 
 void ShapePolySprite::draw( Space* space ) {
 	cVect Pos = getBody()->getPos();
@@ -52,7 +49,7 @@ void ShapePolySprite::offsetSet( cVect center ) {
 						( Int32 )( -myCenter.y + ( center.y - myCenter.y ) ) );
 }
 
-Sprite* ShapePolySprite::getSprite() const {
+const SpritePtr& ShapePolySprite::getSprite() const {
 	return mSprite;
 }
 

@@ -190,7 +190,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void toggleEnableChats( bool enabled );
 
-	Drawable* findIcon( const std::string& name, const size_t iconSize );
+	DrawablePtr findIcon( const std::string& name, const size_t iconSize );
 
 	UIWidget* addChatUI( LLMChat::Role role );
 

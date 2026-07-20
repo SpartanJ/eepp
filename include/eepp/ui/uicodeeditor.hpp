@@ -768,13 +768,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowFoldingRegion( bool showFoldingRegion );
 
-	Drawable* getFoldDrawable() const;
+	const DrawablePtr& getFoldDrawable() const;
 
-	void setFoldDrawable( Drawable* foldDrawable );
+	void setFoldDrawable( DrawablePtr foldDrawable );
 
-	Drawable* getFoldedDrawable() const;
+	const DrawablePtr& getFoldedDrawable() const;
 
-	void setFoldedDrawable( Drawable* foldedDrawable );
+	void setFoldedDrawable( DrawablePtr foldedDrawable );
 
 	bool getFoldsAlwaysVisible() const;
 
@@ -997,10 +997,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Text mLineTextCache;
 	size_t mJumpLinesLength{ 5 };
 	UIIcon* mFileLockIcon{ nullptr };
+	DrawablePtr mFileLockDrawable;
+	int mFileLockDrawableSize{ 0 };
 	std::string mFileLockIconName{ "file-lock-fill" };
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
-	Drawable* mFoldDrawable{ nullptr };
-	Drawable* mFoldedDrawable{ nullptr };
+	DrawablePtr mFoldDrawable;
+	DrawablePtr mFoldedDrawable;
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
@@ -1157,7 +1159,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateGlyphWidth();
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 

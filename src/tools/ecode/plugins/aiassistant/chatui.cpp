@@ -2695,13 +2695,13 @@ void LLMChatUI::toggleEnableChats( bool enabled ) {
 		toggleEnableChat( chat, enabled );
 }
 
-Drawable* LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) {
+DrawablePtr LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) {
 	if ( name.empty() )
-		return nullptr;
+		return {};
 	UIIcon* icon = getUISceneNode()->findIcon( name );
 	if ( icon )
-		return icon->getSize( iconSize );
-	return nullptr;
+		return icon->createDrawable( iconSize );
+	return {};
 }
 
 void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,

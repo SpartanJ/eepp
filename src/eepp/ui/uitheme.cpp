@@ -100,7 +100,8 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 		if ( String::startsWith( name, sAbbrIcon ) ) {
 			auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
-			icon->setSize( textureRegion->getPixelsSize().getWidth(), textureRegion );
+			icon->setSource( textureRegion->getPixelsSize().getWidth(),
+						   textureRegion->createInstance() );
 			tTheme->getIconTheme()->add( icon );
 		} else if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
@@ -140,7 +141,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 				int stateNum = UIState::getStateNumber( nameParts[nameParts.size() - 1] );
 
 				if ( -1 != stateNum )
-					skins[skinName]->setStateDrawable( stateNum, drawable );
+					skins[skinName]->setStateDrawable( stateNum, drawable->createInstance() );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -155,7 +156,8 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 							skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 						if ( -1 != stateNum )
-							skins[skinName]->setStateDrawable( stateNum, textureRegion );
+							skins[skinName]->setStateDrawable( stateNum,
+															 textureRegion->createInstance() );
 					}
 				}
 			}
@@ -199,7 +201,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name );
 				tSG->add( drawable );
 				auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
-				icon->setSize( drawable->getPixelsSize().getWidth(), drawable );
+				icon->setSource( drawable->getPixelsSize().getWidth(), drawable->createInstance() );
 				tTheme->getIconTheme()->add( icon );
 			} else if ( String::startsWith( name, sAbbr ) ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
@@ -240,7 +242,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 					int stateNum = UIState::getStateNumber( nameParts[nameParts.size() - 1] );
 
 					if ( -1 != stateNum )
-						skins[skinName]->setStateDrawable( stateNum, drawable );
+						skins[skinName]->setStateDrawable( stateNum, drawable->createInstance() );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -258,7 +260,8 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 								skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 							if ( -1 != stateNum )
-								skins[skinName]->setStateDrawable( stateNum, textureRegion );
+								skins[skinName]->setStateDrawable(
+									stateNum, textureRegion->createInstance() );
 						}
 					}
 				}

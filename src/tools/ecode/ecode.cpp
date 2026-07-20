@@ -1316,17 +1316,17 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 	} );
 }
 
-Drawable* App::findIcon( const std::string& name ) {
+DrawablePtr App::findIcon( const std::string& name ) {
 	return findIcon( name, mMenuIconSize );
 }
 
-Drawable* App::findIcon( const std::string& name, const size_t iconSize ) {
+DrawablePtr App::findIcon( const std::string& name, const size_t iconSize ) {
 	if ( name.empty() )
-		return nullptr;
+		return {};
 	UIIcon* icon = mUISceneNode->findIcon( name );
 	if ( icon )
-		return icon->getSize( iconSize );
-	return nullptr;
+		return icon->createDrawable( iconSize );
+	return {};
 }
 
 String App::i18n( const std::string& key, const String& def ) {
@@ -2599,7 +2599,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content, repoPath );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
-			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
@@ -2629,7 +2629,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	if ( !icon )
 		icon = getUISceneNode()->findIcon( "file" );
 	if ( icon )
-		tab->setIcon( icon->getSize( getMenuIconSize() ) );
+		tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath, oldFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
@@ -2651,7 +2651,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
-			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
@@ -3158,7 +3158,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		if ( editor->getData() ) {
 			UITab* tab = (UITab*)editor->getData();
-			tab->setIcon( icon->getSize( mMenuIconSize ) );
+			tab->setIcon( icon->createDrawable( mMenuIconSize ) );
 		}
 		editor->getDocument().setHExtLanguageType( mProjectDocConfig.hExtLanguageType );
 

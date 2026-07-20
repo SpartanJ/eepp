@@ -525,11 +525,11 @@ void UITabWidget::updateTabs() {
 	}
 }
 
-UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* icon ) {
+UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, DrawablePtr icon ) {
 	UITab* tab = UITab::New();
 	tab->setParent( mTabBar );
 	tab->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tab->setIcon( icon );
+	tab->setIcon( std::move( icon ) );
 	tab->setText( text );
 	tab->setVisible( true );
 	tab->setEnabled( true );
@@ -553,8 +553,8 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	return tab;
 }
 
-UITab* UITabWidget::add( const String& text, UINode* nodeOwned, Drawable* icon ) {
-	UITab* tab = createTab( text, nodeOwned, icon );
+UITab* UITabWidget::add( const String& text, UINode* nodeOwned, DrawablePtr icon ) {
+	UITab* tab = createTab( text, nodeOwned, std::move( icon ) );
 	add( tab );
 	return tab;
 }
@@ -789,9 +789,9 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
 	}
 }
 
-void UITabWidget::insertTab( const String& text, UINode* nodeOwned, Drawable* icon,
+void UITabWidget::insertTab( const String& text, UINode* nodeOwned, DrawablePtr icon,
 							 const Uint32& index ) {
-	insertTab( createTab( text, nodeOwned, icon ), index );
+	insertTab( createTab( text, nodeOwned, std::move( icon ) ), index );
 }
 
 void UITabWidget::insertTab( UITab* Tab, const Uint32& index ) {

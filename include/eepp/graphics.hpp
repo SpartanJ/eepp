@@ -65,6 +65,7 @@
 #include <eepp/graphics/textshaperun.hpp>
 #include <eepp/graphics/texttransform.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>

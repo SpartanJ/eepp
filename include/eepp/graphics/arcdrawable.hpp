@@ -30,6 +30,8 @@ class EE_API ArcDrawable : public PrimitiveDrawable {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr createInstance() const;
+
 	Float getRadius() const;
 
 	void setRadius( const Float& radius );

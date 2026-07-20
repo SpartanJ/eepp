@@ -529,7 +529,7 @@ bool SpellCheckerPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu*
 						 const std::string& icon = "" ) {
 		subMenu
 			->add( i18n( txtKey, txtVal ),
-				   !icon.empty() ? findIcon( icon )->getSize( PixelDensity::dpToPxI( 12 ) )
+				   !icon.empty() ? findIcon( icon )->createDrawable( PixelDensity::dpToPxI( 12 ) )
 								 : nullptr,
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );

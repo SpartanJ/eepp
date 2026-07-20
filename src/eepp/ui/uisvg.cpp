@@ -21,24 +21,6 @@ class XmlStringWriter : public pugi::xml_writer {
 	}
 };
 
-class PendingSpriteTransfer {
-  public:
-	explicit PendingSpriteTransfer( Sprite* sprite ) : mSprite( sprite ) {}
-	PendingSpriteTransfer( const PendingSpriteTransfer& ) = delete;
-	PendingSpriteTransfer& operator=( const PendingSpriteTransfer& ) = delete;
-
-	~PendingSpriteTransfer() { eeSAFE_DELETE( mSprite ); }
-
-	Sprite* release() {
-		Sprite* sprite = mSprite;
-		mSprite = nullptr;
-		return sprite;
-	}
-
-  private:
-	Sprite* mSprite{ nullptr };
-};
-
 } // namespace
 
 UISvg* UISvg::New() {
@@ -104,17 +86,12 @@ void UISvg::rasterizeSvg( const std::string& svgXml ) {
 	if ( !texture )
 		return;
 
-	Sprite* sprite = Sprite::New();
+	SpritePtr sprite = Sprite::New();
 	sprite->createStatic( std::move( texture ) );
-	sprite->setAsTextureRegionOwner( true );
 
-	auto spriteTransfer = std::make_shared<PendingSpriteTransfer>( sprite );
-
-	runOnMainThread( [this, spriteTransfer] {
-		Sprite* sprite = spriteTransfer->release();
-		if ( sprite ) {
-			setDrawable( sprite, true );
-		}
+	runOnMainThread( [this, sprite = std::move( sprite )]() mutable {
+		if ( sprite )
+			setDrawable( std::move( sprite ) );
 	} );
 }
 

@@ -31,21 +31,29 @@ Sizef UISkin::getPixelsSize( const Uint32& state ) {
 	return StateListDrawable::getPixelsSize( state );
 }
 
-UISkin* UISkin::clone( const std::string& NewName ) {
-	UISkin* SkinS = UISkin::New( NewName );
-
-	SkinS->mColor = mColor;
-	SkinS->mPosition = mPosition;
-	SkinS->mDrawables = mDrawables;
-	SkinS->mCurrentState = mCurrentState;
-	SkinS->mCurrentDrawable = mCurrentDrawable;
-	SkinS->mDrawablesOwnership = mDrawablesOwnership;
-
-	return SkinS;
+ResourcePtr<UISkin> UISkin::clone( const std::string& newName ) const {
+	auto skin = ResourcePtr<UISkin>( eeNew( UISkin, ( newName ) ), ResourceDeleter<UISkin>() );
+	skin->setColor( mColor );
+	skin->setPosition( mPosition );
+	for ( const auto& state : mDrawables ) {
+		if ( !state.second )
+			continue;
+		DrawablePtr drawable = state.second->createInstance();
+		if ( !drawable )
+			return {};
+		skin->setStateDrawable( state.first, std::move( drawable ) );
+	}
+	skin->mDrawableColors = mDrawableColors;
+	skin->setState( mCurrentState );
+	return skin;
 }
 
-UISkin* UISkin::clone() {
+ResourcePtr<UISkin> UISkin::clone() const {
 	return clone( mName );
+}
+
+DrawablePtr UISkin::createInstance() const {
+	return clone();
 }
 
 Rectf UISkin::getBorderSize() {
@@ -55,7 +63,7 @@ Rectf UISkin::getBorderSize() {
 Rectf UISkin::getBorderSize( const Uint32& state ) {
 	if ( hasDrawableState( state ) &&
 		 mDrawables[state]->getDrawableType() == EE::Graphics::Drawable::Type::NINEPATCH ) {
-		NinePatch* ninePatch( static_cast<NinePatch*>( mDrawables[state] ) );
+		NinePatch* ninePatch( static_cast<NinePatch*>( mDrawables[state].get() ) );
 		TextureRegion* stl( ninePatch->getTextureRegion( NinePatch::Left ) );
 		TextureRegion* str( ninePatch->getTextureRegion( NinePatch::Right ) );
 		TextureRegion* stt( ninePatch->getTextureRegion( NinePatch::Up ) );

@@ -838,7 +838,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 					editorSplitter->removeUnusedTab( curTabWidget, true, false );
 
 					if ( icon )
-						tab->setIcon( icon );
+						tab->setIcon( std::move( icon ) );
 
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(

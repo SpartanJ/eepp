@@ -14,7 +14,7 @@ std::string SettingsMenu::getKeybind( const std::string& command ) {
 	return mApp->getKeybind( command );
 }
 
-Drawable* SettingsMenu::findIcon( const std::string& name ) {
+DrawablePtr SettingsMenu::findIcon( const std::string& name ) {
 	return mApp->findIcon( name );
 }
 

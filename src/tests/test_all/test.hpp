@@ -225,8 +225,8 @@ class EETest : private Thread {
 
 	std::vector<physicDemo> mDemo;
 	Uint32 mCurDemo;
-	Sprite* mBoxSprite;
-	Sprite* mCircleSprite;
+	SpritePtr mBoxSprite;
+	SpritePtr mCircleSprite;
 
 	UITheme* mTheme;
 	UISceneNode* mSceneNode;

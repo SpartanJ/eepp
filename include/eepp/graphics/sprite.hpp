@@ -11,6 +11,9 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class Sprite;
+using SpritePtr = ResourcePtr<Sprite>;
+
 /** @brief A Sprite controller class, can hold and control sprites animations. */
 class EE_API Sprite : public Drawable {
   public:
@@ -26,21 +29,23 @@ class EE_API Sprite : public Drawable {
 		SPRITE_EVENT_USER // User vents
 	};
 
-	static Sprite* New();
+	static SpritePtr New();
 
-	static Sprite* New( const std::string& name, const std::string& extension = "",
+	static SpritePtr New( const std::string& name, const std::string& extension = "",
 						TextureAtlas* SearchInTextureAtlas = NULL );
 
-	static Sprite* New( TextureRegion* TextureRegion );
+	static SpritePtr New( TextureRegion* TextureRegion );
 
-	static Sprite* New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
+	static SpritePtr New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
 						const Vector2i& offset = Vector2i( 0, 0 ),
 						const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
-	static Sprite* fromGif( IOStream& gif );
+	static SpritePtr fromGif( IOStream& gif );
 
 	/** Instantiate an empty sprite */
 	Sprite();
+
+	Sprite( const Sprite& other );
 
 	/** Creates an animated Sprite from a animation name. It will search for a pattern name.
 	 * For example search for name "car" with extensions "png", i will try to find car00.png
@@ -312,6 +317,8 @@ class EE_API Sprite : public Drawable {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr createInstance() const;
+
 	/** Set the number of repetitions of the animation. Any number below 0 the animation will loop.
 	 */
 	void setRepetitions( const int& Repeations );
@@ -379,8 +386,8 @@ class EE_API Sprite : public Drawable {
 	/** Pop the event callback id indicated. */
 	bool popEventsCallback( const Uint32& callbackId );
 
-	/** Creates a copy of the current sprite and returns it */
-	Sprite clone();
+	/** Creates an independent instance sharing the same texture resources. */
+	SpritePtr clone() const;
 
 	/** Update the sprite animation */
 	void update( const Time& ElapsedTime );
@@ -391,10 +398,6 @@ class EE_API Sprite : public Drawable {
 	/** Fire a User Event in the sprite */
 	void fireEvent( const Uint32& Event );
 
-	Sprite& setAsTextureRegionOwner( bool set );
-
-	bool isTextureRegionOwner() const;
-
   protected:
 	enum SpriteFlags {
 		SPRITE_FLAG_AUTO_ANIM = ( 1 << 0 ),
@@ -402,7 +405,6 @@ class EE_API Sprite : public Drawable {
 		SPRITE_FLAG_ANIM_PAUSED = ( 1 << 2 ),
 		SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP = ( 1 << 3 ),
 		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 ),
-		SPRITE_FLAG_TEXTURE_REGION_OWNER = ( 1 << 6 ),
 	};
 
 	Uint32 mFlags{ SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED };
@@ -433,7 +435,7 @@ class EE_API Sprite : public Drawable {
 	UnorderedMap<Uint32, SpriteCbData> mCallbacks;
 
 	struct Frame {
-		std::vector<TextureRegion*> Spr;
+		std::vector<TextureRegionPtr> Spr;
 	};
 	std::vector<Frame> mFrames;
 
@@ -441,11 +443,12 @@ class EE_API Sprite : public Drawable {
 
 	void clearFrame();
 
-	void cleanUpResources();
-
 	unsigned int getFrame( const unsigned int& FrameNum );
 
 	unsigned int getSubFrame( const unsigned int& SubFrame );
+
+	bool addSubFrame( TextureRegionPtr textureRegion, const unsigned int& numFrame,
+					  const unsigned int& numSubFrame );
 };
 
 }} // namespace EE::Graphics

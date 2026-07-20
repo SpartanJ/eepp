@@ -49,7 +49,7 @@ class EE_MAPS_API GameObjectVirtual : public GameObject {
 	Uint32 mDataId;
 	Vector2f mPos;
 	MapLayer* mLayer;
-	TextureRegion* mTextureRegion;
+	TextureRegionPtr mTextureRegion;
 };
 
 }} // namespace EE::Maps

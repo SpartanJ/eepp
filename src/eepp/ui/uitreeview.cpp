@@ -289,8 +289,8 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			if ( !mExpandersAsIcons && mExpandIcon && mContractIcon ) {
 				minIndent =
 					eemax(
-						mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
-						mContractIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth() ) +
+						mExpandIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth(),
+						mContractIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth() ) +
 					image->getLayoutPixelsMargin().Right;
 			}
 
@@ -300,14 +300,14 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
+				DrawablePtr drawable = icon ? icon->createDrawable( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );
 				} else {
 					image->setVisible( true );
 					image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
-					image->setDrawable( drawable );
+					image->setDrawable( std::move( drawable ) );
 					if ( !mExpandersAsIcons )
 						indentation = indentation - image->getPixelsSize().getWidth();
 				}
@@ -330,7 +330,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->setIcon( icon.asDrawable() );
 		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
 			isVisible = true;
-			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
+			cell->setIcon( icon.asIcon()->createDrawable( mIconSize ) );
 		}
 		if ( cell->hasIcon() )
 			cell->getIcon()->setVisible( isVisible );

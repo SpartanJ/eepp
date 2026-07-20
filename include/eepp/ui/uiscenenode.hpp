@@ -564,7 +564,7 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param drawableSize The desired size of the drawable in pixels.
 	 * @return Pointer to the Drawable, or nullptr if not found.
 	 */
-	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+	DrawablePtr findIconDrawable( const std::string& iconName, const size_t& drawableSize );
 
 	/**
 	 * @brief Gets the keybindings manager.

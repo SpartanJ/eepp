@@ -979,11 +979,9 @@ void UITextInput::setEscapePastedText( bool escapePastedText ) {
 	mEscapePastedText = escapePastedText;
 }
 
-Drawable* UITextInput::findIcon( const std::string& name ) {
+DrawablePtr UITextInput::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const String& translateString,

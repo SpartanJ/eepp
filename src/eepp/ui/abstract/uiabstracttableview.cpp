@@ -667,7 +667,7 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 			cell->setIcon( icon.asDrawable() );
 		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
 			isVisible = true;
-			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
+			cell->setIcon( icon.asIcon()->createDrawable( mIconSize ) );
 		}
 		if ( cell->hasIcon() )
 			cell->getIcon()->setVisible( isVisible );
@@ -891,7 +891,7 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 			UIImage* image =
 				columnData( model->keyColumn() ).widget->getExtraInnerWidget()->asType<UIImage>();
 			image->setForegroundFillEnabled( false );
-			image->setDrawable( nullptr );
+			image->setDrawable( DrawablePtr{} );
 		}
 		SortOrder sortOrder = model->sortOrder() == SortOrder::Ascending ? SortOrder::Descending
 																		 : SortOrder::Ascending;
@@ -904,10 +904,10 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 		if ( image->getForeground() )
 			image->getForeground()->setAlpha( 255 );
 		if ( image && image->getForeground() == nullptr ) {
-			Drawable* icon = mUISceneNode->findIconDrawable(
+			DrawablePtr icon = mUISceneNode->findIconDrawable(
 				sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mSortIconSize );
 			if ( icon )
-				image->setDrawable( icon );
+				image->setDrawable( std::move( icon ) );
 		}
 		model->sort( colIndex, sortOrder );
 	}

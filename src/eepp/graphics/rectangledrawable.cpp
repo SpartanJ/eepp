@@ -29,6 +29,21 @@ RectangleDrawable::RectangleDrawable( const Vector2f& position, const Sizef& siz
 	mPosition = position;
 }
 
+DrawablePtr RectangleDrawable::createInstance() const {
+	auto instance = makeResource<RectangleDrawable>( mPosition, mSize );
+	instance->mRotation = mRotation;
+	instance->mScale = mScale;
+	instance->mCorners = mCorners;
+	instance->mRectColors = mRectColors;
+	instance->mUsingRectColors = mUsingRectColors;
+	instance->mFillMode = mFillMode;
+	instance->mBlendMode = mBlendMode;
+	instance->mLineWidth = mLineWidth;
+	instance->mSmooth = mSmooth;
+	instance->mColor = mColor;
+	return instance;
+}
+
 Sizef RectangleDrawable::getSize() {
 	return mSize;
 }

@@ -58,7 +58,7 @@ class Plugin : public UICodeEditorPlugin {
 
 	UIIcon* findIcon( const std::string& iconName );
 
-	Drawable* iconDrawable( const std::string& iconName, Float dpSize );
+	DrawablePtr iconDrawable( const std::string& iconName, Float dpSize );
 
 	virtual void onVersionUpgrade( Uint32 /*oldVersion*/, Uint32 /*currentVersion*/ ) {}
 

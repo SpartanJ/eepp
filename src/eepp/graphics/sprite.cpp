@@ -10,37 +10,40 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-Sprite* Sprite::New() {
-	return eeNew( Sprite, () );
+SpritePtr Sprite::New() {
+	return makeResource<Sprite>();
 }
 
-Sprite* Sprite::New( const std::string& name, const std::string& extension,
-					 TextureAtlas* SearchInTextureAtlas ) {
-	return eeNew( Sprite, ( name, extension, SearchInTextureAtlas ) );
+SpritePtr Sprite::New( const std::string& name, const std::string& extension,
+					   TextureAtlas* SearchInTextureAtlas ) {
+	return makeResource<Sprite>( name, extension, SearchInTextureAtlas );
 }
 
-Sprite* Sprite::New( TextureRegion* TextureRegion ) {
-	return eeNew( Sprite, ( TextureRegion ) );
+SpritePtr Sprite::New( TextureRegion* TextureRegion ) {
+	return makeResource<Sprite>( TextureRegion );
 }
 
-Sprite* Sprite::New( ResourceId textureId, const Sizef& DestSize, const Vector2i& offset,
-					 const Rect& TexSector ) {
-	return eeNew( Sprite, ( textureId, DestSize, offset, TexSector ) );
+SpritePtr Sprite::New( ResourceId textureId, const Sizef& DestSize, const Vector2i& offset,
+					   const Rect& TexSector ) {
+	return makeResource<Sprite>( textureId, DestSize, offset, TexSector );
 }
 
-Sprite* Sprite::fromGif( IOStream& stream ) {
+SpritePtr Sprite::fromGif( IOStream& stream ) {
 	auto [gif, delay] = Texture::loadGif( stream );
-	Sprite* sprite = Sprite::New();
+	SpritePtr sprite = Sprite::New();
 
 	for ( const auto& texture : gif )
 		sprite->addFrame( texture );
 
 	sprite->setAnimationSpeed( 1000.f / (float)delay );
-	sprite->setAsTextureRegionOwner( true );
 	return sprite;
 }
 
 Sprite::Sprite() : Drawable( Drawable::SPRITE ) {}
+
+Sprite::Sprite( const Sprite& other ) : Drawable( Drawable::SPRITE ) {
+	*this = other;
+}
 
 Sprite::Sprite( const std::string& name, const std::string& extension,
 				TextureAtlas* SearchInTextureAtlas ) :
@@ -59,16 +62,30 @@ Sprite::Sprite( ResourceId textureId, const Sizef& DestSize, const Vector2i& Off
 }
 
 Sprite::~Sprite() {
-	cleanUpResources();
 	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
 Sprite& Sprite::operator=( const Sprite& Other ) {
+	if ( this == &Other )
+		return *this;
+
 	mDrawableType = Other.mDrawableType;
-	mFrames = Other.mFrames;
+	mFrames.clear();
+	mFrames.reserve( Other.mFrames.size() );
+	for ( const Frame& otherFrame : Other.mFrames ) {
+		Frame frame;
+		frame.Spr.reserve( otherFrame.Spr.size() );
+		for ( const TextureRegionPtr& region : otherFrame.Spr ) {
+			frame.Spr.emplace_back(
+				region ? std::static_pointer_cast<TextureRegion>( region->createInstance() )
+					   : nullptr );
+		}
+		mFrames.emplace_back( std::move( frame ) );
+	}
 	mFlags = Other.mFlags;
 	mColor = Other.mColor;
 	mPosition = Other.mPosition;
+	mOrigin = Other.mOrigin;
 	mRotation = Other.mRotation;
 	mScale = Other.mScale;
 	mAnimSpeed = Other.mAnimSpeed;
@@ -80,8 +97,10 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 	mCurrentSubFrame = Other.mCurrentSubFrame;
 	mSubFrames = Other.mSubFrames;
 	mAnimTo = Other.mAnimTo;
-	mCallbacks = Other.mCallbacks;
-	mNumCallBacks = Other.mNumCallBacks;
+	mCallbacks.clear();
+	mNumCallBacks = 0;
+
+	eeSAFE_DELETE_ARRAY( mVertexColors );
 
 	if ( NULL != Other.mVertexColors ) {
 		mVertexColors = eeNewArray( Color, 4 );
@@ -96,39 +115,12 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 	return *this;
 }
 
-Sprite Sprite::clone() {
-	Sprite Spr;
+SpritePtr Sprite::clone() const {
+	return makeResource<Sprite>( *this );
+}
 
-	Spr.mDrawableType = mDrawableType;
-	Spr.mColor = mColor;
-	Spr.mFrames = mFrames;
-	Spr.mFlags = mFlags;
-	Spr.mPosition = mPosition;
-	Spr.mRotation = mRotation;
-	Spr.mScale = mScale;
-	Spr.mAnimSpeed = mAnimSpeed;
-	Spr.mRepetitions = mRepetitions;
-	Spr.mBlend = mBlend;
-	Spr.mEffect = mEffect;
-	Spr.mCurrentFrame = mCurrentFrame;
-	Spr.mfCurrentFrame = mfCurrentFrame;
-	Spr.mCurrentSubFrame = mCurrentSubFrame;
-	Spr.mSubFrames = mSubFrames;
-	Spr.mAnimTo = mAnimTo;
-	Spr.mCallbacks = mCallbacks;
-	Spr.mNumCallBacks = mNumCallBacks;
-
-	if ( NULL != mVertexColors ) {
-		Spr.mVertexColors = eeNewArray( Color, 4 );
-		Spr.mVertexColors[0] = mVertexColors[0];
-		Spr.mVertexColors[1] = mVertexColors[1];
-		Spr.mVertexColors[2] = mVertexColors[2];
-		Spr.mVertexColors[3] = mVertexColors[3];
-	} else {
-		Spr.mVertexColors = NULL;
-	}
-
-	return Spr;
+DrawablePtr Sprite::createInstance() const {
+	return clone();
 }
 
 void Sprite::clearFrame() {
@@ -138,21 +130,7 @@ void Sprite::clearFrame() {
 	mFrames.clear();
 }
 
-void Sprite::cleanUpResources() {
-	if ( isTextureRegionOwner() ) {
-		size_t frames = getNumFrames();
-
-		for ( size_t i = 0; i < frames; i++ ) {
-			for ( size_t f = 0; f < mFrames[i].Spr.size(); f++ ) {
-				TextureRegion* region = mFrames[i].Spr[f];
-				GlobalTextureAtlas::instance()->remove( region );
-			}
-		}
-	}
-}
-
 void Sprite::reset() {
-	cleanUpResources();
 	clearFrame();
 
 	mFlags = SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
@@ -402,6 +380,14 @@ bool Sprite::addFramesByPattern( const std::string& name, const std::string& ext
 
 bool Sprite::addSubFrame( TextureRegion* TextureRegion, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame ) {
+	return addSubFrame( TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>(
+											TextureRegion->createInstance() )
+									  : TextureRegionPtr{},
+						NumFrame, NumSubFrame );
+}
+
+bool Sprite::addSubFrame( TextureRegionPtr TextureRegion, const unsigned int& NumFrame,
+						  const unsigned int& NumSubFrame ) {
 	unsigned int NF, NSF;
 
 	if ( NumFrame >= mFrames.size() )
@@ -458,7 +444,7 @@ bool Sprite::addSubFrame( TexturePtr tex, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame, const Sizef& DestSize,
 						  const Vector2i& Offset, const Rect& TexSector ) {
 	if ( tex ) {
-		TextureRegion* region = GlobalTextureAtlas::instance()->add( TextureRegion::New() );
+		TextureRegionPtr region = makeResource<TextureRegion>();
 		region->setTexture( std::move( tex ) );
 
 		if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
@@ -475,7 +461,7 @@ bool Sprite::addSubFrame( TexturePtr tex, const unsigned int& NumFrame,
 
 		region->setDestSize( destSize );
 		region->setOffset( Offset );
-		return addSubFrame( region, NumFrame, NumSubFrame );
+		return addSubFrame( std::move( region ), NumFrame, NumSubFrame );
 	}
 	return false;
 }
@@ -732,21 +718,21 @@ bool Sprite::getAutoAnimate() const {
 
 TextureRegion* Sprite::getCurrentTextureRegion() {
 	if ( mFrames.size() )
-		return mFrames[mCurrentFrame].Spr[mCurrentSubFrame];
+		return mFrames[mCurrentFrame].Spr[mCurrentSubFrame].get();
 
 	return NULL;
 }
 
 TextureRegion* Sprite::getTextureRegion( const unsigned int& frame ) {
 	if ( frame < mFrames.size() )
-		return mFrames[frame].Spr[mCurrentSubFrame];
+		return mFrames[frame].Spr[mCurrentSubFrame].get();
 
 	return NULL;
 }
 
 TextureRegion* Sprite::getTextureRegion( const unsigned int& frame, const unsigned int& SubFrame ) {
 	if ( frame < mFrames.size() )
-		return mFrames[frame].Spr[SubFrame];
+		return mFrames[frame].Spr[SubFrame].get();
 
 	return NULL;
 }
@@ -895,18 +881,6 @@ void Sprite::fireEvent( const Uint32& Event ) {
 			cb.second.cb( Event, this, cb.second.userData );
 		}
 	}
-}
-
-Sprite& Sprite::setAsTextureRegionOwner( bool set ) {
-	if ( set )
-		mFlags |= SPRITE_FLAG_TEXTURE_REGION_OWNER;
-	else
-		mFlags &= ~SPRITE_FLAG_TEXTURE_REGION_OWNER;
-	return *this;
-}
-
-bool Sprite::isTextureRegionOwner() const {
-	return mFlags & SPRITE_FLAG_TEXTURE_REGION_OWNER;
 }
 
 void Sprite::setOrigin( const OriginPoint& origin ) {

@@ -9,7 +9,8 @@ namespace EE { namespace Maps {
 GameObjectTextureRegion::GameObjectTextureRegion( const Uint32& Flags, MapLayer* Layer,
 												  Graphics::TextureRegion* TextureRegion,
 												  const Vector2f& Pos ) :
-	GameObject( Flags, Layer ), mTextureRegion( TextureRegion ), mPos( Pos ) {
+	GameObject( Flags, Layer ), mPos( Pos ) {
+	setTextureRegion( TextureRegion );
 	assignTilePos();
 }
 
@@ -44,7 +45,8 @@ void GameObjectTextureRegion::draw() {
 						getRenderModeFromFlags() );
 				} else {
 					mTextureRegion->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(),
-										  Vector2f::One, BlendMode::Alpha(), getRenderModeFromFlags() );
+										  Vector2f::One, BlendMode::Alpha(),
+										  getRenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->isByVertex() ) {
@@ -99,11 +101,14 @@ Sizei GameObjectTextureRegion::getSize() {
 }
 
 Graphics::TextureRegion* GameObjectTextureRegion::getTextureRegion() const {
-	return mTextureRegion;
+	return mTextureRegion.get();
 }
 
 void GameObjectTextureRegion::setTextureRegion( Graphics::TextureRegion* TextureRegion ) {
-	mTextureRegion = TextureRegion;
+	mTextureRegion =
+		TextureRegion
+			? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->createInstance() )
+			: TextureRegionPtr{};
 }
 
 Uint32 GameObjectTextureRegion::getDataId() {

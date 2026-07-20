@@ -11,11 +11,11 @@ class ResourceScope;
 
 class EE_API DrawableSearcher {
   public:
-	static Drawable* searchByName( const std::string& name, bool firstSearchSprite = false,
+	static DrawablePtr searchByName( const std::string& name, bool firstSearchSprite = false,
 								   Network::URI referer = "",
 								   ResourceScope* resourceScope = nullptr );
 
-	static Drawable* searchById( const Uint32& id );
+	static DrawablePtr searchById( const Uint32& id );
 
 	static void setPrintWarnings( const bool& print );
 

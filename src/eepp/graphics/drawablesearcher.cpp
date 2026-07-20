@@ -19,42 +19,42 @@ namespace EE { namespace Graphics {
 
 bool DrawableSearcher::sPrintWarnings = false;
 
-static Drawable* getSprite( const std::string& sprite ) {
+static DrawablePtr getSprite( const std::string& sprite ) {
 	std::vector<TextureRegion*> tTextureRegionVec =
 		TextureAtlasManager::instance()->getTextureRegionsByPattern( sprite );
 
 	if ( tTextureRegionVec.size() ) {
-		Sprite* tSprite = Graphics::Sprite::New();
+		SpritePtr tSprite = Sprite::New();
 		tSprite->createAnimation();
 		tSprite->addFrames( tTextureRegionVec );
 
 		return tSprite;
 	}
 
-	return NULL;
+	return {};
 }
 
-static Drawable* searchByNameInternal( const std::string& name, ResourceScope& resourceScope ) {
+static DrawablePtr searchByNameInternal( const std::string& name, ResourceScope& resourceScope ) {
 	String::HashType id = String::hash( name );
-	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
+	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
 
-	if ( NULL == drawable ) {
-		drawable = NinePatchManager::instance()->getById( id );
+	if ( NULL == source ) {
+		source = NinePatchManager::instance()->getById( id );
 	}
 
-	if ( NULL == drawable ) {
-		drawable = resourceScope.findTexture( name ).get();
+	if ( source ) {
+		return source->createInstance();
 	}
 
-	return drawable;
+	TexturePtr texture = resourceScope.findTexture( name );
+	return texture ? texture->createInstance() : DrawablePtr{};
 }
 
-static Drawable* parseDataURI( const std::string& name, ResourceScope& scope ) {
+static DrawablePtr parseDataURI( const std::string& name, ResourceScope& scope ) {
 	auto hash = MD5::fromString( name ).toHexString();
 	TexturePtr texture = scope.findTexture( hash );
-	Drawable* drawable = texture.get();
 	std::string::size_type formatAndEncSep;
-	if ( nullptr == drawable &&
+	if ( !texture &&
 		 ( formatAndEncSep = name.find_first_of( ',' ) ) != std::string::npos ) {
 		std::string decodingType = "urldecode";
 		std::string mediaType = name.substr( 0, formatAndEncSep );
@@ -103,16 +103,16 @@ static Drawable* parseDataURI( const std::string& name, ResourceScope& scope ) {
 		if ( tex ) {
 			tex->setName( hash );
 			scope.publishLocal( hash, tex );
-			drawable = tex.get();
+			texture = std::move( tex );
 		}
 	}
-	return drawable;
+	return texture ? texture->createInstance() : DrawablePtr{};
 }
 
-Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite,
+DrawablePtr DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite,
 										  Network::URI referer,
 										  ResourceScope* requestedResourceScope ) {
-	Drawable* drawable = NULL;
+	DrawablePtr drawable;
 
 	if ( name.size() ) {
 		ResourceScope& resourceScope =
@@ -126,7 +126,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 				drawable = getSprite( name );
 			}
 
-			if ( NULL != drawable ) {
+			if ( drawable ) {
 				return drawable;
 			}
 
@@ -135,18 +135,22 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 		if ( name[0] == '@' ) {
 			if ( String::startsWith( name, "@textureregion/" ) ) {
-				drawable =
-					TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
+				if ( Drawable* source =
+						 TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) ) )
+					drawable = source->createInstance();
 			} else if ( String::startsWith( name, "@image/" ) ) {
-				drawable = resourceScope.findTexture( name.substr( 7 ) ).get();
+				TexturePtr texture = resourceScope.findTexture( name.substr( 7 ) );
+				drawable = texture ? texture->createInstance() : DrawablePtr{};
 			} else if ( String::startsWith( name, "@texture/" ) ) {
-				drawable = resourceScope.findTexture( name.substr( 9 ) ).get();
+				TexturePtr texture = resourceScope.findTexture( name.substr( 9 ) );
+				drawable = texture ? texture->createInstance() : DrawablePtr{};
 			} else if ( String::startsWith( name, "@sprite/" ) && !searchedSprite ) {
 				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
 				drawable = searchByNameInternal( name.substr( 10 ), resourceScope );
 			} else if ( String::startsWith( name, "@9p/" ) ) {
-				drawable = NinePatchManager::instance()->getByName( name.substr( 4 ) );
+				if ( Drawable* source = NinePatchManager::instance()->getByName( name.substr( 4 ) ) )
+					drawable = source->createInstance();
 			} else {
 				drawable = searchByNameInternal( name, resourceScope );
 			}
@@ -162,16 +166,17 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 			FileSystem::filePathRemoveProcessPath( filePath );
 
-			drawable = resourceScope.findTexture( filePath ).get();
+			TexturePtr texture = resourceScope.findTexture( filePath );
 
-			if ( NULL == drawable ) {
+			if ( !texture ) {
 				TexturePtr tex = TextureFactory::instance()->loadFromFile( filePath );
 
 				if ( tex ) {
 					resourceScope.publishLocal( filePath, tex );
-					drawable = tex.get();
+					texture = std::move( tex );
 				}
 			}
+			drawable = texture ? texture->createInstance() : DrawablePtr{};
 		} else if ( String::startsWith( name, "http://" ) ||
 					String::startsWith( name, "https://" ) ) {
 			TexturePtr texture = resourceScope.findTexture( name );
@@ -204,7 +209,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 					URI( name ), Seconds( 5 ), {}, headers );
 			}
 
-			drawable = texture.get();
+			drawable = texture ? texture->createInstance() : DrawablePtr{};
 		} else if ( String::startsWith( name, "data:image/" ) ) {
 			drawable = parseDataURI( name, resourceScope );
 		} else {
@@ -212,16 +217,17 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 		}
 	}
 
-	if ( NULL == drawable && sPrintWarnings )
+	if ( !drawable && sPrintWarnings )
 		Log::warning( "DrawableSearcher::searchByName: \"%s\" not found", name.c_str() );
 
 	return drawable;
 }
 
-Drawable* DrawableSearcher::searchById( const Uint32& id ) {
-	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
+DrawablePtr DrawableSearcher::searchById( const Uint32& id ) {
+	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
+	DrawablePtr drawable = source ? source->createInstance() : DrawablePtr{};
 
-	if ( NULL == drawable && sPrintWarnings )
+	if ( !drawable && sPrintWarnings )
 		Log::warning( "DrawableSearcher::searchById: \"%ld\" not found", id );
 
 	return drawable;

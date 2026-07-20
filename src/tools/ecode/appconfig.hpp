@@ -284,7 +284,7 @@ struct SessionSnapshotFile {
 
 struct TabWidgetData {
 	UIWidget* widget{ nullptr };
-	Drawable* icon{ nullptr };
+	DrawablePtr icon;
 	std::string title;
 };
 

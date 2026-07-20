@@ -5,9 +5,7 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-namespace EE { namespace Graphics {
-class Sprite;
-}} // namespace EE::Graphics
+#include <eepp/graphics/sprite.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
@@ -15,10 +13,9 @@ namespace EE { namespace Physics {
 class EE_PHYSICS_API ShapeCircleSprite : public ShapeCircle {
   public:
 	static ShapeCircleSprite* New( Physics::Body* body, cpFloat radius, cVect offset,
-								   Sprite* Sprite, bool AutoDeleteSprite = false );
+								   SpritePtr sprite );
 
-	ShapeCircleSprite( Physics::Body* body, cpFloat radius, cVect offset, Sprite* Sprite,
-					   bool AutoDeleteSprite = false );
+	ShapeCircleSprite( Physics::Body* body, cpFloat radius, cVect offset, SpritePtr sprite );
 
 	virtual ~ShapeCircleSprite();
 
@@ -28,11 +25,10 @@ class EE_PHYSICS_API ShapeCircleSprite : public ShapeCircle {
 
 	virtual void setOffset( const cVect& offset );
 
-	Sprite* getSprite() const;
+	const SpritePtr& getSprite() const;
 
   protected:
-	Sprite* mSprite;
-	bool mSpriteAutoDelete;
+	SpritePtr mSprite;
 
 	void offsetSet();
 };

@@ -155,16 +155,17 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonCancel->setTheme( theme );
 
 	if ( i18n( "msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
-		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
-		Drawable* cancelIcon =
+		DrawablePtr okIcon =
+			getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
+		DrawablePtr cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );
 
 		if ( NULL != okIcon ) {
-			mButtonOK->setIcon( okIcon );
+			mButtonOK->setIcon( std::move( okIcon ) );
 		}
 
 		if ( NULL != cancelIcon ) {
-			mButtonCancel->setIcon( cancelIcon );
+			mButtonCancel->setIcon( std::move( cancelIcon ) );
 		}
 	}
 

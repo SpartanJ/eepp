@@ -288,7 +288,8 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mRoot->on( Event::OnLayoutUpdate, [this]( const Event* ) {
 		if ( mHuePicker->getDrawable() == nullptr ) {
 			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ) );
-			mCurrentColor->setBackgroundDrawable( TextureRegion::New( createGridTexture() ), true );
+			mCurrentColor->setBackgroundDrawable(
+				makeResource<TextureRegion>( createGridTexture() ) );
 			mCurrentColor->setBackgroundRepeat( "repeat" );
 			updateAll();
 		}
@@ -404,9 +405,9 @@ TexturePtr UIColorPicker::createGridTexture() {
 }
 
 void UIColorPicker::updateColorPicker() {
-	DrawableGroup* colorRectangle = DrawableGroup::New();
+	auto colorRectangle = DrawableGroup::New();
 
-	RectangleDrawable* rectDrawable = RectangleDrawable::New();
+	auto rectDrawable = makeResource<RectangleDrawable>();
 
 	RectColors rectColors;
 	rectDrawable->setSize( mColorPicker->getPixelsSize() );
@@ -417,7 +418,7 @@ void UIColorPicker::updateColorPicker() {
 	rectDrawable->setRectColors( rectColors );
 	colorRectangle->addDrawable( rectDrawable );
 
-	rectDrawable = RectangleDrawable::New();
+	rectDrawable = makeResource<RectangleDrawable>();
 	rectDrawable->setSize( mColorPicker->getPixelsSize() );
 	rectColors.TopLeft = Color::Transparent;
 	rectColors.BottomLeft = Color::Black;
@@ -426,7 +427,7 @@ void UIColorPicker::updateColorPicker() {
 	rectDrawable->setRectColors( rectColors );
 	colorRectangle->addDrawable( rectDrawable );
 
-	mColorPicker->setDrawable( colorRectangle, true );
+	mColorPicker->setDrawable( std::move( colorRectangle ) );
 }
 
 void UIColorPicker::updateGuideLines() {

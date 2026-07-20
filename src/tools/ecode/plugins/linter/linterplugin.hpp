@@ -157,6 +157,7 @@ class LinterPlugin : public Plugin {
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
 	UIIcon* mLightbulbIcon{ nullptr };
+	UnorderedMap<int, DrawablePtr> mLightbulbDrawables;
 	std::string mErrorMsg;
 	Rectf mQuickFixRect;
 	std::string mOldMaxWidth;

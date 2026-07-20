@@ -379,7 +379,6 @@ void EETest::createBaseUI() {
 	sprite->setSprite( Sprite::New( "gn" ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
-	sprite->setIsSpriteOwner( true );
 
 	UITextView* Text = UITextView::New();
 	Text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
@@ -742,7 +741,7 @@ void EETest::createNewUI() {
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setPosition( 50, 600 )->setParent( container );
-	sprite->setSprite( &SP );
+	sprite->setSprite( SP.clone() );
 
 	UIScrollBar* scrollBar = UIScrollBar::New();
 	scrollBar->setOrientation( UIOrientation::Horizontal )
@@ -1802,26 +1801,26 @@ void EETest::screen5() {
 	Color col( 0x000000CC );
 
 	if ( drawableGroup.getDrawableCount() == 0 ) {
-		ArcDrawable* arc = ArcDrawable::New();
+		auto arc = makeResource<ArcDrawable>();
 		arc->setPosition( Vector2f( 60, 60 ) );
 		arc->setArcStartAngle( 90 );
 		arc->setArcAngle( 180 );
 		arc->setRadius( 60 );
 		arc->setColor( col );
 
-		RectangleDrawable* rect = RectangleDrawable::New();
+		auto rect = makeResource<RectangleDrawable>();
 		rect->setPosition( Vector2f( 0, 60 ) );
 		rect->setSize( Sizef( 120, 60 ) );
 		rect->setColor( col );
 
-		ArcDrawable* arc2 = ArcDrawable::New();
+		auto arc2 = makeResource<ArcDrawable>();
 		arc2->setPosition( Vector2f( 60, 120 ) );
 		arc2->setArcStartAngle( -90 );
 		arc2->setArcAngle( 180 );
 		arc2->setRadius( 60 );
 		arc2->setColor( col );
 
-		ConvexShapeDrawable* poly = ConvexShapeDrawable::New();
+		auto poly = makeResource<ConvexShapeDrawable>();
 		poly->setPosition( Vector2f( 60, 90 ) );
 		poly->addPoint( Vector2f( -10, -10 ) );
 		poly->addPoint( Vector2f( -10, 10 ) );
@@ -2551,8 +2550,8 @@ void EETest::end() {
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFBO );
 	eeSAFE_DELETE( mVBO );
-	eeSAFE_DELETE( mBoxSprite );
-	eeSAFE_DELETE( mCircleSprite );
+	mBoxSprite.reset();
+	mCircleSprite.reset();
 	eeSAFE_DELETE( PakTest );
 
 	Log::instance()->save();

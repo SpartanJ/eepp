@@ -51,7 +51,7 @@ class EE_API UITextureRegion : public UIWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
-	UIScaleType mScaleType;
+	UIScaleType mScaleType{ UIScaleType::None };
 	Graphics::TextureRegion* mTextureRegion;
 	Color mColor;
 	RenderMode mRender;
@@ -65,7 +65,9 @@ class EE_API UITextureRegion : public UIWidget {
 
 	void autoAlign();
 
-	void drawTextureRegion();
+	void drawTextureRegion( const Sizef& destSize, const Vector2i& offset );
+
+	void autoAlign( const Sizef& drawableSize );
 };
 
 }} // namespace EE::UI

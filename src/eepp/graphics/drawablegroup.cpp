@@ -4,36 +4,47 @@
 
 namespace EE { namespace Graphics {
 
-DrawableGroup* DrawableGroup::New() {
-	return eeNew( DrawableGroup, () );
+ResourcePtr<DrawableGroup> DrawableGroup::New() {
+	return makeResource<DrawableGroup>();
 }
 
 DrawableGroup::DrawableGroup() :
-	Drawable( Drawable::GROUP ),
-	mNeedsUpdate( true ),
-	mClipEnabled( false ),
-	mDrawableOwner( true ) {}
+	Drawable( Drawable::GROUP ), mNeedsUpdate( true ), mClipEnabled( false ) {}
 
 DrawableGroup::~DrawableGroup() {
 	clearDrawables();
 }
 
-void DrawableGroup::clearDrawables() {
-	if ( mDrawableOwner ) {
-		for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-			Drawable* drawable = mGroup[i];
-			eeSAFE_DELETE( drawable );
-		}
+DrawablePtr DrawableGroup::createInstance() const {
+	auto instance = makeResource<DrawableGroup>();
+	instance->mPosition = mPosition;
+	instance->mColor = mColor;
+	instance->mSize = mSize;
+	instance->mClipEnabled = mClipEnabled;
+
+	for ( const auto& drawable : mGroup ) {
+		if ( !drawable )
+			continue;
+		DrawablePtr drawableInstance = drawable->createInstance();
+		if ( !drawableInstance )
+			return {};
+		instance->addDrawable( std::move( drawableInstance ) );
 	}
 
+	return instance;
+}
+
+void DrawableGroup::clearDrawables() {
 	mGroup.clear();
 	mPos.clear();
 }
 
-Drawable* DrawableGroup::addDrawable( Drawable* drawable ) {
-	mGroup.push_back( drawable );
+DrawablePtr DrawableGroup::addDrawable( DrawablePtr drawable ) {
+	if ( !drawable )
+		return {};
 	mPos.push_back( drawable->getPosition() );
-	return drawable;
+	mGroup.push_back( std::move( drawable ) );
+	return mGroup.back();
 }
 
 Uint32 DrawableGroup::getDrawableCount() const {
@@ -48,15 +59,7 @@ void DrawableGroup::setClipEnabled( bool clipEnabled ) {
 	mClipEnabled = clipEnabled;
 }
 
-bool DrawableGroup::isDrawableOwner() const {
-	return mDrawableOwner;
-}
-
-void DrawableGroup::setDrawableOwner( bool drawableOwner ) {
-	mDrawableOwner = drawableOwner;
-}
-
-std::vector<Drawable*>& DrawableGroup::getGroup() {
+std::vector<DrawablePtr>& DrawableGroup::getGroup() {
 	return mGroup;
 }
 
@@ -89,7 +92,7 @@ void DrawableGroup::draw( const Vector2f& position, const Sizef& size ) {
 		GLi->getClippingMask()->clipPlaneEnable( mPosition.x, mPosition.y, mSize.x, mSize.y );
 
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-		Drawable* drawable = mGroup[i];
+		Drawable* drawable = mGroup[i].get();
 		drawable->draw();
 	}
 
@@ -111,7 +114,7 @@ void DrawableGroup::onPositionChange() {
 
 void DrawableGroup::onAlphaChange() {
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-		Drawable* drawable = mGroup[i];
+		Drawable* drawable = mGroup[i].get();
 		drawable->setAlpha( getAlpha() );
 	}
 }
@@ -120,7 +123,7 @@ void DrawableGroup::update() {
 	Sizef nSize( mSize );
 
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-		Drawable* drawable = mGroup[i];
+		Drawable* drawable = mGroup[i].get();
 		Vector2f pos( mPosition + mPos[i] );
 		Sizef s( mPos[i] + drawable->getSize() );
 

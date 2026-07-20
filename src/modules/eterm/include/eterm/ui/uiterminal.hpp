@@ -171,7 +171,7 @@ class UITerminal : public UIWidget {
 
 	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 

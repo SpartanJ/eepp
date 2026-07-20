@@ -14,6 +14,8 @@ class EE_API CircleDrawable : public ArcDrawable {
 	CircleDrawable();
 
 	CircleDrawable( const Float& radius, const Uint32& segmentsCount );
+
+	DrawablePtr createInstance() const;
 };
 
 }} // namespace EE::Graphics

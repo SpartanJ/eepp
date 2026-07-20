@@ -484,6 +484,17 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 
+	if ( mLocked && mDisplayLockedIcon ) {
+		if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
+			mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
+		const int iconSize = PixelDensity::dpToPxI( 16 );
+		if ( mFileLockIcon &&
+			 ( mFileLockDrawable == nullptr || mFileLockDrawableSize != iconSize ) ) {
+			mFileLockDrawable = mFileLockIcon->createDrawable( iconSize );
+			mFileLockDrawableSize = iconSize;
+		}
+	}
+
 	if ( mDoc && !mDoc->isLoading() && !mDoc->isEmpty() &&
 		 !mDoc->getSyntaxDefinition().getPatterns().empty() &&
 		 mDoc->getHighlighter()->updateDirty( getVisibleLinesCount() ) ) {
@@ -1146,27 +1157,21 @@ void UICodeEditor::updateIMELocation() {
 }
 
 void UICodeEditor::drawLockedIcon( const Vector2f start ) {
-	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
-		mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
-	if ( mFileLockIcon == nullptr )
+	if ( mFileLockDrawable == nullptr )
 		return;
 
-	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
-	if ( fileLockIcon == nullptr )
-		return;
-
-	Float w = fileLockIcon->getPixelsSize().getWidth();
+	Float w = mFileLockDrawable->getPixelsSize().getWidth();
 	Float posX =
 		mMinimapEnabled
 			? getMinimapRect( getScreenStart() ).Left - w
 			: ( start.x + mSize.getWidth() -
 				( mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0 ) ) -
 				  mPadding.Right - w;
-	Color col( fileLockIcon->getColor() );
-	fileLockIcon->setColor( Color( mFontStyleConfig.getFontColor() ).blendAlpha( mAlpha ) );
+	Color col( mFileLockDrawable->getColor() );
+	mFileLockDrawable->setColor( Color( mFontStyleConfig.getFontColor() ).blendAlpha( mAlpha ) );
 	Float margin = PixelDensity::dpToPxI( 4 );
-	fileLockIcon->draw( { posX - margin, start.y + margin } );
-	fileLockIcon->setColor( col );
+	mFileLockDrawable->draw( { posX - margin, start.y + margin } );
+	mFileLockDrawable->setColor( col );
 }
 
 size_t UICodeEditor::getTotalVisibleLines() const {
@@ -3533,11 +3538,9 @@ void UICodeEditor::updateGlyphWidth() {
 		invalidateLineWrapMaxWidth( false );
 }
 
-Drawable* UICodeEditor::findIcon( const std::string& name ) {
+DrawablePtr UICodeEditor::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 const bool& UICodeEditor::getColorPreview() const {
@@ -3755,6 +3758,8 @@ void UICodeEditor::setFileLockIconName( const std::string& fileLockIconName ) {
 	if ( mFileLockIconName != fileLockIconName ) {
 		mFileLockIconName = fileLockIconName;
 		mFileLockIcon = nullptr;
+		mFileLockDrawable.reset();
+		mFileLockDrawableSize = 0;
 	}
 }
 
@@ -4610,7 +4615,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 
 			if ( mFoldsAlwaysVisible || mFoldsVisible || currentLineHasFold ) {
 				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
-					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
+					Drawable* drawable = ( isFolded ? mFoldedDrawable : mFoldDrawable ).get();
 					GlyphDrawable::DrawMode oldMode;
 
 					if ( drawable->getDrawableType() == Drawable::Type::GLYPH ) {
@@ -5462,20 +5467,20 @@ void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
 	}
 }
 
-Drawable* UICodeEditor::getFoldDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldDrawable() const {
 	return mFoldDrawable;
 }
 
-void UICodeEditor::setFoldDrawable( Drawable* foldDrawable ) {
-	mFoldDrawable = foldDrawable;
+void UICodeEditor::setFoldDrawable( DrawablePtr foldDrawable ) {
+	mFoldDrawable = std::move( foldDrawable );
 }
 
-Drawable* UICodeEditor::getFoldedDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldedDrawable() const {
 	return mFoldedDrawable;
 }
 
-void UICodeEditor::setFoldedDrawable( Drawable* foldedDrawable ) {
-	mFoldedDrawable = foldedDrawable;
+void UICodeEditor::setFoldedDrawable( DrawablePtr foldedDrawable ) {
+	mFoldedDrawable = std::move( foldedDrawable );
 }
 
 bool UICodeEditor::getFoldsAlwaysVisible() const {

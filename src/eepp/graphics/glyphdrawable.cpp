@@ -80,6 +80,18 @@ bool GlyphDrawable::isStateful() {
 	return false;
 }
 
+DrawablePtr GlyphDrawable::createInstance() const {
+	auto instance = makeResource<GlyphDrawable>( mTexture, mSrcRect.asInt(), mDestSize, mName );
+	instance->setPixelDensity( mPixelDensity );
+	instance->setGlyphOffset( mGlyphOffset );
+	instance->setDrawMode( mDrawMode );
+	instance->setIsItalic( mIsItalic );
+	instance->setAdvance( mAdvance );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
+
 const TexturePtr& GlyphDrawable::getTexture() const {
 	return mTexture;
 }

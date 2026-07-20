@@ -8,6 +8,9 @@
 
 namespace EE { namespace Graphics {
 
+class TextureRegion;
+using TextureRegionPtr = ResourcePtr<TextureRegion>;
+
 /** @brief A TextureRegion is a part of a texture that represent an sprite.*/
 class EE_API TextureRegion : public DrawableResource {
   public:
@@ -125,6 +128,8 @@ class EE_API TextureRegion : public DrawableResource {
 	virtual void draw( const Vector2f& position, const Sizef& size );
 
 	virtual bool isStateful() { return false; }
+
+	DrawablePtr createInstance() const;
 
 	/** @return The texture instance used by the TextureRegion. */
 	const TexturePtr& getTexture() const;

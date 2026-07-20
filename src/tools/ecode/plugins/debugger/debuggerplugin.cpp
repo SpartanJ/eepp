@@ -183,6 +183,23 @@ DebuggerPlugin::~DebuggerPlugin() {
 	}
 }
 
+void DebuggerPlugin::update( UICodeEditor* editor ) {
+	if ( mBreakpointIcon == nullptr )
+		mBreakpointIcon = getUISceneNode()->findIcon( "circle-perfect" );
+	if ( mBreakpointIcon ) {
+		const int iconSize = (int)eefloor( editor->getLineHeight() * 0.875f );
+		if ( mBreakpointDrawables.find( iconSize ) == mBreakpointDrawables.end() )
+			mBreakpointDrawables[iconSize] = mBreakpointIcon->createDrawable( iconSize );
+	}
+	if ( mStackFrameIcon == nullptr )
+		mStackFrameIcon = getUISceneNode()->findIcon( "debug-stackframe" );
+	if ( mStackFrameIcon ) {
+		const int iconSize = (int)eefloor( editor->getLineHeight() );
+		if ( mStackFrameDrawables.find( iconSize ) == mStackFrameDrawables.end() )
+			mStackFrameDrawables[iconSize] = mStackFrameIcon->createDrawable( iconSize );
+	}
+}
+
 void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 									const std::string& projectStatePath,
 									bool rewriteStateOnlyIfNeeded ) {
@@ -761,7 +778,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 			return;
 		UIIcon* icon = findIcon( "debug" );
 		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+								icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "debugger_tab" );
 		mTab->setTextAsFallback( true );
 
@@ -821,7 +838,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents =
 		getUISceneNode()->loadLayoutFromString( STYLE, nullptr, String::hash( "debugger_plugin" ) );
 	mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "debugger_tab" );
 	mTab->setTextAsFallback( true );
 
@@ -1601,20 +1618,22 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 															   : SyntaxStyleTypes::LineNumber2 ) )
 									 .blendAlpha( editor->getAlpha() ) );
 
-					static UIIcon* circleFilled = getUISceneNode()->findIcon( "circle-perfect" );
-
-					if ( circleFilled ) {
+					bool iconDrawn = false;
+					if ( mBreakpointIcon ) {
 						Float finalHeight = eefloor( radius * 1.75f );
-						Drawable* drawable = circleFilled->getSize( finalHeight );
-						if ( drawable ) {
+						auto drawableIt = mBreakpointDrawables.find( (int)finalHeight );
+						if ( drawableIt != mBreakpointDrawables.end() && drawableIt->second ) {
+							DrawablePtr& drawable = drawableIt->second;
 							Color oldColor = drawable->getColor();
 							drawable->setColor( color );
 							drawable->draw(
 								Sizef{ lnPos.x, lnPos.y + ( lineHeight - finalHeight ) * 0.5f }
 									.floor() );
 							drawable->setColor( oldColor );
+							iconDrawn = true;
 						}
-					} else {
+					}
+					if ( !iconDrawn ) {
 						p.setColor( color );
 
 						p.drawCircle( Sizef{ lnPos.x + radius + ( gutterSpace - radius ) * 0.5f,
@@ -1645,12 +1664,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 			Float dim = radius * 2;
 			Float gutterSpace = editor->getGutterSpace( this );
 
-			static UIIcon* sfIcon = getUISceneNode()->findIcon( "debug-stackframe" );
-			if ( sfIcon ) {
-				Drawable* drawable = sfIcon->getSize( lineHeight );
-				if ( drawable ) {
-					drawable->setColor( color );
-					drawable->draw( lnPos.floor() );
+			if ( mStackFrameIcon ) {
+				const int iconSize = (int)eefloor( lineHeight );
+				auto drawableIt = mStackFrameDrawables.find( iconSize );
+				if ( drawableIt != mStackFrameDrawables.end() && drawableIt->second ) {
+					drawableIt->second->setColor( color );
+					drawableIt->second->draw( lnPos.floor() );
 					return;
 				}
 			}

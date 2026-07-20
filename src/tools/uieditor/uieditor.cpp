@@ -1111,7 +1111,7 @@ void App::fileMenuClick( const Event* event ) {
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-Drawable* App::findIcon( const std::string& icon ) {
+DrawablePtr App::findIcon( const std::string& icon ) {
 	return mAppUISceneNode->findIconDrawable( icon, mMenuIconSize );
 }
 

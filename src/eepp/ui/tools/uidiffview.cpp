@@ -67,12 +67,12 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 
 	auto sprite = Sprite::New();
 	sprite->createStatic( texture );
-	sprite->setAsTextureRegionOwner( true );
+	Sprite* spritePtr = sprite.get();
 
 	viewer->reset();
-	viewer->getImage()->setDrawable( sprite, true );
+	viewer->getImage()->setDrawable( std::move( sprite ) );
 	setImageViewerImageSize( viewer );
-	return sprite;
+	return spritePtr;
 }
 
 UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,

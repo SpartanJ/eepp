@@ -22,12 +22,12 @@ void UITextureViewer::setImage( TexturePtr texture ) {
 		return;
 	mSelectedTexture = std::move( texture );
 	mImageLayout->setEnabled( true )->setVisible( true );
-	imageView->setDrawable( mSelectedTexture.get() );
+	imageView->setDrawable( mSelectedTexture );
 }
 
 void UITextureViewer::clearSelectedTexture() {
 	if ( UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE ) )
-		imageView->setDrawable( nullptr );
+		imageView->setDrawable( DrawablePtr{} );
 	mSelectedTexture.reset();
 	mImageLayout->setEnabled( false )->setVisible( false );
 }
@@ -110,7 +110,7 @@ void UITextureViewer::insertTexture( const TextureRegistryRecord& record ) {
 	UIImage* img = UIImage::New();
 	std::string uid(
 		String::format( "texture-%llu", static_cast<unsigned long long>( record.id.value() ) ) );
-	img->setDrawable( texture.get() )
+	img->setDrawable( texture )
 		->setScaleType( UIScaleType::FitInside )
 		->setClasses( { "texture-preview", uid } )
 		->setTooltipText( getTextureDescription( texture.get() ) )

@@ -20,15 +20,23 @@ class EE_API UIIcon {
 
 	const std::string& getName() const;
 
-	virtual Drawable* getSize( const int& size ) const;
+	/** Returns the icon source closest to the requested size.
+	 *
+	 * The returned drawable is shared icon data and must not be mutated by consumers. Use
+	 * createDrawable() when a consumer needs its own mutable drawable instance. */
+	virtual const DrawablePtr& getSource( const int& size ) const;
 
-	virtual void setSize( const int& size, Drawable* drawable );
+	/** Creates a private drawable instance for a consumer. This must not be called from a rendering
+	 * loop; retain the returned instance instead. */
+	DrawablePtr createDrawable( const int& size ) const;
+
+	virtual void setSource( const int& size, DrawablePtr drawable );
 
   protected:
 	UIIcon( const std::string& name );
 
 	std::string mName;
-	mutable UnorderedMap<int, Drawable*> mSizes;
+	mutable UnorderedMap<int, DrawablePtr> mSizes;
 };
 
 class EE_API UIGlyphIcon : public UIIcon {
@@ -37,7 +45,7 @@ class EE_API UIGlyphIcon : public UIIcon {
 
 	virtual ~UIGlyphIcon();
 
-	virtual Drawable* getSize( const int& size ) const;
+	virtual const DrawablePtr& getSource( const int& size ) const;
 
   protected:
 	UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint );
@@ -53,13 +61,12 @@ class EE_API UISVGIcon : public UIIcon {
 
 	virtual ~UISVGIcon();
 
-	virtual Drawable* getSize( const int& size ) const;
+	virtual const DrawablePtr& getSource( const int& size ) const;
 
   protected:
 	UISVGIcon( const std::string& name, const std::string& svgXML );
 
 	std::string mSVGXml;
-	mutable UnorderedMap<int, TexturePtr> mSVGs;
 	mutable Sizei mOriSize;
 	mutable int mOriChannels{ 0 };
 };

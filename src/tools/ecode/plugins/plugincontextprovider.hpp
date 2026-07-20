@@ -113,9 +113,9 @@ class PluginContextProvider {
 
 	virtual ProjectDirectoryTree* getDirTree() const = 0;
 
-	virtual Drawable* findIcon( const std::string& name ) = 0;
+	virtual DrawablePtr findIcon( const std::string& name ) = 0;
 
-	virtual Drawable* findIcon( const std::string& name, const size_t iconSize ) = 0;
+	virtual DrawablePtr findIcon( const std::string& name, const size_t iconSize ) = 0;
 
 	virtual TerminalConfig& termConfig() = 0;
 

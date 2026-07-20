@@ -281,21 +281,21 @@ void UIFontPickerDialog::setTheme( UITheme* theme ) {
 	UIWindow::setTheme( theme );
 
 	if ( mButtonOK ) {
-		if ( Drawable* icon =
+		if ( DrawablePtr icon =
 				 getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) )
-			mButtonOK->setIcon( icon );
+			mButtonOK->setIcon( std::move( icon ) );
 	}
 
 	if ( mButtonCancel ) {
-		if ( Drawable* icon =
+		if ( DrawablePtr icon =
 				 getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) )
-			mButtonCancel->setIcon( icon );
+			mButtonCancel->setIcon( std::move( icon ) );
 	}
 
 	if ( mButtonBrowse ) {
-		if ( Drawable* icon = getUISceneNode()->findIconDrawable( "document-open",
-																  PixelDensity::dpToPxI( 16 ) ) )
-			mButtonBrowse->setIcon( icon );
+		if ( DrawablePtr icon = getUISceneNode()->findIconDrawable( "document-open",
+															  PixelDensity::dpToPxI( 16 ) ) )
+			mButtonBrowse->setIcon( std::move( icon ) );
 	}
 
 	onThemeLoaded();

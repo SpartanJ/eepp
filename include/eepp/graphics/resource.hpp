@@ -51,6 +51,10 @@ template <typename T> struct ResourceDeleter {
 	void operator()( T* resource ) const noexcept { eeDelete( resource ); }
 };
 
+template <typename T, typename... Args> ResourcePtr<T> makeResource( Args&&... args ) {
+	return ResourcePtr<T>( eeNew( T, ( std::forward<Args>( args )... ) ), ResourceDeleter<T>() );
+}
+
 }} // namespace EE::Graphics
 
 #endif

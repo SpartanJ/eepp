@@ -15,11 +15,13 @@ ScrollParallax::ScrollParallax( TextureRegion* textureRegion, const Vector2f& Po
 }
 
 TextureRegion* ScrollParallax::getTextureRegion() const {
-	return mTextureRegion;
+	return mTextureRegion.get();
 }
 
 void ScrollParallax::setTextureRegion( TextureRegion* textureRegion ) {
-	mTextureRegion = textureRegion;
+	mTextureRegion =
+		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->createInstance() )
+					  : TextureRegionPtr{};
 
 	setTextureRegion();
 }
@@ -43,7 +45,9 @@ void ScrollParallax::setAABB() {
 bool ScrollParallax::create( TextureRegion* textureRegion, const Vector2f& Position,
 							 const Sizef& Size, const Vector2f& Speed, const Color& Color,
 							 const BlendMode& Blend ) {
-	mTextureRegion = textureRegion;
+	mTextureRegion =
+		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->createInstance() )
+					  : TextureRegionPtr{};
 	mPos = Position;
 	mSize = Size;
 	mInitPos = mPos;
@@ -97,8 +101,8 @@ void ScrollParallax::draw() {
 
 		Vector2f Pos = mPos;
 
-		Pos.x = ( Float )(Int32)Pos.x;
-		Pos.y = ( Float )(Int32)Pos.y;
+		Pos.x = (Float)(Int32)Pos.x;
+		Pos.y = (Float)(Int32)Pos.y;
 
 		if ( mSpeed.x > 0.f )
 			Pos.x -= mRealSize.getWidth();
@@ -111,53 +115,52 @@ void ScrollParallax::draw() {
 
 		for ( Int32 y = -1; y < mTiles.y; y++ ) {
 			for ( Int32 x = -1; x < mTiles.x; x++ ) {
-				Rect Rect = mRect;
+				Rect rect = mRect;
 				Rectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.getWidth(),
 							Pos.y + mRealSize.getHeight() );
 
 				if ( AABB.intersect( mAABB ) ) {
 					if ( Pos.x < mAABB.Left ) {
-						Rect.Left += ( Int32 )( ( mAABB.Left - Pos.x ) * pd );
+						rect.Left += (Int32)( ( mAABB.Left - Pos.x ) * pd );
 						AABB.Left = mAABB.Left;
 					}
 
 					if ( Pos.x + mRealSize.getWidth() > mAABB.Right ) {
-						Rect.Right -=
-							( Int32 )( ( ( Pos.x + mRealSize.getWidth() ) - mAABB.Right ) * pd );
+						rect.Right -=
+							(Int32)( ( ( Pos.x + mRealSize.getWidth() ) - mAABB.Right ) * pd );
 					}
 
 					if ( Pos.y < mAABB.Top ) {
-						Rect.Top += ( Int32 )( ( mAABB.Top - Pos.y ) * pd );
+						rect.Top += (Int32)( ( mAABB.Top - Pos.y ) * pd );
 						AABB.Top = mAABB.Top;
 					}
 
 					if ( Pos.y + mRealSize.getHeight() > mAABB.Bottom ) {
-						Rect.Bottom -=
-							( Int32 )( ( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom ) * pd );
+						rect.Bottom -=
+							(Int32)( ( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom ) * pd );
 					}
 
-					mTextureRegion->setSrcRect( Rect );
-					mTextureRegion->setDestSize(
-						Vector2f( Rect.getSize().x * ps, Rect.getSize().y * ps ) );
-
-					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
-						mTextureRegion->draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One,
-											  mBlend );
+					const TexturePtr& texture = mTextureRegion->getTexture();
+					if ( texture && !( rect.Right == 0 || rect.Bottom == 0 ) ) {
+						const Vector2i& offset = mTextureRegion->getOffset();
+						texture->drawEx( AABB.Left + offset.x, AABB.Top + offset.y,
+										 rect.getSize().x * ps, rect.getSize().y * ps, 0.f,
+										 Vector2f::One, mColor, mColor, mColor, mColor, mBlend,
+										 RENDER_NORMAL, OriginPoint( OriginPoint::OriginCenter ),
+										 rect );
+					}
 				}
 
 				Pos.x += mRealSize.getWidth();
 			}
 
-			Pos.x = ( Float )(Int32)mPos.x;
+			Pos.x = (Float)(Int32)mPos.x;
 
 			if ( mSpeed.x > 0.f )
 				Pos.x -= mRealSize.getWidth();
 
 			Pos.y += mRealSize.getHeight();
 		}
-
-		mTextureRegion->setSrcRect( mRect );
-		mTextureRegion->resetDestSize();
 	}
 }
 

@@ -3,16 +3,43 @@
 
 #include <eepp/core.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <memory>
 
 namespace EE { namespace Graphics {
 
+class DrawableResource;
+
+struct DrawableResourceCallbackState {
+	using Callback = std::function<void( DrawableResource& )>;
+	Uint32 nextId{ 0 };
+	UnorderedMap<Uint32, Callback> callbacks;
+};
+
+class EE_API DrawableResourceConnection {
+  public:
+	DrawableResourceConnection() = default;
+	~DrawableResourceConnection();
+	DrawableResourceConnection( DrawableResourceConnection&& other ) noexcept;
+	DrawableResourceConnection& operator=( DrawableResourceConnection&& other ) noexcept;
+	DrawableResourceConnection( const DrawableResourceConnection& ) = delete;
+	DrawableResourceConnection& operator=( const DrawableResourceConnection& ) = delete;
+
+	void disconnect();
+	explicit operator bool() const;
+
+  private:
+	friend class DrawableResource;
+	DrawableResourceConnection( std::weak_ptr<DrawableResourceCallbackState> state, Uint32 id );
+
+	std::weak_ptr<DrawableResourceCallbackState> mState;
+	Uint32 mId{ 0 };
+};
+
 class EE_API DrawableResource : public Drawable {
   public:
-	enum Event { Change, Unload };
-
 	virtual ~DrawableResource();
 
-	typedef std::function<void( Uint32, Event, DrawableResource* )> OnResourceChangeCallback;
+	using OnResourceChangeCallback = DrawableResourceCallbackState::Callback;
 
 	/** @return The DrawableResource Id. The Id is the String::hash of the name. */
 	const String::HashType& getId() const;
@@ -26,19 +53,13 @@ class EE_API DrawableResource : public Drawable {
 	/** Always true */
 	bool isDrawableResource() const;
 
-	/** Push a new on resource change callback.
-	 * @return The Callback Id
-	 */
-	Uint32 pushResourceChangeCallback( const OnResourceChangeCallback& cb );
-
-	/** Pop the on resource change callback id indicated. */
-	bool popResourceChangeCallback( const Uint32& callbackId );
+	/** Connects a callback for mutable resource data changes. */
+	DrawableResourceConnection connectResourceChange( OnResourceChangeCallback cb );
 
   protected:
 	std::string mName;
 	String::HashType mId;
-	Uint32 mNumCallBacks;
-	UnorderedMap<Uint32, OnResourceChangeCallback> mCallbacks;
+	std::shared_ptr<DrawableResourceCallbackState> mCallbackState;
 
 	explicit DrawableResource( Type drawableType );
 
@@ -48,7 +69,7 @@ class EE_API DrawableResource : public Drawable {
 
 	virtual void onResourceChange();
 
-	void sendEvent( const Event& event );
+	void sendResourceChanged();
 };
 
 }} // namespace EE::Graphics

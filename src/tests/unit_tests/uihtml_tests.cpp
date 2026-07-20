@@ -7,7 +7,9 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -53,6 +55,25 @@ using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
+
+static Texture* getDrawableTexture( Drawable* drawable ) {
+	if ( !drawable )
+		return nullptr;
+	switch ( drawable->getDrawableType() ) {
+		case Drawable::TEXTURE:
+			return static_cast<Texture*>( drawable );
+		case Drawable::TEXTUREDRAWABLE:
+			return static_cast<TextureDrawable*>( drawable )->getTexture().get();
+		case Drawable::TEXTUREREGION:
+			return static_cast<TextureRegion*>( drawable )->getTexture().get();
+		default:
+			return nullptr;
+	}
+}
+
+static Texture* getDrawableTexture( const DrawablePtr& drawable ) {
+	return getDrawableTexture( drawable.get() );
+}
 
 static void init_ui_test() {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
@@ -3843,8 +3864,11 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 	ASSERT_TRUE( second->getBackground() != nullptr );
 	ASSERT_TRUE( first->getBackground()->getLayer( 0 ) != nullptr );
 	ASSERT_TRUE( second->getBackground()->getLayer( 0 ) != nullptr );
-	EXPECT_EQ( cached.get(), first->getBackground()->getLayer( 0 )->getDrawable() );
-	EXPECT_EQ( cached.get(), second->getBackground()->getLayer( 0 )->getDrawable() );
+	const DrawablePtr& firstDrawable = first->getBackground()->getLayer( 0 )->getDrawable();
+	const DrawablePtr& secondDrawable = second->getBackground()->getLayer( 0 )->getDrawable();
+	EXPECT_EQ( cached.get(), getDrawableTexture( firstDrawable ) );
+	EXPECT_EQ( cached.get(), getDrawableTexture( secondDrawable ) );
+	EXPECT_NE( firstDrawable.get(), secondDrawable.get() );
 
 	cached.reset();
 	Engine::destroySingleton();
@@ -5118,7 +5142,7 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	sceneNode->setURI( URI( "file://" + processPath ) );
 	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
 	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
-	Drawable* cached = DrawableSearcher::searchByName(
+	DrawablePtr cached = DrawableSearcher::searchByName(
 		imageURI.toString(), false, sceneNode->getReferer(), sceneNode->getResourceScope().get() );
 	ASSERT_TRUE( cached != nullptr );
 
@@ -5145,9 +5169,11 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	auto* second = secondNode->asType<UIHTMLImage>();
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
-	EXPECT_EQ( cached, first->getDrawable() );
-	EXPECT_EQ( cached, second->getDrawable() );
+	EXPECT_EQ( getDrawableTexture( cached ), getDrawableTexture( first->getDrawable() ) );
+	EXPECT_EQ( getDrawableTexture( cached ), getDrawableTexture( second->getDrawable() ) );
+	EXPECT_NE( first->getDrawable().get(), second->getDrawable().get() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 
@@ -5187,8 +5213,9 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	auto* second = secondNode->asType<UIHTMLImage>();
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
-	EXPECT_EQ( cached.get(), first->getDrawable() );
-	EXPECT_EQ( cached.get(), second->getDrawable() );
+	EXPECT_EQ( cached.get(), getDrawableTexture( first->getDrawable() ) );
+	EXPECT_EQ( cached.get(), getDrawableTexture( second->getDrawable() ) );
+	EXPECT_NE( first->getDrawable().get(), second->getDrawable().get() );
 
 	cached.reset();
 	Engine::destroySingleton();

@@ -207,7 +207,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	ColorSchemeExtPreference mUIColorScheme;
 
-	Drawable* findIcon( const std::string& icon );
+	DrawablePtr findIcon( const std::string& icon );
 };
 
 } // namespace uieditor

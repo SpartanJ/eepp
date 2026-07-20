@@ -3,6 +3,7 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -66,11 +67,8 @@ UIImage* UIImage::NewWithTag( const std::string& tag ) {
 UIImage::UIImage( const std::string& tag ) :
 	UIWidget( tag ),
 	mScaleType( UIScaleType::None ),
-	mDrawable( NULL ),
 	mColor(),
 	mAlignOffset( 0, 0 ),
-	mResourceChangeCb( 0 ),
-	mDrawableOwner( false ),
 	mAsyncImageAlive( std::make_shared<std::atomic<bool>>( true ) ) {
 	mFlags |= UI_AUTO_SIZE;
 
@@ -82,7 +80,7 @@ UIImage::UIImage() : UIImage( "image" ) {}
 UIImage::~UIImage() {
 	if ( mAsyncImageAlive )
 		mAsyncImageAlive->store( false, std::memory_order_release );
-	safeDeleteDrawable();
+	clearDrawable();
 }
 
 Uint32 UIImage::getType() const {
@@ -93,16 +91,15 @@ bool UIImage::isType( const Uint32& type ) const {
 	return UIImage::getType() == type ? true : UIWidget::isType( type );
 }
 
-UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
+UIImage* UIImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
 
 	Sizef oldSize( mSize );
 
-	safeDeleteDrawable();
+	clearDrawable();
 
-	mDrawable = drawable;
-	mDrawableOwner = ownIt;
+	mDrawable = std::move( drawable );
 	sendCommonEvent( Event::OnResourceChange );
 
 	if ( mDrawable ) {
@@ -110,17 +107,15 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 			if ( !isSubscribedForScheduledUpdate() )
 				subscribeScheduledUpdate();
 
-			mResourceChangeCb =
-				static_cast<Sprite*>( mDrawable )->pushEventsCallback( [this]( auto, auto, auto ) {
-					invalidateDraw();
-				} );
+			mSpriteChangeCb =
+				static_cast<Sprite*>( mDrawable.get() )
+					->pushEventsCallback( [this]( auto, auto, auto ) { invalidateDraw(); } );
 		} else {
 			if ( mDrawable->isDrawableResource() ) {
-				mResourceChangeCb =
-					static_cast<DrawableResource*>( mDrawable )
-						->pushResourceChangeCallback( [this]( auto, auto event, auto res ) {
-							onDrawableResourceEvent( event, res );
-						} );
+				mResourceChangeConnection =
+					static_cast<DrawableResource*>( mDrawable.get() )
+						->connectResourceChange(
+							[this]( DrawableResource& ) { onDrawableResourceChange(); } );
 			}
 
 			if ( isSubscribedForScheduledUpdate() )
@@ -141,10 +136,7 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 }
 
 UIImage* UIImage::setDrawable( TexturePtr texture ) {
-	Texture* drawable = texture.get();
-	setDrawable( drawable, false );
-	mTexture = std::move( texture );
-	return this;
+	return setDrawable( texture ? TextureDrawable::New( std::move( texture ) ) : DrawablePtr{} );
 }
 
 void UIImage::onAutoSize() {
@@ -278,7 +270,7 @@ void UIImage::setAlpha( const Float& alpha ) {
 	mColor.a = (Uint8)alpha;
 }
 
-Drawable* UIImage::getDrawable() const {
+const DrawablePtr& UIImage::getDrawable() const {
 	return mDrawable;
 }
 
@@ -316,36 +308,25 @@ void UIImage::autoAlign() {
 	}
 }
 
-void UIImage::safeDeleteDrawable() {
+void UIImage::clearDrawable() {
 	if ( mDrawable && mDrawable->getDrawableType() == Drawable::SPRITE ) {
-		static_cast<Sprite*>( mDrawable )->popEventsCallback( mResourceChangeCb );
-	} else if ( mDrawable && mDrawable->isDrawableResource() ) {
-		static_cast<DrawableResource*>( mDrawable )->popResourceChangeCallback( mResourceChangeCb );
-		mResourceChangeCb = 0;
+		static_cast<Sprite*>( mDrawable.get() )->popEventsCallback( mSpriteChangeCb );
+		mSpriteChangeCb = 0;
 	}
 
-	if ( mDrawable && mDrawableOwner ) {
-		eeSAFE_DELETE( mDrawable );
-
-		mDrawableOwner = false;
-	}
-
-	mTexture.reset();
+	mResourceChangeConnection.disconnect();
+	mDrawable.reset();
 }
 
-void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* ) {
-	if ( event == DrawableResource::Change ) {
-		runOnMainThread( [this] {
-			auto s = mSize;
-			onAutoSize();
-			calcDestSize();
-			if ( mSize != s )
-				notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
-			invalidateDraw();
-		} );
-	} else if ( event == DrawableResource::Unload ) {
-		mDrawable = NULL;
-	}
+void UIImage::onDrawableResourceChange() {
+	runOnMainThread( [this] {
+		auto s = mSize;
+		onAutoSize();
+		calcDestSize();
+		if ( mSize != s )
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
+		invalidateDraw();
+	} );
 }
 
 bool UIImage::loadFileDrawable( const Network::URI& uri ) {
@@ -400,7 +381,11 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 	std::string url = uri.toString();
 	ResourceScopePtr resourceScope = scene->getResourceScope();
 	if ( TexturePtr texture = resourceScope->findTexture( url ) ) {
-		if ( mDrawable != texture.get() ) {
+		TextureDrawable* textureDrawable =
+			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
+				? static_cast<TextureDrawable*>( mDrawable.get() )
+				: nullptr;
+		if ( !textureDrawable || textureDrawable->getTexture() != texture ) {
 			++mRemoteImageLoadId;
 			setDrawable( std::move( texture ) );
 		}
@@ -436,7 +421,7 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 					[alive, loadId, texture, imageData = std::move( imageData ),
 					 this]( UISceneNode* ) mutable {
 						if ( !alive || !alive->load( std::memory_order_acquire ) ||
-							 loadId != mRemoteImageLoadId || mDrawable != texture.get() )
+							 loadId != mRemoteImageLoadId )
 							return;
 
 						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
@@ -515,7 +500,7 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
 
 void UIImage::scheduledUpdate( const Time& time ) {
 	if ( mDrawable && mDrawable->getDrawableType() == Drawable::SPRITE )
-		static_cast<Sprite*>( mDrawable )->update( time );
+		static_cast<Sprite*>( mDrawable.get() )->update( time );
 }
 
 std::vector<PropertyId> UIImage::getPropertiesImplemented() const {
@@ -546,7 +531,6 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 
 			std::string path( attribute.getValue() );
 			URI uri( path );
-			bool ownIt;
 			UISceneNode* scene = getUISceneNode();
 
 			if ( scene && uri.getScheme().empty() && !scene->getURI().empty() ) {
@@ -562,33 +546,28 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( mDeferLoad && uri.getScheme() == "file" && loadFileDrawable( uri ) )
 				break;
 
-			Drawable* createdDrawable =
+			DrawablePtr createdDrawable =
 				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
-					path, mSize, ownIt, this );
+					path, mSize, this );
 			if ( createdDrawable ) {
-				setDrawable( createdDrawable, ownIt );
+				setDrawable( std::move( createdDrawable ) );
 			} else {
-				Drawable* res = NULL;
-				if ( NULL != ( res = DrawableSearcher::searchByName(
-								   path, false, scene ? scene->getReferer() : URI(),
-								   scene ? scene->getResourceScope().get() : nullptr ) ) )
-					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+				setDrawable( DrawableSearcher::searchByName(
+					path, false, scene ? scene->getReferer() : URI(),
+					scene ? scene->getResourceScope().get() : nullptr ) );
 			}
 			break;
 		}
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
-			Drawable* icon = NULL;
-			bool ownIt;
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
 			if ( iconF ) {
 				setDrawable(
-					iconF->getSize( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom ) );
-			} else if ( NULL !=
-						( icon = StyleSheetSpecification::instance()
-									 ->getDrawableImageParser()
-									 .createDrawable( val, getPixelsSize(), ownIt, this ) ) ) {
-				setDrawable( icon, ownIt );
+					iconF->createDrawable( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom ) );
+			} else if ( DrawablePtr icon = StyleSheetSpecification::instance()
+											   ->getDrawableImageParser()
+											   .createDrawable( val, getPixelsSize(), this ) ) {
+				setDrawable( std::move( icon ) );
 			}
 			break;
 		}

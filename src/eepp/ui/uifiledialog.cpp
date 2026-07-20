@@ -341,31 +341,31 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 	mFile->setTheme( Theme );
 	mFiletype->setTheme( Theme );
 
-	Drawable* icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
+	DrawablePtr icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonUp->setText( "" );
-		mButtonUp->setIcon( icon );
+		mButtonUp->setIcon( std::move( icon ) );
 		mButtonUp->setTooltipText( i18n( "uifiledialog_go_up", "Up" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "folder-add", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonNewFolder->setText( "" );
-		mButtonNewFolder->setIcon( icon );
+		mButtonNewFolder->setIcon( std::move( icon ) );
 		mButtonNewFolder->setTooltipText( i18n( "uifiledialog_new_folder", "New Folder" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "list-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonListView->setText( "" );
-		mButtonListView->setIcon( icon );
+		mButtonListView->setIcon( std::move( icon ) );
 		mButtonListView->setTooltipText( i18n( "uifiledialog_list", "List" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "table-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonTableView->setText( "" );
-		mButtonTableView->setIcon( icon );
+		mButtonTableView->setIcon( std::move( icon ) );
 		mButtonTableView->setTooltipText( i18n( "uifiledialog_table", "Table" ) );
 	}
 

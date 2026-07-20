@@ -242,7 +242,7 @@ UITerminal* StatusTerminalController::createTerminal(
 
 	UIIcon* icon = mUISceneNode->findIcon( "terminal" );
 	auto tab = mTabWidget->add(
-		program, term, icon != nullptr ? icon->getSize( PixelDensity::dpToPxI( 12 ) ) : nullptr );
+		program, term, icon != nullptr ? icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) : nullptr );
 
 	term->setData( (UintPtr)tab );
 	term->on( Event::OnTitleChange, [tab, term]( auto ) { tab->setText( term->getTitle() ); } );

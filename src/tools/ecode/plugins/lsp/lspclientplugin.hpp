@@ -149,6 +149,10 @@ class LSPClientPlugin : public Plugin {
 	};
 	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
 	UIIcon* mDrawSepIcon{ nullptr };
+	DrawablePtr mDrawSepDrawable;
+	int mDrawSepDrawableSize{ 0 };
+	UnorderedMap<std::string, DrawablePtr> mBreadcrumbIconDrawables;
+	int mBreadcrumbIconDrawableSize{ 0 };
 	std::string mConfigFileError;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );

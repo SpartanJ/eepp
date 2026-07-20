@@ -3,6 +3,7 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/math/easing.hpp>
 #include <eepp/network/http.hpp>
@@ -100,10 +101,6 @@ UINodeDrawable::~UINodeDrawable() {
 }
 
 void UINodeDrawable::clearDrawables() {
-	for ( auto& drawable : mGroup ) {
-		eeDelete( drawable.second );
-	}
-
 	mGroup.clear();
 	mBackgroundColor.setColor( Color::Transparent );
 }
@@ -124,24 +121,24 @@ UINodeDrawable::LayerDrawable* UINodeDrawable::getLayer( int index ) {
 	auto it = mGroup.find( index );
 
 	if ( it == mGroup.end() ) {
-		mGroup[index] = UINodeDrawable::LayerDrawable::New( this );
+		mGroup[index] = LayerDrawablePtr( UINodeDrawable::LayerDrawable::New( this ) );
 
 		// HTML background-repeat defaults to "repeat", non-HTML to
 		// "no-repeat". The LayerDrawable constructor uses NoRepeat
 		// (the eepp/non-HTML default), so reset it for Html mode.
 		if ( mBackgroundMode == BackgroundMode::Html ) {
-			auto* layer = mGroup[index];
+			auto* layer = mGroup[index].get();
 			layer->setRepeatX( RepeatX::Repeat );
 			layer->setRepeatY( RepeatY::Repeat );
 		}
 	}
 
-	return mGroup[index];
+	return mGroup[index].get();
 }
 
-void UINodeDrawable::setDrawable( int index, Drawable* drawable, bool ownIt ) {
+void UINodeDrawable::setDrawable( int index, DrawablePtr drawable ) {
 	if ( drawable != getLayer( index )->getDrawable() ) {
-		getLayer( index )->setDrawable( drawable, ownIt );
+		getLayer( index )->setDrawable( std::move( drawable ) );
 	}
 }
 
@@ -245,7 +242,7 @@ void UINodeDrawable::setBackgroundMode( BackgroundMode mode ) {
 	// still carry the LayerDrawable default (NoRepeat for both axes).
 	if ( mode == BackgroundMode::Html ) {
 		for ( auto& entry : mGroup ) {
-			auto* layer = entry.second;
+			auto* layer = entry.second.get();
 			if ( layer->getRepeatX() == RepeatX::NoRepeat &&
 				 layer->getRepeatY() == RepeatY::NoRepeat ) {
 				layer->setRepeatX( RepeatX::Repeat );
@@ -331,7 +328,7 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 	// "The background images are drawn on stacking context layers on top of each other. The first
 	// layer specified is drawn as if it is closest to the user."
 	for ( auto drawableIt = mGroup.rbegin(); drawableIt != mGroup.rend(); ++drawableIt ) {
-		UINodeDrawable::LayerDrawable* drawable = drawableIt->second;
+		UINodeDrawable::LayerDrawable* drawable = drawableIt->second.get();
 
 		bool clipContent = mBackgroundMode == BackgroundMode::Html &&
 						   drawable->getClip() == LayerDrawable::Clip::ContentBox;
@@ -411,9 +408,6 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable* container ) :
 	mPositionY( "0px" ),
 	mSizeEq( "auto" ),
 	mNeedsUpdate( false ),
-	mOwnsDrawable( false ),
-	mDrawable( NULL ),
-	mResourceChangeCbId( 0 ),
 	mRepeatX( RepeatX::NoRepeat ),
 	mRepeatY( RepeatY::NoRepeat ),
 	mOriginEq( "padding-box" ),
@@ -428,13 +422,7 @@ UINodeDrawable::LayerDrawable::~LayerDrawable() {
 	if ( mAsyncDrawableAlive )
 		mAsyncDrawableAlive->store( false, std::memory_order_release );
 
-	if ( NULL != mDrawable && 0 != mResourceChangeCbId && mDrawable->isDrawableResource() ) {
-		reinterpret_cast<DrawableResource*>( mDrawable )
-			->popResourceChangeCallback( mResourceChangeCbId );
-	}
-
-	if ( mOwnsDrawable )
-		eeSAFE_DELETE( mDrawable );
+	mResourceChangeConnection.disconnect();
 }
 
 void UINodeDrawable::LayerDrawable::draw() {
@@ -497,8 +485,8 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 				mDrawable->draw( Vector2f( xPos, effectivePos.y + mOffset.y ), tileSz );
 				break;
 			case RepeatY::Repeat:
-				repeatYdraw( mDrawable, effectivePos, Vector2f( xPos - effectivePos.x, mOffset.y ),
-							 mSize, tileSz );
+				repeatYdraw( mDrawable.get(), effectivePos,
+							 Vector2f( xPos - effectivePos.x, mOffset.y ), mSize, tileSz );
 				break;
 			case RepeatY::Space: {
 				if ( drawH <= 0 )
@@ -610,7 +598,7 @@ void UINodeDrawable::LayerDrawable::setSize( const Sizef& size ) {
 	}
 }
 
-Drawable* UINodeDrawable::LayerDrawable::getDrawable() const {
+const DrawablePtr& UINodeDrawable::LayerDrawable::getDrawable() const {
 	return mDrawable;
 }
 
@@ -618,51 +606,30 @@ const std::string& UINodeDrawable::LayerDrawable::getDrawableRef() const {
 	return mDrawableRef;
 }
 
-void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool& ownIt ) {
+void UINodeDrawable::LayerDrawable::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return;
 
-	if ( NULL != mDrawable ) {
-		if ( mDrawable->isDrawableResource() ) {
-			reinterpret_cast<DrawableResource*>( mDrawable )
-				->popResourceChangeCallback( mResourceChangeCbId );
-		}
+	mResourceChangeConnection.disconnect();
 
-		if ( mOwnsDrawable ) {
-			eeSAFE_DELETE( mDrawable );
-		}
-	}
-	mTexture.reset();
-
-	mDrawable = drawable;
+	mDrawable = std::move( drawable );
 	mDrawableRef = "";
-	mOwnsDrawable = ownIt;
 	invalidate();
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
-		mResourceChangeCbId =
-			reinterpret_cast<DrawableResource*>( mDrawable )
-				->pushResourceChangeCallback(
-					[this]( Uint32, DrawableResource::Event event, DrawableResource* ) {
-						invalidate();
-						if ( event == DrawableResource::Event::Unload ) {
-							mResourceChangeCbId = 0;
-							mDrawable = NULL;
-							mOwnsDrawable = false;
-						}
-					} );
+		mResourceChangeConnection =
+			reinterpret_cast<DrawableResource*>( mDrawable.get() )
+				->connectResourceChange( [this]( DrawableResource& ) { invalidate(); } );
 	}
 }
 
 void UINodeDrawable::LayerDrawable::setDrawable( TexturePtr texture ) {
-	Texture* drawable = texture.get();
-	setDrawable( drawable, false );
-	mTexture = std::move( texture );
+	setDrawable( texture ? TextureDrawable::New( std::move( texture ) ) : DrawablePtr{} );
 }
 
 void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef ) {
 	if ( drawableRef == "none" ) {
-		setDrawable( nullptr, false );
+		setDrawable( DrawablePtr{} );
 		return;
 	}
 
@@ -671,10 +638,9 @@ void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef 
 		return;
 	}
 
-	bool ownIt;
-	Drawable* drawable = createDrawable( drawableRef, mSize, ownIt );
+	DrawablePtr drawable = createDrawable( drawableRef, mSize );
 
-	setDrawable( drawable, ownIt );
+	setDrawable( std::move( drawable ) );
 
 	mDrawableRef = drawableRef;
 }
@@ -714,7 +680,11 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	std::string url = uri.toString();
 	ResourceScopePtr resourceScope = scene->getResourceScope();
 	if ( TexturePtr texture = resourceScope->findTexture( url ) ) {
-		if ( mDrawable != texture.get() ) {
+		TextureDrawable* textureDrawable =
+			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
+				? static_cast<TextureDrawable*>( mDrawable.get() )
+				: nullptr;
+		if ( !textureDrawable || textureDrawable->getTexture() != texture ) {
 			++mRemoteDrawableLoadId;
 			setDrawable( std::move( texture ) );
 		}
@@ -750,7 +720,7 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 					[alive, loadId, texture, imageData = std::move( imageData ),
 					 this]( UISceneNode* ) mutable {
 						if ( !alive || !alive->load( std::memory_order_acquire ) ||
-							 loadId != mRemoteDrawableLoadId || mDrawable != texture.get() )
+							 loadId != mRemoteDrawableLoadId )
 							return;
 
 						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
@@ -769,10 +739,10 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	return true;
 }
 
-Drawable* UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,
-														 const Sizef& size, bool& ownIt ) {
+DrawablePtr UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,
+														   const Sizef& size ) {
 	return CSS::StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
-		value, size, ownIt, mContainer->getOwner() );
+		value, size, mContainer->getOwner() );
 }
 
 const Vector2f& UINodeDrawable::LayerDrawable::getOffset() const {

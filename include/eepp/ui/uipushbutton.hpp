@@ -40,7 +40,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual UIPushButton* setIcon( Drawable* icon, bool ownIt = false );
+	virtual UIPushButton* setIcon( DrawablePtr icon );
 
 	virtual UIImage* getIcon();
 

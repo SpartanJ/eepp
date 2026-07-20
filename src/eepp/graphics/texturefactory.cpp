@@ -320,10 +320,15 @@ void TextureFactory::diagnoseLiveTexturesAtShutdown() {
 
 	Log::error( "TextureFactory shutdown found %zu externally retained texture(s).",
 				survivors.size() );
+	eePRINTL( "TextureFactory shutdown found %zu externally retained texture(s).",
+			  survivors.size() );
 	for ( const TexturePtr& texture : survivors ) {
 		Log::error( "Texture %llu ('%s') survived shutdown with %zu external owner(s).",
 					static_cast<unsigned long long>( texture->getTextureId().value() ),
 					texture->getName().c_str(), texture.use_count() - 1 );
+		eePRINTL( "Texture %llu ('%s') survived shutdown with %zu external owner(s).",
+				  static_cast<unsigned long long>( texture->getTextureId().value() ),
+				  texture->getName().c_str(), texture.use_count() - 1 );
 		texture->deleteTexture();
 	}
 

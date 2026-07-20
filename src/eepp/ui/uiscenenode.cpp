@@ -1347,11 +1347,10 @@ UIIcon* UISceneNode::findIcon( const std::string& iconName ) {
 	return getUIIconThemeManager()->findIcon( iconName );
 }
 
-Drawable* UISceneNode::findIconDrawable( const std::string& iconName, const size_t& drawableSize ) {
+DrawablePtr UISceneNode::findIconDrawable( const std::string& iconName,
+												 const size_t& drawableSize ) {
 	UIIcon* icon = findIcon( iconName );
-	if ( icon )
-		return icon->getSize( drawableSize );
-	return nullptr;
+	return icon ? icon->createDrawable( drawableSize ) : DrawablePtr{};
 }
 
 CSS::MediaFeatures UISceneNode::getMediaFeatures() const {

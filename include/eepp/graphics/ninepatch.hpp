@@ -51,10 +51,12 @@ class EE_API NinePatch : public DrawableResource {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr createInstance() const;
+
 	TextureRegion* getTextureRegion( const int& side );
 
   protected:
-	TextureRegion* mDrawable[SideCount];
+	TextureRegionPtr mDrawable[SideCount];
 	Rect mRect;
 	Rectf mRectf;
 	Sizef mSize;
