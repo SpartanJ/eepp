@@ -40,6 +40,15 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 * Styling with Cascading Style Sheets
 
+* HTML+CSS compatibility layer (ongoing effort for native HTML content rendering):
+  * Renders HTML documents natively using the `UIWebView` component. Also used by `UIMarkdownView` for Markdown rendering.
+  * Full CSS layout system covering block, inline, inline-block, flex (Flexbox Level 1), inline-flex, grid, inline-grid, table, list-item, and none display modes.
+  * Positioning: absolute, fixed, float, relative, and sticky.
+  * Rich text formatting with inline text spans, line wrapping, custom blocks, floats, and baseline alignment.
+  * CSS properties: backgrounds (color/image/layers), borders, box model (margin/padding), sizing constraints (min/max-width/height), `box-sizing`, overflow, `visibility`, `z-index`, text styling (color, font, decoration, alignment), and more.
+  * Document-scoped stylesheets, CSS viewport/media queries, and scoped `@font-face` font resources.
+  * Spec-compliant where implemented. Follows the CSS and HTML Living Standard specifications rather than custom behavior.
+
 ### Graphics Module
 
 * Renderers for OpenGL 2 ( fixed-pipeline ), OpenGL 3 ( programmable-pipeline ), OpenGL ES 2, OpenGL ES 1, and OpenGL Core Profile.
