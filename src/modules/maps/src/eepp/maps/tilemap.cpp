@@ -128,9 +128,9 @@ void TileMap::createEmptyTile() {
 	std::string tileName( String::format( "maptile-%dx%d-%u", mTileSize.getWidth(),
 										  mTileSize.getHeight(), mGridLinesColor.getValue() ) );
 
-	Texture* Tex = TF->getByName( tileName );
+	TexturePtr texture = TF->getByName( tileName );
 
-	if ( NULL == Tex ) {
+	if ( NULL == texture ) {
 		Uint32 x, y;
 		Color Col( mGridLinesColor );
 
@@ -152,7 +152,7 @@ void TileMap::createEmptyTile() {
 									   Img.getChannels(), true, Texture::ClampMode::ClampToEdge,
 									   false, false, tileName );
 	} else {
-		mTileTex = Tex;
+		mTileTex = std::move( texture );
 	}
 }
 
@@ -1465,7 +1465,7 @@ void TileMap::setUpdateCallback( MapUpdateCb Cb ) {
 	mUpdateCb = Cb;
 }
 
-Texture* TileMap::getBlankTileTexture() {
+const TexturePtr& TileMap::getBlankTileTexture() const {
 	return mTileTex;
 }
 

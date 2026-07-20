@@ -37,7 +37,6 @@ Sprite* Sprite::fromGif( IOStream& stream ) {
 
 	sprite->setAnimationSpeed( 1000.f / (float)delay );
 	sprite->setAsTextureRegionOwner( true );
-	sprite->setAsTextureOwner( true );
 	return sprite;
 }
 
@@ -140,21 +139,13 @@ void Sprite::clearFrame() {
 }
 
 void Sprite::cleanUpResources() {
-	if ( isTextureRegionOwner() || isTextureOwner() ) {
+	if ( isTextureRegionOwner() ) {
 		size_t frames = getNumFrames();
 
 		for ( size_t i = 0; i < frames; i++ ) {
 			for ( size_t f = 0; f < mFrames[i].Spr.size(); f++ ) {
 				TextureRegion* region = mFrames[i].Spr[f];
-				Texture* texture = region->getTexture();
-
-				if ( isTextureOwner() && texture &&
-					 TextureFactory::instance()->exists( texture ) ) {
-					TextureFactory::instance()->remove( texture );
-				}
-
-				if ( isTextureRegionOwner() )
-					GlobalTextureAtlas::instance()->remove( region );
+				GlobalTextureAtlas::instance()->remove( region );
 			}
 		}
 	}
@@ -338,12 +329,12 @@ bool Sprite::createStatic( ResourceId textureId, const Sizef& DestSize, const Ve
 	return false;
 }
 
-bool Sprite::createStatic( Texture* tex, const Sizef& DestSize, const Vector2i& offset,
+bool Sprite::createStatic( TexturePtr tex, const Sizef& DestSize, const Vector2i& offset,
 						   const Rect& TexSector ) {
 	if ( tex ) {
 		reset();
 
-		addFrame( tex->getTextureId(), DestSize, offset, TexSector );
+		addFrame( std::move( tex ), DestSize, offset, TexSector );
 
 		return true;
 	}
@@ -453,22 +444,39 @@ unsigned int Sprite::addFrame( ResourceId textureId, const Sizef& DestSize, cons
 	return 0;
 }
 
-unsigned int Sprite::addFrame( Texture* tex, const Sizef& DestSize, const Vector2i& offset,
+unsigned int Sprite::addFrame( TexturePtr tex, const Sizef& DestSize, const Vector2i& offset,
 							   const Rect& TexSector ) {
 	unsigned int id = framePos();
 
-	if ( addSubFrame( tex, id, mCurrentSubFrame, DestSize, offset, TexSector ) )
+	if ( addSubFrame( std::move( tex ), id, mCurrentSubFrame, DestSize, offset, TexSector ) )
 		return id;
 
 	return 0;
 }
 
-bool Sprite::addSubFrame( Texture* tex, const unsigned int& NumFrame,
+bool Sprite::addSubFrame( TexturePtr tex, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame, const Sizef& DestSize,
 						  const Vector2i& Offset, const Rect& TexSector ) {
-	if ( tex )
-		return addSubFrame( tex->getTextureId(), NumFrame, NumSubFrame, DestSize, Offset,
-							TexSector );
+	if ( tex ) {
+		TextureRegion* region = GlobalTextureAtlas::instance()->add( TextureRegion::New() );
+		region->setTexture( std::move( tex ) );
+
+		if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
+			region->setSrcRect( TexSector );
+		else
+			region->setSrcRect( Rect( 0, 0, (Int32)region->getTexture()->getImageWidth(),
+									  (Int32)region->getTexture()->getImageHeight() ) );
+
+		Sizef destSize( DestSize );
+		if ( destSize.x <= 0 )
+			destSize.x = static_cast<Float>( region->getSrcRect().getWidth() );
+		if ( destSize.y <= 0 )
+			destSize.y = static_cast<Float>( region->getSrcRect().getHeight() );
+
+		region->setDestSize( destSize );
+		region->setOffset( Offset );
+		return addSubFrame( region, NumFrame, NumSubFrame );
+	}
 	return false;
 }
 
@@ -478,32 +486,8 @@ bool Sprite::addSubFrame( ResourceId textureId, const unsigned int& NumFrame,
 	if ( !TextureFactory::instance()->existsId( textureId ) )
 		return false;
 
-	Texture* Tex = TextureFactory::instance()->getTexture( textureId );
-	TextureRegion* S = GlobalTextureAtlas::instance()->add( TextureRegion::New() );
-
-	S->setTextureId( textureId );
-
-	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
-		S->setSrcRect( TexSector );
-	else
-		S->setSrcRect( Rect( 0, 0, (Int32)Tex->getImageWidth(), (Int32)Tex->getImageHeight() ) );
-
-	Sizef destSize( DestSize );
-
-	if ( destSize.x <= 0 ) {
-		destSize.x = static_cast<Float>( S->getSrcRect().Right - S->getSrcRect().Left );
-	}
-
-	if ( destSize.y <= 0 ) {
-		destSize.y = static_cast<Float>( S->getSrcRect().Bottom - S->getSrcRect().Top );
-	}
-
-	S->setDestSize( destSize );
-	S->setOffset( Offset );
-
-	addSubFrame( S, NumFrame, NumSubFrame );
-
-	return true;
+	return addSubFrame( TextureFactory::instance()->getTexture( textureId ), NumFrame, NumSubFrame,
+						DestSize, Offset, TexSector );
 }
 
 void Sprite::update() {
@@ -923,18 +907,6 @@ Sprite& Sprite::setAsTextureRegionOwner( bool set ) {
 
 bool Sprite::isTextureRegionOwner() const {
 	return mFlags & SPRITE_FLAG_TEXTURE_REGION_OWNER;
-}
-
-Sprite& Sprite::setAsTextureOwner( bool set ) {
-	if ( set )
-		mFlags |= SPRITE_FLAG_TEXTURE_OWNER;
-	else
-		mFlags &= ~SPRITE_FLAG_TEXTURE_OWNER;
-	return *this;
-}
-
-bool Sprite::isTextureOwner() const {
-	return mFlags & SPRITE_FLAG_TEXTURE_OWNER;
 }
 
 void Sprite::setOrigin( const OriginPoint& origin ) {

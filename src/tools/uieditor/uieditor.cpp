@@ -136,7 +136,6 @@ void App::saveConfig() {
 void App::unloadImages() {
 	for ( auto it = mImagesLoaded.begin(); it != mImagesLoaded.end(); ++it ) {
 		GlobalTextureAtlas::instance()->remove( it->second );
-		TextureFactory::instance()->remove( it->first );
 	}
 	mImagesLoaded.clear();
 }
@@ -149,10 +148,11 @@ void App::unloadFonts() {
 
 void App::loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	Texture* tex = TextureFactory::instance()->loadFromFile( path );
+	TexturePtr tex = TextureFactory::instance()->loadFromFile( path );
 	if ( tex ) {
 		ResourceId texId = tex->getTextureId();
-		TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
+		TextureRegion* texRegion =
+			GlobalTextureAtlas::instance()->add( std::move( tex ), filename );
 		mImagesLoaded[texId] = texRegion;
 	}
 }

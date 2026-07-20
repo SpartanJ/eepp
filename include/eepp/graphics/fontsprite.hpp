@@ -58,7 +58,7 @@ class EE_API FontSprite : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
 
@@ -75,8 +75,8 @@ class EE_API FontSprite : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture; ///< Texture containing the pixels of the glyphs
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

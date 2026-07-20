@@ -1,7 +1,7 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0, prerequisite fixes, and Stage 1 complete;
-Stage 2 is next, 2026-07-15.
+Status: active implementation baseline; Stage 0, prerequisite fixes, Stage 1, and Stage 2 complete;
+Stage 3 is next, 2026-07-19.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -576,6 +576,17 @@ Exit tests:
 
 ### Stage 2: one complete TexturePtr ownership cut
 
+Status: complete, 2026-07-19. TextureFactory creation and acquisition APIs now return TexturePtr,
+and TextureLoader exposes handle-based state with `reset()` replacing destructive `unload()`
+semantics. TextureRegion, atlases/loaders, framebuffers, font pages and glyphs, nine-patches,
+sprites, particle systems, SVG caches, UI image/background paths, maps, tools, tests, ecode, and
+eeiv now retain texture handles. Atlas worker loads store their returned handles directly instead
+of depending on later global lookup. BatchRenderer retains handle-aware submissions until flush;
+its raw overload is limited to Texture's immediate draw path, whose queued object lifetime is
+protected by display-time deferred destruction. Sprite's obsolete texture-owner flag and public
+factory texture-removal APIs are removed. Factory-wide strong retention remains only as the
+planned temporary bridge to Stage 3.
+
 Change creation/acquisition APIs to return TexturePtr and migrate every required holder in the same
 repository-wide cut. During conversion, TextureFactory temporarily retains strong handles so an
 unclassified ignored result cannot silently expire.
@@ -740,8 +751,8 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 1 is complete, including removal of the obsolete context-recovery APIs and TextureLoader
-callback registry, weak UITextureViewer observation, and display/shutdown texture collection. The
-next coding deliverable is the complete Stage 2 TexturePtr ownership cut described above: change
-the public APIs and migrate every texture holder while temporary factory retention keeps the
-repository behavior stable.
+Stage 2 is complete with the repository-wide TexturePtr API and holder migration while temporary
+factory retention preserves existing global lookup behavior. The next coding deliverable is Stage
+3: introduce catalogs and Graphics scopes, migrate semantic name lookup out of TextureFactory, move
+intentional persistence into catalogs/caches, and then remove the factory's temporary strong
+retention.

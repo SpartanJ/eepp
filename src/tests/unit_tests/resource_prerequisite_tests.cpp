@@ -178,8 +178,8 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
 	{
-		Texture* first = TextureFactory::instance()->createEmptyTexture( 1, 1 );
-		Texture* second = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+		TexturePtr first = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+		TexturePtr second = TextureFactory::instance()->createEmptyTexture( 1, 1 );
 		ASSERT_TRUE( first != NULL );
 		ASSERT_TRUE( second != NULL );
 
@@ -207,12 +207,14 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAcceptsFilterBeforeAtlasExists )
 UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithoutOwning ) {
 	createLifecycleTestWindow( "Texture registry identity test" );
 	TextureFactory* factory = TextureFactory::instance();
-	Texture* first = factory->createEmptyTexture( 2, 3, 4, Color::Transparent, false,
-												  Texture::ClampMode::ClampToEdge, false, false,
-												  "registry-first" );
-	Texture* second = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
-												   Texture::ClampMode::ClampToEdge, false, false,
-												   "registry-second" );
+	Uint8 firstPixels[2 * 3 * 4]{};
+	TextureLoader firstLoader( firstPixels, 2, 3, 4, false, Texture::ClampMode::ClampToEdge, false,
+							   false, "registry-first" );
+	firstLoader.load();
+	TexturePtr first = firstLoader.getTexture();
+	TexturePtr second = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
+													 Texture::ClampMode::ClampToEdge, false, false,
+													 "registry-second" );
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
 
@@ -242,7 +244,8 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 	TextureWeakPtr firstWeak = firstRecord->texture;
 	TexturePtr retainedFirst = firstWeak.lock();
 	ASSERT_TRUE( retainedFirst != nullptr );
-	ASSERT_TRUE( factory->remove( first ) );
+	firstLoader.reset();
+	first.reset();
 	EXPECT_FALSE( firstWeak.expired() );
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
 	retainedFirst.reset();
@@ -253,19 +256,24 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 							   [firstId]( const auto& record ) { return record.id == firstId; } ) );
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u );
 
+	second.reset();
 	Engine::destroySingleton();
 
 	createLifecycleTestWindow( "Texture registry identity restart test" );
-	Texture* afterRestart = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	TexturePtr afterRestart = TextureFactory::instance()->createEmptyTexture( 1, 1 );
 	ASSERT_TRUE( afterRestart != nullptr );
 	EXPECT_TRUE( secondId < afterRestart->getTextureId() );
+	afterRestart.reset();
 	Engine::destroySingleton();
 }
 
-UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
+UTEST( ResourcePrerequisites, pendingBatchRetainsTextureUntilDisplayCollection ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Texture deferred release test" );
 	TextureFactory* factory = TextureFactory::instance();
-	Texture* texture = factory->createEmptyTexture( 2, 2 );
+	Uint8 pixels[2 * 2 * 4]{};
+	TextureLoader loader( pixels, 2, 2, 4 );
+	loader.load();
+	TexturePtr texture = loader.getTexture();
 	ASSERT_TRUE( texture != nullptr );
 
 	bool unloaded = false;
@@ -276,7 +284,7 @@ UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
 		} );
 
 	TextureRegistrySnapshot snapshot = factory->snapshotTextures();
-	auto record = std::find_if( snapshot.begin(), snapshot.end(), [texture]( const auto& entry ) {
+	auto record = std::find_if( snapshot.begin(), snapshot.end(), [&texture]( const auto& entry ) {
 		return entry.id == texture->getTextureId();
 	} );
 	ASSERT_TRUE( record != snapshot.end() );
@@ -284,18 +292,46 @@ UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
 	TexturePtr retainedTexture = weakTexture.lock();
 	ASSERT_TRUE( retainedTexture != nullptr );
 
-	ASSERT_TRUE( factory->remove( texture ) );
+	loader.reset();
 	GlobalBatchRenderer::instance()->setTexture( texture );
 	GlobalBatchRenderer::instance()->batchQuad( 0, 0, 2, 2 );
+	texture.reset();
 	retainedTexture.reset();
 
-	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_FALSE( weakTexture.expired() );
 	EXPECT_FALSE( unloaded );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+
+	window->display( false );
+
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_TRUE( unloaded );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, textureRegionRetainsItsTexture ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture region ownership test" );
+	TextureFactory* factory = TextureFactory::instance();
+	Uint8 pixels[2 * 2 * 4]{};
+	TextureLoader loader( pixels, 2, 2, 4 );
+	loader.load();
+	TexturePtr texture = loader.getTexture();
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	{
+		TextureRegion region( texture );
+		loader.reset();
+		texture.reset();
+		EXPECT_FALSE( weakTexture.expired() );
+	}
+
+	EXPECT_TRUE( weakTexture.expired() );
 	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
 
 	window->display( false );
 
-	EXPECT_TRUE( unloaded );
 	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
 	Engine::destroySingleton();
 }
@@ -446,7 +482,7 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 	for ( int cycle = 0; cycle < 2; ++cycle ) {
 		createLifecycleTestWindow( "Engine teardown test" );
 
-		Texture* texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
+		TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
 		ASSERT_TRUE( texture != nullptr );
 
 		NinePatch* ninePatch = NinePatchManager::instance()->add(
@@ -468,6 +504,7 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		auto* batch = GlobalBatchRenderer::instance();
 		batch->setTexture( texture );
 		batch->batchQuad( 0, 0, 4, 4 );
+		texture.reset();
 
 		Engine::destroySingleton();
 

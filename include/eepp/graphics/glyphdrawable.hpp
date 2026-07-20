@@ -11,7 +11,7 @@ class VertexBuffer;
 
 class EE_API GlyphDrawable : public DrawableResource {
   public:
-	static GlyphDrawable* New( Texture* texture, const Rect& srcRect, const Sizef& destSize = {},
+	static GlyphDrawable* New( TexturePtr texture, const Rect& srcRect, const Sizef& destSize = {},
 							   const std::string& resourceName = "" );
 
 	enum class DrawMode {
@@ -21,7 +21,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 				   ///< italic skew
 	};
 
-	GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef& destSize = {},
+	GlyphDrawable( TexturePtr texture, const Rect& srcRect, const Sizef& destSize = {},
 				   const std::string& resourceName = "" );
 
 	virtual void draw();
@@ -36,7 +36,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	virtual bool isStateful();
 
 	/** @return The texture instance used by the GlyphDrawable. */
-	Texture* getTexture();
+	const TexturePtr& getTexture() const;
 
 	/** @return The Texture sector that represents the GlyphDrawable */
 	const Rectf& getSrcRect() const;
@@ -69,7 +69,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	void setAdvance( Float advance );
 
   protected:
-	Texture* mTexture;
+	TexturePtr mTexture;
 	Rectf mSrcRect;
 	Sizef mDestSize;
 	Float mPixelDensity;

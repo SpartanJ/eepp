@@ -67,7 +67,6 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 
 	auto sprite = Sprite::New();
 	sprite->createStatic( texture );
-	sprite->setAsTextureOwner( true );
 	sprite->setAsTextureRegionOwner( true );
 
 	viewer->reset();

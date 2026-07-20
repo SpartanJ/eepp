@@ -130,6 +130,8 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 		IOS.read( (char*)&mTexGrHdr, sizeof( sTextureAtlasHdr ) );
 
 		if ( mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC ) {
+			// The complete entry vector is built before mRL starts. Each task below writes only the
+			// LoadedTexture member at its captured index, so worker execution cannot race a resize.
 			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
 				sTextureHdr tTextureHdr;
 				sTempTexAtlas tTexAtlas;
@@ -143,16 +145,20 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 				std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
 
 				//! Checks if the texture is already loaded
-				Texture* tTex = TextureFactory::instance()->getByName( path );
+				TexturePtr tTex = TextureFactory::instance()->getByName( path );
+				tTexAtlas.LoadedTexture = tTex;
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
+					const std::size_t textureIndex = mTempAtlass.size();
 					if ( NULL != mPack ) {
-						mRL.add( [this, path = std::move( path )] {
-							TextureFactory::instance()->loadFromPack( mPack, path );
+						mRL.add( [this, textureIndex, path = std::move( path )] {
+							mTempAtlass[textureIndex].LoadedTexture =
+								TextureFactory::instance()->loadFromPack( mPack, path );
 						} );
 					} else {
-						mRL.add( [path = std::move( path )] {
-							TextureFactory::instance()->loadFromFile( path );
+						mRL.add( [this, textureIndex, path = std::move( path )] {
+							mTempAtlass[textureIndex].LoadedTexture =
+								TextureFactory::instance()->loadFromFile( path );
 						} );
 					}
 				}
@@ -160,7 +166,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 				IOS.read( (char*)&tTexAtlas.TextureRegions[0],
 						  sizeof( sTextureRegionHdr ) * tTextureHdr.TextureRegionCount );
 
-				mTempAtlass.push_back( tTexAtlas );
+				mTempAtlass.push_back( std::move( tTexAtlas ) );
 			}
 		}
 
@@ -233,7 +239,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 		FileSystem::filePathRemoveProcessPath( path );
 
-		Texture* tTex = TextureFactory::instance()->getByName( path );
+		TexturePtr tTex = tTexAtlas->LoadedTexture;
 
 		if ( NULL != tTex )
 			mTexturesLoaded.push_back( tTex );
@@ -327,7 +333,7 @@ bool TextureAtlasLoader::isLoading() const {
 	return mIsLoading.load();
 }
 
-Texture* TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
+const TexturePtr& TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTexturesLoaded.size() );
 	return mTexturesLoaded[texnum];
 }

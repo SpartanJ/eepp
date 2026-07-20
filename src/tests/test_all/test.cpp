@@ -974,18 +974,21 @@ void EETest::createNewUI() {
 	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
-		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
+		TextureRegistrySnapshot textures = TextureFactory::instance()->snapshotTextures();
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
+				TexturePtr texture = textures[i].texture.lock();
+				if ( !texture )
+					continue;
 				UIImage* img = UIImage::New();
-				img->setDrawable( textures[i] )
+				img->setDrawable( texture )
 					->setScaleType( UIScaleType::FitInside )
 					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 					->setEnabled( false )
 					->setParent( gridLayout );
 
-				img->setBackgroundColor( Color::fromPointer( textures[i] ) );
+				img->setBackgroundColor( Color::fromPointer( texture.get() ) );
 			}
 		}
 	}
@@ -1368,8 +1371,11 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( [this, name = std::move( name )] {
-				TextureFactory::instance()->loadFromPack( PakTest, name );
+			const std::size_t textureIndex = mLoadedTextures.size();
+			mLoadedTextures.emplace_back();
+			mResLoad.add( [this, textureIndex, name = std::move( name )] {
+				mLoadedTextures[textureIndex] =
+					TextureFactory::instance()->loadFromPack( PakTest, name );
 			} );
 		}
 	}
@@ -1401,8 +1407,7 @@ void EETest::loadTextures() {
 			Tiles[i] = SG->getByName( String::toString( i + 1 ) );
 		}
 
-		Tiles[6] =
-			SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" )->getTextureId(), "7" );
+		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
 
 #ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
@@ -1431,7 +1436,7 @@ void EETest::loadTextures() {
 	PS[3].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
-	Texture* Tex = TNP[2];
+	Texture* Tex = TNP[2].get();
 
 	if ( NULL != Tex && Tex->lock() ) {
 		int w = (int)Tex->getWidth();
@@ -1464,7 +1469,7 @@ void EETest::loadTextures() {
 	CurMan->set( Cursor::SysHand );
 	CurMan->setGlobalCursor(
 		Cursor::Arrow,
-		CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
+		CurMan->add( CurMan->create( CursorP[0].get(), Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->set( Cursor::Arrow );
 
 	CL1.addFrame( TN[2] );
@@ -1522,7 +1527,13 @@ void EETest::screen1() {
 
 void EETest::screen2() {
 	if ( mResLoad.isLoaded() ) {
-		Texture* TexLoaded = TF->getByName( "1.jpg" );
+		TexturePtr TexLoaded;
+		for ( const TexturePtr& texture : mLoadedTextures ) {
+			if ( texture && texture->getName() == "1.jpg" ) {
+				TexLoaded = texture;
+				break;
+			}
+		}
 
 		if ( NULL != TexLoaded )
 			TexLoaded->draw( 0, 0 );

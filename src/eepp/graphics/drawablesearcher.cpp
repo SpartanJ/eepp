@@ -42,7 +42,7 @@ static Drawable* searchByNameInternal( const std::string& name ) {
 	}
 
 	if ( NULL == drawable ) {
-		drawable = TextureFactory::instance()->getByHash( id );
+		drawable = TextureFactory::instance()->getByHash( id ).get();
 	}
 
 	return drawable;
@@ -50,7 +50,8 @@ static Drawable* searchByNameInternal( const std::string& name ) {
 
 static Drawable* parseDataURI( const std::string& name ) {
 	auto hash = MD5::fromString( name ).toHexString();
-	Drawable* drawable = TextureFactory::instance()->getByName( hash );
+	TexturePtr texture = TextureFactory::instance()->getByName( hash );
+	Drawable* drawable = texture.get();
 	std::string::size_type formatAndEncSep;
 	if ( nullptr == drawable &&
 		 ( formatAndEncSep = name.find_first_of( ',' ) ) != std::string::npos ) {
@@ -72,7 +73,7 @@ static Drawable* parseDataURI( const std::string& name ) {
 			}
 		}
 
-		Texture* tex = nullptr;
+		TexturePtr tex;
 		if ( !format.empty() &&
 			 ( Image::isImageExtension( "." + format ) || format == "svg+xml" ) ) {
 			Image::FormatConfiguration format;
@@ -100,7 +101,7 @@ static Drawable* parseDataURI( const std::string& name ) {
 
 		if ( tex ) {
 			tex->setName( hash );
-			drawable = tex;
+			drawable = tex.get();
 		}
 	}
 	return drawable;
@@ -132,9 +133,9 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 				drawable =
 					TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
-				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
+				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) ).get();
 			} else if ( String::startsWith( name, "@texture/" ) ) {
-				drawable = TextureFactory::instance()->getByName( name.substr( 9 ) );
+				drawable = TextureFactory::instance()->getByName( name.substr( 9 ) ).get();
 			} else if ( String::startsWith( name, "@sprite/" ) && !searchedSprite ) {
 				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
@@ -156,17 +157,17 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 
 			FileSystem::filePathRemoveProcessPath( filePath );
 
-			drawable = TextureFactory::instance()->getByName( filePath );
+			drawable = TextureFactory::instance()->getByName( filePath ).get();
 
 			if ( NULL == drawable ) {
-				Texture* tex = TextureFactory::instance()->loadFromFile( filePath );
+				TexturePtr tex = TextureFactory::instance()->loadFromFile( filePath );
 
 				if ( tex )
-					drawable = tex;
+					drawable = tex.get();
 			}
 		} else if ( String::startsWith( name, "http://" ) ||
 					String::startsWith( name, "https://" ) ) {
-			Texture* texture = TextureFactory::instance()->getByName( name );
+			TexturePtr texture = TextureFactory::instance()->getByName( name );
 
 			if ( NULL == texture && Engine::instance()->isSharedGLContextEnabled() ) {
 				texture = TextureFactory::instance()->createEmptyTexture(
@@ -194,7 +195,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 					URI( name ), Seconds( 5 ), {}, headers );
 			}
 
-			drawable = texture;
+			drawable = texture.get();
 		} else if ( String::startsWith( name, "data:image/" ) ) {
 			drawable = parseDataURI( name );
 		} else {
@@ -212,7 +213,7 @@ Drawable* DrawableSearcher::searchById( const Uint32& id ) {
 	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
 	if ( NULL == drawable ) {
-		drawable = TextureFactory::instance()->getByHash( id );
+		drawable = TextureFactory::instance()->getByHash( id ).get();
 	}
 
 	if ( NULL == drawable && sPrintWarnings )

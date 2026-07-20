@@ -211,7 +211,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool createStatic( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
+	bool createStatic( TexturePtr tex, const Sizef& DestSize = Sizef( 0, 0 ),
 					   const Vector2i& offset = Vector2i( 0, 0 ),
 					   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -238,7 +238,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return The frame position or 0 if fails
 	 */
-	unsigned int addFrame( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
+	unsigned int addFrame( TexturePtr tex, const Sizef& DestSize = Sizef( 0, 0 ),
 						   const Vector2i& offset = Vector2i( 0, 0 ),
 						   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -269,7 +269,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool addSubFrame( Texture* tex, const unsigned int& NumFrame, const unsigned int& NumSubFrame,
+	bool addSubFrame( TexturePtr tex, const unsigned int& NumFrame, const unsigned int& NumSubFrame,
 					  const Sizef& DestSize = Sizef( 0, 0 ),
 					  const Vector2i& offset = Vector2i( 0, 0 ),
 					  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
@@ -395,10 +395,6 @@ class EE_API Sprite : public Drawable {
 
 	bool isTextureRegionOwner() const;
 
-	Sprite& setAsTextureOwner( bool set );
-
-	bool isTextureOwner() const;
-
   protected:
 	enum SpriteFlags {
 		SPRITE_FLAG_AUTO_ANIM = ( 1 << 0 ),
@@ -406,7 +402,6 @@ class EE_API Sprite : public Drawable {
 		SPRITE_FLAG_ANIM_PAUSED = ( 1 << 2 ),
 		SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP = ( 1 << 3 ),
 		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 ),
-		SPRITE_FLAG_TEXTURE_OWNER = ( 1 << 5 ),
 		SPRITE_FLAG_TEXTURE_REGION_OWNER = ( 1 << 6 ),
 	};
 

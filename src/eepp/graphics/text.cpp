@@ -356,7 +356,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	Sizef size{ 0, height };
 	size_t ssize = string.size();
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
-	Texture* fontTexture = font->getTexture( fontSize );
+	const TexturePtr& fontTexture = font->getTexture( fontSize );
 	Float tabAlign = 0;
 	GlyphDrawable* spaceGlyph = nullptr;
 	GlyphDrawable* tabGlyph = nullptr;
@@ -1763,7 +1763,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	if ( mColors.empty() )
 		return;
 
-	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
+	const TexturePtr& texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
 		return;
 	texture->bind();

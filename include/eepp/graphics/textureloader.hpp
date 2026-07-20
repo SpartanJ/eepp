@@ -89,9 +89,9 @@ class EE_API TextureLoader {
 	 * is done. */
 	void setColorKey( RGB Color );
 
-	/** @brief Releases the texture loaded ( if was already loaded ), it will destroy the texture
-	 * from memory. */
-	void unload();
+	/** Clears the loader state and releases its texture handle. Other texture owners remain valid.
+	 */
+	void reset();
 
 	/** @return The file path to the texture ( if any ) */
 	const std::string& getFilepath() const;
@@ -100,7 +100,7 @@ class EE_API TextureLoader {
 	ResourceId getId() const;
 
 	/** @return The texture instance ( if it was loaded ). */
-	Texture* getTexture() const;
+	const TexturePtr& getTexture() const;
 
 	Image::FormatConfiguration getFormatConfiguration() const;
 
@@ -112,7 +112,7 @@ class EE_API TextureLoader {
   protected:
 	Uint32 mLoadType{ 0 };	   // From memory, from path, from pack
 	Uint8* mPixels{ nullptr }; // Texture Info
-	Texture* mTexture{ nullptr };
+	TexturePtr mTexture;
 	Int32 mImgWidth{ 0 };
 	Int32 mImgHeight{ 0 };
 
@@ -132,8 +132,6 @@ class EE_API TextureLoader {
 
 	RGB* mColorKey{ nullptr };
 	Image::FormatConfiguration mFormatConfiguration;
-
-	void reset();
 
   private:
 	bool mLoaded{ false };

@@ -36,40 +36,40 @@ TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect, co
 								   destSize, offset, name ) );
 }
 
-TextureRegion* TextureRegion::New( Texture* tex, const std::string& name ) {
-	return eeNew( TextureRegion, ( tex, name ) );
+TextureRegion* TextureRegion::New( TexturePtr tex, const std::string& name ) {
+	return eeNew( TextureRegion, ( std::move( tex ), name ) );
 }
 
-TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const std::string& name ) {
-	return eeNew( TextureRegion, ( tex, srcRect, name ) );
+TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const std::string& name ) {
+	return eeNew( TextureRegion, ( std::move( tex ), srcRect, name ) );
 }
 
-TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& name ) {
-	return eeNew( TextureRegion, ( tex, srcRect, destSize, name ) );
+	return eeNew( TextureRegion, ( std::move( tex ), srcRect, destSize, name ) );
 }
 
-TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
 								   const Vector2i& offset, const std::string& name ) {
-	return eeNew( TextureRegion, ( tex, srcRect, destSize, offset, name ) );
+	return eeNew( TextureRegion, ( std::move( tex ), srcRect, destSize, offset, name ) );
 }
 
 TextureRegion::TextureRegion() :
 	DrawableResource( Drawable::TEXTUREREGION ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( NULL ),
+	mTexture(),
 	mSrcRect( Rect( 0, 0, 0, 0 ) ),
 	mOriDestSize( 0, 0 ),
 	mDestSize( 0, 0 ),
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( Texture* tex, const std::string& name ) :
+TextureRegion::TextureRegion( TexturePtr tex, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( tex ),
+	mTexture( std::move( tex ) ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0,
 					NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
 	mOriDestSize( PixelDensity::dpToPx( mSrcRect.getSize().asFloat() ) ),
@@ -77,11 +77,11 @@ TextureRegion::TextureRegion( Texture* tex, const std::string& name ) :
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const std::string& name ) :
+TextureRegion::TextureRegion( TexturePtr tex, const Rect& SrcRect, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( tex ),
+	mTexture( std::move( tex ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( PixelDensity::dpToPx( Sizef( (Float)( mSrcRect.Right - mSrcRect.Left ),
 											   (Float)( mSrcRect.Bottom - mSrcRect.Top ) ) ) ),
@@ -89,24 +89,24 @@ TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const std::stri
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion::TextureRegion( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 							  const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( tex ),
+	mTexture( std::move( tex ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
 	mDestSize( DestSize ),
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion::TextureRegion( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 							  const Vector2i& Offset, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( tex ),
+	mTexture( std::move( tex ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
 	mDestSize( DestSize ),
@@ -121,8 +121,8 @@ void TextureRegion::setTextureId( ResourceId textureId ) {
 	mTexture = TextureFactory::instance()->getTexture( textureId );
 }
 
-void TextureRegion::setTexture( Texture* texture ) {
-	mTexture = texture;
+void TextureRegion::setTexture( TexturePtr texture ) {
+	mTexture = std::move( texture );
 }
 
 const Rect& TextureRegion::getSrcRect() const {
@@ -199,7 +199,7 @@ void TextureRegion::draw( const Vector2f& position, const Sizef& size ) {
 	mDestSize = oldSize;
 }
 
-Graphics::Texture* TextureRegion::getTexture() {
+const TexturePtr& TextureRegion::getTexture() const {
 	return mTexture;
 }
 

@@ -432,7 +432,7 @@ const std::string& TextureLoader::getFilepath() const {
 	return mFilepath;
 }
 
-Texture* TextureLoader::getTexture() const {
+const TexturePtr& TextureLoader::getTexture() const {
 	return mTexture;
 }
 
@@ -445,17 +445,18 @@ void TextureLoader::setFormatConfiguration(
 	mFormatConfiguration = formatConfiguration;
 }
 
-void TextureLoader::unload() {
-	if ( mLoaded && mTexture != nullptr ) {
-		TextureFactory::instance()->remove( mTexture->getTextureId() );
-
-		reset();
-	}
-}
-
 void TextureLoader::reset() {
-	mPixels = nullptr;
-	mTexture = nullptr;
+	if ( mTexture ) {
+		if ( TextureFactory* factory = TextureFactory::existsSingleton() )
+			factory->releaseRetainedTexture( mTexture->getTextureId() );
+	}
+
+	if ( TEX_LT_PIXELS != mLoadType ) {
+		eeSAFE_FREE( mPixels );
+	} else {
+		mPixels = nullptr;
+	}
+	mTexture.reset();
 	mImgWidth = 0;
 	mImgHeight = 0;
 	mWidth = 0;

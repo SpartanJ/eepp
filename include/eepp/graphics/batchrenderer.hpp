@@ -43,6 +43,10 @@ class EE_API BatchRenderer {
 	void setTexture( const Texture* texture,
 					 Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized );
 
+	/** Retains the texture until the currently queued batch has been rendered. */
+	void setTexture( const TexturePtr& texture,
+					 Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized );
+
 	/** Set the predefined blending function to use on the batch */
 	void setBlendMode( const BlendMode& blend );
 
@@ -315,7 +319,10 @@ class EE_API BatchRenderer {
 	VertexData* mTVertex{ nullptr };
 	unsigned int mNumVertex{ 0 };
 
+	// Borrowed draw view. Handle-aware submissions retain mTextureOwner; Texture::draw() borrows
+	// under the contract that released textures are collected only after this batch is flushed.
 	const Texture* mTexture{ nullptr };
+	TexturePtr mTextureOwner;
 	BlendMode mBlend{ BlendMode::Alpha() };
 
 	Vector2f mTexCoord[4]{ Vector2f::Zero, Vector2f::Zero, Vector2f::Zero, Vector2f::Zero };

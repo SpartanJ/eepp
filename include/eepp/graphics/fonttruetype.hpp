@@ -77,7 +77,7 @@ class EE_API FontTrueType : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
 
@@ -201,11 +201,11 @@ class EE_API FontTrueType : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables; ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture{ nullptr }; ///< Texture containing the pixels of the glyphs
-		std::vector<Row> rows;		 ///< List containing the position of all the existing rows
-		Uint32 fontInternalId{ 0 };	 // The font internal id
-		unsigned int nextRow;		 ///< Y position of the next new row in the texture
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
+		std::vector<Row> rows;		///< List containing the position of all the existing rows
+		Uint32 fontInternalId{ 0 }; // The font internal id
+		unsigned int nextRow;		///< Y position of the next new row in the texture
 		const FontTrueType* font{ nullptr };
 	};
 

@@ -10,9 +10,9 @@ NinePatch* NinePatch::New( ResourceId textureId, int left, int top, int right, i
 							   right, bottom, pixelDensity, name ) );
 }
 
-NinePatch* NinePatch::New( Texture* tex, int left, int top, int right, int bottom,
+NinePatch* NinePatch::New( TexturePtr tex, int left, int top, int right, int bottom,
 						   const Float& pixelDensity, const std::string& name ) {
-	return eeNew( NinePatch, ( tex, left, top, right, bottom, pixelDensity, name ) );
+	return eeNew( NinePatch, ( std::move( tex ), left, top, right, bottom, pixelDensity, name ) );
 }
 
 NinePatch* NinePatch::New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
@@ -20,7 +20,7 @@ NinePatch* NinePatch::New( TextureRegion* textureRegion, int left, int top, int 
 	return eeNew( NinePatch, ( textureRegion, left, top, right, bottom, name ) );
 }
 
-NinePatch::NinePatch( Texture* tex, int left, int top, int right, int bottom,
+NinePatch::NinePatch( TexturePtr tex, int left, int top, int right, int bottom,
 					  const Float& pixelDensity, const std::string& name ) :
 	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
@@ -43,16 +43,14 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 	for ( Int32 i = 0; i < SideCount; i++ )
 		mDrawable[i] = NULL;
 
-	Texture* tex;
-
-	if ( NULL != textureRegion && ( tex = textureRegion->getTexture() ) != NULL ) {
+	if ( NULL != textureRegion && textureRegion->getTexture() != NULL ) {
 		mPixelDensity = textureRegion->getPixelDensity();
 
 		Rectf r( textureRegion->getSrcRect().asFloat() );
 
 		mSize = r.getSize();
 
-		createFromTexture( tex, left, top, right, bottom );
+		createFromTexture( textureRegion->getTexture(), left, top, right, bottom );
 
 		for ( int i = 0; i < SideCount; i++ ) {
 			TextureRegion* side = static_cast<TextureRegion*>( mDrawable[i] );
@@ -121,7 +119,8 @@ TextureRegion* NinePatch::getTextureRegion( const int& side ) {
 	return NULL;
 }
 
-void NinePatch::createFromTexture( Texture* tex, int left, int top, int right, int bottom ) {
+void NinePatch::createFromTexture( const TexturePtr& tex, int left, int top, int right,
+								   int bottom ) {
 	Rect r;
 	r = Rect( 0, top, left, mSize.getHeight() - bottom );
 	mDrawable[Left] = TextureRegion::New( tex, r, r.getSize().asFloat() );

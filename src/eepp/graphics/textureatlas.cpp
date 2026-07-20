@@ -56,33 +56,33 @@ TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect, con
 	return add( TextureRegion::New( textureId, SrcRect, DestSize, Offset, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const std::string& Name ) {
-	return add( TextureRegion::New( tex, Name ) );
+TextureRegion* TextureAtlas::add( TexturePtr tex, const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, Name ) );
+TextureRegion* TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), SrcRect, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion* TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 								  const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, DestSize, Name ) );
+	return add( TextureRegion::New( std::move( tex ), SrcRect, DestSize, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion* TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 								  const Vector2i& Offset, const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, DestSize, Offset, Name ) );
+	return add( TextureRegion::New( std::move( tex ), SrcRect, DestSize, Offset, Name ) );
 }
 
 Uint32 TextureAtlas::getCount() {
 	return ResourceManager<TextureRegion>::getCount();
 }
 
-void TextureAtlas::setTextures( std::vector<Texture*> textures ) {
-	mTextures = textures;
+void TextureAtlas::setTextures( std::vector<TexturePtr> textures ) {
+	mTextures = std::move( textures );
 }
 
-Texture* TextureAtlas::getTexture( const Uint32& texnum ) const {
+const TexturePtr& TextureAtlas::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTextures.size() );
 	return mTextures[texnum];
 }

@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/texture.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
@@ -60,6 +61,8 @@ class EE_API UINodeDrawable : public Drawable {
 		const std::string& getDrawableRef() const;
 
 		void setDrawable( Drawable* drawable, const bool& ownIt );
+
+		void setDrawable( TexturePtr texture );
 
 		void setDrawable( const std::string& drawableRef );
 
@@ -131,6 +134,7 @@ class EE_API UINodeDrawable : public Drawable {
 		bool mOwnsDrawable{ false };
 		bool mColorWasSet{ false };
 		Drawable* mDrawable;
+		TexturePtr mTexture;
 		std::string mDrawableRef;
 		Uint32 mResourceChangeCbId;
 		RepeatX mRepeatX{ RepeatX::NoRepeat };

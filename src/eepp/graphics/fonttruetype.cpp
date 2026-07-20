@@ -1135,7 +1135,7 @@ Float FontTrueType::getUnderlineThickness( unsigned int characterSize ) const {
 	}
 }
 
-Texture* FontTrueType::getTexture( unsigned int characterSize ) const {
+const TexturePtr& FontTrueType::getTexture( unsigned int characterSize ) const {
 	return getPage( characterSize ).texture;
 }
 
@@ -1621,7 +1621,7 @@ Rect FontTrueType::findGlyphRect( Page& page, unsigned int width, unsigned int h
 				// Make the texture 2 times bigger
 				Image newImage;
 				newImage.create( textureWidth * 2, textureHeight * 2, 4 );
-				newImage.copyImage( page.texture );
+				newImage.copyImage( page.texture.get() );
 
 				page.texture->replace( &newImage );
 			} else {
@@ -1958,7 +1958,7 @@ bool FontTrueType::hasColrGlyphs() const {
 
 FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName,
 						  const FontTrueType* font ) :
-	texture( NULL ), fontInternalId( fontInternalId ), nextRow( 3 ), font( font ) {
+	texture(), fontInternalId( fontInternalId ), nextRow( 3 ), font( font ) {
 	// Make sure that the texture is initialized by default
 	Image image;
 	image.create( 128, 128, 4 );
@@ -1979,9 +1979,6 @@ FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageNa
 FontTrueType::Page::~Page() {
 	for ( auto drawable : drawables )
 		eeDelete( drawable.second );
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 void FontTrueType::clearCache() {

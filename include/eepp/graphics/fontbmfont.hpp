@@ -37,7 +37,7 @@ class EE_API FontBMFont : public Font {
 	const Font::Info& getInfo() const;
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness = 0 ) const;
+					Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,
@@ -54,7 +54,7 @@ class EE_API FontBMFont : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
 
@@ -71,8 +71,8 @@ class EE_API FontBMFont : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture; ///< Texture containing the pixels of the glyphs
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

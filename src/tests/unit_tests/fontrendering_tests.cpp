@@ -1110,7 +1110,7 @@ UTEST( FontRendering, TextLayoutWrap ) {
 		FontTrueType* font =
 			static_cast<FontTrueType*>( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		auto fontSize = 16;
-		Texture* fontTexture = font->getTexture( fontSize );
+		const TexturePtr& fontTexture = font->getTexture( fontSize );
 		BR->setBlendMode( BlendMode::Alpha() );
 		BR->quadsBegin();
 		BR->setTexture( fontTexture, fontTexture->getCoordinateType() );

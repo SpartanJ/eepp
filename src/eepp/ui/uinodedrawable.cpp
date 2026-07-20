@@ -632,6 +632,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 			eeSAFE_DELETE( mDrawable );
 		}
 	}
+	mTexture.reset();
 
 	mDrawable = drawable;
 	mDrawableRef = "";
@@ -651,6 +652,12 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 						}
 					} );
 	}
+}
+
+void UINodeDrawable::LayerDrawable::setDrawable( TexturePtr texture ) {
+	Texture* drawable = texture.get();
+	setDrawable( drawable, false );
+	mTexture = std::move( texture );
 }
 
 void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef ) {
@@ -705,10 +712,10 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 		return true;
 
 	std::string url = uri.toString();
-	if ( Texture* texture = TextureFactory::instance()->getByName( url ) ) {
-		if ( mDrawable != texture ) {
+	if ( TexturePtr texture = TextureFactory::instance()->getByName( url ) ) {
+		if ( mDrawable != texture.get() ) {
 			++mRemoteDrawableLoadId;
-			setDrawable( texture, false );
+			setDrawable( std::move( texture ) );
 		}
 		return true;
 	}
@@ -718,10 +725,10 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	Uint64 loadId = ++mRemoteDrawableLoadId;
 	auto alive = mAsyncDrawableAlive;
-	Texture* texture = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
 	if ( texture )
-		setDrawable( texture, false );
+		setDrawable( texture );
 
 	Http::Request::FieldTable headers;
 	if ( !scene->getReferer().empty() )
@@ -740,7 +747,7 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 					[alive, loadId, texture, imageData = std::move( imageData ),
 					 this]( UISceneNode* ) mutable {
 						if ( !alive || !alive->load( std::memory_order_acquire ) ||
-							 loadId != mRemoteDrawableLoadId || mDrawable != texture )
+							 loadId != mRemoteDrawableLoadId || mDrawable != texture.get() )
 							return;
 
 						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),

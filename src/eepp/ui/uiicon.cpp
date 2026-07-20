@@ -77,7 +77,7 @@ UISVGIcon::~UISVGIcon() {}
 Drawable* UISVGIcon::getSize( const int& size ) const {
 	auto it = mSVGs.find( size );
 	if ( it != mSVGs.end() )
-		return it->second;
+		return it->second.get();
 
 	Image::FormatConfiguration format;
 	if ( mOriSize == Sizei::Zero ) {
@@ -91,12 +91,12 @@ Drawable* UISVGIcon::getSize( const int& size ) const {
 		}
 	}
 	format.svgScale( size / (Float)eemax( mOriSize.x, mOriSize.y ) );
-	Texture* texture = TextureFactory::instance()->loadFromMemory(
+	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
 		(const unsigned char*)&mSVGXml[0], mSVGXml.size(), false, Texture::ClampMode::ClampToEdge,
 		false, false, format );
 
 	mSVGs[size] = texture;
-	return texture;
+	return texture.get();
 }
 
 UISVGIcon::UISVGIcon( const std::string& name, const std::string& svgXML ) :

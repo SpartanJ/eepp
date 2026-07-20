@@ -53,14 +53,24 @@ void BatchRenderer::discard() {
 	mNumVertex = 0;
 	mTVertex = nullptr;
 	mTexture = nullptr;
+	mTextureOwner.reset();
 }
 
 void BatchRenderer::setTexture( const Texture* texture, Texture::CoordinateType coordinateType ) {
-	if ( mTexture != texture || mCoordinateType != coordinateType )
+	if ( mTexture != texture || mCoordinateType != coordinateType ) {
 		flush();
+		mTextureOwner.reset();
+	}
 
 	mTexture = texture;
 	mCoordinateType = coordinateType;
+}
+
+void BatchRenderer::setTexture( const TexturePtr& texture,
+								Texture::CoordinateType coordinateType ) {
+	setTexture( texture.get(), coordinateType );
+	if ( mTextureOwner != texture )
+		mTextureOwner = texture;
 }
 
 void BatchRenderer::setBlendMode( const BlendMode& blend ) {
@@ -94,8 +104,10 @@ void BatchRenderer::setDrawMode( const PrimitiveType& Mode, const bool& Force ) 
 }
 
 void BatchRenderer::flush() {
-	if ( mNumVertex == 0 )
+	if ( mNumVertex == 0 ) {
+		mTextureOwner.reset();
 		return;
+	}
 
 	if ( GlobalBatchRenderer::instance() != this )
 		GlobalBatchRenderer::instance()->draw();
@@ -163,6 +175,8 @@ void BatchRenderer::flush() {
 		GLi->enable( GL_TEXTURE_2D );
 		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
+
+	mTextureOwner.reset();
 }
 
 void BatchRenderer::batchQuad( const Float& x, const Float& y, const Float& width,

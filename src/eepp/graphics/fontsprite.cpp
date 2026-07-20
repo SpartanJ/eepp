@@ -136,7 +136,7 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	img.createMaskFromColor( Color::Fuchsia, 0 );
 
-	Texture* texture = TextureFactory::instance()->loadFromPixels(
+	TexturePtr texture = TextureFactory::instance()->loadFromPixels(
 		img.getPixelsPtr(), img.getWidth(), img.getHeight(), img.getChannels() );
 	mPages[mFontSize].texture = texture;
 	if ( NULL != texture ) {
@@ -232,7 +232,7 @@ Float FontSprite::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontSprite::getTexture( unsigned int ) const {
+const TexturePtr& FontSprite::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
@@ -252,9 +252,6 @@ FontSprite& FontSprite::operator=( const FontSprite& right ) {
 FontSprite::Page::~Page() {
 	for ( auto drawable : drawables )
 		eeDelete( drawable.second );
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

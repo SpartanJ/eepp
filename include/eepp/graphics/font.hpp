@@ -156,7 +156,7 @@ class EE_API Font {
 
 	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
 
-	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+	virtual const TexturePtr& getTexture( unsigned int characterSize ) const = 0;
 
 	virtual Uint32 getFontStyle() const;
 

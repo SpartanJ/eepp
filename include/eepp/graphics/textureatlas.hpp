@@ -63,14 +63,14 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	 *	@param tex The texture
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( Texture* tex, const std::string& Name = "" );
+	TextureRegion* add( TexturePtr tex, const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
 	 *	@param tex The texture
 	 *	@param SrcRect The texture part that will be used as the TextureRegion.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( Texture* tex, const Rect& SrcRect, const std::string& Name = "" );
+	TextureRegion* add( TexturePtr tex, const Rect& SrcRect, const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
 	 *	@param tex The texture
@@ -78,7 +78,7 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	 *	@param DestSize The destination size that the TextureRegion will have when rendered.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+	TextureRegion* add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 						const std::string& Name = "" );
 
 	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
@@ -89,7 +89,7 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	 *used.
 	 *	@param Name The texture name ( if any )
 	 */
-	TextureRegion* add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+	TextureRegion* add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
 						const Vector2i& Offset, const std::string& Name = "" );
 
 	/** @return The texture atlas name. */
@@ -119,7 +119,7 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	 * linked to a texture. \n The Global Texture Atlas for example doesn't have any texture linked
 	 * to it.
 	 */
-	Texture* getTexture( const Uint32& texnum = 0 ) const;
+	const TexturePtr& getTexture( const Uint32& texnum = 0 ) const;
 
 	/** @return The number of textures linked to the texture atlas. */
 	Uint32 getTexturesCount();
@@ -130,9 +130,9 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	std::string mName;
 	String::HashType mId;
 	std::string mPath;
-	std::vector<Texture*> mTextures;
+	std::vector<TexturePtr> mTextures;
 
-	void setTextures( std::vector<Texture*> textures );
+	void setTextures( std::vector<TexturePtr> textures );
 };
 
 }} // namespace EE::Graphics

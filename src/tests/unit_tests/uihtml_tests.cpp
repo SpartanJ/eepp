@@ -3822,7 +3822,7 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	UISceneNode* sceneNode = init_test_inline_block();
 	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-background.png";
-	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
 
@@ -3842,9 +3842,10 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 	ASSERT_TRUE( second->getBackground() != nullptr );
 	ASSERT_TRUE( first->getBackground()->getLayer( 0 ) != nullptr );
 	ASSERT_TRUE( second->getBackground()->getLayer( 0 ) != nullptr );
-	EXPECT_EQ( cached, first->getBackground()->getLayer( 0 )->getDrawable() );
-	EXPECT_EQ( cached, second->getBackground()->getLayer( 0 )->getDrawable() );
+	EXPECT_EQ( cached.get(), first->getBackground()->getLayer( 0 )->getDrawable() );
+	EXPECT_EQ( cached.get(), second->getBackground()->getLayer( 0 )->getDrawable() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 
@@ -5012,7 +5013,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	auto* img = images[0]->asType<UIHTMLImage>();
 	ASSERT_TRUE( img != nullptr );
 
-	Texture* texture =
+	TexturePtr texture =
 		TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent );
 	ASSERT_TRUE( texture != nullptr );
 	img->setDrawable( texture );
@@ -5031,6 +5032,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	EXPECT_GT( body->getPixelsSize().getHeight(), bodyInitialHeight + 150.f );
 	EXPECT_GT( doc->getPixelsSize().getHeight(), docInitialHeight + 150.f );
 
+	texture.reset();
 	Engine::destroySingleton();
 }
 
@@ -5155,7 +5157,7 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-image.png";
 
 	UISceneNode* sceneNode = init_test_inline_block();
-	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
 
@@ -5182,9 +5184,10 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	auto* second = secondNode->asType<UIHTMLImage>();
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
-	EXPECT_EQ( cached, first->getDrawable() );
-	EXPECT_EQ( cached, second->getDrawable() );
+	EXPECT_EQ( cached.get(), first->getDrawable() );
+	EXPECT_EQ( cached.get(), second->getDrawable() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 

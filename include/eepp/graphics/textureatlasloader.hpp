@@ -146,7 +146,7 @@ class EE_API TextureAtlasLoader {
 	 * 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so
 	 * the texture index is 0.
 	 */
-	Texture* getTexture( const Uint32& texnum = 0 ) const;
+	const TexturePtr& getTexture( const Uint32& texnum = 0 ) const;
 
 	/** @return The number of textures linked to the texture atlas. */
 	Uint32 getTexturesLoadedCount();
@@ -170,11 +170,12 @@ class EE_API TextureAtlasLoader {
 	std::atomic<bool> mIsLoading;
 	TextureAtlas* mTextureAtlas;
 	GLLoadCallback mLoadCallback;
-	std::vector<Texture*> mTexturesLoaded;
+	std::vector<TexturePtr> mTexturesLoaded;
 
 	struct sTempTexAtlas {
 		sTextureHdr Texture;
 		std::vector<sTextureRegionHdr> TextureRegions;
+		TexturePtr LoadedTexture;
 	};
 
 	sTextureAtlasHdr mTexGrHdr;

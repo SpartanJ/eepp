@@ -28,6 +28,8 @@ class EE_API UIImage : public UIWidget {
 
 	UIImage* setDrawable( Drawable* drawable, bool ownIt = false );
 
+	UIImage* setDrawable( TexturePtr texture );
+
 	const Color& getColor() const;
 
 	UIImage* setColor( const Color& col );
@@ -54,6 +56,7 @@ class EE_API UIImage : public UIWidget {
   protected:
 	UIScaleType mScaleType;
 	Drawable* mDrawable;
+	TexturePtr mTexture;
 	Color mColor;
 	Vector2f mAlignOffset;
 	Vector2f mDestSize;

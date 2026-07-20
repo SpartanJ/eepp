@@ -50,7 +50,7 @@ class EETest : private Thread {
 	Uint32 lasttick;
 
 	std::vector<ResourceId> TN;
-	std::vector<Texture*> TNP;
+	std::vector<TexturePtr> TNP;
 
 	std::vector<TextureRegion*> Tiles;
 	std::vector<ParticleSystem> PS;
@@ -97,7 +97,7 @@ class EETest : private Thread {
 	Interpolation2d WP;
 	Int32 PartsNum;
 	ResourceId Cursor[1];
-	Texture* CursorP[1];
+	TexturePtr CursorP[1];
 	std::string mInfo;
 
 	bool MultiViewportMode;
@@ -123,6 +123,7 @@ class EETest : private Thread {
 	String mBuddha;
 
 	ResourceLoader mResLoad;
+	std::vector<TexturePtr> mLoadedTextures;
 	void onTextureLoaded( ResourceLoader* ObjLoaded );
 
 	void createUI();

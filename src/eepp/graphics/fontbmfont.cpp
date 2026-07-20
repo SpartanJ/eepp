@@ -113,13 +113,13 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 					}
 				}
 
-				Texture* tex = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
-												   rgbaImg.getHeight(), rgbaImg.getChannels() );
+				TexturePtr tex = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
+													 rgbaImg.getHeight(), rgbaImg.getChannels() );
 
 				mPages[mFontSize].texture = tex;
 			} else {
-				Texture* tex = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
-												   img.getHeight(), img.getChannels() );
+				TexturePtr tex = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
+													 img.getHeight(), img.getChannels() );
 				mPages[mFontSize].texture = tex;
 			}
 
@@ -254,7 +254,7 @@ Float FontBMFont::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontBMFont::getTexture( unsigned int ) const {
+const TexturePtr& FontBMFont::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
@@ -274,9 +274,6 @@ FontBMFont& FontBMFont::operator=( const FontBMFont& right ) {
 FontBMFont::Page::~Page() {
 	for ( auto drawable : drawables )
 		eeDelete( drawable.second );
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

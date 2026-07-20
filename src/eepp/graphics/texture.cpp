@@ -919,7 +919,7 @@ void Texture::draw( const Vector2f& position, const Sizef& size ) {
 			  size.y );
 }
 
-std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
+std::pair<std::vector<TexturePtr>, int> Texture::loadGif( IOStream& stream ) {
 	stbi_io_callbacks callbacks;
 	callbacks.read = &IOCb::read;
 	callbacks.skip = &IOCb::skip;
@@ -929,7 +929,7 @@ std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
 	if ( type != STBI_gif )
 		return {};
 	stream.seek( 0 );
-	std::vector<Texture*> gif;
+	std::vector<TexturePtr> gif;
 	ScopedBuffer buf( stream.getSize() );
 	stream.read( (char*)buf.get(), buf.size() );
 	int width, height, frames, comp;

@@ -38,11 +38,11 @@ std::string getTextureCacheName( const Network::URI& uri ) {
 	return filePath;
 }
 
-Texture* loadFileTextureCached( const std::string& filePath, const std::string& cacheName ) {
+TexturePtr loadFileTextureCached( const std::string& filePath, const std::string& cacheName ) {
 	static std::mutex loadMutex;
 	std::lock_guard<std::mutex> lock( loadMutex );
 
-	if ( Texture* texture = TextureFactory::instance()->getByName( cacheName ) )
+	if ( TexturePtr texture = TextureFactory::instance()->getByName( cacheName ) )
 		return texture;
 
 	return TextureFactory::instance()->loadFromFile(
@@ -133,6 +133,13 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 	invalidateDraw();
 
+	return this;
+}
+
+UIImage* UIImage::setDrawable( TexturePtr texture ) {
+	Texture* drawable = texture.get();
+	setDrawable( drawable, false );
+	mTexture = std::move( texture );
 	return this;
 }
 
@@ -318,6 +325,8 @@ void UIImage::safeDeleteDrawable() {
 
 		mDrawableOwner = false;
 	}
+
+	mTexture.reset();
 }
 
 void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* ) {
@@ -344,8 +353,8 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 	Uint64 loadId = ++mRemoteImageLoadId;
 	std::string filePath = uri.getFSPath();
 	std::string cacheName = getTextureCacheName( uri );
-	if ( Texture* texture = TextureFactory::instance()->getByName( cacheName ) ) {
-		setDrawable( texture, false );
+	if ( TexturePtr texture = TextureFactory::instance()->getByName( cacheName ) ) {
+		setDrawable( std::move( texture ) );
 		return true;
 	}
 
@@ -361,7 +370,7 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 			 !alive || !alive->load( std::memory_order_acquire ) )
 			return;
 
-		Texture* texture = loadFileTextureCached( filePath, cacheName );
+		TexturePtr texture = loadFileTextureCached( filePath, cacheName );
 		if ( texture == nullptr )
 			return;
 
@@ -371,7 +380,7 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 					 loadId != mRemoteImageLoadId )
 					return;
 
-				setDrawable( texture, false );
+				setDrawable( std::move( texture ) );
 			} );
 	} );
 
@@ -384,10 +393,10 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 		return;
 
 	std::string url = uri.toString();
-	if ( Texture* texture = TextureFactory::instance()->getByName( url ) ) {
-		if ( mDrawable != texture ) {
+	if ( TexturePtr texture = TextureFactory::instance()->getByName( url ) ) {
+		if ( mDrawable != texture.get() ) {
 			++mRemoteImageLoadId;
-			setDrawable( texture, false );
+			setDrawable( std::move( texture ) );
 		}
 		return;
 	}
@@ -397,10 +406,10 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	Uint64 loadId = ++mRemoteImageLoadId;
 	auto alive = mAsyncImageAlive;
-	Texture* texture = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
 	if ( texture )
-		setDrawable( texture, false );
+		setDrawable( texture );
 
 	Http::Request::FieldTable headers;
 	if ( !scene->getReferer().empty() )
@@ -419,7 +428,7 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 					[alive, loadId, texture, imageData = std::move( imageData ),
 					 this]( UISceneNode* ) mutable {
 						if ( !alive || !alive->load( std::memory_order_acquire ) ||
-							 loadId != mRemoteImageLoadId || mDrawable != texture )
+							 loadId != mRemoteImageLoadId || mDrawable != texture.get() )
 							return;
 
 						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),

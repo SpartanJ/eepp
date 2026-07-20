@@ -167,7 +167,6 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 								  : TextureFactory::instance()->loadFromFile( path );
 			Sprite* sprite = Sprite::New();
 			sprite->createStatic( tex );
-			sprite->setAsTextureOwner( true );
 			sprite->setAsTextureRegionOwner( true );
 			image = sprite;
 		} else {
@@ -175,7 +174,6 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 								   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
 								   : (IOStream*)new IOStreamFile( path );
 			Sprite* sprite = Sprite::fromGif( *stream );
-			sprite->setAsTextureOwner( true );
 			sprite->setAsTextureRegionOwner( true );
 			sprite->setAutoAnimate( false );
 			image = sprite;

@@ -163,11 +163,11 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 
 	} else {
 		if ( NULL == mTexture ) {
-			Texture* tex = TextureFactory::instance()->createEmptyTexture( Width, Height, channels,
-																		   Color::Transparent );
+			TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
+				Width, Height, channels, Color::Transparent );
 
-			if ( tex ) {
-				mTexture = tex;
+			if ( texture ) {
+				mTexture = std::move( texture );
 			} else {
 				Log::error( "FrameBufferFBO::create: failed to create texture" );
 				return false;

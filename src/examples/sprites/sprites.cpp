@@ -101,8 +101,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		// Load the rock texture
-		Texture* PlanetTex = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
-		Texture* RockTex = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
+		TexturePtr PlanetTex = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
+		TexturePtr RockTex = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the TextureRegions needed to load
 		// an animated sprite

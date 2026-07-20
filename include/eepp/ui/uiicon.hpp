@@ -59,7 +59,7 @@ class EE_API UISVGIcon : public UIIcon {
 	UISVGIcon( const std::string& name, const std::string& svgXML );
 
 	std::string mSVGXml;
-	mutable UnorderedMap<int, Texture*> mSVGs;
+	mutable UnorderedMap<int, TexturePtr> mSVGs;
 	mutable Sizei mOriSize;
 	mutable int mOriChannels{ 0 };
 };

@@ -98,15 +98,14 @@ void UISvg::scheduleRasterize() {
 }
 
 void UISvg::rasterizeSvg( const std::string& svgXml ) {
-	Texture* texture = TextureFactory::instance()->loadFromMemory(
+	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
 		(const unsigned char*)svgXml.data(), svgXml.size() );
 
 	if ( !texture )
 		return;
 
 	Sprite* sprite = Sprite::New();
-	sprite->createStatic( texture );
-	sprite->setAsTextureOwner( true );
+	sprite->createStatic( std::move( texture ) );
 	sprite->setAsTextureRegionOwner( true );
 
 	auto spriteTransfer = std::make_shared<PendingSpriteTransfer>( sprite );

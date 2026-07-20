@@ -32,7 +32,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
 	mHasColorBuffer( false ),
 	mHasDepthBuffer( false ),
 	mHasStencilBuffer( false ),
-	mTexture( NULL ),
+	mTexture(),
 	mClearColor( 0, 0, 0, 0 ) {
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -42,13 +42,10 @@ FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
 }
 
 FrameBuffer::~FrameBuffer() {
-	if ( mTexture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( mTexture );
-
 	FrameBufferManager::instance()->remove( this );
 }
 
-Texture* FrameBuffer::getTexture() const {
+const TexturePtr& FrameBuffer::getTexture() const {
 	return mTexture;
 }
 

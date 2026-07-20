@@ -78,6 +78,7 @@ class EE_API Cursor {
 	Vector2i mHotSpot;
 	EE::Window::Window* mWindow;
 
+	// The texture pixels are copied synchronously; Cursor does not retain this borrow.
 	Cursor( Texture* tex, const Vector2i& hotspot, const std::string& getName,
 			EE::Window::Window* window );
 

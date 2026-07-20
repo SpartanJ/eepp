@@ -62,7 +62,7 @@ class EE_API FrameBuffer {
 	** The frame buffer must be unbinded before any rendering is done outside the frame buffer.
 	** For example MyFrameBufferPtr->getTexture()->Draw(0,0);
 	*/
-	Texture* getTexture() const;
+	const TexturePtr& getTexture() const;
 
 	/** @brief Sets the frame buffer clear color. */
 	void setClearColor( const ColorAf& color );
@@ -123,7 +123,7 @@ class EE_API FrameBuffer {
 	bool mHasStencilBuffer{ false };
 	bool mAdjustCurrentClipping{ true };
 	bool mNeedsToRestoreScissorsClipping{ false };
-	Texture* mTexture{ nullptr };
+	TexturePtr mTexture;
 	ColorAf mClearColor;
 	View mView;
 	float mProjMat[16];
