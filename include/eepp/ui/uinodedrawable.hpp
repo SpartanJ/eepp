@@ -39,6 +39,8 @@ class EE_API UINodeDrawable : public Drawable {
 		static LayerDrawable* New( UINodeDrawable* container );
 
 		LayerDrawable( UINodeDrawable* container );
+		LayerDrawable( const LayerDrawable& ) = delete;
+		LayerDrawable& operator=( const LayerDrawable& ) = delete;
 
 		virtual ~LayerDrawable();
 
@@ -160,6 +162,8 @@ class EE_API UINodeDrawable : public Drawable {
 	static UINodeDrawable* New( UINode* owner );
 
 	UINodeDrawable( UINode* owner );
+	UINodeDrawable( const UINodeDrawable& ) = delete;
+	UINodeDrawable& operator=( const UINodeDrawable& ) = delete;
 
 	virtual ~UINodeDrawable();
 
