@@ -4,18 +4,25 @@
 
 namespace EE { namespace UI {
 
-UIScrollView* UIScrollView::New() {
-	return eeNew( UIScrollView, () );
+static void setScrollViewPixelsPosition( Node* node, const Float& x, const Float& y ) {
+	if ( node->isUINode() )
+		node->asType<UINode>()->setPixelsPosition( x, y );
+	else
+		node->setPosition( x, y );
 }
 
-UIScrollView::UIScrollView() :
-	UITouchDraggableWidget( "scrollview" ),
+UIScrollView* UIScrollView::New() {
+	return eeNew( UIScrollView, ( "scrollview" ) );
+}
+
+UIScrollView::UIScrollView( const std::string& tag ) :
+	UITouchDraggableWidget( tag ),
 	mViewType( ScrollViewType::Outside ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mHScroll( UIScrollBar::NewHorizontal() ),
-	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
+	mContainer( UIWidget::NewWithTag( tag + "::container" ) ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
@@ -36,6 +43,8 @@ UIScrollView::UIScrollView() :
 	applyDefaultTheme();
 	listenParent();
 }
+
+UIScrollView::UIScrollView() : UIScrollView( "scrollview" ) {}
 
 UIScrollView::~UIScrollView() {
 	clearListeners();
@@ -243,7 +252,6 @@ void UIScrollView::containerUpdate() {
 
 	mContainer->setPosition( mPadding.Left, mPadding.Top );
 
-	// TODO: Fix layouting to avoid needing this hack.
 	if ( size != mContainer->getSize() )
 		runOnMainThread( [this, size]() { mContainer->setSize( size ); } );
 
@@ -258,17 +266,17 @@ void UIScrollView::containerUpdate() {
 						   ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ),
 					   mHScroll->getSize().getHeight() );
 
-	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() ) {
-		mVScroll->setPageStep( mContainer->getSize().getHeight() /
-							   mScrollView->getSize().getHeight() );
+	if ( mVScroll->isVisible() && 0 != mScrollView->getPixelsSize().getHeight() ) {
+		mVScroll->setPageStep( mContainer->getPixelsSize().getHeight() /
+							   mScrollView->getPixelsSize().getHeight() );
 
 		if ( mAutoSetClipStep )
 			mVScroll->setClickStep( mVScroll->getPageStep() / 4.f );
 	}
 
-	if ( mHScroll->isVisible() && 0 != mScrollView->getSize().getWidth() ) {
-		mHScroll->setPageStep( mContainer->getSize().getWidth() /
-							   mScrollView->getSize().getWidth() );
+	if ( mHScroll->isVisible() && 0 != mScrollView->getPixelsSize().getWidth() ) {
+		mHScroll->setPageStep( mContainer->getPixelsSize().getWidth() /
+							   mScrollView->getPixelsSize().getWidth() );
 	}
 
 	updateScroll();
@@ -278,16 +286,17 @@ void UIScrollView::updateScroll() {
 	if ( NULL == mScrollView )
 		return;
 
-	mScrollView->setPosition(
+	setScrollViewPixelsPosition(
+		mScrollView,
 		mHScroll->isVisible()
 			? -static_cast<int>( mHScroll->getSlider()->getValue() *
-								 eemax( 0.f, mScrollView->getSize().getWidth() -
-												 mContainer->getSize().getWidth() ) )
+								 eemax( 0.f, mScrollView->getPixelsSize().getWidth() -
+												 mContainer->getPixelsSize().getWidth() ) )
 			: 0.f,
 		mVScroll->isVisible()
 			? -static_cast<int>( mVScroll->getSlider()->getValue() *
-								 eemax( 0.f, mScrollView->getSize().getHeight() -
-												 mContainer->getSize().getHeight() ) )
+								 eemax( 0.f, mScrollView->getPixelsSize().getHeight() -
+												 mContainer->getPixelsSize().getHeight() ) )
 			: 0.f );
 }
 
@@ -297,9 +306,9 @@ void UIScrollView::onValueChangeCb( const Event* ) {
 
 void UIScrollView::onScrollViewSizeChange( const Event* ) {
 	Float lastScrollWidth =
-		eemax( 0.f, mLastScrollViewSize.getWidth() - mContainer->getSize().getWidth() );
+		eemax( 0.f, mLastScrollViewSize.getWidth() - mContainer->getPixelsSize().getWidth() );
 	Float lastScrollHeight =
-		eemax( 0.f, mLastScrollViewSize.getHeight() - mContainer->getSize().getHeight() );
+		eemax( 0.f, mLastScrollViewSize.getHeight() - mContainer->getPixelsSize().getHeight() );
 	Float lastScrollX = mHScroll->getValue() * lastScrollWidth;
 	Float lastScrollY = mVScroll->getValue() * lastScrollHeight;
 
@@ -307,12 +316,12 @@ void UIScrollView::onScrollViewSizeChange( const Event* ) {
 
 	if ( mAnchorScroll ) {
 		Float scrollHeight = eemax( 0.f, mScrollView->getPixelsSize().getHeight() -
-											 mContainer->getSize().getHeight() );
+											 mContainer->getPixelsSize().getHeight() );
 		Float valY = lastScrollY / scrollHeight;
 		mVScroll->setValue( valY );
 
 		Float scrollWidth = eemax( 0.f, mScrollView->getPixelsSize().getWidth() -
-											mContainer->getSize().getWidth() );
+											mContainer->getPixelsSize().getWidth() );
 		Float valX = lastScrollX / scrollWidth;
 		mHScroll->setValue( valX );
 	}
@@ -328,13 +337,13 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 	if ( NULL == mScrollView )
 		return;
 
-	if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() )
+	if ( mVScroll->isEnabled() && 0 != mScrollView->getPixelsSize().getHeight() )
 		mVScroll->setValue( mVScroll->getValue() +
-							( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
+							( -diff.y / (Float)( mScrollView->getPixelsSize().getHeight() ) ) );
 
-	if ( mHScroll->isEnabled() && 0 != mScrollView->getSize().getWidth() )
+	if ( mHScroll->isEnabled() && 0 != mScrollView->getPixelsSize().getWidth() )
 		mHScroll->setValue( mHScroll->getValue() +
-							( -diff.x / (Float)( mScrollView->getSize().getWidth() ) ) );
+							( -diff.x / (Float)( mScrollView->getPixelsSize().getWidth() ) ) );
 }
 
 bool UIScrollView::isTouchOverAllowedChildren() {

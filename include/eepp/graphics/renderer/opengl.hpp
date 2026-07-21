@@ -16,8 +16,12 @@
 #include <OpenGL/gl.h>
 #else
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef APIENTRY
 #define APIENTRY __stdcall
+#endif
+#ifndef WINGDIAPI
 #define WINGDIAPI __declspec( dllimport )
+#endif
 #endif
 
 #include <GL/gl.h>
@@ -28,7 +32,121 @@
 #include <GL/glext.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 #include <OpenGL/glext.h>
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_SOLARIS
+#include <GL/glext.h>
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+typedef char GLchar;
 #endif
+#endif
+
+#ifndef GL_TEXTURE0
+#define GL_TEXTURE0 0x84C0
+#endif
+#ifndef GL_COMPRESSED_RGBA
+#define GL_COMPRESSED_RGBA 0x84EE
+#endif
+#ifndef GL_TEXTURE_COMPRESSED_IMAGE_SIZE
+#define GL_TEXTURE_COMPRESSED_IMAGE_SIZE 0x86A0
+#endif
+#ifndef GL_TEXTURE_COMPRESSED
+#define GL_TEXTURE_COMPRESSED 0x86A1
+#endif
+#ifndef GL_ARRAY_BUFFER
+#define GL_ARRAY_BUFFER 0x8892
+#endif
+#ifndef GL_ELEMENT_ARRAY_BUFFER
+#define GL_ELEMENT_ARRAY_BUFFER 0x8893
+#endif
+#ifndef GL_STREAM_DRAW
+#define GL_STREAM_DRAW 0x88E0
+#endif
+#ifndef GL_STATIC_DRAW
+#define GL_STATIC_DRAW 0x88E4
+#endif
+#ifndef GL_DYNAMIC_DRAW
+#define GL_DYNAMIC_DRAW 0x88E8
+#endif
+#ifndef GL_FRAGMENT_SHADER
+#define GL_FRAGMENT_SHADER 0x8B30
+#endif
+#ifndef GL_VERTEX_SHADER
+#define GL_VERTEX_SHADER 0x8B31
+#endif
+#ifndef GL_COMPILE_STATUS
+#define GL_COMPILE_STATUS 0x8B81
+#endif
+#ifndef GL_LINK_STATUS
+#define GL_LINK_STATUS 0x8B82
+#endif
+#ifndef GL_INFO_LOG_LENGTH
+#define GL_INFO_LOG_LENGTH 0x8B84
+#endif
+#ifndef GL_SHADING_LANGUAGE_VERSION
+#define GL_SHADING_LANGUAGE_VERSION 0x8B8C
+#endif
+#ifndef GL_VERTEX_PROGRAM_POINT_SIZE
+#define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
+#endif
+#ifndef GL_FUNC_ADD
+#define GL_FUNC_ADD 0x8006
+#endif
+#ifndef GL_FUNC_SUBTRACT
+#define GL_FUNC_SUBTRACT 0x800A
+#endif
+#ifndef GL_FUNC_REVERSE_SUBTRACT
+#define GL_FUNC_REVERSE_SUBTRACT 0x800B
+#endif
+#ifndef GL_POINT_SPRITE
+#define GL_POINT_SPRITE 0x8861
+#endif
+#ifndef GL_COORD_REPLACE
+#define GL_COORD_REPLACE 0x8862
+#endif
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER 0x8D40
+#endif
+#ifndef GL_RENDERBUFFER
+#define GL_RENDERBUFFER 0x8D41
+#endif
+#ifndef GL_FRAMEBUFFER_COMPLETE
+#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
+#endif
+#ifndef GL_COLOR_ATTACHMENT0
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#endif
+#ifndef GL_DEPTH_ATTACHMENT
+#define GL_DEPTH_ATTACHMENT 0x8D00
+#endif
+#ifndef GL_STENCIL_ATTACHMENT
+#define GL_STENCIL_ATTACHMENT 0x8D20
+#endif
+#ifndef GL_FRAMEBUFFER_BINDING
+#define GL_FRAMEBUFFER_BINDING 0x8CA6
+#endif
+#ifndef GL_RENDERBUFFER_BINDING
+#define GL_RENDERBUFFER_BINDING 0x8CA7
+#endif
+#ifndef GL_READ_FRAMEBUFFER
+#define GL_READ_FRAMEBUFFER 0x8CA8
+#endif
+#ifndef GL_DRAW_FRAMEBUFFER
+#define GL_DRAW_FRAMEBUFFER 0x8CA9
+#endif
+#ifndef GL_STENCIL_INDEX8
+#define GL_STENCIL_INDEX8 0x8D48
+#endif
+#ifndef GL_RGBA8
+#define GL_RGBA8 0x8058
+#endif
+#ifndef GL_RGB8
+#define GL_RGB8 0x8051
+#endif
+#ifndef GL_VERTEX_ARRAY_BINDING
+#define GL_VERTEX_ARRAY_BINDING 0x85B5
+#endif
+#ifndef GL_NUM_EXTENSIONS
+#define GL_NUM_EXTENSIONS 0x821D
 #endif
 
 #else
@@ -245,6 +363,10 @@ typedef char GLchar;
 #define GL_STENCIL_INDEX GL_STENCIL_INDEX8_OES
 #endif
 
+#ifndef GL_STENCIL_INDEX8
+#define GL_STENCIL_INDEX8 GL_STENCIL_INDEX
+#endif
+
 #define GL_DEPTH_ATTACHMENT GL_DEPTH_ATTACHMENT_OES
 #define GL_COLOR_ATTACHMENT0 GL_COLOR_ATTACHMENT0_OES
 #define GL_STENCIL_ATTACHMENT GL_STENCIL_ATTACHMENT_OES
@@ -277,7 +399,7 @@ typedef char GLchar;
 #endif
 
 #ifndef GL_MULTISAMPLE
-#define GL_MULTISAMPLE  0x809D
+#define GL_MULTISAMPLE 0x809D
 #endif
 
 #include <eepp/graphics/renderer/rendererhelper.hpp>

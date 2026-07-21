@@ -4,16 +4,222 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <ctype.h>
 #include <iomanip>
 #include <sstream>
+#include <string_view>
 
 namespace EE { namespace System {
 
 namespace {
 
 template <typename T> inline T _round( T r ) {
-	return ( r > 0.0f ) ? eefloor( r + 0.5f ) : eeceil( r - 0.5f );
+	return ( r > 0.0f ) ? std::floor( r + 0.5f ) : std::ceil( r - 0.5f );
+}
+
+static bool parseCssColorComponent( Float& out, const char* start, const char* end, bool isAlpha ) {
+	while ( start < end && ( *start == ' ' || *start == '\t' || *start == '\n' || *start == '\r' ) )
+		start++;
+	while ( end > start && ( *( end - 1 ) == ' ' || *( end - 1 ) == '\t' || *( end - 1 ) == '\n' ||
+							 *( end - 1 ) == '\r' ) )
+		end--;
+
+	if ( start >= end )
+		return false;
+
+	if ( ( end - start == 4 && std::strncmp( start, "none", 4 ) == 0 ) ||
+		 ( end - start == 4 && std::strncmp( start, "None", 4 ) == 0 ) ) {
+		out = 0;
+		return true;
+	}
+
+	bool hasPercent = ( *( end - 1 ) == '%' );
+	const char* numEnd = hasPercent ? end - 1 : end;
+	while ( numEnd > start && ( *( numEnd - 1 ) == ' ' || *( numEnd - 1 ) == '\t' ||
+								*( numEnd - 1 ) == '\n' || *( numEnd - 1 ) == '\r' ) )
+		numEnd--;
+
+	if ( start >= numEnd )
+		return false;
+
+	char buffer[64];
+	std::size_t len = static_cast<std::size_t>( numEnd - start );
+	if ( len >= sizeof( buffer ) )
+		return false;
+	std::memcpy( buffer, start, len );
+	buffer[len] = '\0';
+
+	char* endptr = nullptr;
+	Float val = std::strtof( buffer, &endptr );
+	if ( endptr == buffer || static_cast<std::size_t>( endptr - buffer ) != len )
+		return false;
+
+	out = hasPercent ? ( isAlpha ? val / 100.f : val / 100.f * 255.f ) : val;
+	return true;
+}
+
+static int tokenizeModernColorParams( std::string_view paramsStr, std::string_view tokens[4] ) {
+	int count = 0;
+	const char* p = paramsStr.data();
+	const char* end = p + paramsStr.size();
+	while ( p < end && count < 4 ) {
+		while ( p < end && ( *p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' ) )
+			p++;
+		if ( p >= end )
+			break;
+		if ( *p == '/' ) {
+			p++;
+			continue;
+		}
+		const char* tokStart = p;
+		while ( p < end && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' && *p != '/' )
+			p++;
+		tokens[count++] = std::string_view( tokStart, static_cast<std::size_t>( p - tokStart ) );
+	}
+	return count;
+}
+
+static bool parseCssColorComponentFromView( Float& out, std::string_view tok, bool isAlpha ) {
+	return parseCssColorComponent( out, tok.data(), tok.data() + tok.size(), isAlpha );
+}
+
+static bool tryParseModernRgbRgba( std::string_view paramsStr, Color& outColor ) {
+	std::string_view tokens[4];
+	int tokenCount = tokenizeModernColorParams( paramsStr, tokens );
+	if ( tokenCount < 3 )
+		return false;
+
+	Float components[4];
+	for ( int i = 0; i < tokenCount; i++ ) {
+		if ( !parseCssColorComponentFromView( components[i], tokens[i], i == 3 ) )
+			return false;
+	}
+
+	Float alpha = ( tokenCount >= 4 ) ? components[3] : 1.f;
+
+	outColor = Color( static_cast<Uint8>( eemax( eemin( 255.f, _round( components[0] ) ), 0.f ) ),
+					  static_cast<Uint8>( eemax( eemin( 255.f, _round( components[1] ) ), 0.f ) ),
+					  static_cast<Uint8>( eemax( eemin( 255.f, _round( components[2] ) ), 0.f ) ),
+					  static_cast<Uint8>( eemax( eemin( 1.f, alpha ), 0.f ) * 255.f + 0.5f ) );
+	return true;
+}
+
+static bool parseHslHue( Float& out, std::string_view tok ) {
+	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
+		tok.remove_prefix( 1 );
+	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
+		tok.remove_suffix( 1 );
+	if ( tok.empty() )
+		return false;
+	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||
+							  std::strncmp( tok.data(), "None", 4 ) == 0 ) ) {
+		out = 0;
+		return true;
+	}
+	char buffer[64];
+	if ( tok.size() >= sizeof( buffer ) )
+		return false;
+	std::memcpy( buffer, tok.data(), tok.size() );
+	buffer[tok.size()] = '\0';
+	char* endptr = nullptr;
+	Float val = std::strtof( buffer, &endptr );
+	if ( endptr == buffer || static_cast<std::size_t>( endptr - buffer ) != tok.size() )
+		return false;
+	if ( val < 0 || val > 360 )
+		return false;
+	out = val;
+	return true;
+}
+
+static bool parseHslPercentOrNumber( Float& out, std::string_view tok ) {
+	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
+		tok.remove_prefix( 1 );
+	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
+		tok.remove_suffix( 1 );
+	if ( tok.empty() )
+		return false;
+	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||
+							  std::strncmp( tok.data(), "None", 4 ) == 0 ) ) {
+		out = 0;
+		return true;
+	}
+	bool hasPercent = ( tok.back() == '%' );
+	if ( hasPercent )
+		tok.remove_suffix( 1 );
+	char buffer[64];
+	if ( tok.size() >= sizeof( buffer ) )
+		return false;
+	std::memcpy( buffer, tok.data(), tok.size() );
+	buffer[tok.size()] = '\0';
+	char* endptr = nullptr;
+	Float val = std::strtof( buffer, &endptr );
+	if ( endptr == buffer || static_cast<std::size_t>( endptr - buffer ) != tok.size() )
+		return false;
+	if ( val < 0 || val > 100 )
+		return false;
+	out = val;
+	return true;
+}
+
+static bool tryParseModernHslHsla( std::string_view paramsStr, Color& outColor ) {
+	std::string_view tokens[4];
+	int tokenCount = tokenizeModernColorParams( paramsStr, tokens );
+	if ( tokenCount < 3 )
+		return false;
+
+	Float hue, saturation, lightness;
+	if ( !parseHslHue( hue, tokens[0] ) )
+		return false;
+	if ( !parseHslPercentOrNumber( saturation, tokens[1] ) )
+		return false;
+	if ( !parseHslPercentOrNumber( lightness, tokens[2] ) )
+		return false;
+
+	Float alphaVal = 1;
+	if ( tokenCount >= 4 ) {
+		if ( !parseCssColorComponentFromView( alphaVal, tokens[3], true ) )
+			return false;
+	}
+
+	Colorf hsl;
+	hsl.hsl.h = hue / 360.f;
+	hsl.hsl.s = saturation / 100.f;
+	hsl.hsl.l = lightness / 100.f;
+	hsl.hsl.a = eemax( eemin( 1.f, alphaVal ), 0.f );
+
+	outColor = Color::fromHsl( hsl );
+	return true;
+}
+
+static bool tryParseModernHsvHsva( std::string_view paramsStr, Color& outColor ) {
+	std::string_view tokens[4];
+	int tokenCount = tokenizeModernColorParams( paramsStr, tokens );
+	if ( tokenCount < 3 )
+		return false;
+
+	Float hue, saturation, value;
+	if ( !parseHslHue( hue, tokens[0] ) )
+		return false;
+	if ( !parseHslPercentOrNumber( saturation, tokens[1] ) )
+		return false;
+	if ( !parseHslPercentOrNumber( value, tokens[2] ) )
+		return false;
+
+	Float alphaVal = 1;
+	if ( tokenCount >= 4 ) {
+		if ( !parseCssColorComponentFromView( alphaVal, tokens[3], true ) )
+			return false;
+	}
+
+	Colorf hsv;
+	hsv.hsv.h = hue;
+	hsv.hsv.s = saturation / 100.f;
+	hsv.hsv.v = value / 100.f;
+	hsv.hsv.a = eemax( eemin( 1.f, alphaVal ), 0.f );
+
+	outColor = Color::fromHsv( hsv );
+	return true;
 }
 
 } // namespace
@@ -504,68 +710,94 @@ Color Color::fromString( std::string str ) {
 		return Color::Transparent;
 
 	if ( str[0] == '#' ) {
-		str = str.substr( 1 );
+		str.erase( 0, 1 );
 
 		size = str.size();
 
-		if ( 0 == size )
+		if ( size != 3 && size != 4 && size != 6 && size != 8 )
 			return Color::Transparent;
 
-		if ( size < 6 ) {
-			for ( std::size_t i = size; i < 6; i++ )
-				str += str[size - 1];
+		// Expand shorthand CSS notation
+		if ( size == 3 || size == 4 ) {
+			std::string expanded;
+			expanded.reserve( size * 2 );
 
-			size = 6;
+			for ( char c : str ) {
+				expanded += c;
+				expanded += c;
+			}
+
+			str = expanded;
+			size = str.size();
 		}
 
-		if ( 6 == size )
+		// Add opaque alpha if omitted
+		if ( size == 6 )
 			str += "FF";
 
 		return Color( std::strtoul( str.c_str(), NULL, 16 ) );
 	} else if ( String::startsWith( str, "rgba(" ) || String::startsWith( str, "rgb(" ) ) {
+		size_t parenStart = str.find( '(' );
+		size_t parenEnd = str.find_last_of( ')' );
+		if ( parenStart != std::string::npos && parenEnd != std::string::npos &&
+			 parenEnd > parenStart ) {
+			std::string_view paramsStr( str.data() + parenStart + 1, parenEnd - parenStart - 1 );
+			if ( paramsStr.find( ',' ) == std::string_view::npos &&
+				 paramsStr.find_first_not_of( " \t\n\r" ) != std::string_view::npos ) {
+				Color result;
+				if ( tryParseModernRgbRgba( paramsStr, result ) )
+					return result;
+			}
+		}
+
 		FunctionString functionString = FunctionString::parse( str );
 
-		if ( ( functionString.getName() == "rgba" && functionString.getParameters().size() >= 4 ) ||
-			 ( functionString.getName() == "rgb" && functionString.getParameters().size() >= 3 ) ) {
+		if ( functionString.getParameters().size() >= 3 &&
+			 ( functionString.getName() == "rgb" || functionString.getName() == "rgba" ) ) {
 			Color color( Color::Transparent );
+			auto params = functionString.getParameters();
 
-			for ( int i = 0; i < 3; i++ ) {
-				Float val = 0;
-				if ( String::fromString( val, functionString.getParameters().at( i ) ) ) {
-					switch ( i ) {
-						case 0:
-							color.r = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) );
-							break;
-						case 1:
-							color.g = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) );
-							break;
-						case 2:
-							color.b = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) );
-							break;
-						default:
-							break;
+			// Handle "rgb(r, g, b / alpha)" hybrid syntax produced by var()
+			// substitution where comma-separated channels are mixed with the
+			// modern-slash alpha separator.
+			if ( params.size() == 3 ) {
+				std::string::size_type slashPos = params[2].find( '/' );
+				if ( slashPos != std::string::npos ) {
+					std::string alphaStr = String::trim( params[2].substr( slashPos + 1 ) );
+					std::string blueStr = String::trim( params[2].substr( 0, slashPos ) );
+					if ( !blueStr.empty() ) {
+						params[2] = blueStr;
+						params.push_back( alphaStr );
 					}
-				} else {
-					return Color::Transparent;
 				}
 			}
 
-			Float val = 255;
-			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString( val, functionString.getParameters().at( 3 ) ) ) {
-					color.a = static_cast<Uint8>( eemax( eemin( 1.f, val ), 0.f ) * 255.f + 0.5f );
-				} else {
+			Float val = 0;
+			if ( !parseCssColorComponent( val, params[0].data(),
+										  params[0].data() + params[0].size(), false ) )
+				return Color::Transparent;
+			color.r = static_cast<Uint8>( eemax( eemin( 255.f, _round( val ) ), 0.f ) );
+			if ( !parseCssColorComponent( val, params[1].data(),
+										  params[1].data() + params[1].size(), false ) )
+				return Color::Transparent;
+			color.g = static_cast<Uint8>( eemax( eemin( 255.f, _round( val ) ), 0.f ) );
+			if ( !parseCssColorComponent( val, params[2].data(),
+										  params[2].data() + params[2].size(), false ) )
+				return Color::Transparent;
+			color.b = static_cast<Uint8>( eemax( eemin( 255.f, _round( val ) ), 0.f ) );
+
+			Float alpha = 1;
+			if ( params.size() >= 4 ) {
+				if ( !parseCssColorComponent( alpha, params[3].data(),
+											  params[3].data() + params[3].size(), true ) )
 					return Color::Transparent;
-				}
-			} else {
-				color.a = val;
 			}
+			color.a = static_cast<Uint8>( eemax( eemin( 1.f, alpha ), 0.f ) * 255.f + 0.5f );
 
 			return color;
-		} else if ( functionString.getName() == "rgba" &&
-					functionString.getParameters().size() >= 2 &&
+		} else if ( functionString.getParameters().size() >= 2 &&
+					( functionString.getName() == "rgb" || functionString.getName() == "rgba" ) &&
 					isColorString( functionString.getParameters()[0] ) ) {
-			// Allow creating rgba( #AABBCC, 0.5 )
 			Color color( Color::fromString( functionString.getParameters()[0] ) );
 			Float val = 255;
 			if ( String::fromString( val, functionString.getParameters().at( 1 ) ) )
@@ -576,55 +808,48 @@ Color Color::fromString( std::string str ) {
 			return Color::Transparent;
 		}
 	} else if ( String::startsWith( str, "hsla(" ) || String::startsWith( str, "hsl(" ) ) {
+		size_t parenStart = str.find( '(' );
+		size_t parenEnd = str.find_last_of( ')' );
+		if ( parenStart != std::string::npos && parenEnd != std::string::npos &&
+			 parenEnd > parenStart ) {
+			std::string_view paramsStr( str.data() + parenStart + 1, parenEnd - parenStart - 1 );
+			if ( paramsStr.find( ',' ) == std::string_view::npos &&
+				 paramsStr.find_first_not_of( " \t\n\r" ) != std::string_view::npos ) {
+				Color result;
+				if ( tryParseModernHslHsla( paramsStr, result ) )
+					return result;
+			}
+		}
+
 		FunctionString functionString = FunctionString::parse( str );
 
-		if ( ( functionString.getName() == "hsla" && functionString.getParameters().size() >= 4 ) ||
-			 ( functionString.getName() == "hsl" && functionString.getParameters().size() >= 3 ) ) {
+		if ( functionString.getParameters().size() >= 3 &&
+			 ( functionString.getName() == "hsl" || functionString.getName() == "hsla" ) ) {
 			Colorf color;
+			const auto& params = functionString.getParameters();
 
-			Float hueVal, saturationVal, lightnessVal;
-
-			int hueIntVal;
-			if ( String::fromString( hueIntVal, functionString.getParameters().at( 0 ) ) &&
-				 hueIntVal >= 0 && hueIntVal <= 360 ) {
-				hueVal = hueIntVal / 360.f;
-			} else {
+			Float hueVal;
+			if ( !parseHslHue( hueVal, params[0] ) )
 				return Color::Transparent;
-			}
 
 			Float saturationFloatVal;
-			std::string saturationString( functionString.getParameters().at( 1 ) );
-			String::replaceAll( saturationString, "%", "" );
-			if ( String::fromString( saturationFloatVal, saturationString ) &&
-				 saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
-				saturationVal = saturationFloatVal / 100.f;
-			} else {
+			if ( !parseHslPercentOrNumber( saturationFloatVal, params[1] ) )
 				return Color::Transparent;
-			}
 
 			Float lightnessFloatVal;
-			std::string lightnessString( functionString.getParameters().at( 2 ) );
-			String::replaceAll( lightnessString, "%", "" );
-			if ( String::fromString( lightnessFloatVal, lightnessString ) &&
-				 lightnessFloatVal >= 0 && lightnessFloatVal <= 100 ) {
-				lightnessVal = lightnessFloatVal / 100.f;
-			} else {
+			if ( !parseHslPercentOrNumber( lightnessFloatVal, params[2] ) )
 				return Color::Transparent;
-			}
 
 			Float alphaVal = 1;
-
-			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString( alphaVal, functionString.getParameters().at( 3 ) ) ) {
-					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
-				} else {
+			if ( params.size() >= 4 ) {
+				if ( !parseCssColorComponentFromView( alphaVal, params[3], true ) )
 					return Color::Transparent;
-				}
+				alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 			}
 
-			color.hsl.h = hueVal;
-			color.hsl.s = saturationVal;
-			color.hsl.l = lightnessVal;
+			color.hsl.h = hueVal / 360.f;
+			color.hsl.s = saturationFloatVal / 100.f;
+			color.hsl.l = lightnessFloatVal / 100.f;
 			color.hsl.a = alphaVal;
 
 			return Color::fromHsl( color );
@@ -632,55 +857,48 @@ Color Color::fromString( std::string str ) {
 			return Color::Transparent;
 		}
 	} else if ( String::startsWith( str, "hsva(" ) || String::startsWith( str, "hsv(" ) ) {
+		size_t parenStart = str.find( '(' );
+		size_t parenEnd = str.find_last_of( ')' );
+		if ( parenStart != std::string::npos && parenEnd != std::string::npos &&
+			 parenEnd > parenStart ) {
+			std::string_view paramsStr( str.data() + parenStart + 1, parenEnd - parenStart - 1 );
+			if ( paramsStr.find( ',' ) == std::string_view::npos &&
+				 paramsStr.find_first_not_of( " \t\n\r" ) != std::string_view::npos ) {
+				Color result;
+				if ( tryParseModernHsvHsva( paramsStr, result ) )
+					return result;
+			}
+		}
+
 		FunctionString functionString = FunctionString::parse( str );
 
-		if ( ( functionString.getName() == "hsva" && functionString.getParameters().size() >= 4 ) ||
-			 ( functionString.getName() == "hsv" && functionString.getParameters().size() >= 3 ) ) {
+		if ( functionString.getParameters().size() >= 3 &&
+			 ( functionString.getName() == "hsv" || functionString.getName() == "hsva" ) ) {
 			Colorf color;
+			const auto& params = functionString.getParameters();
 
-			Float hueVal, saturationVal, valueVal;
-
-			int hueIntVal;
-			if ( String::fromString( hueIntVal, functionString.getParameters().at( 0 ) ) &&
-				 hueIntVal >= 0 && hueIntVal <= 360 ) {
-				hueVal = hueIntVal;
-			} else {
+			Float hueVal;
+			if ( !parseHslHue( hueVal, params[0] ) )
 				return Color::Transparent;
-			}
 
 			Float saturationFloatVal;
-			std::string saturationString( functionString.getParameters().at( 1 ) );
-			String::replaceAll( saturationString, "%", "" );
-			if ( String::fromString( saturationFloatVal, saturationString ) &&
-				 saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
-				saturationVal = saturationFloatVal / 100.f;
-			} else {
+			if ( !parseHslPercentOrNumber( saturationFloatVal, params[1] ) )
 				return Color::Transparent;
-			}
 
 			Float valueFloatVal;
-			std::string valueString( functionString.getParameters().at( 2 ) );
-			String::replaceAll( valueString, "%", "" );
-			if ( String::fromString( valueFloatVal, valueString ) && valueFloatVal >= 0 &&
-				 valueFloatVal <= 100 ) {
-				valueVal = valueFloatVal / 100.f;
-			} else {
+			if ( !parseHslPercentOrNumber( valueFloatVal, params[2] ) )
 				return Color::Transparent;
-			}
 
 			Float alphaVal = 1;
-
-			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString( alphaVal, functionString.getParameters().at( 3 ) ) ) {
-					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
-				} else {
+			if ( params.size() >= 4 ) {
+				if ( !parseCssColorComponentFromView( alphaVal, params[3], true ) )
 					return Color::Transparent;
-				}
+				alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 			}
 
 			color.hsv.h = hueVal;
-			color.hsv.s = saturationVal;
-			color.hsv.v = valueVal;
+			color.hsv.s = saturationFloatVal / 100.f;
+			color.hsv.v = valueFloatVal / 100.f;
 			color.hsv.a = alphaVal;
 
 			return Color::fromHsv( color );
@@ -715,8 +933,7 @@ Color Color::fromString( std::string str ) {
 	return Color::Transparent;
 }
 
-template <AllowedFunctionString StringType>
-bool Color::isColorStringT( StringType str, bool searchColorNames ) {
+template <typename StringType> bool Color::isColorStringT( StringType str, bool searchColorNames ) {
 	if ( str.empty() )
 		return false;
 
@@ -831,12 +1048,18 @@ bool Color::validHexColorString( String::View hexColor ) {
 }
 
 bool Color::validHexColorString( std::string_view hexColor ) {
-	if ( hexColor.size() < 2 || hexColor[0] != '#' )
+	if ( hexColor.empty() || hexColor[0] != '#' )
+		return false;
+
+	const size_t len = hexColor.size() - 1;
+
+	if ( len != 3 && len != 4 && len != 6 && len != 8 )
 		return false;
 
 	for ( size_t i = 1; i < hexColor.size(); i++ ) {
-		if ( !( String::isNumber( hexColor[i] ) || ( hexColor[i] >= 'a' && hexColor[i] <= 'f' ) ||
-				( hexColor[i] >= 'A' && hexColor[i] <= 'F' ) ) ) {
+		char c = hexColor[i];
+
+		if ( !( String::isNumber( c ) || ( c >= 'a' && c <= 'f' ) || ( c >= 'A' && c <= 'F' ) ) ) {
 			return false;
 		}
 	}

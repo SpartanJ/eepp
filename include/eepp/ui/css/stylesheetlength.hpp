@@ -2,9 +2,15 @@
 #define EE_UI_CSS_STYLESHEETLENGTH_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <string>
+#include <string_view>
+
+namespace EE { namespace Graphics {
+class Font;
+}} // namespace EE::Graphics
 
 using namespace EE::Math;
 
@@ -34,13 +40,21 @@ class EE_API StyleSheetLength {
 		Dpru,
 		Dpr,
 		Ch,
+		Clamp,
+		Min,
+		Max,
+		Calc,
 	};
 
-	static Unit unitFromString( std::string unitStr );
+	using Arguments = SmallVector<std::string, 4>;
+
+	static Unit unitFromString( std::string_view unitStr );
 
 	static std::string unitToString( const Unit& unit );
 
-	static bool isLength( const std::string& unitStr );
+	static bool isLength( std::string_view unitStr );
+
+	static bool isPercentage( std::string_view val );
 
 	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0,
 										bool pxAsDp = false );
@@ -60,10 +74,12 @@ class EE_API StyleSheetLength {
 	const Unit& getUnit() const;
 
 	Float asPixels( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
-					const Float& elFontSize = 12, const Float& globalFontSize = 12 ) const;
+					const Float& elFontSize = 12, const Float& globalFontSize = 12,
+					Graphics::Font* font = nullptr ) const;
 
 	Float asDp( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
-				const Float& elFontSize = 12, const Float& globalFontSize = 12 ) const;
+				const Float& elFontSize = 12, const Float& globalFontSize = 12,
+				Graphics::Font* font = nullptr ) const;
 
 	bool operator==( const StyleSheetLength& val ) const;
 
@@ -75,9 +91,26 @@ class EE_API StyleSheetLength {
 
 	std::string toString() const;
 
+	const Arguments& getArgs() const;
+
+	void setArgs( const Arguments& args );
+
   protected:
+	static bool isFunctionString( std::string_view str );
+
+	static bool parseFunction( const std::string& str, Unit& outUnit, Arguments& outArgs );
+
+	Float resolveFunction( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
+						   const Float& elFontSize, const Float& globalFontSize,
+						   Graphics::Font* font ) const;
+
+	Float resolveCalc( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
+					   const Float& elFontSize, const Float& globalFontSize,
+					   Graphics::Font* font ) const;
+
 	Unit mUnit;
 	Float mValue;
+	Arguments mArgs;
 };
 
 }}} // namespace EE::UI::CSS

@@ -6,6 +6,8 @@
 #include "projectdirectorytree.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
+#include <tuple>
+#include <unordered_map>
 
 namespace ecode {
 
@@ -19,15 +21,25 @@ class UniversalLocator {
 		LocatorProvider(
 			String&& symbol, String&& description, std::function<bool( const String& )> switchFn,
 			std::function<void( const Variant& var, const ModelEvent* modelEvent )> openFn,
-			std::function<bool( const String& )> pressEnterFn = nullptr,
-			bool projectNeeded = true ) :
+			std::function<bool( const String& )> pressEnterFn = nullptr, bool projectNeeded = true,
+			bool spaceOptional = false ) :
 			symbol( std::move( symbol ) ),
 			symbolTrigger( this->symbol + " " ),
 			description( std::move( description ) ),
 			switchFn( std::move( switchFn ) ),
 			openFn( std::move( openFn ) ),
 			pressEnterFn( std::move( pressEnterFn ) ),
-			projectNeeded( projectNeeded ) {}
+			projectNeeded( projectNeeded ),
+			spaceOptional( spaceOptional ) {}
+
+		bool matches( const String& txt ) const {
+			return String::startsWith( txt, symbolTrigger ) ||
+				   ( spaceOptional && String::startsWith( txt, symbol ) );
+		}
+
+		size_t triggerSize( const String& txt ) const {
+			return String::startsWith( txt, symbolTrigger ) ? symbolTrigger.size() : symbol.size();
+		}
 
 		String symbol;
 		String symbolTrigger;
@@ -36,6 +48,7 @@ class UniversalLocator {
 		std::function<void( const Variant&, const ModelEvent* )> openFn;
 		std::function<bool( const String& )> pressEnterFn{ nullptr };
 		bool projectNeeded{ true };
+		bool spaceOptional{ false };
 	};
 
 	UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );
@@ -76,6 +89,8 @@ class UniversalLocator {
 
 	void showSwitchFileType();
 
+	void showCalculator();
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -92,6 +107,8 @@ class UniversalLocator {
 	std::shared_ptr<OpenDocumentsModel> mOpenDocumentsModel{ nullptr };
 	PluginIDType mQueryWorkspaceLastId;
 	std::vector<LocatorProvider> mLocatorProviders;
+	std::unordered_map<std::string, double> mCalculatorVariables;
+	std::vector<std::tuple<std::string, std::string, std::string>> mCalculatorHistory;
 
 	void updateLocateBar();
 
@@ -142,6 +159,12 @@ class UniversalLocator {
 
 	std::shared_ptr<ItemListOwnerModel<std::string>>
 	openFileTypeModel( const std::string& pattern );
+
+	void updateCalculatorTable();
+
+	bool saveCalculatorResult();
+
+	bool openCalculatorHistorySelection();
 
 	bool findCapability( PluginCapability );
 

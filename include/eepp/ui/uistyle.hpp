@@ -9,6 +9,7 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uistate.hpp>
+#include <optional>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -40,6 +41,8 @@ class EE_API UIStyle : public UIState {
 	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
 	void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
+
+	void setStyleSheetVariable( const CSS::StyleSheetVariable& variable );
 
 	bool hasTransition( const std::string& propertyName );
 
@@ -77,11 +80,18 @@ class EE_API UIStyle : public UIState {
 
 	bool hasLocalProperty( CSS::PropertyId propId ) const;
 
-	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId ) const;
+	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId,
+												   UIStyle** ownerStyle = nullptr ) const;
 
-	void resetGlobalDefinition();
+	void resetGlobalDefinition( bool force = false );
 
 	void resetCachedProperties();
+
+	void applyInheritedProperties();
+
+	const std::shared_ptr<CSS::ElementDefinition> getDefinition() const { return mDefinition; }
+
+	void applyVarValues( CSS::StyleSheetProperty* style );
 
   protected:
 	UIWidget* mWidget;
@@ -102,8 +112,6 @@ class EE_API UIStyle : public UIState {
 	bool mFirstState;
 
 	explicit UIStyle( UIWidget* widget );
-
-	void applyVarValues( CSS::StyleSheetProperty* style );
 
 	void applyLightDarkValues( CSS::StyleSheetProperty* style );
 
@@ -128,8 +136,6 @@ class EE_API UIStyle : public UIState {
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
 
-	void applyInheritedProperties();
-
 	void updateAnimationsPlayState();
 
 	void updateAnimations();
@@ -142,6 +148,10 @@ class EE_API UIStyle : public UIState {
 						  const Uint32& propertyIndex );
 
 	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+
+	CSS::StyleSheetProperty*
+	getResolvedLocalProperty( Uint32 propId,
+							  std::optional<CSS::StyleSheetProperty>& resolvedProperty );
 
 	void addStructurallyVolatileWidgetFromParent();
 

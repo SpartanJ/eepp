@@ -8,7 +8,7 @@ SyntaxDefinition& addMeson() {
 	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Meson",
-		  { "meson%.build$", "^meson_options%.txt$" },
+		  { "%.meson$", "meson%.build$", "^meson_options%.txt$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },

@@ -1,5 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -11,6 +13,7 @@ FontManager::~FontManager() {
 	mEmojiFont = nullptr;
 	mColorEmojiFont = nullptr;
 	mFallbackFonts.clear();
+	mSystemFallbackFonts.clear();
 }
 
 Graphics::Font* FontManager::add( Graphics::Font* font ) {
@@ -99,6 +102,30 @@ Font* FontManager::getByInternalId( Uint32 internalId ) const {
 			return font;
 	}
 	return nullptr;
+}
+
+FontTrueType* FontManager::getOrLoadSystemFallbackFont( const FontDesc& desc ) {
+	if ( desc.path.empty() )
+		return nullptr;
+
+	for ( auto* font : mSystemFallbackFonts ) {
+		if ( font->getType() == FontType::TTF ) {
+			auto* ttf = static_cast<FontTrueType*>( font );
+			if ( ttf->getInfo().fontpath + ttf->getInfo().filename == desc.path &&
+				 ttf->getFaceIndex() == desc.faceIndex )
+				return ttf;
+		}
+	}
+
+	FontTrueType* ttf = FontTrueType::New( desc.family, desc.path, desc.faceIndex );
+	if ( !ttf || !ttf->loaded() ) {
+		eeSAFE_DELETE( ttf );
+		return nullptr;
+	}
+
+	mSystemFallbackFonts.push_back( ttf );
+
+	return ttf;
 }
 
 }} // namespace EE::Graphics

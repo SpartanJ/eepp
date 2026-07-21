@@ -66,13 +66,13 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	UIIcon* getExpandIcon() const;
 
-	void setExpandedIcon( EE::UI::UIIcon* expandIcon );
+	void setExpandedIcon( UIIcon* expandIcon );
 
 	void setExpandedIcon( const std::string& expandIcon );
 
 	UIIcon* getContractIcon() const;
 
-	void setContractedIcon( EE::UI::UIIcon* contractIcon );
+	void setContractedIcon( UIIcon* contractIcon );
 
 	void setContractedIcon( const std::string& contractIcon );
 

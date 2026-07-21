@@ -8,6 +8,36 @@ static inline Float sanitizeFloat( Float val ) {
 	return std::isfinite( val ) ? val : 0.f;
 }
 
+static Float specifiedHeightPx( UIWidget* widget ) {
+	if ( widget == nullptr || widget->getUIStyle() == nullptr )
+		return 0.f;
+
+	const StyleSheetProperty* prop = widget->getUIStyle()->getProperty( PropertyId::Height );
+	if ( prop == nullptr )
+		return 0.f;
+
+	return sanitizeFloat( widget->cssHeightPropertyToBorderBoxHeight( *prop ) );
+}
+
+static Float normalFlowChildrenBottomPx( UIWidget* widget ) {
+	if ( widget == nullptr )
+		return 0.f;
+
+	Float bottom = 0.f;
+	for ( Node* child = widget->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( !child->isWidget() || !child->isVisible() )
+			continue;
+		if ( child->isType( UI_TYPE_HTML_WIDGET ) && child->asType<UIHTMLWidget>()->isOutOfFlow() )
+			continue;
+
+		UIWidget* childWidget = child->asType<UIWidget>();
+		const Float childTop = childWidget->getPixelsPosition().y;
+		bottom = std::max( bottom, childTop + childWidget->getPixelsSize().getHeight() );
+		bottom = std::max( bottom, childTop + normalFlowChildrenBottomPx( childWidget ) );
+	}
+	return sanitizeFloat( bottom );
+}
+
 void TableLayouter::setTableLayout( TableLayout layout ) {
 	if ( layout != mTableLayout ) {
 		mTableLayout = layout;
@@ -18,19 +48,19 @@ TableLayout TableLayouter::getTableLayout() const {
 	return mTableLayout;
 }
 
-void TableLayouter::setCellpadding( Float padding ) {
+void TableLayouter::setCellPadding( Float padding ) {
 	mCellpadding = padding;
 }
 
-Float TableLayouter::getCellpadding() const {
+Float TableLayouter::getCellPadding() const {
 	return mCellpadding;
 }
 
-void TableLayouter::setCellspacing( Float spacing ) {
+void TableLayouter::setCellSpacing( Float spacing ) {
 	mCellspacing = spacing;
 }
 
-Float TableLayouter::getCellspacing() const {
+Float TableLayouter::getCellSpacing() const {
 	return mCellspacing;
 }
 
@@ -58,7 +88,8 @@ void TableLayouter::computeIntrinsicWidths() {
 	auto collectRows = [&]( auto&& self, Node* node ) -> void {
 		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() ) {
 			if ( child->getType() == UI_TYPE_HTML_TABLE_ROW ) {
-				mRows.push_back( child->asType<UIHTMLTableRow>() );
+				if ( child->isVisible() )
+					mRows.push_back( child->asType<UIHTMLTableRow>() );
 			} else if ( child->getType() != UI_TYPE_HTML_TABLE ) {
 				if ( child->getType() == UI_TYPE_HTML_TABLE_HEAD )
 					mHead = child->asType<UIHTMLTableHead>();
@@ -76,6 +107,8 @@ void TableLayouter::computeIntrinsicWidths() {
 	auto getRecursiveSpecifiedWidth = [&]( auto&& self, Node* node ) -> Float {
 		if ( !node->isWidget() )
 			return 0.f;
+		if ( node->isType( UI_TYPE_HTML_WIDGET ) && node->asType<UIHTMLWidget>()->isOutOfFlow() )
+			return 0.f;
 		UIWidget* widget = node->asType<UIWidget>();
 		Float spec = 0.f;
 		if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed )
@@ -87,7 +120,7 @@ void TableLayouter::computeIntrinsicWidths() {
 
 	if ( mRows.empty() ) {
 		mMinIntrinsicWidth = mMaxIntrinsicWidth =
-			mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+			mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 		return;
 	}
@@ -100,7 +133,7 @@ void TableLayouter::computeIntrinsicWidths() {
 			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
 				auto* cell = child->asType<UIHTMLTableCell>();
 				mCells.push_back( cell );
-				colCount += cell->getColspan();
+				colCount += cell->getColSpan();
 				if ( mCellpadding > 0 && cell->getPadding() == Rectf::Zero ) {
 					cell->setPadding( { mCellpadding, mCellpadding, mCellpadding, mCellpadding } );
 				}
@@ -112,7 +145,7 @@ void TableLayouter::computeIntrinsicWidths() {
 
 	if ( maxCols == 0 ) {
 		mMinIntrinsicWidth = mMaxIntrinsicWidth =
-			mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+			mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 		mIntrinsicWidthsDirty = false;
 		return;
 	}
@@ -133,7 +166,7 @@ void TableLayouter::computeIntrinsicWidths() {
 				Float cellSpecified = sanitizeFloat(
 					std::max( cell->getPropertyWidth(),
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan == 1 && colIndex < maxCols ) {
 					if ( cellSpecified > 0.f ) {
@@ -151,7 +184,7 @@ void TableLayouter::computeIntrinsicWidths() {
 				Float cellSpecified = sanitizeFloat(
 					std::max( cell->getPropertyWidth(),
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan > 1 && cellSpecified > 0.f ) {
 					Float curSpec = 0.f;
@@ -186,7 +219,7 @@ void TableLayouter::computeIntrinsicWidths() {
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
 				cell->mWidthPolicy = widthPolicy;
 
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan == 1 && colIndex < maxCols ) {
 					mColMinWidths[colIndex] = std::max( mColMinWidths[colIndex], cellMin );
@@ -217,7 +250,7 @@ void TableLayouter::computeIntrinsicWidths() {
 							  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) ) );
 				cell->mWidthPolicy = widthPolicy;
 
-				Uint32 colspan = cell->getColspan();
+				Uint32 colspan = cell->getColSpan();
 
 				if ( colspan > 1 ) {
 					// Min excess
@@ -269,10 +302,12 @@ void TableLayouter::computeIntrinsicWidths() {
 		totalMax += mColMaxWidths[i];
 	}
 
-	mMinIntrinsicWidth = totalMin + mContainer->getPixelsPadding().Left +
-						 mContainer->getPixelsPadding().Right + ( maxCols + 1 ) * mCellspacing;
-	mMaxIntrinsicWidth = totalMax + mContainer->getPixelsPadding().Left +
-						 mContainer->getPixelsPadding().Right + ( maxCols + 1 ) * mCellspacing;
+	mMinIntrinsicWidth = totalMin + mContainer->getPixelsContentOffset().Left +
+						 mContainer->getPixelsContentOffset().Right +
+						 ( maxCols + 1 ) * mCellspacing;
+	mMaxIntrinsicWidth = totalMax + mContainer->getPixelsContentOffset().Left +
+						 mContainer->getPixelsContentOffset().Right +
+						 ( maxCols + 1 ) * mCellspacing;
 
 	mIntrinsicWidthsDirty = false;
 }
@@ -292,10 +327,40 @@ void TableLayouter::updateLayout() {
 	if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed && widget->getUIStyle() &&
 		 ( prop = widget->getUIStyle()->getProperty( PropertyId::Width ) ) ) {
 		widget->asType<UINode>()->setInternalPixelsSize(
-			{ widget->lengthFromValue( *prop ), widget->getPixelsSize().getHeight() } );
+			{ widget->cssWidthPropertyToBorderBoxWidth( *prop ),
+			  widget->getPixelsSize().getHeight() } );
+	}
+
+	if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed && widget->getUIStyle() &&
+		 ( prop = widget->getUIStyle()->getProperty( PropertyId::Height ) ) ) {
+		widget->asType<UINode>()->setInternalPixelsSize(
+			{ widget->getPixelsSize().getWidth(),
+			  widget->cssHeightPropertyToBorderBoxHeight( *prop ) } );
 	}
 
 	computeIntrinsicWidths();
+
+	bool useContentWidth = false;
+	if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed && widget->getUIStyle() ) {
+		const StyleSheetProperty* wprop = widget->getUIStyle()->getProperty( PropertyId::Width );
+		if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) && widget->getParent() &&
+			 widget->getParent()->isWidget() &&
+			 widget->getParent()->asType<UIWidget>()->getLayoutWidthPolicy() ==
+				 SizePolicy::WrapContent ) {
+			useContentWidth = true;
+		}
+	}
+
+	bool useContentHeight = false;
+	if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed && widget->getUIStyle() ) {
+		const StyleSheetProperty* hprop = widget->getUIStyle()->getProperty( PropertyId::Height );
+		if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) && widget->getParent() &&
+			 widget->getParent()->isWidget() &&
+			 widget->getParent()->asType<UIWidget>()->getLayoutHeightPolicy() ==
+				 SizePolicy::WrapContent ) {
+			useContentHeight = true;
+		}
+	}
 
 	if ( mRows.empty() ) {
 		mPacking = false;
@@ -304,8 +369,11 @@ void TableLayouter::updateLayout() {
 
 	size_t maxCols = mColMinWidths.size();
 	mColWidths.assign( maxCols, 0.f );
-	Float paddingH = mContainer->getPixelsPadding().Left + mContainer->getPixelsPadding().Right;
+	Float paddingH =
+		mContainer->getPixelsContentOffset().Left + mContainer->getPixelsContentOffset().Right;
 	Float containerWidth = mContainer->getPixelsSize().getWidth();
+	if ( useContentWidth )
+		containerWidth = mMaxIntrinsicWidth;
 	Float availableWidth = sanitizeFloat(
 		std::max( 0.f, containerWidth - paddingH - ( maxCols + 1 ) * mCellspacing ) );
 
@@ -443,10 +511,10 @@ void TableLayouter::updateLayout() {
 		Uint32 colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
-			cell->beginAttributesTransaction();
-			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
-			cell->setLayoutHeightPolicy( SizePolicy::WrapContent );
-			Uint32 cellColspan = cell->getColspan();
+			Float cellSpecifiedHeight = specifiedHeightPx( cell );
+			cell->mWidthPolicy = SizePolicy::Fixed;
+			cell->mHeightPolicy = SizePolicy::WrapContent;
+			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];
@@ -454,39 +522,56 @@ void TableLayouter::updateLayout() {
 			if ( cellColspan > 1 )
 				cellWidth += ( cellColspan - 1 ) * mCellspacing;
 			cell->setPixelsSize( cellWidth, cell->getPixelsSize().getHeight() );
-			cell->updateLayout();
-			cell->setLayoutHeightPolicy( SizePolicy::Fixed );
-			cell->endAttributesTransaction();
-			rowHeight = std::max( rowHeight, cell->getPixelsSize().getHeight() );
+			cell->UIRichText::updateLayout();
+			cell->mHeightPolicy = SizePolicy::Fixed;
+			// CSS Tables: a single-row table-cell height contributes to the row minimum
+			// height. It must not clamp content that needs more space.
+			Float cellMinHeight =
+				std::max( cell->getPixelsSize().getHeight(), cellSpecifiedHeight );
+			if ( cellSpecifiedHeight > 0.f )
+				cellMinHeight = std::max( cellMinHeight, normalFlowChildrenBottomPx( cell ) );
+			rowHeight = std::max( rowHeight, cellMinHeight );
 			colIndex += cellColspan;
 		}
+
+		UIHTMLTableRow* row = mRows[r];
+		// CSS Tables: row height is also a minimum, not a hard height.
+		if ( row->getLayoutHeightPolicy() == SizePolicy::Fixed )
+			rowHeight = std::max( rowHeight, specifiedHeightPx( row ) );
 
 		Float currentX = mCellspacing;
 		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
-			cell->beginAttributesTransaction();
 			cell->setPixelsPosition( currentX, 0 );
-			Uint32 cellColspan = cell->getColspan();
+			cell->mWidthPolicy = SizePolicy::Fixed;
+			cell->mHeightPolicy = SizePolicy::Fixed;
+			Uint32 cellColspan = cell->getColSpan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];
 			}
 			if ( cellColspan > 1 )
 				cellWidth += ( cellColspan - 1 ) * mCellspacing;
-			cell->setPixelsSize( cellWidth, rowHeight );
-			cell->endAttributesTransaction();
+			cell->setInternalPixelsSize( { cellWidth, rowHeight } );
 			currentX += cellWidth + mCellspacing;
 			colIndex += cellColspan;
 		}
 
-		UIHTMLTableRow* row = mRows[r];
 		row->setPixelsSize( containerWidth - paddingH, rowHeight );
 
-		if ( r == 0 && mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_HEAD ) ) {
+		if ( r == 0 && mCells[start]->getParent() &&
+			 ( mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_HEAD ) ||
+			   ( mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_ROW ) &&
+				 mCells[start]->getParent()->getParent() &&
+				 mCells[start]->getParent()->getParent()->isType( UI_TYPE_HTML_TABLE_HEAD ) ) ) ) {
 			headHeight = rowHeight;
 		} else if ( r == rowCount - 1 && columnCount &&
-					mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_FOOTER ) ) {
+					( mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_FOOTER ) ||
+					  ( mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_ROW ) &&
+						mCells[start]->getParent()->getParent() &&
+						mCells[start]->getParent()->getParent()->isType(
+							UI_TYPE_HTML_TABLE_FOOTER ) ) ) ) {
 			footerHeight = rowHeight;
 		} else {
 			bodyHeight += rowHeight;
@@ -508,24 +593,27 @@ void TableLayouter::updateLayout() {
 		mFooter->setPixelsSize( { mContainer->getPixelsSize().x, footerHeight } );
 	}
 
-	Float currentY = mContainer->getPixelsPadding().Top + mCellspacing - headHeight;
+	Float currentY = mContainer->getPixelsContentOffset().Top + mCellspacing - headHeight;
 	for ( size_t r = 0; r < rowCount; ++r ) {
 		UIHTMLTableRow* row = mRows[r];
-		row->setPixelsPosition( mContainer->getPixelsPadding().Left, currentY );
+		row->setPixelsPosition( mContainer->getPixelsContentOffset().Left, currentY );
 		currentY += row->getPixelsSize().getHeight() + mCellspacing;
 	}
 
 	if ( mHead && !mRows.empty() )
-		mRows[0]->setPixelsPosition( mContainer->getPixelsPadding().Left, 0 );
+		mRows[0]->setPixelsPosition( mContainer->getPixelsContentOffset().Left, 0 );
 
 	if ( mFooter && !mRows.empty() )
-		mRows[rowCount - 1]->setPixelsPosition( mContainer->getPixelsPadding().Left, 0 );
+		mRows[rowCount - 1]->setPixelsPosition( mContainer->getPixelsContentOffset().Left, 0 );
 
-	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+	if ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent || useContentHeight ) {
 		mContainer->asType<UINode>()->setInternalPixelsHeight(
-			mContainer->getPixelsPadding().Top + headHeight + bodyHeight + footerHeight +
-			( rowCount + 1 ) * mCellspacing + mContainer->getPixelsPadding().Bottom );
+			mContainer->getPixelsContentOffset().Top + headHeight + bodyHeight + footerHeight +
+			( rowCount + 1 ) * mCellspacing + mContainer->getPixelsContentOffset().Bottom );
 	}
+
+	if ( useContentWidth )
+		widget->asType<UINode>()->setInternalPixelsWidth( mMaxIntrinsicWidth );
 
 	mPacking = false;
 }

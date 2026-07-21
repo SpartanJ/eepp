@@ -96,6 +96,8 @@ class EE_API Renderer {
 
 	void activeTexture( unsigned int texture );
 
+	void clientActiveTextureImpl( unsigned int texture );
+
 	void blendFunc( unsigned int sfactor, unsigned int dfactor );
 
 	void blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorRGB,
@@ -240,6 +242,73 @@ class EE_API Renderer {
 	void deleteVertexArrays( int n, const unsigned int* arrays );
 
 	void genVertexArrays( int n, unsigned int* arrays );
+
+	void genBuffers( int n, unsigned int* buffers );
+
+	void deleteBuffers( int n, const unsigned int* buffers );
+
+	void bindBuffer( unsigned int target, unsigned int buffer );
+
+	void bufferData( unsigned int target, IntPtr size, const void* data, unsigned int usage );
+
+	void bufferSubData( unsigned int target, IntPtr offset, IntPtr size, const void* data );
+
+	void vertexAttribPointer( unsigned int index, int size, unsigned int type, bool normalized,
+							  int stride, const void* pointer );
+
+	void enableVertexAttribArray( unsigned int index );
+
+	void disableVertexAttribArray( unsigned int index );
+
+	unsigned int createShader( unsigned int type );
+
+	void deleteShader( unsigned int shader );
+
+	void shaderSource( unsigned int shader, int count, const char* const* strings,
+					   const int* lengths );
+
+	void compileShader( unsigned int shader );
+
+	void getShaderiv( unsigned int shader, unsigned int pname, int* params );
+
+	void getShaderInfoLog( unsigned int shader, int maxLength, int* length, char* infoLog );
+
+	unsigned int createProgram();
+
+	void deleteProgram( unsigned int program );
+
+	void attachShader( unsigned int program, unsigned int shader );
+
+	void linkProgram( unsigned int program );
+
+	void useProgram( unsigned int program );
+
+	void getProgramiv( unsigned int program, unsigned int pname, int* params );
+
+	void getProgramInfoLog( unsigned int program, int maxLength, int* length, char* infoLog );
+
+	int getUniformLocation( unsigned int program, const char* name );
+
+	int getAttribLocation( unsigned int program, const char* name );
+
+	void uniform1i( int location, int value );
+
+	void uniform1f( int location, float value );
+
+	void uniform2fv( int location, int count, const float* value );
+
+	void uniform3fv( int location, int count, const float* value );
+
+	void uniform4f( int location, float x, float y, float z, float w );
+
+	void uniform4fv( int location, int count, const float* value );
+
+	void uniformMatrix4fv( int location, int count, bool transpose, const float* value );
+
+	void compressedTexImage2D( unsigned int target, int level, unsigned int internalFormat,
+							   int width, int height, int border, int imageSize, const void* data );
+
+	void getCompressedTexImage( unsigned int target, int level, void* pixels );
 
 	const bool& quadsSupported() const;
 

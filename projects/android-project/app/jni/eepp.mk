@@ -95,6 +95,7 @@ CODE_SRCS				:=  \
 	math/*.cpp \
 	audio/*.cpp \
 	window/*.cpp \
+	window/backend/*.cpp \
 	window/backend/SDL2/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \
@@ -367,6 +368,20 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBYAML_SRCS), $(addprefix $(dir $(F)),$(not
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBYAML ***************
+
+#*************** TINYEXPR ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= tinyexpr
+
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= tinyexpr/tinyexpr.c
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** TINYEXPR ***************
 
 #*************** GUMBOPARSER ***************
 include $(CLEAR_VARS)

@@ -25,7 +25,9 @@ UISplitter::UISplitter() :
 	mSplitter->setParent( this );
 	mSplitter->setMinWidth( 4 );
 	mSplitter->setMinHeight( 4 );
-	mSplitter->on( Event::OnSizeChange, [this]( const Event* ) { setLayoutDirty(); } );
+	mSplitter->on( Event::OnSizeChange, [this]( const Event* ) {
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
+	} );
 	mSplitter->on( Event::MouseEnter, [this]( const Event* ) {
 		getUISceneNode()->setCursor( mOrientation == UIOrientation::Horizontal ? Cursor::SizeWE
 																			   : Cursor::SizeNS );
@@ -60,7 +62,7 @@ void UISplitter::setOrientation( const UIOrientation& orientation ) {
 	if ( orientation != mOrientation ) {
 		mOrientation = orientation;
 		updateSplitterDragFlags();
-		setLayoutDirty();
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
 
@@ -71,7 +73,7 @@ const bool& UISplitter::alwaysShowSplitter() const {
 void UISplitter::setAlwaysShowSplitter( bool alwaysShowSplitter ) {
 	if ( alwaysShowSplitter != mAlwaysShowSplitter ) {
 		mAlwaysShowSplitter = alwaysShowSplitter;
-		setLayoutDirty();
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
 
@@ -82,7 +84,7 @@ const StyleSheetLength& UISplitter::getSplitPartition() const {
 void UISplitter::setSplitPartition( const StyleSheetLength& divisionSplit ) {
 	if ( divisionSplit != mSplitPartition ) {
 		mSplitPartition = divisionSplit;
-		setLayoutDirty();
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
 
@@ -94,7 +96,7 @@ void UISplitter::swap( bool swapSplitPartition ) {
 		if ( swapSplitPartition )
 			mSplitPartition.setValue( 100.f - mSplitPartition.getValue(),
 									  StyleSheetLength::Percentage );
-		setLayoutDirty();
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
 

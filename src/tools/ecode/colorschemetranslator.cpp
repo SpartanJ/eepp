@@ -74,8 +74,6 @@ static const auto BASE_UI_THEME = R"css(
 	--theme-error: error;
 	--theme-warning: warning;
 	--theme-success: function;
-
-	droppable-hovering-color: minimap_visible_area;
 }
 
 )css";

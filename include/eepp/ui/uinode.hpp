@@ -33,6 +33,8 @@ class UIWidget;
 class EE_API UINode : public Node {
   public:
 	friend class BlockLayouter;
+	friend class FlexLayouter;
+	friend class GridLayouter;
 	friend class InlineLayouter;
 	friend class TableLayouter;
 	/**
@@ -115,7 +117,7 @@ class EE_API UINode : public Node {
 	 *
 	 * @return The node type as a Uint32.
 	 */
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_UINODE; }
 
 	/**
 	 * @brief Checks if the node is of a specific type.
@@ -125,7 +127,9 @@ class EE_API UINode : public Node {
 	 * @param type The type identifier to check.
 	 * @return True if the node is of the specified type, false otherwise.
 	 */
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UINode::getType() == type || Node::isType( type );
+	}
 
 	/**
 	 * @brief Sets the node position in density-independent pixels (dp).
@@ -416,6 +420,12 @@ class EE_API UINode : public Node {
 	 */
 	UINode* setBackgroundSize( const std::string& size, int index = 0 );
 
+	UINode* setBackgroundOrigin( const std::string& origin, int index = 0 );
+
+	UINode* setBackgroundClip( const std::string& clip, int index = 0 );
+
+	UINode* setBackgroundAttachment( const std::string& attachment, int index = 0 );
+
 	/**
 	 * @brief Gets the background color.
 	 *
@@ -634,6 +644,74 @@ class EE_API UINode : public Node {
 	Uint32 getForegroundRadius() const;
 
 	/**
+	 * @brief Sets the top-left foreground border radius.
+	 *
+	 * Sets the top-left corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundTopLeftRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the top-right foreground border radius.
+	 *
+	 * Sets the top-right corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundTopRightRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the bottom-left foreground border radius.
+	 *
+	 * Sets the bottom-left corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundBottomLeftRadius( const std::string& radius );
+
+	/**
+	 * @brief Sets the bottom-right foreground border radius.
+	 *
+	 * Sets the bottom-right corner radius for the foreground content.
+	 *
+	 * @param radius The radius value as a string (e.g., "5px", "50%").
+	 * @return Pointer to this node for method chaining.
+	 */
+	UINode* setForegroundBottomRightRadius( const std::string& radius );
+
+	/**
+	 * @brief Gets the top-left foreground border radius.
+	 *
+	 * @return The top-left foreground border radius.
+	 */
+	const Sizef& getForegroundTopLeftRadius() const;
+
+	/**
+	 * @brief Gets the top-right foreground border radius.
+	 *
+	 * @return The top-right foreground border radius.
+	 */
+	const Sizef& getForegroundTopRightRadius() const;
+
+	/**
+	 * @brief Gets the bottom-left foreground border radius.
+	 *
+	 * @return The bottom-left foreground border radius.
+	 */
+	const Sizef& getForegroundBottomLeftRadius() const;
+
+	/**
+	 * @brief Gets the bottom-right foreground border radius.
+	 *
+	 * @return The bottom-right foreground border radius.
+	 */
+	const Sizef& getForegroundBottomRightRadius() const;
+
+	/**
 	 * @brief Enables or disables the border and returns the border drawable.
 	 *
 	 * If enabled, creates or returns the border drawable. If disabled, the border is hidden.
@@ -687,9 +765,9 @@ class EE_API UINode : public Node {
 	 *
 	 * Returns the bitmask of flags that control various node behaviors and states.
 	 *
-	 * @return The flags as a Uint32 bitmask.
+	 * @return The flags as a Uint64 bitmask.
 	 */
-	const Uint32& getFlags() const;
+	const Uint64& getFlags() const;
 
 	/**
 	 * @brief Sets multiple flags on the node.
@@ -700,7 +778,7 @@ class EE_API UINode : public Node {
 	 * @param flags Bitwise combination of flags to set.
 	 * @return Pointer to this node for method chaining.
 	 */
-	virtual UINode* setFlags( const Uint32& flags );
+	virtual UINode* setFlags( const Uint64& flags );
 
 	/**
 	 * @brief Unsets multiple flags on the node.
@@ -710,7 +788,7 @@ class EE_API UINode : public Node {
 	 * @param flags Bitwise combination of flags to unset.
 	 * @return Pointer to this node for method chaining.
 	 */
-	virtual UINode* unsetFlags( const Uint32& flags );
+	virtual UINode* unsetFlags( const Uint64& flags );
 
 	/**
 	 * @brief Resets all flags to a specific value.
@@ -720,7 +798,7 @@ class EE_API UINode : public Node {
 	 * @param newFlags The new flags bitmask (default is 0 to clear all).
 	 * @return Pointer to this node for method chaining.
 	 */
-	virtual UINode* resetFlags( Uint32 newFlags = 0 );
+	virtual UINode* resetFlags( Uint64 newFlags = 0 );
 
 	/**
 	 * @brief Gets the background drawable.
@@ -1422,23 +1500,28 @@ class EE_API UINode : public Node {
 	 */
 	virtual bool isScrollable() const;
 
+	/** @brief Get a widget's computed absolute font size in pixels. */
+	Float getAbsoluteFontSize( const UIWidget* widget ) const;
+
+	bool isCreatingNode() const;
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
 	Sizef mMinSize;
-	Uint32 mFlags;
+	Uint64 mFlags;
 	Uint32 mState;
+	Uint32 mDragButton;
 	UISkinState* mSkinState;
 	mutable UINodeDrawable* mBackground;
 	mutable UINodeDrawable* mForeground;
 	mutable UIBorderDrawable* mBorder;
 	Vector2f mDragPoint;
-	Uint32 mDragButton;
 	Color mSkinColor;
+	UIClip mClip;
 	UISceneNode* mUISceneNode;
 	Rectf mPadding;
 	Rectf mPaddingPx;
-	UIClip mClip;
 	std::string mMinWidthEq;
 	std::string mMinHeightEq;
 	std::string mMaxWidthEq;
@@ -1704,7 +1787,7 @@ class EE_API UINode : public Node {
 	 * @param Flag The flag bit to modify.
 	 * @param Val The value to set (1 to set, 0 to clear).
 	 */
-	void writeFlag( const Uint32& Flag, const Uint32& Val );
+	void writeFlag( const Uint64& Flag, const Uint32& Val );
 
 	/**
 	 * @brief Creates padding rectangle from skin border size.
@@ -1862,8 +1945,6 @@ class EE_API UINode : public Node {
 	 * @return The droppable hover color.
 	 */
 	Color getDroppableHoveringColor();
-
-	Float getAbsoluteFontSize( const UIWidget* widget ) const;
 };
 
 }} // namespace EE::UI

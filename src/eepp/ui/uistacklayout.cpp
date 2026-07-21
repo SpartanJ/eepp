@@ -123,7 +123,7 @@ void UIStackLayout::listenParent() {
 		if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
 			 getUISceneNode()->isUpdatingLayouts() && getParent()->getPixelsSize().getWidth() > 0 &&
 			 mSize.x != getMatchParentWidth() ) {
-			runOnMainThread( [this]() { setLayoutDirty(); } );
+			runOnMainThread( [this]() { setLayoutDirty( LayoutInvalidation::ContainerLayout ); } );
 		}
 	} );
 	mParentCloseCb =
@@ -200,7 +200,7 @@ void UIStackLayout::updateLayout() {
 
 	if ( !mVisible ) {
 		setInternalPixelsSize( Sizef::Zero );
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		mPacking = false;
 		mDirtyLayout = false;
 		return;
@@ -350,13 +350,13 @@ void UIStackLayout::updateLayout() {
 		 ( ( lines.size() == 1 && !lines[0].nodes.empty() ) ||
 		   ( lines.size() == 2 && lines[1].nodes.empty() ) ) ) {
 		setInternalPixelsWidth( curX );
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 		if ( totHeight != (int)getPixelsSize().getHeight() ) {
 			setInternalPixelsHeight( totHeight );
-			notifyLayoutAttrChangeParent();
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		}
 	}
 

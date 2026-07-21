@@ -10,6 +10,9 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class FontTrueType;
+struct FontDesc;
+
 /** @brief The Font Manager is a singleton class that manages all the instance of fonts
    instantiated. And releases the font instances automatically. So the user doesn't need to release
    any font instance.
@@ -49,10 +52,13 @@ class EE_API FontManager : public ResourceManager<Font> {
 
 	Font* getByInternalId( Uint32 internalId ) const;
 
+	FontTrueType* getOrLoadSystemFallbackFont( const FontDesc& desc );
+
   protected:
 	Font* mColorEmojiFont{ nullptr };
 	Font* mEmojiFont{ nullptr };
 	std::vector<Font*> mFallbackFonts;
+	std::vector<Font*> mSystemFallbackFonts;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 

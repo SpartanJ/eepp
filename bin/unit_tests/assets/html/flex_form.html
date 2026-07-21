@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      :root {
+        --bg: #1c1917;
+        --surface: #292524;
+        --surface-hover: #302c2a;
+        --accent: #d97706;
+        --accent-hover: #f59e0b;
+        --muted: #a8a29e;
+        --border: #897c75;
+      }
+
+      html {
+        font-size: 18px;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background-color: var(--bg);
+        background-position-x: 0%;
+        background-position-y: 0%;
+        background-size: auto;
+        background-origin: padding-box;
+        background-clip: border-box;
+        color: var(--text);
+        font-family: "Source Serif 4", Georgia, serif;
+        line-height: 1.6;
+      }
+
+      .newsletter-box {
+        margin-top: 3rem;
+        background-color: var(--surface);
+        background-position-x: 0%;
+        background-position-y: 0%;
+        background-size: auto;
+        background-origin: padding-box;
+        background-clip: border-box;
+        border-top-width: 1px;
+        border-right-width: 1px;
+        border-bottom-width: 1px;
+        border-left-width: 1px;
+        border-top-color: var(--border);
+        border-right-color: var(--border);
+        border-bottom-color: var(--border);
+        border-left-color: var(--border);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        padding-top: 1.75rem;
+        padding-right: 2rem;
+        padding-bottom: 1.75rem;
+        padding-left: 2rem;
+      }
+
+      .newsletter-box h3 {
+        font-family: "Source Sans 3", sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--heading);
+        margin-bottom: 0.4rem;
+      }
+
+      .newsletter-box p {
+        font-size: 0.88rem;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+      }
+
+      .newsletter-form {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .newsletter-form input[type="email"] {
+        outline: none;
+        padding-top: 0.6rem;
+        padding-right: 0.9rem;
+        padding-bottom: 0.6rem;
+        padding-left: 0.9rem;
+        background-color: var(--bg);
+        background-position-x: 0%;
+        background-position-y: 0%;
+        background-size: auto;
+        background-origin: padding-box;
+        background-clip: border-box;
+        border-top-width: 1px;
+        border-right-width: 1px;
+        border-bottom-width: 1px;
+        border-left-width: 1px;
+        border-top-color: var(--border);
+        border-right-color: var(--border);
+        border-bottom-color: var(--border);
+        border-left-color: var(--border);
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom-left-radius: 6px;
+        color: var(--text);
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 0.88rem;
+        transition: border-color 0.2s;
+      }
+
+      .newsletter-form input[type="email"]:focus {
+        border-top-color: var(--accent);
+        border-right-color: var(--accent);
+        border-bottom-color: var(--accent);
+        border-left-color: var(--accent);
+      }
+
+      .newsletter-form input[type="email"]::placeholder {
+        color: var(--muted);
+        opacity: 0.6;
+      }
+
+      .newsletter-form button {
+        padding-top: 0.6rem;
+        padding-right: 1.25rem;
+        padding-bottom: 0.6rem;
+        padding-left: 1.25rem;
+        background-color: var(--accent);
+        background-position-x: 0%;
+        background-position-y: 0%;
+        background-size: auto;
+        background-origin: padding-box;
+        background-clip: border-box;
+        border-top-width: 0;
+        border-right-width: 0;
+        border-bottom-width: 0;
+        border-left-width: 0;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom-left-radius: 6px;
+        color: #1c1917;
+        font-family: "Source Sans 3", sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .newsletter-form button:hover {
+        background-color: var(--accent-hover);
+        background-position-x: 0%;
+        background-position-y: 0%;
+        background-size: auto;
+        background-origin: padding-box;
+        background-clip: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="content">
+      <article>
+        <div class="newsletter-box">
+          <form
+            action="https://buttondown.com/api/emails/embed-subscribe/causality"
+            method="post"
+            target="popupwindow"
+            class="newsletter-form"
+          >
+            <input
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              required=""
+            />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

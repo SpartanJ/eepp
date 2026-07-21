@@ -12,9 +12,9 @@ SyntaxDefinition& addObjectiveC() {
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
-			  { { "(#%s*include)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
+			  { { "(#%s*include)%s+([<%\"][%w%d%.%\\%/%_%-%+]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
-			  { { "(#%s*import)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
+			  { { "(#%s*import)%s+([<%\"][%w%d%.%\\%/%_%-%+]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },

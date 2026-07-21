@@ -29,6 +29,10 @@ class SceneNode;
 }} // namespace EE::Scene
 using namespace EE::Scene;
 
+namespace EE { namespace UI {
+class UISceneNode;
+}} // namespace EE::UI
+
 namespace EE { namespace Scene {
 
 /**
@@ -79,7 +83,8 @@ enum NodeFlags {
 	NODE_FLAG_LOADING = ( 1 << 27 ),
 	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
 	NODE_FLAG_DISABLE_CLICK_FOCUS = ( 1 << 29 ),
-	NODE_FLAG_FREE_USE = ( 1 << 30 )
+	NODE_FLAG_TEXTNODE = ( 1 << 30 ),
+	NODE_FLAG_FREE_USE = ( 1 << 31 )
 };
 
 /**
@@ -197,7 +202,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The node type as a Uint32.
 	 */
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return 0; }
 
 	/**
 	 * @brief Checks if the node is of a specific type.
@@ -207,7 +212,10 @@ class EE_API Node : public Transformable {
 	 * @param type The type identifier to check.
 	 * @return True if the node is of the specified type, false otherwise.
 	 */
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const { return Node::getType() == type; }
+
+	/** @return True if this node is a UITextNode, false otherwise. */
+	inline bool isTextNode() const { return 0 != ( mNodeFlags & NODE_FLAG_TEXTNODE ); }
 
 	/**
 	 * @brief Posts a message to this node and its ancestors.
@@ -271,7 +279,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The size as a Sizef.
 	 */
-	virtual const Sizef& getSize() const;
+	virtual const Sizef& getSize() const { return mSize; }
 
 	/**
 	 * @brief Gets the node size in actual screen pixels.
@@ -281,7 +289,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The pixel size as a Sizef.
 	 */
-	const Sizef& getPixelsSize() const;
+	inline const Sizef& getPixelsSize() const { return mSize; }
 
 	/**
 	 * @brief Sets the visibility of the node.
@@ -314,7 +322,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if the node is visible, false otherwise.
 	 */
-	bool isVisible() const;
+	inline bool isVisible() const { return mVisible; }
 
 	/**
 	 * @brief Checks if the node and all its parents are visible.
@@ -342,7 +350,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if the node is enabled, false if disabled.
 	 */
-	bool isEnabled() const;
+	inline bool isEnabled() const { return mEnabled; }
 
 	/**
 	 * @brief Checks if the node is disabled.
@@ -351,7 +359,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if the node is disabled, false otherwise.
 	 */
-	bool isDisabled() const;
+	inline bool isDisabled() const { return !mEnabled; }
 
 	/**
 	 * @brief Gets the parent node.
@@ -361,7 +369,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the parent node or nullptr.
 	 */
-	Node* getParent() const;
+	inline Node* getParent() const { return mParentNode; }
 
 	/**
 	 * @brief Sets the parent node.
@@ -421,7 +429,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the next sibling node or nullptr.
 	 */
-	Node* getNextNode() const;
+	inline Node* getNextNode() const { return mNext; }
 
 	/**
 	 * @brief Gets the previous sibling node in the parent's child list.
@@ -431,7 +439,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the previous sibling node or nullptr.
 	 */
-	Node* getPrevNode() const;
+	inline Node* getPrevNode() const { return mPrev; }
 
 	/**
 	 * @brief Gets the next sibling node, wrapping to first if at end.
@@ -460,7 +468,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The stored user data pointer.
 	 */
-	const UintPtr& getData() const;
+	inline const UintPtr& getData() const { return mData; }
 
 	/**
 	 * @brief Sets the blend mode for this node.
@@ -517,7 +525,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The flags as a Uint32 bitmask.
 	 */
-	const Uint32& getNodeFlags() const;
+	inline const Uint32& getNodeFlags() const { return mNodeFlags; }
 
 	/**
 	 * @brief Sets the node flags directly.
@@ -536,7 +544,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a SceneNode, false otherwise.
 	 */
-	bool isSceneNode() const;
+	inline bool isSceneNode() const { return 0 != ( mNodeFlags & NODE_FLAG_SCENENODE ); }
 
 	/**
 	 * @brief Checks if this node is a UISceneNode.
@@ -545,7 +553,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a UISceneNode, false otherwise.
 	 */
-	bool isUISceneNode() const;
+	inline bool isUISceneNode() const { return 0 != ( mNodeFlags & NODE_FLAG_UISCENENODE ); }
 
 	/**
 	 * @brief Checks if this node is a UINode.
@@ -554,7 +562,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a UINode, false otherwise.
 	 */
-	bool isUINode() const;
+	inline bool isUINode() const { return 0 != ( mNodeFlags & NODE_FLAG_UINODE ); }
 
 	/**
 	 * @brief Checks if this node is a UIWidget.
@@ -563,7 +571,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a UIWidget, false otherwise.
 	 */
-	bool isWidget() const;
+	inline bool isWidget() const { return 0 != ( mNodeFlags & NODE_FLAG_WIDGET ); }
 
 	/**
 	 * @brief Checks if this node is a Window.
@@ -572,7 +580,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a Window, false otherwise.
 	 */
-	bool isWindow() const;
+	inline bool isWindow() const { return 0 != ( mNodeFlags & NODE_FLAG_WINDOW ); }
 
 	/**
 	 * @brief Checks if this node is a Layout.
@@ -582,7 +590,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node is a Layout, false otherwise.
 	 */
-	bool isLayout() const;
+	inline bool isLayout() const { return 0 != ( mNodeFlags & NODE_FLAG_LAYOUT ); }
 
 	/**
 	 * @brief Checks if clipping is enabled for this node.
@@ -591,21 +599,21 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if clipping is enabled, false otherwise.
 	 */
-	bool isClipped() const;
+	inline bool isClipped() const { return 0 != ( mNodeFlags & NODE_FLAG_CLIP_ENABLE ); }
 
 	/**
 	 * @brief Checks if this node has rotation applied.
 	 *
 	 * @return True if the node's rotation is non-zero, false otherwise.
 	 */
-	bool isRotated() const;
+	inline bool isRotated() const { return 0 != ( mNodeFlags & NODE_FLAG_ROTATED ); }
 
 	/**
 	 * @brief Checks if this node has scaling applied.
 	 *
 	 * @return True if the node's scale is not (1,1), false otherwise.
 	 */
-	bool isScaled() const;
+	inline bool isScaled() const { return 0 != ( mNodeFlags & NODE_FLAG_SCALED ); }
 
 	/**
 	 * @brief Checks if this node uses a frame buffer.
@@ -614,21 +622,23 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if using frame buffer rendering, false otherwise.
 	 */
-	bool isFrameBuffer() const;
+	inline bool isFrameBuffer() const { return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER ); }
 
 	/**
 	 * @brief Checks if the mouse is currently over this node.
 	 *
 	 * @return True if the mouse cursor is over this node, false otherwise.
 	 */
-	bool isMouseOver() const;
+	inline bool isMouseOver() const { return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER ); }
 
 	/**
 	 * @brief Checks if the mouse is over this node or any of its children.
 	 *
 	 * @return True if the mouse is over this node or any descendant, false otherwise.
 	 */
-	bool isMouseOverMeOrChildren() const;
+	inline bool isMouseOverMeOrChildren() const {
+		return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
+	}
 
 	/**
 	 * @brief Checks if this node and all its parents are visible in the tree.
@@ -748,14 +758,14 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the first child or nullptr if no children exist.
 	 */
-	Node* getFirstChild() const;
+	inline Node* getFirstChild() const { return mChild; }
 
 	/**
 	 * @brief Gets the last child node.
 	 *
 	 * @return Pointer to the last child or nullptr if no children exist.
 	 */
-	Node* getLastChild() const;
+	inline Node* getLastChild() const { return mChildLast; }
 
 	/**
 	 * @brief Gets the world polygon of this node.
@@ -865,7 +875,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return The ID hash value.
 	 */
-	const String::HashType& getIdHash() const;
+	inline const String::HashType& getIdHash() const { return mIdHash; }
 
 	/**
 	 * @brief Finds a descendant node by its ID string.
@@ -1022,7 +1032,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if reverse drawing is enabled, false otherwise.
 	 */
-	bool isReverseDraw() const;
+	inline bool isReverseDraw() const { return 0 != ( mNodeFlags & NODE_FLAG_REVERSE_DRAW ); }
 
 	/**
 	 * @brief Enables or disables reverse drawing order.
@@ -1420,7 +1430,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if this node has focus, false otherwise.
 	 */
-	bool hasFocus() const;
+	inline bool hasFocus() const { return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS ); }
 
 	/**
 	 * @brief Checks if this node or any descendant has focus.
@@ -1545,7 +1555,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return Pointer to the SceneNode or nullptr if not found.
 	 */
-	SceneNode* getSceneNode() const;
+	inline SceneNode* getSceneNode() const { return mSceneNode; }
 
 	/**
 	 * @brief Gets the event dispatcher associated with this node.
@@ -1756,7 +1766,7 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if the node's loading flag is set, false otherwise.
 	 */
-	bool isLoadingState() const;
+	inline bool isLoadingState() const { return 0 != ( mNodeFlags & NODE_FLAG_LOADING ); }
 
 	/**
 	 * @brief Called when the node's ID changes.
@@ -1771,14 +1781,23 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if the close flag is set (node will be removed), false otherwise.
 	 */
-	bool isClosing() const;
+	inline bool isClosing() const { return 0 != ( mNodeFlags & NODE_FLAG_CLOSE ); }
+
+	/**
+	 * @brief Checks if the node is marked for closure or any node in its parent tree.
+	 *
+	 * @return True if node is about to close
+	 */
+	bool inClosingTree() const;
 
 	/**
 	 * @brief Checks if the node is in the process of closing children.
 	 *
 	 * @return True if the closing children flag is set, false otherwise.
 	 */
-	bool isClosingChildren() const;
+	inline bool isClosingChildren() const {
+		return 0 != ( mNodeFlags & NODE_FLAG_CLOSING_CHILDREN );
+	}
 
 	/**
 	 * @brief Finds the node under a point, considering hit testing.
@@ -1918,6 +1937,7 @@ class EE_API Node : public Transformable {
 
 	/** @brief Forward declaration for EventDispatcher. */
 	friend class EventDispatcher;
+	friend class EE::UI::UISceneNode;
 
 	std::string mId;
 	String::HashType mIdHash{ 0 };
@@ -2538,7 +2558,9 @@ class EE_API Node : public Transformable {
 	 *
 	 * @return True if NODE_FLAG_SCHEDULED_UPDATE is set.
 	 */
-	bool isSubscribedForScheduledUpdate();
+	inline bool isSubscribedForScheduledUpdate() {
+		return 0 != ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE );
+	}
 };
 
 }} // namespace EE::Scene

@@ -167,7 +167,7 @@ void RendererGL3::setShader( ShaderProgram* Shader ) {
 		mTextureUnits[i] = mCurShader->getAttributeLocation( EEGL3_TEXTUREUNIT_NAMES[i] );
 	}
 
-	glUseProgram( mCurShader->getHandler() );
+	useProgram( mCurShader->getHandler() );
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
 		enableClientState( GL_VERTEX_ARRAY );
@@ -290,7 +290,7 @@ void RendererGL3::enableClientState( unsigned int array ) {
 		if ( -1 != ( state = mTextureUnits[mCurActiveTex] ) ) {
 			mTextureUnitsStates[mCurActiveTex] = 1;
 
-			glEnableVertexAttribArray( state );
+			enableVertexAttribArray( state );
 		}
 	} else {
 		Int32 Pos = array - GL_VERTEX_ARRAY;
@@ -298,7 +298,7 @@ void RendererGL3::enableClientState( unsigned int array ) {
 		if ( -1 != ( state = mAttribsLoc[Pos] ) ) {
 			mAttribsLocStates[Pos] = 1;
 
-			glEnableVertexAttribArray( state );
+			enableVertexAttribArray( state );
 		}
 	}
 }
@@ -310,7 +310,7 @@ void RendererGL3::disableClientState( unsigned int array ) {
 		if ( -1 != ( state = mTextureUnits[mCurActiveTex] ) ) {
 			mTextureUnitsStates[mCurActiveTex] = 0;
 
-			glDisableVertexAttribArray( state );
+			disableVertexAttribArray( state );
 		}
 	} else {
 		Int32 Pos = array - GL_VERTEX_ARRAY;
@@ -318,7 +318,7 @@ void RendererGL3::disableClientState( unsigned int array ) {
 		if ( -1 != ( state = mAttribsLoc[Pos] ) ) {
 			mAttribsLocStates[Pos] = 0;
 
-			glDisableVertexAttribArray( state );
+			disableVertexAttribArray( state );
 		}
 	}
 }
@@ -331,10 +331,10 @@ void RendererGL3::vertexPointer( int size, unsigned int type, int stride, const 
 		if ( 0 == mAttribsLocStates[EEGL_VERTEX_ARRAY] ) {
 			mAttribsLocStates[EEGL_VERTEX_ARRAY] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
+		vertexAttribPointer( index, size, type, false, stride, pointer );
 	}
 }
 
@@ -346,13 +346,13 @@ void RendererGL3::colorPointer( int size, unsigned int type, int stride, const v
 		if ( 0 == mAttribsLocStates[EEGL_COLOR_ARRAY] ) {
 			mAttribsLocStates[EEGL_COLOR_ARRAY] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointer( index, size, type, GL_TRUE, stride, pointer );
+			vertexAttribPointer( index, size, type, true, stride, pointer );
 		} else {
-			glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
+			vertexAttribPointer( index, size, type, false, stride, pointer );
 		}
 	}
 }
@@ -365,10 +365,10 @@ void RendererGL3::texCoordPointer( int size, unsigned int type, int stride, cons
 		if ( 0 == mTextureUnitsStates[mCurActiveTex] ) {
 			mTextureUnitsStates[mCurActiveTex] = 1;
 
-			glEnableVertexAttribArray( index );
+			enableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
+		vertexAttribPointer( index, size, type, false, stride, pointer );
 	}
 }
 
@@ -423,10 +423,10 @@ void RendererGL3::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32
 	GLi->enable( GL_CLIP_PLANE2 );
 	GLi->enable( GL_CLIP_PLANE3 );
 
-	glUniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0] ) );
-	glUniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0] ) );
-	glUniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0] ) );
-	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0] ) );
+	uniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0] ) );
+	uniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0] ) );
+	uniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0] ) );
+	uniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0] ) );
 }
 
 void RendererGL3::clip2DPlaneDisable() {
@@ -451,7 +451,7 @@ void RendererGL3::clipPlane( unsigned int plane, const double* equation ) {
 	} else {
 		std::string planeNum( "dgl_ClipPlane[" + String::toString( nplane ) + "]" );
 
-		location = glGetUniformLocation( mCurShader->getHandler(), (GLchar*)&planeNum[0] );
+		location = getUniformLocation( mCurShader->getHandler(), &planeNum[0] );
 	}
 
 	glm::vec4 teq( equation[0], equation[1], equation[2], equation[3] );
@@ -460,7 +460,7 @@ void RendererGL3::clipPlane( unsigned int plane, const double* equation ) {
 		  glm::inverse( mStack->mModelViewMatrix
 							.top() ); /// Apply the inverse of the model view matrix to the equation
 
-	glUniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
+	uniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
 }
 
 float RendererGL3::pointSize() {

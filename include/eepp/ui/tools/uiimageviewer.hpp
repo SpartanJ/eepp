@@ -74,6 +74,12 @@ class EE_API UIImageViewer : public UIWidget {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const override;
 
+	void resetImageView();
+
+	bool isLoading() const { return mLoading; }
+
+	bool hasImage() const;
+
   protected:
 	UILoader* mLoader{ nullptr };
 	UIImage* mImage{ nullptr };
@@ -104,8 +110,6 @@ class EE_API UIImageViewer : public UIWidget {
 	virtual Uint32 onKeyDown( const KeyEvent& event ) override;
 
 	void updateTextDisplay();
-
-	void resetImageView();
 };
 
 } // namespace EE::UI::Tools

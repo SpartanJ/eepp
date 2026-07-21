@@ -20,9 +20,57 @@ using namespace std::literals;
 
 namespace ecode {
 
-static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
-static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-]+)}"sv;
-static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
+class AutoCompletePlugin::SnippetDocumentClient : public TextDocument::Client {
+  public:
+	SnippetDocumentClient( AutoCompletePlugin* plugin, TextDocument* doc ) :
+		mPlugin( plugin ), mDoc( doc ) {}
+
+	void detach() {
+		if ( mDoc ) {
+			mDoc->unregisterClient( this );
+			mDoc = nullptr;
+		}
+	}
+
+	bool isAttached() const { return mDoc != nullptr; }
+
+	void onDocumentTextChanged( const DocumentContentChange& change ) override {
+		if ( mDoc )
+			mPlugin->onSnippetTextChanged( mDoc, change );
+	}
+
+	void onDocumentUndoRedo( const TextDocument::UndoRedo& ) override {
+		if ( mDoc )
+			mPlugin->cancelSnippetSession( mDoc );
+	}
+
+	void onDocumentCursorChange( const TextPosition& ) override {}
+
+	void onDocumentSelectionChange( const TextRange& ) override {
+		if ( mDoc )
+			mPlugin->onSnippetSelectionChanged( mDoc );
+	}
+
+	void onDocumentLineCountChange( const size_t&, const size_t& ) override {}
+	void onDocumentLineChanged( const Int64& ) override {}
+	void onDocumentSaved( TextDocument* ) override {}
+
+	void onDocumentClosed( TextDocument* doc ) override {
+		mPlugin->onSnippetDocumentClosed( doc );
+		mDoc = nullptr;
+	}
+
+	void onDocumentDirtyOnFileSystem( TextDocument* ) override {}
+	void onDocumentMoved( TextDocument* ) override {}
+
+	void onDocumentReset( TextDocument* doc ) override { mPlugin->cancelSnippetSession( doc ); }
+
+	Client::Type getTextDocumentClientType() override { return Client::Auxiliary; }
+
+  private:
+	AutoCompletePlugin* mPlugin{ nullptr };
+	TextDocument* mDoc{ nullptr };
+};
 
 static json getURIJSON( TextDocument* doc, const PluginIDType& id ) {
 	json data;
@@ -106,6 +154,10 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
+	for ( auto& client : mSnippetClients )
+		client.second->detach();
+	mSnippetClients.clear();
+	mSnippetSessions.clear();
 
 	{
 		Lock l( mDocMutex );
@@ -207,6 +259,13 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			config["suggestion_documentation"] = mSuggestionDocumentation;
 			updateConfigFile = true;
 		}
+
+		if ( config.contains( "signature_help_documentation" ) )
+			mSignatureHelpDocumentation = config.value( "signature_help_documentation", true );
+		else {
+			config["suggestion_documentation"] = mSignatureHelpDocumentation;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -304,6 +363,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 		TextDocument* oldDoc = mEditorDocs[editor];
 		TextDocument* newDoc = editor->getDocumentRef().get();
+		cancelSnippetSession( oldDoc );
 
 		{
 			Lock ls( mDocUsesOwnSymbolsMutex );
@@ -328,8 +388,10 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		}
 	} ) );
 
-	listeners.push_back(
-		editor->on( Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
+	listeners.push_back( editor->on( Event::OnFocusLoss, [this, editor]( const Event* ) {
+		resetSignatureHelp();
+		cancelSnippetSession( &editor->getDocument(), true );
+	} ) );
 
 	listeners.push_back(
 		editor->on( Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
@@ -382,6 +444,7 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 		for ( auto ceditor : mEditorDocs )
 			if ( ceditor.second == doc )
 				return;
+		detachSnippetClient( doc );
 		mDocs.erase( doc );
 		mDocCache.erase( doc );
 	}
@@ -394,8 +457,46 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 	mDirty = true;
 }
 
+static bool isSnippetNavigationCommand( std::string_view command ) {
+	return command == "move-to-previous-char"sv || command == "move-to-next-char"sv ||
+		   command == "move-to-previous-line"sv || command == "move-to-next-line"sv ||
+		   command == "move-to-start-of-content"sv || command == "move-to-end-of-line"sv ||
+		   command == "move-to-previous-page"sv || command == "move-to-next-page"sv;
+}
+
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
-	KeyBindings::Shortcut eventShortcut( event.getKeyCode(), event.getSanitizedMod() );
+	KeyBindings::Shortcut eventShortcut =
+		KeyBindings::sanitizeShortcut( { event.getKeyCode(), event.getSanitizedMod() } );
+	auto sessionIt = mSnippetSessions.find( &editor->getDocument() );
+	if ( sessionIt != mSnippetSessions.end() && sessionIt->second.editor == editor ) {
+		const Uint32 mod = event.getSanitizedMod();
+		if ( event.getKeyCode() == KEY_TAB &&
+			 ( mod == 0 || ( mod & KEYMOD_SHIFT && ( mod & ~KEYMOD_SHIFT ) == 0 ) ) ) {
+			if ( mSnippetChoiceSuggestions && !( mod & KEYMOD_SHIFT ) )
+				pickSnippetChoice( editor );
+			return navigateSnippet( editor, mod & KEYMOD_SHIFT );
+		}
+		if ( event.getKeyCode() == KEY_ESCAPE && mod == 0 && mSnippetChoiceSuggestions ) {
+			resetSuggestions( editor );
+			editor->invalidateDraw();
+			return true;
+		}
+		if ( event.getKeyCode() == KEY_ESCAPE && mod == 0 ) {
+			cancelSnippetSession( &editor->getDocument() );
+			return false;
+		}
+		const auto command = editor->getKeyBindings().getCommandFromKeyBind( eventShortcut );
+		const bool choiceNavigationShortcut =
+			mSnippetChoiceSuggestions &&
+			( mShortcuts["autocomplete-prev-suggestion"] == eventShortcut ||
+			  mShortcuts["autocomplete-next-suggestion"] == eventShortcut ||
+			  mShortcuts["autocomplete-first-suggestion"] == eventShortcut ||
+			  mShortcuts["autocomplete-last-suggestion"] == eventShortcut ||
+			  mShortcuts["autocomplete-prev-suggestion-page"] == eventShortcut ||
+			  mShortcuts["autocomplete-next-suggestion-page"] == eventShortcut );
+		if ( !choiceNavigationShortcut && isSnippetNavigationCommand( command ) )
+			cancelSnippetSession( &editor->getDocument(), true );
+	}
 	if ( mSignatureHelpVisible ) {
 		if ( mShortcuts["autocomplete-close-signature-help"] == eventShortcut ) {
 			resetSignatureHelp();
@@ -424,12 +525,11 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
-		} else if ( event.getKeyCode() == EE::Window::KEY_BACKSPACE ||
-					event.getKeyCode() == EE::Window::KEY_DELETE ) {
+		} else if ( event.getKeyCode() == KEY_BACKSPACE || event.getKeyCode() == KEY_DELETE ) {
 			auto lang = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
 			auto cap = mCapabilities.find( lang );
 			if ( cap != mCapabilities.end() ) {
-				auto curChar = event.getKeyCode() == EE::Window::KEY_BACKSPACE
+				auto curChar = event.getKeyCode() == KEY_BACKSPACE
 								   ? editor->getDocumentRef()->getPrevChar()
 								   : editor->getDocumentRef()->getCurrentChar();
 				const auto& signatureTrigger = cap->second.signatureHelpProvider.triggerCharacters;
@@ -439,6 +539,13 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				}
 			}
 		}
+	}
+
+	if ( !mSnippetChoiceSuggestions &&
+		 mShortcuts["autocomplete-update-suggestions"] == eventShortcut ) {
+		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
+		updateSuggestions( partialSymbol, editor );
+		return true;
 	}
 
 	if ( !mSuggestions.empty() ) {
@@ -511,10 +618,6 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			pickSuggestion( editor );
 			return true;
 		}
-	} else if ( mShortcuts["autocomplete-update-suggestions"] == eventShortcut ) {
-		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
-		updateSuggestions( partialSymbol, editor );
-		return true;
 	}
 	return false;
 }
@@ -660,136 +763,411 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 				clock.getElapsedTime().asMilliseconds() );
 }
 
+static SnippetParser::VariableMap snippetVariables( TextDocument& doc,
+													const TextRange& selection ) {
+	const TextPosition position = selection.normalized().start();
+	std::string filePath = doc.getFilePath();
+	if ( filePath.empty() )
+		filePath = doc.getLoadingFilePath();
+	const std::string filename = FileSystem::fileNameFromPath( filePath );
+	return { { "TM_SELECTED_TEXT", doc.getText( selection ).toUtf8() },
+			 { "TM_CURRENT_LINE", doc.getLineTextWithoutNewLine( position.line() ).toUtf8() },
+			 { "TM_CURRENT_WORD", doc.getWordInPosition( position ).toUtf8() },
+			 { "TM_LINE_INDEX", String::toString( position.line() ) },
+			 { "TM_LINE_NUMBER", String::toString( position.line() + 1 ) },
+			 { "TM_FILENAME", filename },
+			 { "TM_FILENAME_BASE", FileSystem::fileRemoveExtension( filename ) },
+			 { "TM_DIRECTORY", FileSystem::fileRemoveFileName( filePath ) },
+			 { "TM_FILEPATH", filePath } };
+}
+
 void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
+	if ( mSnippetChoiceSuggestions )
+		return pickSnippetChoice( editor );
 	mReplacing = true;
 	std::string symbol( getPartialSymbol( editor->getDocumentRef().get() ) );
 	const auto& suggestion = mSuggestions[mSuggestionIndex];
 	auto doc = editor->getDocumentRef();
 	auto prevSels = doc->getSelections();
-
-	if ( doc->getSelections().size() == 1 && suggestion.range.isValid() &&
-		 doc->isValidRange( suggestion.range ) ) {
-		doc->setSelection( suggestion.range );
-		doc->textInput( !suggestion.insertText.empty() ? suggestion.insertText : suggestion.text );
+	const std::string& rawInsertText =
+		!suggestion.insertText.empty() ? suggestion.insertText : suggestion.text;
+	const bool isSnippet = suggestion.kind == LSPCompletionItemKind::Snippet ||
+						   suggestion.insertTextFormat == LSPInsertTextFormat::Snippet;
+	if ( !isSnippet ) {
+		if ( doc->getSelections().size() == 1 && suggestion.range.isValid() &&
+			 doc->isValidRange( suggestion.range ) ) {
+			doc->setSelection( suggestion.range );
+			doc->textInput( rawInsertText );
+		} else {
+			if ( !symbol.empty() )
+				doc->execute( "delete-to-previous-word" );
+			doc->textInput( rawInsertText );
+		}
 	} else {
-		if ( !symbol.empty() )
-			doc->execute( "delete-to-previous-word" );
-		doc->textInput( !suggestion.insertText.empty() ? suggestion.insertText : suggestion.text );
-	}
+		std::vector<SnippetInsertion> insertions;
+		insertions.reserve( prevSels.size() );
+		for ( const auto& selection : prevSels )
+			insertions.push_back(
+				{ SnippetParser::parse( rawInsertText, snippetVariables( *doc, selection ) ),
+				  {} } );
 
-	tryStartSnippetNav( suggestion, editor, prevSels );
+		if ( prevSels.size() == 1 && suggestion.range.isValid() &&
+			 doc->isValidRange( suggestion.range ) ) {
+			doc->setSelection( suggestion.range );
+		} else if ( !symbol.empty() ) {
+			doc->execute( "delete-to-previous-word" );
+		}
+		if ( insertions.size() > doc->getSelections().size() )
+			insertions.resize( doc->getSelections().size() );
+
+		for ( size_t index = 0; index < insertions.size(); ++index ) {
+			if ( doc->getSelectionIndex( index ).hasSelection() )
+				doc->deleteTo( index, 0 );
+			insertions[index].start = doc->getSelectionIndex( index ).start();
+			TextPosition end = doc->insert( index, insertions[index].start,
+											String::fromUtf8( insertions[index].snippet.text ) );
+			doc->setSelection( index, end );
+		}
+		tryStartSnippetNav( insertions, editor );
+	}
 
 	mReplacing = false;
 	resetSuggestions( editor );
+	auto sessionIt = mSnippetSessions.find( doc.get() );
+	if ( sessionIt != mSnippetSessions.end() )
+		showSnippetChoices( sessionIt->second );
 }
 
-void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
-											 const TextRanges& prevSels ) {
-	if ( !hasCompleteSteps( suggestion ) )
-		return;
+static TextPosition snippetPosition( const TextPosition& insertionStart,
+									 const TextPosition& relative ) {
+	return { insertionStart.line() + relative.line(),
+			 relative.line() == 0 ? insertionStart.column() + relative.column()
+								  : relative.column() };
+}
 
+void AutoCompletePlugin::tryStartSnippetNav( const std::vector<SnippetInsertion>& insertions,
+											 UICodeEditor* editor ) {
 	auto doc = editor->getDocumentRef();
-	auto selections = doc->getSelections();
-	TextRanges newSelections;
-	newSelections.reserve( selections.size() );
-	size_t i = 0;
-	for ( const auto& sel : selections ) {
-		newSelections.emplace_back( prevSels[i].start(), sel.end() );
-		i++;
-	}
-	std::vector<TextRanges> ranges;
-
-	for ( const auto& sel : newSelections ) {
-		TextRanges steps;
-
-		auto res = doc->findAll( SNIPPET_PTRN1, true, false,
-								 TextDocument::FindReplaceType::LuaPattern, sel );
-
-		auto res2 = doc->findAll( SNIPPET_PTRN2, true, false,
-								  TextDocument::FindReplaceType::LuaPattern, sel );
-
-		auto res3 = doc->findAll( SNIPPET_PTRN3, true, false,
-								  TextDocument::FindReplaceType::LuaPattern, sel );
-
-		res.reserve( res.size() + res2.size() + res3.size() );
-
-		for ( auto& r : res2 )
-			res.emplace_back( std::move( r ) );
-
-		for ( auto& r : res3 )
-			res.emplace_back( std::move( r ) );
-
-		if ( res.empty() )
+	SnippetSession session;
+	session.editor = editor;
+	session.instanceCount = insertions.size();
+	for ( size_t instance = 0; instance < insertions.size(); ++instance ) {
+		const auto& insertion = insertions[instance];
+		if ( !insertion.snippet.hasTabStops() )
 			continue;
-
-		std::sort(
-			res.begin(), res.end(),
-			[]( const TextDocument::SearchResult& left, const TextDocument::SearchResult& right ) {
-				return left.result > right.result;
-			} );
-
-		for ( TextDocument::SearchResult& sr : res ) {
-			if ( !sr.isValid() )
-				continue;
-
-			doc->setSelection( sr.result );
-
-			if ( !sr.captures.empty() ) {
-				auto text = doc->getText( sr.captures[0] );
-				auto pos = doc->replaceSelection( text );
-
-				for ( auto& step : steps ) {
-					if ( step.start().line() == sr.result.start().line() ) {
-						Int64 offset = sr.result.length() - text.size();
-						step.setStart( doc->positionOffset( step.start(), -offset, false ) );
-						step.setEnd( doc->positionOffset( step.end(), -offset, false ) );
-					}
-				}
-
-				steps.emplace_back( pos, doc->positionOffset( pos, -text.size() ) );
-			} else {
-				auto pos = doc->replaceSelection( "" );
-
-				for ( auto& step : steps ) {
-					if ( step.start().line() == sr.result.start().line() ) {
-						Int64 offset = sr.result.length();
-						step.setStart( doc->positionOffset( step.start(), -offset, false ) );
-						step.setEnd( doc->positionOffset( step.end(), -offset, false ) );
-					}
-				}
-
-				steps.emplace_back( pos, pos );
+		String parsedText( String::fromUtf8( insertion.snippet.text ) );
+		for ( const auto& stop : insertion.snippet.tabStops ) {
+			auto groupIt = std::find_if(
+				session.groups.begin(), session.groups.end(),
+				[&stop]( const SnippetTabStopGroup& group ) { return group.index == stop.index; } );
+			if ( groupIt == session.groups.end() ) {
+				session.groups.push_back( { stop.index, {} } );
+				groupIt = std::prev( session.groups.end() );
+			}
+			auto relativeRange =
+				TextRange::convertToLineColumn( parsedText.view(), static_cast<Int64>( stop.start ),
+												static_cast<Int64>( stop.end ) );
+			if ( relativeRange.isValid() ) {
+				groupIt->occurrences.push_back(
+					{ { snippetPosition( insertion.start, relativeRange.start() ),
+						snippetPosition( insertion.start, relativeRange.end() ) },
+					  instance,
+					  stop.choices } );
 			}
 		}
-
-		ranges.emplace_back( steps );
 	}
 
-	TextRanges initialRanges;
+	std::sort( session.groups.begin(), session.groups.end(),
+			   []( const SnippetTabStopGroup& left, const SnippetTabStopGroup& right ) {
+				   if ( left.index == 0 )
+					   return false;
+				   if ( right.index == 0 )
+					   return true;
+				   return left.index < right.index;
+			   } );
+	if ( session.groups.empty() )
+		return;
 
-	for ( const auto& textRanges : ranges ) {
-		TextRange sel;
-		for ( const auto& range : textRanges ) {
-			// skip ranges that have default values
-			if ( range.hasSelection() )
-				continue;
-			sel = range;
-		}
-		if ( sel.isValid() )
-			initialRanges.push_back( sel );
+	if ( session.groups.front().index == 0 ) {
+		TextRanges finalStops;
+		for ( const auto& occurrence : session.groups.front().occurrences )
+			finalStops.push_back( occurrence.range );
+		if ( !finalStops.empty() )
+			doc->resetSelection( finalStops );
+		return;
 	}
-	doc->setSelection( initialRanges.empty() ? prevSels : initialRanges );
+
+	ensureSnippetClient( doc.get() );
+	mSnippetSessions[doc.get()] = std::move( session );
+	selectSnippetGroup( mSnippetSessions[doc.get()] );
 }
 
-bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
-	if ( suggestion.kind != LSPCompletionItemKind::Snippet )
+static TextPosition snippetInsertedEnd( const TextPosition& start, const String& text ) {
+	TextPosition end( start );
+	for ( const auto& ch : text ) {
+		if ( ch == '\n' ) {
+			end.setLine( end.line() + 1 );
+			end.setColumn( 0 );
+		} else {
+			end.setColumn( end.column() + 1 );
+		}
+	}
+	return end;
+}
+
+static TextPosition translateSnippetSuffix( const TextPosition& position,
+											const TextPosition& oldEnd,
+											const TextPosition& newEnd ) {
+	if ( position.line() == oldEnd.line() )
+		return { newEnd.line(), newEnd.column() + position.column() - oldEnd.column() };
+	return { position.line() + newEnd.line() - oldEnd.line(), position.column() };
+}
+
+static TextPosition translateSnippetMarker( const TextPosition& position, const TextRange& replaced,
+											const TextPosition& insertedEnd, bool stickLeft ) {
+	const auto& start = replaced.start();
+	const auto& end = replaced.end();
+	if ( position < start )
+		return position;
+	if ( position == start )
+		return stickLeft ? start : insertedEnd;
+	if ( position < end )
+		return stickLeft ? start : insertedEnd;
+	return translateSnippetSuffix( position, end, insertedEnd );
+}
+
+static void translateSnippetRange( TextRange& range, const TextRange& replaced,
+								   const TextPosition& insertedEnd, bool changeInside ) {
+	range.normalize();
+	if ( changeInside ) {
+		range.setStart( translateSnippetMarker( range.start(), replaced, insertedEnd, true ) );
+		range.setEnd( translateSnippetMarker( range.end(), replaced, insertedEnd, false ) );
+		return;
+	}
+	if ( range.end() <= replaced.start() )
+		return;
+	if ( range.start() >= replaced.end() ) {
+		range.setStart( translateSnippetMarker( range.start(), replaced, insertedEnd, false ) );
+		range.setEnd( translateSnippetMarker( range.end(), replaced, insertedEnd, false ) );
+		return;
+	}
+	range.setStart( translateSnippetMarker( range.start(), replaced, insertedEnd, true ) );
+	range.setEnd( translateSnippetMarker( range.end(), replaced, insertedEnd, false ) );
+}
+
+void AutoCompletePlugin::ensureSnippetClient( TextDocument* doc ) {
+	if ( !doc || mSnippetClients.find( doc ) != mSnippetClients.end() )
+		return;
+	auto client = std::make_unique<SnippetDocumentClient>( this, doc );
+	doc->registerClient( client.get() );
+	mSnippetClients.emplace( doc, std::move( client ) );
+}
+
+void AutoCompletePlugin::detachSnippetClient( TextDocument* doc ) {
+	cancelSnippetSession( doc );
+	auto clientIt = mSnippetClients.find( doc );
+	if ( clientIt == mSnippetClients.end() )
+		return;
+	clientIt->second->detach();
+	mSnippetClients.erase( clientIt );
+}
+
+void AutoCompletePlugin::cancelSnippetSession( TextDocument* doc, bool collapseSelection ) {
+	if ( !doc )
+		return;
+	auto sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt == mSnippetSessions.end() )
+		return;
+	UICodeEditor* editor = sessionIt->second.editor;
+	if ( collapseSelection && !doc->getSelections().empty() ) {
+		TextRanges selections;
+		const auto& session = sessionIt->second;
+		if ( session.currentGroup < session.groups.size() ) {
+			std::vector<bool> instanceAdded( session.instanceCount, false );
+			for ( const auto& occurrence : session.groups[session.currentGroup].occurrences ) {
+				if ( occurrence.instance < instanceAdded.size() &&
+					 !instanceAdded[occurrence.instance] ) {
+					selections.push_back( occurrence.range );
+					instanceAdded[occurrence.instance] = true;
+				}
+			}
+		}
+		if ( selections.empty() )
+			selections.push_back( doc->getSelection() );
+		mChangingSnippetSelection = true;
+		doc->resetSelection( selections );
+		mChangingSnippetSelection = false;
+	}
+	mSnippetSessions.erase( sessionIt );
+	if ( mSnippetChoiceSuggestions )
+		resetSuggestions( editor );
+	if ( editor )
+		editor->invalidateDraw();
+}
+
+void AutoCompletePlugin::selectSnippetGroup( SnippetSession& session, bool showChoices ) {
+	if ( session.currentGroup >= session.groups.size() )
+		return;
+	const auto& occurrences = session.groups[session.currentGroup].occurrences;
+	if ( occurrences.empty() )
+		return;
+	TextRanges ranges;
+	ranges.reserve( occurrences.size() );
+	for ( const auto& occurrence : occurrences )
+		ranges.push_back( occurrence.range );
+	ranges.sort();
+	mChangingSnippetSelection = true;
+	session.editor->getDocument().resetSelection( ranges );
+	mChangingSnippetSelection = false;
+	session.editor->invalidateDraw();
+	if ( showChoices )
+		showSnippetChoices( session );
+}
+
+void AutoCompletePlugin::showSnippetChoices( SnippetSession& session ) {
+	resetSuggestions( session.editor );
+	if ( session.currentGroup >= session.groups.size() )
+		return;
+	const std::vector<std::string>* choices = nullptr;
+	for ( const auto& occurrence : session.groups[session.currentGroup].occurrences ) {
+		if ( !occurrence.choices.empty() ) {
+			choices = &occurrence.choices;
+			break;
+		}
+	}
+	if ( !choices )
+		return;
+	Lock suggestionsLock( mSuggestionsMutex );
+	mSuggestions.reserve( choices->size() );
+	for ( const auto& choice : *choices )
+		mSuggestions.emplace_back( choice );
+	{
+		Lock editorLock( mSuggestionsEditorMutex );
+		mSuggestionsEditor = session.editor;
+	}
+	mSnippetChoiceSuggestions = true;
+	session.editor->invalidateDraw();
+}
+
+void AutoCompletePlugin::pickSnippetChoice( UICodeEditor* editor ) {
+	if ( mSuggestionIndex < 0 || mSuggestionIndex >= static_cast<int>( mSuggestions.size() ) )
+		return;
+	const std::string choice = mSuggestions[mSuggestionIndex].text;
+	TextDocument* doc = &editor->getDocument();
+	auto sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt == mSnippetSessions.end() || sessionIt->second.editor != editor ) {
+		resetSuggestions( editor );
+		return;
+	}
+	doc->textInput( String::fromUtf8( choice ) );
+	resetSuggestions( editor );
+	sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt != mSnippetSessions.end() )
+		selectSnippetGroup( sessionIt->second, false );
+}
+
+bool AutoCompletePlugin::navigateSnippet( UICodeEditor* editor, bool backwards ) {
+	TextDocument* doc = &editor->getDocument();
+	auto sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt == mSnippetSessions.end() || sessionIt->second.editor != editor )
 		return false;
-	if ( LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN1 ) ||
-		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN2 ) ||
-		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
+	auto& session = sessionIt->second;
+	if ( backwards ) {
+		if ( session.currentGroup == 0 )
+			return true;
+		--session.currentGroup;
+		selectSnippetGroup( session );
 		return true;
 	}
-	return false;
+
+	if ( session.currentGroup + 1 >= session.groups.size() ) {
+		cancelSnippetSession( doc, true );
+		return true;
+	}
+	++session.currentGroup;
+	if ( session.groups[session.currentGroup].index != 0 ) {
+		selectSnippetGroup( session );
+		return true;
+	}
+
+	TextRanges finalStops;
+	for ( const auto& occurrence : session.groups[session.currentGroup].occurrences )
+		finalStops.push_back( occurrence.range );
+	if ( mSnippetChoiceSuggestions )
+		resetSuggestions( editor );
+	mSnippetSessions.erase( sessionIt );
+	if ( !finalStops.empty() ) {
+		mChangingSnippetSelection = true;
+		doc->resetSelection( finalStops );
+		mChangingSnippetSelection = false;
+	}
+	editor->invalidateDraw();
+	return true;
+}
+
+void AutoCompletePlugin::onSnippetTextChanged( TextDocument* doc,
+											   const DocumentContentChange& change ) {
+	auto sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt == mSnippetSessions.end() )
+		return;
+	auto& session = sessionIt->second;
+	if ( session.currentGroup >= session.groups.size() ) {
+		cancelSnippetSession( doc );
+		return;
+	}
+
+	TextRange replaced( change.range.normalized() );
+	const auto& activeOccurrences = session.groups[session.currentGroup].occurrences;
+	auto editedOccurrence = std::find_if(
+		activeOccurrences.begin(), activeOccurrences.end(), [&replaced]( const auto& occurrence ) {
+			return occurrence.range.normalized().contains( replaced );
+		} );
+	if ( editedOccurrence == activeOccurrences.end() ) {
+		cancelSnippetSession( doc );
+		return;
+	}
+
+	const TextRange activeRange( editedOccurrence->range.normalized() );
+	const TextPosition insertedEnd = snippetInsertedEnd( replaced.start(), change.text );
+	for ( auto& group : session.groups ) {
+		for ( auto& occurrence : group.occurrences ) {
+			const bool changeInside = occurrence.range.normalized().contains( activeRange );
+			translateSnippetRange( occurrence.range, replaced, insertedEnd, changeInside );
+		}
+	}
+	if ( mSnippetChoiceSuggestions )
+		resetSuggestions( session.editor );
+	if ( session.editor )
+		session.editor->invalidateDraw();
+}
+
+void AutoCompletePlugin::onSnippetSelectionChanged( TextDocument* doc ) {
+	if ( mChangingSnippetSelection || doc->isDoingTextInput() )
+		return;
+	auto sessionIt = mSnippetSessions.find( doc );
+	if ( sessionIt == mSnippetSessions.end() )
+		return;
+	const auto& session = sessionIt->second;
+	if ( session.currentGroup >= session.groups.size() )
+		return cancelSnippetSession( doc );
+	const auto& activeOccurrences = session.groups[session.currentGroup].occurrences;
+	const auto& selections = doc->getSelections();
+	if ( selections.size() != activeOccurrences.size() )
+		return cancelSnippetSession( doc );
+	for ( const auto& selection : selections ) {
+		if ( std::none_of( activeOccurrences.begin(), activeOccurrences.end(),
+						   [&selection]( const auto& occurrence ) {
+							   return occurrence.range.normalized().contains(
+								   selection.normalized() );
+						   } ) ) {
+			cancelSnippetSession( doc );
+			return;
+		}
+	}
+}
+
+void AutoCompletePlugin::onSnippetDocumentClosed( TextDocument* doc ) {
+	cancelSnippetSession( doc );
 }
 
 PluginRequestHandle
@@ -802,15 +1180,17 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 	LSPCompletionList& wcompletion = const_cast<LSPCompletionList&>( completion );
 	for ( auto& item : wcompletion.items ) {
 		if ( !item.textEdit.text.empty() ) {
-			suggestions.push_back(
-				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
-				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
-				  std::move( item.textEdit.text ), std::move( item.documentation ) } );
+			suggestions.push_back( { item.kind,
+									 std::move( item.label.empty() ? item.insertText : item.label ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::move( item.textEdit.text ),
+									 std::move( item.documentation ), item.insertTextFormat } );
 		} else if ( !item.insertText.empty() ) {
-			suggestions.push_back(
-				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
-				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
-				  std::string{ item.insertText }, std::move( item.documentation ) } );
+			suggestions.push_back( { item.kind,
+									 std::move( item.label.empty() ? item.insertText : item.label ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::string{ item.insertText },
+									 std::move( item.documentation ), item.insertTextFormat } );
 		} else {
 			suggestions.push_back( { item.kind,
 									 std::move( item.filterText ),
@@ -818,7 +1198,8 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 									 std::move( item.sortText ),
 									 {},
 									 "",
-									 std::move( item.documentation ) } );
+									 std::move( item.documentation ),
+									 item.insertTextFormat } );
 		}
 	}
 	if ( suggestions.empty() || !mSuggestionsEditor )
@@ -885,41 +1266,65 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	signatures.signatures.reserve( signatureHelp.signatures.size() );
 
 	TextDocument doc;
-	for ( const auto& sig : signatureHelp.signatures ) {
+
+	for ( size_t sigIdx = 0; sigIdx < signatureHelp.signatures.size(); sigIdx++ ) {
+		const auto& sig = signatureHelp.signatures[sigIdx];
+
 		String initialLabel( sig.label );
 		SignatureInformation nsig;
 		nsig.documentation = sig.documentation;
 
 		doc.reset();
 		doc.textInput( initialLabel );
+
 		std::vector<String> parameters;
-		parameters.reserve( sig.parameters.size() );
 		nsig.parameters.reserve( sig.parameters.size() );
 
-		int skippedSelections = 0;
+		if ( !mSignatureHelpMultiLine )
+			parameters.reserve( sig.parameters.size() );
+
+		Int32 skippedBeforeActiveParameter = 0;
+
 		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
-			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
-			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
+			const auto rawStart = sig.parameters[i].start;
+			const auto rawEnd = sig.parameters[i].end;
+
+			const bool isBeforeActiveParameter =
+				static_cast<Int32>( i ) < signatureHelp.activeParameter;
+
+			if ( rawStart < 0 || rawEnd < 0 || rawEnd < rawStart ||
+				 static_cast<size_t>( rawEnd ) > sig.label.size() ) {
+				if ( sigIdx == static_cast<size_t>( signatureHelp.activeSignature ) &&
+					 isBeforeActiveParameter ) {
+					skippedBeforeActiveParameter++;
+				}
+				continue;
+			}
+
+			auto start = String::utf8ToCodepointPosition( sig.label, rawStart );
+			auto end = String::utf8ToCodepointPosition( sig.label, rawEnd );
+
+			if ( start < 0 || end < 0 || end < start ) {
+				if ( sigIdx == static_cast<size_t>( signatureHelp.activeSignature ) &&
+					 isBeforeActiveParameter ) {
+					skippedBeforeActiveParameter++;
+				}
+				continue;
+			}
+
 			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
 
 			nsig.parameters.emplace_back(
 				TextSelectionRange{ static_cast<Int64>( start ), static_cast<Int64>( end ) } );
 
-			size_t index = i - skippedSelections;
-
-			if ( i == 0 ) {
-				doc.setSelection( i, sel );
-			} else {
-				if ( !doc.addSelection( sel ).isValid() ) {
-					skippedSelections++;
-					continue;
-				}
-			}
-
-			parameters.emplace_back( doc.getSelectedText( index ) );
+			if ( !mSignatureHelpMultiLine )
+				parameters.emplace_back( doc.getText( sel ) );
 		}
 
-		auto selections( doc.getSelections() );
+		if ( sigIdx == static_cast<size_t>( signatureHelp.activeSignature ) ) {
+			signatures.activeParameter =
+				eemax<Int32>( 0, signatures.activeParameter - skippedBeforeActiveParameter );
+		}
 
 		if ( !mSignatureHelpMultiLine && 0 != doc.replaceAll( "\n", "" ) ) {
 			while ( 0 != doc.replaceAll( "  ", " " ) )
@@ -942,13 +1347,35 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		signatures.signatures.emplace_back( std::move( nsig ) );
 	}
 
+	if ( signatures.signatures.empty() ) {
+		signatures.activeSignature = 0;
+		signatures.activeParameter = 0;
+	} else {
+		signatures.activeSignature =
+			eemin<Int32>( eemax<Int32>( signatures.activeSignature, 0 ),
+						  static_cast<Int32>( signatures.signatures.size() ) - 1 );
+
+		const auto& activeSig = signatures.signatures[signatures.activeSignature];
+
+		if ( activeSig.parameters.empty() ) {
+			signatures.activeParameter = 0;
+		} else {
+			signatures.activeParameter =
+				eemin<Int32>( eemax<Int32>( signatures.activeParameter, 0 ),
+							  static_cast<Int32>( activeSig.parameters.size() ) - 1 );
+		}
+	}
+
 	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
 		mSignatureHelpVisible = true;
 		mSignatureHelp = signatures;
+
 		if ( mSignatureHelpSelected >= static_cast<Int32>( mSignatureHelp.signatures.size() ) )
 			mSignatureHelpSelected = -1;
+
 		if ( mSignatureHelp.signatures.empty() )
 			resetSignatureHelp();
+
 		editor->invalidateDraw();
 	} );
 
@@ -1024,6 +1451,12 @@ std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
 }
 
 void AutoCompletePlugin::update( UICodeEditor* ) {
+	for ( auto clientIt = mSnippetClients.begin(); clientIt != mSnippetClients.end(); ) {
+		if ( !clientIt->second->isAttached() )
+			clientIt = mSnippetClients.erase( clientIt );
+		else
+			++clientIt;
+	}
 	if ( mClock.getElapsedTime() >= mUpdateFreq || mDirty ) {
 		mClock.restart();
 		mDirty = false;
@@ -1044,7 +1477,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 }
 
 void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
-											const Float& /*lineHeight*/, bool drawUp ) {
+											const Float& lineHeight, bool drawUp ) {
 	TextDocument& doc = editor->getDocument();
 	Primitives primitives;
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
@@ -1089,7 +1522,7 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 		mBoxPadding.Top + mBoxPadding.Bottom;
 
 	Float vdiff = drawUp ? -boxHeight : mRowHeight;
-	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
+	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition ).asFloat();
 
 	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
 	Rectf boxRect( pos, Sizef( boxWidth, boxHeight ) );
@@ -1135,6 +1568,37 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 
 	mSignatureHelpText.draw( boxRect.getPosition().x + mBoxPadding.Left,
 							 boxRect.getPosition().y + mBoxPadding.Top );
+
+	bool drawsSuggestions =
+		!( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor );
+
+	if ( !drawsSuggestions && mSignatureHelpDocumentation && !curSig.documentation.value.empty() ) {
+		mSuggestionDoc.setFillColor( normalStyle.color );
+		mSuggestionDoc.setStyle( normalStyle.style );
+		mSuggestionDoc.setFont( editor->getFont() );
+		mSuggestionDoc.setFontSize( editor->getFontSize() );
+		mSuggestionDoc.setLineWrapMode( LineWrapMode::Word );
+		mSuggestionDoc.setLineWrapKeepIndentation( true );
+
+		Vector2f cursorScreenPos( startScroll.x + offset.x, startScroll.y + offset.y );
+		Rectf docRect =
+			findBestDocumentationPlacement( editor, curSig.documentation, "", boxRect, boxRect,
+											cursorScreenPos, drawUp, lineHeight );
+
+		if ( docRect.getSize().getWidth() > 0 && docRect.getSize().getHeight() > 0 ) {
+			primitives.setColor(
+				Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
+
+			editor->clipSmartEnable( docRect.Left, docRect.Top, docRect.getWidth(),
+									 docRect.getHeight() );
+
+			primitives.drawRoundedRectangle( docRect, 0.f, Vector2f::One, 6 );
+
+			mSuggestionDoc.draw( docRect.Left + mBoxPadding.Left, docRect.Top + mBoxPadding.Top );
+
+			editor->clipSmartDisable();
+		}
+	}
 }
 
 void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
@@ -1260,11 +1724,14 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			mSuggestionDoc.setLineWrapMode( LineWrapMode::Word );
 			mSuggestionDoc.setLineWrapKeepIndentation( true );
 
-			Rectf docRect =
-				findBestDocumentationPlacement( editor, suggestion, boxRect,
-												{ { cursorPos.x, cursorPos.y + mRowHeight * count },
-												  { mBoxRect.getWidth(), mRowHeight } },
-												drawUp, lineHeight );
+			Vector2f cursorOffset = editor->getTextPositionOffset( cursor ).asFloat();
+			Vector2f cursorScreenPos( startScroll.x + cursorOffset.x,
+									  startScroll.y + cursorOffset.y );
+			Rectf docRect = findBestDocumentationPlacement(
+				editor, suggestion.documentation, suggestion.detail, boxRect,
+				{ { cursorPos.x, cursorPos.y + mRowHeight * count },
+				  { mBoxRect.getWidth(), mRowHeight } },
+				cursorScreenPos, drawUp, lineHeight );
 
 			if ( docRect.getSize().getWidth() > 0 && docRect.getSize().getHeight() > 0 ) {
 				primitives.setColor(
@@ -1303,21 +1770,49 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 									 (int)eefloor( bar.getWidth() * 0.5f ) );
 }
 
-Rectf AutoCompletePlugin::findBestDocumentationPlacement( UICodeEditor* editor,
-														  const Suggestion& suggestion,
-														  const Rectf& anchorBox,
-														  const Rectf& rowRect, bool drawUp,
-														  Float lineHeight ) {
+void AutoCompletePlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f,
+											 const Float&, const Float& lineHeight ) {
+	auto sessionIt = mSnippetSessions.find( &editor->getDocument() );
+	if ( sessionIt == mSnippetSessions.end() || sessionIt->second.editor != editor )
+		return;
+	const auto& session = sessionIt->second;
+	if ( session.currentGroup >= session.groups.size() )
+		return;
+	const auto& group = session.groups[session.currentGroup];
+	Primitives primitives;
+	const auto& style = editor->getColorScheme().getEditorSyntaxStyle( "matching_selection"_sst );
+	primitives.setColor( Color( style.color, 55 ) );
+	const Float minimumWidth = PixelDensity::dpToPx( 2.f );
+	for ( const auto& occurrence : group.occurrences ) {
+		const auto normalized = occurrence.range.normalized();
+		if ( !normalized.containsLine( index ) )
+			continue;
+		auto rectangles = editor->getTextRangeRectangles(
+			normalized, editor->getScreenScroll(), DocumentLineRange{ index, index }, lineHeight );
+		for ( auto& rectangle : rectangles ) {
+			if ( rectangle.getWidth() < minimumWidth )
+				rectangle.Right = rectangle.Left + minimumWidth;
+			primitives.drawRectangle( rectangle );
+		}
+	}
+}
+
+Rectf AutoCompletePlugin::findBestDocumentationPlacement(
+	UICodeEditor* editor, const LSPMarkupContent& suggestion, const std::string& detail,
+	const Rectf& anchorBox, const Rectf& rowRect, const Vector2f& cursorScreenPos, bool,
+	Float lineHeight ) {
 	PopupPlacementConfig config;
 	config.areaRect = editor->getScreenRect();
 	config.targetRect = anchorBox;
 	config.alignRect = rowRect;
-	// The avoidRect is the user's cursor line. This ensures Top/Bottom placement skips the line
-	// being typed.
-	Float cursorLineTop =
-		rowRect.Top - lineHeight; // Approximating cursor location based on the suggestion row
-	config.avoidRect =
-		Rectf( anchorBox.Left, cursorLineTop, editor->getPixelsSize().getWidth(), lineHeight );
+	// Small avoid-rect: just the cursor cell + a few character-widths to the right,
+	// so the documentation can still sit to the right of the cursor text without being moved.
+	Float cursorAvoidX = cursorScreenPos.x + editor->getGlyphWidth() * 4;
+	config.avoidRect = Rectf( Vector2f( cursorScreenPos.x, cursorScreenPos.y ),
+							  Sizef( cursorAvoidX - cursorScreenPos.x + 1, lineHeight ) );
+	// Enable cursor-aware placement: when popup would cover the cursor area, try above target.
+	config.cursorScreenPos = cursorScreenPos;
+	config.cursorLineHeight = lineHeight;
 	config.userMaxWidth = editor->convertLength(
 		StyleSheetLength( mMaxSuggestionDocumentationWidth ), editor->getPixelsSize().getWidth() );
 	config.minHorizontalSpace = PixelDensity::dpToPx( 200.f );
@@ -1328,10 +1823,10 @@ Rectf AutoCompletePlugin::findBestDocumentationPlacement( UICodeEditor* editor,
 		Float textWrapWidth =
 			std::max( 0.f, availableMaxWidth - mBoxPadding.Left - mBoxPadding.Right );
 		mSuggestionDoc.setMaxWrapWidth( textWrapWidth );
-		bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
+		bool changed = mSuggestionDoc.setString( suggestion.value );
 		if ( changed ) {
-			bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
-			if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
+			bool forceHTML = String::startsWith( detail, "Emmet" );
+			if ( suggestion.kind == LSPMarkupKind::MarkDown || forceHTML ) {
 				const auto& syntaxDef =
 					forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
 							  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
@@ -1347,15 +1842,17 @@ Rectf AutoCompletePlugin::findBestDocumentationPlacement( UICodeEditor* editor,
 
 bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
 									  const Uint32& flags ) {
-	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor ||
-		 !( flags & EE_BUTTON_LMASK ) )
-		return false;
-	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
-	if ( mBoxRect.contains( localPos ) ) {
-		localPos -= { mBoxRect.Left, mBoxRect.Top };
-		mSuggestionIndex = mSuggestionsStartIndex + localPos.y / mRowHeight;
-		editor->invalidateDraw();
-		return true;
+	if ( flags & EE_BUTTON_LMASK ) {
+		if ( !mSuggestions.empty() && mSuggestionsEditor == editor ) {
+			Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+			if ( mBoxRect.contains( localPos ) ) {
+				localPos -= { mBoxRect.Left, mBoxRect.Top };
+				mSuggestionIndex = mSuggestionsStartIndex + localPos.y / mRowHeight;
+				editor->invalidateDraw();
+				return true;
+			}
+		}
+		cancelSnippetSession( &editor->getDocument(), true );
 	}
 	return false;
 }
@@ -1457,6 +1954,7 @@ void AutoCompletePlugin::setDirty( bool dirty ) {
 
 void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 	Lock l( mSuggestionsMutex );
+	mSnippetChoiceSuggestions = false;
 	mSuggestionIndex = 0;
 	mSuggestionsStartIndex = 0;
 	{

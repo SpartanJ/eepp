@@ -21,8 +21,6 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 
 	void unbind();
 
-	void reload();
-
 	void resize( const Uint32& Width, const Uint32& Height );
 
 	void draw( const Vector2f& position, const Sizef& size );

@@ -22,7 +22,7 @@ typedef std::function<bool( const UIWidget* node, int a, int b, const FunctionSt
 
 struct StructuralSelector {
 	StructuralSelector( StyleSheetNodeSelector selector, int a = 0, int b = 0,
-						const FunctionString& data = FunctionString::parse( "" ) ) :
+						const FunctionString& data = {} ) :
 		selector( selector ), a( a ), b( b ), data( data ) {}
 	StyleSheetNodeSelector selector;
 	int a;

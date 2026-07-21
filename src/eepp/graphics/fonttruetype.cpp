@@ -1,6 +1,7 @@
 #include <eepp/core/retainsymbol.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -21,6 +22,7 @@ using namespace EE::Window;
 #include FT_BITMAP_H
 #include FT_STROKER_H
 #include FT_TRUETYPE_TABLES_H
+#include FT_MULTIPLE_MASTERS_H
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
@@ -68,13 +70,23 @@ FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer 
 	FT_UNUSED( data_pointer );
 	FT_UNUSED( cache );
 	FT_SVG_Document document = (FT_SVG_Document)slot->other;
-	FT_Pos ascender = document->metrics.ascender;
-	FT_Pos descender = document->metrics.descender;
 
-	// The total height of the glyph's design space in pixels is ascender - descender.
-	// We convert from 26.6 format to integer pixels using ceiling division.
-	unsigned int pixel_height = ( ascender - descender + 63 ) >> 6;
-	unsigned int pixel_width = pixel_height;
+	auto ceilPixels = []( FT_Pos value ) -> unsigned int {
+		return value > 0 ? static_cast<unsigned int>( ( value + 63 ) >> 6 ) : 0;
+	};
+
+	unsigned int pixel_width = document->metrics.x_ppem;
+	unsigned int pixel_height = document->metrics.y_ppem;
+
+	if ( pixel_width == 0 && document->units_per_EM != 0 )
+		pixel_width = ceilPixels( FT_MulFix( document->units_per_EM, document->metrics.x_scale ) );
+	if ( pixel_height == 0 && document->units_per_EM != 0 )
+		pixel_height = ceilPixels( FT_MulFix( document->units_per_EM, document->metrics.y_scale ) );
+
+	if ( pixel_width == 0 )
+		pixel_width = ceilPixels( document->metrics.max_advance );
+	if ( pixel_height == 0 )
+		pixel_height = ceilPixels( document->metrics.height );
 
 	if ( pixel_width == 0 || pixel_height == 0 ) {
 		slot->bitmap.width = 0;
@@ -86,7 +98,7 @@ FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer 
 	slot->bitmap.rows = pixel_height;
 	slot->bitmap.pitch = pixel_width * 4;
 	slot->bitmap.pixel_mode = FT_PIXEL_MODE_BGRA;
-	slot->bitmap_top = ascender >> 6;
+	slot->bitmap_top = pixel_height;
 	slot->bitmap_left = 0;
 	slot->metrics.width = (FT_Pos)( pixel_width * 64 );
 	slot->metrics.height = (FT_Pos)( pixel_height * 64 );
@@ -103,6 +115,9 @@ FT_Error svg_render( FT_GlyphSlot slot, FT_Pointer* data_pointer ) {
 	}
 
 	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+
+	if ( !slot->bitmap.buffer && slot->bitmap.width > 0 && slot->bitmap.rows > 0 )
+		return FT_Err_Invalid_Slot_Handle;
 
 	memset( slot->bitmap.buffer, 0, slot->bitmap.pitch * slot->bitmap.rows );
 
@@ -261,6 +276,13 @@ FontTrueType* FontTrueType::New( const std::string& FontName, const std::string&
 	return fontTrueType;
 }
 
+FontTrueType* FontTrueType::New( const std::string& FontName, const std::string& filename,
+								 Uint32 faceIndex ) {
+	FontTrueType* fontTrueType = New( FontName );
+	fontTrueType->loadFromFile( filename, faceIndex );
+	return fontTrueType;
+}
+
 FontTrueType::FontTrueType( const std::string& FontName ) :
 	Font( FontType::TTF, FontName ),
 	mLibrary( NULL ),
@@ -280,12 +302,14 @@ FontTrueType::FontTrueType( const std::string& FontName ) :
 	mUsingFallback( false ),
 	mEnableEmojiFallback( true ),
 	mEnableFallbackFont( true ),
+	mEnableSystemFallback( true ),
 	mEnableDynamicMonospace( false ),
 	mIsBold( false ),
 	mIsItalic( false ),
 	mIsMonospaceCompletePending( false ),
 	mHinting( FontManager::instance()->getHinting() ),
 	mAntialiasing( FontManager::instance()->getAntialiasing() ),
+	mFaceIndex( 0 ),
 	mFontBold( nullptr ),
 	mFontItalic( nullptr ),
 	mFontBoldItalic( nullptr ),
@@ -318,7 +342,7 @@ static bool checkHasColrTable( const FT_Face& face ) {
 	return length > 0;
 }
 
-bool FontTrueType::loadFromFile( const std::string& filename ) {
+bool FontTrueType::loadFromFile( const std::string& filename, Uint32 faceIndex ) {
 	if ( !FileSystem::fileExists( filename ) &&
 		 PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
@@ -327,7 +351,7 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		if ( NULL != pack ) {
 			Log::info( "Loading font from pack: %s", path.c_str() );
 
-			return loadFromPack( pack, path );
+			return loadFromPack( pack, path, faceIndex );
 		}
 
 		return false;
@@ -335,6 +359,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 
 	// Cleanup the previous resources
 	cleanup();
+
+	mFaceIndex = faceIndex;
 
 	// Initialize FreeType
 	FT_Library library;
@@ -347,9 +373,12 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 
 	// Load the new font face from the specified file
 	FT_Face face;
-	if ( FT_New_Face( static_cast<FT_Library>( mLibrary ), filename.c_str(), 0, &face ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (%s) (failed to create the font face)",
-					filename.c_str(), mFontName.c_str() );
+	FT_Error err = FT_New_Face( static_cast<FT_Library>( mLibrary ), filename.c_str(),
+								static_cast<FT_Long>( mFaceIndex ), &face );
+	if ( err != 0 ) {
+		const char* err_str = FT_Error_String( err );
+		Log::error( "Failed to load font \"%s\" (%s, face index %zu) - %s (code %d)", filename,
+					mFontName, mFaceIndex, err_str ? err_str : "Unknown error", err );
 		return false;
 	}
 
@@ -359,7 +388,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	return setFontFace( face );
 }
 
-bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bool copyData ) {
+bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bool copyData,
+								   Uint32 faceIndex ) {
 	const void* ptr = data;
 
 	if ( copyData ) {
@@ -371,6 +401,8 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	// Cleanup the previous resources
 	cleanup();
 
+	mFaceIndex = faceIndex;
+
 	// Initialize FreeType
 	FT_Library library;
 	if ( FT_Init_FreeType( &library ) != 0 ) {
@@ -381,19 +413,25 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 
 	// Load the new font face from the specified file
 	FT_Face face;
-	if ( FT_New_Memory_Face( static_cast<FT_Library>( mLibrary ),
-							 reinterpret_cast<const FT_Byte*>( ptr ),
-							 static_cast<FT_Long>( sizeInBytes ), 0, &face ) != 0 ) {
-		Log::error( "Failed to load font from memory (failed to create the font face)" );
+	FT_Error err = FT_New_Memory_Face(
+		static_cast<FT_Library>( mLibrary ), reinterpret_cast<const FT_Byte*>( ptr ),
+		static_cast<FT_Long>( sizeInBytes ), static_cast<FT_Long>( mFaceIndex ), &face );
+	if ( err != 0 ) {
+		const char* err_str = FT_Error_String( err );
+		Log::error( "Failed to load font from memory (failed to create the font face, face index "
+					"%zu): %s (code %d)",
+					mFaceIndex, err_str ? err_str : "Unknown error", err );
 		return false;
 	}
 
 	return setFontFace( face );
 }
 
-bool FontTrueType::loadFromStream( IOStream& stream ) {
+bool FontTrueType::loadFromStream( IOStream& stream, Uint32 faceIndex ) {
 	// Cleanup the previous resources
 	cleanup();
+
+	mFaceIndex = faceIndex;
 
 	// Initialize FreeType
 	FT_Library library;
@@ -424,7 +462,8 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 
 	// Load the new font face from the specified stream
 	FT_Face face;
-	if ( FT_Open_Face( static_cast<FT_Library>( mLibrary ), &args, 0, &face ) != 0 ) {
+	if ( FT_Open_Face( static_cast<FT_Library>( mLibrary ), &args,
+					   static_cast<FT_Long>( mFaceIndex ), &face ) != 0 ) {
 		Log::error( "Failed to load font from stream (failed to create the font face)" );
 		delete rec;
 		return false;
@@ -437,7 +476,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	return res;
 }
 
-bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
+bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath, Uint32 faceIndex ) {
 	if ( NULL == pack )
 		return false;
 
@@ -446,7 +485,7 @@ bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) )
-		ret = loadFromMemory( mMemCopy.get(), mMemCopy.length(), false );
+		ret = loadFromMemory( mMemCopy.get(), mMemCopy.length(), false, faceIndex );
 
 	mInfo.fontpath = FileSystem::fileRemoveFileName( filePackPath );
 	mInfo.filename = FileSystem::fileNameFromPath( filePackPath );
@@ -477,11 +516,11 @@ bool FontTrueType::setFontFace( void* _face ) {
 #endif
 	}
 
-	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
+	if ( ( mIsColorEmojiFont || mHasColrGlyphs ) &&
 		 FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
 
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+	if ( mIsEmojiFont && !mHasSvgGlyphs && FontManager::instance()->getEmojiFont() == nullptr )
 		FontManager::instance()->setEmojiFont( this );
 
 	// Load the stroker that will be used to outline the font
@@ -518,6 +557,65 @@ bool FontTrueType::setFontFace( void* _face ) {
 
 const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
+}
+
+bool FontTrueType::getFontDesc( FontDesc& desc ) const {
+	if ( !loaded() || mInfo.filename.empty() || mInfo.fontpath.empty() )
+		return false;
+
+	desc = FontDesc{};
+	desc.family = mInfo.family.empty() ? getName() : mInfo.family;
+	desc.path = mInfo.fontpath + mInfo.filename;
+	desc.faceIndex = getFaceIndex();
+	desc.weight = isBold() || isBoldItalic() ? FontWeight::Bold : FontWeight::Normal;
+	desc.italic = isItalic() || isBoldItalic();
+	desc.monospace = isIdentifiedAsMonospace();
+	return !desc.family.empty() && !desc.path.empty();
+}
+
+bool FontTrueType::setVariableFontWeight( FontWeight weight ) {
+	if ( !loaded() || !mFace || !mLibrary )
+		return false;
+
+	FT_Face face = static_cast<FT_Face>( mFace );
+	FT_MM_Var* mmVar = nullptr;
+	if ( FT_Get_MM_Var( face, &mmVar ) != 0 || !mmVar )
+		return false;
+
+	std::vector<FT_Fixed> coords( mmVar->num_axis );
+	bool hasWeightAxis = false;
+	for ( FT_UInt i = 0; i < mmVar->num_axis; i++ ) {
+		const FT_Var_Axis& axis = mmVar->axis[i];
+		coords[i] = axis.def;
+		if ( axis.tag == FT_MAKE_TAG( 'w', 'g', 'h', 't' ) ) {
+			FT_Fixed requested = static_cast<FT_Fixed>(
+				static_cast<Float>( static_cast<Uint16>( weight ) ) * 65536.f );
+			if ( requested < axis.minimum )
+				requested = axis.minimum;
+			else if ( requested > axis.maximum )
+				requested = axis.maximum;
+			coords[i] = requested;
+			hasWeightAxis = true;
+		}
+	}
+
+	bool applied =
+		hasWeightAxis && FT_Set_Var_Design_Coordinates( face, mmVar->num_axis, coords.data() ) == 0;
+	FT_Done_MM_Var( static_cast<FT_Library>( mLibrary ), mmVar );
+
+	if ( !applied )
+		return false;
+
+	mIsBold = weight >= FontWeight::SemiBold;
+	mPages.clear();
+	mKeyCache.clear();
+	mKerningCache.clear();
+	mKerningGlyphCache.clear();
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( mHBFont )
+		hb_ft_font_changed( static_cast<hb_font_t*>( mHBFont ) );
+#endif
+	return true;
 }
 
 void FontTrueType::updateFontInternalId() {
@@ -611,6 +709,23 @@ Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool
 				}
 				return fallbackFont->getGlyphByIndex( idx, characterSize, bold, italic,
 													  outlineThickness, getPage( characterSize ) );
+			}
+		}
+	}
+
+	if ( 0 == idx && mEnableSystemFallback && SystemFontResolver::existsSingleton() ) {
+		FontDesc fallbackDesc = SystemFontResolver::instance()->getFallbackForCodepoint(
+			codePoint, FontWeight::Normal, false );
+		if ( !fallbackDesc.path.empty() ) {
+			FontTrueType* systemFallback =
+				FontManager::instance()->getOrLoadSystemFallbackFont( fallbackDesc );
+			if ( systemFallback && ( idx = systemFallback->getGlyphIndex( codePoint ) ) ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				return systemFallback->getGlyphByIndex(
+					idx, characterSize, bold, italic, outlineThickness, getPage( characterSize ) );
 			}
 		}
 	}
@@ -740,6 +855,26 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 						mUsingFallback = true;
 					}
 					break;
+				}
+			}
+			if ( 0 == glyphIndex )
+				glyphIndex = getGlyphIndex( codePoint );
+		}
+
+		if ( 0 == glyphIndex && mEnableSystemFallback && SystemFontResolver::existsSingleton() ) {
+			FontDesc fallbackDesc = SystemFontResolver::instance()->getFallbackForCodepoint(
+				codePoint, FontWeight::Normal, false );
+			if ( !fallbackDesc.path.empty() ) {
+				FontTrueType* systemFallback =
+					FontManager::instance()->getOrLoadSystemFallbackFont( fallbackDesc );
+				if ( systemFallback &&
+					 ( tGlyphIndex = systemFallback->getGlyphIndex( codePoint ) ) ) {
+					glyphIndex = tGlyphIndex;
+					fontInternalId = systemFallback->getFontInternalId();
+					if ( mIsMonospace && mEnableDynamicMonospace ) {
+						mIsMonospaceComplete = false;
+						mUsingFallback = true;
+					}
 				}
 			}
 			if ( 0 == glyphIndex )
@@ -1014,20 +1149,9 @@ void FontTrueType::cleanup() {
 	if ( FontManager::existsSingleton() && FontManager::instance()->getColorEmojiFont() == this )
 		FontManager::instance()->setColorEmojiFont( nullptr );
 
-	if ( mFontBoldItalicCb != 0 && mFontBoldItalic != nullptr ) {
-		mFontBoldItalic->popFontEventCallback( mFontBoldItalicCb );
-		mFontBoldItalicCb = 0;
-	}
-
-	if ( mFontBoldCb != 0 && mFontBold != nullptr ) {
-		mFontBold->popFontEventCallback( mFontBoldCb );
-		mFontBoldCb = 0;
-	}
-
-	if ( mFontItalicCb != 0 && mFontItalic != nullptr ) {
-		mFontItalic->popFontEventCallback( mFontItalicCb );
-		mFontItalicCb = 0;
-	}
+	disconnectBoldItalicFont();
+	disconnectBoldFont();
+	disconnectItalicFont();
 
 	mCallbacks.clear();
 	mNumCallBacks = 0;
@@ -1059,6 +1183,7 @@ void FontTrueType::cleanup() {
 	mStroker = NULL;
 	mHBFont = NULL;
 	mStreamRec = NULL;
+	mFaceIndex = 0;
 	mInfo = Info();
 	mFontInternalId = 0;
 	mBoldAdvanceSameAsRegular = false;
@@ -1072,6 +1197,7 @@ void FontTrueType::cleanup() {
 	mUsingFallback = false;
 	mEnableEmojiFallback = true;
 	mEnableFallbackFont = true;
+	mEnableSystemFallback = true;
 	mEnableDynamicMonospace = false;
 	mIsBold = false;
 	mIsItalic = false;
@@ -1206,7 +1332,22 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting, glyphDesc->format );
 
 	// Convert the glyph to a bitmap (i.e. rasterize it)
-	FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 );
+	if ( ( err = FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 ) ) != 0 ) {
+		Log::error( "FT_Glyph_To_Bitmap failed for: glyphIndex %d characterSize: %d font: %s "
+					"error: %d",
+					index, characterSize, mFontName.c_str(), err );
+		FT_Done_Glyph( glyphDesc );
+		return glyph;
+	}
+
+	if ( glyphDesc->format != FT_GLYPH_FORMAT_BITMAP ) {
+		Log::error( "FT_Glyph_To_Bitmap produced non-bitmap glyph for: glyphIndex %d "
+					"characterSize: %d font: %s",
+					index, characterSize, mFontName.c_str() );
+		FT_Done_Glyph( glyphDesc );
+		return glyph;
+	}
+
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
@@ -1235,6 +1376,30 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		width /= 3;
 
 	if ( ( width > 0 ) && ( height > 0 ) ) {
+		int minimumPitch = width;
+		if ( bitmap.pixel_mode == FT_PIXEL_MODE_MONO )
+			minimumPitch = ( bitmap.width + 7 ) / 8;
+		else if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA )
+			minimumPitch = bitmap.width * 4;
+		else if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD )
+			minimumPitch = bitmap.width;
+		else if ( bitmap.pixel_mode != FT_PIXEL_MODE_GRAY ) {
+			Log::error( "Unsupported glyph bitmap pixel mode: %d for glyphIndex %d "
+						"characterSize: %d font: %s",
+						bitmap.pixel_mode, index, characterSize, mFontName.c_str() );
+			FT_Done_Glyph( glyphDesc );
+			return glyph;
+		}
+
+		if ( bitmap.buffer == nullptr || eeabs( bitmap.pitch ) < minimumPitch ) {
+			Log::error( "Invalid glyph bitmap buffer for glyphIndex %d characterSize: %d "
+						"font: %s size: %dx%d pitch: %d mode: %d",
+						index, characterSize, mFontName.c_str(), bitmap.width, bitmap.rows,
+						bitmap.pitch, bitmap.pixel_mode );
+			FT_Done_Glyph( glyphDesc );
+			return glyph;
+		}
+
 		// Leave a small padding around characters, so that filtering doesn't
 		// pollute them with pixels from neighbors
 		const int padding = 2;
@@ -1408,7 +1573,7 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 
 		page.texture->update( pixelPtr, w, h, x, y );
 
-		if ( scale < 1.f )
+		if ( scale < 1.f && pixelPtr != mPixelBuffer.data() )
 			eeSAFE_DELETE_ARRAY( pixelPtr );
 	}
 
@@ -1624,6 +1789,14 @@ void FontTrueType::setEnableFallbackFont( bool enableFallbackFont ) {
 	mEnableFallbackFont = enableFallbackFont;
 }
 
+bool FontTrueType::isSystemFallbackEnabled() const {
+	return mEnableSystemFallback;
+}
+
+void FontTrueType::setEnableSystemFallback( bool enableSystemFallback ) {
+	mEnableSystemFallback = enableSystemFallback;
+}
+
 bool FontTrueType::isEmojiFallbackEnabled() const {
 	return mEnableEmojiFallback;
 }
@@ -1705,6 +1878,7 @@ void FontTrueType::updateMonospaceState() const {
 void FontTrueType::setBoldFont( FontTrueType* fontBold ) {
 	if ( fontBold == mFontBold )
 		return;
+	disconnectBoldFont();
 	mFontBold = fontBold;
 	if ( mFontBold != nullptr ) {
 		mFontBoldCb = mFontBold->pushFontEventCallback( [this]( Uint32, Event event, Font* ) {
@@ -1721,6 +1895,7 @@ void FontTrueType::setBoldFont( FontTrueType* fontBold ) {
 void FontTrueType::setItalicFont( FontTrueType* fontItalic ) {
 	if ( fontItalic == mFontItalic )
 		return;
+	disconnectItalicFont();
 	mFontItalic = fontItalic;
 	if ( mFontItalic != nullptr ) {
 		mFontItalicCb = mFontItalic->pushFontEventCallback( [this]( Uint32, Event event, Font* ) {
@@ -1737,6 +1912,7 @@ void FontTrueType::setItalicFont( FontTrueType* fontItalic ) {
 void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
 	if ( fontBoldItalic == mFontBoldItalic )
 		return;
+	disconnectBoldItalicFont();
 	mFontBoldItalic = fontBoldItalic;
 	if ( mFontBoldItalic != nullptr ) {
 		mFontBoldItalicCb =
@@ -1749,6 +1925,27 @@ void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
 			} );
 	}
 	updateMonospaceState();
+}
+
+void FontTrueType::disconnectBoldFont() {
+	if ( mFontBoldCb != 0 && mFontBold != nullptr )
+		mFontBold->popFontEventCallback( mFontBoldCb );
+	mFontBold = nullptr;
+	mFontBoldCb = 0;
+}
+
+void FontTrueType::disconnectItalicFont() {
+	if ( mFontItalicCb != 0 && mFontItalic != nullptr )
+		mFontItalic->popFontEventCallback( mFontItalicCb );
+	mFontItalic = nullptr;
+	mFontItalicCb = 0;
+}
+
+void FontTrueType::disconnectBoldItalicFont() {
+	if ( mFontBoldItalicCb != 0 && mFontBoldItalic != nullptr )
+		mFontBoldItalic->popFontEventCallback( mFontBoldItalicCb );
+	mFontBoldItalic = nullptr;
+	mFontBoldItalicCb = 0;
 }
 
 bool FontTrueType::hasSvgGlyphs() const {

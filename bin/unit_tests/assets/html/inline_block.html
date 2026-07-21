@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<style>
+    .share-buttons li .sharing-platform-button:focus,
+    .share-buttons li .sharing-platform-button:hover {
+        background-color: rgba(128, 128, 128, .1);
+        outline: none
+    }
+
+    .post-share-buttons {
+        margin-top: .5em;
+        vertical-align: middle
+    }
+
+    .share-button {
+        width: 20px;
+        height: 20px;
+        background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAA8CAYAAACtrX6oAAATn0lEQVRo3u2bCXSUVZbHMz19bLvtVjw9PdPHmZ4ZbbVPN922SDsgiuiALXpkFHHOtOPSLqiI7C7sEpAAYZEEJKyySiAIYQlJCHswIWwhSSUkqSSVkH0DErIntfzn/V/xii+VfPVVlQI2U3XO/9S33nrv/d69931Vt4KCxOvAgQMI6OZTkILb3t7+nUgZDtj7/tgLAA4A9r+BjY2NiI+PR3R0NHbs2NFF2uPbt2/H3r17UVFR4VWHGxoa0Nzc/K3ax89cuXKl1IoVK7Bq1SrXNt/VvlZff/21V+1j3/Pz85GcnIy4uDjs3r1b6sSJEygvL/cL8IULF3Du3Dl88803Uty+ePHijQNMYGvXrsXGjRtdWr9+vUsbNmzodG7dunWIjIw07HBNTQ3OnDmDs2fPStD+ts8dXnfSQlbgjdpXVVWFpKQk7N+/H4cOHZITeevWrYiKisKmTZukzcTERK8Bt7S04NSpU3IsFy9e3EmrV6+W53iNIWAOclhYGLZt2ya9w2azdbqhra0NVqtVat++fViyZAmWLVvm0UO08GiX0GNiYqS++uqrLpB5zKjDhYWF0hOosrIyvwFzoLvzUgWW3soJZLfbpdRxT+0jXEI9fPiwBMvrOU4LFixAeHg4Fi5ciC+//FIe4zVGgAmOE4VcCJQThfdxAsXGxspJx+O8xh1yF8BLly7F7NmzMWPGDHkj3d/hcHRSR0eHBPXpp58iJCRESq+BDL0KbkJCApqamjrZoidyEOnNvgAuKirCyZMnpQib4ZC2+U5xInrrwd2FY3VMC5dS13hqHwee3skxmjVrFr744gvs2rVLTuw1a9bIcZs5c6b8DMLOyMjwaO/06dMSYEREBNLS0tDa2irbdfnyZemAnOCMCryG13oETCNz586VYZKN4KzjYCogtbW1WL58uWwkQXBWeQJMD6aHsrNsGG1woDhJlE0C8hcwO6RCtRL3ORCXLl3yyoO1XqvA8p1SYNVxJT17eXl5cp+5lnDpwYRBR6FnU2zjpEmT5PjOnz9fOoGePd7HsEzPz8zMlEAZtXiMk4V5mMfOnz8v2fG4tt8uwDxI0YMJjJ7FuK68ND09XQ4qgfMY72EIJ2B6vLpfNVDt0zvpvQzHarCOHDkicxEbzH0OAMOOysucjXr2lCwWi+woAVNsK/cJndtc2PAa9/vc7TG9eBIjAeV+XM8evZeRihOHnksvo4cRACcy28R3evPbb78tryEYPXv0bk4CjiPDL0N/aGionHBkwW32med4Da81mUyd7HUCzLxAoFzlcfCzs7Mxb948ORspwuQM5DmGxM8//9wrwHv27HEBZghlJKBHa48dO3ZMXksPNgKscjDhpqamdvJgihOSg+svYAXWXUaAuVpmOKbH7dy5U6566Rhsb0FBAcxms1xZHz9+HBMnTnRFST17zLWExgnLiUKHYt6tq6vD0aNHJRtGAALmmojA6UC6gFUOpjE1+JxFzBX8IA6oFgqPf/bZZz4B1hPDKkOMNx7MAVM5mAPIDjKicNKpRyf3e7wBTI/SAlRgGSrV9bxGzx7hMhoRGkHwkY9gKYbv3Nxc6TQEzHXOlClT5Bjq2Tt48KAcd0YGOh0/mymI/SVIAuZncp9RkoB5TxfA7AClQjSNMXQWFxfLDvJinufqmfC5T8DM12ykul81UO0z93YXopmjCJ2zjkB4nJ7I1SUB69lTUiGagEtLS7uc15O7PQWU71q5e7L7eT17HGzmXXowcyRzrvJcwlWAueIdMWKEhMsx17PHSU/AjGoMvbTJycGJs2jRIgmY48CJzfWLCtlaexIwB4liCKBH0jDDCxdDTOLuYohlqOG1EyZMcN2vGqj2OZvplQStbPHeyspKKQ6AOs77FGA9e0r04JSUFNm5rKwsORndr+lO7vYIgn12f1fbHDiK29pzevY4uMqDuVZhqmBb6b0ES3FsOUk++OADFzw9e8zdHBNGVRVFuXbhGHJMmQYIkusOOiZTZk5OTid7nQCrHEx49FYOfnfiOcKZPn26IWAunAiZMLqbLBTDLMGqL0WMALNTKkRT9H7OcIqDSujMwd4C1kLV7ivA2vOUnj16FvvBqMUQTAfgwog5lJ5Hz1VwOQl4nithPXuMpFxTKMdjVOFY8TjFcWAKJTdOAqYFHtcFHBwcjKlTp8pBogcrT9NKLfc5KydPnoxx48YZAmaHCY+rR8425hElXk+oPK8el4wAUwzTyosJmdtKHFCGRiPAXMFyRU/RI9S2kgKsPcd7PLWPz8D8domPU3SAMWPGyHeKYXnkyJEuuNq+6tnjWHMS0Hu3bNni+u6AK2l6P20RLsea8N3tBekNoD9ybyAbwhBDwBS3uxPhqkngLWAlei8njfJmbnMxyIExah89QguX71qYCrAWuhFgiusM5laGTHosYaoFFfOkgss1jhFgBVl9gVJSUiInD20QLL2bj2YM593195oCZqjnlybaryIp968nGdbUMQLzBTBVX18vI45Sd+G5O3v8XG3o1ebi7rYpb9YIFNMFF5OEob5mJPTNmzfLR0Jv2qcVQy9TALcZ9hmOGb04xtqwfF0BB+zdeHsBwDc74EDJzk1essMXv/wO6OaTC+539YO/Mhyw9/2xFwAcAOx/Azsqc4DQJ4Cxdwr18KzRQjMfgjV9r1cdLmoFytrxrdr35uTtePTlFT6J93jTvtbqRlTtK0ThvNPIHH8AqaPicfKjOBSsPIOLWZV+AW7ML0DFV1EomDITBZNnomLzNjQWWG4cYMe8fsCrQcC7V/SW0F+v6A2h4Zpz7145PuY2ww6n1AEfZtkwNduG/Bb43T5f4SoZte9yRg0sc04iZ8JRmD9Jwul3Y5H8xk4cf2sXjr66DXH/vR6mFcneA25owPn5YUi6tzfign4i9CPEB92K2KAf4tivHsD50DC0NzYaAy54/XXkPf44aj7+GPaGS3DYO2Bra4S9rUm8Nzm3rW2w21pR+8VC5P/nAOQPHqzbQOmZWngTfwUsehRY8Ijw7D7AqJ8Ab2oAvyM08hbDDm8uB97PsGGkUEKN45oBfmPS16i91AT18gYw4eZ8egz5k5JxRoDdN2w9ol9chsj/WozoIcuxbdAS7P+fTdg9eCVMYccMAbddvozsd8bgwN/9AglBd+LUI4ORO3YK8qeFwPTyezj6D/djf9DPkT18tJwIHgHnvfAC8h7pg+zf/RYl77yD9upKuL8c7a2oDg7GuZ6/R26/fjAL6QIe08MF1x4xDI7L1RpLdjhKM4Bp912FTMAf3GoIeEuFmBsmG8Zk2rC1zIZi4cXFbUCReC8UumDFdwJYC9dbwIVzTsEyNQUn3tyFtU+FYOuH4Ti8PgrHtu5A9KzliBg6Hev6zkXsC2sRJWBbYrI82ju/IFwCPHzHPShdthq2pkZ01FSjvdLJpj7lBI7/4TEJn9d6BGweOhQFA59E1bSpyHngj8h/7hm0Z5lcHWyvKEbh228i+/7foGbyZBQPG4bcvn09e/BbTs91tFx2ThD+LsxzDodz3xTjBDzcN8CjBWCG6Y/P2TAp+6o+EfvTc2xIb8S3BuwO1ghwVXwhcj9KxNn390m4BzduQZOtAg3NJbhUb8HFhnzkpCUh7NmJWPvYHEQ9EY5jU/bo2msqLBJh+U848MNfomL9ZmcN29zFSLqntwzN+ZNmyWOXDifiSI97xPGHxD3nuwJWFQC5woPzBwyAtbwc9fGxOPdQb+T3exRNR4+gLSsLlmefQVbPnqhbvw5oakbpSy8hp08f1/2qgWrfMfYOZ65d9JgTJv120wjYJz4Ax7FVzmP1NXB8chfw9lXAevaUtIDHZzk9WavhaTYZxt3vc7fnL2A9e5a5p5A94QgSXlwvPbfZVoba6jxUlmWjojQT5SUmlJVnInHbdsz65xHY/dxq7Hlpja69iq3RMt+mPf+qGCix3pg8C/uCfopv7n4QB/7+lyIP/xglXzjHMf3510ROvgWV4h6tvS6AmYPbLRZ5U8OpE8gbNAi5vXvD3LcPzI89hvpDB+Q5m0jqhS++iNw+fY0BM+fC5hytekGn0gy0NlyNfQ0idEe+D7zuG+AJAu5k4bXBuTbMuCJ6b0ieHbkt/gPWexkBzhx/EKkj4rBj6DIcWhclPLdYwD0n4ZYVZ6C4MA0lJRlISz6E8EETZaiOGrhEf8JM/UwA/RmKFi5FU3YODv/s30Q+Hg9rnTgXPA97g4KQ/uJfZdtyRk8Sk+FWFE4PMQbcVlDg6lTr0cMoGjIElqf/jNa4vYyx8jiTv3nYUOQ83Ns3wHqvQ6HAa94DVjk4utKOug4HatscqLmiRhu6rcnyFjBzrzb/qn0jwKmj4pD85k5EDlkscm40LlzKE2BNEm6JgHvechYFBWdw9vghRLw0HSsfnIGop5bq2iuYOMMJeF4YmnNykfiL36Bs9SbZJsuMOYgRgE3/O0LuZ701VgLO+2RGV8CqhkcCFiG6vbAQjku16DBnwdHWCqtI6h1VYlRtHbDm58JRXYE24cGm559HUq9ervtVA9W+Y0zXEO3Y9J5YQT8poAtFvCBC/UXnKB6Y6wKsZ08p8gpgenFCjd3rmix3e/6GaD17Jz+Ow+n3YhH9XAR2igXVBZFzlecSrgRsSUVyTAzm3DcK2wYuRfTQlbr2ysUzb7x4LDr9+BBUi7B+vOejKP48Ai35+Tj443/BHgG4ZOlKEb2tYnX9jHyEKo74spM9CVj9+pD7vMjB/fuj5ch+2KpEErN353UO2AXs1oxUpD/zLOIfeNh1v2qg2rePud25yJr+azE52p23V+aKJe9Zp8rEAk40Tr7WvuoCrGdPaWfVVQ8Ot9hR2Qqvfl1xt+cvYD17BatSpQdvHRSOZWK1bM44LnNucXG69NyCwjPINh1H5KTFmH/fWGwdEI6Do6J07dUKkKf6DRYr5B44cufdOPTTf8WFhEOwicch08vv4tzwcbC3NKNiUxQO/OAfkfhPv0VFckone50Am4UHWx7vj2ZTpgyoVhvlcJM4Js61lJchZcAgY8BXHpMcMcH64TlnnyB2h3MyeAE4W0TPCQLuOKHxmczBdiwssGOBUGi+HUsE9KI2XHfAFzOrcOQ1Mdgvb8aXD4dg1V9m4kRcLM4mHZRhmZ4bOXkxQu8fJ3Pvxr7zkbkmRdeeLJPavhuJd/1e5NsfIOm+P8lc3FZWjraSEgm3JjYB3/x7LxHKb0fOhCnyHl3AZ58YiNTefVGZkozai9WoqSjtqspSVFeVoTQ7A4n9/4z4ng/pAx51+9XnW66Sw54C4mYC+0OAhNnifQ4c9NxRtznhyi86fmQIWJYDVThcXkyNNl3V8HQbtpQbA37qrbUYPXuvrtRLe4z3eGqfaWUy9g/diLhh67H6P2Zh4R/GI2LIdCwbNhVz7h2F0HvHXoEbiv0jtuLy+Yse7THUcqV8+Pa7kTH0dVi5mHv1XaT8cQDSnvmLeDz6tfTwjGGvocps7tLfIL0B9EfuDXRMvce5Mn7nynMut1/rRuoRSXrwLV4BpvbVAjOF9/JxSWn8lWfjE/U3BrCEHJ6EXc+txI6By7BHPApt6BcqFlTBiBq0FFsGhEnPTRBwq9I8t08LuThijci/y9BcYEHKg0/I/MvHosS7eiJvymeo7qbI8JoDbkrdI2KpeMYdeasMvR7Fa96/DW27g70G7Eot4pEos1GsJBud78Vt8Kp9/v7Y4E37CveeQ8r0OMS8sg7bn1uO7YMj5ILq4KhtMK05joaSOsP2acXQW1ddjcai8ygKWYS88VNQuvYrVKWe7RSWryvggL0bby8A+GYHHCjZuclLdgKA/x/UZAVCYCAHBwYwALhrAy/lnYZ93gDYx/SQ32p51Cih4F5oOrnDqw6rmqxv075r+Zgka7LiLbDMPQ2TrMmKw8mPYpHPmqzMSp8B81GoOj0DpRsiXTVZpRu3oDrDdOMek+xzH/GrJsuow+41Wf62z9+aLKP2eVuT5S3g2vJyFM77XLcmi+cuVJQbAza/8grM/fuj+sMPYa2/AJu1HR2tDbC2Nor3Rud2eyusHS2oWbIAeU8+jrynn9YHPPp2v2qyjDrsXpN1rQDr1WR5ap+vNVlGgGvLyryuyeK13QJWPy+Z/azJ8vhzoR81WUY/F3pTk/Vd/FyoV5PlqX3+1GTp2aurq0PR/DCPNVl1mposXst7uvxc6PrB38+aLI8/+PtRk+VLyY6nmqzrXbJTFWfxqyZLz16dOc/nmqw6c77nio5ATVagJitQk/W3VpPlKpv1sybLY9msHzVZvtRF69VkfZu6aKOaLD17/HuKPzVZevb8qskS9+jXRftRk5Xcq5cxYB9rsowAu9dkXat/NvhaF33y43i/arL07FVEfu1zTVbpinWeAA/1qybLsPDdx5osI8Dd1WR9HwBb/KzJ0rPXXF5hXJPV2oJKTU1WfZrJw19XxCran5osw/8m+ViTZQTY25qs6w34YpZ/NVme+lu9M8ZjTVatpibL/NE0dHR4+OuKvzVZuoBH9/CrJsubv1N6U5NlBNjfkh1P7fOnJsuTPavV6nVNVnNF5fX9+yim+VeT5e3/ZY1qsm4EYFuz1aeaLG/+PkrIpSvWypqslm5qsgqmzUZLdfX1/3+wNSvB55ose1yIz/94764m60b+AdzWbvWqJsvXP4B3NDWhpaTUVZNVsWELGnLMIix3XL2ure36AQ7Yu/H2AoBvdsCBkp2bu2Tn/wBHWnVz/KUB9wAAAABJRU5ErkJggg==)no-repeat left !important;
+        overflow: hidden;
+        margin-left: -1px
+    }
+
+    a:hover.share-button {
+        text-decoration: none;
+        z-index: 1
+    }
+
+    .share-button-link-text {
+        display: block;
+        text-indent: -9999px
+    }
+
+    .sb-email {
+        background-position: 0 0 !important
+    }
+
+    a:hover.sb-email {
+        background-position: 0-20px !important
+    }
+
+    a:active.sb-email {
+        background-position: 0-40px !important
+    }
+
+    .sb-blog {
+        background-position: -20px 0 !important
+    }
+
+    a:hover.sb-blog {
+        background-position: -20px -20px !important
+    }
+
+    a:active.sb-blog {
+        background-position: -20px -40px !important
+    }
+
+    .sb-twitter {
+        background-position: -40px 0 !important
+    }
+
+    a:hover.sb-twitter {
+        background-position: -40px -20px !important
+    }
+
+    a:active.sb-twitter {
+        background-position: -40px -40px !important
+    }
+
+    .sb-facebook {
+        background-position: -60px 0 !important
+    }
+
+    a:hover.sb-facebook {
+        background-position: -60px -20px !important
+    }
+
+    a:active.sb-facebook {
+        background-position: -60px -40px !important
+    }
+
+    .sb-pinterest {
+        background-position: -100px 0 !important
+    }
+
+    a:hover.sb-pinterest {
+        background-position: -100px -20px !important
+    }
+
+    a:active.sb-pinterest {
+        background-position: -100px -40px !important
+    }
+
+    .goog-inline-block {
+        position: relative;
+        display: inline-block
+    }
+
+</style>
+</head>
+<body class=variant-light>
+    <div
+        class="post-footer-line post-footer-line-1">
+        <div
+            class="post-share-buttons goog-inline-block">
+            <a class="goog-inline-block share-button sb-email"
+                href="https://www.blogger.com/share-post.g?blogID=1420607183117556670&amp;postID=3791696274114184127&amp;target=email"
+                target=_blank
+                title="Email This"><span
+                    class=share-button-link-text>Email
+                    This</span></a><a
+                class="goog-inline-block share-button sb-blog"
+                href="https://www.blogger.com/share-post.g?blogID=1420607183117556670&amp;postID=3791696274114184127&amp;target=blog"
+                target=_blank
+                title=BlogThis!><span
+                    class=share-button-link-text>BlogThis!</span></a><a
+                class="goog-inline-block share-button sb-twitter"
+                href="https://www.blogger.com/share-post.g?blogID=1420607183117556670&amp;postID=3791696274114184127&amp;target=twitter"
+                target=_blank
+                title="Share to X"><span
+                    class=share-button-link-text>Share
+                    to X</span></a><a
+                class="goog-inline-block share-button sb-facebook"
+                href="https://www.blogger.com/share-post.g?blogID=1420607183117556670&amp;postID=3791696274114184127&amp;target=facebook"
+                target=_blank
+                title="Share to Facebook"><span
+                    class=share-button-link-text>Share
+                    to Facebook</span></a><a
+                class="goog-inline-block share-button sb-pinterest"
+                href="https://www.blogger.com/share-post.g?blogID=1420607183117556670&amp;postID=3791696274114184127&amp;target=pinterest"
+                target=_blank
+                title="Share to Pinterest"><span
+                    class=share-button-link-text>Share
+                    to Pinterest</span></a>
+        </div>
+    </div>
+</body>
+</html>

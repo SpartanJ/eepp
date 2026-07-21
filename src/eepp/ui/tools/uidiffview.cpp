@@ -1,11 +1,16 @@
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -16,7 +21,63 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText ) {
+static bool imagesHaveSameDimensions( const std::string& oldFilePath,
+									  const std::string& newFilePath ) {
+	int oldWidth = 0;
+	int oldHeight = 0;
+	int oldChannels = 0;
+	int newWidth = 0;
+	int newHeight = 0;
+	int newChannels = 0;
+
+	return Image::getInfo( oldFilePath, &oldWidth, &oldHeight, &oldChannels ) &&
+		   Image::getInfo( newFilePath, &newWidth, &newHeight, &newChannels ) &&
+		   oldWidth == newWidth && oldHeight == newHeight;
+}
+
+static bool setImageViewerImageSize( UIImageViewer* viewer ) {
+	if ( !viewer || !viewer->getImage() || !viewer->getImage()->getDrawable() )
+		return false;
+
+	auto imageSize( viewer->getImage()->getDrawable()->getPixelsSize() );
+	auto viewerSize( viewer->getPixelsSize() );
+	auto scale(
+		viewerSize.x > 0 && viewerSize.y > 0 &&
+				( imageSize.x > viewerSize.x || imageSize.y > viewerSize.y )
+			? eemin( viewerSize.x / imageSize.getWidth(), viewerSize.y / imageSize.getHeight() )
+			: 1.f );
+	viewer->getImage()->setPixelsSize( eefloor( imageSize.x * scale ),
+									   eefloor( imageSize.y * scale ) );
+	viewer->getImage()->setScale( 1 );
+	viewer->getImage()->setPixelsPosition( Vector2f::Zero );
+	viewer->getImage()->setRotation( 0 );
+	viewer->getImage()->setVisible( true );
+	viewer->getImage()->center();
+	return true;
+}
+
+static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
+	if ( !viewer || !image || !image->getPixelsPtr() )
+		return nullptr;
+
+	auto texture = TextureFactory::instance()->loadFromPixels(
+		image->getPixelsPtr(), image->getWidth(), image->getHeight(), image->getChannels() );
+	if ( !texture )
+		return nullptr;
+
+	auto sprite = Sprite::New();
+	sprite->createStatic( texture );
+	sprite->setAsTextureOwner( true );
+	sprite->setAsTextureRegionOwner( true );
+
+	viewer->reset();
+	viewer->getImage()->setDrawable( sprite, true );
+	setImageViewerImageSize( viewer );
+	return sprite;
+}
+
+UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
+												  const std::string& repoPath ) {
 	auto scrollView = UIScrollView::New();
 	auto vbox = UILinearLayout::NewVertical();
 	vbox->setParent( scrollView );
@@ -29,7 +90,7 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText )
 		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		diffView->setParent( vbox );
 		diffView->setHeadersVisible( true );
-		diffView->loadFromPatch( diff );
+		diffView->loadFromPatch( diff, "", "", repoPath );
 	}
 
 	return scrollView;
@@ -302,6 +363,7 @@ UIDiffView::UIDiffView() :
 	createEditor( mEditor, mPlugin );
 	createEditor( mLeftEditor, mLeftPlugin );
 	createEditor( mRightEditor, mRightPlugin );
+	createImageViewers();
 
 	mEditor->on( Event::OnFontChanged, [this]( auto ) { mPlugin->registerUpdate( mEditor ); } );
 	mLeftEditor->on( Event::OnFontChanged, [this]( auto ) {
@@ -351,6 +413,7 @@ UIDiffView::UIDiffView() :
 	mCompleteViewToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
 
 	updateButtonsText();
+	updateImagesPosAndSize();
 }
 
 UIDiffView::~UIDiffView() {
@@ -362,6 +425,9 @@ UIDiffView::~UIDiffView() {
 
 	if ( mRightEditor && mRightPlugin )
 		mRightEditor->unregisterPlugin( mRightPlugin.get() );
+
+	if ( mAutoDeleteOldTempImage )
+		FileSystem::fileRemove( mImageDiffOldPath );
 }
 
 Uint32 UIDiffView::getType() const {
@@ -384,11 +450,49 @@ void UIDiffView::createEditor( UICodeEditor*& editor,
 	editor->registerPlugin( plugin.get() );
 }
 
+void UIDiffView::createImageViewers() {
+	const auto initImageView = [this] {
+		auto iv = UIImageViewer::New();
+		iv->setParent( this );
+		iv->setVisible( false );
+		iv->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		iv->setDisplayOptions( UIImageViewer::DisplayDimensions );
+		return iv;
+	};
+	mLeftImageViewer = initImageView();
+	mRightImageViewer = initImageView();
+	mDiffImageViewer = initImageView();
+}
+
+void UIDiffView::resetToTextDiffView() {
+	mIsImageDiff = false;
+	mImageDiffOldPath.clear();
+	mImageDiffNewPath.clear();
+	if ( mLeftImageViewer ) {
+		mLeftImageViewer->reset();
+		mLeftImageViewer->setVisible( false );
+	}
+	if ( mRightImageViewer ) {
+		mRightImageViewer->reset();
+		mRightImageViewer->setVisible( false );
+	}
+	mEditor->setVisible( mViewMode == ViewMode::Unified );
+	mLeftEditor->setVisible( mViewMode == ViewMode::SideBySide );
+	mRightEditor->setVisible( mViewMode == ViewMode::SideBySide );
+}
+
 void UIDiffView::setViewMode( ViewMode mode ) {
 	if ( mViewMode == mode )
 		return;
 
 	mViewMode = mode;
+
+	if ( mIsImageDiff ) {
+		onSizeChange();
+		updateImageDiffView();
+		updateButtonsText();
+		return;
+	}
 
 	mLeftPlugin->registerUpdate( mLeftEditor );
 	mRightPlugin->registerUpdate( mRightEditor );
@@ -422,6 +526,10 @@ void UIDiffView::setCompleteView( bool complete ) {
 		return;
 	mShowCompleteView = complete;
 	updateButtonsText();
+	if ( mIsImageDiff ) {
+		updateImageDiffView();
+		return;
+	}
 	updateEditorsText();
 }
 
@@ -463,23 +571,83 @@ void UIDiffView::updateModeButton() {
 }
 
 void UIDiffView::onSizePolicyChange() {
-	if ( mHeightPolicy == SizePolicy::WrapContent && mEditor && mLeftEditor ) {
-		mEditor->setLayoutHeightPolicy( mHeightPolicy );
-		mLeftEditor->setLayoutHeightPolicy( mHeightPolicy );
-		mRightEditor->setLayoutHeightPolicy( mHeightPolicy );
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
+		if ( mEditor )
+			mEditor->setLayoutHeightPolicy( mHeightPolicy );
+		if ( mLeftEditor )
+			mLeftEditor->setLayoutHeightPolicy( mHeightPolicy );
+		if ( mRightEditor )
+			mRightEditor->setLayoutHeightPolicy( mHeightPolicy );
+
 		onAutoSize();
 	}
 }
 
 void UIDiffView::onAutoSize() {
-	if ( mHeightPolicy == SizePolicy::WrapContent && mEditor && mLeftEditor ) {
+	if ( mHeightPolicy != SizePolicy::WrapContent )
+		return;
+
+	if ( mEditor && mLeftEditor && !mIsImageDiff ) {
 		setPixelsSize( getPixelsSize().getWidth(), mViewMode == ViewMode::Unified
 													   ? mEditor->getPixelsSize().getHeight()
 													   : mLeftEditor->getPixelsSize().getHeight() );
 	}
+
+	if ( mIsImageDiff && mLeftImageViewer && mRightImageViewer && mDiffImageViewer ) {
+		bool displayDiffImage;
+		bool displayLeftImage;
+		imageDisplayState( displayDiffImage, displayLeftImage );
+		Float height = PixelDensity::dpToPx( 64 ); // force a min height
+		auto viewImageHeight = []( auto iv ) -> Float {
+			if ( iv && iv->getImage() && iv->getImage()->getDrawable() )
+				return iv->getImage()->getDrawable()->getPixelsSize().getHeight();
+			return 0;
+		};
+
+		height = std::max( height, viewImageHeight( mLeftImageViewer ) );
+		height = std::max( height, viewImageHeight( mRightImageViewer ) );
+
+		if ( displayDiffImage )
+			height = std::max( height, viewImageHeight( mDiffImageViewer ) );
+
+		setPixelsSize( getPixelsSize().getWidth(), height );
+	}
+}
+
+void UIDiffView::updateImagesPosAndSize() {
+	const Sizef size( getPixelsSize() );
+
+	bool displayDiffImage;
+	bool displayLeftImage;
+	imageDisplayState( displayDiffImage, displayLeftImage );
+
+	mLeftImageViewer->setVisible( true );
+	mLeftImageViewer->setPixelsPosition( 0, 0 );
+	mLeftImageViewer->setPixelsSize( { size.getWidth() * 0.5f, size.getHeight() } );
+	setImageViewerImageSize( mLeftImageViewer );
+
+	mRightImageViewer->setVisible( true );
+	mRightImageViewer->setPixelsSize(
+		displayLeftImage ? Sizef{ size.getWidth() * 0.5f, size.getHeight() } : size );
+	mRightImageViewer->setPixelsPosition(
+		displayLeftImage ? std::floor( size.getWidth() * 0.5f ) : 0.f, 0.f );
+	setImageViewerImageSize( mRightImageViewer );
+
+	mDiffImageViewer->setVisible( true );
+	mDiffImageViewer->setPixelsPosition( 0, 0 );
+	mDiffImageViewer->setPixelsSize( size );
+	setImageViewerImageSize( mDiffImageViewer );
+
+	onAutoSize();
+	updateModeButton();
 }
 
 void UIDiffView::onSizeChange() {
+	if ( mIsImageDiff ) {
+		updateImagesPosAndSize();
+		return;
+	}
+
 	if ( mViewMode == ViewMode::Unified ) {
 		mEditor->setPixelsSize(
 			{ getPixelsSize().getWidth(), mHeightPolicy == SizePolicy::WrapContent
@@ -556,6 +724,110 @@ void UIDiffView::updateEditorsText() {
 		mEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 		mLeftEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 		mRightEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
+	}
+}
+
+bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
+										 const std::string& newFilePath ) {
+	const bool hasOldImage = !oldFilePath.empty() && FileSystem::fileExists( oldFilePath ) &&
+							 Image::isImage( oldFilePath );
+	const bool hasNewImage = !newFilePath.empty() && FileSystem::fileExists( newFilePath ) &&
+							 Image::isImage( newFilePath );
+	if ( !hasOldImage && !hasNewImage )
+		return false;
+
+	mLines.clear();
+	mViewLines.clear();
+	mSyntaxDef.reset();
+	mImageDiffOldPath = hasOldImage ? oldFilePath : "";
+	mImageDiffNewPath = hasNewImage ? newFilePath : "";
+	mIsImageDiff = true;
+
+	mEditor->setVisible( false );
+	mLeftEditor->setVisible( false );
+	mRightEditor->setVisible( false );
+
+	if ( !mImageDiffNewPath.empty() )
+		mFileName = FileSystem::fileNameFromPath( mImageDiffNewPath );
+	else
+		mFileName = FileSystem::fileNameFromPath( mImageDiffOldPath );
+
+	if ( !mImageDiffOldPath.empty() && !mImageDiffNewPath.empty() )
+		mViewMode = ViewMode::SideBySide;
+	else
+		mViewMode = ViewMode::Unified;
+
+	setCompleteViewToggleVisible( !mImageDiffOldPath.empty() && !mImageDiffNewPath.empty() );
+	updateButtonsText();
+	onSizeChange();
+	updateImageDiffView();
+	return true;
+}
+
+void UIDiffView::imageDisplayState( bool& displayDiffImage, bool& displayLeftImage ) {
+	if ( !mIsImageDiff ) {
+		displayDiffImage = displayLeftImage = false;
+		return;
+	}
+
+	const bool showVisualDiff =
+		!mShowCompleteView && !mImageDiffOldPath.empty() && !mImageDiffNewPath.empty();
+	const bool sameDimension = imagesHaveSameDimensions( mImageDiffOldPath, mImageDiffNewPath );
+	displayDiffImage = showVisualDiff && sameDimension && mViewMode == ViewMode::Unified;
+	displayLeftImage =
+		!displayDiffImage && !mImageDiffOldPath.empty() && mViewMode == ViewMode::SideBySide;
+}
+
+void UIDiffView::updateImageDiffView() {
+	if ( !mIsImageDiff )
+		return;
+
+	bool displayDiffImage;
+	bool displayLeftImage;
+	imageDisplayState( displayDiffImage, displayLeftImage );
+
+	mEditor->setVisible( false );
+	mLeftEditor->setVisible( false );
+	mRightEditor->setVisible( false );
+
+	mDiffImageViewer->setVisible( false );
+
+	if ( displayLeftImage ) {
+		mLeftImageViewer->setVisible( true );
+		if ( !mLeftImageViewer->hasImage() )
+			mLeftImageViewer->loadImageAsync( mImageDiffOldPath, false, false );
+	} else {
+		mLeftImageViewer->reset();
+		mLeftImageViewer->setVisible( false );
+	}
+
+	if ( displayDiffImage ) {
+		if ( nullptr == mSprite ) {
+			Image oldImage( mImageDiffOldPath, 4 );
+			Image newImage( mImageDiffNewPath, 4 );
+			if ( oldImage.getPixelsPtr() && newImage.getPixelsPtr() ) {
+				auto diff = oldImage.diff( newImage );
+				if ( diff.diffImage )
+					mSprite = setImageViewerImage( mDiffImageViewer, diff.diffImage );
+			}
+		}
+
+		mLeftImageViewer->setVisible( false );
+		mRightImageViewer->setVisible( false );
+		mDiffImageViewer->setVisible( true );
+		return;
+	}
+
+	const std::string& displayPath =
+		mImageDiffNewPath.empty() ? mImageDiffOldPath : mImageDiffNewPath;
+
+	if ( !displayPath.empty() ) {
+		mRightImageViewer->setVisible( true );
+		if ( !mRightImageViewer->hasImage() )
+			mRightImageViewer->loadImageAsync( displayPath, false, false );
+	} else {
+		mRightImageViewer->reset();
+		mRightImageViewer->setVisible( false );
 	}
 }
 
@@ -660,8 +932,127 @@ static void applySubLineDiff(
 	}
 }
 
-void UIDiffView::loadFromPatch( const std::string& patchText,
-								const std::string& originalFilePath ) {
+struct BinaryImagePatch {
+	std::string oldPath;
+	std::string newPath;
+	std::string fileName;
+	bool isBinary{ false };
+};
+
+static std::string stripDiffPathPrefix( std::string path ) {
+	path = String::trim( path );
+	if ( String::startsWith( path, "\"" ) && String::endsWith( path, "\"" ) && path.size() > 1 )
+		path = path.substr( 1, path.size() - 2 );
+	if ( String::startsWith( path, "a/" ) || String::startsWith( path, "b/" ) )
+		path = path.substr( 2 );
+	return path;
+}
+
+static bool isPatchNullFile( const std::string& path ) {
+	return stripDiffPathPrefix( path ) == "/dev/null";
+}
+
+static bool isImagePath( const std::string& path ) {
+	return !path.empty() && !isPatchNullFile( path ) && Image::isImageExtension( path );
+}
+
+static std::string resolveImagePatchPath( const std::string& patchPath,
+										  const std::string& originalFilePath,
+										  bool preferOriginalFile, const std::string& repoPath ) {
+	if ( patchPath.empty() || isPatchNullFile( patchPath ) )
+		return "";
+
+	const std::string cleanPath( stripDiffPathPrefix( patchPath ) );
+
+	if ( preferOriginalFile && !originalFilePath.empty() &&
+		 Image::isImageExtension( originalFilePath ) &&
+		 FileSystem::fileExists( originalFilePath ) ) {
+		return originalFilePath;
+	}
+
+	if ( FileSystem::fileExists( patchPath ) )
+		return patchPath;
+	if ( FileSystem::fileExists( cleanPath ) )
+		return cleanPath;
+
+	if ( !repoPath.empty() ) {
+		std::string fullPath = repoPath + cleanPath;
+		if ( FileSystem::fileExists( fullPath ) )
+			return fullPath;
+	}
+
+	if ( !originalFilePath.empty() ) {
+		std::string basePath( FileSystem::fileRemoveFileName( originalFilePath ) );
+		if ( !basePath.empty() ) {
+			std::string path( basePath + cleanPath );
+			if ( FileSystem::fileExists( path ) )
+				return path;
+			path = basePath + patchPath;
+			if ( FileSystem::fileExists( path ) )
+				return path;
+		}
+	}
+
+	return "";
+}
+
+static BinaryImagePatch parseBinaryImagePatch( const std::vector<std::string>& lines,
+											   const std::string& originalFilePath ) {
+	BinaryImagePatch patch;
+
+	for ( const auto& line : lines ) {
+		if ( String::startsWith( line, "diff --git " ) ) {
+			auto paths = String::split( line.substr( 11 ), ' ', true );
+			if ( paths.size() >= 2 ) {
+				patch.oldPath = paths[0];
+				patch.newPath = paths[1];
+			}
+		} else if ( String::startsWith( line, "--- " ) ) {
+			patch.oldPath = line.substr( 4 );
+		} else if ( String::startsWith( line, "+++ " ) ) {
+			patch.newPath = line.substr( 4 );
+		} else if ( String::startsWith( line, "Binary files " ) ) {
+			patch.isBinary = true;
+			const size_t oldStart = sizeof( "Binary files " ) - 1;
+			const size_t andPos = line.find( " and ", oldStart );
+			const size_t differPos = line.rfind( " differ" );
+			if ( andPos != std::string::npos && differPos != std::string::npos &&
+				 andPos < differPos ) {
+				patch.oldPath = line.substr( oldStart, andPos - oldStart );
+				patch.newPath = line.substr( andPos + 5, differPos - andPos - 5 );
+			}
+		} else if ( line == "GIT binary patch" || String::startsWith( line, "literal " ) ) {
+			patch.isBinary = true;
+		}
+	}
+
+	if ( !patch.newPath.empty() && !isPatchNullFile( patch.newPath ) )
+		patch.fileName = FileSystem::fileNameFromPath( stripDiffPathPrefix( patch.newPath ) );
+	else if ( !patch.oldPath.empty() && !isPatchNullFile( patch.oldPath ) )
+		patch.fileName = FileSystem::fileNameFromPath( stripDiffPathPrefix( patch.oldPath ) );
+	else if ( !originalFilePath.empty() )
+		patch.fileName = FileSystem::fileNameFromPath( originalFilePath );
+
+	if ( !patch.isBinary && ( isImagePath( patch.oldPath ) || isImagePath( patch.newPath ) ) ) {
+		for ( const auto& line : lines ) {
+			if ( String::startsWith( line, "Binary " ) || line == "GIT binary patch" ) {
+				patch.isBinary = true;
+				break;
+			}
+		}
+	}
+
+	if ( patch.isBinary && !isImagePath( patch.oldPath ) && !isImagePath( patch.newPath ) &&
+		 !Image::isImageExtension( originalFilePath ) ) {
+		patch.isBinary = false;
+	}
+
+	return patch;
+}
+
+void UIDiffView::loadFromPatch( const std::string& patchText, const std::string& originalFilePath,
+								const std::string& oldFilePath, const std::string& repoPath ) {
+	resetToTextDiffView();
 	mLines.clear();
 	auto lines = String::split( patchText, '\n', true );
 
@@ -679,6 +1070,26 @@ void UIDiffView::loadFromPatch( const std::string& patchText,
 	Int64 expectedOldLineNum = 1;
 	Int64 expectedNewLineNum = 1;
 	std::string filename;
+
+	auto imagePatch = parseBinaryImagePatch( lines, originalFilePath );
+	if ( imagePatch.isBinary ) {
+		std::string oldImagePath( oldFilePath );
+		if ( oldImagePath.empty() ) {
+			oldImagePath =
+				resolveImagePatchPath( imagePatch.oldPath, originalFilePath, false, repoPath );
+		}
+		std::string newImagePath(
+			resolveImagePatchPath( imagePatch.newPath, originalFilePath, true, repoPath ) );
+
+		if ( oldImagePath == newImagePath )
+			oldImagePath.clear();
+
+		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
+			if ( !imagePatch.fileName.empty() )
+				mFileName = std::move( imagePatch.fileName );
+			return;
+		}
+	}
 
 	for ( const auto& line : lines ) {
 		if ( String::startsWith( line, "diff " ) || String::startsWith( line, "index " ) ||
@@ -795,6 +1206,7 @@ void UIDiffView::loadFromPatch( const std::string& patchText,
 
 void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText,
 								  const std::string& originalFilePath ) {
+	resetToTextDiffView();
 	mLines.clear();
 
 	std::vector<std::string> leftLines = String::split( oldText, '\n', true );
@@ -845,6 +1257,13 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 }
 
 void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string& newFilePath ) {
+	if ( ( oldFilePath.empty() || Image::isImageExtension( oldFilePath ) ) &&
+		 ( newFilePath.empty() || Image::isImageExtension( newFilePath ) ) &&
+		 loadImageDiffFromPaths( oldFilePath, newFilePath ) ) {
+		return;
+	}
+
+	resetToTextDiffView();
 	std::string oldText, newText;
 	FileSystem::fileGet( oldFilePath, oldText );
 	FileSystem::fileGet( newFilePath, newText );
@@ -864,6 +1283,7 @@ void UIDiffView::updateButtonsText() {
 	mModeToggle->setText( i18n( "diffview_side_by_side", "Side by Side" ) );
 	mModeToggle->setSelected( mViewMode != ViewMode::Unified );
 	mCompleteViewToggle->setText( i18n( "diffview_compact", "Compact" ) );
+	mCompleteViewToggle->setVisible( !mIsImageDiff );
 	mCompleteViewToggle->setSelected( !mShowCompleteView );
 }
 

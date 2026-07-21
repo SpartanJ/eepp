@@ -249,6 +249,17 @@ Git::Result Git::diff( const std::string& file, bool isStaged, const std::string
 					  projectDir );
 }
 
+Git::Result Git::showFile( const std::string& file, const std::string& ref,
+						   const std::string& projectDir ) {
+	std::string relativePath( file );
+	const std::string& repoPath = projectDir.empty() ? mProjectPath : projectDir;
+	if ( !repoPath.empty() )
+		FileSystem::filePathRemoveBasePath( repoPath, relativePath );
+
+	std::string refSpec( ref == ":" ? ":" + relativePath : ref + ":" + relativePath );
+	return gitSimple( String::format( "show \"%s\"", refSpec ), projectDir );
+}
+
 Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
 							   const std::string& projectDir ) {
 	auto res = gitSimple( String::format( "branch --no-track %s", branchName ), projectDir );

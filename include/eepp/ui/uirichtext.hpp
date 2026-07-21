@@ -2,6 +2,7 @@
 #define EE_UI_UIRICHTEXT_HPP
 
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/graphics/texttransform.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilayout.hpp>
 
@@ -11,8 +12,29 @@ class EE_API UIRichText : public UIHTMLWidget {
   public:
 	enum class IntrinsicMode { None, Min, Max };
 
+	enum class WhiteSpaceCollapse {
+		Collapse,
+		Preserve,
+		PreserveBreaks,
+		PreserveSpaces,
+		BreakSpaces,
+		Discard
+	};
+
+	static WhiteSpaceCollapse toWhiteSpaceCollapse( std::string_view val );
+
+	static std::string fromWhiteSpaceCollapse( WhiteSpaceCollapse val );
+
+	static std::string fromWhiteSpace( WhiteSpaceCollapse collapse, bool lineWrap );
+
+	static String collapseInternalWhitespace( const String& s );
+
 	static void rebuildRichText( UILayout* container, RichText& richText,
 								 IntrinsicMode mode = IntrinsicMode::None );
+
+	static void setUseCodeEditorForPreCodeBlocks( bool enabled );
+
+	static bool getUseCodeEditorForPreCodeBlocks();
 
 	static UIRichText* New();
 
@@ -44,13 +66,13 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };
 
-	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
-
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_RICHTEXT; }
 
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UIRichText::getType() == type || UIHTMLWidget::isType( type );
+	}
 
 	virtual void draw();
 
@@ -85,6 +107,10 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	UIRichText* setFontStyle( const Uint32& fontStyle );
 
+	FontWeight getFontWeight() const;
+
+	UIRichText* setFontWeight( const FontWeight& weight );
+
 	const Color& getFontColor() const;
 
 	UIRichText* setFontColor( const Color& color );
@@ -113,9 +139,35 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	UIRichText* setTextAlign( const Uint32& align );
 
+	WhiteSpaceCollapse getWhiteSpaceCollapse() const;
+
+	void setWhiteSpaceCollapse( WhiteSpaceCollapse collapse );
+
+	bool getLineWrap() const;
+
+	void setLineWrap( bool lineWrap );
+
+	void applyWhiteSpace( std::string_view val );
+
+	Float getLineHeightPx() const;
+
+	UIRichText* setLineHeightEq( const std::string& eq );
+
+	Float getTextIndentPx() const;
+
+	UIRichText* setTextIndentEq( const std::string& eq );
+
+	Uint32 getTabSize() const;
+
+	UIRichText* setTabSize( Uint32 tabSize );
+
 	bool isTextSelectionEnabled() const;
 
 	void setTextSelectionEnabled( bool active );
+
+	const TextTransform::Value& getTextTransform() const;
+
+	void setTextTransform( const TextTransform::Value& textTransform );
 
 	const Color& getSelectionBackColor() const;
 
@@ -131,8 +183,6 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	String getSelectionString() const;
 
-	virtual void updateLayout();
-
 	virtual RichText* getRichTextPtr() { return &mRichText; }
 
   protected:
@@ -140,6 +190,18 @@ class EE_API UIRichText : public UIHTMLWidget {
 	Int64 mSelCurInit{ 0 };
 	Int64 mSelCurEnd{ 0 };
 	bool mSelecting{ false };
+	std::string mLineHeightEq;
+	std::string mTextIndentEq;
+	mutable Float mLineHeightPxCache{ 0 };
+	mutable bool mLineHeightPxDirty{ true };
+	mutable Float mTextIndentPxCache{ 0 };
+	mutable bool mTextIndentPxDirty{ true };
+	Uint32 mTabSize{ 8 };
+	WhiteSpaceCollapse mWhiteSpaceCollapse{ WhiteSpaceCollapse::Collapse };
+	bool mLineWrap{ true };
+	TextTransform::Value mTextTransform{ TextTransform::None };
+
+	LayoutInvalidationFlags mDeferredLayoutReasons{ 0 };
 
 	explicit UIRichText( const std::string& tag = "richtext" );
 
@@ -154,8 +216,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();
-	virtual void onAlphaChange();
 	virtual void onSelectionChange();
+	virtual void onLayoutUpdate();
 
 	void selCurInit( const Int64& init );
 	void selCurEnd( const Int64& end );
@@ -169,8 +231,9 @@ class EE_API UIRichText : public UIHTMLWidget {
 class EE_API UIHTMLHtml : public UIRichText {
   public:
 	static UIHTMLHtml* New( const std::string& tag );
-	virtual Uint32 getType() const override;
-	bool isType( const Uint32& type ) const override;
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
+	bool applyProperty( const StyleSheetProperty& attribute );
 
   protected:
 	UIHTMLHtml( const std::string& tag = "html" );
@@ -179,14 +242,37 @@ class EE_API UIHTMLHtml : public UIRichText {
 class EE_API UIHTMLBody : public UIRichText {
   public:
 	static UIHTMLBody* New( const std::string& tag );
-	virtual Uint32 getType() const override;
-	bool isType( const Uint32& type ) const override;
-	bool applyProperty( const StyleSheetProperty& attribute ) override;
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
+	bool applyProperty( const StyleSheetProperty& attribute );
+	virtual void updateLayout();
+	void setDocumentViewportMinHeight( const Float& height );
+	void setDocumentCanvasMinHeight( const Float& height );
 
   protected:
 	bool mPropagatedBackground{ false };
+	StyleSheetLength mMinHeightLocal;
+	bool mSettingBodyHeight{ false };
+	Float mDocumentViewportMinHeight{ 0 };
+	Float mDocumentContentMinHeight{ 0 };
 
 	UIHTMLBody( const std::string& tag = "body" );
+
+	Float getLocalMinHeight() const;
+	bool setDocumentContentMinHeight( const Float& height );
+	bool updateDocumentMinHeight();
+	bool updateDocumentContentMinHeightFromChildren();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+};
+
+class EE_API UIHTMLHead : public UIWidget {
+  public:
+	static UIHTMLHead* New();
+	virtual Uint32 getType() const;
+	bool isType( const Uint32& type ) const;
+
+  protected:
+	UIHTMLHead();
 };
 
 class EE_API UILineBreak : public UIRichText {

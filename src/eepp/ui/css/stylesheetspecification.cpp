@@ -1,5 +1,7 @@
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
+#include <eepp/ui/css/stylesheetselectorrule.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -111,6 +113,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "background-size", "auto" )
 		.setType( PropertyType::BackgroundSize )
 		.setIndexed();
+	registerProperty( "background-origin", "padding-box" ).setIndexed();
+	registerProperty( "background-clip", "border-box" ).setIndexed();
+	registerProperty( "background-attachment", "scroll" ).setIndexed();
 	registerProperty( "foreground-color", "" ).setType( PropertyType::Color );
 	registerProperty( "foreground-image", "none" ).setIndexed();
 	registerProperty( "foreground-tint", "" ).setIndexed().setType( PropertyType::Color );
@@ -126,8 +131,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "foreground-size", "auto" )
 		.setType( PropertyType::ForegroundSize )
 		.setIndexed();
-	registerProperty( "foreground-radius", "0px" ).setType( PropertyType::NumberLength );
 	registerProperty( "visible", "true" ).setType( PropertyType::Bool );
+	registerProperty( "visibility", "visible" ).setType( PropertyType::String );
 	registerProperty( "enabled", "true" ).setType( PropertyType::Bool );
 	registerProperty( "theme", "" );
 	registerProperty( "skin", "" );
@@ -171,6 +176,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
 	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
 	registerProperty( "clip", "" ).setType( PropertyType::String );
+	// TODO: layer implement overflow-x and overflow-y properly
+	registerProperty( "overflow", "visible" )
+		.addAlias( "overflow-x" )
+		.addAlias( "overflow-y" )
+		.setType( PropertyType::String );
 	registerProperty( "rotation", "" ).addAlias( "rotate" ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "rotation-origin-point-x", "50%" )
@@ -219,9 +229,13 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
-	registerProperty( "font-style", "", true ).addAlias( "font-weight" );
+	registerProperty( "font-style", "", true );
+	registerProperty( "font-weight", "", true );
 	registerProperty( "text-decoration", "", true );
 	registerProperty( "line-spacing", "", true ).setType( PropertyType::NumberLength );
+	registerProperty( "line-height", "", true ).setType( PropertyType::NumberLength );
+	registerProperty( "text-indent", "", true ).setType( PropertyType::NumberLength );
+	registerProperty( "tab-size", "8", true ).setType( PropertyType::String );
 	registerProperty( "text-stroke-width", "", true )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "fontoutlinethickness" );
@@ -326,7 +340,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "word-wrap", "" ).setType( PropertyType::Bool );
 
-	registerProperty( "hint", "" ).setType( PropertyType::String );
+	registerProperty( "white-space", "normal", true ).setType( PropertyType::String );
+	registerProperty( "white-space-collapse", "collapse", true ).setType( PropertyType::String );
+
+	registerProperty( "hint", "" ).setType( PropertyType::String ).addAlias( "placeholder" );
 	registerProperty( "hint-color", "" ).setType( PropertyType::Color );
 	registerProperty( "hint-shadow-color", "" ).setType( PropertyType::Color );
 	registerProperty( "hint-shadow-offset", "" ).setType( PropertyType::Vector2 );
@@ -397,6 +414,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
 	registerProperty( "foreground-smooth", "false" ).setType( PropertyType::Bool );
 
+	registerProperty( "foreground-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "foreground-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
+
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
@@ -426,12 +448,27 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "input-mode", "normal" ).setType( PropertyType::String );
 
 	registerProperty( "hidden", "" ).setType( PropertyType::Bool );
+	registerProperty( "open", "" ).setType( PropertyType::Bool );
 	registerProperty( "display", "inline" ).setType( PropertyType::String );
 	registerProperty( "position", "static" ).setType( PropertyType::String );
-	registerProperty( "top", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "right", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "bottom", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "left", "auto" ).setType( PropertyType::NumberLength );
+	registerProperty( "float", "none" ).setType( PropertyType::String );
+	registerProperty( "clear", "none" ).setType( PropertyType::String );
+	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
+	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
+	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
+	registerProperty( "box-sizing", "content-box" ).setType( PropertyType::String );
+	registerProperty( "top", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "right", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "bottom", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "left", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "z-index", "auto" ).setType( PropertyType::NumberInt );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
@@ -439,6 +476,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "glyph", "" ).setType( PropertyType::String );
 	registerProperty( "name", "" ).setType( PropertyType::String );
+	registerProperty( "for", "" ).setType( PropertyType::String );
 	registerProperty( "row-valign", "" )
 		.addAlias( "row-vertical-align" )
 		.setType( PropertyType::String );
@@ -456,7 +494,42 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "display-options", "" ).setType( PropertyType::String );
 	registerProperty( "menu-width-mode", "" ).setType( PropertyType::String );
 
-	registerProperty( "data-language", "" ).setType( PropertyType::String );
+	registerProperty( "action", "" ).setType( PropertyType::String );
+	registerProperty( "method", "GET" ).setType( PropertyType::String );
+	registerProperty( "enctype", "application/x-www-form-urlencoded" )
+		.setType( PropertyType::String );
+	registerProperty( "target", "_self" ).setType( PropertyType::String );
+	registerProperty( "unicode-range", "" ).setType( PropertyType::String );
+	registerProperty( "alignment-baseline", "baseline" ).setType( PropertyType::String );
+	registerProperty( "flex-direction", "row" ).setType( PropertyType::String );
+	registerProperty( "flex-wrap", "nowrap" ).setType( PropertyType::String );
+	registerProperty( "justify-content", "flex-start" ).setType( PropertyType::String );
+	registerProperty( "align-items", "stretch" ).setType( PropertyType::String );
+	registerProperty( "align-content", "stretch" ).setType( PropertyType::String );
+	registerProperty( "align-self", "auto" ).setType( PropertyType::String );
+	registerProperty( "flex-grow", "0" ).setType( PropertyType::NumberFloat );
+	registerProperty( "flex-shrink", "1" ).setType( PropertyType::NumberFloat );
+	registerProperty( "flex-basis", "auto" ).setType( PropertyType::NumberLength );
+	registerProperty( "order", "0" ).setType( PropertyType::NumberInt );
+	registerProperty( "row-gap", "0px" ).setType( PropertyType::NumberLength );
+	registerProperty( "column-gap", "0px" ).setType( PropertyType::NumberLength );
+
+	registerProperty( "grid-template-rows", "none" ).setType( PropertyType::String );
+	registerProperty( "grid-template-columns", "none" ).setType( PropertyType::String );
+	registerProperty( "grid-template-areas", "none" ).setType( PropertyType::String );
+	registerProperty( "grid-auto-rows", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-auto-columns", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-auto-flow", "row" ).setType( PropertyType::String );
+	registerProperty( "grid-row-start", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-row-end", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-column-start", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-column-end", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-row", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-column", "auto" ).setType( PropertyType::String );
+	registerProperty( "grid-area", "auto" ).setType( PropertyType::String );
+	registerProperty( "justify-items", "normal" ).setType( PropertyType::String );
+	registerProperty( "justify-self", "auto" ).setType( PropertyType::String );
+	registerProperty( "defer", "0" ).setType( PropertyType::Bool );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
@@ -467,10 +540,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
 	registerShorthand(
 		"padding", { "padding-top", "padding-right", "padding-bottom", "padding-left" }, "box" );
-	registerShorthand(
-		"background",
-		{ "background-color", "background-image", "background-repeat", "background-position" },
-		"background" );
+	registerShorthand( "background",
+					   { "background-color", "background-image", "background-position",
+						 "background-size", "background-repeat", "background-attachment",
+						 "background-origin", "background-clip" },
+					   "background" );
 	registerShorthand(
 		"foreground",
 		{ "foreground-color", "foreground-image", "foreground-repeat", "foreground-position" },
@@ -491,6 +565,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "border-radius",
 					   { "border-top-left-radius", "border-top-right-radius",
 						 "border-bottom-right-radius", "border-bottom-left-radius" },
+					   "radius" );
+	registerShorthand( "foreground-radius",
+					   { "foreground-top-left-radius", "foreground-top-right-radius",
+						 "foreground-bottom-right-radius", "foreground-bottom-left-radius" },
 					   "radius" );
 	registerShorthand( "rotation-origin-point",
 					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
@@ -516,6 +594,26 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "border-bottom",
 					   { "border-bottom-width", "border-bottom-style", "border-bottom-color" },
 					   "border-side" );
+	registerShorthand( "list-style",
+					   { "list-style-type", "list-style-position", "list-style-image" },
+					   "list-style" );
+	registerShorthand( "font",
+					   { "font-style", "font-weight", "font-size", "line-height", "font-family" },
+					   "font" );
+	registerShorthand( "vertical-align", { "alignment-baseline" }, "vertical-align" );
+	registerShorthand( "flex-flow", { "flex-direction", "flex-wrap" }, "single-value-vector" );
+	registerShorthand( "flex", { "flex-grow", "flex-shrink", "flex-basis" }, "flex" );
+	registerShorthand( "gap", { "row-gap", "column-gap" }, "vector2" );
+	registerShorthand( "grid-template",
+					   { "grid-template-rows", "grid-template-columns", "grid-template-areas" },
+					   "grid-template" );
+	registerShorthand( "grid",
+					   { "grid-template-rows", "grid-template-columns", "grid-template-areas",
+						 "grid-auto-rows", "grid-auto-columns", "grid-auto-flow" },
+					   "grid" );
+	registerShorthand( "place-items", { "align-items", "justify-items" }, "vector2" );
+	registerShorthand( "place-self", { "align-self", "justify-self" }, "vector2" );
+	registerShorthand( "place-content", { "align-content", "justify-content" }, "vector2" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -531,13 +629,18 @@ static bool isNth( int a, int b, int count ) {
 	return ( x >= 0 && x * a + b == count );
 }
 
+static bool whereIsMatch( const UIWidget* node, const std::string& param ) {
+	StyleSheetSelectorRule rule( param, StyleSheetSelectorRule::PatternMatch::ANY );
+	return rule.matches( const_cast<UIWidget*>( node ) );
+}
+
 void StyleSheetSpecification::registerDefaultNodeSelectors() {
 	mNodeSelectors["empty"] = []( const UIWidget* node, int, int, const FunctionString& ) -> bool {
 		return node->getFirstChild() == NULL;
 	};
 	mNodeSelectors["first-child"] = []( const UIWidget* node, int, int,
 										const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
+		return NULL != node->getParent() && node->getElementIndex() == 0;
 	};
 	mNodeSelectors["enabled"] = []( const UIWidget* node, int, int,
 									const FunctionString& ) -> bool { return node->isEnabled(); };
@@ -545,69 +648,69 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 									 const FunctionString& ) -> bool { return !node->isEnabled(); };
 	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int, int,
 										  const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		while ( NULL != child ) {
-			if ( type == child->getType() ) {
-				return child == node;
-			}
-			child = child->getNextNode();
-		};
-		return false;
+		return NULL != node->getParent() && node->getElementOfTypeIndex() == 0;
 	};
 	mNodeSelectors["last-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
+		Node* child = node->getParent()->getLastChild();
+		while ( NULL != child ) {
+			if ( child->isWidget() && !static_cast<UIWidget*>( child )->isTextNode() )
+				return child == node;
+			child = child->getPrevNode();
+		}
+		return false;
 	};
 	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
+		if ( NULL == node->getParent() || !node->getParent()->isWidget() )
+			return false;
 		Uint32 type = node->getType();
+		Node* child = node->getParent()->getLastChild();
 		while ( NULL != child ) {
-			if ( type == child->getType() ) {
+			if ( child->getType() == type && child->isWidget() &&
+				 !static_cast<UIWidget*>( child )->isTextNode() )
 				return child == node;
-			}
 			child = child->getPrevNode();
-		};
+		}
 		return false;
 	};
 	mNodeSelectors["only-child"] = []( const UIWidget* node, int, int,
 									   const FunctionString& ) -> bool {
-		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() == 1;
 	};
 	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int, int,
 										 const FunctionString& ) -> bool {
-		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
-		Uint32 type = node->getType();
-		Uint32 typeCount = 0;
-		while ( NULL != child ) {
-			if ( child->getType() == type ) {
-				typeCount++;
-			}
-			if ( typeCount > 1 )
-				return false;
-			child = child->getNextNode();
-		};
-		return typeCount == 1;
+		return NULL != node->getParent() && node->getParent()->isWidget() &&
+			   static_cast<const UIWidget*>( node->getParent() )
+					   ->getChildElementOfTypeCount( node->getType() ) == 1;
 	};
 	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b,
 									  const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeIndex() + 1 );
+		return isNth( a, b, node->getElementIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b,
 										   const FunctionString& ) -> bool {
-		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
+		return node->getParent() != NULL && node->getParent()->isWidget()
+				   ? isNth(
+						 a, b,
+						 static_cast<const UIWidget*>( node->getParent() )->getChildElementCount() -
+							 node->getElementIndex() )
+				   : false;
 	};
 	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b,
 										const FunctionString& ) -> bool {
-		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
+		return isNth( a, b, node->getElementOfTypeIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b,
 											 const FunctionString& ) -> bool {
-		return node->getParent() != NULL
+		return node->getParent() != NULL && node->getParent()->isWidget()
 				   ? isNth( a, b,
-							node->getParent()->getChildOfTypeCount( node->getType() ) -
-								node->getNodeOfTypeIndex() )
+							static_cast<const UIWidget*>( node->getParent() )
+									->getChildElementOfTypeCount( node->getType() ) -
+								node->getElementOfTypeIndex() )
 				   : false;
 	};
 	mNodeSelectors["checked"] = []( const UIWidget* node, int, int,
@@ -644,6 +747,22 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		}
 		return false;
 	};
+
+	mNodeSelectors["where"] = []( const UIWidget* node, int, int,
+								  const FunctionString& data ) -> bool {
+		if ( data.isEmpty() || data.getParameters().empty() ||
+			 ( data.getName() != "where" && data.getName() != "is" ) )
+			return false;
+
+		for ( const auto& param : data.getParameters() ) {
+			if ( !param.empty() && whereIsMatch( node, param ) )
+				return true;
+		}
+		return false;
+	};
+
+	auto whereFn = mNodeSelectors["where"];
+	mNodeSelectors["is"] = whereFn;
 }
 
 StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::string& name ) {
@@ -796,6 +915,18 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
+	mShorthandParsers["vertical-align"] =
+		[]( const ShorthandDefinition* shorthand,
+			std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.empty() )
+			return {};
+		return { StyleSheetProperty( propNames[0], value ) };
+	};
+
 	mShorthandParsers["vector2"] = []( const ShorthandDefinition* shorthand,
 									   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
@@ -868,6 +999,17 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		value = String::trim( value );
 		if ( value.empty() )
 			return {};
+
+		bool isImportant = false;
+		if ( String::icontains( value, "!important" ) ) {
+			std::string lowerVal = String::toLower( value );
+			size_t impPos = lowerVal.rfind( "!important" );
+			if ( impPos != std::string::npos ) {
+				isImportant = true;
+				value.erase( impPos );
+				value = String::trim( value );
+			}
+		}
 
 		const std::vector<std::string>& propNames = shorthand->getProperties();
 		std::vector<std::string> values = String::split( value, ',' );
@@ -960,10 +1102,12 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		}
 
 		std::vector<StyleSheetProperty> properties;
+		std::string impStr = isImportant ? " !important" : "";
+
 		if ( !propNames.empty() )
-			properties.emplace_back( propNames[0], String::join( xValues, ',' ) );
+			properties.emplace_back( propNames[0], String::join( xValues, ',' ) + impStr );
 		if ( propNames.size() > 1 )
-			properties.emplace_back( propNames[1], String::join( yValues, ',' ) );
+			properties.emplace_back( propNames[1], String::join( yValues, ',' ) + impStr );
 
 		return properties;
 	};
@@ -974,41 +1118,146 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};
+
+		// Extract !important early so it doesn't get captured as a color token
+		bool isImportant = false;
+		if ( String::icontains( value, "!important" ) ) {
+			isImportant = true;
+			String::replaceAll( value, "!important", "" );
+			String::replaceAll( value, "! important", "" );
+		}
+
+		// Ensure functional notations (like url) are separated by a space
+		// so that standard token splitting works correctly for minified CSS.
+		String::replaceAll( value, ")", ") " );
+		String::removeExtraSpaces( value );
+		value = String::trim( value );
+
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string>& propNames = shorthand->getProperties();
-		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
-		std::string positionStr;
 
-		for ( auto& tok : tokens ) {
-			if ( mDrawableImageParser.exists( tok ) ) {
-				int pos = getIndexEndingWith( propNames, "-image" );
-				if ( pos != -1 )
-					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
-			} else if ( -1 != String::valueIndex( tok, "repeat;repeat-x;repeat-y;no-repeat" ) ) {
-				int pos = getIndexEndingWith( propNames, "-repeat" );
-				if ( pos != -1 )
-					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
-			} else if ( -1 != String::valueIndex( tok, "left;right;top;bottom;center" ) ||
-						String::isNumber( tok[0] ) || tok[0] == '-' || tok[0] == '.' ||
-						tok[0] == '+' ) {
-				positionStr += tok + " ";
+		auto isRepeatKeyword = []( const std::string& s ) {
+			return -1 != String::valueIndex( s, "repeat;repeat-x;repeat-y;no-repeat;space;round" );
+		};
+
+		auto isBoxKeyword = []( const std::string& s ) {
+			return s == "border-box" || s == "padding-box" || s == "content-box";
+		};
+
+		auto isAttachmentKeyword = []( const std::string& s ) {
+			return s == "scroll" || s == "fixed" || s == "local";
+		};
+
+		auto isPositionKeyword = []( const std::string& s ) {
+			return s == "left" || s == "right" || s == "top" || s == "bottom" || s == "center";
+		};
+
+		// Split by comma for multi-layer support, while strictly ignoring
+		// commas inside parentheses (required for data: URIs and functions)
+		std::vector<std::string> layers = String::split( value, ",", "", "(" );
+
+		std::vector<std::string> imageValues;
+		std::vector<std::string> repeatValues;
+		std::vector<std::string> attachmentValues;
+		std::vector<std::string> originValues;
+		std::vector<std::string> clipValues;
+		std::vector<std::string> positionValues;
+		std::vector<std::string> sizeValues;
+		std::string colorValue;
+
+		for ( size_t layerIdx = 0; layerIdx < layers.size(); ++layerIdx ) {
+			std::string layerVal = String::trim( layers[layerIdx] );
+
+			std::vector<std::string> tokens = String::split( layerVal, " ", "", "(" );
+			std::string positionStr;
+			std::string sizeStr;
+			bool hasSlash{ false };
+			std::string firstBox;
+			std::string secondBox;
+
+			for ( size_t ti = 0; ti < tokens.size(); ++ti ) {
+				auto& tok = tokens[ti];
+				if ( tok.empty() )
+					continue; // Safeguard empty tokens
+
+				auto open = tok.find_first_of( '(' );
+
+				if ( open != std::string::npos &&
+					 mDrawableImageParser.exists( tok.substr( 0, open ) ) ) {
+					imageValues.push_back( tok );
+				} else if ( isRepeatKeyword( tok ) ) {
+					repeatValues.push_back( tok );
+				} else if ( isAttachmentKeyword( tok ) ) {
+					attachmentValues.push_back( tok );
+				} else if ( isBoxKeyword( tok ) ) {
+					if ( firstBox.empty() )
+						firstBox = tok;
+					else
+						secondBox = tok;
+				} else if ( tok == "/" ) {
+					hasSlash = true;
+				} else if ( hasSlash && !tok.empty() && tok != "/" ) {
+					sizeStr += tok + " ";
+				} else if ( isPositionKeyword( tok ) || String::isNumber( tok[0] ) ||
+							tok[0] == '-' || tok[0] == '.' || tok[0] == '+' ) {
+					positionStr += tok + " ";
+				} else {
+					if ( colorValue.empty() )
+						colorValue = tok;
+				}
+			}
+
+			originValues.push_back( firstBox.empty() ? "padding-box" : firstBox );
+			clipValues.push_back( secondBox.empty() ? "border-box" : secondBox );
+
+			if ( !positionStr.empty() ) {
+				String::trimInPlace( positionStr );
+				positionValues.push_back( positionStr );
 			} else {
-				int pos = getIndexEndingWith( propNames, "-color" );
-				if ( pos != -1 )
-					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
+				positionValues.push_back( "0% 0%" );
+			}
+
+			if ( !sizeStr.empty() ) {
+				String::trimInPlace( sizeStr );
+				sizeValues.push_back( sizeStr );
+			} else {
+				sizeValues.push_back( "auto" );
 			}
 		}
 
-		if ( !positionStr.empty() ) {
-			String::trimInPlace( positionStr );
-			int pos = getIndexEndingWith( propNames, "-position" );
-			if ( pos != -1 ) {
-				const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
-				if ( NULL != shorthand ) {
-					auto bpVec = mShorthandParsers["background-position"]( shorthand, positionStr );
+		// Re-apply the !important flag to the mapped individual longhands
+		std::string impStr = isImportant ? " !important" : "";
+
+		for ( auto& propName : propNames ) {
+			if ( String::endsWith( propName, "-color" ) && !colorValue.empty() ) {
+				properties.emplace_back( StyleSheetProperty( propName, colorValue + impStr ) );
+			} else if ( String::endsWith( propName, "-image" ) && !imageValues.empty() ) {
+				properties.emplace_back(
+					StyleSheetProperty( propName, String::join( imageValues, ',' ) + impStr ) );
+			} else if ( String::endsWith( propName, "-repeat" ) && !repeatValues.empty() ) {
+				properties.emplace_back(
+					StyleSheetProperty( propName, String::join( repeatValues, ',' ) + impStr ) );
+			} else if ( String::endsWith( propName, "-attachment" ) && !attachmentValues.empty() ) {
+				properties.emplace_back( StyleSheetProperty(
+					propName, String::join( attachmentValues, ',' ) + impStr ) );
+			} else if ( String::endsWith( propName, "-origin" ) ) {
+				properties.emplace_back(
+					StyleSheetProperty( propName, String::join( originValues, ',' ) + impStr ) );
+			} else if ( String::endsWith( propName, "-clip" ) ) {
+				properties.emplace_back(
+					StyleSheetProperty( propName, String::join( clipValues, ',' ) + impStr ) );
+			} else if ( String::endsWith( propName, "-position" ) ) {
+				// Let background-position sub-parser handle this
+				const ShorthandDefinition* posShorthand = getShorthand( propName );
+				if ( NULL != posShorthand ) {
+					auto bpVec = mShorthandParsers["background-position"](
+						posShorthand, String::join( positionValues, ',' ) + impStr );
 					for ( auto& bp : bpVec )
 						properties.emplace_back( bp );
 				}
+			} else if ( String::endsWith( propName, "-size" ) ) {
+				properties.emplace_back(
+					StyleSheetProperty( propName, String::join( sizeValues, ',' ) + impStr ) );
 			}
 		}
 
@@ -1018,7 +1267,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["border"] = [this]( const ShorthandDefinition* shorthand,
 										  std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
-		if ( value.empty() || "none" == value )
+		if ( value.empty() )
 			return {};
 
 		std::vector<StyleSheetProperty> properties;
@@ -1029,10 +1278,26 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			if ( -1 !=
 				 String::valueIndex(
 					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
+
+				// small hack to at least hide none borders until border-style is implemented
+				if ( tok == "none" ) {
+					int pos = getIndexEndingWith( propNames, "-width" );
+					if ( pos != -1 ) {
+						const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
+						if ( NULL != shorthand ) {
+							auto bbVec = mShorthandParsers["border-box"]( shorthand, "0" );
+							for ( auto& bb : bbVec )
+								properties.emplace_back( bb );
+						}
+					}
+					continue;
+				}
+
 				int pos = getIndexEndingWith( propNames, "-style" );
 				// boder-style is not implemented yet
 				if ( pos != -1 )
 					continue;
+
 			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 ) {
@@ -1134,6 +1399,338 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		}
 
 		return properties;
+	};
+
+	mShorthandParsers["list-style"] = []( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.empty() )
+			return {};
+		auto tokens = String::split( value, " ", "", "(" );
+		int typePos = getIndexEndingWith( propNames, "-type" );
+		int posPos = getIndexEndingWith( propNames, "-position" );
+		int imagePos = getIndexEndingWith( propNames, "-image" );
+		for ( auto& tok : tokens ) {
+			String::trimInPlace( tok );
+			if ( tok == "inside" || tok == "outside" ) {
+				if ( posPos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[posPos], tok ) );
+			} else if ( String::startsWith( tok, "url(" ) ) {
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else if ( tok == "none" ) {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+				if ( imagePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[imagePos], tok ) );
+			} else {
+				if ( typePos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[typePos], tok ) );
+			}
+		}
+		return properties;
+	};
+
+	mShorthandParsers["font"] = []( const ShorthandDefinition* shorthand,
+									std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+
+		std::string lowerVal = String::toLower( value );
+		static const std::string systemFonts[] = { "caption",	  "icon",		   "menu",
+												   "message-box", "small-caption", "status-bar" };
+		for ( const auto& sysFont : systemFonts ) {
+			if ( lowerVal == sysFont ) {
+				std::vector<StyleSheetProperty> properties;
+				const std::vector<std::string>& propNames = shorthand->getProperties();
+				int familyPos = getIndexEndingWith( propNames, "-family" );
+				int stylePos = getIndexEndingWith( propNames, "-style" );
+				if ( familyPos != -1 && Graphics::SystemFontResolver::isEnabled() ) {
+					Graphics::FontDesc desc =
+						Graphics::SystemFontResolver::instance()->resolveGeneric(
+							Graphics::GenericFamily::SystemUi, Graphics::FontWeight::Normal,
+							false );
+					if ( !desc.family.empty() ) {
+						properties.emplace_back(
+							StyleSheetProperty( propNames[familyPos], desc.family ) );
+						if ( stylePos != -1 )
+							properties.emplace_back( StyleSheetProperty(
+								propNames[stylePos], desc.italic ? "italic" : "normal" ) );
+					}
+				}
+				return properties;
+			}
+		}
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+
+		int stylePos = getIndexEndingWith( propNames, "-style" );
+		int sizePos = getIndexEndingWith( propNames, "-size" );
+		int linePos = getIndexEndingWith( propNames, "-height" );
+		int familyPos = getIndexEndingWith( propNames, "-family" );
+		int weightPos = getIndexEndingWith( propNames, "-weight" );
+
+		static const std::string sizeKeywords[] = {
+			"xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large", "xxx-large" };
+
+		auto isSizeKeyword = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			for ( const auto& kw : sizeKeywords ) {
+				if ( lt == kw )
+					return true;
+			}
+			return false;
+		};
+
+		auto isStyleWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "italic" || lt == "oblique" || lt == "normal";
+		};
+
+		auto isWeightWord = []( const std::string& t ) {
+			std::string lt = String::toLower( t );
+			return lt == "bold" || lt == "bolder" || lt == "lighter" || lt == "100" ||
+				   lt == "200" || lt == "300" || lt == "400" || lt == "500" || lt == "600" ||
+				   lt == "700" || lt == "800" || lt == "900";
+		};
+
+		auto isNumberOrLength = []( const std::string& t ) {
+			if ( t.empty() )
+				return false;
+			return ( t[0] >= '0' && t[0] <= '9' ) || t[0] == '.' || t[0] == '-';
+		};
+
+		std::vector<std::string> tokens = String::split( value, " ", "", "(", "\"" );
+		std::string styleStr;
+		std::string sizeStr;
+		std::string lineStr;
+		std::string familyStr;
+		std::string weightStr;
+		bool inLineHeight = false;
+
+		for ( size_t i = 0; i < tokens.size(); i++ ) {
+			std::string tok = tokens[i];
+			String::trimInPlace( tok );
+			if ( tok.empty() )
+				continue;
+
+			if ( tok == "/" ) {
+				inLineHeight = true;
+				continue;
+			}
+
+			if ( !inLineHeight ) {
+				size_t slashPos = tok.find( '/' );
+				if ( slashPos != std::string::npos ) {
+					if ( slashPos == 0 ) {
+						lineStr = tok.substr( 1 );
+						String::trimInPlace( lineStr );
+						continue;
+					}
+					sizeStr = tok.substr( 0, slashPos );
+					lineStr = tok.substr( slashPos + 1 );
+					String::trimInPlace( lineStr );
+					continue;
+				}
+			}
+
+			if ( inLineHeight ) {
+				lineStr += ( lineStr.empty() ? "" : " " ) + tok;
+				inLineHeight = false;
+				continue;
+			}
+
+			if ( !sizeStr.empty() && familyStr.empty() && !isStyleWord( tok ) &&
+				 !isWeightWord( tok ) ) {
+				familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+				continue;
+			}
+
+			if ( isStyleWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( !styleStr.empty() )
+						styleStr += "|";
+					styleStr += lt;
+				}
+				continue;
+			}
+
+			if ( isWeightWord( tok ) ) {
+				std::string lt = String::toLower( tok );
+				if ( lt != "normal" ) {
+					if ( lt == "bolder" || lt == "lighter" )
+						weightStr = "bold";
+					else
+						weightStr = lt;
+				}
+				continue;
+			}
+
+			if ( sizeStr.empty() && ( isNumberOrLength( tok ) || isSizeKeyword( tok ) ) ) {
+				sizeStr = tok;
+				continue;
+			}
+
+			familyStr += ( familyStr.empty() ? "" : " " ) + tok;
+		}
+
+		if ( !sizeStr.empty() ) {
+			if ( stylePos != -1 && !styleStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[stylePos], styleStr ) );
+			if ( weightPos != -1 && !weightStr.empty() )
+				properties.emplace_back( StyleSheetProperty( propNames[weightPos], weightStr ) );
+			if ( sizePos != -1 )
+				properties.emplace_back( StyleSheetProperty( propNames[sizePos], sizeStr ) );
+			if ( linePos != -1 )
+				properties.emplace_back( StyleSheetProperty(
+					propNames[linePos], lineStr.empty() ? "normal" : lineStr ) );
+			if ( familyPos != -1 && !familyStr.empty() ) {
+				String::trimInPlace( familyStr );
+				if ( familyStr.size() >= 2 &&
+					 ( ( familyStr[0] == '"' && familyStr.back() == '"' ) ||
+					   ( familyStr[0] == '\'' && familyStr.back() == '\'' ) ) ) {
+					familyStr = familyStr.substr( 1, familyStr.size() - 2 );
+				}
+				properties.emplace_back( StyleSheetProperty( propNames[familyPos], familyStr ) );
+			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["flex-flow"] = []( const ShorthandDefinition* shorthand,
+										 std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.size() != 2 )
+			return {};
+
+		std::vector<std::string> tokens = String::split( value, ' ' );
+		if ( tokens.empty() )
+			return {};
+
+		std::vector<StyleSheetProperty> properties;
+		properties.emplace_back( StyleSheetProperty( propNames[0], tokens[0] ) );
+		if ( tokens.size() > 1 )
+			properties.emplace_back( StyleSheetProperty( propNames[1], tokens[1] ) );
+		return properties;
+	};
+
+	mShorthandParsers["flex"] = []( const ShorthandDefinition* shorthand,
+									std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() )
+			return {};
+
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		if ( propNames.size() != 3 )
+			return {};
+
+		std::string lowerVal = String::toLower( value );
+		String::removeExtraSpaces( lowerVal );
+
+		std::vector<StyleSheetProperty> properties;
+
+		if ( lowerVal == "auto" ) {
+			properties.emplace_back( StyleSheetProperty( propNames[0], "1" ) );
+			properties.emplace_back( StyleSheetProperty( propNames[1], "1" ) );
+			properties.emplace_back( StyleSheetProperty( propNames[2], "auto" ) );
+			return properties;
+		}
+
+		if ( lowerVal == "none" ) {
+			properties.emplace_back( StyleSheetProperty( propNames[0], "0" ) );
+			properties.emplace_back( StyleSheetProperty( propNames[1], "0" ) );
+			properties.emplace_back( StyleSheetProperty( propNames[2], "auto" ) );
+			return properties;
+		}
+
+		std::vector<std::string> tokens = String::split( lowerVal, ' ' );
+		if ( tokens.empty() )
+			return {};
+
+		auto isNumber = []( const std::string& s ) -> bool {
+			if ( s.empty() )
+				return false;
+			char c = s[0];
+			return ( c >= '0' && c <= '9' ) || c == '.' || c == '-' || c == '+';
+		};
+
+		auto isLength = []( const std::string& s ) -> bool {
+			if ( s.empty() )
+				return false;
+			if ( s == "auto" || s == "content" )
+				return true;
+			char c = s[0];
+			return ( c >= '0' && c <= '9' ) || c == '.' || c == '-' || c == '+';
+		};
+
+		if ( tokens.size() == 1 ) {
+			// flex: <number>  =>  <number> 1 0%
+			if ( isNumber( tokens[0] ) ) {
+				properties.emplace_back( StyleSheetProperty( propNames[0], tokens[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], "1" ) );
+				properties.emplace_back( StyleSheetProperty( propNames[2], "0%" ) );
+			}
+		} else if ( tokens.size() == 2 ) {
+			if ( isNumber( tokens[0] ) && isNumber( tokens[1] ) ) {
+				// flex: <grow> <shrink>  =>  <grow> <shrink> 0%
+				properties.emplace_back( StyleSheetProperty( propNames[0], tokens[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], tokens[1] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[2], "0%" ) );
+			} else if ( isNumber( tokens[0] ) && isLength( tokens[1] ) ) {
+				// flex: <grow> <basis>  =>  <grow> 1 <basis>
+				properties.emplace_back( StyleSheetProperty( propNames[0], tokens[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], "1" ) );
+				properties.emplace_back( StyleSheetProperty( propNames[2], tokens[1] ) );
+			}
+		} else if ( tokens.size() >= 3 ) {
+			// flex: <grow> <shrink> <basis>
+			if ( isNumber( tokens[0] ) && isNumber( tokens[1] ) && isLength( tokens[2] ) ) {
+				properties.emplace_back( StyleSheetProperty( propNames[0], tokens[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], tokens[1] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[2], tokens[2] ) );
+			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["grid-template"] =
+		[]( const ShorthandDefinition* shorthand,
+			std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		const auto& props = shorthand->getProperties();
+		if ( value == "none" )
+			return { StyleSheetProperty( props[0], "none" ), StyleSheetProperty( props[1], "none" ),
+					 StyleSheetProperty( props[2], "none" ) };
+
+		// Split on '/' for rows vs columns
+		size_t slashPos = value.find( '/' );
+		std::string rowsAndAreas = String::trim( value.substr( 0, slashPos ) );
+		std::string cols = ( slashPos != std::string::npos )
+							   ? String::trim( value.substr( slashPos + 1 ) )
+							   : "none";
+		return { StyleSheetProperty( props[0], rowsAndAreas ), StyleSheetProperty( props[1], cols ),
+				 StyleSheetProperty( props[2], value ) };
+	};
+
+	mShorthandParsers["grid"] = []( const ShorthandDefinition* shorthand,
+									std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value == "none" )
+			return { StyleSheetProperty( "grid-template-rows", "none" ) };
+		return { StyleSheetProperty( "grid-template-rows", value ) };
 	};
 }
 

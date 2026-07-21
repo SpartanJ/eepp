@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML Element Defaults</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  h2 { border-bottom: 1px solid #ccc; margin-top: 32px; }
+  .group { margin-bottom: 24px; }
+  .row { margin: 4px 0; }
+  .label { display: inline-block; min-width: 130px; color: #555; font-size: 12px; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #ccc; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<h1>HTML Element Default Styles</h1>
+<p>This page exercises all elements whose defaults were moved to widget-creation code.</p>
+
+<h2>Headings</h2>
+<div class="group">
+  <h1>Heading 1 &mdash; The quick brown fox</h1>
+  <h2>Heading 2 &mdash; The quick brown fox</h2>
+  <h3>Heading 3 &mdash; The quick brown fox</h3>
+  <h4>Heading 4 &mdash; The quick brown fox</h4>
+  <h5>Heading 5 &mdash; The quick brown fox</h5>
+  <h6>Heading 6 &mdash; The quick brown fox</h6>
+</div>
+
+<h2>Inline Text Semantics</h2>
+<div class="group">
+  <div class="row"><span class="label">b / strong</span> <b>bold text</b> <strong>strong text</strong></div>
+  <div class="row"><span class="label">i / em / cite</span> <i>italic text</i> <em>emphasized</em> <cite>citation</cite></div>
+  <div class="row"><span class="label">u / ins</span> <u>underlined</u> <ins>inserted</ins></div>
+  <div class="row"><span class="label">s / del</span> <s>strikethrough</s> <del>deleted</del></div>
+  <div class="row"><span class="label">small</span> <small>small text</small></div>
+  <div class="row"><span class="label">code / kbd</span> <code>function()</code> <kbd>Ctrl+C</kbd></div>
+  <div class="row"><span class="label">sub / sup</span> H<sub>2</sub>O and E=mc<sup>2</sup></div>
+  <div class="row"><span class="label">a (link)</span> <a href="#">clickable link</a></div>
+  <div class="row"><span class="label">a (visited)</span> <a href="">visited link</a></div>
+  <div class="row"><span class="label">a (hover)</span> <a href="#" style="text-decoration:underline;cursor:hand;">hovered link</a></div>
+  <div class="row"><span class="label">mark</span> <mark>highlighted text</mark></div>
+</div>
+
+<h2>Block Elements</h2>
+<div class="group">
+  <p>A paragraph of text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+  <p>Another paragraph with a <br>line break in the middle.</p>
+  <hr>
+  <pre>preformatted text
+    with spaces
+  and newlines</pre>
+  <blockquote>
+    <p>This is a blockquote. It should have left border, left padding, and background.</p>
+    <p>Multiple paragraphs in a blockquote.</p>
+  </blockquote>
+  <div>A div container with no special styling</div>
+</div>
+
+<h2>Lists</h2>
+<div class="group">
+  <ul>
+    <li>Unordered list item 1</li>
+    <li>Unordered list item 2
+      <ul>
+        <li>Nested item A</li>
+        <li>Nested item B</li>
+      </ul>
+    </li>
+    <li>Unordered list item 3</li>
+  </ul>
+  <ol>
+    <li>Ordered list item 1</li>
+    <li>Ordered list item 2
+      <ol>
+        <li>Nested numbered item A</li>
+        <li>Nested numbered item B</li>
+      </ol>
+    </li>
+    <li>Ordered list item 3</li>
+  </ol>
+</div>
+<h2>Form Controls &mdash; Text Inputs</h2>
+
+<div class="group">
+  <div class="row"><span class="label">text</span> <input type="text" value="default text input" style="width:200px"></div>
+  <div class="row"><span class="label">text (empty)</span> <input type="text" placeholder="placeholder text" style="width:200px"></div>
+  <div class="row"><span class="label">password</span> <input type="password" value="secret" style="width:200px"></div>
+  <div class="row"><span class="label">number</span> <input type="number" value="42" style="width:100px"></div>
+  <div class="row"><span class="label">textarea</span> <textarea rows="4" cols="40">Textarea content</textarea></div>
+</div>
+
+<h2>Form Controls &mdash; Buttons</h2>
+<div class="group">
+  <div class="row"><span class="label">submit</span> <input type="submit" value="Submit"></div>
+  <div class="row"><span class="label">button</span> <input type="button" value="Button"></div>
+  <div class="row"><span class="label">reset</span> <input type="reset" value="Reset"></div>
+</div>
+
+<h2>Form Controls &mdash; Checkboxes</h2>
+<div class="group">
+  <div class="row"><span class="label">checkbox</span> <input type="checkbox" checked> Option A <input type="checkbox"> Option B</div>
+  <div class="row"><span class="label">radio</span> <input type="radio" name="r" checked> Choice 1 <input type="radio" name="r"> Choice 2</div>
+</div>
+
+<h2>Tables</h2>
+<div class="group">
+  <table>
+    <thead>
+      <tr><th>Header A</th><th>Header B</th><th>Header C</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td></tr>
+      <tr><td>Cell 4</td><td>Cell 5</td><td>Cell 6</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td>Footer 1</td><td>Footer 2</td><td>Footer 3</td></tr>
+    </tfoot>
+  </table>
+</div>
+
+<h2>Details / Summary</h2>
+<div class="group">
+  <details>
+    <summary>Click to expand details</summary>
+    <p>Hidden content revealed when summary is clicked.</p>
+  </details>
+  <details open>
+    <summary>Already open details</summary>
+    <p>This content is visible by default.</p>
+  </details>
+</div>
+
+<h2>Misc</h2>
+<div class="group">
+  <div class="row"><span class="label">image</span> <img src="triangle.svg" width="32" height="32" alt="triangle"></div>
+  <div class="row"><span class="label">fieldset</span>
+    <fieldset>
+      <legend>Legend</legend>
+      Fieldset content
+    </fieldset>
+  </div>
+  <div class="row"><span class="label">hidden input</span> <input type="hidden" value="should be invisible"> (should not be visible)</div>
+</div>
+</body>
+</html>

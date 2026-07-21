@@ -106,8 +106,8 @@ bool ActionManager::removeActionsByTagFromTarget( Node* target, const Action::Un
 }
 
 void ActionManager::update( const Time& time, Action** actions, size_t count ) {
-	std::vector<Action*> removeList;
-	std::vector<Action*> deferredRemoveList;
+	ActionList removeList;
+	ActionList deferredRemoveList;
 
 	// Copy the deferred remove list under lock to avoid data races during the loop.
 	{
@@ -162,37 +162,13 @@ void ActionManager::update( const Time& time ) {
 		size = mActions.size();
 	}
 
-	// Micro-optimization to avoid heap allocations during updates (which are done usually at 60 hz)
-	if ( size <= 8 ) {
-		Action* actions[8];
-		{
-			Lock l( mMutex );
-			std::copy( mActions.begin(), mActions.end(), actions );
-		}
-		update( time, actions, size );
-	} else if ( size <= 16 ) {
-		Action* actions[16];
-		{
-			Lock l( mMutex );
-			std::copy( mActions.begin(), mActions.end(), actions );
-		}
-		update( time, actions, size );
-	} else if ( size <= 32 ) {
-		Action* actions[32];
-		{
-			Lock l( mMutex );
-			std::copy( mActions.begin(), mActions.end(), actions );
-		}
-		update( time, actions, size );
-	} else {
-		// Actions can be added during action updates, we need to only iterate the current actions
-		std::vector<Action*> actions;
-		{
-			Lock l( mMutex );
-			actions = mActions;
-		}
-		update( time, actions.data(), size );
+	// Actions can be added during action updates, we need to only iterate the current actions
+	ActionList actions;
+	{
+		Lock l( mMutex );
+		actions = mActions;
 	}
+	update( time, actions.data(), size );
 }
 
 std::size_t ActionManager::count() const {

@@ -27,7 +27,8 @@ Socket::Status TcpListener::listen( unsigned short port, const IpAddress& addres
 	close();
 
 	// Create the internal socket if it doesn't exist
-	create();
+	if ( !create() )
+		return Error;
 
 	// Check if the address is valid
 	if ( ( address == IpAddress::None ) || ( address == IpAddress::Broadcast ) )

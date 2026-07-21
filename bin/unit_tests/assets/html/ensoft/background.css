@@ -1,0 +1,16 @@
+#bar #rss {
+  margin-top: 20px;
+  margin-left: 20px;
+}
+#bar #rss a {
+  background: url("rss.png") no-repeat 8px center;
+  padding: 5px 10px 5px 24px;
+  text-decoration: none;
+  font-size: 12px;
+  border-radius: 4px;
+  background-color: #d0d0d0;
+  color: white;
+}
+#bar #rss a:hover {
+  background-color: red;
+}

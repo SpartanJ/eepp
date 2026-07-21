@@ -647,12 +647,12 @@ bool Image::isImageExtension( const std::string& path ) {
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
 			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" || ext == "webp" ||
-			 ext == "jpe" );
+			 ext == "jpe" || ext == "astc" );
 }
 
 std::vector<std::string> Image::getImageExtensionsSupported() {
-	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds",	"psd",
-									 "hdr", "pic", "pvr", "pkm", "svg", "qoi",	"webp", "jpe" };
+	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds", "psd", "hdr",
+									 "pic", "pvr", "pkm", "svg", "qoi", "webp", "jpe", "astc" };
 }
 
 std::string Image::getLastFailureReason() {
@@ -784,13 +784,7 @@ Image::Image( const Uint8* imageData, const unsigned int& imageDataSize,
 	} else if ( webp_test_from_memory( imageData, imageDataSize ) ) {
 		webpLoad( imageData, imageDataSize );
 	} else {
-		std::string reason = ".";
-
-		if ( NULL != stbi_failure_reason() ) {
-			reason = ", reason: " + std::string( stbi_failure_reason() );
-		}
-
-		Log::error( "Failed to load image from memory. Reason: %s", reason.c_str() );
+		Log::error( "Failed to load image from memory. Reason: %s", stbi_failure_reason() );
 	}
 }
 
@@ -1326,6 +1320,12 @@ void Image::copyImage( Graphics::Image* image, const Uint32& x, const Uint32& y 
 }
 
 void Image::resize( const Uint32& newWidth, const Uint32& newHeight, ResamplerFilter filter ) {
+	if ( newWidth == 0 || newHeight == 0 ) {
+		Log::warning( "Image::resize: Invalid resize %dx%d (from %dx%d)", newWidth, newHeight,
+					  mWidth, mHeight );
+		return;
+	}
+
 	if ( NULL != mPixels && ( mWidth != newWidth || mHeight != newHeight ) ) {
 		unsigned char* resampled =
 			resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
@@ -1438,7 +1438,7 @@ Graphics::Image* Image::copy() {
 }
 
 Graphics::Image& Image::operator=( const Image& right ) {
-	if (this == &right)
+	if ( this == &right )
 		return *this;
 
 	mWidth = right.mWidth;

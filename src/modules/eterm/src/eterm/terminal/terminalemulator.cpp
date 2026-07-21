@@ -2740,6 +2740,7 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 			u = buf[n] & 0xFF;
 			charsize = 1;
 		}
+
 		if ( show_ctrl && ISCONTROL( u ) ) {
 			if ( u & 0x80 ) {
 				u &= 0x7f;

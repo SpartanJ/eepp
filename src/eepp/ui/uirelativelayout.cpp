@@ -35,7 +35,7 @@ void UIRelativeLayout::updateLayout() {
 
 	if ( !mVisible ) {
 		setInternalPixelsSize( Sizef::Zero );
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 	} else {
 
 		if ( getParent()->isUINode() &&

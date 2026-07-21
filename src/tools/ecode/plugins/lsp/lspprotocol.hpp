@@ -182,7 +182,7 @@ struct LSPShowMessageParams {
 	LSPMessageType type{ LSPMessageType::Log };
 	std::string message;
 	std::vector<LSPMessageActionItem> actions;
-	bool allowCopy{ false };
+	bool allowCopy{ true };
 };
 
 struct LSPTextDocumentContentChangeEvent {
@@ -531,6 +531,11 @@ class LSPCompletionItemHelper {
 	}
 };
 
+enum class LSPInsertTextFormat {
+	PlainText = 1,
+	Snippet = 2,
+};
+
 struct LSPCompletionItem {
 	std::string label;
 	LSPCompletionItemKind kind;
@@ -538,6 +543,7 @@ struct LSPCompletionItem {
 	LSPMarkupContent documentation;
 	std::string sortText;
 	std::string insertText;
+	LSPInsertTextFormat insertTextFormat{ LSPInsertTextFormat::PlainText };
 	std::string filterText;
 	LSPTextEdit textEdit;
 	std::vector<LSPTextEdit> additionalTextEdits;

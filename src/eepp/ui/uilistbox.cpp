@@ -135,6 +135,7 @@ void UIListBox::addListBoxItems( const std::vector<String>& texts ) {
 	findMaxWidth();
 	updatePageStep();
 	updateScroll();
+	onItemsCountChange();
 }
 
 Uint32 UIListBox::addListBoxItem( const String& text ) {
@@ -143,6 +144,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 
 	updatePageStep();
 	updateScroll();
+	onItemsCountChange();
 
 	return (Uint32)( mItems.size() - 1 );
 }
@@ -190,6 +192,8 @@ void UIListBox::removeListBoxItems( const std::vector<Uint32>& ItemsIndex ) {
 
 	if ( mTexts.empty() )
 		sendCommonEvent( Event::OnClear );
+
+	onItemsCountChange();
 }
 
 void UIListBox::clear() {
@@ -204,11 +208,12 @@ void UIListBox::clear() {
 
 	sendCommonEvent( Event::OnClear );
 	sendCommonEvent( Event::OnSelectionChanged );
+	onItemsCountChange();
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
 	removeListBoxItems( { ItemIndex } );
-
+	onItemsCountChange();
 	return ItemIndex;
 }
 
@@ -415,7 +420,7 @@ void UIListBox::createItemIndex( const Uint32& i ) {
 void UIListBox::updateScrollBarState() {
 	bool clipped = 0 != mContainer->isClipped();
 
-	Uint32 visibleItems = mContainer->getSize().getHeight() / mRowHeight;
+	Uint32 visibleItems = getVisibleItemsCount();
 	mItemsNotVisible = (Int32)mItems.size() - visibleItems;
 
 	if ( mItemsNotVisible <= 0 ) {
@@ -488,7 +493,7 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 	updateScrollBarState();
 
-	Uint32 visibleItems = mContainer->getSize().getHeight() / mRowHeight;
+	Uint32 visibleItems = getVisibleItemsCount();
 	mItemsNotVisible = (Uint32)mItems.size() - visibleItems;
 	Int32 scrolleable = (Int32)mItems.size() * mRowHeight - mContainer->getSize().getHeight();
 	bool isScrollVisible = mVScrollBar->isVisible();
@@ -727,6 +732,10 @@ std::vector<UIListBoxItem*> UIListBox::getItemsSelected() {
 	}
 
 	return tItems;
+}
+
+Uint32 UIListBox::getVisibleItemsCount() const {
+	return mContainer->getSize().getHeight() / mRowHeight;
 }
 
 Uint32 UIListBox::getItemIndex( UIListBoxItem* Item ) {
@@ -1136,6 +1145,10 @@ void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
 	}
 
 	endAttributesTransaction();
+}
+
+void UIListBox::onItemsCountChange() {
+	sendCommonEvent( Event::OnItemsCountChange );
 }
 
 }} // namespace EE::UI

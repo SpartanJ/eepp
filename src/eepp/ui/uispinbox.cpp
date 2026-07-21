@@ -314,6 +314,7 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::FontWeight:
 		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
@@ -406,6 +407,7 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::FontWeight:
 		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:

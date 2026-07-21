@@ -80,6 +80,10 @@ class EE_API UITooltip : public UIWidget {
 
 	const Uint32& getFontStyle() const;
 
+	FontWeight getFontWeight() const;
+
+	UITooltip* setFontWeight( const FontWeight& weight );
+
 	Uint32 getTextDecoration() const;
 
 	UITooltip* setTextDecoration( const Uint32& textDecoration );

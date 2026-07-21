@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <uchar.h>
 #include <vector>
 
@@ -49,20 +50,31 @@ class EE_API String {
 	  public:
 		typedef std::vector<size_t> OccTable;
 
-		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength );
+		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength,
+											  bool caseInsensitive = false );
 
 		/** @returns haystackLength if not found, otherwise the position */
 		static size_t search( const unsigned char* haystack, size_t haystackLength,
 							  const unsigned char* needle, const size_t needleLength,
-							  const OccTable& occ );
+							  const OccTable& occ, bool caseInsensitive = false );
 
 		/** @returns -1 if not found otherwise the position */
 		static Int64 find( const std::string& haystack, const std::string& needle,
-						   const size_t& haystackOffset, const OccTable& occ );
+						   const size_t& haystackOffset, const OccTable& occ,
+						   bool caseInsensitive = false );
 
 		/** @returns -1 if not found otherwise the position */
 		static Int64 find( const std::string& haystack, const std::string& needle,
-						   const size_t& haystackOffset = 0 );
+						   const size_t& haystackOffset = 0, bool caseInsensitive = false );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( std::string_view haystack, std::string_view needle,
+						   const size_t& haystackOffset, const OccTable& occ,
+						   bool caseInsensitive = false );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( std::string_view haystack, std::string_view needle,
+						   const size_t& haystackOffset = 0, bool caseInsensitive = false );
 	};
 
 	/** @return string hash */
@@ -129,10 +141,11 @@ class EE_API String {
 	static bool isCharacter( const int& value );
 
 	/** @return If the value passed is a number */
-	static bool isNumber( const int& value, bool AllowDot = false );
+	static bool isNumber( const int& value, bool AllowDot = false, bool AllowScientific = false );
 
 	/** @return If the string represents a number. */
-	static bool isNumber( const std::string& value, bool AllowDot = false );
+	static bool isNumber( const std::string& value, bool AllowDot = false,
+						  bool AllowScientific = false );
 
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
@@ -145,6 +158,10 @@ class EE_API String {
 
 	/** @return If the needle substring, found starting at startPos is a whole-word. */
 	static bool isWholeWord( const std::string& haystack, const std::string& needle,
+							 const Int64& startPos );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( std::string_view haystack, std::string_view needle,
 							 const Int64& startPos );
 
 	/** @return If the needle substring, found starting at startPos is a whole-word. */
@@ -522,6 +539,18 @@ class EE_API String {
 	static bool fromString( Uint64& t, const std::string& s, int base = 10 );
 	static bool fromString( float& t, const std::string& s );
 	static bool fromString( double& t, const std::string& s );
+
+	/** Converts from a string view to type */
+	static bool fromString( Int8& t, std::string_view s, int base = 10 );
+	static bool fromString( Int16& t, std::string_view s, int base = 10 );
+	static bool fromString( Int32& t, std::string_view s, int base = 10 );
+	static bool fromString( Int64& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint8& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint16& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint32& t, std::string_view s, int base = 10 );
+	static bool fromString( Uint64& t, std::string_view s, int base = 10 );
+	static bool fromString( float& t, std::string_view s );
+	static bool fromString( double& t, std::string_view s );
 
 	/** Converts from a String to type */
 	static bool fromString( Int8& t, const String& s, int base = 10 );

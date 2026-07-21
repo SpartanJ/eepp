@@ -371,6 +371,36 @@ UITooltip* UITooltip::setFontStyle( const Uint32& fontStyle ) {
 		onAutoSize();
 		autoAlign();
 		invalidateDraw();
+
+		if ( auto* newFont = getUISceneNode()->reevaluateFontStyle(
+				 mStyleConfig.Font, fontStyle,
+				 ( fontStyle & Text::Bold ) ? FontWeight::Bold : FontWeight::Normal ) )
+			setFont( newFont );
+	}
+
+	return this;
+}
+
+FontWeight UITooltip::getFontWeight() const {
+	return mStyleConfig.Weight;
+}
+
+UITooltip* UITooltip::setFontWeight( const FontWeight& weight ) {
+	mStyleConfig.Weight = weight;
+
+	Uint32 weightStyle = ( weight >= FontWeight::SemiBold ) ? Text::Bold : 0;
+	Uint32 newStyle = ( mStyleConfig.Style & ~Text::Bold ) | weightStyle;
+
+	if ( mStyleConfig.Style != newStyle ) {
+		mTextCache->setStyle( newStyle );
+		mStyleConfig.Style = newStyle;
+		onAutoSize();
+		autoAlign();
+		invalidateDraw();
+
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( mStyleConfig.Font, newStyle, weight ) )
+			setFont( newFont );
 	}
 
 	return this;
@@ -456,13 +486,15 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getCharacterSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::FontWeight:
+			return Text::fontWeightToString( mStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
@@ -559,7 +591,8 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 
 			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );
@@ -588,6 +621,11 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 
 				setFontStyle( flags );
 			}
+			break;
+		}
+		case PropertyId::FontWeight: {
+			if ( !mUsingCustomStyling )
+				setFontWeight( Text::stringToFontWeight( attribute.value() ) );
 			break;
 		}
 		case PropertyId::TextDecoration:

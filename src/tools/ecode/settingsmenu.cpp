@@ -782,6 +782,42 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	mGlobalMenu->addSeparator();
 
+	UIPopUpMenu* newTabPositionMenu = UIPopUpMenu::New();
+	mGlobalMenu
+		->addSubMenu( i18n( "new_tab_position", "New Tab Position" ), nullptr, newTabPositionMenu )
+		->setId( "new_tab_position" );
+
+	newTabPositionMenu->on( Event::OnMenuShow, [this, newTabPositionMenu]( const Event* ) {
+		if ( newTabPositionMenu->getCount() == 0 ) {
+			newTabPositionMenu
+				->addRadioButton( i18n( "new_tab_position_after_active", "After Active Tab" ) )
+				->setId( "after_active" );
+			newTabPositionMenu->addRadioButton( i18n( "new_tab_position_last", "Last" ) )
+				->setId( "last" );
+			newTabPositionMenu->addRadioButton( i18n( "new_tab_position_first", "First" ) )
+				->setId( "first" );
+			newTabPositionMenu
+				->addRadioButton( i18n( "new_tab_position_left_of_active", "Left of Active Tab" ) )
+				->setId( "left_of_active" );
+		}
+
+		newTabPositionMenu->getItemId( "after_active" )
+			->asType<UIMenuRadioButton>()
+			->setActive( mApp->getConfig().editor.newTabPosition == NewTabPosition::AfterActive );
+		newTabPositionMenu->getItemId( "last" )->asType<UIMenuRadioButton>()->setActive(
+			mApp->getConfig().editor.newTabPosition == NewTabPosition::Last );
+		newTabPositionMenu->getItemId( "first" )->asType<UIMenuRadioButton>()->setActive(
+			mApp->getConfig().editor.newTabPosition == NewTabPosition::First );
+		newTabPositionMenu->getItemId( "left_of_active" )
+			->asType<UIMenuRadioButton>()
+			->setActive( mApp->getConfig().editor.newTabPosition == NewTabPosition::LeftOfActive );
+	} );
+
+	newTabPositionMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		mApp->getConfig().editor.newTabPosition = NewTabPosition::fromString( id );
+	} );
+
 	mGlobalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
 		->setId( "line_breaking_column" );
 
@@ -1304,6 +1340,15 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   getKeybind( "delete-to-next-char" ) )
 		->setId( "delete-to-next-char" );
 	mEditMenu->addSeparator();
+	mDateMenu = UIPopUpMenu::New();
+	auto* dateMenuItem = mEditMenu->addSubMenu( i18n( "insert_date", "Insert Date" ),
+												findIcon( "calendar-2" ), mDateMenu );
+	dateMenuItem->setId( "insert_date_menu" );
+	dateMenuItem->on( Event::OnMenuShow, [this, dateMenuItem]( const Event* ) {
+		mDateMenu->setOwnerNode( dateMenuItem );
+		updateDateMenu();
+	} );
+	mEditMenu->addSeparator();
 	mEditMenu
 		->add( i18n( "select_all", "Select All" ), findIcon( "select-all" ),
 			   getKeybind( "select-all" ) )
@@ -1321,7 +1366,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	mEditMenu
-		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
+		->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path" ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
 	mEditMenu
@@ -1359,6 +1404,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			mEditMenu->getItemId( "redo" )->setEnabled( false );
 			mEditMenu->getItemId( "copy" )->setEnabled( false );
 			mEditMenu->getItemId( "cut" )->setEnabled( false );
+			mEditMenu->getItemId( "insert_date_menu" )->setEnabled( false );
 			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
 			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
 			moveSep->setEnabled( false )->setVisible( false );
@@ -1373,6 +1419,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
 		mEditMenu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
 		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
+		mEditMenu->getItemId( "insert_date_menu" )->setEnabled( true );
 		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
 		moveSep->setEnabled( true )->setVisible( true );
@@ -1382,6 +1429,48 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
 	} );
 	return mEditMenu;
+}
+
+void SettingsMenu::updateDateMenu() {
+	if ( mDateMenu->getCount() != 0 )
+		return;
+	mDateMenu->removeAll();
+	mDateMenu->removeEventsOfType( Event::OnItemClicked );
+
+	struct DateFormatCommand {
+		const char* command;
+		const char* i18nKey;
+		const char* label;
+	};
+
+	static constexpr DateFormatCommand DATE_COMMANDS[] = {
+		{ "insert-date-dd-mm-yyyy", "insert_date_dd_mm_yyyy", "dd.mm.yyyy" },
+		{ "insert-date-mm-dd-yyyy", "insert_date_mm_dd_yyyy", "mm.dd.yyyy" },
+		{ "insert-date-yyyy-mm-dd", "insert_date_yyyy_mm_dd", "yyyy/mm/dd" },
+		{ "insert-date-time-dd-mm-yyyy", "insert_date_time_dd_mm_yyyy", "dd.mm.yyyy hh:mm:ss" },
+		{ "insert-date-time-mm-dd-yyyy", "insert_date_time_mm_dd_yyyy", "mm.dd.yyyy hh:mm:ss" },
+		{ "insert-date-time-yyyy-mm-dd", "insert_date_time_yyyy_mm_dd", "yyyy/mm/dd hh:mm:ss" },
+	};
+
+	for ( const auto& cmd : DATE_COMMANDS ) {
+		mDateMenu->add( i18n( cmd.i18nKey, cmd.label ), nullptr, getKeybind( cmd.command ) )
+			->setId( cmd.command );
+	}
+
+	mDateMenu->addSeparator();
+	mDateMenu
+		->add( i18n( "use_custom_date_format", "Use Custom Date Format" ), nullptr,
+			   getKeybind( "insert-date-custom" ) )
+		->setId( "insert-date-custom" );
+	mDateMenu
+		->add( i18n( "set_custom_date_format", "Set Custom Date Format" ), nullptr,
+			   getKeybind( "set-custom-date-format" ) )
+		->setId( "set-custom-date-format" );
+
+	mDateMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			runCommand( event->getNode()->getId() );
+	} );
 }
 
 UIMenu* SettingsMenu::createWindowMenu() {
@@ -1764,8 +1853,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 				} );
 
 				mLineWrapMenu
-					->addSubMenu( i18n( "wrap_type_ellipsis", "Wrap Against..." ), nullptr,
-								  wrapTypeMenu )
+					->addSubMenu( i18n( "wrap_type", "Wrap Against" ), nullptr, wrapTypeMenu )
 					->setId( "wrap_type" );
 
 				mLineWrapMenu->addCheckBox( i18n( "keep_indentation", "Keep Indentation" ) )
@@ -2042,6 +2130,15 @@ UIMenu* SettingsMenu::createViewMenu() {
 				  "Synchronizes the current focused document as the selected\nfile in the "
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
+	mViewMenu
+		->addCheckBox(
+			i18n( "restore_editor_selection_on_focus", "Restore editor selection on focus" ) )
+		->setActive( mApp->getConfig().editor.restoreEditorSelectionOnFocus )
+		->setTooltipText(
+			i18n( "restore_editor_selection_on_focus_tooltip",
+				  "Restores each editor split's last cursor and selection state when it regains "
+				  "focus." ) )
+		->setId( "restore-editor-selection-on-focus" );
 
 	mViewMenu->addSeparator();
 	mViewMenu
@@ -2061,13 +2158,13 @@ UIMenu* SettingsMenu::createViewMenu() {
 					   getKeybind( "toggle-menu-bar" ) )
 		->setId( "toggle-menu-bar" );
 	mViewMenu
-		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
-			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
+		->add( i18n( "move_panel_to_left", "Move Panel To Left" ), findIcon( "layout-left" ),
+			   getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
 	mViewMenu
-		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-right" ) )
+		->add( i18n( "move_panel_to_right", "Move Panel To Right" ), findIcon( "layout-right" ),
+			   getKeybind( "layout-right" ) )
 		->setId( "move-panel-right" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
 
@@ -2175,6 +2272,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 		} else if ( item->getId() == "sync-project-tree" ) {
 			mApp->getConfig().editor.syncProjectTreeWithEditor =
 				item->asType<UIMenuCheckBox>()->isActive();
+		} else if ( item->getId() == "restore-editor-selection-on-focus" ) {
+			mApp->getConfig().editor.restoreEditorSelectionOnFocus =
+				item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->setRestoreEditorSelectionOnFocus(
+				mApp->getConfig().editor.restoreEditorSelectionOnFocus );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -2257,12 +2359,11 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 
 UIMenu* SettingsMenu::createHelpMenu() {
 	mHelpMenu = UIPopUpMenu::New();
-	mHelpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
+	mHelpMenu->add( i18n( "ecode_source", "ecode Source Code" ), findIcon( "github" ) )
 		->setId( "ecode-source" );
-	mHelpMenu
-		->add( i18n( "check_for_updates_ellipsis", "Check for Updates..." ), findIcon( "refresh" ) )
+	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
-	mHelpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
+	mHelpMenu->add( i18n( "about_ecode", "About ecode" ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
 	mHelpMenu->on( Event::OnItemClicked,
 				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
@@ -2613,8 +2714,7 @@ void SettingsMenu::createProjectTreeMenu() {
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
 			->setId( "show-hidden-files" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu
-			->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 			->setId( "refresh-view" );
 		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
@@ -2775,8 +2875,7 @@ void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
 		->setId( "expand-all" );
 	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 		->setId( "refresh-view" );
 
 	if ( !mApp->getCurrentProject().empty() ) {
@@ -2995,7 +3094,7 @@ void SettingsMenu::createProjectMenu() {
 		->addRadioButton( "Objective-C++", hExtLanguageType == HExtLanguageType::ObjectiveCPP )
 		->setId( "objective-cpp" );
 
-	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
+	mProjectMenu->addSubMenu( i18n( "treat_h_files_as", "Treat .h files as" ), nullptr,
 							  mHExtLanguageTypeMenu );
 
 	mProjectMenu->addSeparator();

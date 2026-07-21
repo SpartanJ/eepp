@@ -1293,7 +1293,12 @@ int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 		if ( posix_spawn_file_actions_init( &actions ) != 0 )
 			return -1; // Failed to initialize
 
+#if defined( __APPLE__ ) && defined( __MAC_OS_X_VERSION_MIN_REQUIRED__ ) && \
+	__MAC_OS_X_VERSION_MIN_REQUIRED__ >= 110000
+		if ( posix_spawn_file_actions_addchdir( &actions, workingDir.c_str() ) != 0 ) {
+#else
 		if ( posix_spawn_file_actions_addchdir_np( &actions, workingDir.c_str() ) != 0 ) {
+#endif
 			posix_spawn_file_actions_destroy( &actions );
 			return -1; // Failed to add chdir action
 		}
@@ -2250,13 +2255,13 @@ static bool _isOSUsingDarkColorScheme() {
 
 	return false; // Default to light
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-    // Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
-    return EM_ASM_INT({
-        if (typeof window !== 'undefined' && window.matchMedia) {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
-        }
-        return 0;
-    }) != 0;
+	// Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
+	return EM_ASM_INT( {
+			   if ( typeof window != = 'undefined' && window.matchMedia ) {
+				   return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 1 : 0;
+			   }
+			   return 0;
+		   } ) != 0;
 #else
 	return true; // Any other OS default to dark
 #endif

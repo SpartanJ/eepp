@@ -104,7 +104,7 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) const {
 	target.refresh_rate = wantedMode.RefreshRate;
 	target.driverdata = 0;
 
-	if ( SDL_GetClosestDisplayMode( 0, &target, &mode ) != NULL ) {
+	if ( SDL_GetClosestDisplayMode( 0, &target, &mode ) != nullptr ) {
 		return DisplayMode( mode.w, mode.h, mode.refresh_rate, index );
 	}
 
@@ -138,7 +138,7 @@ Display* DisplayManagerSDL2::getDisplayIndex( int index ) {
 		}
 	}
 
-	return index >= 0 && index < (Int32)displays.size() ? displays[index] : NULL;
+	return index >= 0 && index < (Int32)displays.size() ? displays[index] : nullptr;
 }
 
 void DisplayManagerSDL2::enableScreenSaver() {

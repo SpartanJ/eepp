@@ -89,7 +89,7 @@ Shader::Shader( const Uint32& Type, const char** Data, const Uint32& NumLines ) 
 Shader::~Shader() {
 	if ( 0 != mGLId ) {
 #ifdef EE_SHADERS_SUPPORTED
-		glDeleteShader( mGLId );
+		GLi->deleteShader( mGLId );
 #endif
 	}
 }
@@ -99,7 +99,7 @@ void Shader::Init( const Uint32& Type ) {
 	mValid = false;
 	mCompiled = false;
 #ifdef EE_SHADERS_SUPPORTED
-	mGLId = glCreateShader( mType );
+	mGLId = GLi->createShader( mType );
 #endif
 }
 
@@ -201,7 +201,7 @@ void Shader::setSource( const std::string& Source ) {
 #ifdef EE_SHADERS_SUPPORTED
 	const char* src = reinterpret_cast<const char*>( &mSource[0] );
 
-	glShaderSource( mGLId, 1, &src, NULL );
+	GLi->shaderSource( mGLId, 1, &src, NULL );
 #endif
 }
 
@@ -241,22 +241,21 @@ bool Shader::compile() {
 
 #ifdef EE_SHADERS_SUPPORTED
 
-	glCompileShader( getId() );
+	GLi->compileShader( getId() );
 	mCompiled = true;
 
 	int Compiled;
-	glGetShaderiv( getId(), GL_COMPILE_STATUS, &Compiled );
+	GLi->getShaderiv( getId(), GL_COMPILE_STATUS, &Compiled );
 	mValid = 0 != Compiled;
 
 	if ( !mValid ) {
 		int logsize = 0, logarraysize = 0;
-		glGetShaderiv( getId(), GL_INFO_LOG_LENGTH, &logarraysize );
+		GLi->getShaderiv( getId(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 		if ( logarraysize > 0 ) {
 			mCompileLog.resize( logarraysize - 1 );
 
-			glGetShaderInfoLog( getId(), logarraysize, &logsize,
-								reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
+			GLi->getShaderInfoLog( getId(), logarraysize, &logsize, &mCompileLog[0] );
 		}
 
 		Log::error( "Couldn't compile shader %s. Log follows:\n", getName().c_str() );

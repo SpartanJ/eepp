@@ -1,9 +1,12 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
+#include <algorithm>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uinode.hpp>
 
 namespace pugi {
@@ -20,6 +23,13 @@ namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
+
+struct MarginAuto {
+	static constexpr auto Left = ( 1 << 0 );
+	static constexpr auto Right = ( 1 << 1 );
+	static constexpr auto Top = ( 1 << 2 );
+	static constexpr auto Bottom = ( 1 << 3 );
+};
 
 /**
  * @brief Base class for all UI widgets in the eepp framework.
@@ -70,7 +80,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return The widget type as a Uint32.
 	 */
-	virtual Uint32 getType() const;
+	virtual Uint32 getType() const { return UI_TYPE_WIDGET; }
 
 	/**
 	 * @brief Checks if the widget is of a specific type.
@@ -80,7 +90,9 @@ class EE_API UIWidget : public UINode {
 	 * @param type The type identifier to check.
 	 * @return True if the widget is of the specified type, false otherwise.
 	 */
-	virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const {
+		return UIWidget::getType() == type || UINode::isType( type );
+	}
 
 	/**
 	 * @brief Sets multiple flags on the widget.
@@ -93,7 +105,7 @@ class EE_API UIWidget : public UINode {
 	 * @param flags Bitwise combination of flags to set.
 	 * @return Pointer to this widget for method chaining.
 	 */
-	virtual UINode* setFlags( const Uint32& flags );
+	virtual UINode* setFlags( const Uint64& flags );
 
 	/**
 	 * @brief Unsets multiple flags on the widget.
@@ -104,7 +116,7 @@ class EE_API UIWidget : public UINode {
 	 * @param flags Bitwise combination of flags to unset.
 	 * @return Pointer to this widget for method chaining.
 	 */
-	virtual UINode* unsetFlags( const Uint32& flags );
+	virtual UINode* unsetFlags( const Uint64& flags );
 
 	/**
 	 * @brief Sets anchor flags for relative positioning.
@@ -320,6 +332,10 @@ class EE_API UIWidget : public UINode {
 	bool hasLayoutMarginTopAuto() const;
 
 	bool hasLayoutMarginBottomAuto() const;
+
+	bool hasLayoutMarginAuto() const;
+
+	UIWidget* updateLayoutMarginAuto();
 
 	/**
 	 * @brief Sets the layout margin for all sides in pixels.
@@ -558,12 +574,29 @@ class EE_API UIWidget : public UINode {
 	void notifyLayoutAttrChange();
 
 	/**
+	 * @brief Notifies that layout attributes have changed with specific reasons.
+	 *
+	 * Emits a reasoned layout invalidation that receivers can use for precise
+	 * propagation decisions instead of coarse ancestor dirtying.
+	 *
+	 * @param reasons Bitmask of LayoutInvalidationReason describing what changed.
+	 */
+	void notifyLayoutAttrChange( LayoutInvalidationFlags reasons );
+
+	/**
 	 * @brief Notifies parent that layout attributes have changed.
 	 *
 	 * Triggers layout recalculation in the parent widget when this widget's
 	 * layout attributes change. This ensures proper layout propagation.
 	 */
 	void notifyLayoutAttrChangeParent();
+
+	/**
+	 * @brief Notifies parent that layout attributes have changed with specific reasons.
+	 *
+	 * @param reasons Bitmask of LayoutInvalidationReason describing the child effect.
+	 */
+	void notifyLayoutAttrChangeParent( LayoutInvalidationFlags reasons );
 
 	/**
 	 * @brief Sets an inline CSS property.
@@ -610,6 +643,15 @@ class EE_API UIWidget : public UINode {
 	 * @return The padding in pixels as a Rectf.
 	 */
 	const Rectf& getPixelsPadding() const;
+
+	/**
+	 * @brief Gets the content offset area (padding + border).
+	 *
+	 * Returns a Rectf containing padding + border for all 4 sides.
+	 *
+	 * @return The content offset as a Rectf.
+	 */
+	Rectf getPixelsContentOffset() const;
 
 	/**
 	 * @brief Sets the padding for all sides.
@@ -738,6 +780,23 @@ class EE_API UIWidget : public UINode {
 	 */
 	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
 
+	/** @return Number of sorted unique CSS class hashes cached by this widget. */
+	inline Uint32 getClassHashCount() const { return static_cast<Uint32>( mClassHashes.size() ); }
+
+	/** @return Sorted unique class hashes used for stylesheet candidate lookup and matching. */
+	inline const SmallVector<String::HashType, 1>& getClassHashes() const { return mClassHashes; }
+
+	/** @return True if all the sorted unique required hashes are applied to this widget. */
+	inline bool hasClassHashes( const std::vector<String::HashType>& requiredHashes ) const {
+		const auto* hashes = mClassHashes.data();
+		const auto* hashesEnd = hashes + mClassHashes.size();
+		for ( auto hash : requiredHashes ) {
+			if ( !std::binary_search( hashes, hashesEnd, hash ) )
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @brief Gets the parent element for CSS styling.
 	 *
@@ -746,7 +805,11 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the parent element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetParentElement() const;
+	inline UIWidget* getStyleSheetParentElement() const {
+		return NULL != mParentNode && mParentNode->isWidget() && getType() != UI_TYPE_HTML_HTML
+				   ? mParentNode->asType<UIWidget>()
+				   : NULL;
+	}
 
 	/**
 	 * @brief Gets the previous sibling element for CSS styling.
@@ -755,7 +818,15 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the previous sibling element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetPreviousSiblingElement() const;
+	inline UIWidget* getStyleSheetPreviousSiblingElement() const {
+		Node* node = mPrev;
+		while ( NULL != node ) {
+			if ( node->isWidget() && !node->isTextNode() )
+				return node->asType<UIWidget>();
+			node = node->getPrevNode();
+		}
+		return NULL;
+	}
 
 	/**
 	 * @brief Gets the next sibling element for CSS styling.
@@ -764,7 +835,15 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Pointer to the next sibling element widget or nullptr.
 	 */
-	UIWidget* getStyleSheetNextSiblingElement() const;
+	inline UIWidget* getStyleSheetNextSiblingElement() const {
+		Node* node = mNext;
+		while ( NULL != node ) {
+			if ( node->isWidget() && !node->isTextNode() )
+				return node->asType<UIWidget>();
+			node = node->getNextNode();
+		}
+		return NULL;
+	}
 
 	/**
 	 * @brief Gets the active pseudo-classes for this widget.
@@ -773,7 +852,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Bitmask of active pseudo-classes.
 	 */
-	Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
+	inline Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
 
 	/**
 	 * @brief Gets the pseudo-classes as string array.
@@ -783,6 +862,32 @@ class EE_API UIWidget : public UINode {
 	 * @return Vector of pseudo-class strings.
 	 */
 	std::vector<const char*> getStyleSheetPseudoClassesStrings() const;
+
+	/** @return True if the widget is not a text node. */
+	bool isWidgetElement() const;
+
+	/**
+	 * @brief Returns whether this widget participates in inline formatting (for whitespace
+	 * collapsing).
+	 *
+	 * Inline display types (CSSDisplay::Inline, CSSDisplay::InlineBlock) and text nodes
+	 * are considered inline. All other widgets default to block.
+	 *
+	 * @return True if this widget is inline-level.
+	 */
+	virtual bool isInlineDisplay() const;
+
+	/** @return The index of this element among its sibling elements. */
+	Uint32 getElementIndex() const;
+
+	/** @return The index of this element among its sibling elements of the same type. */
+	Uint32 getElementOfTypeIndex() const;
+
+	/** @return The number of child elements. */
+	Uint32 getChildElementCount() const;
+
+	/** @return The number of child elements of the specified type. */
+	Uint32 getChildElementOfTypeCount( const Uint32& type ) const;
 
 	/**
 	 * @brief Resets all CSS classes and removes them.
@@ -908,6 +1013,9 @@ class EE_API UIWidget : public UINode {
 	 * @return The CSS element tag string.
 	 */
 	inline const std::string& getElementTag() const { return mTag; }
+
+	/** @return The precomputed hash of the CSS element tag. */
+	inline String::HashType getElementTagHash() const { return mTagHash; }
 
 	/**
 	 * @brief Pushes a state onto the widget's state stack.
@@ -1315,9 +1423,65 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onWidgetCreated();
 
+	/**@return The property id length */
+	Float getPropertyLength( PropertyId prop ) const;
+
+	/**@return The property `width` converted as length */
 	Float getPropertyWidth() const;
 
+	/**@return The property `height` converted as length */
 	Float getPropertyHeight() const;
+
+	/**
+	 * @brief Converts an already resolved CSS width value into this widget's stored border-box
+	 * width.
+	 *
+	 * The base widget has no CSS box model adjustment, so the value is returned as-is. HTML
+	 * widgets override this to account for box-sizing and content offsets.
+	 */
+	virtual Float cssResolvedLengthToBorderBoxWidth( const Float& resolvedLength ) const;
+
+	/**
+	 * @brief Converts an already resolved CSS height value into this widget's stored border-box
+	 * height.
+	 *
+	 * The base widget has no CSS box model adjustment, so the value is returned as-is. HTML
+	 * widgets override this to account for box-sizing and content offsets.
+	 */
+	virtual Float cssResolvedLengthToBorderBoxHeight( const Float& resolvedLength ) const;
+
+	/**
+	 * @brief Resolves a CSS width property and converts it into this widget's stored border-box
+	 * width.
+	 *
+	 * This is the sizing hook layout code should use when applying a CSS-specified width. Derived
+	 * widgets can override the relative-size resolution or box conversion without layout-specific
+	 * type checks.
+	 */
+	virtual Float cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const;
+
+	/**
+	 * @brief Resolves a CSS height property and converts it into this widget's stored border-box
+	 * height.
+	 *
+	 * This is the sizing hook layout code should use when applying a CSS-specified height. Derived
+	 * widgets can override the relative-size resolution or box conversion without layout-specific
+	 * type checks.
+	 */
+	virtual Float cssHeightPropertyToBorderBoxHeight( const StyleSheetProperty& property ) const;
+
+	/* @return The width of the widget when size policy is match_parent */
+	Float getMatchParentWidth() const;
+
+	/* @return The height of the widget when size policy is match_parent */
+	Float getMatchParentHeight() const;
+
+	/* @return The size of the widget when size policy is match_parent */
+	Sizef getSizeFromLayoutPolicy();
+
+	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
+
+	void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
 
   protected:
 	friend class UIManager;
@@ -1339,23 +1503,23 @@ class EE_API UIWidget : public UINode {
 	SizePolicy mWidthPolicy;
 	SizePolicy mHeightPolicy;
 	PositionPolicy mLayoutPositionPolicy;
+	String::HashType mTagHash{ 0 };
 	UIWidget* mLayoutPositionPolicyWidget;
 	int mAttributesTransactionCount;
+	LayoutInvalidationFlags mPendingLayoutReasons{ 0 };
+	LayoutInvalidationFlags mPendingParentLayoutReasons{ 0 };
 	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
+	SmallVector<String::HashType, 1> mClassHashes;
 	String mTooltipText;
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
 	mutable bool mIntrinsicWidthsDirty{ true };
 	Uint8 mMarginAuto{ 0 };
 
-	static constexpr Uint8 MarginAutoLeft = ( 1 << 0 );
-	static constexpr Uint8 MarginAutoRight = ( 1 << 1 );
-	static constexpr Uint8 MarginAutoTop = ( 1 << 2 );
-	static constexpr Uint8 MarginAutoBottom = ( 1 << 3 );
-
 	void calculateAutoMargin();
+	void rebuildClassHashes();
 
 	/**
 	 * @brief Default constructor.
@@ -1697,15 +1861,6 @@ class EE_API UIWidget : public UINode {
 	 * Reloads the font family for this widget, typically after a theme change.
 	 */
 	void reloadFontFamily();
-
-	/* @return The width of the widget when size policy is match_parent */
-	Float getMatchParentWidth() const;
-
-	/* @return The height of the widget when size policy is match_parent */
-	Float getMatchParentHeight() const;
-
-	/* @return The size of the widget when size policy is match_parent */
-	Sizef getSizeFromLayoutPolicy();
 
 	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
 };

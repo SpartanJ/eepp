@@ -765,7 +765,7 @@ void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
 		const ProjectBuild* build = getCurrentBuild();
 		if ( build ) {
-			mApp->saveAll();
+			mApp->saveAll( false );
 			sboc->runBuild( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ), false, doneFn );
 		}

@@ -56,6 +56,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statefuldrawable.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textselectionrange.hpp>

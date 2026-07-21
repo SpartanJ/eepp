@@ -573,7 +573,8 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontSize:
 			return String::format( "%ddp", getHintFontSize() );
 		case PropertyId::HintFontFamily:
-			return NULL != getHintFont() ? getFont()->getName() : "";
+			return NULL != getHintFont() ? getUISceneNode()->getFontFamilyName( getHintFont() )
+										 : "";
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
@@ -617,6 +618,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
+		case PropertyId::Value:
 			setText( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::AllowEditing:

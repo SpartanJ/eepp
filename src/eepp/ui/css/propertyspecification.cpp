@@ -8,17 +8,17 @@ SINGLETON_DECLARE_IMPLEMENTATION( PropertySpecification )
 
 PropertySpecification::~PropertySpecification() {}
 
-PropertyDefinition& PropertySpecification::registerProperty( const std::string& propertyVame,
+PropertyDefinition& PropertySpecification::registerProperty( const std::string& propertyName,
 															 const std::string& defaultValue,
 															 bool inherited ) {
-	PropertyDefinition* property = const_cast<PropertyDefinition*>( getProperty( propertyVame ) );
+	PropertyDefinition* property = const_cast<PropertyDefinition*>( getProperty( propertyName ) );
 
-	if ( nullptr != property ) {
-		Log::warning( "Property \"%s\" already registered.", propertyVame.c_str() );
+	if ( nullptr != property && !String::startsWith( propertyName, "-" ) ) {
+		Log::warning( "Property \"%s\" already registered.", propertyName.c_str() );
 		return *property;
 	}
 
-	PropertyDefinition* propDef = new PropertyDefinition( propertyVame, defaultValue, inherited );
+	PropertyDefinition* propDef = new PropertyDefinition( propertyName, defaultValue, inherited );
 
 	mProperties[propDef->getId()] = std::shared_ptr<PropertyDefinition>( propDef );
 

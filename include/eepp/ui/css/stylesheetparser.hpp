@@ -2,6 +2,7 @@
 #define EE_UI_CSS_STYLESHEETPARSER
 
 #include <eepp/core/string.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
@@ -38,6 +39,10 @@ class EE_API StyleSheetParser {
 
 	const bool& isLoaded() const;
 
+	void setBaseURI( const Network::URI& uri );
+
+	void setBaseURI( const std::string& uri );
+
   protected:
 	enum ReadState { ReadingSelector, ReadingProperty, ReadingComment };
 
@@ -46,6 +51,7 @@ class EE_API StyleSheetParser {
 	std::vector<std::string> mComments;
 	MediaQueryList::ptr mMediaQueryList;
 	bool mLoaded;
+	Network::URI mBaseURI;
 
 	bool parse( std::string& css, std::vector<std::string>& importedList );
 

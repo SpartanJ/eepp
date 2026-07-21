@@ -60,6 +60,8 @@ class EE_API StyleSheet {
 
 	void removeAllWithoutMarker( const Uint32& marker );
 
+	void setSelectorSpecificity( const Int64& specificity );
+
 	bool markerExists( const Uint32& marker ) const;
 
 	StyleSheet getAllWithMarker( const Uint32& marker ) const;
@@ -80,6 +82,13 @@ class EE_API StyleSheet {
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
 	UnorderedMap<size_t, StyleSheetStyleVector> mNodeIndex;
+	// Class-anchored rules live in one bucket only; selector matching validates tag and other
+	// classes.
+	UnorderedMap<String::HashType, StyleSheetStyleVector> mClassNodeIndex;
+	// Candidate buckets are independent, so retain insertion order explicitly for equal
+	// specificity.
+	UnorderedMap<const StyleSheetStyle*, size_t> mStyleSourceOrder;
+	size_t mNextStyleSourceOrder{ 0 };
 	MediaQueryList::vector mMediaQueryList;
 	KeyframesDefinitionMap mKeyframesMap;
 	using ElementDefinitionCache = UnorderedMap<size_t, std::shared_ptr<ElementDefinition>>;

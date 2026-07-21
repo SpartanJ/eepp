@@ -52,8 +52,10 @@ class EE_API ActionManager {
 	void clear();
 
   protected:
-	std::vector<Action*> mActions;
-	std::vector<Action*> mActionsRemoveList;
+	using ActionList = SmallVector<Action*, 32>;
+
+	ActionList mActions;
+	ActionList mActionsRemoveList;
 	mutable Mutex mMutex;
 	std::atomic<bool> mUpdating;
 

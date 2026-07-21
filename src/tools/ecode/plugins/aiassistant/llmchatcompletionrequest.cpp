@@ -86,7 +86,8 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 				nlohmann::json& choices = data["choices"];
 
 				for ( const auto& choice : choices ) {
-					if ( choice["delta"].contains( "reasoning_content" ) ) {
+					if ( choice["delta"].contains( "reasoning_content" ) &&
+						 !choice["delta"]["reasoning_content"].is_null() ) {
 						const auto& reasoningContent = choice["delta"]["reasoning_content"];
 						if ( reasoningContent.is_string() ) {
 							std::string delta = choice["delta"]["reasoning_content"];
@@ -96,7 +97,8 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 								mReasoningResponse += std::move( delta );
 							}
 						}
-					} else if ( choice["delta"].contains( "reasoning" ) ) {
+					} else if ( choice["delta"].contains( "reasoning" ) &&
+								!choice["delta"]["reasoning"].is_null() ) {
 						const auto& reasoningContent = choice["delta"]["reasoning"];
 						if ( reasoningContent.is_string() ) {
 							std::string delta = choice["delta"]["reasoning"];
@@ -106,7 +108,8 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 								mReasoningResponse += std::move( delta );
 							}
 						}
-					} else if ( choice["delta"].contains( "content" ) ) {
+					} else if ( choice["delta"].contains( "content" ) &&
+								!choice["delta"]["content"].is_null() ) {
 						const auto& content = choice["delta"]["content"];
 						if ( content.is_string() ) {
 							std::string delta = choice["delta"]["content"];
@@ -165,7 +168,7 @@ void LLMChatCompletionRequest::requestAsync() {
 		mRequest, mStream, Seconds( 5 ) );
 }
 
-void LLMChatCompletionRequest::cancel(bool resetCancelCallback ) {
+void LLMChatCompletionRequest::cancel( bool resetCancelCallback ) {
 	mCancel = true;
 	if ( mRequestId )
 		mHttp->setCancelRequest( mRequestId, resetCancelCallback );

@@ -1,0 +1,217 @@
+<!doctype html>
+<!-- saved from url=(0018)https://zsnes.com/ -->
+<html lang="en">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background-color: #1e2a38;
+        font:
+          13px Verdana,
+          Sans-Serif;
+        color: #d0d8e0;
+        line-height: 1.5;
+      }
+
+      a {
+        color: #60c0e0;
+        text-decoration: underline;
+      }
+      a:hover {
+        background-color: #2a3a4a;
+        color: #80d8f0;
+      }
+
+      header {
+        text-align: center;
+        padding: 30px 20px 10px;
+      }
+
+      header img.logo {
+        max-width: 400px;
+        height: auto;
+      }
+
+      nav {
+        background-color: #162028;
+        text-align: center;
+        padding: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid #2a3a4a;
+      }
+
+      nav a {
+        margin: 0 10px;
+        font:
+          bold 11px Verdana,
+          Sans-Serif;
+        text-decoration: none;
+        color: #80b8d0;
+      }
+
+      nav a:hover {
+        background-color: #2a3a4a;
+        color: #a0d8f0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 20px auto;
+        padding: 0 20px;
+      }
+
+      section {
+        margin-bottom: 30px;
+      }
+
+      h2 {
+        background-color: #162028;
+        color: #60c0e0;
+        font:
+          bold 14px Arial,
+          Sans-Serif;
+        padding: 5px 8px;
+        border-left: 1px solid #2a3a4a;
+        border-top: 1px solid #2a3a4a;
+      }
+
+      section p,
+      section ul {
+        background-color: #1a2838;
+        padding: 10px;
+        border-left: 1px solid #2a3a4a;
+        border-right: 1px solid #2a3a4a;
+      }
+
+      section p {
+        text-indent: 12px;
+      }
+
+      section ul {
+        padding-left: 20px;
+      }
+
+      section ul li {
+        margin-bottom: 6px;
+      }
+
+      strong {
+        color: #e0b800;
+      }
+
+      .download-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .download-card {
+        background-color: #1a2838;
+        border: 1px solid #2a3a4a;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .download-card h3 {
+        font:
+          bold 12px Verdana,
+          Sans-Serif;
+        margin-bottom: 8px;
+      }
+
+      .download-card a {
+        display: inline-block;
+        padding: 6px 14px;
+        background-color: #162028;
+        color: #60c0e0;
+        text-decoration: none;
+        font:
+          11px Verdana,
+          Sans-Serif;
+        border: 1px solid #2a3a4a;
+      }
+
+      .download-card a:hover {
+        background-color: #2a3a4a;
+        color: #80d8f0;
+      }
+
+      .download-card .pending {
+        color: #8090a0;
+        font-style: italic;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        font:
+          11px Verdana,
+          Sans-Serif;
+        color: #607080;
+      }
+
+      @media (max-width: 600px) {
+        header img.logo {
+          max-width: 280px;
+        }
+
+        nav {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        nav a {
+          display: block;
+          margin: 4px 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="downloads">
+        <h2>Downloads</h2>
+        <div class="download-grid">
+          <div class="download-card">
+            <h3>Windows</h3>
+            <a href="https://zsnes.com/files/SuperZSNES_v0.201.zip">Download</a>
+          </div>
+          <div class="download-card">
+            <h3>Mac</h3>
+            <a href="https://zsnes.com/files/SuperZSNES_v0.201.dmg">Download</a>
+          </div>
+          <div class="download-card">
+            <h3>Linux</h3>
+            <a href="https://zsnes.com/files/SuperZSNES_v0.201.tar.gz"
+              >Download</a
+            >
+          </div>
+          <div class="download-card">
+            <h3>Android</h3>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.zsnes.superzsnes"
+              target="_blank"
+              rel="noopener"
+              >Google Play</a
+            >
+          </div>
+          <div class="download-card">
+            <h3>iOS</h3>
+            <span class="pending">Coming Soon</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

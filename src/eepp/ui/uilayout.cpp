@@ -3,12 +3,18 @@
 
 namespace EE { namespace UI {
 
+static UILayout::Metrics sMetrics;
+static bool sMetricsEnabled{ false };
+
 UILayout::UILayout( const std::string& tag ) : UIWidget( tag ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 	unsetFlags( UI_TAB_FOCUSABLE );
 }
 
 void UILayout::onChildCountChange( Node* child, const bool& removed ) {
+	if ( sMetricsEnabled )
+		sMetrics.childCountChanges++;
+
 	UIWidget::onChildCountChange( child, removed );
 
 	if ( child->isLayout() ) {
@@ -45,14 +51,6 @@ void UILayout::onLayoutUpdate() {
 	sendCommonEvent( Event::OnLayoutUpdate );
 }
 
-Uint32 UILayout::getType() const {
-	return UI_TYPE_LAYOUT;
-}
-
-bool UILayout::isType( const Uint32& type ) const {
-	return UILayout::getType() == type ? true : UIWidget::isType( type );
-}
-
 const Sizef& UILayout::getSize() const {
 	if ( mDirtyLayout )
 		const_cast<UILayout*>( this )->updateLayout();
@@ -62,9 +60,18 @@ const Sizef& UILayout::getSize() const {
 void UILayout::updateLayout() {}
 
 void UILayout::setLayoutDirty() {
+	setLayoutDirty( 0 );
+}
+
+void UILayout::setLayoutDirty( LayoutInvalidationFlags reasons ) {
 	if ( !mDirtyLayout ) {
-		mUISceneNode->invalidateLayout( this );
+		if ( sMetricsEnabled )
+			sMetrics.invalidations++;
+
+		mUISceneNode->invalidateLayout( this, reasons );
 		mDirtyLayout = true;
+	} else if ( reasons ) {
+		mUISceneNode->invalidateLayout( this, reasons );
 	}
 }
 
@@ -78,20 +85,33 @@ void UILayout::setGravityOwner( bool gravityOwner ) {
 
 void UILayout::tryUpdateLayout() {
 	if ( mUISceneNode->isUpdatingLayouts() ) {
-		updateLayout();
+		if ( !isPacking() ) {
+			if ( sMetricsEnabled ) {
+				sMetrics.synchronousUpdates++;
+			}
+			updateLayout();
+		}
 	} else if ( !mDirtyLayout ) {
-		setLayoutDirty();
+		setLayoutDirty( LayoutInvalidation::Self );
 	}
 }
 
 void UILayout::updateLayoutTree() {
+	if ( sMetricsEnabled )
+		sMetrics.treeUpdates++;
+
+	mCurrentLayoutReasons = mDirtyReasons;
+	mUpdatingLayoutTree = true;
 	updateLayout();
 
 	for ( auto layout : mLayouts ) {
 		layout->updateLayoutTree();
 	}
 
+	mUpdatingLayoutTree = false;
+	mDirtyReasons = 0;
 	onLayoutUpdate();
+	mCurrentLayoutReasons = 0;
 }
 
 bool UILayout::setMatchParentIfNeededVerticalGrowth() {
@@ -138,10 +158,32 @@ void UILayout::updateLayoutWrappingContents() {
 }
 
 void UILayout::onAutoSizeChild( UIWidget* child ) {
+	if ( sMetricsEnabled )
+		sMetrics.autoSizeChildren++;
+
 	if ( child->isLayout() ) {
 		child->asType<UILayout>()->updateLayoutWrappingContents();
-	} else
+	} else {
 		child->onAutoSize();
+	}
+}
+
+void UILayout::resetMetrics() {
+	sMetrics = {};
+	sMetricsEnabled = true;
+}
+
+UILayout::Metrics UILayout::getMetrics() {
+	return sMetrics;
+}
+
+void UILayout::setMetricsEnabled( bool enabled ) {
+	sMetricsEnabled = enabled;
+}
+
+void UILayout::countRichTextRebuild() {
+	if ( sMetricsEnabled )
+		sMetrics.richTextRebuilds++;
 }
 
 }} // namespace EE::UI

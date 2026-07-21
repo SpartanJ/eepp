@@ -161,6 +161,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
 	bool mDisplayReasoning{ false };
+	bool mInReasoning{ false };
 	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );

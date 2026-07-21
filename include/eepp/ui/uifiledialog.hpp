@@ -129,6 +129,10 @@ class EE_API UIFileDialog : public UIWindow {
 
 	virtual void scheduledUpdate( const Time& time );
 
+	nlohmann::json serialize() const;
+
+	void unserialize( const nlohmann::json& json );
+
   protected:
 	std::string mCurPath;
 	std::string mFilePatterns;

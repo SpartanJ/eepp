@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/color.hpp>
 using namespace EE::System;
@@ -35,9 +36,10 @@ class FontStyleConfig {
 
 	bool operator==( const FontStyleConfig& other ) {
 		return Font == other.Font && CharacterSize == other.CharacterSize && Style == other.Style &&
-			   FontColor == other.FontColor && ShadowColor == other.ShadowColor &&
-			   ShadowOffset == other.ShadowOffset && OutlineThickness == other.OutlineThickness &&
-			   OutlineColor == other.OutlineColor && BackgroundColor == other.BackgroundColor;
+			   Weight == other.Weight && FontColor == other.FontColor &&
+			   ShadowColor == other.ShadowColor && ShadowOffset == other.ShadowOffset &&
+			   OutlineThickness == other.OutlineThickness && OutlineColor == other.OutlineColor &&
+			   BackgroundColor == other.BackgroundColor;
 	}
 
 	bool operator!=( const FontStyleConfig& other ) { return !( *this == other ); }
@@ -45,6 +47,7 @@ class FontStyleConfig {
 	virtual void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
 		Font = fontStyleConfig.Font;
 		Style = fontStyleConfig.Style;
+		Weight = fontStyleConfig.Weight;
 		CharacterSize = fontStyleConfig.CharacterSize;
 		FontColor = fontStyleConfig.FontColor;
 		ShadowColor = fontStyleConfig.ShadowColor;
@@ -57,6 +60,7 @@ class FontStyleConfig {
 	Graphics::Font* Font{ nullptr };
 	Float CharacterSize{ 12 };
 	Uint32 Style{ 0 };
+	FontWeight Weight{ FontWeight::Normal };
 	Color FontColor{ 255, 255, 255, 255 };
 	Color ShadowColor{ 50, 50, 50, 230 };
 	Vector2f ShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };

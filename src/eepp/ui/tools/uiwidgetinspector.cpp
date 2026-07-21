@@ -1,20 +1,44 @@
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
+#include <vector>
+
 using namespace EE::Window;
 using namespace EE::UI::Models;
 using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Tools {
+
+struct UIWidgetInspector::PickHighlightOverState {
+	std::vector<std::pair<UISceneNode*, bool>> sceneStates;
+
+	void capture( UISceneNode* sceneNode ) {
+		if ( !sceneNode )
+			return;
+
+		sceneStates.emplace_back( sceneNode, sceneNode->getHighlightOver() );
+
+		for ( auto* childSceneNode : sceneNode->getChildUISceneNodes() )
+			capture( childSceneNode );
+	}
+
+	void restore() {
+		for ( auto& sceneState : sceneStates )
+			sceneState.first->setHighlightOver( sceneState.second );
+	}
+};
 
 UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIconSize,
 									 std::function<void()> highlightToggle,
@@ -42,14 +66,19 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			<PushButton id="open-texture-viewer" lh="18dp" text="@string(texture_viewer, Texture Viewer)" margin-left="8dp" />
 		</hbox>
 		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
-			<treeview lw="fixed" lh="mp" />
-			<tableview lw="fixed" lh="mp" />
+			<TreeView id="widget_inspector_nodetree" lw="fixed" lh="mp" />
+			<TabWidget lw="fixed" lh="mp">
+				<TableView id="widget_inspector_computed" class="computed" lw="mp" lh="mp" />
+				<CodeEditor id="widget_inspector_style" lw="mp" lh="mp" />
+				<Tab id="widget_inspector_tab_computed" text="@string(computed, Computed)" owns="widget_inspector_computed" />
+				<Tab id="widget_inspector_tab_style" text="@string(style, Style)" owns="widget_inspector_style" />
+			</TabWidget>
 		</Splitter>
 	</vbox>
 	)xml";
 	UIWidget* cont = sceneNode->loadLayoutFromString( WIDGET_LAYOUT, uiWin->getContainer() );
-	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
-	widgetTree->on( Event::OnRowCreated, [sceneNode]( const Event* event ) {
+	UITreeView* nodeTree = cont->find<UITreeView>( "widget_inspector_nodetree" );
+	nodeTree->on( Event::OnRowCreated, [sceneNode]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();
 		row->on( Event::MouseOver, [row, sceneNode]( const Event* ) {
 			if ( lastModelIndex.isValid() && lastModelIndex != row->getCurIndex() &&
@@ -68,21 +97,51 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 				row->getCurIndex().ref<UINode>()->unsetFlags( UI_HIGHLIGHT );
 		} );
 	} );
-	widgetTree->setHeadersVisible( true );
-	widgetTree->setExpanderIconSize( menuIconSize );
-	widgetTree->setAutoColumnsWidth( true );
+	nodeTree->setHeadersVisible( true );
+	nodeTree->setExpanderIconSize( menuIconSize );
+	nodeTree->setAutoColumnsWidth( true );
 	auto model = WidgetTreeModel::New( sceneNode );
-	widgetTree->setModel( model );
-	widgetTree->tryOpenModelIndex( model->getRoot() );
-	UITableView* tableView = cont->findByType<UITableView>( UI_TYPE_TABLEVIEW );
-	tableView->setAutoColumnsWidth( true );
-	tableView->setHeadersVisible( true );
-	widgetTree->setOnSelection( [tableView]( const ModelIndex& index ) {
+	nodeTree->setModel( model );
+	nodeTree->tryOpenModelIndex( model->getRoot() );
+
+	UICodeEditor* stylesEditor = cont->find<UICodeEditor>( "widget_inspector_style" );
+	stylesEditor->setLocked( true );
+	stylesEditor->setShowLineNumber( false );
+	stylesEditor->setShowFoldingRegion( false );
+	stylesEditor->setLineWrapType( LineWrapType::Viewport );
+	stylesEditor->setLineWrapMode( LineWrapMode::Word );
+	stylesEditor->setLineWrapKeepIndentation( true );
+	stylesEditor->setColorPreview( true );
+	stylesEditor->setColorScheme( sceneNode->getColorSchemePreference() ==
+										  ColorSchemePreference::Dark
+									  ? SyntaxColorScheme::getDefaultDark()
+									  : SyntaxColorScheme::getDefaultLight() );
+
+	UITableView* computedView = cont->find<UITableView>( "widget_inspector_computed" );
+	computedView->setAutoColumnsWidth( true );
+	computedView->setHeadersVisible( true );
+	nodeTree->setOnSelection( [computedView, stylesEditor]( const ModelIndex& index ) {
 		Node* node = static_cast<Node*>( index.internalData() );
+		computedView->setModel( node->isWidget()
+									? CSSPropertiesModel::create( node->asType<UIWidget>() )
+									: CSSPropertiesModel::create() );
+
+		stylesEditor->getDocument().reset();
+		stylesEditor->getDocument().setSyntaxDefinition(
+			SyntaxDefinitionManager::instance()->getByLSPName( "css" ) );
+
 		if ( node->isWidget() ) {
-			tableView->setModel( node->isWidget()
-									 ? CSSPropertiesModel::create( node->asType<UIWidget>() )
-									 : CSSPropertiesModel::create() );
+			UIWidget* widget = node->asType<UIWidget>();
+			if ( widget->getUIStyle() && widget->getUIStyle()->getDefinition() ) {
+				const auto& styles = widget->getUIStyle()->getDefinition()->getStyles();
+				String elemStyle;
+				for ( const auto& style : styles ) {
+					if ( style->getSelector().getName() != ":root" ||
+						 widget->getElementTag() == ":root" )
+						elemStyle += style->build( false, false );
+				}
+				stylesEditor->getDocument().textInput( elemStyle );
+			}
 		}
 	} );
 
@@ -96,13 +155,14 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			button->setIcon( cursorPointer, true );
 	}
 
-	button->on( Event::MouseClick, [sceneNode, widgetTree, tableView]( const Event* event ) {
+	button->on( Event::MouseClick, [sceneNode, nodeTree, computedView]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-			bool wasHighlightOver = sceneNode->getHighlightOver();
-			sceneNode->setHighlightOver( true );
+			auto highlightOverState = std::make_shared<PickHighlightOverState>();
+			highlightOverState->capture( sceneNode );
+			sceneNode->setHighlightOverRecursive( true );
 			sceneNode->getEventDispatcher()->setDisableMousePress( true );
-			sceneNode->runOnMainThread( [sceneNode, widgetTree, tableView, wasHighlightOver]() {
-				checkWidgetPick( sceneNode, widgetTree, wasHighlightOver, tableView );
+			sceneNode->runOnMainThread( [sceneNode, nodeTree, computedView, highlightOverState]() {
+				checkWidgetPick( sceneNode, nodeTree, highlightOverState, computedView );
 			} );
 		}
 	} );
@@ -113,8 +173,9 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( highlightToggle ) {
 				highlightToggle();
 			} else {
-				sceneNode->setHighlightFocus( !sceneNode->getHighlightFocus() );
-				sceneNode->setHighlightOver( !sceneNode->getHighlightOver() );
+				bool highlight = !sceneNode->getHighlightOver();
+				sceneNode->setHighlightFocusRecursive( highlight );
+				sceneNode->setHighlightOverRecursive( highlight );
 			}
 		} );
 
@@ -124,7 +185,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawBoxesToggle ) {
 				drawBoxesToggle();
 			} else {
-				sceneNode->setDrawBoxes( !sceneNode->getDrawBoxes() );
+				sceneNode->setDrawBoxesRecursive( !sceneNode->getDrawBoxes() );
 			}
 		} );
 
@@ -134,21 +195,21 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			if ( drawDebugDataToggle ) {
 				drawDebugDataToggle();
 			} else {
-				sceneNode->setDrawDebugData( !sceneNode->getDrawDebugData() );
+				sceneNode->setDrawDebugDataRecursive( !sceneNode->getDrawDebugData() );
 			}
 		} );
 
 	cont->find<UIPushButton>( "widget-tree-search-collapse" )
-		->on( Event::MouseClick, [widgetTree]( const Event* event ) {
+		->on( Event::MouseClick, [nodeTree]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-				widgetTree->collapseAll();
+				nodeTree->collapseAll();
 			}
 		} );
 
 	cont->find<UIPushButton>( "widget-tree-search-expand" )
-		->on( Event::MouseClick, [widgetTree]( const Event* event ) {
+		->on( Event::MouseClick, [nodeTree]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-				widgetTree->expandAll();
+				nodeTree->expandAll();
 			}
 		} );
 
@@ -184,18 +245,19 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 }
 
 void UIWidgetInspector::checkWidgetPick( UISceneNode* sceneNode, UITreeView* widgetTree,
-										 bool wasHighlightOver, UITableView* tableView ) {
+										 std::shared_ptr<PickHighlightOverState> highlightOverState,
+										 UITableView* tableView ) {
 	Input* input = sceneNode->getWindow()->getInput();
 	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
 		Node* node = sceneNode->getEventDispatcher()->getMouseOverNode();
 		WidgetTreeModel* model = static_cast<WidgetTreeModel*>( widgetTree->getModel() );
 		ModelIndex index( model->getModelIndex( node ) );
 		widgetTree->setSelection( index );
-		sceneNode->setHighlightOver( wasHighlightOver );
+		highlightOverState->restore();
 		sceneNode->getEventDispatcher()->setDisableMousePress( false );
 	} else {
-		sceneNode->runOnMainThread( [sceneNode, widgetTree, wasHighlightOver, tableView]() {
-			checkWidgetPick( sceneNode, widgetTree, wasHighlightOver, tableView );
+		sceneNode->runOnMainThread( [sceneNode, widgetTree, highlightOverState, tableView]() {
+			checkWidgetPick( sceneNode, widgetTree, highlightOverState, tableView );
 		} );
 	}
 }

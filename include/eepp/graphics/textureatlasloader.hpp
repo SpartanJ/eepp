@@ -120,10 +120,10 @@ class EE_API TextureAtlasLoader {
 	void setThreaded( const bool& threaded );
 
 	/** @return True if the texture atlas is loaded. */
-	const bool& isLoaded() const;
+	bool isLoaded() const;
 
 	/** @return True if the texture atlas is loading. */
-	const bool& isLoading() const;
+	bool isLoading() const;
 
 	/** The function will check if the texture atlas is updated. Checks if all the images inside the
 	 * images path are inside the texture atlas, and if they have the same date and size, otherwise
@@ -162,13 +162,12 @@ class EE_API TextureAtlasLoader {
 	void setTextureFilter( const Texture::Filter& textureFilter );
 
   protected:
-	ResourceLoader mRL;
 	std::string mTextureAtlasPath;
 	bool mThreaded;
-	bool mLoaded;
+	std::atomic<bool> mLoaded;
 	Pack* mPack;
 	bool mSkipResourceLoad;
-	bool mIsLoading;
+	std::atomic<bool> mIsLoading;
 	TextureAtlas* mTextureAtlas;
 	GLLoadCallback mLoadCallback;
 	std::vector<Texture*> mTexturesLoaded;
@@ -180,6 +179,10 @@ class EE_API TextureAtlasLoader {
 
 	sTextureAtlasHdr mTexGrHdr;
 	std::vector<sTempTexAtlas> mTempAtlass;
+
+	// Must remain the last data member: it joins its worker in its destructor before any
+	// callback-visible loader state above is destroyed.
+	ResourceLoader mRL;
 
 	void createTextureRegions();
 };

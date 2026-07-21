@@ -109,7 +109,7 @@ UITextView* UITextView::setFont( Graphics::Font* font ) {
 		mFontStyleConfig.Font = font;
 		recalculate();
 		onFontChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
 
@@ -122,11 +122,13 @@ Uint32 UITextView::getFontSize() const {
 
 UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
 	if ( mTextCache.getCharacterSize() != characterSize ) {
+		if ( characterSize == 0 )
+			return this;
 		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache.setFontSize( characterSize );
 		recalculate();
 		onFontStyleChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
 
@@ -147,7 +149,7 @@ UITextView* UITextView::setOutlineThickness( const Float& outlineThickness ) {
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		recalculate();
 		onFontStyleChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
 
@@ -177,8 +179,39 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
 		onFontStyleChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
+
+		if ( auto* newFont = getUISceneNode()->reevaluateFontStyle(
+				 mFontStyleConfig.Font, fontStyle,
+				 ( fontStyle & Text::Bold ) ? FontWeight::Bold : FontWeight::Normal ) )
+			setFont( newFont );
+	}
+
+	return this;
+}
+
+FontWeight UITextView::getFontWeight() const {
+	return mFontStyleConfig.Weight;
+}
+
+UITextView* UITextView::setFontWeight( const FontWeight& weight ) {
+	mFontStyleConfig.Weight = weight;
+
+	Uint32 weightStyle = ( weight >= FontWeight::SemiBold ) ? Text::Bold : 0;
+	Uint32 newStyle = ( mFontStyleConfig.Style & ~Text::Bold ) | weightStyle;
+
+	if ( mFontStyleConfig.Style != newStyle ) {
+		mTextCache.setStyle( newStyle );
+		mFontStyleConfig.Style = newStyle;
+		recalculate();
+		onFontStyleChanged();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+		invalidateDraw();
+
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( mFontStyleConfig.Font, newStyle, weight ) )
+			setFont( newFont );
 	}
 
 	return this;
@@ -198,7 +231,7 @@ UITextView* UITextView::setTextDecoration( const Uint32& textDecoration ) {
 
 		recalculate();
 		onFontStyleChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
 	return this;
@@ -216,7 +249,7 @@ UITextView* UITextView::setText( const String& text ) {
 
 		recalculate();
 		onTextChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 	}
 
 	return this;
@@ -230,7 +263,7 @@ UITextView* UITextView::setText( String&& text ) {
 
 		recalculate();
 		onTextChanged();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 	}
 
 	return this;
@@ -395,7 +428,7 @@ void UITextView::onAutoSize() {
 
 	if ( sizeChanged ) {
 		updateTextOverflow();
-		notifyLayoutAttrChange();
+		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 	}
 }
 
@@ -742,12 +775,10 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			if ( attribute.value() != "inherit" ) {
-				Font* font = FontManager::instance()->getByName( attribute.value() );
-
-				if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
-					setFont( font );
-				}
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
+			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
+				setFont( font );
 			}
 			break;
 		}
@@ -771,6 +802,11 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 
 				setFontStyle( flags );
 			}
+			break;
+		}
+		case PropertyId::FontWeight: {
+			if ( !mUsingCustomStyling )
+				setFontWeight( Text::stringToFontWeight( attribute.value() ) );
 			break;
 		}
 		case PropertyId::Wordwrap:
@@ -835,13 +871,15 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::SelectionBackColor:
 			return getSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::FontWeight:
+			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:

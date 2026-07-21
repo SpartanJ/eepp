@@ -68,4 +68,8 @@ const std::string& IOStreamString::getStream() const {
 	return mStream;
 }
 
+std::string& IOStreamString::getStream() {
+	return mStream;
+}
+
 }} // namespace EE::System

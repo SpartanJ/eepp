@@ -6,12 +6,19 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
-namespace EE { namespace UI {
+namespace EE {
+
+namespace Graphics {
+class Sprite;
+}
+
+namespace UI {
 
 class UIScrollView;
 
 namespace Tools {
 
+class UIImageViewer;
 class UIDiffEditorPlugin;
 
 class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
@@ -21,7 +28,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	static UIDiffView* New();
 
-	static UIScrollView* NewMultiFileDiffViewer( const std::string& patchText );
+	static UIScrollView* NewMultiFileDiffViewer( const std::string& patchText,
+												 const std::string& repoPath = "" );
 
 	static std::vector<std::string> splitDiff( const std::string& multiFileDiff );
 
@@ -32,7 +40,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	virtual Uint32 getType() const override;
 	virtual bool isType( const Uint32& type ) const override;
 
-	void loadFromPatch( const std::string& patchText, const std::string& originalFilePath = "" );
+	void loadFromPatch( const std::string& patchText, const std::string& originalFilePath = "",
+						const std::string& oldFilePath = "", const std::string& repoPath = "" );
 	void loadFromStrings( const std::string& oldText, const std::string& newText,
 						  const std::string& originalFilePath = "" );
 	void loadFromFile( const std::string& oldFilePath, const std::string& newFilePath );
@@ -40,6 +49,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	UICodeEditor* getEditor() const { return mEditor; }
 	UICodeEditor* getLeftEditor() const { return mLeftEditor; }
 	UICodeEditor* getRightEditor() const { return mRightEditor; }
+	UIImageViewer* getLeftImageViewer() const { return mLeftImageViewer; }
+	UIImageViewer* getRightImageViewer() const { return mRightImageViewer; }
 
 	enum class DiffLineType { Common, Added, Removed, Header };
 	struct DiffLine {
@@ -76,12 +87,20 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	const String& getFileName() const { return mFileName; }
 
+	bool isImageDiff() const { return mIsImageDiff; }
+
+	void setAutoDeleteOldTempImage( bool set ) { mAutoDeleteOldTempImage = set; }
+
   protected:
 	UICodeEditor* mEditor{ nullptr };
 	UICodeEditor* mLeftEditor{ nullptr };
 	UICodeEditor* mRightEditor{ nullptr };
+	UIImageViewer* mLeftImageViewer{ nullptr };
+	UIImageViewer* mRightImageViewer{ nullptr };
+	UIImageViewer* mDiffImageViewer{ nullptr };
 	UISelectButton* mModeToggle{ nullptr };
 	UISelectButton* mCompleteViewToggle{ nullptr };
+	Sprite* mSprite{ nullptr };
 	std::unique_ptr<UIDiffEditorPlugin> mPlugin;
 	std::unique_ptr<UIDiffEditorPlugin> mLeftPlugin;
 	std::unique_ptr<UIDiffEditorPlugin> mRightPlugin;
@@ -93,8 +112,12 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	bool mShowCompleteView{ false };
 	bool mCompleteViewToggleVisible{ true };
 	bool mHeadersVisible{ false };
+	bool mIsImageDiff{ false };
+	bool mAutoDeleteOldTempImage{ false };
 	std::shared_ptr<SyntaxDefinition> mSyntaxDef;
 	String mFileName;
+	std::string mImageDiffOldPath;
+	std::string mImageDiffNewPath;
 
 	UIDiffView();
 
@@ -112,9 +135,16 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	void computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine );
 	void updateEditorsText();
 	void updateButtonsText();
+	void createImageViewers();
+	bool loadImageDiffFromPaths( const std::string& oldFilePath, const std::string& newFilePath );
+	void updateImageDiffView();
+	void resetToTextDiffView();
+	void imageDisplayState( bool& displayDiffImage, bool& displayLeftImage );
+	void updateImagesPosAndSize();
 };
 
 } // namespace Tools
-}} // namespace EE::UI
+} // namespace UI
+} // namespace EE
 
 #endif // EE_UI_TOOLS_UIDIFFVIEW_HPP

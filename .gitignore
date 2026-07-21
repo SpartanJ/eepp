@@ -23,6 +23,7 @@ projects/android-project-ant/libs
 projects/mingw32/llvm*
 src/examples/strobe
 src/thirdparty/SDL2-*
+src/thirdparty/SDL3-*
 *.dll
 bin/ee*
 bin/eepp-*
@@ -69,6 +70,7 @@ ecode.dmg
 /.ecode/.prjallowed
 /.cache/
 /compile_commands.json
+/bin/benchmarks*
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
 /bin/unit_tests/output/*

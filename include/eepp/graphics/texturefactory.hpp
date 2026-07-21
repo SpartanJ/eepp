@@ -1,6 +1,8 @@
 #ifndef EECTEXTUREFACTORY_H
 #define EECTEXTUREFACTORY_H
 
+#include <cstddef>
+#include <eepp/core/containers.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/system/mutex.hpp>
@@ -9,6 +11,15 @@
 using namespace EE::System;
 
 namespace EE { namespace Graphics {
+
+struct TextureRegistryRecord {
+	ResourceId id;
+	std::string displayName;
+	TextureWeakPtr texture;
+	std::size_t memoryBytes{ 0 };
+};
+
+using TextureRegistrySnapshot = std::vector<TextureRegistryRecord>;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
 class EE_API TextureFactory : protected Mutex {
@@ -126,11 +137,11 @@ class EE_API TextureFactory : protected Mutex {
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
 		const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
-	/** Removes and Unload the Texture Id
-	 * @param TexId
+	/** Removes and unloads the texture identified by @p textureId.
+	 * @param textureId The process-wide texture identity.
 	 * @return True if was removed
 	 */
-	bool remove( Uint32 TexId );
+	bool remove( ResourceId textureId );
 
 	/** Removes and Unload the Texture
 	 * @param texture The texture pointer
@@ -138,17 +149,14 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	bool remove( Texture* texture );
 
-	/** Reload all loaded textures to recover the OpenGL context */
-	void reloadAllTextures();
-
-	/** Bind the the internal Texture Id indicated. This is useful if you are rendering a texture
+	/** Binds the texture identity indicated. This is useful if you are rendering a texture
 	 * outside this class.
-	 * @param TexId The internal Texture Id
+	 * @param textureId The process-wide texture identity.
 	 * @param coordinateType Use normalized or pixel coordinates
 	 * @param textureUnit The Texture Unit binded
 	 * @param forceRebind Force the texture bind (even if is already binded ).
 	 */
-	void bind( const Uint32& TexId,
+	void bind( ResourceId textureId,
 			   Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized,
 			   const Uint32& textureUnit = 0, const bool& forceRebind = false );
 
@@ -164,28 +172,39 @@ class EE_API TextureFactory : protected Mutex {
 			   const Uint32& TextureUnit = 0, const bool& forceRebind = false );
 
 	/**
-	 * @param TexId The internal Texture Id
-	 * @return The OpenGL Texture Id (texture handler)
-	 */
-	Uint32 getTextureId( const Uint32& TexId );
-
-	/**
-	 * @return The real current texture id (OpenGL Texture Id)
-	 * @param TextureUnit The Texture Unit binded
+	 * @return The currently bound OpenGL texture handle.
+	 * @param TextureUnit The bound texture unit.
 	 */
 	int getCurrentTexture( const Uint32& TextureUnit = 0 ) const;
 
-	/** Set the current internal texture id. This will set the TexId as the current texture binded.
-	 * @param TexId The real current texture id (OpenGL Texture Id)
+	/** Sets the currently bound OpenGL texture handle.
+	 * @param textureHandle The OpenGL texture handle.
 	 * @param TextureUnit The Texture Unit binded
 	 */
-	void setCurrentTexture( const int& TexId, const Uint32& TextureUnit );
+	void setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit );
 
 	/** Returns the number of textures loaded */
-	Uint32 getTextureCount() const { return (Uint32)mTextures.size(); }
+	Uint32 getTextureCount();
 
 	/** @return All the active textures */
 	std::vector<Texture*> getTextures();
+
+	/** @return A non-owning diagnostic snapshot of every currently live texture. */
+	TextureRegistrySnapshot snapshotTextures();
+
+	/** Removes expired records from the diagnostic live-texture registry. */
+	void purgeExpiredTextures();
+
+	/** @return The generation of the live-texture registry. It changes when a texture is created or
+	 * its last owning handle is released. */
+	Uint64 getLiveTextureGeneration() const;
+
+	/** Destroys textures whose final owning handle was released. Must run on the graphics thread
+	 * after pending batches have been flushed and while a context is current. */
+	void collectReleasedTextures();
+
+	/** @return The number of textures waiting for graphics-thread destruction. */
+	std::size_t getPendingReleaseCount();
 
 	/** Active a texture unit */
 	void setActiveTextureUnit( const Uint32& Unit );
@@ -196,31 +215,22 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	unsigned int getValidTextureSize( const unsigned int& Size );
 
-	/** Determine if the TextureId passed exists */
-	bool existsId( const Uint32& TexId );
+	/** Determines whether the texture identity exists in the factory. */
+	bool existsId( ResourceId textureId );
 
-	/** Determine if the TextureId passed exists */
+	/** Determines whether the texture is retained by the factory. */
 	bool exists( const Texture* tex );
 
-	/** @return A pointer to the Texture */
-	Texture* getTexture( const Uint32& TexId );
-
-	/** Get a local copy for all the textures */
-	void grabTextures();
-
-	/** Reload all the grabbed textures */
-	void ungrabTextures();
-
-	/** Allocate space for Textures (only works if EE_ALLOC_TEXTURES_ON_VECTOR is defined) */
-	void allocate( const unsigned int& size );
+	/** @return The texture matching @p textureId, or null if it is not factory-retained. */
+	Texture* getTexture( ResourceId textureId );
 
 	/** @return The memory used by the textures (in bytes) */
-	unsigned int getTextureMemorySize() { return mMemSize; }
+	unsigned int getTextureMemorySize();
 
 	/** It's possible to create textures outside the texture factory loader, but the library will
 	 * need to know of this texture, so it's necessary to push the texture to the factory.
 	 * @param Filepath The Texture path ( if exists )
-	 * @param TexId The OpenGL Texture Id
+	 * @param textureHandle The OpenGL texture handle.
 	 * @param Width Texture Width
 	 * @param Height Texture Height
 	 * @param ImgWidth Image Width.
@@ -233,7 +243,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param MemSize The size of the texture in memory ( just if you need to specify the real size
 	 * in memory, just useful to calculate the total texture memory ).
 	 */
-	Texture* pushTexture( const std::string& Filepath, const Uint32& TexId,
+	Texture* pushTexture( const std::string& Filepath, const Uint32& textureHandle,
 						  const unsigned int& Width, const unsigned int& Height,
 						  const unsigned int& ImgWidth, const unsigned int& ImgHeight,
 						  const bool& Mipmap, const unsigned int& Channels,
@@ -263,23 +273,31 @@ class EE_API TextureFactory : protected Mutex {
 
 	std::vector<int> mCurrentTexture;
 
-	std::vector<Texture*> mTextures;
+	using TextureMap = UnorderedMap<Uint64, TexturePtr>;
 
-	unsigned int mMemSize;
+	struct LiveTextureRecord {
+		ResourceId id;
+		TextureWeakPtr texture;
+	};
 
-	std::vector<Uint32> mVectorFreeSlots;
+	struct TextureDeleter {
+		void operator()( Texture* texture ) const noexcept;
+	};
+
+	TextureMap mTextures;
+	UnorderedMap<Uint64, LiveTextureRecord> mLiveTextures;
+	std::vector<Texture*> mReleasedTextures;
+	std::atomic<Uint64> mLiveTextureGeneration{ 0 };
 
 	Texture::CoordinateType mLastCoordinateType;
 
 	void unloadTextures();
 
-	Uint32 findFreeSlot();
+	void resetTextureBinding( const Texture* texture );
 
-	bool mErasing;
+	void queueReleasedTexture( Texture* texture );
 
-	const bool& isErasing() const;
-
-	void removeReference( Texture* Tex );
+	void diagnoseLiveTexturesAtShutdown();
 };
 
 }} // namespace EE::Graphics

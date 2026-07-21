@@ -35,6 +35,10 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFontStyle( const Uint32& fontStyle );
 
+	FontWeight getFontWeight() const;
+
+	UITextView* setFontWeight( const FontWeight& weight );
+
 	Uint32 getTextDecoration() const;
 
 	UITextView* setTextDecoration( const Uint32& textDecoration );

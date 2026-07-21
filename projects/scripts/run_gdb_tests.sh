@@ -1,11 +1,13 @@
 #!/bin/bash
 set -euo pipefail
+CANONPATH=$(readlink -f "$0")
+DIRPATH="$(dirname "$CANONPATH")"
 
 cd ../../bin/unit_tests
 
 echo "=== Running eepp unit tests under GDB (xvfb) ==="
 
-ASAN_OPTIONS=detect_leaks=0 xvfb-run -s "-screen 0 1280x1024x24" \
+sh "$DIRPATH/xvfb-run-eepp" \
   gdb --batch --quiet --return-child-result \
     -ex "set confirm off" \
     -ex "set print thread-events off" \

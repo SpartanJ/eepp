@@ -64,7 +64,7 @@ void UIMultiModelView::setViewMode( const ViewMode& mode ) {
 	}
 }
 
-UIAbstractView* UIMultiModelView::getCurrentView() const {
+UIAbstractTableView* UIMultiModelView::getCurrentView() const {
 	switch ( mMode ) {
 		case Table:
 			return mTable;

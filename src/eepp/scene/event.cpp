@@ -57,4 +57,8 @@ const FocusEvent* Event::asFocusEvent() const {
 	return static_cast<const FocusEvent*>( this );
 }
 
+const ChildCountChangedEvent* Event::asChildCountChangedEvent() const {
+	return static_cast<const ChildCountChangedEvent*>( this );
+}
+
 }} // namespace EE::Scene

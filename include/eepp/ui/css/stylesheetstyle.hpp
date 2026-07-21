@@ -53,9 +53,9 @@ class EE_API StyleSheetStyle {
 
 	StyleSheetVariable getVariableByName( const std::string& name ) const;
 
-	void setVariable( const StyleSheetVariable& variable );
+	void setVariable( const StyleSheetVariable& variable, bool setSelectorSpecificity = true );
 
-	bool isMediaValid() const;
+	bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
 
 	const MediaQueryList::ptr& getMediaQueryList() const;
 
@@ -66,6 +66,8 @@ class EE_API StyleSheetStyle {
 	const Uint32& getMarker() const;
 
 	void setMarker( const Uint32& marker );
+
+	void setSelectorSpecificity( const Int64& specificity );
 
 	bool updatePropertyValue( const std::string& name, const std::string& value );
 

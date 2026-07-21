@@ -186,7 +186,8 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList(
+				attribute.value(), getFontStyleConfig().getFontStyle(), getFontWeight() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
@@ -203,6 +204,9 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontStyle( attribute.asFontStyle() );
 			break;
 		}
+		case PropertyId::FontWeight:
+			setFontWeight( Text::stringToFontWeight( attribute.value() ) );
+			break;
 		case PropertyId::TextStrokeWidth:
 			setFontOutlineThickness( lengthFromValue( attribute ) );
 			break;
@@ -234,13 +238,15 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::SelectionBackColor:
 			return getFontSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
+		case PropertyId::FontWeight:
+			return Text::fontWeightToString( getFontStyleConfig().Weight );
 		case PropertyId::TextStrokeWidth:
 			return String::fromFloat( PixelDensity::dpToPx( getFontOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
@@ -253,9 +259,9 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = {
-		PropertyId::Color,			PropertyId::TextShadowColor,	PropertyId::TextShadowOffset,
-		PropertyId::SelectionColor, PropertyId::SelectionBackColor, PropertyId::FontFamily,
-		PropertyId::FontSize,		PropertyId::FontStyle,			PropertyId::TextStrokeWidth,
+		PropertyId::Color,			 PropertyId::TextShadowColor,	 PropertyId::TextShadowOffset,
+		PropertyId::SelectionColor,	 PropertyId::SelectionBackColor, PropertyId::FontFamily,
+		PropertyId::FontSize,		 PropertyId::FontStyle,			 PropertyId::TextStrokeWidth,
 		PropertyId::TextStrokeColor, PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -347,6 +353,24 @@ UIConsole* UIConsole::setFontStyle( const Uint32& fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
 		onFontStyleChanged();
 	}
+	return this;
+}
+
+FontWeight UIConsole::getFontWeight() const {
+	return mFontStyleConfig.Weight;
+}
+
+UIConsole* UIConsole::setFontWeight( const FontWeight& weight ) {
+	mFontStyleConfig.Weight = weight;
+
+	Uint32 weightStyle = ( weight >= FontWeight::SemiBold ) ? Text::Bold : 0;
+	Uint32 newStyle = ( mFontStyleConfig.Style & ~Text::Bold ) | weightStyle;
+
+	if ( mFontStyleConfig.Style != newStyle ) {
+		mFontStyleConfig.Style = newStyle;
+		onFontStyleChanged();
+	}
+
 	return this;
 }
 

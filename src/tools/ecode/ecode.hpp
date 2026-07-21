@@ -31,6 +31,8 @@ namespace ecode {
 class AutoCompletePlugin;
 class LinterPlugin;
 class FormatterPlugin;
+class DateTimeController;
+class FontPickerController;
 class SettingsMenu;
 class UITreeViewFS;
 
@@ -103,7 +105,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::vector<std::string> getUnlockedCommands();
 
-	void saveAll();
+	void saveAll( bool includeBuffers = true );
 
 	ProjectDirectoryTree* getDirTree() const;
 
@@ -384,6 +386,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		mSplitter->registerSplitterCommands( t );
 
 		// Overwrite it
+		t.setCommand( "create-new", [this] { getSplitter()->createEditorInNewTab(); } );
+
 		t.setCommand( "next-tab", [this] {
 			UITabWidget* tabWidget =
 				getSplitter()->tabWidgetFromWidget( getSplitter()->getCurWidget() );
@@ -569,7 +573,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
 
-	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "",
+							 const std::string& oldFilePath = "",
+							 const std::string& repoPath = "" );
 
 	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
 
@@ -650,6 +656,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	size_t getMenuIconSize() const { return mMenuIconSize; }
 
   protected:
+	friend class FontPickerController;
+
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -662,6 +670,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UITextView* mDocInfo{ nullptr };
 	std::vector<std::string> mRecentFiles;
 	std::stack<std::string> mRecentClosedFiles;
+	std::unordered_map<std::string, TextRanges> mClosedDocumentState;
 	std::vector<std::string> mRecentFolders;
 	AppConfig mConfig;
 	UISplitter* mProjectSplitter{ nullptr };
@@ -743,6 +752,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;
+	std::unique_ptr<DateTimeController> mDateTimeController;
+	std::unique_ptr<FontPickerController> mFontPickerController;
 	std::string mFileToOpen;
 	UITheme* mTheme{ nullptr };
 	UIStatusBar* mStatusBar{ nullptr };
@@ -800,6 +811,12 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void updateEditorState();
 
+	std::string closedDocumentStateKey( const std::string& path ) const;
+
+	void rememberClosedDocumentState( UICodeEditor* editor );
+
+	void restoreClosedDocumentState( UICodeEditor* editor, const std::string& path );
+
 	void saveDoc();
 
 	void loadKeybindings();
@@ -829,6 +846,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
 	void onTabCreated( UITab* tab, UIWidget* widget );
+
+	void applyNewTabPosition( UITab* tab );
 
 	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
 

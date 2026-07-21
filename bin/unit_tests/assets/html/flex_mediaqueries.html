@@ -1,0 +1,774 @@
+<!doctype html>
+<!-- saved from url=(0050)https://causality.blog/essays/what-async-promised/ -->
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="Astro v5.17.2" />
+    <title>What Async Promised and What it Delivered — Causality</title>
+    <meta
+      name="description"
+      content="The async/await saga is a story where each chapter solves the previous chapter&#39;s worst problem while introducing new structural costs. The sequential syntax that made async code readable also obscures the thing that matters: which operations actually depend on each other."
+    />
+    <link
+      rel="canonical"
+      href="https://causality.blog/essays/what-async-promised/"
+    />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Causality"
+      href="https://causality.blog/rss.xml"
+    />
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="https://causality.blog/favicon.svg"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="https://causality.blog/apple-touch-icon.png"
+    />
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://causality.blog/essays/what-async-promised/"
+    />
+    <meta
+      property="og:title"
+      content="What Async Promised and What it Delivered — Causality"
+    />
+    <meta
+      property="og:description"
+      content="The async/await saga is a story where each chapter solves the previous chapter&#39;s worst problem while introducing new structural costs. The sequential syntax that made async code readable also obscures the thing that matters: which operations actually depend on each other."
+    />
+    <meta property="og:image" content="https://causality.blog/og-essay-3.png" />
+    <meta property="og:site_name" content="Causality" />
+    <!-- Twitter / Bluesky card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="What Async Promised and What it Delivered — Causality"
+    />
+    <meta
+      name="twitter:description"
+      content="The async/await saga is a story where each chapter solves the previous chapter&#39;s worst problem while introducing new structural costs. The sequential syntax that made async code readable also obscures the thing that matters: which operations actually depend on each other."
+    />
+    <meta
+      name="twitter:image"
+      content="https://causality.blog/og-essay-3.png"
+    />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/" />
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link href="./flex_mediaqueries_files/css2" rel="stylesheet" />
+    <script
+      data-goatcounter="https://causality.goatcounter.com/count"
+      async=""
+      src="./flex_mediaqueries_files/count.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="./flex_mediaqueries_files/about.ZLlEu_QV.css"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="https://causality.blog/" class="header-logo">
+        <svg
+          width="32"
+          height="24"
+          viewBox="0 0 48 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <defs>
+            <marker
+              id="ah"
+              markerWidth="3.5"
+              markerHeight="3"
+              refX="3.2"
+              refY="1.5"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <polygon points="0,0 3.5,1.5 0,3" fill="#B45309"></polygon>
+            </marker>
+          </defs>
+          <!-- Edges: center-to-center, left-to-right flow -->
+          <line
+            x1="6"
+            y1="20"
+            x2="18"
+            y2="8"
+            stroke="#B45309"
+            stroke-width="2"
+            stroke-linecap="round"
+            marker-end="url(#ah)"
+          ></line>
+          <line
+            x1="18"
+            y1="8"
+            x2="38"
+            y2="5"
+            stroke="#B45309"
+            stroke-width="2"
+            stroke-linecap="round"
+            marker-end="url(#ah)"
+          ></line>
+          <line
+            x1="6"
+            y1="20"
+            x2="18"
+            y2="32"
+            stroke="#B45309"
+            stroke-width="2"
+            stroke-linecap="round"
+            marker-end="url(#ah)"
+          ></line>
+          <line
+            x1="18"
+            y1="32"
+            x2="38"
+            y2="35"
+            stroke="#B45309"
+            stroke-width="2"
+            stroke-linecap="round"
+            marker-end="url(#ah)"
+          ></line>
+          <!-- Nodes -->
+          <circle cx="6" cy="20" r="4" fill="#D97706"></circle>
+          <circle cx="18" cy="8" r="3.5" fill="#D97706"></circle>
+          <circle cx="38" cy="5" r="3.5" fill="#D97706"></circle>
+          <circle cx="18" cy="32" r="3.5" fill="#D97706"></circle>
+          <circle cx="38" cy="35" r="3.5" fill="#D97706"></circle>
+        </svg>
+        <span class="header-wordmark">Causality</span>
+      </a>
+      <nav class="site-nav">
+        <a href="https://causality.blog/series">Series</a>
+        <a href="https://causality.blog/about">About</a>
+        <a
+          href="https://buttondown.com/causality"
+          target="_blank"
+          rel="noopener"
+          >Subscribe</a
+        >
+        <a href="https://causality.blog/rss.xml">RSS</a>
+      </nav>
+    </header>
+    <main class="content">
+      <article>
+        <div class="essay-header">
+          <div class="essay-date">April 2026</div>
+          <h1>What Async Promised and What it Delivered</h1>
+          <p class="essay-subtitle">
+            Each wave fixed the last wave's worst problem and introduced a new
+            one.
+          </p>
+        </div>
+        <div class="essay-body">
+          <p>
+            OS threads carry overhead: an operating system thread reserves
+            virtual address space for its stack and takes on the order of tens
+            of microseconds to create on modern Linux.
+            <em
+              >(edit Apr 27: The original “roughly a millisecond”, and “megabyte
+              of stack space” conflated virtual reservation with physical memory
+              commitment. Thanks to ibraheemdev, jemfinch, eklitzke on HN)</em
+            >
+            Context switches happen in kernel space and burn CPU cycles, and
+            O(n) readiness polling (select, poll) add up at scale. A server
+            handling thousands of concurrent connections and dedicating one
+            thread per connection means thousands of threads each consuming
+            memory and competing for scheduling. The system spends time managing
+            threads that could be better spent doing useful work.
+          </p>
+          <p>
+            This is the C10K problem, named by Dan Kegel in 1999. If you were
+            building a web server, a chat system, or anything with a large
+            number of simultaneous connections, you needed a way to handle
+            concurrency without a thread per connection.
+          </p>
+          <p>
+            The answer came in waves, each solving the previous wave’s worst
+            problem while introducing new ones. Previously we’ve looked at
+            <a
+              href="https://causality.blog/essays/message-passing-is-shared-mutable-state"
+              >channels in Go</a
+            >
+            and
+            <a href="https://causality.blog/essays/the-isolation-trap"
+              >actors in Erlang</a
+            >. Now we turn to async, which is everywhere these days.
+          </p>
+          <h2 id="callbacks">Callbacks</h2>
+          <p>
+            The first wave was straightforward: don’t block the thread. Instead
+            of waiting for an i/o operation to complete, register a function to
+            be called when it finishes and move on to the next piece of work.
+            Event loops (select, poll, epoll, kqueue) multiplexed thousands of
+            connections onto a handful of threads, and callbacks were the
+            programmer’s interface to this machinery.
+          </p>
+          <p>
+            Node.js built an entire ecosystem on this model, handling thousands
+            of concurrent connections on a single thread. Nginx’s event-driven
+            architecture was a major reason it displaced Apache for
+            high-concurrency workloads.
+          </p>
+          <p>
+            This nicely solved the performance problem, but at a cost: callbacks
+            invert control flow. Instead of writing “do A, then B, then C” as
+            three sequential statements, you write “do A, and when it’s done
+            call this function, which does B, and when <em>that’s</em> done call
+            this other function, which does C.” The programmer’s intent becomes
+            scattered across nested closures. JavaScript developers named this
+            “callback hell” and built
+            <a href="http://callbackhell.com/">an entire website</a> to
+            commiserate.
+          </p>
+          <p>
+            Callbacks have deeper problems than aesthetics, such as fracturing
+            error handling. Each callback needs its own error path. Errors can’t
+            propagate naturally up the call stack because there is no call stack
+            (callbacks run in a different context from where they are
+            registered). Handling partial failure in a chain of callbacks means
+            threading error state through every function in the chain.
+          </p>
+          <p>
+            Plus, callbacks have no notion of cancellation. If you start an
+            asynchronous operation and then decide you don’t need the result,
+            there’s no general way to stop it. The callback will fire
+            eventually, and your code needs to handle the case where it no
+            longer cares about the result.
+          </p>
+          <p>
+            Callbacks solved the resource problem (too many threads) by creating
+            an ergonomics problem (code that’s hard to write, read, and get
+            right).
+          </p>
+          <h2 id="promises-and-futures">Promises and Futures</h2>
+          <p>
+            The next wave started with a good idea: what if, instead of passing
+            a callback for later invocation, an asynchronous operation
+            immediately returned an object representing its eventual result?
+          </p>
+          <p>
+            This is a promise (JavaScript) or future (Java, Rust, etc). The
+            concept dates to Baker and Hewitt in 1977, but it took the C10K
+            pressure of the 2010s to push it into mainstream programming.
+            JavaScript standardized native Promises in ES2015 following the
+            community-driven Promises/A+ spec, and Java 8 introduced
+            <code>CompletableFuture</code>.
+          </p>
+          <p>
+            Promises are more ergonomic than callbacks. First, promises are
+            composable: <code>promise.then(f).then(g)</code> reads as a pipeline
+            instead of a nested pyramid. Error handling also consolidates: a
+            <code>.catch()</code> at the end of a chain handles failures from
+            any step. And promises are values that you can store, pass around,
+            and return from functions. A first-class handle to an eventual value
+            moves the conversation away from raw threads and toward data
+            dependencies. The idea that “this value depends on a computation
+            that hasn’t finished yet” is a useful thing to be able to express.
+          </p>
+          <p>
+            Here’s JavaScript reading a user profile and then fetching their
+            recent orders, first with callbacks, then with promises:
+          </p>
+          <pre
+            class="astro-code css-variables"
+            style="
+              background-color: var(--astro-code-background);
+              color: var(--astro-code-foreground);
+              overflow-x: auto;
+            "
+            tabindex="0"
+            data-language="javascript"
+          ><code><span class="line"><span style="color:var(--astro-code-token-comment)">// Callbacks: nested, error handling at every level</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">getUser</span><span style="color:var(--astro-code-foreground)">(userId</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> (err</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> user) </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    if</span><span style="color:var(--astro-code-foreground)"> (err) </span><span style="color:var(--astro-code-token-keyword)">return</span><span style="color:var(--astro-code-token-function)"> handleError</span><span style="color:var(--astro-code-foreground)">(err);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">    getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> (err</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders) </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-foreground)"> {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">        if</span><span style="color:var(--astro-code-foreground)"> (err) </span><span style="color:var(--astro-code-token-keyword)">return</span><span style="color:var(--astro-code-token-function)"> handleError</span><span style="color:var(--astro-code-foreground)">(err);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">        render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders);</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">    });</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--astro-code-token-comment)">// Promises: chained, error handling consolidated</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">getUser</span><span style="color:var(--astro-code-foreground)">(userId)</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">    .then</span><span style="color:var(--astro-code-foreground)">(user </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-token-function)"> getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id)</span><span style="color:var(--astro-code-token-function)">.then</span><span style="color:var(--astro-code-foreground)">(orders </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-foreground)"> [user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders]))</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">    .then</span><span style="color:var(--astro-code-foreground)">(([user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders]) </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-token-function)"> render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders))</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">    .catch</span><span style="color:var(--astro-code-foreground)">(handleError);</span></span></code></pre>
+          <p>
+            The promise-based version is not a huge improvement on this small
+            example, but the difference grows with complexity: five steps deep
+            in callbacks is nearly unreadable, while five
+            <code>.then()</code> calls chained together are at least linear.
+          </p>
+          <p>But promises introduced their own problems:</p>
+          <p>
+            <strong>Promises are one-shot.</strong> A promise resolves exactly
+            once. This makes them unsuitable for modeling streams, events,
+            repeated messages, or any ongoing communication. A WebSocket that
+            receives a stream of messages doesn’t map onto “a value that will
+            exist later.” This forces a split: promises for request-response
+            patterns, and something else (event emitters, observables, callbacks
+            again) for everything else.
+          </p>
+          <p>
+            <strong>Composition is clunky.</strong> The example above hints at
+            it: getting both <code>user</code> and <code>orders</code> into the
+            final <code>.then()</code> requires nesting or awkward gymnastics
+            with <code>Promise.all</code>. Two independent async operations are
+            easy (<code>Promise.all([a, b])</code>), but anything more complex
+            (conditional branching, loops over async operations, early exit)
+            requires increasingly elaborate combinator patterns. These patterns
+            work but they’re a functional programming idiom grafted onto an
+            imperative language and they don’t feel natural.
+          </p>
+          <p>
+            <strong>Errors vanish silently.</strong> JavaScript promises that
+            reject without a <code>.catch()</code> handler originally just
+            swallowed the error. The value was lost causing failures to be
+            invisible. This was bad enough that Node.js eventually changed
+            unhandled rejections from a warning to a process crash, and browsers
+            added <code>unhandledrejection</code> events. A feature designed to
+            improve error handling managed to create an entirely new class of
+            silent failures that didn’t exist with callbacks.
+          </p>
+          <p>
+            <strong>The type split.</strong> Every function now returns either a
+            value or a promise of a value. So callers need to know which one
+            they’re getting and libraries need to decide which one to provide. A
+            function that was synchronous becomes asynchronous when you add a
+            database call to it, and now every caller needs to handle a promise
+            instead of a value. This is a mild form of the coloring problem that
+            the next wave would make even worse.
+          </p>
+          <h2 id="asyncawait">Async/Await</h2>
+          <p>
+            Promise chains still looked nothing like the sequential code
+            developers wrote for everything else. Async/await, pioneered by C#
+            in 2012 and adopted by JavaScript (ES2017), Python (3.5), Rust
+            (1.39), Kotlin, Swift, and Dart, delivered exactly that:
+          </p>
+          <pre
+            class="astro-code css-variables"
+            style="
+              background-color: var(--astro-code-background);
+              color: var(--astro-code-foreground);
+              overflow-x: auto;
+            "
+            tabindex="0"
+            data-language="javascript"
+          ><code><span class="line"><span style="color:var(--astro-code-token-comment)">// Promise chains</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">function</span><span style="color:var(--astro-code-token-function)"> loadDashboard</span><span style="color:var(--astro-code-foreground)">(userId) {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    return</span><span style="color:var(--astro-code-token-function)"> getUser</span><span style="color:var(--astro-code-foreground)">(userId)</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">        .then</span><span style="color:var(--astro-code-foreground)">(user </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-token-function)"> getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id)</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">            .then</span><span style="color:var(--astro-code-foreground)">(orders </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-foreground)"> [user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders]))</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">        .then</span><span style="color:var(--astro-code-foreground)">(([user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders]) </span><span style="color:var(--astro-code-token-keyword)">=&gt;</span><span style="color:var(--astro-code-token-function)"> render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders));</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:var(--astro-code-token-comment)">// Async/await</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">async</span><span style="color:var(--astro-code-token-keyword)"> function</span><span style="color:var(--astro-code-token-function)"> loadDashboard</span><span style="color:var(--astro-code-foreground)">(userId) {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> user</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getUser</span><span style="color:var(--astro-code-foreground)">(userId);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> orders</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    return</span><span style="color:var(--astro-code-token-function)"> render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders);</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">}</span></span></code></pre>
+          <p>
+            The async/await version reads like sequential code. Variables bind
+            naturally. You can use <code>try/catch</code> instead of
+            <code>.catch()</code>. Loops work with <code>await</code> inside
+            them. It’s an ergonomic win for linear sequences of asynchronous
+            operations.
+          </p>
+          <p>
+            The industry adopted it fast, with JavaScript frameworks going
+            all-in, Python’s asyncio becoming the standard approach for
+            concurrent i/o, and Rust stabilizing async/await as the path to
+            high-performance networking. Within a few years, async/await was the
+            default way to write concurrent i/o code in most mainstream
+            languages.
+          </p>
+          <h2 id="paying-the-function-coloring-tax">
+            Paying the Function Coloring Tax
+          </h2>
+          <p>
+            In 2015, right as async/await was gaining steam, Bob Nystrom
+            published
+            <a
+              href="https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/"
+              >“What Color is Your Function?”</a
+            >, a thought experiment about a language where every function is
+            either “red” or “blue.” Red functions can call blue functions, but
+            blue functions can’t call red functions without special ceremony.
+            Every function must choose a color, and if you call a red function
+            from a blue one, the blue one must become red, spreading virally
+            throughout the codebase.
+          </p>
+          <p>
+            This was an analogy to async/await: async functions are red, sync
+            functions are blue. An async function can call a sync function
+            without issue, but calling an async function from a sync function
+            requires blocking the thread or restructuring the code. Every
+            function in your program must choose a color, and that choice
+            propagates through every caller.
+          </p>
+          <p>
+            Nystrom’s post stuck because it put a name to something developers
+            had been experiencing without a vocabulary for it. Function coloring
+            reshapes entire codebases and ecosystems.
+          </p>
+          <p>
+            The Rust async ecosystem fragmented around competing runtimes
+            (Tokio, async-std, smol) that provide incompatible implementations
+            of fundamental types like TCP streams and timers. A library written
+            for Tokio can’t easily be used with async-std. The popular HTTP
+            client <code>reqwest</code> simply requires Tokio, and if your
+            project uses a different runtime, that’s your problem. Now library
+            authors either pick Tokio (locking out alternatives) or attempt
+            runtime-agnostic abstractions (adding complexity and sometimes
+            performance overhead).
+          </p>
+          <p>
+            Tokio’s dominance is function coloring at ecosystem scale. The tax
+            shows up at other scales too:
+          </p>
+          <p>
+            <strong>At the function level</strong>, adding a single i/o call to
+            a previously synchronous function changes its signature, its return
+            type, and its calling convention. Every caller must be updated, and
+            their callers must be updated. The change ripples through the call
+            graph until it hits a framework entry point or a main function. A
+            one-line database lookup can require modifying dozens of files.
+          </p>
+          <p>
+            <strong>At the library level</strong>, authors face a choice of
+            writing a sync library and exclude async users, or writing an async
+            library and force sync users to add runtime dependencies (or
+            maintain both). Many choose “both,” doubling the API surface, the
+            test matrix, and the maintenance burden. In Python, the
+            <code>requests</code> library (sync) and
+            <code>aiohttp</code> (async) are separate projects by separate
+            authors doing the same thing. <code>httpx</code> eventually appeared
+            to offer both interfaces from one package, which is an improvement
+            only needed because of the split.
+          </p>
+          <p>
+            <strong>At the ecosystem level</strong>, the Rust example above is
+            the norm, not the exception. Every library that touches i/o must
+            choose a color, and that choice limits which other libraries it can
+            work with. The Rust async book itself notes that “sync and async
+            code also tend to promote different design patterns, which can make
+            it difficult to compose code intended for the different
+            environments.”
+          </p>
+          <p>
+            And the costs aren’t just logistical: async/await introduced
+            entirely new categories of bugs that threads don’t have. O’Connor
+            documents a class of async Rust deadlocks he calls “futurelocks”: a
+            future acquires a lock, then stops being polled while another future
+            tries to acquire the same lock. With threads, a thread holding a
+            lock always makes progress toward releasing it (unless you do
+            something everyone knows is dangerous, like
+            <code>SuspendThread</code>). With async Rust, the standard tools
+            like <code>select!</code>, buffered streams, and
+            <code>FuturesUnordered</code> routinely stop polling futures that
+            hold resources. The original futurelock at Oxide required core dumps
+            and a disassembler to diagnose.
+          </p>
+          <h2 id="a-sequential-trap">A Sequential Trap</h2>
+          <p>
+            A subtler cost that gets less attention is that async/await’s
+            greatest strength, making asynchronous code look sequential, is also
+            a cognitive trap.
+          </p>
+          <pre
+            class="astro-code css-variables"
+            style="
+              background-color: var(--astro-code-background);
+              color: var(--astro-code-foreground);
+              overflow-x: auto;
+            "
+            tabindex="0"
+            data-language="javascript"
+          ><code><span class="line"><span style="color:var(--astro-code-token-keyword)">async</span><span style="color:var(--astro-code-token-keyword)"> function</span><span style="color:var(--astro-code-token-function)"> loadDashboard</span><span style="color:var(--astro-code-foreground)">(userId) {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> user</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getUser</span><span style="color:var(--astro-code-foreground)">(userId);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> orders</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> recommendations</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getRecommendations</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    return</span><span style="color:var(--astro-code-token-function)"> render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> recommendations);</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">}</span></span></code></pre>
+          <p>
+            This fetches orders and recommendations sequentially:
+            <code>getRecommendations</code> doesn’t start until
+            <code>getOrders</code> finishes. But these two operations are
+            independent, because recommendations don’t depend on orders. So they
+            could run in parallel, but don’t. The code looks clean and correct
+            while leaving performance on the table.
+          </p>
+          <p>
+            The parallel version requires the programmer to explicitly break out
+            of sequential style:
+          </p>
+          <pre
+            class="astro-code css-variables"
+            style="
+              background-color: var(--astro-code-background);
+              color: var(--astro-code-foreground);
+              overflow-x: auto;
+            "
+            tabindex="0"
+            data-language="javascript"
+          ><code><span class="line"><span style="color:var(--astro-code-token-keyword)">async</span><span style="color:var(--astro-code-token-keyword)"> function</span><span style="color:var(--astro-code-token-function)"> loadDashboard</span><span style="color:var(--astro-code-foreground)">(userId) {</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-token-constant)"> user</span><span style="color:var(--astro-code-token-keyword)"> =</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-function)"> getUser</span><span style="color:var(--astro-code-foreground)">(userId);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    const</span><span style="color:var(--astro-code-foreground)"> [</span><span style="color:var(--astro-code-token-constant)">orders</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-token-constant)"> recommendations</span><span style="color:var(--astro-code-foreground)">] </span><span style="color:var(--astro-code-token-keyword)">=</span><span style="color:var(--astro-code-token-keyword)"> await</span><span style="color:var(--astro-code-token-constant)"> Promise</span><span style="color:var(--astro-code-token-function)">.all</span><span style="color:var(--astro-code-foreground)">([</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">        getOrders</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id)</span><span style="color:var(--astro-code-token-punctuation)">,</span></span>
+<span class="line"><span style="color:var(--astro-code-token-function)">        getRecommendations</span><span style="color:var(--astro-code-foreground)">(</span><span style="color:var(--astro-code-token-constant)">user</span><span style="color:var(--astro-code-foreground)">.id)</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">    ]);</span></span>
+<span class="line"><span style="color:var(--astro-code-token-keyword)">    return</span><span style="color:var(--astro-code-token-function)"> render</span><span style="color:var(--astro-code-foreground)">(user</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> orders</span><span style="color:var(--astro-code-token-punctuation)">,</span><span style="color:var(--astro-code-foreground)"> recommendations);</span></span>
+<span class="line"><span style="color:var(--astro-code-foreground)">}</span></span></code></pre>
+          <p>
+            The pattern scales poorly beyond small examples. In a real
+            application with dozens of async calls, determining which operations
+            are independent and can be parallelized requires the programmer to
+            manually analyze dependencies and restructure the code accordingly.
+            The sequential syntax actively obscures the dependency structure,
+            i.e. the one piece of information that would tell you what can run
+            in parallel.
+          </p>
+          <p>
+            Async/await was introduced to make asynchronous code easier to
+            write. It made “what can run concurrently” something the programmer
+            must determine manually and express through combinator patterns that
+            break the sequential flow that was the whole point.
+          </p>
+          <h2 id="what-async-got-right">What Async Got Right</h2>
+          <p>To be fair, async abstractions did improve things.</p>
+          <p>
+            Async/await’s ergonomics for linear sequences are better than
+            callbacks or promise chains. For code that’s inherently sequential
+            but happens to include i/o, async/await removes real syntactic
+            noise. It’s easier to read and debug than callback-based code.
+          </p>
+          <p>
+            Some language designers chose different paths. For example, Go
+            deliberately chose goroutines, accepting a heavier runtime in
+            exchange for no function coloring at all.
+            <em
+              >(Edit note Apr 24: Go actually introduced a form of coloring
+              through <code>context.Context</code>, which propagates through
+              calls for cancellation. Edit Apr 27: previous language implied Go
+              made the decision in reaction to async/await)</em
+            >
+            Java’s Project Loom (virtual threads in Java 21) also made a
+            different bet: lightweight threads that look and behave like regular
+            threads, so no code needs to change color. The Loom team explicitly
+            cited function coloring as a problem they wanted to avoid.
+          </p>
+          <p>
+            Zig went further: it removed its compiler-level async/await entirely
+            and rebuilt around an Io interface parameter that i/o operations
+            accept. The runtime (threaded, event-loop, whatever the user
+            supplies) fulfills the interface. Function signatures don’t change
+            based on how they’re scheduled, and async/await become library
+            functions rather than language keywords. Though some argue that the
+            Io parameter itself is a form of coloring.
+          </p>
+          <p>
+            Language designers who studied the async/await experience in other
+            ecosystems concluded that the costs of function coloring outweigh
+            the benefits and chose different paths.
+          </p>
+          <h2 id="accumulating-costs">Accumulating Costs</h2>
+          <p>
+            Each solution solved a problem but introduced new costs. And those
+            costs are structural, affecting the shape of every program, library,
+            and API in the codebase.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Wave</th>
+                <th>Solved</th>
+                <th>Introduced</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Callbacks</td>
+                <td>Thread-per-connection resource exhaustion</td>
+                <td>
+                  Inverted control flow, fragmented error handling, callback
+                  hell
+                </td>
+              </tr>
+              <tr>
+                <td>Promises</td>
+                <td>Nesting, error consolidation, values over callbacks</td>
+                <td>
+                  One-shot limitation, silent error swallowing, mild type split
+                </td>
+              </tr>
+              <tr>
+                <td>Async/Await</td>
+                <td>Ergonomics for linear async sequences</td>
+                <td>
+                  Function coloring, ecosystem fragmentation, new deadlock
+                  classes, sequential trap
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Each wave made the local experience of writing async code more
+            pleasant while making the global experience more complex. The
+            developer writing a single async function has never had it better,
+            while the team maintaining a large codebase with mixed sync/async
+            code, managing dependency compatibility across runtimes, and trying
+            to find parallelism opportunities hidden behind sequential-looking
+            <code>await</code> chains are carrying a burden that didn’t exist
+            before these abstractions were introduced.
+          </p>
+          <p>
+            This isn’t a case of bad engineering. The people who designed
+            callbacks, promises, and async/await were solving real problems, and
+            each step was a reasonable response to the previous step’s failures.
+            But fifteen years and several iterations in, the accumulated tax is
+            sizable, and a pattern is visible: each fix treats symptoms while
+            leaving the structure intact.
+          </p>
+          <p>
+            The callbacks-to-promises-to-async/await arc may be the clearest
+            illustration yet of a theme running through this series: approaches
+            that start by asking “how do we manage concurrent execution?” keep
+            generating new problems at every level of abstraction. You can watch
+            this one play out in real time, across a single ecosystem, within a
+            single decade.
+          </p>
+          <h3 id="references">References</h3>
+          <ul>
+            <li>
+              Baker, Henry and Carl Hewitt. “The Incremental Garbage Collection
+              of Processes.” <em>ACM SIGART Bulletin</em> 64 (1977): 55–59.
+            </li>
+            <li>
+              Kegel, Dan.
+              <a href="http://www.kegel.com/c10k.html">“The C10K Problem.”</a>
+              1999.
+            </li>
+            <li>
+              Nystrom, Bob.
+              <a
+                href="https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/"
+                >“What Color is Your Function?”</a
+              >
+              February 1, 2015.
+            </li>
+            <li>
+              Elizarov, Roman.
+              <a
+                href="https://elizarov.medium.com/how-do-you-color-your-functions-a6bb423d936d"
+                >“How Do You Color Your Functions?”</a
+              >
+              Medium, November 18, 2019.
+            </li>
+            <li>
+              Cro, Loris.
+              <a href="https://kristoff.it/blog/zig-new-async-io/"
+                >“Zig’s New Async I/O.”</a
+              >
+              Blog post, 2025.
+            </li>
+            <li>
+              <a
+                href="https://blogs.oracle.com/javamagazine/java-virtual-threads/"
+                >“Virtual Threads in Java.”</a
+              >
+              Oracle Java Magazine.
+            </li>
+            <li>
+              Corrode Rust Consulting.
+              <a href="https://corrode.dev/blog/async/"
+                >“The State of Async Rust: Runtimes.”</a
+              >
+              Blog post.
+            </li>
+            <li>
+              O’Connor, Jack.
+              <a href="https://jacko.io/snooze.html"
+                >“Never Snooze a Future.”</a
+              >
+              Blog post, 2026.
+            </li>
+          </ul>
+        </div>
+        <nav class="essay-nav">
+          <a
+            href="https://causality.blog/essays/the-isolation-trap"
+            class="essay-nav-prev"
+            ><span class="essay-nav-label">← Previous: Essay 2</span
+            ><span class="essay-nav-title">The Isolation Trap</span></a
+          >
+        </nav>
+        <div class="discuss-links">
+          <span>Discuss:</span
+          ><a
+            href="https://news.ycombinator.com/item?id=47859442"
+            target="_blank"
+            rel="noopener"
+            >Hacker News</a
+          ><a
+            href="https://lobste.rs/s/xs2xus/what_async_promised_what_it_delivered"
+            target="_blank"
+            rel="noopener"
+            >Lobsters</a
+          >
+        </div>
+        <div class="newsletter-box">
+          <h3>Stay in the loop</h3>
+          <p>
+            Get notified when new posts are published. No spam, no tracking,
+            just ideas.
+          </p>
+          <form
+            action="https://buttondown.com/api/emails/embed-subscribe/causality"
+            method="post"
+            target="popupwindow"
+            class="newsletter-form"
+          >
+            <input
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              required=""
+            />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </article>
+    </main>
+    <footer class="site-footer">
+      <span>
+        Josh Segall ·
+        <a
+          href="https://bsky.app/profile/causality.blog"
+          target="_blank"
+          rel="noopener me"
+          >Bluesky</a
+        >
+      </span>
+    </footer>
+    <script
+      defer=""
+      src="./flex_mediaqueries_files/v833ccba57c9e4d2798f2e76cebdd09a11778172276447"
+      integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ=="
+      data-cf-beacon='{"version":"2024.11.0","token":"9e55899864f945f5adcb8c2b050bc1d7","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

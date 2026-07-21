@@ -12,7 +12,7 @@ StyleSheetVariable::StyleSheetVariable( const std::string& name, const std::stri
 	mSpecificity( 0 ) {}
 
 StyleSheetVariable::StyleSheetVariable( const std::string& name, const std::string& value,
-										const Uint32& specificity ) :
+										const Int64& specificity ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
@@ -30,11 +30,11 @@ const std::string& StyleSheetVariable::value() const {
 	return mValue;
 }
 
-const Uint32& StyleSheetVariable::getSpecificity() const {
+const Int64& StyleSheetVariable::getSpecificity() const {
 	return mSpecificity;
 }
 
-void StyleSheetVariable::setSpecificity( const Uint32& specificity ) {
+void StyleSheetVariable::setSpecificity( const Int64& specificity ) {
 	mSpecificity = specificity;
 }
 

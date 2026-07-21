@@ -148,11 +148,13 @@ void URI::clear() {
 
 std::string URI::toString() const {
 	std::string uri;
-	if ( isRelative() ) {
+	if ( isRelative() && mHost.empty() ) {
 		encode( mPath, RESERVED_PATH, uri );
 	} else {
-		uri = mScheme;
-		uri += ':';
+		if ( !mScheme.empty() ) {
+			uri = mScheme;
+			uri += ':';
+		}
 		std::string auth = getAuthority();
 		if ( !auth.empty() || mScheme == "file" ) {
 			uri.append( "//" );
@@ -604,6 +606,10 @@ void URI::parse( const std::string& uri ) {
 			it = uri.begin();
 			parsePathEtc( it, end );
 		}
+	} else if ( *it == '/' && ( it + 1 ) != end && *( it + 1 ) == '/' ) {
+		it += 2;
+		parseAuthority( it, end );
+		parsePathEtc( it, end );
 	} else {
 		parsePathEtc( it, end );
 	}

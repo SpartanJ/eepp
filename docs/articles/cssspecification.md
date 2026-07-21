@@ -679,6 +679,20 @@ Read [font-style](https://developer.mozilla.org/en-US/docs/Web/CSS/font-style) d
 
 ---
 
+### font-weight
+
+Read [font-weight](https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight) documentation.
+
+Supported values: `normal`, `bold`, `bolder`, `lighter`, `100`, `200`, `300`, `400`, `500`, `600`,
+`700`, `800`, `900`, plus named weights `thin` (100), `extra-light` / `extralight` (200),
+`light` (300), `medium` (500), `semi-bold` / `semibold` (600), `extra-bold` / `extrabold` (800),
+`black` / `heavy` (900).
+
+Weights >= 600 (SemiBold) set the `Text::Bold` style flag and will resolve to the nearest matching
+system font variant when available. The `font` shorthand property also supports the weight token.
+
+---
+
 ### fill-color
 
 Sets the fill color of a element.
@@ -703,6 +717,18 @@ Multiple flags can be set, flags are separated by `|`.
   * `autopadding`: Enables the element to calculate the padding based on the skin size.
   * `reportsizechangetochildren`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
 * Default value: _No value_
+
+---
+
+### foreground-bottom-left-radius
+
+Same as [border-bottom-left-radius](#border-bottom-left-radius) but for the foreground of the node.
+
+---
+
+### foreground-bottom-right-radius
+
+Same as [border-bottom-right-radius](#border-bottom-right-radius) but for the foreground of the node.
 
 ---
 
@@ -753,6 +779,18 @@ Sets the tint color of the foreground image.
 * Applicable to: Any element
 * Data Type: [color](#color-data-type)
 * Default value: `white`
+
+---
+
+### foreground-top-left-radius
+
+Same as [border-top-left-radius](#border-top-left-radius) but for the foreground of the node.
+
+---
+
+### foreground-top-right-radius
+
+Same as [border-top-right-radius](#border-top-right-radius) but for the foreground of the node.
 
 ---
 
@@ -2486,6 +2524,8 @@ Same as the [background-position](#background-position) but for the foreground o
 ### foreground-radius
 
 Same as the [border-radius](#border-radius) but for the foreground of the node.
+
+This is a shorthand for setting [foreground-top-left-radius](#foreground-top-left-radius), [foreground-top-right-radius](#foreground-top-right-radius), [foreground-bottom-right-radius](#foreground-bottom-right-radius), and [foreground-bottom-left-radius](#foreground-bottom-left-radius) in a single declaration.
 
 ---
 

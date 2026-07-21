@@ -1027,7 +1027,12 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
 #if !TARGET_OS_IPHONE
   if (working_directory) {
+#if defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED__) && \
+    __MAC_OS_X_VERSION_MIN_REQUIRED__ >= 110000
+    if (0 != posix_spawn_file_actions_addchdir(&actions, working_directory)) {
+#else
     if (0 != posix_spawn_file_actions_addchdir_np(&actions, working_directory)) {
+#endif
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }

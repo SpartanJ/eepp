@@ -123,6 +123,8 @@ class EE_API WindowSDL : public Window {
   protected:
 	friend class ClipboardSDL;
 
+	void destroySDLResources();
+
 	SDL_Window* mSDLWindow;
 	SDL_GLContext mGLContext;
 	SDL_GLContext mGLContextThread;

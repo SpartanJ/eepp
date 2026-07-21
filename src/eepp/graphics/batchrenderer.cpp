@@ -25,6 +25,7 @@ BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) {
 }
 
 BatchRenderer::~BatchRenderer() {
+	discard();
 	eeSAFE_DELETE_ARRAY( mVertex );
 }
 
@@ -46,6 +47,12 @@ void BatchRenderer::drawOpt() {
 
 void BatchRenderer::draw() {
 	flush();
+}
+
+void BatchRenderer::discard() {
+	mNumVertex = 0;
+	mTVertex = nullptr;
+	mTexture = nullptr;
 }
 
 void BatchRenderer::setTexture( const Texture* texture, Texture::CoordinateType coordinateType ) {

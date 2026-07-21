@@ -8,29 +8,29 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 CursorSDL::CursorSDL( Texture* tex, const Vector2i& hotspot, const std::string& name,
 					  EE::Window::Window* window ) :
-	Cursor( tex, hotspot, name, window ), mCursor( NULL ) {
+	Cursor( tex, hotspot, name, window ), mCursor( nullptr ) {
 	create();
 }
 
 CursorSDL::CursorSDL( Graphics::Image* img, const Vector2i& hotspot, const std::string& name,
 					  EE::Window::Window* window ) :
-	Cursor( img, hotspot, name, window ), mCursor( NULL ) {
+	Cursor( img, hotspot, name, window ), mCursor( nullptr ) {
 	create();
 }
 
 CursorSDL::CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name,
 					  EE::Window::Window* window ) :
-	Cursor( path, hotspot, name, window ), mCursor( NULL ) {
+	Cursor( path, hotspot, name, window ), mCursor( nullptr ) {
 	create();
 }
 
 CursorSDL::~CursorSDL() {
-	if ( NULL != mCursor )
+	if ( nullptr != mCursor )
 		SDL_FreeCursor( mCursor );
 }
 
 void CursorSDL::create() {
-	if ( NULL == mImage )
+	if ( nullptr == mImage )
 		return;
 
 	Uint32 rmask, gmask, bmask, amask;

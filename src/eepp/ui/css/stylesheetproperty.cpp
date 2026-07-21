@@ -13,6 +13,10 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+static bool isDataPropertyName( std::string_view name ) {
+	return String::istartsWith( String::trim( name ), "data-" );
+}
+
 StyleSheetProperty::StyleSheetProperty() :
 	mSpecificity( 0 ), mVolatile( false ), mImportant( false ) {}
 
@@ -37,13 +41,14 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	createIndexed();
 	checkVars();
 
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
+		 !String::startsWith( mName, "-" ) && !isDataPropertyName( mName ) ) {
 		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
 StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
-										const std::string& value, const Uint32& /*specificity*/,
+										const std::string& value, const Int64& /*specificity*/,
 										const Uint32& index ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
@@ -60,13 +65,14 @@ StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinitio
 	checkImportant();
 	checkVars();
 
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
+		 !String::startsWith( mName, "-" ) && !isDataPropertyName( mName ) ) {
 		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										bool trimValue, const Uint32& specificity,
+										bool trimValue, const Int64& specificity,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -86,13 +92,14 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	createIndexed();
 	checkVars();
 
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
+		 !String::startsWith( mName, "-" ) && !isDataPropertyName( mName ) ) {
 		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const Uint32& specificity, bool isVolatile,
+										const Int64& specificity, bool isVolatile,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -112,7 +119,8 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	createIndexed();
 	checkVars();
 
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
+		 !isDataPropertyName( mName ) ) {
 		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
@@ -135,16 +143,14 @@ const std::string& StyleSheetProperty::value() const {
 	return mValue;
 }
 
-const Uint32& StyleSheetProperty::getSpecificity() const {
+const Int64& StyleSheetProperty::getSpecificity() const {
 	return mSpecificity;
 }
 
-void StyleSheetProperty::setSpecificity( const Uint32& specificity ) {
-	// Don't allow set specificity if is an important property,
-	// force the specificity in this case.
-	if ( !mImportant ) {
-		mSpecificity = specificity;
-	}
+void StyleSheetProperty::setSpecificity( const Int64& specificity ) {
+	mSpecificity = specificity;
+	if ( mImportant )
+		mSpecificity += StyleSheetSelectorRule::SpecificityImportant;
 }
 
 bool StyleSheetProperty::isEmpty() const {
@@ -160,8 +166,11 @@ void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	mValue = value;
 	if ( updateHash )
 		mValueHash = String::hash( value );
-	mIsVarValue = String::startsWith( mValue, "var(" );
+	mVarCache.clear();
+	mIsVarValue = false;
+	mIsLightDarkValue = false;
 	createIndexed();
+	checkVars();
 }
 
 bool StyleSheetProperty::isVolatile() const {
@@ -187,7 +196,7 @@ const String::HashType& StyleSheetProperty::getNameHash() const {
 void StyleSheetProperty::checkImportant() {
 	if ( String::endsWith( mValue, "!important" ) ) {
 		mImportant = true;
-		mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
+		mSpecificity += StyleSheetSelectorRule::SpecificityImportant;
 		mValue = String::trim( mValue.substr( 0, mValue.size() - 10 /*!important*/ ) );
 		mValueHash = String::hash( mValue );
 	}
@@ -221,11 +230,17 @@ void StyleSheetProperty::checkVars() {
 static void varToVal( VariableFunctionCache& varCache, const std::string& varDef ) {
 	FunctionString functionType = FunctionString::parse( varDef );
 	if ( !functionType.getParameters().empty() ) {
+		bool foundVar = false;
 		for ( auto& val : functionType.getParameters() ) {
 			if ( String::startsWith( val, "--" ) ) {
 				varCache.variableList.emplace_back( val );
+				foundVar = true;
 			} else if ( String::startsWith( val, "var(" ) ) {
 				varToVal( varCache, val );
+				foundVar = true;
+			} else if ( foundVar ) {
+				// This is a fallback value (comes after the variable name)
+				varCache.variableList.emplace_back( val );
 			}
 		}
 	}
@@ -551,6 +566,18 @@ bool StyleSheetProperty::isLightDarkValue() const {
 	return mIsLightDarkValue;
 }
 
+bool StyleSheetProperty::needsValueSubstitution() const {
+	if ( mIsVarValue || mIsLightDarkValue )
+		return true;
+
+	for ( const auto& property : mIndexedProperty ) {
+		if ( property.needsValueSubstitution() )
+			return true;
+	}
+
+	return false;
+}
+
 size_t StyleSheetProperty::getPropertyIndexCount() const {
 	return mIndexedProperty.size();
 }
@@ -569,10 +596,56 @@ const Uint32& StyleSheetProperty::getIndex() const {
 	return mIndex;
 }
 
-void StyleSheetProperty::cleanValue() {
-	if ( NULL != mPropertyDefinition && mPropertyDefinition->getType() == PropertyType::String ) {
-		String::trimInPlace( mValue, '"' );
+static bool isWholeQuotedString( const std::string& value ) {
+	if ( value.size() < 2 )
+		return false;
+
+	const char quote = value.front();
+
+	if ( quote != '"' && quote != '\'' )
+		return false;
+
+	if ( value.back() != quote )
+		return false;
+
+	bool escaped = false;
+
+	for ( size_t i = 1; i + 1 < value.size(); ++i ) {
+		const char c = value[i];
+
+		if ( escaped ) {
+			escaped = false;
+			continue;
+		}
+
+		if ( c == '\\' ) {
+			escaped = true;
+			continue;
+		}
+
+		if ( c == quote ) {
+			// Found the closing quote before the end.
+			// So this is something like:
+			// "Noto Sans", "Trebuchet MS"
+			return false;
+		}
 	}
+
+	return true;
+}
+
+void StyleSheetProperty::cleanValue() {
+	if ( NULL == mPropertyDefinition )
+		return;
+
+	if ( mPropertyDefinition->getType() != PropertyType::String )
+		return;
+
+	if ( !isWholeQuotedString( mValue ) )
+		return;
+
+	if ( mValue.size() >= 2 )
+		mValue = mValue.substr( 1, mValue.size() - 2 );
 }
 
 Float StyleSheetProperty::asDpDimension( UINode* node, const std::string& defaultValue ) const {
@@ -686,8 +759,14 @@ bool StyleSheetProperty::isCachedProperty() const {
 }
 
 void StyleSheetProperty::setImportant( bool important ) {
+	if ( mImportant == important )
+		return;
 	mImportant = important;
-	mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
+	if ( important ) {
+		mSpecificity += StyleSheetSelectorRule::SpecificityImportant;
+	} else {
+		mSpecificity -= StyleSheetSelectorRule::SpecificityImportant;
+	}
 }
 
 }}} // namespace EE::UI::CSS

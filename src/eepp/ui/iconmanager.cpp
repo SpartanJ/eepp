@@ -69,6 +69,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "arrow-down-s", 0xea4e },
 				  { "arrow-up-s", 0xea78 },
 				  { "arrow-right-s", 0xea6e },
+				  { "arrow-left-s", 0xea64 },
 				  { "match-case", 0xed8d },
 				  { "palette", 0xefc5 },
 				  { "file-code", 0xecd1 },
@@ -118,6 +119,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "input-field", 0xF47A },
 				  { "sun", 0xF1BC },
 				  { "moon", 0xEF72 },
+				  { "calendar-2", 0xEB21 },
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, remixIconFont, icon.second ) );
 		}

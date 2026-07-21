@@ -21,6 +21,7 @@ class WindowEvent;
 class ItemValueEvent;
 class RowCreatedEvent;
 class FocusEvent;
+class ChildCountChangedEvent;
 
 class EE_API Event {
   public:
@@ -122,6 +123,15 @@ class EE_API Event {
 		OnFoldUnfoldRange,
 		OnResourceLoaded,
 		OnDiscard,
+		OnNavigationStarted,
+		OnNavigationCompleted,
+		OnNavigationError,
+		OnTitleChanged,
+		OnToggle,
+		OnFocusWithin,
+		OnFocusWithinLoss,
+		OnItemsCountChange,
+		OnApply,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -152,6 +162,8 @@ class EE_API Event {
 	const RowCreatedEvent* asRowCreatedEvent() const;
 
 	const FocusEvent* asFocusEvent() const;
+
+	const ChildCountChangedEvent* asChildCountChangedEvent() const;
 
   protected:
 	friend class Node;
@@ -221,6 +233,20 @@ class EE_API FocusEvent : public Event {
 
   protected:
 	NodeFocusReason mReason;
+};
+
+class EE_API ChildCountChangedEvent : public Event {
+  public:
+	ChildCountChangedEvent( Node* node, Uint32 eventType, Node* child, bool removed ) :
+		Event( node, eventType ), mChild( child ), mRemoved( removed ) {}
+
+	Node* child() const { return mChild; }
+
+	bool removed() const { return mRemoved; }
+
+  protected:
+	Node* mChild;
+	bool mRemoved;
 };
 
 }} // namespace EE::Scene

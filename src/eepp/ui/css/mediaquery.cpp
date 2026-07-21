@@ -10,13 +10,14 @@ namespace EE { namespace UI { namespace CSS {
 
 #define MediaOrientationStrings "portrait;landscape"
 
-#define MediaFeatureStrings                                                                    \
-	"none;width;min-width;max-width;height;min-height;max-height;device-width;min-device-"     \
-	"width;max-device-width;device-height;min-device-height;max-device-height;orientation;"    \
-	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"    \
-	"ratio;max-device-aspect-ratio;color;min-color;max-color;color-index;min-color-index;max-" \
-	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"      \
-	"resolution;pixel-density;min-pixel-density;max-pixel-density;prefers-color-scheme"
+#define MediaFeatureStrings                                                                      \
+	"none;width;min-width;max-width;height;min-height;max-height;device-width;min-device-"       \
+	"width;max-device-width;device-height;min-device-height;max-device-height;orientation;"      \
+	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"      \
+	"ratio;max-device-aspect-ratio;color;min-color;max-color;color-index;min-color-index;max-"   \
+	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"        \
+	"resolution;pixel-density;min-pixel-density;max-pixel-density;prefers-color-scheme;prefers-" \
+	"contrast"
 
 #define MediaTypeStrings "none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
 
@@ -102,7 +103,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 					query->mExpressions.push_back( expr );
 				}
 			}
-		} else {
+		} else if ( tok != "only" && tok != "and" ) {
 			query->mMediaType =
 				(MediaType)String::valueIndex( tok, MediaTypeStrings, media_type_all );
 		}
@@ -140,6 +141,11 @@ MediaQueryList::ptr MediaQueryList::parse( const std::string& str ) {
 	for ( auto& tok : tokens ) {
 		String::trimInPlace( tok );
 		String::toLowerInPlace( tok );
+
+		if ( String::startsWith( tok, "@media" ) ) {
+			tok = tok.substr( 6 );
+			String::trimInPlace( tok );
+		}
 
 		MediaQuery::ptr query = MediaQuery::parse( tok );
 
@@ -409,6 +415,10 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 			break;
 		case media_feature_prefers_color_scheme:
 			if ( features.prefersColorScheme == valStr )
+				return true;
+			break;
+		case media_feature_prefers_contrast:
+			if ( features.prefersContrast == valStr )
 				return true;
 			break;
 		default:

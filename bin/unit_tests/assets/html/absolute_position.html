@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<style type="text/css">
+		body {
+			background: #000000;
+			color: #FFFFFF;
+			font-family: Verdana, Helvetica, Arial, sans-serif;
+			font-size: 8pt;
+			font-weight:normal;
+			text-align: left;
+			margin: 0;
+			padding: 0;
+		}
+		#main {
+			width: 400px;
+			position:absolute;
+			left:50%;
+			margin-left: -200px;
+			margin-top: 120px;
+			border: 0px;
+		}
+		.box {
+			width: 400px;
+			margin: 0 auto;
+			background-color: #333333;
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+<div id="main">
+	<div class="box">
+		<div class="titlebox">File Upload</div>
+		<div class="login_inbox">
+			<div class="loginbox">
+				<div class="mini_titlebox">[LOGIN]</div>
+				<form method="post" action="?s=1">
+					<p>Username: <input name="Nombre" type="text" size="12" /></p>
+					<p>Password: <input name="Password" type="password" size="12" /></p>
+					<p><input type="submit" name="Submit" value="Entrar" /></p>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="box">
+		<div class="titlebox">Download Files</div>
+		<div class="inbox">
+			<a href="upload/">ENTER</a>
+		</div>
+	</div>
+</div>
+</body>
+</html>

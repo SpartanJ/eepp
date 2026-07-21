@@ -1,3 +1,4 @@
+#include <eepp/core/small_vector.hpp>
 #include <eepp/ui/uiplacementutils.hpp>
 
 namespace EE::UI {
@@ -142,6 +143,37 @@ PopupPlacementResult UIPlacementUtils::findBestPopupPlacement(
 		pos.x = std::max(
 			config.areaRect.Left + config.margin,
 			std::min( pos.x, config.areaRect.Right - boxSize.getWidth() - config.margin ) );
+	}
+
+	// Cursor-aware placement: when the popup would cover the editing cursor
+	// while the target sits above it, try above the target first.
+	if ( config.cursorLineHeight > 0 ) {
+		Rectf popup( pos, boxSize );
+		bool belowCursor = pos.y >= config.cursorScreenPos.y;
+		bool targetAbove =
+			config.targetRect.Bottom <= config.cursorScreenPos.y + config.cursorLineHeight;
+		bool hOverlap = ( best.direction == PlacementDirection::Right ||
+						  best.direction == PlacementDirection::Left ) &&
+						popup.overlap( config.avoidRect );
+		if ( ( belowCursor && targetAbove ) || hOverlap ) {
+			Float w = popup.getWidth();
+			Float h = popup.getHeight();
+			PlacementDirection newDir;
+			Float aboveY = config.targetRect.Top - h - config.margin;
+			if ( aboveY >= config.areaRect.Top + config.margin ) {
+				pos.x = config.targetRect.Left;
+				pos.y = aboveY;
+				newDir = PlacementDirection::Top;
+			} else {
+				pos.y = config.cursorScreenPos.y + config.cursorLineHeight + config.margin;
+				pos.x = config.targetRect.Left;
+				Float areaBottom = config.areaRect.Bottom - config.margin;
+				if ( pos.y + h > areaBottom )
+					pos.y = eemax( config.areaRect.Top + config.margin, areaBottom - h );
+				newDir = PlacementDirection::Bottom;
+			}
+			return { Rectf( pos, { w, h } ).round(), newDir };
+		}
 	}
 
 	return { Rectf( pos, boxSize ).round(), best.direction };

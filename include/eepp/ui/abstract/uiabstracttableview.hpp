@@ -148,6 +148,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setSetupCellCb( const std::function<void( UITableCell* )>& onSetupCellCb );
 
+	void resetSearchText();
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 	friend class EE::UI::UIDropDownModelList;

@@ -38,6 +38,8 @@ class EE_API IOStreamString : public IOStream {
 
 	const std::string& getStream() const;
 
+	std::string& getStream();
+
   protected:
 	std::string mStream;
 	ios_size mPos{ 0 };

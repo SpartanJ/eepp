@@ -1,11 +1,13 @@
 #ifndef EE_UI_UINODEDRAWABLE_HPP
 #define EE_UI_UINODEDRAWABLE_HPP
 
+#include <atomic>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <map>
+#include <memory>
 
 using namespace EE::Graphics;
 using namespace EE::Scene;
@@ -14,14 +16,25 @@ namespace EE { namespace UI {
 
 class UINode;
 
+enum class BackgroundMode { Native, Html };
+
 class EE_API UINodeDrawable : public Drawable {
   public:
-	enum Repeat { RepeatXY, RepeatX, RepeatY, NoRepeat };
+	enum class RepeatX { NoRepeat, Repeat, Space, Round };
+	enum class RepeatY { NoRepeat, Repeat, Space, Round };
 
-	static Repeat repeatFromText( const std::string& text );
+	static void repeatFromText( const std::string& text, RepeatX& repeatX, RepeatY& repeatY );
 
 	class EE_API LayerDrawable : public Drawable {
 	  public:
+		enum class Origin { PaddingBox, BorderBox, ContentBox };
+		enum class Clip { BorderBox, PaddingBox, ContentBox };
+		enum class Attachment { Scroll, Fixed, Local };
+
+		static Origin originFromText( const std::string& text );
+		static Clip clipFromText( const std::string& text );
+		static Attachment attachmentFromText( const std::string& text );
+
 		static LayerDrawable* New( UINodeDrawable* container );
 
 		LayerDrawable( UINodeDrawable* container );
@@ -62,9 +75,13 @@ class EE_API UINodeDrawable : public Drawable {
 
 		const std::string& getSizeEq() const;
 
-		const Repeat& getRepeat() const;
+		RepeatX getRepeatX() const;
 
-		void setRepeat( const Repeat& repeat );
+		RepeatY getRepeatY() const;
+
+		void setRepeatX( RepeatX repeatX );
+
+		void setRepeatY( RepeatY repeatY );
 
 		void invalidate();
 
@@ -84,6 +101,24 @@ class EE_API UINodeDrawable : public Drawable {
 
 		void setPositionY( const std::string& positionY );
 
+		void setOrigin( const std::string& origin );
+
+		void setClip( const std::string& clip );
+
+		void setAttachment( const std::string& attachment );
+
+		Origin getOrigin() const;
+
+		Clip getClip() const;
+
+		Attachment getAttachment() const;
+
+		const std::string& getOriginEq() const;
+
+		const std::string& getClipEq() const;
+
+		const std::string& getAttachmentEq() const;
+
 	  protected:
 		UINodeDrawable* mContainer;
 		Sizef mSize;
@@ -98,7 +133,16 @@ class EE_API UINodeDrawable : public Drawable {
 		Drawable* mDrawable;
 		std::string mDrawableRef;
 		Uint32 mResourceChangeCbId;
-		Repeat mRepeat;
+		RepeatX mRepeatX{ RepeatX::NoRepeat };
+		RepeatY mRepeatY{ RepeatY::NoRepeat };
+		std::string mOriginEq{ "padding-box" };
+		std::string mClipEq{ "border-box" };
+		std::string mAttachmentEq{ "scroll" };
+		Origin mOrigin{ Origin::PaddingBox };
+		Clip mClip{ Clip::BorderBox };
+		Attachment mAttachment{ Attachment::Scroll };
+		std::shared_ptr<std::atomic<bool>> mAsyncDrawableAlive;
+		Uint64 mRemoteDrawableLoadId{ 0 };
 
 		virtual void onPositionChange();
 
@@ -107,6 +151,8 @@ class EE_API UINodeDrawable : public Drawable {
 		void update();
 
 		Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt );
+
+		bool loadRemoteDrawable( const std::string& value );
 	};
 
 	static UINodeDrawable* New( UINode* owner );
@@ -153,6 +199,12 @@ class EE_API UINodeDrawable : public Drawable {
 
 	void setDrawableSize( int index, const std::string& sizeEq );
 
+	void setDrawableOrigin( int index, const std::string& origin );
+
+	void setDrawableClip( int index, const std::string& clip );
+
+	void setDrawableAttachment( int index, const std::string& attachment );
+
 	void setDrawableColor( int index, const Color& color );
 
 	void setBackgroundColor( const Color& color );
@@ -169,9 +221,15 @@ class EE_API UINodeDrawable : public Drawable {
 
 	UIBackgroundDrawable& getBackgroundDrawable();
 
+	bool hasDrawableLayers() const;
+
 	bool isSmooth() const;
 
 	void setSmooth( bool smooth );
+
+	void setBackgroundMode( BackgroundMode mode );
+
+	BackgroundMode getBackgroundMode() const;
 
   protected:
 	UINode* mOwner;
@@ -181,6 +239,7 @@ class EE_API UINodeDrawable : public Drawable {
 	bool mNeedsUpdate{ true };
 	bool mClipEnabled{ false };
 	bool mSmooth{ false };
+	BackgroundMode mBackgroundMode{ BackgroundMode::Native };
 
 	virtual void onPositionChange();
 

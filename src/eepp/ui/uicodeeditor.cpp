@@ -1,3 +1,4 @@
+#include "eepp/ui/uistyle.hpp"
 #include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -35,6 +36,12 @@ namespace EE { namespace UI {
 
 UICodeEditor* UICodeEditor::New() {
 	return eeNew( UICodeEditor, ( true, true ) );
+}
+
+UICodeEditor* UICodeEditor::NewWithTag( const std::string& tag,
+										const bool& autoRegisterBaseCommands,
+										const bool& autoRegisterBaseKeybindings ) {
+	return eeNew( UICodeEditor, ( tag, autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
 UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
@@ -149,7 +156,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHeightPolicy = SizePolicy::Fixed;
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
-	setColorScheme( SyntaxColorScheme::getDefault() );
+	setColorScheme( SyntaxColorScheme::getDefaultDark() );
 	refreshTag();
 	mDocView.setOnVisibleLineCountChange( [this] {
 		onAutoSize();
@@ -170,11 +177,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHScrollBar->on( Event::OnValueChange, [this]( const Event* ) {
 		setScrollX( mHScrollBar->getValue() * getMaxScroll().x, false );
 	} );
-
-	if ( NULL == mFont && elementTag == "codeeditor" )
-		Log::error(
-			"A monospace font must be loaded to be able to use the code editor.\nTry loading "
-			"a font with the name \"monospace\"" );
 
 	mFontStyleConfig.Font = mFont;
 
@@ -1435,8 +1437,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 				 "folder-open", "open-containing-folder" );
 
 		menuAdd( menu,
-				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",
-					   "Copy Containing Folder Path..." ),
+				 i18n( "uicodeeditor_copy_containing_folder_path", "Copy Containing Folder Path" ),
 				 "copy", "copy-containing-folder-path" );
 
 		menuAdd( menu, i18n( "uicodeeditor_copy_file_path", "Copy File Path" ), "copy",
@@ -1480,8 +1481,10 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	UICodeEditor* editor = this;
 	const auto registerMenu = [editor, this]( UIMenu* menu ) {
 		menu->on( Event::OnItemClicked, [this, menu, editor]( const Event* event ) {
-			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) ||
+				 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) ) {
 				return;
+			}
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 			std::string txt( item->getId() );
 			mDoc->execute( txt, editor );
@@ -1602,6 +1605,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		if ( localPos.y < mPluginsTopSpace )
 			return UIWidget::onMouseDown( position, flags );
 
+		const auto resetSelectionTo = [this]( const TextPosition& pos ) {
+			mDoc->resetSelection();
+			mDoc->setSelection( pos );
+		};
+
 		bool downOverGutter = localPos.x < mPaddingPx.Left + getGutterWidth();
 
 		if ( flags & EE_BUTTON_LMASK ) {
@@ -1617,14 +1625,14 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 					return UIWidget::onMouseDown( position, flags );
 
 				if ( !downOverGutter || mAllowSelectingTextFromGutter )
-					mDoc->setSelection( textScreenPos );
+					resetSelectionTo( textScreenPos );
 				if ( downOverGutter && mAllowSelectingTextFromGutter )
 					mDoc->selectLine();
 			}
 		} else if ( !downOverGutter && tryExecuteMouseBinding( shortcut ) ) {
 			return UIWidget::onMouseDown( position, flags );
 		} else if ( !mDoc->hasSelection() ) {
-			mDoc->setSelection( textScreenPos );
+			resetSelectionTo( textScreenPos );
 		}
 	} else if ( !( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ) {
 		tryExecuteMouseBinding( shortcut );
@@ -2044,7 +2052,7 @@ void UICodeEditor::onSizeChange() {
 	onAutoSize();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( !mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn )
 		invalidateLongestLineWidth();
 	UIWidget::onSizeChange();
 }
@@ -2052,7 +2060,7 @@ void UICodeEditor::onSizeChange() {
 void UICodeEditor::onPaddingChange() {
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( !mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn )
 		invalidateLongestLineWidth();
 	UIWidget::onPaddingChange();
 }
@@ -2135,6 +2143,10 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 }
 
 void UICodeEditor::updateScrollBar() {
+	if ( mUpdatingScrollBar )
+		return;
+	mUpdatingScrollBar = true;
+
 	Int64 notVisibleLineCount = (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y;
 
 	mHScrollBar->setEnabled( false );
@@ -2154,7 +2166,9 @@ void UICodeEditor::updateScrollBar() {
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
-		bool showHScroll = mLongestLineWidth > viewPortWidth && !mDocView.isWrapEnabled();
+		bool showHScroll =
+			mLongestLineWidth > viewPortWidth &&
+			( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn );
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
 	}
@@ -2168,10 +2182,13 @@ void UICodeEditor::updateScrollBar() {
 	mVScrollBar->setEnabled( showVScroll );
 	mVScrollBar->setVisible( showVScroll );
 
-	if ( wasVScrollVisible != showVScroll && mDocView.isWrapEnabled() )
+	if ( wasVScrollVisible != showVScroll &&
+		 ( mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn ) ) {
 		invalidateLineWrapMaxWidth( false );
+	}
 
 	setScrollY( mScroll.y );
+	mUpdatingScrollBar = false;
 }
 
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
@@ -2922,6 +2939,34 @@ UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
 		invalidateDraw();
 		onFontStyleChanged();
+
+		if ( auto* newFont = getUISceneNode()->reevaluateFontStyle(
+				 mFontStyleConfig.Font, fontStyle,
+				 ( fontStyle & Text::Bold ) ? FontWeight::Bold : FontWeight::Normal ) )
+			setFont( newFont );
+	}
+
+	return this;
+}
+
+FontWeight UICodeEditor::getFontWeight() const {
+	return mFontStyleConfig.Weight;
+}
+
+UICodeEditor* UICodeEditor::setFontWeight( const FontWeight& weight ) {
+	mFontStyleConfig.Weight = weight;
+
+	Uint32 weightStyle = ( weight >= FontWeight::SemiBold ) ? Text::Bold : 0;
+	Uint32 newStyle = ( mFontStyleConfig.Style & ~Text::Bold ) | weightStyle;
+
+	if ( mFontStyleConfig.Style != newStyle ) {
+		mFontStyleConfig.Style = newStyle;
+		invalidateDraw();
+		onFontStyleChanged();
+
+		if ( auto* newFont =
+				 getUISceneNode()->reevaluateFontStyle( mFontStyleConfig.Font, newStyle, weight ) )
+			setFont( newFont );
 	}
 
 	return this;
@@ -3012,7 +3057,8 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.value() );
+			Font* font = getUISceneNode()->getFontFromNamesList( attribute.value(), getFontStyle(),
+																 getFontWeight() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -3026,6 +3072,10 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
+			break;
+		}
+		case PropertyId::FontWeight: {
+			setFontWeight( Text::stringToFontWeight( attribute.value() ) );
 			break;
 		}
 		case PropertyId::TextStrokeWidth:
@@ -3053,12 +3103,14 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setLineWrapType( LineWrap::toLineWrapType( attribute.asString() ) );
 			break;
 		case PropertyId::Text:
+		case PropertyId::Value:
 			mDoc->textInput( attribute.asString() );
 			break;
-		case PropertyId::DataLanguage:
-			setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->findFromString( attribute.asString() ) );
+		case PropertyId::BackgroundColor: {
+			setBackgroundColor( attribute.asColor() );
+			updateDynamicTheme();
 			break;
+		}
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -3086,13 +3138,15 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::SelectionBackColor:
 			return getFontSelectionBackColor().toHexString();
 		case PropertyId::FontFamily:
-			return NULL != getFont() ? getFont()->getName() : "";
+			return NULL != getFont() ? getUISceneNode()->getFontFamilyName( getFont() ) : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::FontWeight:
+			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
@@ -4206,6 +4260,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			}
 		}
 	} else {
+		bool getChunkHints = !Text::canSkipShaping( drawHints ) && tokens.size() > 8192;
 		for ( const auto& token : tokens ) {
 			String::View text = strLine.view();
 			if ( pos < strLine.size() && !( pos == 0 && text.size() == token.len ) ) {
@@ -4275,28 +4330,35 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 						Int64 totalChars = curCharsWidth - start;
 						Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 						if ( curCharsWidth >= charsToVisible ) {
+							String::View subText( text.substr( start, end ) );
 							size = Text::draw(
-								text.substr( start, end ),
+								subText,
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-								fontStyle, mTabWidth, drawHints, mTextDirection,
-								whitespaceDisplayConfig );
+								fontStyle, mTabWidth,
+								getChunkHints ? String::getTextHints( subText ) : drawHints,
+								mTextDirection, whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
-						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
-										   { position.x, position.y + lineOffset }, fontStyle,
-										   mTabWidth, drawHints, mTextDirection,
-										   whitespaceDisplayConfig );
+						String::View subText( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
+						size = Text::draw(
+							subText, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
+							getChunkHints ? String::getTextHints( subText ) : drawHints,
+							mTextDirection, whitespaceDisplayConfig );
 					}
 				} else {
-					size =
-						Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									mTabWidth, drawHints, mTextDirection, whitespaceDisplayConfig );
+					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+									   mTabWidth,
+									   getChunkHints ? String::getTextHints( text ) : drawHints,
+									   mTextDirection, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )
 					textWidth = size.getWidth();
+
+				if ( position.x > mScreenPos.x + mSize.getWidth() )
+					break;
 			} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 				break;
 			}
@@ -4368,11 +4430,11 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	}
 }
 
-std::vector<Rectf> UICodeEditor::getTextRangeRectangles(
+SmallVector<Rectf, 4> UICodeEditor::getTextRangeRectangles(
 	const TextRange& range, const Vector2f& startScroll,
 	std::optional<const DocumentLineRange> lineRange, std::optional<Float> lineHeight,
 	std::optional<DocumentViewLineRange> visibleLineRange, bool visualizeNewLines ) {
-	std::vector<Rectf> rects;
+	SmallVector<Rectf, 4> rects;
 	Float lh = lineHeight ? *lineHeight : getLineHeight();
 	Int64 startLine =
 		eemax<Int64>( lineRange ? lineRange->first : range.start().line(), range.start().line() );
@@ -5764,7 +5826,36 @@ void UICodeEditor::onClassChange() {
 }
 
 bool UICodeEditor::needsHorizontalLength() const {
-	return mDocView.getConfig().mode == LineWrapMode::NoWrap;
+	return mDocView.getConfig().mode == LineWrapMode::NoWrap ||
+		   mLineWrapType == LineWrapType::LineBreakingColumn;
+}
+
+void UICodeEditor::setUseDefaultStyle( bool use ) {
+	mUseDefaultStyle = use;
+	invalidateDraw();
+}
+
+void UICodeEditor::setDynamicTheming( bool set ) {
+	if ( mDynamicTheming != set ) {
+		mDynamicTheming = set;
+		updateDynamicTheme();
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::updateDynamicTheme() {
+	if ( !mDynamicTheming )
+		return;
+	Color color( getFontColor() );
+	if ( mStyle && mStyle->getProperty( PropertyId::BackgroundColor ) )
+		color = getBackgroundColor();
+	if ( color != Color::Transparent ) {
+		if ( color.perceivedLuminance() > 128 ) {
+			setColorScheme( SyntaxColorScheme::getDefaultLight() );
+		} else {
+			setColorScheme( SyntaxColorScheme::getDefaultDark() );
+		}
+	}
 }
 
 }} // namespace EE::UI

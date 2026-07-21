@@ -1,6 +1,7 @@
 ﻿#ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
@@ -187,6 +188,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	static UICodeEditor* New();
 
+	static UICodeEditor* NewWithTag( const std::string& tag,
+									 const bool& autoRegisterBaseCommands = true,
+									 const bool& autoRegisterBaseKeybindings = true );
+
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
@@ -262,6 +267,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UICodeEditor* setTabWidth( const Uint32& tabWidth );
 
 	const Uint32& getFontStyle() const;
+
+	FontWeight getFontWeight() const;
+
+	UICodeEditor* setFontWeight( const FontWeight& weight );
 
 	Uint32 getTextDecoration() const;
 
@@ -536,7 +545,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;
 
-	std::vector<Rectf>
+	SmallVector<Rectf, 4>
 	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
 							std::optional<const DocumentLineRange> lineRange = {},
 							std::optional<Float> lineHeight = {},
@@ -844,6 +853,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	size_t getTotalVisibleLines() const;
 
+	bool usesDefaultStyle() const { return mUseDefaultStyle; }
+
+	void setUseDefaultStyle( bool use );
+
+	bool dynamicTheming() const { return mDynamicTheming; }
+
+	void setDynamicTheming( bool set );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -893,6 +910,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
 	bool mDisableScrollInvalidation{ false };
+	bool mDynamicTheming{ false };
+	bool mUpdatingScrollBar{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
@@ -1221,6 +1240,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onClassChange();
 
 	inline bool needsHorizontalLength() const;
+
+	void updateDynamicTheme();
 };
 
 }} // namespace EE::UI

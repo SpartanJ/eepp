@@ -3,6 +3,7 @@
 
 #include <eepp/core.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 
 namespace EE { namespace UI {
 
@@ -32,6 +33,8 @@ class EE_API UIWidgetCreator {
 	static const RegisteredWidgetCallbackMap& getRegisteredWidgets();
 
 	static std::vector<std::string> getWidgetNames();
+
+	static void loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker );
 
   protected:
 	static RegisteredWidgetCallbackMap registeredWidget;

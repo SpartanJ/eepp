@@ -45,8 +45,7 @@ class EE_API Sys {
 	/** @return The path of the directory designated for temporary files. */
 	static std::string getTempPath();
 
-	/** @return The number of milliseconds since the first call. Note that this value wraps if the
-	 * program runs for more than ~49 days. */
+	/** @return The number of milliseconds since the first call. */
 	static Uint64 getTicks();
 
 	/** Wait the time defined before returning. */

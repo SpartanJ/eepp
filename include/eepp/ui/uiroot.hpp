@@ -16,10 +16,24 @@ class EE_API UIRoot : public UIWidget {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
+	Node* overFind( const Vector2f& point );
+
+	void setChildHitTestTraversalPixelsSize( const Sizef& size );
+
+	void clearChildHitTestTraversalPixelsSize();
+
+	bool hasChildHitTestTraversalPixelsSize() const;
+
+	const Sizef& getChildHitTestTraversalPixelsSize() const;
+
   protected:
 	UIRoot();
 
+	bool childHitTestTraversalContains( const Vector2f& point );
+
 	Color mDroppableHoveringColor{ Color::Transparent };
+	Sizef mChildHitTestTraversalPixelsSize;
+	bool mHasChildHitTestTraversalPixelsSize{ false };
 };
 
 }} // namespace EE::UI

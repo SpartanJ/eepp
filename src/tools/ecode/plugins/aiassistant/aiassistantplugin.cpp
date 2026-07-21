@@ -402,6 +402,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["together"] = config.value( "together_api_key", "" );
 		else if ( updateConfigFile )
 			config["together_api_key"] = mApiKeys["together"];
+
+		if ( config.contains( "mimo_api_key" ) )
+			mApiKeys["mimo"] = config.value( "mimo_api_key", "" );
+		else if ( updateConfigFile )
+			config["mimo_api_key"] = mApiKeys["mimo"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -614,6 +619,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "NVIDIA_API_KEY" );
 	} else if ( provider == "together" ) {
 		ret = getenv( "TOGETHER_API_KEY" );
+	} else if ( provider == "mimo" ) {
+		ret = getenv( "MIMO_API_KEY" );
 	} else {
 		const auto& providerModelIt = instance->mProviders.find( provider );
 		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )

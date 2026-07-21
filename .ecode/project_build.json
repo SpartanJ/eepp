@@ -377,9 +377,15 @@
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "-c system --hn-dark",
+        "args": "--hn-dark",
         "command": "${project_root}/bin/eepp-ui-html-debug",
         "name": "eepp-ui-html-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-font-picker-debug",
+        "name": "eepp-ui-font-picker-debug",
         "working_dir": "${project_root}/bin"
       }
     ],
@@ -476,7 +482,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--disable-static-build --with-debug-symbols ninja",
+        "args": "--disable-static-build --with-debug-symbols --with-backend=SDL3 ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },

@@ -8,7 +8,7 @@ void addPython() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Python",
-		  { "%.py$", "%.pyw$", "%.bry$", "^SConstruct$" },
+		  { "%.py$", "%.pyw$", "%.bry$", "^SConstruct$", "%.gs$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "[ruU]?\"", "\"", "\\" }, "string" },

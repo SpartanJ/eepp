@@ -22,9 +22,9 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout* UILinearLayout::NewVerticalWidthMatchParent( const std::string& tag ) {
-	return ( eeNew( UILinearLayout, ( tag, UIOrientation::Vertical ) ) )
-		->setLayoutWidthPolicy( SizePolicy::MatchParent )
-		->asType<UILinearLayout>();
+	UILinearLayout* ll = eeNew( UILinearLayout, ( tag, UIOrientation::Vertical ) );
+	ll->mWidthPolicy = SizePolicy::MatchParent;
+	return ll;
 }
 
 UILinearLayout::UILinearLayout() :
@@ -39,16 +39,16 @@ UILinearLayout::UILinearLayout( const std::string& tag, const UIOrientation& ori
 	setClipType( ClipType::ContentBox );
 }
 
+UIOrientation UILinearLayout::getOrientation() const {
+	return mOrientation;
+}
+
 Uint32 UILinearLayout::getType() const {
 	return UI_TYPE_LINEAR_LAYOUT;
 }
 
 bool UILinearLayout::isType( const Uint32& type ) const {
-	return UILinearLayout::getType() == type ? true : UILayout::isType( type );
-}
-
-UIOrientation UILinearLayout::getOrientation() const {
-	return mOrientation;
+	return UILinearLayout::getType() == type || UILayout::isType( type );
 }
 
 UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation ) {
@@ -62,7 +62,7 @@ void UILinearLayout::updateLayout() {
 			return;
 		mPacking = true;
 		setInternalPixelsSize( Sizef::Zero );
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		mPacking = false;
 	} else {
 		if ( mOrientation == UIOrientation::Vertical )
@@ -208,12 +208,13 @@ void UILinearLayout::packVertical() {
 
 			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
-					pos.x = ( getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+					pos.x = mPaddingPx.Left +
+							( getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							  widget->getPixelsSize().getWidth() ) /
-							2;
+								2;
 					break;
 				case UI_HALIGN_RIGHT:
-					pos.x = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+					pos.x = getPixelsSize().getWidth() - mPaddingPx.Right -
 							widget->getPixelsSize().getWidth() -
 							widget->getLayoutPixelsMargin().Right;
 					break;
@@ -244,7 +245,7 @@ void UILinearLayout::packVertical() {
 
 		if ( curY != (int)getPixelsSize().getHeight() ) {
 			setInternalPixelsHeight( curY );
-			notifyLayoutAttrChangeParent();
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		}
 	} else if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
 		int h =
@@ -269,7 +270,7 @@ void UILinearLayout::packVertical() {
 					setInternalPixelsWidth( maxX );
 					mPacking = false;
 					packVertical();
-					notifyLayoutAttrChangeParent();
+					notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 				}
 			}
 		}
@@ -342,12 +343,13 @@ void UILinearLayout::packHorizontal() {
 
 			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
-					pos.y = ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+					pos.y = mPaddingPx.Top +
+							( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
 							  widget->getPixelsSize().getHeight() ) /
-							2;
+								2;
 					break;
 				case UI_VALIGN_BOTTOM:
-					pos.y = getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+					pos.y = getPixelsSize().getHeight() - mPaddingPx.Bottom -
 							widget->getPixelsSize().getHeight() -
 							widget->getLayoutPixelsMargin().Bottom;
 					break;
@@ -378,7 +380,7 @@ void UILinearLayout::packHorizontal() {
 
 		if ( curX != (int)getPixelsSize().getWidth() ) {
 			setInternalPixelsWidth( curX );
-			notifyLayoutAttrChangeParent();
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		}
 	} else if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 		int w = getMatchParentWidth();
@@ -396,7 +398,7 @@ void UILinearLayout::packHorizontal() {
 					setInternalPixelsHeight( maxY );
 					mPacking = false;
 					packHorizontal();
-					notifyLayoutAttrChangeParent();
+					notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 				}
 			}
 		}

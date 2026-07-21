@@ -20,6 +20,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	richText.getFontStyleConfig().Font = font;
 	richText.getFontStyleConfig().CharacterSize = 24;
 	richText.setAlign( TEXT_ALIGN_LEFT );
+	richText.setLineHeight( 36 ); // Line height of 36px (1.5x 24px font)
+	richText.setTextIndent( 30 ); // Indent first line 30px
 
 	// Add spans using the helper method
 	richText.addSpan( "Hello " );

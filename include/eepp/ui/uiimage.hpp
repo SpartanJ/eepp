@@ -1,7 +1,10 @@
 #ifndef EE_UI_UIIMAGE_HPP
 #define EE_UI_UIIMAGE_HPP
 
+#include <atomic>
+#include <eepp/network/uri.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <memory>
 
 namespace EE { namespace UI {
 
@@ -56,6 +59,9 @@ class EE_API UIImage : public UIWidget {
 	Vector2f mDestSize;
 	Uint32 mResourceChangeCb;
 	bool mDrawableOwner;
+	bool mDeferLoad{ false };
+	std::shared_ptr<std::atomic<bool>> mAsyncImageAlive;
+	Uint64 mRemoteImageLoadId{ 0 };
 
 	UIImage();
 
@@ -76,6 +82,10 @@ class EE_API UIImage : public UIWidget {
 	void safeDeleteDrawable();
 
 	void onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* );
+
+	bool loadFileDrawable( const Network::URI& uri );
+
+	void loadRemoteDrawable( const Network::URI& uri );
 };
 
 }} // namespace EE::UI

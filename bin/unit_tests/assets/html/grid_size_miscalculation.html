@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      :root {
+        --bg: #0c1520;
+        --bg-surface: #141f2e;
+        --bg-surface-2: #1a2637;
+        --text: #bfc8d2;
+        --text-muted: #566a7c;
+        --text-bright: #e4e9ee;
+        --accent: #d4a853;
+        --accent-hover: #e4bc6a;
+        --tag-color: #7eb8a8;
+        --eng-color: #3d7b8a;
+        --danger: #e07a5f;
+        --border: rgba(255, 255, 255, 0.07);
+        --border-strong: rgba(255, 255, 255, 0.12);
+        --max-width: 54rem;
+        --read-width: 54rem;
+        --font-text:
+          text, "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono:
+          code, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+        --font-serif: serif, "Fraunces", "Iowan Old Style", Georgia, serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        font-size: 17.5px;
+      }
+      body {
+        font-family: var(--font-text);
+        font-weight: 300;
+        line-height: 1.65;
+        color: var(--text);
+        background: var(--bg);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: clip;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+      main.shell {
+        flex: 1;
+        max-width: var(--max-width);
+        margin: 0 auto;
+        width: 100%;
+        padding: 3rem 1.5rem 5rem;
+        animation: fadeIn 0.3s ease;
+      }
+      main.post-shell {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        width: 100%;
+        padding: 2.5rem 1.5rem 4rem;
+      }
+      .header-box {
+        border: 1px solid var(--border);
+        border-radius: 0.25rem;
+        padding: 0.9rem 1.1rem;
+        background: rgba(255, 255, 255, 0.015);
+        margin-bottom: 2.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+      }
+      .header-box .hb-row {
+        display: grid;
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        gap: 1rem;
+        padding: 0.2rem 0;
+      }
+      .header-box .hb-k {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.64rem;
+        padding-top: 0.15rem;
+      }
+      .header-box .hb-v {
+        color: var(--text-bright);
+        text-wrap: pretty;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      .header-box .hb-v .tag {
+        color: var(--tag-color);
+        margin-right: 0.6rem;
+      }
+      .header-box .hb-v .tag::before {
+        content: "#";
+        opacity: 0.5;
+      }
+      .header-box .hb-v a {
+        color: var(--text-bright);
+        border-bottom: 1px dashed var(--border-strong);
+      }
+    </style>
+  </head>
+  <body>
+    <main id="main" class="shell post-shell" role="main">
+      <article id="top">
+        <div class="header-box" aria-label="Post metadata">
+          <div class="hb-row">
+            <span class="hb-k">published</span>
+            <span class="hb-v">
+              <time datetime="2026-04-05">2026-04-05</time>
+            </span>
+          </div>
+
+          <div class="hb-row">
+            <span class="hb-k">reading</span>
+            <span class="hb-v">5 min · 1,132 words</span>
+          </div>
+
+          <div class="hb-row">
+            <span class="hb-k">tags</span>
+            <span class="hb-v">
+              <a href="https://jonno.nz/tags/ai/" class="tag">ai</a
+              ><a href="https://jonno.nz/tags/architecture/" class="tag"
+                >architecture</a
+              ><a href="https://jonno.nz/tags/engineering/" class="tag"
+                >engineering</a
+              >
+            </span>
+          </div>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

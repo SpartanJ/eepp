@@ -13,6 +13,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -34,11 +35,11 @@ UINode::UINode() :
 	Node(),
 	mFlags( UI_NODE_DEFAULT_FLAGS ),
 	mState( UIState::StateFlagNormal ),
+	mDragButton( EE_BUTTON_LMASK ),
 	mSkinState( NULL ),
 	mBackground( NULL ),
 	mForeground( NULL ),
 	mBorder( NULL ),
-	mDragButton( EE_BUTTON_LMASK ),
 	mSkinColor( Color::White ),
 	mUISceneNode( SceneManager::instance()->getUISceneNode() ) {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
@@ -86,14 +87,6 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 
 		ParentLoop = ParentLoop->getParent();
 	}
-}
-
-Uint32 UINode::getType() const {
-	return UI_TYPE_UINODE;
-}
-
-bool UINode::isType( const Uint32& type ) const {
-	return UINode::getType() == type || Node::isType( type );
 }
 
 void UINode::setInternalPosition( const Vector2f& Pos ) {
@@ -167,12 +160,6 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 
 Node* UINode::setSize( const Sizef& size ) {
 	Sizef s( fitMinMaxSizeDp( size ) );
-
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
 
 	if ( s != mDpSize ) {
 		Vector2f sizeChange( s.x - mDpSize.x, s.y - mDpSize.y );
@@ -415,11 +402,11 @@ Sizef UINode::getMinSizePx() const {
 Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
 	Sizef s( size );
 
-	if ( mMinSize.x != 0.f && s.x < PixelDensity::pxToDp( mMinSize.x ) )
-		s.x = PixelDensity::pxToDp( mMinSize.x );
+	if ( mMinSize.x != 0.f )
+		s.x = std::max( s.x, PixelDensity::dpToPx( mMinSize.x ) );
 
-	if ( mMinSize.y != 0.f && s.y < PixelDensity::pxToDp( mMinSize.y ) )
-		s.y = PixelDensity::pxToDp( mMinSize.y );
+	if ( mMinSize.y != 0.f )
+		s.y = std::max( s.y, PixelDensity::dpToPx( mMinSize.y ) );
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length = lengthFromValue( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );
@@ -453,11 +440,8 @@ bool UINode::isScrollable() const {
 Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
 	Sizef s( size );
 
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
+	s.x = std::max( s.x, mMinSize.x );
+	s.y = std::max( s.y, mMinSize.y );
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
@@ -781,6 +765,21 @@ UINode* UINode::setBackgroundSize( const std::string& size, int index ) {
 	return this;
 }
 
+UINode* UINode::setBackgroundOrigin( const std::string& origin, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableOrigin( index, origin );
+	return this;
+}
+
+UINode* UINode::setBackgroundClip( const std::string& clip, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableClip( index, clip );
+	return this;
+}
+
+UINode* UINode::setBackgroundAttachment( const std::string& attachment, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableAttachment( index, attachment );
+	return this;
+}
+
 Color UINode::getBackgroundColor() const {
 	return NULL != mBackground ? mBackground->getBackgroundColor() : Color::Transparent;
 }
@@ -798,24 +797,28 @@ UINode* UINode::setBorderRadius( const unsigned int& corners ) {
 UINode* UINode::setTopLeftRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setTopLeftRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
+	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setTopRightRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setTopRightRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
+	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setBottomLeftRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setBottomLeftRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
+	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setBottomRightRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setBottomRightRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
+	invalidateDraw();
 	return this;
 }
 
@@ -892,6 +895,54 @@ Uint32 UINode::getForegroundRadius() const {
 	return NULL != mForeground ? mForeground->getBorderRadius() : 0;
 }
 
+UINode* UINode::setForegroundTopLeftRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundTopRightRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundBottomLeftRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setForegroundBottomRightRadius( const std::string& radius ) {
+	setForegroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
+	return this;
+}
+
+const Sizef& UINode::getForegroundTopLeftRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().topLeft;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundTopRightRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().topRight;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundBottomLeftRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().bottomLeft;
+	return zero;
+}
+
+const Sizef& UINode::getForegroundBottomRightRadius() const {
+	static const Sizef zero;
+	if ( NULL != mForeground )
+		return mForeground->getBackgroundDrawable().getRadiuses().bottomRight;
+	return zero;
+}
+
 UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
 	const_cast<UINode*>( this )->writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
@@ -926,11 +977,11 @@ Float UINode::getBorderWidth() const {
 	return NULL != mBorder ? mBorder->getLineWidth() : 1.f;
 }
 
-const Uint32& UINode::getFlags() const {
+const Uint64& UINode::getFlags() const {
 	return mFlags;
 }
 
-UINode* UINode::setFlags( const Uint32& flags ) {
+UINode* UINode::setFlags( const Uint64& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
 		setBackgroundFillEnabled( true );
 
@@ -949,7 +1000,7 @@ UINode* UINode::setFlags( const Uint32& flags ) {
 	return this;
 }
 
-UINode* UINode::unsetFlags( const Uint32& flags ) {
+UINode* UINode::unsetFlags( const Uint64& flags ) {
 	if ( mFlags & flags )
 		mFlags &= ~flags;
 
@@ -960,7 +1011,7 @@ UINode* UINode::unsetFlags( const Uint32& flags ) {
 	return this;
 }
 
-UINode* UINode::resetFlags( Uint32 newFlags ) {
+UINode* UINode::resetFlags( Uint64 newFlags ) {
 	mFlags = newFlags;
 	return this;
 }
@@ -1147,6 +1198,8 @@ const Rectf& UINode::getPixelsPadding() const {
 UINodeDrawable* UINode::getBackground() const {
 	if ( NULL == mBackground ) {
 		mBackground = UINodeDrawable::New( const_cast<UINode*>( this ) );
+		if ( mFlags & UI_HTML_ELEMENT )
+			mBackground->setBackgroundMode( BackgroundMode::Html );
 	}
 
 	return mBackground;
@@ -1285,6 +1338,9 @@ void UINode::pushState( const Uint32& State, bool emitEvent ) {
 
 		if ( emitEvent ) {
 			onStateChange();
+
+			if ( mState & UIState::StateFlagFocusWithin )
+				sendCommonEvent( Event::OnFocusWithin );
 		} else {
 			invalidateDraw();
 		}
@@ -1300,6 +1356,9 @@ void UINode::popState( const Uint32& State, bool emitEvent ) {
 
 		if ( emitEvent ) {
 			onStateChange();
+
+			if ( mState & UIState::StateFlagFocusWithin )
+				sendCommonEvent( Event::OnFocusWithinLoss );
 		} else {
 			invalidateDraw();
 		}
@@ -1328,7 +1387,7 @@ UISkin* UINode::getSkin() const {
 	return NULL;
 }
 
-void UINode::writeFlag( const Uint32& Flag, const Uint32& Val ) {
+void UINode::writeFlag( const Uint64& Flag, const Uint32& Val ) {
 	if ( Val )
 		mFlags |= Flag;
 	else {
@@ -1568,15 +1627,17 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
 		case PropertyRelativeTarget::ContainingBlockWidth: {
-			Node* parent = getParent(); // Text spans cannot be considered containing blocks
-			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+			Node* parent = getParent();
+			while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+					static_cast<UIHTMLWidget*>( parent )->isInline() )
 				parent = parent->getParent();
 			containerLength = parent ? parent->getPixelsSize().getWidth() : 0;
 			break;
 		}
 		case PropertyRelativeTarget::ContainingBlockHeight: {
-			Node* parent = getParent(); // Text spans cannot be considered containing blocks
-			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+			Node* parent = getParent();
+			while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+					static_cast<UIHTMLWidget*>( parent )->isInline() )
 				parent = parent->getParent();
 			containerLength = parent ? parent->getPixelsSize().getHeight() : 0;
 			break;
@@ -1633,9 +1694,29 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 	if ( property.getPropertyDefinition() &&
 		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
 		StyleSheetLength length( property.value() );
+		auto parentFontSize = [this]() {
+			Float fontSize = 12.f * PixelDensity::getPixelDensity();
+			Node* parentNode = getParent();
+			while ( parentNode ) {
+				if ( parentNode->isWidget() ) {
+					fontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+					break;
+				}
+				parentNode = parentNode->getParent();
+			}
+			return fontSize;
+		};
+		auto resolveFontRelativeLength = [this, &parentFontSize]( const StyleSheetLength& len ) {
+			const Float parentSize = parentFontSize();
+			Font* font = nullptr;
+			if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
+				font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
+			return len.asPixels( parentSize, Sizef::Zero, getSceneNode()->getDPI(), parentSize,
+								 parentSize, font );
+		};
+
 		if ( length.getUnit() == StyleSheetLength::Unit::Percentage ) {
-			length.setValue( length.getValue() / 100.f, StyleSheetLength::Unit::Em );
-			return convertLength( length, 0 );
+			return resolveFontRelativeLength( length );
 		}
 
 		static constexpr std::string_view FontSizeNames[] = {
@@ -1649,33 +1730,48 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			std::string_view keyword = *it;
 			StyleSheetLength res;
 			if ( keyword == "xx-small" ) {
-				res.setValue( 0.6f, StyleSheetLength::Unit::Rem );
+				res.setValue( 9.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "x-small" ) {
-				res.setValue( 0.75f, StyleSheetLength::Unit::Rem );
+				res.setValue( 10.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "small" ) {
-				res.setValue( 0.89f, StyleSheetLength::Unit::Rem );
+				res.setValue( 13.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "medium" ) {
-				res.setValue( 1.0f, StyleSheetLength::Unit::Rem );
+				res.setValue( 16.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "large" ) {
-				res.setValue( 1.2f, StyleSheetLength::Unit::Rem );
+				res.setValue( 18.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "x-large" ) {
-				res.setValue( 1.5f, StyleSheetLength::Unit::Rem );
+				res.setValue( 24.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "xx-large" ) {
-				res.setValue( 2.0f, StyleSheetLength::Unit::Rem );
+				res.setValue( 32.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "xxx-large" ) {
-				res.setValue( 3.0f, StyleSheetLength::Unit::Rem );
+				res.setValue( 48.f, StyleSheetLength::Unit::Px );
 			} else if ( keyword == "smaller" ) {
 				res.setValue( 0.85f, StyleSheetLength::Unit::Em );
 			} else if ( keyword == "larger" ) {
 				res.setValue( 1.2f, StyleSheetLength::Unit::Em );
 			}
+			if ( res.getUnit() == StyleSheetLength::Unit::Em )
+				return resolveFontRelativeLength( res );
 			return convertLength( res, 0 );
 		} else if ( property.getValue() == "inherit" ) {
-			// TODO: FIX inherit value
+			Node* parentNode = getParent();
+			if ( parentNode && parentNode->isWidget() ) {
+				Float parentPxSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+				StyleSheetLength res;
+				res.setValue( PixelDensity::pxToDp( parentPxSize ), StyleSheetLength::Unit::Dp );
+				return convertLength( res, 0 );
+			}
 			StyleSheetLength res;
-			res.setValue( 1, StyleSheetLength::Unit::Em );
+			res.setValue( 12, StyleSheetLength::Unit::Dp );
 			return convertLength( res, 0 );
 		}
+
+		if ( length.getUnit() != StyleSheetLength::Unit::Em &&
+			 length.getUnit() != StyleSheetLength::Unit::Ex &&
+			 length.getUnit() != StyleSheetLength::Unit::Ch )
+			return convertLength( length, 0 );
+
+		return resolveFontRelativeLength( length );
 	}
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
@@ -1734,12 +1830,21 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 		} else {
 			rootFontSize = getAbsoluteFontSize( getUISceneNode()->getRoot() );
 		}
-	} else if ( length.getUnit() == StyleSheetLength::Unit::Em && isWidget() ) {
+	} else if ( ( length.getUnit() == StyleSheetLength::Unit::Em ||
+				  length.getUnit() == StyleSheetLength::Unit::Ex ||
+				  length.getUnit() == StyleSheetLength::Unit::Ch ) &&
+				isWidget() ) {
 		elFontSize = getAbsoluteFontSize( asConstType<UIWidget>() );
 	}
 
-	auto ret = length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
-								getSceneNode()->getDPI(), elFontSize, rootFontSize );
+	Graphics::Font* font = nullptr;
+	if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
+		font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
+
+	const Sizef& viewportSize = getUISceneNode() ? getUISceneNode()->getViewportPixelsSize()
+												 : getSceneNode()->getPixelsSize();
+	auto ret = length.asPixels( containerLength, viewportSize, getSceneNode()->getDPI(), elFontSize,
+								rootFontSize, font );
 
 	if ( ( mFlags & UI_HTML_ELEMENT ) && length.getUnit() == StyleSheetLength::Unit::Px )
 		ret = PixelDensity::dpToPx( ret ); // scale px as if where dp in HTML elements
@@ -1798,6 +1903,10 @@ Float UINode::getAbsoluteFontSize( const UIWidget* widget ) const {
 		return ( len.getValue() / 100.f ) * parentFontSize;
 	}
 	return widget->convertLength( len, 0 );
+}
+
+bool UINode::isCreatingNode() const {
+	return mFlags & UI_CREATING_NODE;
 }
 
 }} // namespace EE::UI

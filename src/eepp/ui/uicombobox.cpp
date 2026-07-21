@@ -151,6 +151,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::FontWeight:
 		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
@@ -203,6 +204,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::FontWeight:
 		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:

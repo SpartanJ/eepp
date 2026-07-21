@@ -2,15 +2,23 @@
 cd "$(dirname "$0")" || exit
 
 ARCH=32
+BACKEND=sdl2
+MAKE_ARGS=()
 for i in "$@"; do
   case $i in
     config=*)
       CONFIG="${i#*=}"
+      MAKE_ARGS+=("$i")
+      ;;
+    --backend=*)
+      BACKEND="${i#*=}"
       ;;
     *)
+      MAKE_ARGS+=("$i")
       ;;
   esac
 done
+set -- "${MAKE_ARGS[@]}"
 
 PREMAKE5_ARCH=
 if [[ "$CONFIG" == *"x86_64"* ]]; then
@@ -52,7 +60,25 @@ elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
   fi
 fi
 
-PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=gcc --windows-mingw-build $PREMAKE5_ARCH gmake"
+detect_backend_arg()
+{
+  if [[ "${BACKEND,,}" == "sdl3" ]]; then
+    echo "SDL3"
+  else
+    echo "SDL2"
+  fi
+}
+
+detect_backend_name()
+{
+  if [[ "${BACKEND,,}" == "sdl3" ]]; then
+    echo "sdl3"
+  else
+    echo "sdl2"
+  fi
+}
+
+PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=gcc --windows-mingw-build --with-backend=$(detect_backend_arg) $PREMAKE5_ARCH gmake"
 
 if command -v premake5 &> /dev/null
 then
@@ -65,10 +91,15 @@ else
 fi
 
 if [[ "$CONFIG" == *"arm64"* ]]; then
-bash ./build_sdl2.sh --arch=arm64 || exit 1
+bash ./build_$(detect_backend_name).sh --arch=arm64 || exit 1
 else
-export CC=x86_64-w64-mingw32-gcc-posix
-export CXX=x86_64-w64-mingw32-g++-posix
+if command -v x86_64-w64-mingw32-gcc-posix &> /dev/null; then
+  export CC=x86_64-w64-mingw32-gcc-posix
+  export CXX=x86_64-w64-mingw32-g++-posix
+else
+  export CC=x86_64-w64-mingw32-gcc
+  export CXX=x86_64-w64-mingw32-g++
+fi
 fi
 
 cd ../../make/windows/ || exit

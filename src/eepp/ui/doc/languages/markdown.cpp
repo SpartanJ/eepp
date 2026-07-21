@@ -185,6 +185,7 @@ void addMarkdown() {
 	sd.setFoldRangeType( FoldRangeType::Markdown );
 	sd.setBlockComment( { "<!--", "-->" } );
 	sd.addAlternativeName( "md" );
+	sd.addAlternativeName( "reasoning" );
 }
 
 }}}} // namespace EE::UI::Doc::Language

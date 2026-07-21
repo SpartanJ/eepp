@@ -341,7 +341,7 @@ Uint32 UIImageViewer::onKeyDown( const KeyEvent& event ) {
 	} else if ( event.getKeyCode() == KEY_R ) {
 		mImage->setRotation( mImage->getRotation() + 90.0f );
 	} else if ( event.getKeyCode() == KEY_T ) {
-	 	resetImageView();
+		resetImageView();
 	}
 	return UIWidget::onKeyDown( event );
 }
@@ -456,6 +456,10 @@ std::vector<PropertyId> UIImageViewer::getPropertiesImplemented() const {
 	auto local = { PropertyId::DisplayOptions };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
+}
+
+bool UIImageViewer::hasImage() const {
+	return mLoading || ( mImage && mImage->getDrawable() != nullptr );
 }
 
 } // namespace EE::UI::Tools

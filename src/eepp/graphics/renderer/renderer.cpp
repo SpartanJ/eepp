@@ -9,33 +9,14 @@
 
 namespace EE { namespace Graphics {
 
-#ifndef APIENTRY
-#define APIENTRY
+#if defined( EE_GLEW_AVAILABLE ) || defined( EE_GLES2 )
+#define EEGL_LOAD_PROC( type, variable, function ) static type variable = (type)function
+#else
+#define EEGL_LOAD_PROC( type, variable, function ) \
+	static type variable = NULL;                   \
+	if ( NULL == variable )                        \
+	variable = (type)getProcAddress( #function )
 #endif
-
-typedef const GLubyte*( APIENTRY* pglGetStringiFunc )( unsigned int, unsigned int );
-typedef void( APIENTRY* pglGenFramebuffers )( GLsizei n, GLuint* framebuffers );
-typedef void( APIENTRY* pglBindFramebuffer )( GLenum target, GLuint framebuffer );
-typedef void( APIENTRY* pglFramebufferTexture2D )( GLenum target, GLenum attachment,
-												   GLenum textarget, GLuint texture, GLint level );
-typedef void( APIENTRY* pglDeleteFramebuffers )( GLsizei n, const GLuint* framebuffers );
-typedef void( APIENTRY* pglGenRenderbuffers )( GLsizei n, GLuint* renderbuffers );
-typedef void( APIENTRY* pglDeleteRenderbuffers )( GLsizei n, const GLuint* renderbuffers );
-typedef void( APIENTRY* pglRenderbufferStorage )( GLenum target, GLenum internalformat,
-												  GLsizei width, GLsizei height );
-typedef void( APIENTRY* pglFramebufferRenderbuffer )( GLenum target, GLenum attachment,
-													  GLenum renderbuffertarget,
-													  GLuint renderbuffer );
-typedef GLenum( APIENTRY* pglCheckFramebufferStatus )( GLenum target );
-typedef void( APIENTRY* pglBindRenderbuffer )( GLenum target, GLuint renderbuffer );
-typedef void( APIENTRY* pglBlendFuncSeparate )( GLenum sfactorRGB, GLenum dfactorRGB,
-												GLenum sfactorAlpha, GLenum dfactorAlpha );
-typedef void( APIENTRY* pglDiscardFramebufferEXT )( GLenum target, GLsizei numAttachments,
-													const GLenum* attachments );
-typedef void( APIENTRY* pglBlendEquationSeparate )( GLenum modeRGB, GLenum modeAlpha );
-typedef void( APIENTRY* pglBlitFramebufferEXT )( GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
-												 GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
-												 GLbitfield mask, GLenum filter );
 
 Renderer* GLi = NULL;
 
@@ -230,7 +211,30 @@ void Renderer::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
 	BitOp::writeBitKey( &mExtensions, Pos, BitWrite );
 }
 
+static void getGLVersion( int* major, int* minor, int* is_es ) {
+	const char* version = (const char*)glGetString( GL_VERSION );
+	const char* number = version;
+	*major = 0;
+	*minor = 0;
+	*is_es = 0;
+	if ( NULL == version )
+		return;
+	if ( strncmp( version, "OpenGL ES", 9 ) == 0 ) {
+		*is_es = 1;
+		number = version + 9;
+		while ( *number && ( *number < '0' || *number > '9' ) )
+			++number;
+	}
+	sscanf( number, "%d.%d", major, minor );
+}
+
 void Renderer::init() {
+	int major;
+	int minor;
+	int is_es;
+	getGLVersion( &major, &minor, &is_es );
+	const int glVersion = major * 100 + minor * 10;
+
 #ifdef EE_GLEW_AVAILABLE
 #if EE_PLATFORM != EE_PLATFORM_MACOS
 	glewExperimental = 1;
@@ -245,7 +249,9 @@ void Renderer::init() {
 		writeExtension( EEGL_ARB_shader_objects, GLEW_ARB_shader_objects );
 		writeExtension( EEGL_ARB_vertex_shader, GLEW_ARB_vertex_shader );
 		writeExtension( EEGL_ARB_fragment_shader, GLEW_ARB_fragment_shader );
-		writeExtension( EEGL_EXT_framebuffer_object, GLEW_EXT_framebuffer_object );
+		writeExtension( EEGL_EXT_framebuffer_object, GLEW_EXT_framebuffer_object ||
+														 GLEW_ARB_framebuffer_object ||
+														 GLEW_VERSION_3_0 );
 		writeExtension( EEGL_ARB_multitexture, GLEW_ARB_multitexture );
 		writeExtension( EEGL_EXT_texture_compression_s3tc, GLEW_EXT_texture_compression_s3tc );
 		writeExtension( EEGL_ARB_vertex_buffer_object, GLEW_ARB_vertex_buffer_object );
@@ -258,31 +264,47 @@ void Renderer::init() {
 #endif
 	{
 		writeExtension( EEGL_ARB_texture_non_power_of_two,
-						isExtension( "GL_ARB_texture_non_power_of_two" ) );
-		writeExtension( EEGL_ARB_point_parameters, isExtension( "GL_ARB_point_parameters" ) );
-		writeExtension( EEGL_ARB_point_sprite, isExtension( "GL_ARB_point_sprite" ) );
+						glVersion >= 200 || isExtension( "GL_ARB_texture_non_power_of_two" ) );
+		writeExtension( EEGL_ARB_point_parameters,
+						glVersion >= 140 || isExtension( "GL_ARB_point_parameters" ) );
+		writeExtension( EEGL_ARB_point_sprite,
+						glVersion >= 200 || isExtension( "GL_ARB_point_sprite" ) );
 		writeExtension( EEGL_ARB_shading_language_100,
-						isExtension( "GL_ARB_shading_language_100" ) );
-		writeExtension( EEGL_ARB_shader_objects, isExtension( "GL_ARB_shader_objects" ) );
-		writeExtension( EEGL_ARB_vertex_shader, isExtension( "GL_ARB_vertex_shader" ) );
-		writeExtension( EEGL_ARB_fragment_shader, isExtension( "GL_ARB_fragment_shader" ) );
-		writeExtension( EEGL_EXT_framebuffer_object, isExtension( "GL_EXT_framebuffer_object" ) );
-		writeExtension( EEGL_ARB_multitexture, isExtension( "GL_ARB_multitexture" ) );
+						glVersion >= 200 || isExtension( "GL_ARB_shading_language_100" ) );
+		writeExtension( EEGL_ARB_shader_objects,
+						glVersion >= 200 || isExtension( "GL_ARB_shader_objects" ) );
+		writeExtension( EEGL_ARB_vertex_shader,
+						glVersion >= 200 || isExtension( "GL_ARB_vertex_shader" ) );
+		writeExtension( EEGL_ARB_fragment_shader,
+						glVersion >= 200 || isExtension( "GL_ARB_fragment_shader" ) );
+		writeExtension( EEGL_EXT_framebuffer_object,
+						glVersion >= 300 || isExtension( "GL_ARB_framebuffer_object" ) ||
+							isExtension( "GL_EXT_framebuffer_object" ) );
+		writeExtension( EEGL_ARB_multitexture,
+						glVersion >= 130 || isExtension( "GL_ARB_multitexture" ) );
 		writeExtension( EEGL_EXT_texture_compression_s3tc,
 						isExtension( "GL_EXT_texture_compression_s3tc" ) );
 		writeExtension( EEGL_ARB_vertex_buffer_object,
-						isExtension( "GL_ARB_vertex_buffer_object" ) );
-		writeExtension( EEGL_ARB_pixel_buffer_object, isExtension( "GL_ARB_pixel_buffer_object" ) );
-		writeExtension( EEGL_ARB_vertex_array_object, isExtension( "GL_ARB_vertex_array_object" ) );
-		writeExtension( EEGL_EXT_blend_func_separate, isExtension( "GL_EXT_blend_func_separate" ) );
-		writeExtension( EEGL_EXT_blend_minmax, isExtension( "GL_EXT_blend_minmax" ) );
-		writeExtension( EEGL_EXT_blend_subtract, isExtension( "GL_EXT_blend_subtract" ) );
+						glVersion >= 150 || isExtension( "GL_ARB_vertex_buffer_object" ) );
+		writeExtension( EEGL_ARB_pixel_buffer_object,
+						glVersion >= 210 || isExtension( "GL_ARB_pixel_buffer_object" ) );
+		writeExtension( EEGL_ARB_vertex_array_object,
+						glVersion >= 300 || isExtension( "GL_ARB_vertex_array_object" ) );
+		writeExtension( EEGL_EXT_blend_func_separate,
+						glVersion >= 140 || isExtension( "GL_EXT_blend_func_separate" ) );
+		writeExtension( EEGL_EXT_blend_minmax,
+						glVersion >= 140 || isExtension( "GL_EXT_blend_minmax" ) );
+		writeExtension( EEGL_EXT_blend_subtract,
+						glVersion >= 140 || isExtension( "GL_EXT_blend_subtract" ) );
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
 	// GLEW doesn't return the correct result
 	writeExtension( EEGL_OES_compressed_ETC1_RGB8_texture,
 					isExtension( "GL_OES_compressed_ETC1_RGB8_texture" ) );
+
+	writeExtension( EEGL_ARB_ES3_compatibility,
+					isExtension( "GL_ARB_ES3_compatibility" ) || ( is_es && major >= 3 ) );
 
 #ifdef EE_GLES
 
@@ -466,7 +488,24 @@ void Renderer::bindTexture( unsigned int target, unsigned int texture ) {
 }
 
 void Renderer::activeTexture( unsigned int texture ) {
-	glActiveTexture( texture );
+	EEGL_LOAD_PROC( pglActiveTexture, eeglActiveTexture, glActiveTexture );
+
+	if ( NULL != eeglActiveTexture )
+		eeglActiveTexture( texture );
+}
+
+void Renderer::clientActiveTextureImpl( unsigned int texture ) {
+#if defined( EE_GLEW_AVAILABLE ) || ( defined( EE_GLES1 ) && !defined( EE_GLES2 ) )
+	static pglClientActiveTexture eeglClientActiveTexture =
+		(pglClientActiveTexture)glClientActiveTexture;
+#else
+	static pglClientActiveTexture eeglClientActiveTexture = NULL;
+	if ( NULL == eeglClientActiveTexture )
+		eeglClientActiveTexture = (pglClientActiveTexture)getProcAddress( "glClientActiveTexture" );
+#endif
+
+	if ( NULL != eeglClientActiveTexture )
+		eeglClientActiveTexture( texture );
 }
 
 void Renderer::blendFunc( unsigned int sfactor, unsigned int dfactor ) {
@@ -500,7 +539,7 @@ void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int 
 	static pglBlitFramebufferEXT eeglBlitFramebufferEXT = NULL;
 
 	if ( NULL == eeglBlitFramebufferEXT )
-		eeglBlitFramebufferEXT = (pglBlitFramebufferEXT)getProcAddress( "glBlitFramebufferEXT" );
+		eeglBlitFramebufferEXT = (pglBlitFramebufferEXT)getProcAddress( "glBlitFramebuffer" );
 
 	if ( NULL != eeglBlitFramebufferEXT )
 		eeglBlitFramebufferEXT( srcX0, srcY1, srcX1, srcY0, dstX0, dstY0, dstX1, dstY1, mask,
@@ -510,9 +549,9 @@ void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int 
 void Renderer::setShader( ShaderProgram* Shader ) {
 #ifdef EE_SHADERS_SUPPORTED
 	if ( NULL != Shader ) {
-		glUseProgram( Shader->getHandler() );
+		useProgram( Shader->getHandler() );
 	} else {
-		glUseProgram( 0 );
+		useProgram( 0 );
 	}
 #endif
 }
@@ -718,16 +757,18 @@ ClippingMask* Renderer::getClippingMask() const {
 void* Renderer::getProcAddress( std::string proc ) {
 	void* addr = NULL;
 
-#ifdef EE_GLES
-	if ( version() == GLv_ES1 )
-		addr = SOIL_GL_GetProcAddress( ( proc + "OES" ).c_str() );
-#endif
-
-	if ( NULL == addr )
-		addr = SOIL_GL_GetProcAddress( proc.c_str() );
+	addr = SOIL_GL_GetProcAddress( proc.c_str() );
 
 	if ( NULL == addr )
 		addr = SOIL_GL_GetProcAddress( ( proc + "EXT" ).c_str() );
+
+	if ( NULL == addr )
+		addr = SOIL_GL_GetProcAddress( ( proc + "ARB" ).c_str() );
+
+#ifdef EE_GLES
+	if ( NULL == addr )
+		addr = SOIL_GL_GetProcAddress( ( proc + "OES" ).c_str() );
+#endif
 
 	return addr;
 }
@@ -862,10 +903,249 @@ void Renderer::deleteFramebuffers( int n, const unsigned int* framebuffers ) {
 		eeglDeleteFramebuffers( n, framebuffers );
 }
 
+void Renderer::genBuffers( int n, unsigned int* buffers ) {
+	EEGL_LOAD_PROC( pglGenBuffers, eeglGenBuffers, glGenBuffers );
+
+	if ( NULL != eeglGenBuffers )
+		eeglGenBuffers( n, buffers );
+}
+
+void Renderer::deleteBuffers( int n, const unsigned int* buffers ) {
+	EEGL_LOAD_PROC( pglDeleteBuffers, eeglDeleteBuffers, glDeleteBuffers );
+
+	if ( NULL != eeglDeleteBuffers )
+		eeglDeleteBuffers( n, buffers );
+}
+
+void Renderer::bindBuffer( unsigned int target, unsigned int buffer ) {
+	EEGL_LOAD_PROC( pglBindBuffer, eeglBindBuffer, glBindBuffer );
+
+	if ( NULL != eeglBindBuffer )
+		eeglBindBuffer( target, buffer );
+}
+
+void Renderer::bufferData( unsigned int target, IntPtr size, const void* data,
+						   unsigned int usage ) {
+	EEGL_LOAD_PROC( pglBufferData, eeglBufferData, glBufferData );
+
+	if ( NULL != eeglBufferData )
+		eeglBufferData( target, size, data, usage );
+}
+
+void Renderer::bufferSubData( unsigned int target, IntPtr offset, IntPtr size, const void* data ) {
+	EEGL_LOAD_PROC( pglBufferSubData, eeglBufferSubData, glBufferSubData );
+
+	if ( NULL != eeglBufferSubData )
+		eeglBufferSubData( target, offset, size, data );
+}
+
+void Renderer::vertexAttribPointer( unsigned int index, int size, unsigned int type,
+									bool normalized, int stride, const void* pointer ) {
+	EEGL_LOAD_PROC( pglVertexAttribPointer, eeglVertexAttribPointer, glVertexAttribPointer );
+
+	if ( NULL != eeglVertexAttribPointer )
+		eeglVertexAttribPointer( index, size, type, normalized ? GL_TRUE : GL_FALSE, stride,
+								 pointer );
+}
+
+void Renderer::enableVertexAttribArray( unsigned int index ) {
+	EEGL_LOAD_PROC( pglEnableVertexAttribArray, eeglEnableVertexAttribArray,
+					glEnableVertexAttribArray );
+
+	if ( NULL != eeglEnableVertexAttribArray )
+		eeglEnableVertexAttribArray( index );
+}
+
+void Renderer::disableVertexAttribArray( unsigned int index ) {
+	EEGL_LOAD_PROC( pglDisableVertexAttribArray, eeglDisableVertexAttribArray,
+					glDisableVertexAttribArray );
+
+	if ( NULL != eeglDisableVertexAttribArray )
+		eeglDisableVertexAttribArray( index );
+}
+
+unsigned int Renderer::createShader( unsigned int type ) {
+	EEGL_LOAD_PROC( pglCreateShader, eeglCreateShader, glCreateShader );
+
+	return NULL != eeglCreateShader ? eeglCreateShader( type ) : 0;
+}
+
+void Renderer::deleteShader( unsigned int shader ) {
+	EEGL_LOAD_PROC( pglDeleteShader, eeglDeleteShader, glDeleteShader );
+
+	if ( NULL != eeglDeleteShader )
+		eeglDeleteShader( shader );
+}
+
+void Renderer::shaderSource( unsigned int shader, int count, const char* const* strings,
+							 const int* lengths ) {
+	EEGL_LOAD_PROC( pglShaderSource, eeglShaderSource, glShaderSource );
+
+	if ( NULL != eeglShaderSource )
+		eeglShaderSource( shader, count, strings, lengths );
+}
+
+void Renderer::compileShader( unsigned int shader ) {
+	EEGL_LOAD_PROC( pglCompileShader, eeglCompileShader, glCompileShader );
+
+	if ( NULL != eeglCompileShader )
+		eeglCompileShader( shader );
+}
+
+void Renderer::getShaderiv( unsigned int shader, unsigned int pname, int* params ) {
+	EEGL_LOAD_PROC( pglGetShaderiv, eeglGetShaderiv, glGetShaderiv );
+
+	if ( NULL != eeglGetShaderiv )
+		eeglGetShaderiv( shader, pname, params );
+}
+
+void Renderer::getShaderInfoLog( unsigned int shader, int maxLength, int* length, char* infoLog ) {
+	EEGL_LOAD_PROC( pglGetShaderInfoLog, eeglGetShaderInfoLog, glGetShaderInfoLog );
+
+	if ( NULL != eeglGetShaderInfoLog )
+		eeglGetShaderInfoLog( shader, maxLength, length, infoLog );
+}
+
+unsigned int Renderer::createProgram() {
+	EEGL_LOAD_PROC( pglCreateProgram, eeglCreateProgram, glCreateProgram );
+
+	return NULL != eeglCreateProgram ? eeglCreateProgram() : 0;
+}
+
+void Renderer::deleteProgram( unsigned int program ) {
+	EEGL_LOAD_PROC( pglDeleteProgram, eeglDeleteProgram, glDeleteProgram );
+
+	if ( NULL != eeglDeleteProgram )
+		eeglDeleteProgram( program );
+}
+
+void Renderer::attachShader( unsigned int program, unsigned int shader ) {
+	EEGL_LOAD_PROC( pglAttachShader, eeglAttachShader, glAttachShader );
+
+	if ( NULL != eeglAttachShader )
+		eeglAttachShader( program, shader );
+}
+
+void Renderer::linkProgram( unsigned int program ) {
+	EEGL_LOAD_PROC( pglLinkProgram, eeglLinkProgram, glLinkProgram );
+
+	if ( NULL != eeglLinkProgram )
+		eeglLinkProgram( program );
+}
+
+void Renderer::useProgram( unsigned int program ) {
+	EEGL_LOAD_PROC( pglUseProgram, eeglUseProgram, glUseProgram );
+
+	if ( NULL != eeglUseProgram )
+		eeglUseProgram( program );
+}
+
+void Renderer::getProgramiv( unsigned int program, unsigned int pname, int* params ) {
+	EEGL_LOAD_PROC( pglGetProgramiv, eeglGetProgramiv, glGetProgramiv );
+
+	if ( NULL != eeglGetProgramiv )
+		eeglGetProgramiv( program, pname, params );
+}
+
+void Renderer::getProgramInfoLog( unsigned int program, int maxLength, int* length,
+								  char* infoLog ) {
+	EEGL_LOAD_PROC( pglGetProgramInfoLog, eeglGetProgramInfoLog, glGetProgramInfoLog );
+
+	if ( NULL != eeglGetProgramInfoLog )
+		eeglGetProgramInfoLog( program, maxLength, length, infoLog );
+}
+
+int Renderer::getUniformLocation( unsigned int program, const char* name ) {
+	EEGL_LOAD_PROC( pglGetUniformLocation, eeglGetUniformLocation, glGetUniformLocation );
+
+	return NULL != eeglGetUniformLocation ? eeglGetUniformLocation( program, name ) : -1;
+}
+
+int Renderer::getAttribLocation( unsigned int program, const char* name ) {
+	EEGL_LOAD_PROC( pglGetAttribLocation, eeglGetAttribLocation, glGetAttribLocation );
+
+	return NULL != eeglGetAttribLocation ? eeglGetAttribLocation( program, name ) : -1;
+}
+
+void Renderer::uniform1i( int location, int value ) {
+	EEGL_LOAD_PROC( pglUniform1i, eeglUniform1i, glUniform1i );
+
+	if ( NULL != eeglUniform1i )
+		eeglUniform1i( location, value );
+}
+
+void Renderer::uniform1f( int location, float value ) {
+	EEGL_LOAD_PROC( pglUniform1f, eeglUniform1f, glUniform1f );
+
+	if ( NULL != eeglUniform1f )
+		eeglUniform1f( location, value );
+}
+
+void Renderer::uniform2fv( int location, int count, const float* value ) {
+	EEGL_LOAD_PROC( pglUniform2fv, eeglUniform2fv, glUniform2fv );
+
+	if ( NULL != eeglUniform2fv )
+		eeglUniform2fv( location, count, value );
+}
+
+void Renderer::uniform3fv( int location, int count, const float* value ) {
+	EEGL_LOAD_PROC( pglUniform3fv, eeglUniform3fv, glUniform3fv );
+
+	if ( NULL != eeglUniform3fv )
+		eeglUniform3fv( location, count, value );
+}
+
+void Renderer::uniform4f( int location, float x, float y, float z, float w ) {
+	EEGL_LOAD_PROC( pglUniform4f, eeglUniform4f, glUniform4f );
+
+	if ( NULL != eeglUniform4f )
+		eeglUniform4f( location, x, y, z, w );
+}
+
+void Renderer::uniform4fv( int location, int count, const float* value ) {
+	EEGL_LOAD_PROC( pglUniform4fv, eeglUniform4fv, glUniform4fv );
+
+	if ( NULL != eeglUniform4fv )
+		eeglUniform4fv( location, count, value );
+}
+
+void Renderer::uniformMatrix4fv( int location, int count, bool transpose, const float* value ) {
+	EEGL_LOAD_PROC( pglUniformMatrix4fv, eeglUniformMatrix4fv, glUniformMatrix4fv );
+
+	if ( NULL != eeglUniformMatrix4fv )
+		eeglUniformMatrix4fv( location, count, transpose ? GL_TRUE : GL_FALSE, value );
+}
+
+void Renderer::compressedTexImage2D( unsigned int target, int level, unsigned int internalFormat,
+									 int width, int height, int border, int imageSize,
+									 const void* data ) {
+	EEGL_LOAD_PROC( pglCompressedTexImage2D, eeglCompressedTexImage2D, glCompressedTexImage2D );
+
+	if ( NULL != eeglCompressedTexImage2D )
+		eeglCompressedTexImage2D( target, level, internalFormat, width, height, border, imageSize,
+								  data );
+}
+
+void Renderer::getCompressedTexImage( unsigned int target, int level, void* pixels ) {
+#ifdef EE_GLES
+	(void)target;
+	(void)level;
+	(void)pixels;
+#else
+	EEGL_LOAD_PROC( pglGetCompressedTexImage, eeglGetCompressedTexImage, glGetCompressedTexImage );
+
+	if ( NULL != eeglGetCompressedTexImage )
+		eeglGetCompressedTexImage( target, level, pixels );
+#endif
+}
+
 void Renderer::bindVertexArray( unsigned int array ) {
 #if !defined( EE_GLES )
+	EEGL_LOAD_PROC( pglBindVertexArray, eeglBindVertexArray, glBindVertexArray );
+
 	if ( mCurVAO != array ) {
-		glBindVertexArray( array );
+		if ( NULL != eeglBindVertexArray )
+			eeglBindVertexArray( array );
 
 		mCurVAO = array;
 	}
@@ -874,13 +1154,19 @@ void Renderer::bindVertexArray( unsigned int array ) {
 
 void Renderer::deleteVertexArrays( int n, const unsigned int* arrays ) {
 #if !defined( EE_GLES )
-	glDeleteVertexArrays( n, arrays );
+	EEGL_LOAD_PROC( pglDeleteVertexArrays, eeglDeleteVertexArrays, glDeleteVertexArrays );
+
+	if ( NULL != eeglDeleteVertexArrays )
+		eeglDeleteVertexArrays( n, arrays );
 #endif
 }
 
 void Renderer::genVertexArrays( int n, unsigned int* arrays ) {
 #if !defined( EE_GLES )
-	glGenVertexArrays( n, arrays );
+	EEGL_LOAD_PROC( pglGenVertexArrays, eeglGenVertexArrays, glGenVertexArrays );
+
+	if ( NULL != eeglGenVertexArrays )
+		eeglGenVertexArrays( n, arrays );
 #endif
 }
 

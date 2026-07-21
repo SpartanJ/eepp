@@ -8,6 +8,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "with-glew", description = "Compile with GLEW support (disabled by default)." }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
@@ -24,6 +25,7 @@ newoption {
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
 		{ "SDL2",  "SDL2" },
+		{ "SDL3",  "SDL3" },
 	}
 }
 newoption {
@@ -32,6 +34,11 @@ newoption {
     description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+
+function is_arm64_arch()
+	local arch = _OPTIONS["arch"]
+	return arch and (arch:lower() == "arm64" or arch:lower() == "aarch64")
+end
 
 function get_dll_extension()
 	if os.target() == "macosx" then
@@ -156,13 +163,90 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version_number = "2.32.8"
+remote_sdl2_version_number = "2.32.10"
 remote_sdl2_version = "SDL2-" .. remote_sdl2_version_number
 remote_sdl2_devel_src_url = "https://libsdl.org/release/" .. remote_sdl2_version .. ".zip"
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-VC.zip"
 remote_sdl2_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl2/releases/download/2025-12-14/SDL2-arm64-2025-12-14.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-mingw.zip"
 remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
+remote_sdl3_version_number = "3.4.10"
+remote_sdl3_version = "SDL3-" .. remote_sdl3_version_number
+remote_sdl3_devel_src_url = "https://libsdl.org/release/" .. remote_sdl3_version .. ".zip"
+remote_sdl3_devel_vc_url = "https://www.libsdl.org/release/SDL3-devel-" .. remote_sdl3_version_number .. "-VC.zip"
+remote_sdl3_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl3/releases/download/2026-06-07/SDL3-arm64-2026-06-07.zip"
+remote_sdl3_devel_mingw_url = "https://www.libsdl.org/release/SDL3-devel-" .. remote_sdl3_version_number .. "-mingw.zip"
+remote_sdl3_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
+sdl_version_dir_override = nil
+
+function is_sdl3_backend()
+	if _OPTIONS["with-backend"] then
+		return _OPTIONS["with-backend"] == "SDL3"
+	end
+	return false
+end
+
+function glew_supported()
+	return not os.istarget("haiku") and not os.istarget("ios") and not os.istarget("android") and not os.istarget("emscripten")
+end
+
+function glew_enabled()
+	return _OPTIONS["with-glew"] and glew_supported()
+end
+
+function get_sdl_version_dir()
+	if sdl_version_dir_override then
+		return sdl_version_dir_override
+	end
+	if is_sdl3_backend() then
+		return remote_sdl3_version
+	end
+	return remote_sdl2_version
+end
+
+function get_sdl_dll_name()
+	if is_sdl3_backend() then
+		return "SDL3.dll"
+	end
+	return "SDL2.dll"
+end
+
+function get_sdl_include_sub()
+	if is_sdl3_backend() then
+		return "SDL3"
+	end
+	return "SDL2"
+end
+
+function get_sdl_arm64_cross_tools_path()
+	if is_sdl3_backend() then
+		return remote_sdl3_arm64_cross_tools_path
+	end
+	return remote_sdl2_arm64_cross_tools_path
+end
+
+function get_sdl_arm64_version_name()
+	if is_sdl3_backend() then
+		return "SDL3-arm64"
+	end
+	return "SDL2-arm64"
+end
+
+function get_sdl_devel_url(url_type)
+	if is_sdl3_backend() then
+		if url_type == "vc" then return remote_sdl3_devel_vc_url
+		elseif url_type == "vc_arm64" then return remote_sdl3_devel_vc_arm64_url
+		elseif url_type == "mingw" then return remote_sdl3_devel_mingw_url
+		elseif url_type == "src" then return remote_sdl3_devel_src_url
+		end
+	else
+		if url_type == "vc" then return remote_sdl2_devel_vc_url
+		elseif url_type == "vc_arm64" then return remote_sdl2_devel_vc_arm64_url
+		elseif url_type == "mingw" then return remote_sdl2_devel_mingw_url
+		elseif url_type == "src" then return remote_sdl2_devel_src_url
+		end
+	end
+end
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -178,10 +262,10 @@ function popen( executable_path )
 	return result
 end
 
-function download_and_extract_sdl(sdl_url)
+function download_and_extract_sdl(sdl_url, sdl_version_dir)
 	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
-	local local_file = dest_dir .. remote_sdl2_version .. ".zip"
+	local local_file = dest_dir .. sdl_version_dir .. ".zip"
 	local res, response_code = http.download(sdl_url, local_file)
 	if response_code == 200 then
 		print("Downloaded successfully to: " .. local_file)
@@ -194,15 +278,17 @@ function download_and_extract_sdl(sdl_url)
 end
 
 function copy_sdl()
-	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
+	local dll_name = get_sdl_dll_name()
+	local version_dir = get_sdl_version_dir()
+	if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
 	elseif _OPTIONS["windows-vc-build"] then
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
-	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
-		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/lib/x64/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/lib/x64/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
+	elseif _OPTIONS["windows-mingw-build"] and not is_arm64_arch() then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/x86_64-w64-mingw32/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/" .. dll_name )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. version_dir .."/x86_64-w64-mingw32/bin/" .. dll_name, _MAIN_SCRIPT_DIR .. "/bin/unit_tests/" .. dll_name )
 	end
 end
 
@@ -223,24 +309,28 @@ function version_to_number( version )
 end
 
 function download_and_extract_dependencies()
-	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
-		remote_sdl2_version = "SDL2-arm64"
+	sdl_version_dir_override = nil
+
+	if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
+		sdl_version_dir_override = get_sdl_arm64_version_name()
 	end
 
-	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
-		if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
-			download_and_extract_sdl(remote_sdl2_devel_vc_arm64_url)
+	local sdl_version_dir = get_sdl_version_dir()
+
+	if not os.isdir("src/thirdparty/" .. sdl_version_dir) then
+		if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
+			download_and_extract_sdl(get_sdl_devel_url("vc_arm64"), sdl_version_dir)
 			copy_sdl()
 		elseif _OPTIONS["windows-vc-build"] then
-			download_and_extract_sdl(remote_sdl2_devel_vc_url)
+			download_and_extract_sdl(get_sdl_devel_url("vc"), sdl_version_dir)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
-			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
+		elseif _OPTIONS["windows-mingw-build"] and not is_arm64_arch() then
+			download_and_extract_sdl(get_sdl_devel_url("mingw"), sdl_version_dir)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] == "arm64" then
-			download_and_extract_sdl(remote_sdl2_devel_src_url)
+		elseif _OPTIONS["windows-mingw-build"] and is_arm64_arch() then
+			download_and_extract_sdl(get_sdl_devel_url("src"), sdl_version_dir)
 		elseif os.istarget("ios") then
-			download_and_extract_sdl(remote_sdl2_devel_src_url)
+			download_and_extract_sdl(get_sdl_devel_url("src"), sdl_version_dir)
 		end
 	end
 end
@@ -250,7 +340,7 @@ function build_arch_configuration()
 		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/i686-w64-mingw32-" }
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
-		if _OPTIONS["arch"] ~= "arm64" then
+		if not is_arm64_arch() then
 			buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
 		end
 
@@ -454,32 +544,42 @@ function build_link_configuration( package_name, use_ee_icon )
 		targetname ( package_name .. extension )
 
 	filter { "system:windows", "action:not vs*" }
-		linkoptions { "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
+	    linkoptions { "-static-libgcc", "-static-libstdc++" }
+	    linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
 
 	filter { "system:windows", "action:vs*" }
 		if table.contains( backends, "SDL2" ) then
 			links { "SDL2", "SDL2main" }
 		end
+		if table.contains( backends, "SDL3" ) then
+			links { "SDL3" }
+		end
 
 	filter { "options:windows-vc-build", "options:arch=arm64" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib" }
+
+	filter { "options:windows-vc-build", "options:arch=aarch64" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib" }
 
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib/x86" }
 
-	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64", "not options:arch=arm64" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
+	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64", "not options:arch=arm64", "not options:arch=aarch64" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/lib/x64" }
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
+		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["arch"] ~= "arm64" then
-			syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
+		if not is_arm64_arch() then
+			syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 		end
 
 	filter { "options:windows-mingw-build", "options:arch=arm64" }
-		syslibdirs { remote_sdl2_arm64_cross_tools_path.. "/lib/" }
+		syslibdirs { get_sdl_arm64_cross_tools_path().. "/lib/" }
+
+	filter { "options:windows-mingw-build", "options:arch=aarch64" }
+		syslibdirs { get_sdl_arm64_cross_tools_path().. "/lib/" }
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
@@ -510,17 +610,17 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
+		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.istarget("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "CoreText.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	elseif os.istarget("android") then
 		multiple_insert( os_links, { "GLESv1_CM", "GLESv2", "log" } )
 	end
@@ -547,6 +647,10 @@ function parse_args()
 
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
+	end
+
+	if glew_enabled() then
+		defines { "EE_ENABLE_GLEW" }
 	end
 
 	if _OPTIONS["thread-sanitizer"] then
@@ -616,7 +720,7 @@ function add_static_links()
 		links { "mbedtls-static" }
 	end
 
-	if not os.istarget("haiku") and not os.istarget("ios") and not os.istarget("android") and not os.istarget("emscripten") then
+	if glew_enabled() then
 		links{ "glew-static" }
 	end
 end
@@ -644,17 +748,45 @@ function add_sdl2()
 	table.insert( backends, "SDL2" )
 end
 
+function add_sdl3()
+	print("Using SDL3 backend");
+	if not can_add_static_backend("SDL3") then
+		table.insert( link_list, get_backend_link_name( "SDL3" ) )
+	else
+		print("Using static backend")
+		insert_static_backend( "SDL3" )
+	end
+
+	table.insert( backends, "SDL3" )
+end
+
 function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
-		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		if table.contains(backends, "SDL2") then
+			incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		end
+		if table.contains(backends, "SDL3") then
+			incdirs { "/Library/Frameworks/SDL3.framework/Headers" }
+		end
 	end
 	if os.istarget("macosx") then
-		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if table.contains(backends, "SDL2") then
+			defines { "EE_SDL2_FROM_ROOTPATH" }
+		end
+		if table.contains(backends, "SDL3") then
+			defines { "EE_SDL3_FROM_ROOTPATH" }
+		end
 		if not is_xcode() and not _OPTIONS["use-frameworks"] then
-			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
-			buildoptions { sdl2flags }
+			if table.contains(backends, "SDL2") then
+				local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+				buildoptions { sdl2flags }
+			end
+			if table.contains(backends, "SDL3") then
+				local sdl3flags = popen("sdl3-config --cflags"):gsub("\n", "")
+				buildoptions { sdl3flags }
+			end
 		end
 	end
 end
@@ -686,7 +818,7 @@ function set_ios_config()
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+		incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include" }
 	end
 end
 
@@ -720,13 +852,25 @@ function select_backend()
 		add_sdl2()
 	end
 
+	if backend_is("SDL3", "SDL3") then
+		print("Selected SDL3")
+		add_sdl3()
+	end
+
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os_findlib("SDL2", "SDL2") then
+		if os_findlib("SDL3", "SDL3") then
+			add_sdl3()
+		elseif os_findlib("SDL2", "SDL2") then
 			add_sdl2()
 		else
-			print("ERROR: Couldnt find any backend. Forced SDL2.")
-			add_sdl2()
+			if table.contains( backends, "SDL3" ) then
+				add_sdl3()
+				print("ERROR: Couldnt find any backend. Forced SDL3.")
+			else
+				add_sdl2()
+				print("ERROR: Couldnt find any backend. Forced SDL2.")
+			end
 		end
 	end
 end
@@ -765,6 +909,18 @@ function eepp_module_physics_add()
 	incdirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
+function eepp_module_backward_add( ecode_mode )
+	files { "src/modules/backward/src/backward.cpp" }
+	if ecode_mode then
+		defines { "EE_BACKWARD_ECODE_MODE" }
+	end
+	filter "system:windows"
+		links { "dbghelp", "psapi" }
+	filter "system:linux or system:bsd"
+		linkoptions { "-rdynamic" }
+	filter {}
+end
+
 function build_eepp( build_name )
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
@@ -773,6 +929,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
@@ -817,6 +974,11 @@ function build_eepp( build_name )
 		defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 	end
 
+	if table.contains( backends, "SDL3" ) then
+		files { "src/eepp/window/backend/SDL3/*.cpp" }
+		defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_3" }
+	end
+
 	multiple_insert( link_list, os_links )
 
 	links { link_list }
@@ -852,19 +1014,22 @@ function build_eepp( build_name )
 		incdirs { "src/thirdparty/mojoAL" }
 
 	filter "options:windows-vc-build"
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include/SDL2" }
+		incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include" }
+		incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include/" .. get_sdl_include_sub() }
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
+		incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/include/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["arch"] ~= "arm64" then
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+		if not is_arm64_arch() then
+			incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/include/" }
 		end
 
 	filter { "options:windows-mingw-build", "options:arch=arm64" }
-		incdirs { remote_sdl2_arm64_cross_tools_path .. "/include/" }
+		incdirs { get_sdl_arm64_cross_tools_path() .. "/include/" }
+
+	filter { "options:windows-mingw-build", "options:arch=aarch64" }
+		incdirs { get_sdl_arm64_cross_tools_path() .. "/include/" }
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
@@ -900,6 +1065,7 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:AARCH64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=arm64" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=aarch64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
 	if name == "eepp" then
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
@@ -907,6 +1073,7 @@ function postsymlinklib_arch(name)
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:AARCH64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "options:arch=arm64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "options:arch=aarch64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:universal" )
 	end
 end
@@ -926,6 +1093,7 @@ workspace "eepp"
 	select_backend()
 	generate_os_links()
 	parse_args()
+
 	location("./make/" .. os.target() .. "/")
 	objdir("obj/" .. os.target() .. "/")
 
@@ -986,16 +1154,23 @@ workspace "eepp"
 		build_base_configuration( "SOIL2" )
 		target_dir_thirdparty()
 
-	project "glew-static"
-		kind "StaticLib"
-		language "C"
-		defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-		files { "src/thirdparty/glew/*.c" }
-		incdirs { "include/thirdparty/glew" }
-		build_base_configuration( "glew" )
-		target_dir_thirdparty()
-		filter { "action:vs*", "options:arch=arm64" }
-			buildoptions{ "/bigobj", "/O1", "/Zm200" }
+	if glew_enabled() then
+		project "glew-static"
+			kind "StaticLib"
+			language "C"
+			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
+			files { "src/thirdparty/glew/*.c" }
+			incdirs { "include/thirdparty/glew" }
+			build_base_configuration( "glew" )
+			target_dir_thirdparty()
+			filter { "action:vs*", "options:arch=arm64" }
+				buildoptions{ "/bigobj", "/O1", "/Zm200" }
+
+			filter { "action:vs*", "options:arch=aarch64" }
+				buildoptions{ "/bigobj", "/O1", "/Zm200" }
+
+			filter {}
+	end
 
 	project "mbedtls-static"
 		kind "StaticLib"
@@ -1173,6 +1348,9 @@ workspace "eepp"
 			target_dir_thirdparty()
 			filter "action:vs*"
 				buildoptions{ "/bigobj" }
+			filter { "system:windows", "action:not vs*" }
+				buildoptions{ "-Wa,-mbig-obj" }
+				linkoptions { "-Wl,--export-all-symbols" }
 
 		project "SheenBidi-static"
 			kind "StaticLib"
@@ -1212,22 +1390,32 @@ workspace "eepp"
 	project "mojoal-static"
 		kind "StaticLib"
 		language "C"
-		incdirs { "include/eepp/thirdparty/mojoAL" }
 		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
-		files { "src/thirdparty/mojoAL/*.c" }
+
+		if _OPTIONS["with-backend"] == "SDL3" then
+			incdirs { "src/thirdparty/mojoAL-SDL3", "src/thirdparty/mojoAL-SDL3/AL" }
+			files { "src/thirdparty/mojoAL-SDL3/*.c" }
+		else
+			incdirs { "src/thirdparty/mojoAL" }
+			files { "src/thirdparty/mojoAL/*.c" }
+		end
+
 		build_base_cpp_configuration( "mojoal" )
 		target_dir_thirdparty()
 		filter "options:windows-vc-build"
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include/SDL2" }
+			incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include" }
+			incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include/" .. get_sdl_include_sub() }
 		filter { "options:windows-mingw-build", "architecture:x86" }
-				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
+				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64" }
-			if _OPTIONS["arch"] ~= "arm64" then
-				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+			if not is_arm64_arch() then
+				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/include/" }
 			end
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
-			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
+			incdirs { get_sdl_arm64_cross_tools_path() .."/include/" }
+
+		filter { "options:windows-mingw-build", "options:arch=aarch64" }
+			incdirs { get_sdl_arm64_cross_tools_path() .."/include/" }
 
 	project "brotli-static"
 		kind "StaticLib"
@@ -1251,6 +1439,13 @@ workspace "eepp"
 		files { "src/thirdparty/libyaml/**.c" }
 		incdirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
+		target_dir_thirdparty()
+
+	project "tinyexpr-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/tinyexpr/tinyexpr.c" }
+		build_base_configuration( "tinyexpr" )
 		target_dir_thirdparty()
 
 	project "gumbo-parser-static"
@@ -1486,6 +1681,12 @@ workspace "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-font-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_font_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-font-picker", true )
+
 	project "eepp-ui-dropdownmodellist"
 		set_kind()
 		language "C++"
@@ -1508,6 +1709,7 @@ workspace "eepp"
 	project "eepp-ui-markdownview"
 		set_kind()
 		language "C++"
+		incdirs { "src/thirdparty" }
 		files { "src/examples/ui_markdownview/*.cpp" }
 		build_link_configuration( "eepp-ui-markdownview", true )
 
@@ -1615,8 +1817,9 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
+		eepp_module_backward_add( true )
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows" }
 			links { "gumbo-parser-static" }
@@ -1639,14 +1842,10 @@ workspace "eepp"
 			links { "util" }
 			if os_findlib("dw") then
 				links { "dw" }
-				defines { "ECODE_HAS_DW" }
+				defines { "EE_BACKWARD_HAS_DW" }
 			end
 		filter { "system:linux or system:macosx or system:haiku or system:bsd", "configurations:release*" }
 			buildoptions { "-g1", "-fvisibility=default" }
-		filter { "system:linux or system:bsd", "configurations:release*" }
-			linkoptions { "-rdynamic" }
-		filter { "system:windows" }
-			links { "dbghelp", "psapi" }
 		filter "system:haiku"
 			links { "bsd", "network" }
 		filter "system:bsd"
@@ -1696,13 +1895,23 @@ workspace "eepp"
 		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
 
+	project "eepp-benchmarks"
+		kind "ConsoleApp"
+		targetdir(_MAIN_SCRIPT_DIR .. "/bin/benchmarks")
+		language "C++"
+		files { "src/benchmarks/*.cpp" }
+		incdirs { "src/thirdparty" }
+		build_link_configuration( "eepp-benchmarks", true )
+
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		links { "eterm-static", "languages-syntax-highlighting-static" }
-		incdirs { "src/modules/eterm/include/" }
+		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
-		files { "src/tests/unit_tests/*.cpp" }
+		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
+		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

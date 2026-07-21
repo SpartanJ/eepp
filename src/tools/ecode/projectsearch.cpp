@@ -1,84 +1,95 @@
 #include "projectsearch.hpp"
+#include <eepp/system/filemapped.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/regex.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-// For malloc_trim, which is a GNU extension
-extern "C" {
-#include <malloc.h>
-}
-#endif
-
 namespace ecode {
 
-static int countNewLines( const std::string& text, const size_t& start, const size_t& end ) {
-	const char* startPtr = text.c_str() + start;
-	const char* endPtr = text.c_str() + end;
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr ) {
-			if ( '\n' == *startPtr )
-				count++;
-		};
+static constexpr size_t PROJECT_SEARCH_MMAP_THRESHOLD = 256 * 1024;
+
+static int countNewLines( std::string_view text, const size_t& start, const size_t& end ) {
+	if ( start >= end || start >= text.size() )
+		return 0;
+
+	const size_t realEnd = std::min( end, text.size() );
+	const char* startPtr = text.data() + start;
+	const char* endPtr = text.data() + realEnd;
+
+	size_t count = *startPtr == '\n' ? 1 : 0;
+
+	while ( ++startPtr != endPtr ) {
+		if ( '\n' == *startPtr )
+			count++;
 	}
+
 	return count;
 }
 
-static String textLine( const std::string& fileText, const size_t& fromPos, Int64& relCol ) {
-	const char* stringStartPtr = fileText.c_str();
-	const char* startPtr = fileText.c_str() + fromPos;
+static String textLine( std::string_view fileText, const size_t& fromPos, Int64& relCol ) {
+	if ( fileText.empty() || fromPos >= fileText.size() ) {
+		relCol = 0;
+		return {};
+	}
+
+	const char* stringStartPtr = fileText.data();
+	const char* stringEndPtr = fileText.data() + fileText.size();
+	const char* startPtr = fileText.data() + fromPos;
 	const char* endPtr = startPtr;
 	const char* nlStartPtr = startPtr;
-	while ( nlStartPtr != stringStartPtr && *nlStartPtr != '\n' )
+
+	while ( nlStartPtr != stringStartPtr && *( nlStartPtr - 1 ) != '\n' )
 		--nlStartPtr;
-	if ( *nlStartPtr == '\n' )
-		nlStartPtr++;
-	while ( ++endPtr && *endPtr != '\0' && *endPtr != '\n' ) {
-	}
-	relCol =
-		String::utf8Length( fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
-	// if the line to subtract is massive we only get the fist kilobyte of that line, since the
-	// line is only shared for visual aid.
-	return fileText.substr( nlStartPtr - stringStartPtr,
-							endPtr - nlStartPtr > EE_1KB ? EE_1KB : endPtr - nlStartPtr );
+
+	while ( endPtr != stringEndPtr && *endPtr != '\n' )
+		++endPtr;
+
+	relCol = String::utf8Length(
+		std::string_view( nlStartPtr, static_cast<size_t>( startPtr - nlStartPtr ) ) );
+
+	const size_t lineLen = static_cast<size_t>( endPtr - nlStartPtr );
+	const size_t copyLen = lineLen > EE_1KB ? EE_1KB : lineLen;
+
+	return String( std::string_view( nlStartPtr, copyLen ) );
 }
 
 static std::vector<ProjectSearch::ResultData::Result>
-searchInFileHorspool( const std::string& file, const std::string& text, const bool& caseSensitive,
+searchInTextHorspool( std::string_view fileText, const std::string& text, const bool& caseSensitive,
 					  const bool& wholeWord, const String::BMH::OccTable& occ ) {
 	std::vector<ProjectSearch::ResultData::Result> res;
-	std::string fileText;
+
+	if ( fileText.empty() )
+		return res;
+
 	Int64 lSearchRes = 0;
 	Int64 searchRes = 0;
 	size_t totNl = 0;
-	FileSystem::fileGet( file, fileText );
-	std::string fileTextOriginal;
-
-	if ( !caseSensitive ) {
-		fileTextOriginal = fileText;
-		String::toLowerInPlace( fileText );
-	}
+	const bool caseInsensitive = !caseSensitive;
 
 	do {
-		searchRes = String::BMH::find( fileText, text, searchRes, occ );
+		searchRes = String::BMH::find( fileText, text, searchRes, occ, caseInsensitive );
+
 		if ( searchRes != -1 ) {
-			if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
+			if ( wholeWord &&
+				 !String::isWholeWord( fileText, std::string_view{ text }, searchRes ) ) {
 				totNl += countNewLines( fileText, lSearchRes, searchRes );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 				continue;
 			}
+
 			Int64 relCol;
 			totNl += countNewLines( fileText, lSearchRes, searchRes );
-			String str(
-				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
+
+			String str( textLine( fileText, searchRes, relCol ) );
+
 			res.push_back( { std::move( str ),
-							 { { (Int64)totNl, (Int64)relCol },
-							   { (Int64)totNl, (Int64)( relCol + String::utf8Length( text ) ) } },
+							 { { static_cast<Int64>( totNl ), static_cast<Int64>( relCol ) },
+							   { static_cast<Int64>( totNl ),
+								 static_cast<Int64>( relCol + String::utf8Length( text ) ) } },
 							 searchRes,
 							 static_cast<Int64>( searchRes + text.size() ) } );
+
 			lSearchRes = searchRes;
 			searchRes += text.size();
 		}
@@ -88,15 +99,58 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 }
 
 static std::vector<ProjectSearch::ResultData::Result>
+searchInFileHorspoolMapped( const std::string& file, const std::string& text,
+							const bool& caseSensitive, const bool& wholeWord,
+							const String::BMH::OccTable& occ ) {
+	FileMapped mapped( file );
+	if ( !mapped.isOpen() || mapped.empty() )
+		return {};
+
+	return searchInTextHorspool( mapped.view(), text, caseSensitive, wholeWord, occ );
+}
+
+static std::vector<ProjectSearch::ResultData::Result>
+searchInFileHorspoolLoaded( const std::string& file, const std::string& text,
+							const bool& caseSensitive, const bool& wholeWord,
+							const String::BMH::OccTable& occ ) {
+	thread_local std::string fileText;
+
+	if ( !FileSystem::fileGet( file, fileText ) || fileText.empty() )
+		return {};
+
+	auto res = searchInTextHorspool( std::string_view{ fileText.data(), fileText.size() }, text,
+									 caseSensitive, wholeWord, occ );
+
+	return res;
+}
+
+static std::vector<ProjectSearch::ResultData::Result>
+searchInFileHorspool( const std::string& file, const std::string& text, const bool& caseSensitive,
+					  const bool& wholeWord, const String::BMH::OccTable& occ ) {
+	const auto fileSize = FileSystem::fileSize( file );
+
+	if ( fileSize >= 0 && static_cast<size_t>( fileSize ) <= PROJECT_SEARCH_MMAP_THRESHOLD )
+		return searchInFileHorspoolLoaded( file, text, caseSensitive, wholeWord, occ );
+
+	return searchInFileHorspoolMapped( file, text, caseSensitive, wholeWord, occ );
+}
+
+static std::vector<ProjectSearch::ResultData::Result>
 searchInFilePatternMatch( const std::string& file, PatternMatcher& pattern,
 						  const bool& caseSensitive, const bool& wholeWord ) {
-	std::string fileText;
+	thread_local std::string fileText;
+	fileText.clear();
+
+	if ( !FileSystem::fileGet( file, fileText ) || fileText.empty() )
+		return {};
+
 	FileSystem::fileGet( file, fileText );
 	std::vector<ProjectSearch::ResultData::Result> results;
 	Int64 totNl = 0;
 	bool matched = false;
 	Int64 searchRes = 0;
-	std::string fileTextOriginal;
+	thread_local std::string fileTextOriginal;
+	fileTextOriginal.clear();
 
 	if ( !caseSensitive ) {
 		fileTextOriginal = fileText;
@@ -209,12 +263,13 @@ ProjectSearch::find( const std::vector<std::string> files, std::string string,
 				openDocs = std::move( openDocs )]() mutable {
 		SearchConfig searchConfig( string, caseSensitive, wholeWord, type );
 		findData->resCount = files.size();
-		if ( !caseSensitive )
+		if ( !caseSensitive && type != TextDocument::FindReplaceType::Normal )
 			String::toLowerInPlace( string );
-		const auto occ =
-			type == TextDocument::FindReplaceType::Normal
-				? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
-				: std::vector<size_t>();
+		const auto occ = type == TextDocument::FindReplaceType::Normal
+							 ? String::BMH::createOccTable(
+								   reinterpret_cast<const unsigned char*>( string.data() ),
+								   string.size(), !caseSensitive )
+							 : String::BMH::OccTable();
 		std::vector<bool> search;
 		search.resize( files.size() );
 		size_t pos = 0;
@@ -293,9 +348,6 @@ ProjectSearch::find( const std::vector<std::string> files, std::string string,
 				if ( count == 0 ) {
 					result( { searchConfig, findData->res } );
 					eeDelete( findData );
-#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
-					malloc_trim( 0 );
-#endif
 				}
 			};
 

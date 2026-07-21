@@ -49,7 +49,7 @@ class EETest : private Thread {
 	Int32 x, y;
 	Uint32 lasttick;
 
-	std::vector<Uint32> TN;
+	std::vector<ResourceId> TN;
 	std::vector<Texture*> TNP;
 
 	std::vector<TextureRegion*> Tiles;
@@ -96,7 +96,7 @@ class EETest : private Thread {
 
 	Interpolation2d WP;
 	Int32 PartsNum;
-	Uint32 Cursor[1];
+	ResourceId Cursor[1];
 	Texture* CursorP[1];
 	std::string mInfo;
 

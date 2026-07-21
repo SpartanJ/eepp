@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang=en>
+<style>
+    :root {
+        --base-bg: 12 12 12;
+        --base-fg: 255 255 255;
+        --font-size-default: 1rem;
+        --font-size-tags: 0.66rem;
+        --base-shadow: 0 0 0;
+        --comment-controls-height: 1.2lh;
+        --input-outline-width: 2px;
+        --color-bg: rgb(var(--base-bg));
+        --color-bg-50: rgb(var(--base-bg) / 50%);
+        --color-fg: rgb(var(--base-fg) / var(--opacity-fg)); /* primary text */
+        --color-fg-accent: currentColor;
+        --color-fg-contrast-13: rgb(var(--base-fg) / var(--opacity-fg-contrast-13));
+        --color-fg-contrast-10: rgb(var(--base-fg) / var(--opacity-fg-contrast-10));
+        --color-fg-contrast-7-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-7-5));
+        --color-fg-contrast-6: rgb(var(--base-fg) / var(--opacity-fg-contrast-6));
+        --color-fg-contrast-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-5));
+        --color-fg-contrast-4-5: rgb(var(--base-fg) / var(--opacity-fg-contrast-4-5));
+        --opacity-fg: 87%; /* primary text */
+        --opacity-fg-contrast-13: 87%;
+        --opacity-fg-contrast-10: 87%;
+        --opacity-fg-contrast-7-5: 77%;
+        --opacity-fg-contrast-6: 69%;
+        --opacity-fg-contrast-5: 64%;
+        --opacity-fg-contrast-4-5: 61%;
+        --color-fg-link: rgb(138 177 255);
+        --color-fg-author: rgb(80 112 177);
+    }
+
+    html {
+        font-size: var(--font-size-default);
+        overflow-y: scroll;
+    }
+
+    body {
+        font-family: "helvetica neue", arial, sans-serif;
+        color: var(--color-fg);
+        line-height: 1.45em
+    }
+
+    body {
+        background-color: var(--color-bg);
+        margin: 0 auto;
+        padding-bottom: 2em
+    }
+
+    a {
+        color: var(--color-fg-link);
+        cursor: pointer
+    }
+
+    li.story div.details span.link a:visited {
+        color: var(--color-fg-link-visited)
+    }
+
+    a.tag {
+        background-color: var(--color-tag-bg);
+        border: 1px solid var(--color-tag-border);
+        border-radius: 5px;
+        color: var(--color-fg-contrast-10);
+        font-size: var(--font-size-tags);
+        margin-left: 0.25em;
+        padding: 0px 0.4em 1px 0.4em;
+        text-decoration: none;
+        white-space: nowrap
+    }
+
+    a.tag_is_media {
+        background-color: var(--color-tag-media-bg);
+        border-color: var(--color-tag-media-border);
+        color: var(--color-fg-contrast-10)
+    }
+
+    input:focus,
+    button:focus,
+    select:focus,
+    textarea:focus {
+        outline: var(--input-outline-width) solid var(--color-box-border-focus);
+        border-color: transparent;
+        color: var(--color-fg)
+    }
+
+    textarea::placeholder {
+        color: var(--color-fg-contrast-7-5)
+    }
+
+    input[type="submit"]:focus,
+    button:focus {
+        border-color: var(--color-box-border-focus);
+        outline: 1px solid var(--color-box-border-focus)
+    }
+
+    button:hover,
+    input[type="button"]:hover,
+    input[type="reset"]:hover,
+    input[type="submit"]:hover {
+        color: var(--color-fg-contrast-10);
+        text-decoration: none;
+        background-color: var(--color-button-bg-shaded)
+    }
+
+    select::-moz-focus-inner {
+        border: 0;
+        outline: 0
+    }
+
+    input:disabled,
+    textarea:disabled,
+    button:disabled {
+        background-color: var(--color-box-bg-shaded);
+        color: var(--color-fg-contrast-5)
+    }
+
+    summary {
+        cursor: pointer
+    }
+
+    input.btn-link:hover {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        background-color: inherit;
+        color: var(--color-fg-contrast-4-5);
+        line-height: 1
+    }
+
+    input.btn-link:focus-visible {
+        outline: auto
+    }
+
+    header {
+        font-weight: bold;
+        line-height: 18px
+    }
+
+    ol.stories {
+        padding: 0;
+        list-style: none;
+        margin: 0
+    }
+
+    div.voters {
+        float: left;
+        margin-top: 0px;
+        text-align: center;
+        width: 40px
+    }
+
+    .upvoter:before {
+        content: "△";
+        font-size: 1.2rem;
+        font-family: system-ui, monospace, sans-serif
+    }
+
+    .upvoter:hover:before,
+    .upvoted .upvoter:before {
+        content: "▲";
+        color: var(--color-fg-accent);
+        -webkit-text-stroke: 1px var(--color-fg-accent)
+    }
+
+    .upvoter {
+        color: var(--color-fg-contrast-4-5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-self: center;
+        text-decoration: none
+    }
+
+    .upvoter:focus {
+        outline: none
+    }
+
+    .upvoter:focus-visible {
+        outline: 2px solid var(--color-fg-link)
+    }
+
+    li.story {
+        clear: both
+    }
+
+    ol.stories li.story div.story_liner {
+        padding-top: 0.25em;
+        padding-bottom: 0.25em;
+        word-break: break-word
+    }
+
+    ol.stories li:first-child div.story_liner {
+        padding-top: 0.5em
+    }
+
+    li div.details {
+        padding-top: 0.1em
+    }
+
+    .comment:target,
+    li:target,
+    p:target,
+    div:target,
+    span:target {
+        background-color: var(--color-bg-target);
+        border-radius: 8px
+    }
+
+    li .link {
+        font-weight: bold;
+        vertical-align: middle
+    }
+
+    li .link a {
+        text-decoration: none
+    }
+
+    li.story .description_present {
+        color: var(--color-fg-contrast-5);
+        padding-left: 0.25em;
+        text-decoration: none;
+        vertical-align: middle
+    }
+
+    li.story a.tag {
+        vertical-align: middle
+    }
+
+    li .tags {
+        margin-right: 0.25em
+    }
+
+    li .domain {
+        color: var(--color-fg-contrast-4-5);
+        font-style: italic;
+        text-decoration: none;
+        vertical-align: middle
+    }
+
+    li .comment_folder:before {
+        content: "[−]"
+    }
+
+    li .comment_folder_button:checked~.comment .comment_folder:before {
+        content: "[+]"
+    }
+
+    li .comment_folder_button:checked~div.comment:not(:target) div.comment_text {
+        display: none
+    }
+
+    li .comment_folder_button:checked~div.comment:not(:target) div.voters .upvoter {
+        visibility: hidden;
+        margin-bottom: -15px
+    }
+
+    li .comment_folder_button:checked~ol.comments ol,
+    li .comment_folder_button:checked~ol.comments div.comment,
+    li .comment_folder_button:checked~ol.comments li {
+        display: none
+    }
+
+    :not(li.comments_subtree) li.comments_subtree li.comments_subtree li.comments_subtree:has(+li.comments_subtree)::before {
+        content: "";
+        position: absolute;
+        top: 3.6lh;
+        left: calc(1em - 1px);
+        bottom: 0;
+        border-left: 2px dotted var(--color-fg-shape)
+    }
+
+    li .byline {
+        color: var(--color-fg-contrast-4-5)
+    }
+
+    img.avatar {
+        border-radius: 8px;
+        height: 16px;
+        margin-bottom: 2px;
+        margin-right: 2px;
+        vertical-align: middle;
+        width: 16px
+    }
+
+    li.story .byline {
+        margin-top: 1px
+    }
+
+    .byline a {
+        color: var(--color-fg-contrast-4-5);
+        text-decoration: none
+    }
+
+    a.user_is_author,
+    li .byline a.user_is_author {
+        color: var(--color-fg-author)
+    }
+
+    li div.details {
+        margin-left: 32px
+    }
+
+    nav.morelink {
+        float: left
+    }
+
+    nav.morelink {
+        margin-top: 1.5em
+    }
+
+    nav.morelink a {
+        color: var(--color-fg-contrast-7-5);
+        font-weight: bold;
+        text-decoration: none
+    }
+
+    nav.morelink a[rel="prev"]::before {
+        content: "<< " /""
+    }
+
+    nav.morelink a[rel="next"]::after {
+        content: " >>" /""
+    }
+
+    #flag_dropdown a:hover {
+        background-color: var(--color-box-bg-shaded)
+    }
+
+    .caches {
+        display: inline-block;
+        position: relative
+    }
+
+    .caches summary {
+        list-style: none
+    }
+
+    .caches ul {
+        position: absolute;
+        background: var(--color-bg);
+        border: 1px solid var(--color-box-border);
+        white-space: nowrap;
+        list-style: none;
+        padding: 0;
+        z-index: 1
+    }
+
+    .caches li {
+        border-bottom: 1px solid var(--color-box-border)
+    }
+
+    .caches li:last-child {
+        border-bottom: 0
+    }
+
+    .caches a {
+        color: var(--color-fg-contrast-7-5);
+        text-decoration: none;
+        display: block;
+        padding: 3px 7px
+    }
+
+    .caches a:hover {
+        text-decoration: underline
+    }
+
+    .tree:before,
+    .tree ul:before {
+        border-left: 1px solid var(--color-fg-shape);
+        bottom: 0;
+        content: "";
+        display: block;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 0
+    }
+
+    .tree li:before {
+        border-top: 1px solid var(--color-fg-shape);
+        content: "";
+        display: block;
+        height: 0;
+        left: 0;
+        margin-top: -1px;
+        position: absolute;
+        top: 0.8em;
+        width: 8px
+    }
+
+    .tree li:last-child:before {
+        background-color: var(--color-bg);
+        border-left: 0;
+        bottom: 0;
+        height: auto
+    }
+
+    li.noparent:before,
+    ul.noparent:before {
+        border-top: 0 !important;
+        border-left: 0 !important
+    }
+
+    label:has(+*:required)::after,
+    label:has(+*:not(label) *:required)::after,
+    label:has(+*[type="hidden"]+*:required)::after {
+        content: "*";
+        margin-left: 0.15em;
+        vertical-align: middle
+    }
+
+    .profile label::after {
+        content: ":"
+    }
+
+    #story_holder .ts-control:focus-within {
+        border-color: var(--color-box-border-focus)
+    }
+
+    #story_holder .ts-control .data-ts-item a::after {
+        content: "✕";
+        display: block;
+        position: absolute;
+        color: grey;
+        outline: none;
+        padding-right: 3px;
+        top: 0px;
+        width: 12px;
+        cursor: pointer;
+        visibility: visible
+    }
+</style>
+</head>
+
+<body data-username data-now-unix=1778678893>
+    <div id=inside>
+
+        <ol class="stories list">
+            <li id=story_oznirn data-shortid=oznirn class=story>
+                <div class="story_liner h-entry">
+                    <div class=voters>
+                        <a class=upvoter href=https://lobste.rs/login>104</a>
+                    </div>
+                    <div class=details>
+                        <span role=heading aria-level=1 class="link h-cite u-repost-of">
+                            <a class=u-url href=https://charlesleifer.com/blog/redis-and-the-cost-of-ambition/
+                                rel="ugc noreferrer">Redis and the Cost of Ambition</a>
+                        </span>
+                        <span class=tags>
+                            <a class="tag tag_databases" title="Databases (SQL, NoSQL)"
+                                href=https://lobste.rs/t/databases>databases</a>
+                        </span>
+                        <a class=domain href=https://lobste.rs/domains/charlesleifer.com>charlesleifer.com</a>
+                        <div class=byline>
+                            <a tabindex=-1 aria-hidden=true href=https://lobste.rs/~coleifer><img srcset class=avatar
+                                    alt="coleifer avatar" loading=lazy decoding=async
+                                    src="data:image/png;base64,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"
+                                    width=16 height=16 sizes></a>
+                            <span> authored by </span>
+                            <a class="u-author h-card user_is_author" href=https://lobste.rs/~coleifer>coleifer</a>
+                            <time title="2026-05-12 12:01:37" datetime="2026-05-12 12:01:37" data-at-unix=1778605297>20
+                                hours ago</time>
+                            <span aria-hidden=true> | </span>
+                            <details class=caches name=caches>
+                                <summary>caches</summary>
+                                <ul>
+                                    <li><a
+                                            href=https://web.archive.org/web/3/https%3A%2F%2Fcharlesleifer.com%2Fblog%2Fredis-and-the-cost-of-ambition%2F>Archive.org</a>
+                                    </li>
+                                    <li><a
+                                            href="https://ghostarchive.org/search?term=https%3A%2F%2Fcharlesleifer.com%2Fblog%2Fredis-and-the-cost-of-ambition%2F">Ghostarchive</a>
+                                    </li>
+                                </ul>
+                            </details>
+                            <span class=comments_label>
+                                <span aria-hidden=true> | </span>
+                                <a role=heading aria-level=2 href=https://lobste.rs/s/oznirn/redis_cost_ambition>
+                                    23 comments
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <a href=https://lobste.rs/s/oznirn/redis_cost_ambition class=mobile_comments style=display:none>
+
+                </a>
+            </li>
+        </ol>
+    </div>

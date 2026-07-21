@@ -10,6 +10,8 @@ class EE_API UITextEdit : public UICodeEditor {
   public:
 	static UITextEdit* New();
 
+	static UITextEdit* NewWithTag( const std::string& tag );
+
 	virtual ~UITextEdit();
 
 	virtual Uint32 getType() const;
@@ -24,10 +26,10 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	void setWordWrap( bool enabled );
 
-  protected:
-	UITextEdit();
-
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+  protected:
+	UITextEdit( const std::string& tag );
 
 	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor );

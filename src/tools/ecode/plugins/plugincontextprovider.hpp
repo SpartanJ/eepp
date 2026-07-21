@@ -22,6 +22,7 @@ class UISplitter;
 class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
+class UIMessageBox;
 
 namespace Doc {
 class SyntaxColorScheme;
@@ -94,6 +95,8 @@ class PluginContextProvider {
 
 	virtual String i18n( const std::string& key, const String& def ) = 0;
 
+	virtual UIMessageBox* errorMsgBox( const String& msg ) = 0;
+
 	virtual const std::string& getWindowTitle() const = 0;
 
 	virtual EE::Window::Window* getWindow() const = 0;
@@ -158,7 +161,9 @@ class PluginContextProvider {
 	virtual void loadDiffFromPath( const std::string& path ) = 0;
 
 	virtual void loadDiffFromMemory( const std::string& content,
-									 const std::string& originalFilePath = "" ) = 0;
+									 const std::string& originalFilePath = "",
+									 const std::string& oldFilePath = "",
+									 const std::string& repoPath = "" ) = 0;
 
 	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
 

@@ -5,6 +5,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 using namespace EE::Graphics::Private;
@@ -41,7 +42,8 @@ FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
 }
 
 FrameBuffer::~FrameBuffer() {
-	eeSAFE_DELETE( mTexture );
+	if ( mTexture && TextureFactory::existsSingleton() )
+		TextureFactory::instance()->remove( mTexture );
 
 	FrameBufferManager::instance()->remove( this );
 }

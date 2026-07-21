@@ -38,6 +38,7 @@
 #include <eepp/ui/doc/languages/freebasic.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
+#include <eepp/ui/doc/languages/gemini.hpp>
 #include <eepp/ui/doc/languages/gleam.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
 #include <eepp/ui/doc/languages/gn.hpp>
@@ -247,7 +248,7 @@ static void preDefinitionLangsChunk1( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"CMake",
 		[]() -> SyntaxDefinition& { return addCMake(); },
-		{ "%.cmake$", "CMakeLists%.txt$" },
+		{ "%.cmake$", "CMakeLists%.txt$", "%.cmake.in$" },
 		{ "^cmake_minimum_required.*%c" },
 
 	} );
@@ -358,6 +359,9 @@ static void preDefinitionLangsChunk1( SyntaxDefinitionManager* sdm ) {
 		[]() -> SyntaxDefinition& { return addGDScript(); },
 		{ "%.gd$" },
 	} );
+
+	sdm->addPreDefinition(
+		{ "Gemini", []() -> SyntaxDefinition& { return addGemini(); }, { "%.gmi$" } } );
 
 	sdm->addPreDefinition(
 		{ "Gleam", []() -> SyntaxDefinition& { return addGleam(); }, { "%.gleam$" } } );
@@ -496,7 +500,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"Meson",
 		[]() -> SyntaxDefinition& { return addMeson(); },
-		{ "meson%.build$", "^meson_options%.txt$" },
+		{ "%.meson$", "meson%.build$", "^meson_options%.txt$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -796,7 +800,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"Vala",
 		[]() -> SyntaxDefinition& { return addVala(); },
-		{ "%.vala$", "%.genie$" },
+		{ "%.vala$", "%.vapi$" },
 	} );
 
 	sdm->addPreDefinition( {

@@ -1,3 +1,4 @@
+#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/elementdefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
@@ -70,6 +71,8 @@ void ElementDefinition::refresh() {
 		findVariables( styleSheetStyle );
 	}
 
+	resolveVariables();
+
 	for ( auto& property : mProperties )
 		mPropertyIds.insert( property.first );
 }
@@ -78,10 +81,67 @@ void ElementDefinition::findVariables( const StyleSheetStyle* style ) {
 	for ( const auto& vars : style->getVariables() ) {
 		const StyleSheetVariable& variable = vars.second;
 		const auto& it = mVariables.find( variable.getNameHash() );
-
 		if ( it == mVariables.end() || variable.getSpecificity() >= it->second.getSpecificity() ) {
 			mVariables[variable.getNameHash()] = variable;
 		}
+	}
+}
+
+static void resolveVarValue( std::string& value, const StyleSheetVariables& variables,
+							 UnorderedSet<String::HashType>& visited, int depth = 0 ) {
+	static constexpr int maxDepth = 32;
+	if ( depth > maxDepth )
+		return;
+
+	std::string::size_type tokenStart = 0;
+
+	while ( true ) {
+		tokenStart = value.find( "var(", tokenStart );
+		if ( tokenStart == std::string::npos )
+			return;
+
+		std::string::size_type tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
+		if ( tokenEnd == std::string::npos )
+			return;
+
+		std::string varDef( value, tokenStart, tokenEnd + 1 - tokenStart );
+		System::FunctionString functionType = System::FunctionString::parse( varDef );
+
+		if ( functionType.getParameters().empty() ) {
+			tokenStart = tokenEnd;
+			continue;
+		}
+
+		bool resolved = false;
+		for ( auto& param : functionType.getParameters() ) {
+			if ( String::startsWith( param, "--" ) ) {
+				auto it = variables.find( String::hash( param ) );
+				if ( it != variables.end() &&
+					 visited.find( it->second.getNameHash() ) == visited.end() ) {
+					visited.insert( it->second.getNameHash() );
+					std::string deepValue( it->second.getValue() );
+					resolveVarValue( deepValue, variables, visited, depth + 1 );
+					String::replaceAll( value, varDef, deepValue );
+					resolved = true;
+					break;
+				}
+			}
+		}
+
+		if ( resolved )
+			tokenStart = 0;
+		else
+			tokenStart = tokenEnd;
+	}
+}
+
+void ElementDefinition::resolveVariables() {
+	static UnorderedSet<String::HashType> visited;
+	for ( auto& varPair : mVariables ) {
+		std::string value( varPair.second.getValue() );
+		visited.clear();
+		resolveVarValue( value, mVariables, visited );
+		varPair.second.setValue( value );
 	}
 }
 

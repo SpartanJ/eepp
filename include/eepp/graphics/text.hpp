@@ -53,6 +53,10 @@ class EE_API Text {
 
 	static Uint32 stringToStyleFlag( const std::string& str );
 
+	static std::string fontWeightToString( FontWeight weight );
+
+	static FontWeight stringToFontWeight( const std::string& str );
+
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
 							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0,
@@ -258,7 +262,7 @@ class EE_API Text {
 	void setShadowColor( const Color& color );
 
 	/** @return Every cached text line width */
-	const std::vector<Float>& getLinesWidth();
+	const SmallVector<Float, 4>& getLinesWidth();
 
 	/** @return The last line width */
 	Float getLastLineWidth();
@@ -413,8 +417,8 @@ class EE_API Text {
 	TextDirection mDirection{ TextDirection::Unspecified };
 	Vector2f mInitialOffset{ 0.f, 0.f };
 
-	mutable std::vector<Int64> mVisualLines;
-	mutable std::vector<Float> mLinesWidth;
+	mutable SmallVector<Int64, 4> mVisualLines;
+	mutable SmallVector<Float, 4> mLinesWidth;
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;

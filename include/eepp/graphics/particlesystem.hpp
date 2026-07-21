@@ -4,6 +4,7 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/particle.hpp>
+#include <eepp/graphics/resource.hpp>
 
 #include <eepp/system/time.hpp>
 using namespace EE::System;
@@ -49,7 +50,7 @@ class EE_API ParticleSystem {
 	/** Creates the new effect
 	 * @param Effect Number of the effect.
 	 * @param NumParticles Number of particles
-	 * @param TexId Texture Id to render the particles
+	 * @param textureId Texture identity used to render the particles
 	 * @param Pos Initial position
 	 * @param PartSize Size of the particles
 	 * @param AnimLoop Loop the animation?
@@ -61,7 +62,7 @@ class EE_API ParticleSystem {
 	 * @param speed The speed on x axis (used for NoFx)
 	 * @param Acc The acceleration of the particle (used for NoFx)
 	 */
-	void create( const ParticleEffect& Effect, const Uint32& NumParticles, const Uint32& TexId,
+	void create( const ParticleEffect& Effect, const Uint32& NumParticles, ResourceId textureId,
 				 const Vector2f& Pos, const Float& PartSize = 16.0f, const bool& AnimLoop = false,
 				 const Uint32& NumLoops = 1,
 				 const ColorAf& color = ColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),

@@ -58,22 +58,6 @@ void KeybindingsHelper::updateKeybindings(
 				invertedKeybindings[key.second] = shortcutStr;
 				ini.setValue( group, shortcutStr, key.second );
 				added = true;
-			} else if ( foundCmd == invertedKeybindings.end() ) {
-				// Override the shortcut if the command that holds that
-				// shortcut does not exists anymore
-				auto kb = keybindings.find( shortcutStr );
-				if ( kb != keybindings.end() ) {
-					bool found = false;
-					for ( const auto& val : defKeybindings )
-						if ( val.second == kb->second )
-							found = true;
-					if ( !found ) {
-						keybindings[shortcutStr] = key.second;
-						invertedKeybindings[key.second] = shortcutStr;
-						ini.setValue( group, shortcutStr, key.second );
-						added = true;
-					}
-				}
 			}
 		}
 	}
@@ -147,22 +131,6 @@ void KeybindingsHelper::updateKeybindings(
 				invertedKeybindings[key.second] = shortcutStr;
 				ini.setValue( group, shortcutStr, key.second );
 				added = true;
-			} else if ( foundCmd == invertedKeybindings.end() ) {
-				// Override the shortcut if the command that holds that
-				// shortcut does not exists anymore
-				auto kb = keybindings.find( shortcutStr );
-				if ( kb != keybindings.end() ) {
-					bool found = false;
-					for ( const auto& val : defKeybindings )
-						if ( val.second == kb->second )
-							found = true;
-					if ( !found ) {
-						keybindings[shortcutStr] = key.second;
-						invertedKeybindings[key.second] = shortcutStr;
-						ini.setValue( group, shortcutStr, key.second );
-						added = true;
-					}
-				}
 			}
 		}
 	}
@@ -235,22 +203,6 @@ void KeybindingsHelper::updateKeybindings(
 				invertedKeybindings[key.second] = shortcutStr;
 				ini.setValue( group, shortcutStr, key.second );
 				added = true;
-			} else if ( foundCmd == invertedKeybindings.end() ) {
-				// Override the shortcut if the command that holds that
-				// shortcut does not exists anymore
-				auto kb = keybindings.find( shortcutStr );
-				if ( kb != keybindings.end() ) {
-					bool found = false;
-					for ( const auto& val : defKeybindings )
-						if ( val.second == kb->second )
-							found = true;
-					if ( !found ) {
-						keybindings[shortcutStr] = key.second;
-						invertedKeybindings[key.second] = shortcutStr;
-						ini.setValue( group, shortcutStr, key.second );
-						added = true;
-					}
-				}
 			}
 		}
 	}

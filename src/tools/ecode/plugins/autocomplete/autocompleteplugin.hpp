@@ -4,6 +4,7 @@
 #include "../lsp/lspprotocol.hpp"
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
+#include "snippetparser.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/mutex.hpp>
@@ -27,6 +28,7 @@ class AutoCompletePlugin : public Plugin {
 		std::string sortText;
 		TextRange range;
 		std::string insertText;
+		LSPInsertTextFormat insertTextFormat{ LSPInsertTextFormat::PlainText };
 		double score{ 0 };
 		LSPMarkupContent documentation;
 
@@ -38,13 +40,14 @@ class AutoCompletePlugin : public Plugin {
 
 		Suggestion( LSPCompletionItemKind kind, std::string&& text, std::string&& detail,
 					std::string&& sortText, const TextRange& range, std::string&& insertText,
-					LSPMarkupContent&& doc ) :
+					LSPMarkupContent&& doc, LSPInsertTextFormat insertTextFormat ) :
 			kind( kind ),
 			text( std::move( text ) ),
 			detail( std::move( detail ) ),
 			sortText( sortText.empty() ? std::string{ this->text } : std::move( sortText ) ),
 			range( range ),
 			insertText( std::move( insertText ) ),
+			insertTextFormat( insertTextFormat ),
 			documentation( doc ) {};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
@@ -87,6 +90,8 @@ class AutoCompletePlugin : public Plugin {
 	void update( UICodeEditor* ) override;
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor ) override;
+	void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
+							 const Float& ) override;
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
@@ -173,14 +178,44 @@ class AutoCompletePlugin : public Plugin {
 	size_t mMaxLabelCharacters{ 100 };
 	String::HashType mConfigHash{ 0 };
 	std::unordered_map<std::string, std::string> mKeyBindings;
-	std::unordered_map<std::string, KeyBindings::Shortcut> mShortcuts;
+	UnorderedMap<std::string, KeyBindings::Shortcut> mShortcuts;
 	std::string mMaxSuggestionDocumentationWidth{ "100%" };
 	std::string mMaxSignatureHelperWidth{ "90%" };
 	bool mSignatureHelpMultiLine{ true };
 	bool mSuggestionDocumentation{ true };
+	bool mSignatureHelpDocumentation{ true };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
+
+	struct SnippetTabStopOccurrence {
+		TextRange range;
+		size_t instance{ 0 };
+		std::vector<std::string> choices;
+	};
+
+	struct SnippetTabStopGroup {
+		Uint32 index{ 0 };
+		std::vector<SnippetTabStopOccurrence> occurrences;
+	};
+
+	struct SnippetSession {
+		UICodeEditor* editor{ nullptr };
+		std::vector<SnippetTabStopGroup> groups;
+		size_t currentGroup{ 0 };
+		size_t instanceCount{ 0 };
+	};
+
+	struct SnippetInsertion {
+		SnippetParser::Result snippet;
+		TextPosition start;
+	};
+
+	class SnippetDocumentClient;
+	UnorderedMap<TextDocument*, SnippetSession> mSnippetSessions;
+	UnorderedMap<TextDocument*, std::unique_ptr<SnippetDocumentClient>> mSnippetClients;
+	bool mChangingSnippetSelection{ false };
+	bool mSnippetChoiceSuggestions{ false };
 
 	explicit AutoCompletePlugin( PluginManager* pluginManager, bool sync );
 
@@ -220,14 +255,32 @@ class AutoCompletePlugin : public Plugin {
 	void drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
 							const Float& lineHeight, bool drawUp );
 
-	bool hasCompleteSteps( const Suggestion& suggestion );
+	void tryStartSnippetNav( const std::vector<SnippetInsertion>&, UICodeEditor* );
 
-	void tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
-							 const TextRanges& prevSels );
+	void ensureSnippetClient( TextDocument* );
 
-	Rectf findBestDocumentationPlacement( UICodeEditor* editor, const Suggestion& suggestion,
-										  const Rectf& anchorBox, const Rectf& rowRect, bool drawUp,
-										  Float lineHeight );
+	void detachSnippetClient( TextDocument* );
+
+	void cancelSnippetSession( TextDocument*, bool collapseSelection = false );
+
+	bool navigateSnippet( UICodeEditor*, bool backwards );
+
+	void selectSnippetGroup( SnippetSession&, bool showChoices = true );
+
+	void showSnippetChoices( SnippetSession& );
+
+	void pickSnippetChoice( UICodeEditor* );
+
+	void onSnippetTextChanged( TextDocument*, const DocumentContentChange& );
+
+	void onSnippetSelectionChanged( TextDocument* );
+
+	void onSnippetDocumentClosed( TextDocument* );
+
+	Rectf findBestDocumentationPlacement( UICodeEditor* editor, const LSPMarkupContent& suggestion,
+										  const std::string& detail, const Rectf& anchorBox,
+										  const Rectf& rowRect, const Vector2f& cursorScreenPos,
+										  bool drawUp, Float lineHeight );
 
 	void updateShortcuts();
 };

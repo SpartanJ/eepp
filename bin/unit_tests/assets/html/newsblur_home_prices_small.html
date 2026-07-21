@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <style>
+      body {
+        height: 100%;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-color: #c2c2c2 #fafafa;
+        background-color: #fff;
+        border: 0;
+        outline: 0;
+        margin: 0;
+        padding: 0;
+        line-height: 1.3;
+        text-decoration: none;
+        list-style: none;
+        overflow: hidden;
+      }
+      .NB-splash {
+        display: block;
+      }
+      body,
+      .NB-theme-feed-font-whitney {
+        font-family:
+          Whitney SSm A,
+          Whitney SSm B,
+          Lucida Grande,
+          Verdana,
+          Helvetica Neue,
+          Helvetica,
+          sans-serif;
+      }
+      .NB-welcome .NB-body-inner {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        overflow: auto;
+      }
+      .NB-welcome .NB-inner {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 960px;
+        height: 100%;
+        margin: 0 auto;
+        position: relative;
+      }
+      .NB-welcome-pricing {
+        clear: both;
+        background: linear-gradient(#f5eedd 0%, #ebe0c2 100%);
+        border-bottom: 1px solid #0000000f;
+        margin: 0;
+        padding: 48px 0;
+        overflow: hidden;
+      }
+      .NB-pricing-tiers {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 16px;
+        display: flex;
+      }
+      .NB-pricing-tier {
+        background: #fff;
+        border: 1px solid #00000014;
+        border-radius: 12px;
+        flex-direction: column;
+        flex: 1;
+        transition:
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 2px 4px #0000000a,
+          0 8px 24px #0000000f;
+      }
+      .NB-pricing-tier-premium {
+        flex: 34;
+      }
+      .NB-pricing-tier-archive {
+        flex: 38;
+      }
+      .NB-pricing-tier-pro {
+        flex: 28;
+      }
+      .NB-pricing-tier-header {
+        text-align: center;
+        padding: 20px 16px;
+      }
+      .NB-pricing-tier-premium .NB-pricing-tier-header {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      }
+      .NB-pricing-tier-archive .NB-pricing-tier-header {
+        background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+      }
+      .NB-pricing-tier-pro .NB-pricing-tier-header {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      }
+      .NB-pricing-tier-name {
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .NB-pricing-tier-price {
+        justify-content: center;
+        align-items: baseline;
+        gap: 2px;
+        display: flex;
+      }
+      .NB-pricing-tier-price-amount {
+        color: #fff;
+        font-size: 42px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .NB-pricing-tier-price-period {
+        color: #ffffffd9;
+        font-size: 16px;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body
+    class="NB-welcome NB-premium NB-is-premium NB-is-anonymous NB-pref-story-position-center NB-dashboard-columns-double NB-pref-sticky-story-sideoptions NB-content-preview-1 NB-intelligence-neutral NB-feedlist-hide-read-feeds NB-theme-whitney NB-theme-size-m NB-theme-feed-size-m NB-theme-feed-font-whitney NB-line-spacing-m NB-density-comfortable NB-image-preview-small-right"
+    style="background-color: rgb(26, 37, 37)"
+  >
+    <div class="NB-body-inner">
+      <div class="NB-welcome-container NB-splash">
+        <div class="NB-welcome-pricing">
+          <div class="NB-inner">
+            <div class="NB-pricing-tiers">
+              <div class="NB-pricing-tier NB-pricing-tier-premium">
+                <div class="NB-pricing-tier-header">
+                  <div class="NB-pricing-tier-name">Premium</div>
+                  <div class="NB-pricing-tier-price">
+                    <span class="NB-pricing-tier-price-amount">$36</span>
+                    <span class="NB-pricing-tier-price-period">/year</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="NB-pricing-tier NB-pricing-tier-archive">
+                <div class="NB-pricing-tier-header">
+                  <div class="NB-pricing-tier-name">Premium Archive</div>
+                  <div class="NB-pricing-tier-price">
+                    <span class="NB-pricing-tier-price-amount">$99</span>
+                    <span class="NB-pricing-tier-price-period">/year</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="NB-pricing-tier NB-pricing-tier-pro">
+                <div class="NB-pricing-tier-header">
+                  <div class="NB-pricing-tier-name">Premium Pro</div>
+                  <div class="NB-pricing-tier-price">
+                    <span class="NB-pricing-tier-price-amount">$29</span>
+                    <span class="NB-pricing-tier-price-period">/month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

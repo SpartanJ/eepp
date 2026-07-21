@@ -1,0 +1,266 @@
+#!/bin/sh
+# xvfb-run-eepp: xvfb-run variant with race-safe automatic display selection.
+# Defaults tuned for eepp GUI tests:
+#   --auto-servernum enabled by default
+#   --server-args "-screen 0 1280x1024x24" enabled by default
+#   ASAN_OPTIONS includes detect_leaks=0 for the child process
+
+set -e
+
+PROGNAME=${0##*/}
+SERVERNUM=99
+MAX_SERVERNUM=599
+AUTO_SERVERNUM=yes
+AUTHFILE=
+ERRORFILE=/dev/null
+STARTWAIT=3
+XVFBARGS="-screen 0 1280x1024x24"
+LISTENTCP="-nolisten tcp"
+XAUTHPROTO=.
+LOCKDIR=
+XVFB_RUN_TMPDIR=
+XVFBPID=
+
+DEFCOLUMNS=$(stty size 2>/dev/null | awk '{print $2}') || true
+case "$DEFCOLUMNS" in
+    *[!0-9]*|'') DEFCOLUMNS=80 ;;
+esac
+
+message() {
+    echo "$PROGNAME: $*" | fmt -t -w "${COLUMNS:-$DEFCOLUMNS}"
+}
+
+error() {
+    message "error: $*" >&2
+}
+
+usage() {
+    [ -n "$*" ] && message "usage error: $*"
+    cat <<EOF_USAGE
+Usage: $PROGNAME [OPTION ...] COMMAND
+Run COMMAND in a virtual X server environment.
+
+Defaults differ from Debian xvfb-run:
+  --auto-servernum is enabled by default
+  --server-args defaults to "$XVFBARGS"
+  ASAN_OPTIONS gets detect_leaks=0 for COMMAND
+
+Options:
+-a        --auto-servernum          try to get a free server number, starting at --server-num [default]
+          --no-auto-servernum       use exactly --server-num
+-e FILE   --error-file=FILE         file used to store xauth errors and Xvfb output (default: $ERRORFILE)
+-f FILE   --auth-file=FILE          file used to store auth cookie
+-h        --help                    display this usage message and exit
+-n NUM    --server-num=NUM          first/exact server number to use (default: $SERVERNUM)
+          --max-server-num=NUM      highest server number to try in auto mode (default: $MAX_SERVERNUM)
+-l        --listen-tcp              enable TCP port listening in Xvfb
+-p PROTO  --xauth-protocol=PROTO    X authority protocol name to use (default: xauth default)
+-s ARGS   --server-args=ARGS        arguments to pass to Xvfb (default: "$XVFBARGS")
+-w DELAY  --wait=DELAY              seconds to wait for Xvfb to start when xdpyinfo is unavailable (default: $STARTWAIT)
+EOF_USAGE
+}
+
+cleanup() {
+    status=$?
+
+    if [ -n "$XVFBPID" ]; then
+        kill "$XVFBPID" >/dev/null 2>&1 || true
+        wait "$XVFBPID" >/dev/null 2>&1 || true
+    fi
+
+    if [ -n "$AUTHFILE" ]; then
+        XAUTHORITY=$AUTHFILE xauth remove ":$SERVERNUM" >"$ERRORFILE" 2>&1 || true
+    fi
+
+    [ -n "$XVFB_RUN_TMPDIR" ] && rm -rf "$XVFB_RUN_TMPDIR" || true
+    [ -n "$LOCKDIR" ] && rmdir "$LOCKDIR" >/dev/null 2>&1 || true
+
+    exit "$status"
+}
+
+is_display_busy() {
+    n=$1
+
+    # Xorg/Xvfb convention: lock file plus socket. Check both because stale
+    # lock files and still-existing sockets can happen independently.
+    [ -e "/tmp/.X$n-lock" ] && return 0
+    [ -e "/tmp/.X11-unix/X$n" ] && return 0
+
+    return 1
+}
+
+claim_display() {
+    n=$1
+    lock="${TMPDIR:-/tmp}/$PROGNAME-display-$n.lock"
+
+    # mkdir is atomic on local filesystems and avoids the race in classic
+    # xvfb-run -a, where many jobs can pick the same currently-free display.
+    if mkdir "$lock" 2>/dev/null; then
+        LOCKDIR=$lock
+        SERVERNUM=$n
+        # Helpful for manual cleanup/debugging. Not used as synchronization.
+        echo "$$" > "$LOCKDIR/pid" 2>/dev/null || true
+        return 0
+    fi
+
+    # Older versions of this script claimed displays from a command substitution,
+    # which left lock directories behind because LOCKDIR was set in a subshell.
+    # Recover those stale claims, but never touch a lock owned by a live process.
+    if [ -f "$lock/pid" ]; then
+        oldpid=$(cat "$lock/pid" 2>/dev/null || true)
+        case "$oldpid" in
+            *[!0-9]*|'') oldpid= ;;
+        esac
+        if [ -z "$oldpid" ] || ! kill -0 "$oldpid" >/dev/null 2>&1; then
+            rm -f "$lock/pid" 2>/dev/null || true
+            rmdir "$lock" 2>/dev/null || true
+            if mkdir "$lock" 2>/dev/null; then
+                LOCKDIR=$lock
+                SERVERNUM=$n
+                echo "$$" > "$LOCKDIR/pid" 2>/dev/null || true
+                return 0
+            fi
+        fi
+    fi
+
+    return 1
+}
+
+find_and_claim_display() {
+    i=$SERVERNUM
+    while [ "$i" -le "$MAX_SERVERNUM" ]; do
+        if ! is_display_busy "$i" && claim_display "$i"; then
+            return 0
+        fi
+        i=$((i + 1))
+    done
+    return 1
+}
+
+wait_for_xvfb() {
+    if command -v xdpyinfo >/dev/null 2>&1; then
+        i=0
+        # Poll for up to about 10 seconds. Avoid requiring sleep fractions.
+        while [ "$i" -lt 100 ]; do
+            DISPLAY=:$SERVERNUM XAUTHORITY=$AUTHFILE xdpyinfo >/dev/null 2>&1 && return 0
+            kill -0 "$XVFBPID" >/dev/null 2>&1 || return 1
+            sleep 0.1 2>/dev/null || sleep 1
+            i=$((i + 1))
+        done
+        return 1
+    fi
+
+    sleep "$STARTWAIT"
+    kill -0 "$XVFBPID" >/dev/null 2>&1
+}
+
+ARGS=$(getopt --options +ae:f:hn:lp:s:w: \
+    --long auto-servernum,no-auto-servernum,error-file:,auth-file:,help,server-num:,max-server-num:,listen-tcp,xauth-protocol:,server-args:,wait: \
+    --name "$PROGNAME" -- "$@")
+GETOPT_STATUS=$?
+
+if [ "$GETOPT_STATUS" -ne 0 ]; then
+    error "internal error; getopt exited with status $GETOPT_STATUS"
+    exit 6
+fi
+
+eval set -- "$ARGS"
+
+SHOWHELP=
+while :; do
+    case "$1" in
+        -a|--auto-servernum) AUTO_SERVERNUM=yes ;;
+        --no-auto-servernum) AUTO_SERVERNUM=no ;;
+        -e|--error-file) ERRORFILE=$2; shift ;;
+        -f|--auth-file) AUTHFILE=$2; shift ;;
+        -h|--help) SHOWHELP=yes ;;
+        -n|--server-num) SERVERNUM=$2; shift ;;
+        --max-server-num) MAX_SERVERNUM=$2; shift ;;
+        -l|--listen-tcp) LISTENTCP= ;;
+        -p|--xauth-protocol) XAUTHPROTO=$2; shift ;;
+        -s|--server-args) XVFBARGS=$2; shift ;;
+        -w|--wait) STARTWAIT=$2; shift ;;
+        --) shift; break ;;
+        *) error "internal error; getopt permitted '$1' unexpectedly"; exit 6 ;;
+    esac
+    shift
+done
+
+if [ "$SHOWHELP" ]; then
+    usage
+    exit 0
+fi
+
+if [ "$#" -eq 0 ]; then
+    usage "need a command to run" >&2
+    exit 2
+fi
+
+case "$SERVERNUM:$MAX_SERVERNUM" in
+    *[!0-9:]*|:*|*:)
+        error "server numbers must be numeric"
+        exit 2
+        ;;
+esac
+
+if ! command -v xauth >/dev/null 2>&1; then
+    error "xauth command not found"
+    exit 3
+fi
+
+if ! command -v Xvfb >/dev/null 2>&1; then
+    error "Xvfb command not found"
+    exit 3
+fi
+
+if [ "$AUTO_SERVERNUM" = yes ]; then
+    START_SERVERNUM=$SERVERNUM
+    if ! find_and_claim_display; then
+        error "could not find a free X display between $START_SERVERNUM and $MAX_SERVERNUM"
+        exit 4
+    fi
+else
+    if is_display_busy "$SERVERNUM"; then
+        error "display :$SERVERNUM is already busy"
+        exit 4
+    fi
+    if ! claim_display "$SERVERNUM"; then
+        error "display :$SERVERNUM is already claimed by another $PROGNAME process"
+        exit 4
+    fi
+fi
+
+trap cleanup EXIT INT TERM HUP
+
+if [ -z "$AUTHFILE" ]; then
+    XVFB_RUN_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/$PROGNAME.XXXXXXXX") || {
+        error "could not create temporary directory"
+        exit 4
+    }
+    AUTHFILE=$(mktemp "$XVFB_RUN_TMPDIR/Xauthority.XXXXXXXX") || {
+        error "could not create Xauthority file"
+        exit 4
+    }
+fi
+
+MCOOKIE=$(mcookie)
+XAUTHORITY=$AUTHFILE xauth add ":$SERVERNUM" "$XAUTHPROTO" "$MCOOKIE" >"$ERRORFILE" 2>&1
+
+# shellcheck disable=SC2086 # XVFBARGS and LISTENTCP intentionally split like xvfb-run.
+Xvfb ":$SERVERNUM" $XVFBARGS $LISTENTCP -auth "$AUTHFILE" >"$ERRORFILE" 2>&1 &
+XVFBPID=$!
+
+if ! wait_for_xvfb; then
+    error "Xvfb failed to start on display :$SERVERNUM; see $ERRORFILE"
+    exit 1
+fi
+
+set +e
+ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_leaks=0" \
+DISPLAY=:$SERVERNUM \
+XAUTHORITY=$AUTHFILE \
+"$@"
+RETVAL=$?
+set -e
+
+exit "$RETVAL"

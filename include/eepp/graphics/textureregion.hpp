@@ -13,15 +13,15 @@ class EE_API TextureRegion : public DrawableResource {
   public:
 	static TextureRegion* New();
 
-	static TextureRegion* New( const Uint32& TexId, const std::string& name = "" );
+	static TextureRegion* New( ResourceId textureId, const std::string& name = "" );
 
-	static TextureRegion* New( const Uint32& TexId, const Rect& srcRect,
+	static TextureRegion* New( ResourceId textureId, const Rect& srcRect,
 							   const std::string& name = "" );
 
-	static TextureRegion* New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
+	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
 							   const std::string& name = "" );
 
-	static TextureRegion* New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
+	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
 							   const Vector2i& offset, const std::string& name = "" );
 
 	static TextureRegion* New( Texture* tex, const std::string& name = "" );
@@ -73,7 +73,7 @@ class EE_API TextureRegion : public DrawableResource {
 	virtual ~TextureRegion();
 
 	/** Set the Texture Id that holds the TextureRegion. */
-	void setTextureId( const Uint32& TexId );
+	void setTextureId( ResourceId textureId );
 
 	/** Set the Texture that holds the TextureRegion. */
 	void setTexture( Texture* texture );

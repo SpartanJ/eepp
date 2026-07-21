@@ -1,7 +1,9 @@
 #include "ecode.hpp"
 #include "colorschemetranslator.hpp"
 #include "customwidgets.hpp"
+#include "datetimecontroller.hpp"
 #include "featureshealth.hpp"
+#include "fontpickercontroller.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
 #include "settingsactions.hpp"
@@ -186,10 +188,10 @@ void App::saveAllProcess() {
 	} );
 }
 
-void App::saveAll() {
+void App::saveAll( bool includeBuffers ) {
 	mTmpDocs.clear();
-	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-		if ( editor->isDirty() )
+	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		if ( editor->isDirty() && ( includeBuffers || editor->getDocument().hasFilepath() ) )
 			mTmpDocs.insert( &editor->getDocument() );
 	} );
 	saveAllProcess();
@@ -441,89 +443,8 @@ void App::openFolderDialog() {
 
 void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont,
 						  std::function<void()> onFinish ) {
-	std::string absoluteFontPath( fontPath );
-	if ( FileSystem::isRelativePath( absoluteFontPath ) )
-		absoluteFontPath = mResPath + fontPath;
-	UIFileDialog* dialog = UIFileDialog::New(
-		UIFileDialog::DefaultFlags |
-			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
-		"*.ttf; *.otf; *.woff; *.woff2; *.otb; *.bdf; *.ttc",
-		FileSystem::fileRemoveFileName( absoluteFontPath ) );
-	if ( dialog->getMultiView() ) {
-		ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
-			FileSystem::fileNameFromPath( fontPath ), true,
-			UIAbstractView::FindRowWithTextMatchKind::Equals );
-		if ( index.isValid() )
-			dialog->runOnMainThread(
-				[dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
-	}
-	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
-	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
-	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
-		if ( App::instance() && mSplitter && mSplitter->getCurWidget() &&
-			 !SceneManager::instance()->isShuttingDown() ) {
-			mSplitter->getCurWidget()->setFocus();
-		}
-	} );
-	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont, terminalFont,
-								  onFinish]( const Event* event ) {
-		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
-		if ( String::startsWith( newPath, mResPath ) )
-			newPath = newPath.substr( mResPath.size() );
-		if ( fontPath != newPath ) {
-			if ( !loadingMonoFont ) {
-				fontPath = newPath;
-				if ( onFinish )
-					onFinish();
-				return;
-			}
-			auto fontName =
-				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
-			FontTrueType* fontMono = loadFont( fontName, newPath );
-			if ( fontMono ) {
-				auto loadMonoFont = [this, &fontPath, newPath,
-									 terminalFont]( FontTrueType* fontMono ) {
-					fontPath = newPath;
-					if ( terminalFont )
-						mTerminalFont = fontMono;
-					else
-						mFontMono = fontMono;
-					fontMono->setEnableDynamicMonospace( true );
-					fontMono->setBoldAdvanceSameAsRegular( true );
-					FontFamily::loadFromRegular( fontMono );
-					if ( mSplitter ) {
-						if ( terminalFont ) {
-							mSplitter->forEachWidgetType(
-								UI_TYPE_TERMINAL, [fontMono]( UIWidget* term ) {
-									term->asType<UITerminal>()->setFont( fontMono );
-								} );
-						} else {
-							mSplitter->forEachEditor( [fontMono]( UICodeEditor* editor ) {
-								editor->setFont( fontMono );
-							} );
-
-							if ( auto buildOutputEditor =
-									 mUISceneNode->find<UICodeEditor>( "build_output_output" ) )
-								buildOutputEditor->setFont( fontMono );
-
-							if ( auto appOutputEditor =
-									 mUISceneNode->find<UICodeEditor>( "app_output_output" ) )
-								appOutputEditor->setFont( fontMono );
-
-							if ( mConfig.ui.editorFontInInputFields )
-								updateInputFonts();
-						}
-					}
-				};
-
-				loadMonoFont( fontMono );
-			}
-		}
-	} );
-	dialog->center();
-	dialog->show();
+	mFontPickerController->openFontDialog( fontPath, loadingMonoFont, terminalFont,
+										   std::move( onFinish ) );
 }
 
 void App::updateInputFonts() {
@@ -1107,6 +1028,8 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mArgs( args ),
 	mThreadPool(
 		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 4, Sys::getCPUCount() ) ) ),
+	mDateTimeController( std::make_unique<DateTimeController>( this ) ),
+	mFontPickerController( std::make_unique<FontPickerController>( this ) ),
 	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {}
 
 static void fsRemoveAll( const std::string& fpath ) {
@@ -1739,8 +1662,8 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "open_containing_folder_in_fm", "Open Containing Folder in File Manager",
 					 "folder-open", "open-containing-folder" );
 
-			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
-					 "copy", "copy-containing-folder-path" );
+			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path", "copy",
+					 "copy-containing-folder-path" );
 
 			menuAdd( "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
 
@@ -1818,6 +1741,33 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			}
 		} );
 	} );
+
+	applyNewTabPosition( tab );
+}
+
+void App::applyNewTabPosition( UITab* tab ) {
+	UITabWidget* tabWidget = tab->getTabWidget();
+	if ( !tabWidget )
+		return;
+	switch ( mConfig.editor.newTabPosition ) {
+		case NewTabPosition::AfterActive: {
+			Uint32 selectedIdx = tabWidget->getTabSelectedIndex();
+			Uint32 newIdx = eemin<Uint32>( selectedIdx + 1, tabWidget->getTabCount() - 1 );
+			tabWidget->moveTab( tab, newIdx );
+			break;
+		}
+		case NewTabPosition::First:
+			tabWidget->moveTab( tab, 0 );
+			break;
+		case NewTabPosition::LeftOfActive: {
+			Uint32 selectedIdx = tabWidget->getTabSelectedIndex();
+			tabWidget->moveTab( tab, eemin<Uint32>( selectedIdx, tabWidget->getTabCount() - 1 ) );
+			break;
+		}
+		case NewTabPosition::Last:
+		default:
+			break;
+	}
 }
 
 void App::onColorSchemeChanged( const std::string& ) {
@@ -2284,6 +2234,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"maximize-tab-widget",
 		"restore-maximized-tab-widget",
 		"close-folder",
+		"set-custom-date-format",
 	};
 }
 
@@ -2637,14 +2588,15 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 	audioPlayer->loadFromPath( path, autoPlay );
 }
 
-void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath ) {
+void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath,
+							  const std::string& oldFilePath, const std::string& repoPath ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" ) + ": " + originalFilePath;
 		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
+		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content, repoPath );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->getSize( getMenuIconSize() ) );
@@ -2662,7 +2614,10 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
+	diffView->setAutoDeleteOldTempImage( true );
 	auto [tab, iv] = getSplitter()->createWidget( diffView, diffViewTitle );
+	if ( !tab )
+		return;
 	if ( !originalFilePath.empty() ) {
 		std::string fileName = FileSystem::fileNameFromPath( originalFilePath );
 		tab->setText( diffViewTitle + ": " + fileName );
@@ -2676,7 +2631,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	if ( icon )
 		tab->setIcon( icon->getSize( getMenuIconSize() ) );
 	diffView->setHeadersVisible( true );
-	diffView->loadFromPatch( content, originalFilePath );
+	diffView->loadFromPatch( content, originalFilePath, oldFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 	registerUnlockedCommands( *diffView );
 }
@@ -2820,6 +2775,12 @@ bool App::loadFileFromPath(
 		openFileFromPath( path );
 	} else {
 		UITab* tab = mSplitter->isDocumentOpen( path );
+		auto onLoadedRestoreState = [this, onLoaded]( UICodeEditor* codeEditor,
+													  const std::string& path ) {
+			restoreClosedDocumentState( codeEditor, path );
+			if ( onLoaded )
+				onLoaded( codeEditor, path );
+		};
 
 		if ( tab && tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
@@ -2832,9 +2793,9 @@ bool App::loadFileFromPath(
 			}
 		} else {
 			if ( inNewTab ) {
-				mSplitter->loadAsyncFileFromPathInNewTab( path, onLoaded );
+				mSplitter->loadAsyncFileFromPathInNewTab( path, onLoadedRestoreState );
 			} else {
-				mSplitter->loadAsyncFileFromPath( path, codeEditor, onLoaded );
+				mSplitter->loadAsyncFileFromPath( path, codeEditor, onLoadedRestoreState );
 			}
 		}
 	}
@@ -3075,6 +3036,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			}
 		}
 	} );
+	mDateTimeController->registerCommands( doc );
 	registerUnlockedCommands( doc );
 
 	editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
@@ -3149,13 +3111,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			updateNonUniqueTabTitles();
 	} );
 
-	editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+	editor->on( Event::OnDocumentClosed, [this, editor]( const Event* event ) {
 		if ( !appInstance )
 			return;
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		std::string dir( FileSystem::fileRemoveFileName( docEvent->getDoc()->getFilePath() ) );
 		if ( dir.empty() )
 			return;
+		rememberClosedDocumentState( editor );
 		mRecentClosedFiles.push( docEvent->getDoc()->getFilePath() );
 		mSettings->updatedReopenClosedFileState();
 		Lock l( mWatchesLock );
@@ -3273,9 +3236,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					} );
 
 					mdView->loadFromString( doc->toUtf8String() );
-					auto title =
-						i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) + " " +
-						doc->getFilename();
+					auto title = i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) +
+								 " " + doc->getFilename();
 					auto [tab, _] =
 						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
 					tab->setIcon( findIcon( "filetype-md" ) );
@@ -3335,9 +3297,13 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			auto menu = cevent->getMenu();
 
 			UIPopUpMenu* compareMenu = UIPopUpMenu::New();
-			compareMenu->add( i18n( "compare_to_ellipsis", "Compare to..." ) )
+			compareMenu
+				->add( i18n( "compare_to_ellipsis", "Compare to..." ), nullptr,
+					   getKeybind( "compare-to" ) )
 				->setId( "compare-to" );
-			compareMenu->add( i18n( "compare_with_clipboard", "Compare with clipboard" ) )
+			compareMenu
+				->add( i18n( "compare_with_clipboard", "Compare with clipboard" ), nullptr,
+					   getKeybind( "compare-with-clipboard" ) )
 				->setId( "compare-with-clipboard" );
 
 			menu->addSeparator();
@@ -3346,12 +3312,12 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			if ( ext == "md" || ext == "markdown" ) {
 				menu->addSeparator();
 				menu->add( i18n( "show_markdown_preview", "Show Markdown Live Preview" ),
-						   findIcon( "filetype-md" ) )
+						   findIcon( "filetype-md" ), getKeybind( "show-markdown-preview" ) )
 					->setId( "show-markdown-preview" );
 			} else if ( ext == "diff" || ext == "patch" ) {
 				menu->addSeparator();
 				menu->add( i18n( "show_diff_preview", "Show Diff Preview" ),
-						   findIcon( "filetype-diff" ) )
+						   findIcon( "filetype-diff" ), getKeybind( "show-diff-preview" ) )
 					->setId( "show-diff-preview" );
 			}
 		} );
@@ -3422,6 +3388,40 @@ void App::reopenClosedTab() {
 	mSettings->updatedReopenClosedFileState();
 
 	loadFileFromPath( prevTabPath );
+}
+
+std::string App::closedDocumentStateKey( const std::string& path ) const {
+	if ( path.empty() )
+		return {};
+	return FileSystem::fileExists( path ) ? FileSystem::getRealPath( path ) : path;
+}
+
+void App::rememberClosedDocumentState( UICodeEditor* editor ) {
+	if ( !editor || !editor->getDocument().hasFilepath() )
+		return;
+
+	std::string key( closedDocumentStateKey( editor->getDocument().getFilePath() ) );
+	if ( key.empty() )
+		return;
+
+	mClosedDocumentState[key] = editor->getDocument().getSelections();
+}
+
+void App::restoreClosedDocumentState( UICodeEditor* editor, const std::string& path ) {
+	if ( !editor )
+		return;
+
+	std::string key( closedDocumentStateKey( path ) );
+	if ( key.empty() )
+		return;
+
+	auto it = mClosedDocumentState.find( key );
+	if ( it == mClosedDocumentState.end() )
+		return;
+
+	editor->getDocument().setSelection( it->second );
+	editor->scrollToCursor();
+	mClosedDocumentState.erase( it );
 }
 
 void App::updateEditorState() {
@@ -4115,6 +4115,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
 		mStatusBar->setVisible( mConfig.ui.showStatusBar );
 	}
+	mClosedDocumentState.clear();
 
 	if ( !mProjectTreeView ) {
 		showSidePanel( mConfig.ui.showSidePanel );
@@ -4890,6 +4891,7 @@ void App::init( InitParameters& params ) {
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		mSplitter->setHideTabBar( mConfig.editor.hideTabBar );
 		mSplitter->setOpenDocumentsInMainSplit( mConfig.editor.openDocumentsInMainSplit );
+		mSplitter->setRestoreEditorSelectionOnFocus( mConfig.editor.restoreEditorSelectionOnFocus );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
 			tabWidget->getTabBar()->onDoubleClick(
 				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );

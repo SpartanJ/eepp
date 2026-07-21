@@ -23,6 +23,14 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheetParser::StyleSheetParser() : mLoaded( false ) {}
 
+void StyleSheetParser::setBaseURI( const URI& uri ) {
+	mBaseURI = uri;
+}
+
+void StyleSheetParser::setBaseURI( const std::string& uri ) {
+	mBaseURI = URI( uri );
+}
+
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	Clock elapsed;
 	std::vector<std::string> importedList;
@@ -117,13 +125,15 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 		switch ( rs ) {
 			case ReadingSelector: {
 				pos = readSelector( css, rs, pos, buffer );
-
-				if ( buffer[0] == '@' ) {
-					if ( String::startsWith( buffer, "@media" ) ) {
+				std::string_view trimBuf = String::trim( std::string_view{ buffer } );
+				if ( !trimBuf.empty() && trimBuf[0] == '@' ) {
+					if ( String::startsWith( trimBuf, "@media" ) ) {
 						mediaParse( css, rs, pos, buffer, importedList );
-					} else if ( String::startsWith( buffer, "@import" ) ) {
+					} else if ( String::startsWith( trimBuf, "@import" ) ) {
 						importParse( css, pos, buffer, importedList );
-					} else if ( String::startsWith( buffer, "@keyframes" ) ) {
+						size = css.size();
+					} else if ( String::startsWith( trimBuf, "@keyframes" ) ||
+								String::startsWith( trimBuf, "@-webkit-keyframes" ) ) {
 						keyframesParse( css, rs, pos, buffer );
 					}
 				}
@@ -330,6 +340,14 @@ void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::str
 			path = function.getParameters().at( 0 );
 		}
 
+		// Resolve relative @import paths against the base URI (document URL)
+		if ( !mBaseURI.empty() && !String::startsWith( path, "http://" ) &&
+			 !String::startsWith( path, "https://" ) ) {
+			URI resolved = mBaseURI;
+			resolved.resolve( URI( path ) );
+			path = resolved.toString();
+		}
+
 		if ( std::find( importedList.begin(), importedList.end(), path ) == importedList.end() ) {
 			std::string newCss( importCSS( path, importedList ) );
 
@@ -368,8 +386,8 @@ void StyleSheetParser::keyframesParse( std::string& css, ReadState& rs, std::siz
 		const std::vector<std::shared_ptr<StyleSheetStyle>>& styles =
 			keyframeParser.getStyleSheet().getStyles();
 
-		std::string name(
-			String::trim( String::trim( buffer.substr( buffer.find_first_of( " " ) ) ), '"' ) );
+		std::string name( String::trim(
+			String::trim( buffer.substr( String::trim( buffer ).find_first_of( " " ) ) ), '"' ) );
 
 		mStyleSheet.addKeyframes( KeyframesDefinition::parseKeyframes( name, styles ) );
 	}

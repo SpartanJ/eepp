@@ -4,7 +4,7 @@ namespace ecode {
 
 std::vector<std::vector<std::string>>
 CommandPalette::build( const std::vector<std::string>& commandList,
-					   const EE::UI::KeyBindings& keybindings ) {
+					   const KeyBindings& keybindings ) {
 	std::vector<std::vector<std::string>> ret;
 	std::unordered_set<std::string> processedCommands;
 	ret.reserve( commandList.size() );
@@ -24,7 +24,7 @@ CommandPalette::build( const std::vector<std::string>& commandList,
 
 std::shared_ptr<CommandPaletteModel>
 CommandPalette::asModel( const std::vector<std::string>& commandList,
-						 const EE::UI::KeyBindings& keybindings ) {
+						 const KeyBindings& keybindings ) {
 	return CommandPaletteModel::create( 3, build( commandList, keybindings ) );
 }
 

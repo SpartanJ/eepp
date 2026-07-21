@@ -37,7 +37,7 @@ namespace EE { namespace UI { namespace Doc {
 // "minimap_highlight" (Minimap text highlight color)
 // "minimap_visible_area" (Minimap visible area marker color)
 
-SyntaxColorScheme SyntaxColorScheme::getDefault() {
+SyntaxColorScheme SyntaxColorScheme::getDefaultDark() {
 	return {
 		"eepp",
 		{
@@ -84,6 +84,55 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 		  { "minimap_selection"_sst, Color( "#8abdff80" ) },
 		  { "minimap_highlight"_sst, Color( "#FFFF0040" ) },
 		  { "minimap_visible_area"_sst, Color( "#FFFFFF0A" ) } } };
+}
+
+SyntaxColorScheme SyntaxColorScheme::getDefaultLight() {
+	return {
+		"github",
+		{
+			{ "normal"_sst, Color( "#24292e" ) },
+			{ "symbol"_sst, Color( "#24292e" ) },
+			{ "comment"_sst, Color( "#6a737d" ) },
+			{ "keyword"_sst, Color( "#d73a49" ) },
+			{ "type"_sst, Color( "#d73a49" ) },
+			{ "parameter"_sst, Color( "#005cc5" ) },
+			{ "number"_sst, Color( "#005cc5" ) },
+			{ "literal"_sst, Color( "#005cc5" ) },
+			{ "string"_sst, Color( "#032f62" ) },
+			{ "operator"_sst, Color( "#d73a49" ) },
+			{ "function"_sst, Color( "#005cc5" ) },
+			{ "link"_sst, Color( "#0366d6" ) }, // Using 'accent' for link color
+			{ "link_hover"_sst, { Color::Transparent, Color::Transparent, Text::Underlined } },
+		},
+		{ { "background"_sst, Color( "#fbfbfb" ) },
+		  { "widget_background"_sst, Color( "#f6f6f6" ) },
+		  { "text"_sst, Color( "#404040" ) },
+		  { "caret"_sst, Color( "#181818" ) },
+		  { "selection"_sst, Color( "#b7dce8" ) },
+		  { "line_highlight"_sst, Color( "#f2f2f2" ) },
+		  { "line_number"_sst, Color( "#d0d0d0" ) },
+		  { "line_number2"_sst, Color( "#808080" ) },
+		  // eepp colors
+		  { "gutter_background"_sst, Color( "#fbfbfb" ) },
+		  { "whitespace"_sst, Color( "#b7dce8" ) },
+		  { "line_break_column"_sst, Color( "#d0d0d099" ) },
+		  { "matching_bracket"_sst, Color( "#00000033" ) }, // Dark transparent for light theme
+		  { "matching_selection"_sst, Color( "#a1c8d6" ) },
+		  { "matching_search"_sst, Color( "#e8e8e8" ) },
+		  { "suggestion"_sst, { Color( "#1d1f27" ), Color( "#e1e1e6" ), Text::Regular } },
+		  { "suggestion_scrollbar"_sst, { Color( "#3daee9" ) } },
+		  { "suggestion_selected"_sst, { Color( "#222533" ), Color( "#ffffff" ), Text::Regular } },
+		  { "error"_sst, { Color( "#990000FF" ) } },
+		  { "warning"_sst, { Color( "#999900FF" ) } },
+		  { "notice"_sst, Color( "#8abdff" ) },
+		  { "selection_region"_sst, Color( "#b7dce877" ) },
+		  // minimap colors
+		  { "minimap_background"_sst, Color( "#fbfbfbAA" ) },
+		  { "minimap_current_line"_sst, Color( "#0000000A" ) },
+		  { "minimap_hover"_sst, Color( "#00000010" ) },
+		  { "minimap_selection"_sst, Color( "#b7dce880" ) },
+		  { "minimap_highlight"_sst, Color( "#FF00FFFF" ) },
+		  { "minimap_visible_area"_sst, Color( "#00000011" ) } } };
 }
 
 SyntaxColorScheme::Style parseStyle(
@@ -151,7 +200,7 @@ SyntaxColorScheme::Style parseStyle(
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stream ) {
 	Clock clock;
 	std::vector<SyntaxColorScheme> colorSchemes;
-	SyntaxColorScheme refColorScheme( getDefault() );
+	SyntaxColorScheme refColorScheme( getDefaultDark() );
 	IniFile ini( stream );
 	for ( size_t keyIdx = 0; keyIdx < ini.getNumKeys(); keyIdx++ ) {
 		SyntaxColorScheme colorScheme;
@@ -216,7 +265,7 @@ SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
 static const SyntaxColorScheme::Style StyleEmpty = { Color::Transparent };
-static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefault();
+static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefaultDark();
 
 const SyntaxColorScheme::Style&
 SyntaxColorScheme::getSyntaxStyle( const SyntaxStyleType& type ) const {

@@ -9,11 +9,6 @@ FrameBufferManager::FrameBufferManager() {}
 
 FrameBufferManager::~FrameBufferManager() {}
 
-void FrameBufferManager::reload() {
-	for ( auto& fb : mResources )
-		fb->reload();
-}
-
 FrameBuffer* FrameBufferManager::getCurrentlyBound() {
 	int curFB;
 

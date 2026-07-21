@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSS Gradient Function Tests</title>
+<style>
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #ddd;
+    background: #16181d;
+  }
+
+  h1, h2 {
+    margin: 0 0 16px;
+    font-weight: 650;
+  }
+
+  h1 {
+    margin-bottom: 28px;
+  }
+
+  section {
+    margin-bottom: 36px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .case {
+    border: 1px solid #3a3d46;
+    background: #22252d;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .sample {
+    height: 150px;
+    border-bottom: 1px solid #3a3d46;
+  }
+
+  .label {
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  code {
+    display: block;
+    margin-top: 4px;
+    color: #b7cdfd;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  /* linear-gradient() */
+  .linear-basic {
+    background: linear-gradient(red, blue);
+  }
+
+  .linear-to-right {
+    background: linear-gradient(to right, red, yellow, blue);
+  }
+
+  .linear-to-bottom-right {
+    background: linear-gradient(to bottom right, red, yellow, blue);
+  }
+
+  .linear-angle {
+    background: linear-gradient(45deg, red, yellow, lime, cyan, blue);
+  }
+
+  .linear-negative-angle {
+    background: linear-gradient(-30deg, #ff3366, #6633ff);
+  }
+
+  .linear-turn-angle {
+    background: linear-gradient(0.25turn, red, orange, yellow, green, blue);
+  }
+
+  .linear-percent-stops {
+    background: linear-gradient(to right, red 0%, yellow 25%, green 50%, cyan 75%, blue 100%);
+  }
+
+  .linear-length-stops {
+    background: linear-gradient(to right, red 0px, yellow 45px, green 90px, blue 150px);
+  }
+
+  .linear-hard-stops {
+    background: linear-gradient(to right, red 0 25%, white 25% 50%, blue 50% 75%, black 75% 100%);
+  }
+
+  .linear-overlap-stops {
+    background: linear-gradient(to right, red 40%, yellow 20%, blue 80%);
+  }
+
+  .linear-transparent {
+    background: linear-gradient(to right, rgba(255,0,0,1), rgba(255,0,0,0)), #1e90ff;
+  }
+
+  .linear-multiple-backgrounds {
+    background:
+      linear-gradient(45deg, rgba(255,255,255,0.28) 25%, transparent 25% 75%, rgba(255,255,255,0.28) 75%),
+      linear-gradient(to right, #202040, #208080);
+    background-size: 40px 40px, auto;
+  }
+
+  /* repeating-linear-gradient() */
+  .repeat-basic {
+    background: repeating-linear-gradient(red 0 10px, blue 10px 20px);
+  }
+
+  .repeat-diagonal {
+    background: repeating-linear-gradient(45deg, red 0 8px, yellow 8px 16px, blue 16px 24px);
+  }
+
+  .repeat-to-right {
+    background: repeating-linear-gradient(to right, #111 0 10px, #eee 10px 20px);
+  }
+
+  .repeat-thin-lines {
+    background: repeating-linear-gradient(to bottom, black 0 1px, white 1px 2px);
+  }
+
+  .repeat-soft-stops {
+    background: repeating-linear-gradient(90deg, red 0px, yellow 18px, blue 36px);
+  }
+
+  .repeat-hard-soft-mix {
+    background: repeating-linear-gradient(135deg, #ff3366 0 12px, #ffd166 12px 18px, #06d6a0 18px 36px);
+  }
+
+  .repeat-transparent {
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0 8px, transparent 8px 16px),
+      #304060;
+  }
+
+  .repeat-short-period {
+    background: repeating-linear-gradient(30deg, red 0 3px, blue 3px 6px);
+  }
+
+  .repeat-long-period {
+    background: repeating-linear-gradient(30deg, red 0 30px, yellow 30px 60px, blue 60px 90px);
+  }
+
+  .repeat-with-background-size {
+    background: repeating-linear-gradient(to right, red 0 12px, transparent 12px 24px), linear-gradient(to bottom, #222, #555);
+    background-size: 48px 48px, auto;
+  }
+
+  /* radial-gradient() */
+  .radial-basic {
+    background: radial-gradient(red, blue);
+  }
+
+  .radial-circle {
+    background: radial-gradient(circle, red, yellow, blue);
+  }
+
+  .radial-ellipse {
+    background: radial-gradient(ellipse, red, yellow, blue);
+  }
+
+  .radial-at-center {
+    background: radial-gradient(circle at center, red 0%, yellow 35%, blue 100%);
+  }
+
+  .radial-at-corner {
+    background: radial-gradient(circle at top left, red, yellow, blue);
+  }
+
+  .radial-at-lengths {
+    background: radial-gradient(circle at 40px 70px, red, yellow 35%, blue);
+  }
+
+  .radial-closest-side {
+    background: radial-gradient(circle closest-side at 70% 35%, red, yellow, blue);
+  }
+
+  .radial-farthest-side {
+    background: radial-gradient(circle farthest-side at 70% 35%, red, yellow, blue);
+  }
+
+  .radial-closest-corner {
+    background: radial-gradient(circle closest-corner at 70% 35%, red, yellow, blue);
+  }
+
+  .radial-farthest-corner {
+    background: radial-gradient(circle farthest-corner at 70% 35%, red, yellow, blue);
+  }
+
+  .radial-explicit-size {
+    background: radial-gradient(80px 45px at 50% 50%, red, yellow, blue);
+  }
+
+  .radial-hard-stops {
+    background: radial-gradient(circle, red 0 25%, white 25% 50%, blue 50% 75%, black 75% 100%);
+  }
+
+  .radial-transparent {
+    background: radial-gradient(circle at center, rgba(255,255,255,0.9), rgba(255,255,255,0) 55%), #1e5a7a;
+  }
+
+  .radial-multiple-backgrounds {
+    background:
+      radial-gradient(circle at 30% 35%, rgba(255,255,255,0.8), transparent 18%),
+      radial-gradient(circle at 70% 65%, rgba(255,0,0,0.75), transparent 22%),
+      linear-gradient(135deg, #14213d, #000);
+  }
+
+  .radial-repeated-look {
+    background: radial-gradient(circle, red 0 8px, yellow 8px 16px, blue 16px 24px, transparent 24px 32px), #222;
+    background-size: 64px 64px;
+  }
+</style>
+</head>
+<body>
+  <h1>CSS Gradient Function Tests</h1>
+
+  <section>
+    <h2>linear-gradient()</h2>
+    <div class="grid">
+      <div class="case"><div class="sample linear-basic"></div><div class="label">Default direction<code>linear-gradient(red, blue)</code></div></div>
+      <div class="case"><div class="sample linear-to-right"></div><div class="label">Keyword direction<code>linear-gradient(to right, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample linear-to-bottom-right"></div><div class="label">Corner direction<code>linear-gradient(to bottom right, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample linear-angle"></div><div class="label">Angle in degrees<code>linear-gradient(45deg, red, yellow, lime, cyan, blue)</code></div></div>
+      <div class="case"><div class="sample linear-negative-angle"></div><div class="label">Negative angle<code>linear-gradient(-30deg, #ff3366, #6633ff)</code></div></div>
+      <div class="case"><div class="sample linear-turn-angle"></div><div class="label">Angle in turns<code>linear-gradient(0.25turn, red, orange, yellow, green, blue)</code></div></div>
+      <div class="case"><div class="sample linear-percent-stops"></div><div class="label">Percentage stops<code>linear-gradient(to right, red 0%, yellow 25%, green 50%, cyan 75%, blue 100%)</code></div></div>
+      <div class="case"><div class="sample linear-length-stops"></div><div class="label">Length stops<code>linear-gradient(to right, red 0px, yellow 45px, green 90px, blue 150px)</code></div></div>
+      <div class="case"><div class="sample linear-hard-stops"></div><div class="label">Hard color bands / multi-position stops<code>linear-gradient(to right, red 0 25%, white 25% 50%, blue 50% 75%, black 75% 100%)</code></div></div>
+      <div class="case"><div class="sample linear-overlap-stops"></div><div class="label">Out-of-order / overlapping stops<code>linear-gradient(to right, red 40%, yellow 20%, blue 80%)</code></div></div>
+      <div class="case"><div class="sample linear-transparent"></div><div class="label">Alpha over fallback color<code>linear-gradient(to right, rgba(255,0,0,1), rgba(255,0,0,0)), #1e90ff</code></div></div>
+      <div class="case"><div class="sample linear-multiple-backgrounds"></div><div class="label">Multiple backgrounds + background-size<code>linear-gradient(...), linear-gradient(...); background-size: 40px 40px, auto</code></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>repeating-linear-gradient()</h2>
+    <div class="grid">
+      <div class="case"><div class="sample repeat-basic"></div><div class="label">Basic repeating bands<code>repeating-linear-gradient(red 0 10px, blue 10px 20px)</code></div></div>
+      <div class="case"><div class="sample repeat-diagonal"></div><div class="label">Diagonal repeating bands<code>repeating-linear-gradient(45deg, red 0 8px, yellow 8px 16px, blue 16px 24px)</code></div></div>
+      <div class="case"><div class="sample repeat-to-right"></div><div class="label">Keyword direction<code>repeating-linear-gradient(to right, #111 0 10px, #eee 10px 20px)</code></div></div>
+      <div class="case"><div class="sample repeat-thin-lines"></div><div class="label">Very thin lines<code>repeating-linear-gradient(to bottom, black 0 1px, white 1px 2px)</code></div></div>
+      <div class="case"><div class="sample repeat-soft-stops"></div><div class="label">Soft repeating transitions<code>repeating-linear-gradient(90deg, red 0px, yellow 18px, blue 36px)</code></div></div>
+      <div class="case"><div class="sample repeat-hard-soft-mix"></div><div class="label">Mixed hard/soft ranges<code>repeating-linear-gradient(135deg, #ff3366 0 12px, #ffd166 12px 18px, #06d6a0 18px 36px)</code></div></div>
+      <div class="case"><div class="sample repeat-transparent"></div><div class="label">Transparent stripes over color<code>repeating-linear-gradient(45deg, rgba(...), transparent), #304060</code></div></div>
+      <div class="case"><div class="sample repeat-short-period"></div><div class="label">Short repeat period<code>repeating-linear-gradient(30deg, red 0 3px, blue 3px 6px)</code></div></div>
+      <div class="case"><div class="sample repeat-long-period"></div><div class="label">Long repeat period<code>repeating-linear-gradient(30deg, red 0 30px, yellow 30px 60px, blue 60px 90px)</code></div></div>
+      <div class="case"><div class="sample repeat-with-background-size"></div><div class="label">Repeating layer + background-size<code>repeating-linear-gradient(...), linear-gradient(...); background-size: 48px 48px, auto</code></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>radial-gradient()</h2>
+    <div class="grid">
+      <div class="case"><div class="sample radial-basic"></div><div class="label">Default radial gradient<code>radial-gradient(red, blue)</code></div></div>
+      <div class="case"><div class="sample radial-circle"></div><div class="label">Circle shape<code>radial-gradient(circle, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-ellipse"></div><div class="label">Ellipse shape<code>radial-gradient(ellipse, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-at-center"></div><div class="label">Explicit center position<code>radial-gradient(circle at center, red 0%, yellow 35%, blue 100%)</code></div></div>
+      <div class="case"><div class="sample radial-at-corner"></div><div class="label">Position at corner<code>radial-gradient(circle at top left, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-at-lengths"></div><div class="label">Position using lengths<code>radial-gradient(circle at 40px 70px, red, yellow 35%, blue)</code></div></div>
+      <div class="case"><div class="sample radial-closest-side"></div><div class="label">closest-side size<code>radial-gradient(circle closest-side at 70% 35%, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-farthest-side"></div><div class="label">farthest-side size<code>radial-gradient(circle farthest-side at 70% 35%, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-closest-corner"></div><div class="label">closest-corner size<code>radial-gradient(circle closest-corner at 70% 35%, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-farthest-corner"></div><div class="label">farthest-corner size<code>radial-gradient(circle farthest-corner at 70% 35%, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-explicit-size"></div><div class="label">Explicit ellipse radii<code>radial-gradient(80px 45px at 50% 50%, red, yellow, blue)</code></div></div>
+      <div class="case"><div class="sample radial-hard-stops"></div><div class="label">Hard radial bands<code>radial-gradient(circle, red 0 25%, white 25% 50%, blue 50% 75%, black 75% 100%)</code></div></div>
+      <div class="case"><div class="sample radial-transparent"></div><div class="label">Transparent fade over color<code>radial-gradient(circle at center, rgba(...), rgba(...,0) 55%), #1e5a7a</code></div></div>
+      <div class="case"><div class="sample radial-multiple-backgrounds"></div><div class="label">Multiple radial layers<code>radial-gradient(...), radial-gradient(...), linear-gradient(...)</code></div></div>
+      <div class="case"><div class="sample radial-repeated-look"></div><div class="label">Radial tile using background-size<code>radial-gradient(...), #222; background-size: 64px 64px</code></div></div>
+    </div>
+  </section>
+</body>
+</html>

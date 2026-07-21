@@ -82,10 +82,14 @@ bool FileSystem::fileGet( const std::string& path, std::string& data ) {
 		IOStreamFile fs( path );
 		ios_size fsize = fs.getSize();
 
-		data.clear();
-		data.resize( fsize );
+		if ( fsize < 0 )
+			return false;
 
-		fs.read( reinterpret_cast<char*>( &data[0] ), fsize );
+		data.clear();
+		data.resize( static_cast<size_t>( fsize ) );
+
+		if ( fsize > 0 )
+			fs.read( data.data(), fsize );
 
 		return true;
 	}

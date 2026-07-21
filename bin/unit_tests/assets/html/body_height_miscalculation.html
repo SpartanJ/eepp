@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><link id="giscus-css" rel="stylesheet" href="body_height_miscalculation/default.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+  <title>What if your browser built the UI for you? — jonno.nz</title>
+
+
+  <meta name="description" content="We're still shipping hand-crafted frontends while AI can generate entire interfaces. What if the browser itself generated the UI from an API manifest and your preferences?">
+  <meta name="author" content="John Gregoriadis">
+  <meta name="theme-color" content="#0c1520">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="canonical" href="https://jonno.nz/posts/what-if-your-browser-built-the-ui-for-you/">
+  <link rel="icon" href="https://jonno.nz/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="body_height_miscalculation.css">
+  <link rel="alternate" type="application/rss+xml" title="jonno.nz" href="https://jonno.nz/feed.xml">
+  <link rel="alternate" type="application/feed+json" title="jonno.nz" href="https://jonno.nz/feed.json">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="jonno.nz">
+  <meta property="og:locale" content="en_NZ">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="What if your browser built the UI for you? — jonno.nz">
+  <meta property="og:description" content="We're still shipping hand-crafted frontends while AI can generate entire interfaces. What if the browser itself generated the UI from an API manifest and your preferences?">
+  <meta property="og:url" content="https://jonno.nz/posts/what-if-your-browser-built-the-ui-for-you/">
+
+  <meta property="og:image" content="https://jonno.nz/og/what-if-your-browser-built-the-ui-for-you.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="What if your browser built the UI for you?">
+
+
+
+  <meta property="article:published_time" content="2026-04-05">
+
+  <meta property="article:author" content="John Gregoriadis">
+  <meta property="article:tag" content="ai">
+  <meta property="article:tag" content="architecture">
+  <meta property="article:tag" content="engineering">
+
+
+
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="jonno.nz">
+<meta property="og:title" content="What if your browser built the UI for you?">
+<meta property="og:description" content="We're still shipping hand-crafted frontends while AI can generate entire interfaces. What if the browser itself generated the UI from an API manifest and…">
+<meta property="og:url" content="https://jonno.nz/posts/what-if-your-browser-built-the-ui-for-you/">
+<meta property="og:image" content="https://jonno.nz/og/what-if-your-browser-built-the-ui-for-you.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="We're still shipping hand-crafted frontends while AI can generate entire interfaces. What if the browser itself generated the UI from an API manifest and…">
+<meta name="theme-color" content="#0c1520">
+<meta name="generator" content="Lume v2.4.2">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <nav class="site-nav" aria-label="Primary">
+    <div class="wrap">
+      <a href="https://jonno.nz/" class="brand" aria-label="jonno.nz — home">jonno.nz</a>
+      <div class="links">
+        <a href="https://jonno.nz/">writing</a>
+        <a href="https://jonno.nz/projects/">projects</a>
+        <a href="https://jonno.nz/about/">about</a>
+        <a href="https://jonno.nz/tags/">tags</a>
+        <a href="https://jonno.nz/feed.xml" aria-label="RSS feed">rss</a>
+      </div>
+    </div>
+  </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="progress-top" aria-hidden="true"><div class="bar" id="progress-bar" style="width: 0%;"></div></div>
+
+<main id="main" class="shell post-shell" role="main">
+
+  <article id="top">
+    <div class="header-box" aria-label="Post metadata">
+      <div class="hb-row">
+        <span class="hb-k">published</span>
+        <span class="hb-v">
+          <time datetime="2026-04-05">2026-04-05</time>
+
+        </span>
+      </div>
+
+
+      <div class="hb-row">
+        <span class="hb-k">reading</span>
+        <span class="hb-v">5 min · 1,132 words</span>
+      </div>
+
+
+      <div class="hb-row">
+        <span class="hb-k">tags</span>
+        <span class="hb-v">
+          <a href="https://jonno.nz/tags/ai/" class="tag">ai</a><a href="https://jonno.nz/tags/architecture/" class="tag">architecture</a><a href="https://jonno.nz/tags/engineering/" class="tag">engineering</a>
+        </span>
+      </div>
+
+    </div>
+
+    <header class="post-hero">
+      <div class="hero-text">
+
+        <h1>What if your browser built the UI for you?</h1>
+        <p class="dek">We're still shipping hand-crafted frontends while
+ AI can generate entire interfaces. What if the browser itself generated
+ the UI from an API manifest and your preferences?</p>
+        <div class="byline">
+          <span>By <b><a href="https://jonno.nz/about/" rel="author">John Gregoriadis</a></b></span>
+          <span>5 April 2026</span>
+          <span>5 min read</span>
+        </div>
+      </div>
+      <div class="mm-art" data-seed="What if your browser built the UI for you?" aria-hidden="true"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g class="art-spin" style="--dur:23s;--dir:normal"><path d="M57.8,79.6L24.3,66.5L26.3,30.6L61.1,21.5L80.5,51.8Z" fill="none" stroke="#3d7b8a" stroke-width="0.9" opacity="0.5" pathLength="1" class="art-draw" style="--d:0.00s"></path><line x1="57.8" y1="79.6" x2="61.1" y2="21.5" stroke="#3d7b8a" stroke-width="0.5" opacity="0.3" pathLength="1" class="art-draw" style="--d:0.20s"></line><line x1="24.3" y1="66.5" x2="80.5" y2="51.8" stroke="#3d7b8a" stroke-width="0.5" opacity="0.3" pathLength="1" class="art-draw" style="--d:0.27s"></line><line x1="26.3" y1="30.6" x2="57.8" y2="79.6" stroke="#3d7b8a" stroke-width="0.5" opacity="0.2" pathLength="1" class="art-draw" style="--d:0.34s"></line><line x1="61.1" y1="21.5" x2="24.3" y2="66.5" stroke="#3d7b8a" stroke-width="0.5" opacity="0.3" pathLength="1" class="art-draw" style="--d:0.41s"></line><line x1="80.5" y1="51.8" x2="26.3" y2="30.6" stroke="#3d7b8a" stroke-width="0.5" opacity="0.3" pathLength="1" class="art-draw" style="--d:0.48s"></line><line x1="50.0" y1="50.0" x2="57.8" y2="79.6" stroke="#3d7b8a" stroke-width="0.3" opacity="0.2" pathLength="1" class="art-draw" style="--d:0.70s"></line><line x1="50.0" y1="50.0" x2="24.3" y2="66.5" stroke="#3d7b8a" stroke-width="0.3" opacity="0.1" pathLength="1" class="art-draw" style="--d:0.74s"></line><line x1="50.0" y1="50.0" x2="26.3" y2="30.6" stroke="#3d7b8a" stroke-width="0.3" opacity="0.1" pathLength="1" class="art-draw" style="--d:0.78s"></line><line x1="50.0" y1="50.0" x2="61.1" y2="21.5" stroke="#3d7b8a" stroke-width="0.3" opacity="0.1" pathLength="1" class="art-draw" style="--d:0.82s"></line><line x1="50.0" y1="50.0" x2="80.5" y2="51.8" stroke="#3d7b8a" stroke-width="0.3" opacity="0.1" pathLength="1" class="art-draw" style="--d:0.86s"></line><circle cx="57.8" cy="79.6" r="1.2" fill="#3d7b8a" class="art-dot" style="--d:0.90s;--op:0.6"></circle><circle cx="24.3" cy="66.5" r="1.2" fill="#3d7b8a" class="art-pulse-dot" style="--d:0.95s;--op:0.8;--pd:3.7s"></circle><circle cx="26.3" cy="30.6" r="1.2" fill="#3d7b8a" class="art-dot" style="--d:1.00s;--op:0.8"></circle><circle cx="61.1" cy="21.5" r="1.2" fill="#3d7b8a" class="art-pulse-dot" style="--d:1.05s;--op:0.5;--pd:2.8s"></circle><circle cx="80.5" cy="51.8" r="1.2" fill="#3d7b8a" class="art-dot" style="--d:1.10s;--op:0.7"></circle><path d="M33.6,68.5L25.8,55.3L27.3,40.1L37.5,28.7L52.4,25.4L66.4,31.5L74.2,44.7L72.7,59.9L62.5,71.3L47.6,74.6Z" fill="none" stroke="#3d7b8a" stroke-width="0.3" opacity="0.1" pathLength="1" class="art-draw" style="--d:1.59s"></path><path d="M73.9,50.2 A23.9,23.9 0 0 1 37.9,70.6" fill="none" stroke="#3d7b8a" stroke-width="0.6" opacity="0.4" pathLength="1" class="art-draw" style="--d:1.71s"></path></g><g class="art-spin" style="--dur:38s;--dir:reverse"><path d="M47.3,63.9L35.9,51.8L44.0,37.2L60.4,40.3L62.4,56.8Z" fill="none" stroke="#3d7b8a" stroke-width="0.9" opacity="0.4" pathLength="1" class="art-draw" style="--d:0.55s"></path><circle cx="47.3" cy="63.9" r="0.9" fill="#3d7b8a" class="art-pulse-dot" style="--d:1.15s;--op:0.5;--pd:4.1s"></circle><circle cx="35.9" cy="51.8" r="0.9" fill="#3d7b8a" class="art-pulse-dot" style="--d:1.19s;--op:0.5;--pd:4.1s"></circle><circle cx="44.0" cy="37.2" r="0.9" fill="#3d7b8a" class="art-pulse-dot" style="--d:1.23s;--op:0.5;--pd:4.7s"></circle><circle cx="60.4" cy="40.3" r="0.9" fill="#3d7b8a" class="art-dot" style="--d:1.27s;--op:0.5"></circle><circle cx="62.4" cy="56.8" r="0.9" fill="#3d7b8a" class="art-pulse-dot" style="--d:1.31s;--op:0.4;--pd:4.0s"></circle><circle cx="50" cy="50" r="2.4" fill="none" stroke="#3d7b8a" stroke-width="0.7" opacity="0.4" pathLength="1" class="art-draw" style="--d:1.51s"></circle></g><g class="art-orbit" style="--dur:6.1s;--dir:reverse"><circle cx="70.0" cy="50.0" r="1.2" fill="#3d7b8a" class="art-dot" style="--d:1.35s;--op:0.4"></circle></g><g class="art-orbit" style="--dur:4.7s;--dir:normal"><circle cx="75.4" cy="50.0" r="1.2" fill="#3d7b8a" class="art-dot" style="--d:1.43s;--op:0.6"></circle></g></svg></div>
+    </header>
+
+
+
+    <div class="post-content">
+      <p><span class="first-word">We're</span> at a genuinely weird inflection point in frontend development. AI can
+generate entire interfaces now. LLMs can reason about data and layout. And yet —
+most SaaS products still ship hand-crafted React apps, each building its own UI,
+its own accessibility layer, its own theme system, its own responsive
+breakpoints. Not every service, but the vast majority.</p>
+<p>That's a lot of duplicated effort for what's essentially the same job — showing
+a human some data and letting them do stuff with it.</p>
+<p>I've been thinking about this a lot lately, and I built a proof of concept to
+test an idea: what if the browser itself generated the UI?</p>
+<h2>Where we are right now</h2>
+<p>The industry is circling this idea from multiple angles, but nobody's quite
+landed on it yet.</p>
+<p><a href="https://www.apollographql.com/docs/graphos/schema-design/guides/sdui/basics">Server-driven UI</a>
+has been around for a while — Airbnb and others pioneered it for mobile, where
+app store review cycles make shipping UI changes painful. The server sends down
+a JSON tree describing what to render, and the client just follows instructions.
+It's clever, but the server is still calling the shots. x.</p>
+<p>Google recently shipped
+<a href="https://developers.google.com/natively-adaptive-interfaces">Natively Adaptive Interfaces</a>
+— a framework that uses AI agents to make accessibility a default rather than an
+afterthought. Really cool idea, and the right instinct. But it's still operating
+within a single app's boundaries. Your accessibility preferences don't carry
+between Google's products and, say, your project management tool.</p>
+<p>Then there's the
+<a href="https://www.copilotkit.ai/blog/the-developer-s-guide-to-generative-ui-in-2026">generative UI</a>
+wave — CopilotKit, Vercel's AI SDK, and others building frameworks where LLMs
+generate components on the fly. These are powerful developer tools, but they're
+still developer tools. The generation happens at build time or on the server.
+The service is still in control.</p>
+<p>See the pattern? Every approach keeps the power on the service side.</p>
+<h2>Flip it</h2>
+<p>Here's the idea behind the
+<a href="https://github.com/jonnonz1/adaptive-browser">adaptive browser</a>: what if the
+generation happened on <em>your</em> side?</p>
+<p>Instead of a service shipping you a finished frontend, it publishes a manifest —
+a structured description of what it can do. Its capabilities, endpoints, data
+shapes, what actions are available. Think of it like an API spec, but semantic.
+Not just "here's a GET endpoint" but "here's a list of repositories, they're
+sortable by stars and language, you can create, delete, star, or fork them."</p>
+<p>Your browser takes that manifest, calls the actual APIs, gets real data back,
+and then generates the UI based on your preferences. Your font size. Your colour
+scheme. Your preferred layout (tables vs cards vs kanban). Your accessibility
+needs. All applied universally, across every service.</p>
+<p>The manifest for something like GitHub looks roughly like this — a service
+describes its capabilities and the browser figures out the rest:</p>
+<pre><code class="language-yaml hljs"><span class="hljs-attr">service:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">"GitHub"</span>
+  <span class="hljs-attr">domain:</span> <span class="hljs-string">"api.github.com"</span>
+
+<span class="hljs-attr">capabilities:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">id:</span> <span class="hljs-string">"repositories"</span>
+    <span class="hljs-attr">endpoints:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-attr">path:</span> <span class="hljs-string">"/user/repos"</span>
+        <span class="hljs-attr">semantic:</span> <span class="hljs-string">"list"</span>
+        <span class="hljs-attr">entity:</span> <span class="hljs-string">"repository"</span>
+        <span class="hljs-attr">sortable_fields:</span> [<span class="hljs-string">name</span>, <span class="hljs-string">updated_at</span>, <span class="hljs-string">stargazers_count</span>]
+        <span class="hljs-attr">actions:</span> [<span class="hljs-string">create</span>, <span class="hljs-string">delete</span>, <span class="hljs-string">star</span>, <span class="hljs-string">fork</span>]
+</code></pre>
+<p>The browser takes that, fetches the data, and generates a bespoke interface —
+using an LLM to reason about the best way to present it given who you are and
+what you're trying to do.</p>
+<h2>Why this matters more than it sounds</h2>
+<p>When I was building the app store and integrations platforms at Xero, one of the
+constant headaches was that every third-party integration had its own UI
+patterns. Users had to learn a new interface for every app they connected. If
+the browser was generating the UI from a shared set of preferences, that problem
+just… goes away.</p>
+<p>Accessibility is the big one though. Right now, accessibility is a feature that
+gets bolted on — and often badly. When the browser generates the UI,
+accessibility isn't a feature. It's the default. Your preferences — high
+contrast, keyboard-first navigation, screen reader optimisation, larger text —
+apply everywhere. Not because every developer remembered to implement them, but
+because they're baked into how the UI gets generated in the first place.</p>
+<p>Customisation becomes genuinely personal too. Not "pick from three themes the
+developer made" but "this is how I interact with software, full stop."</p>
+<h2>The trade-off is real though</h2>
+<p>Frontend complexity drops dramatically, but the complexity doesn't disappear —
+it moves behind the API. And honestly, it probably increases.</p>
+<p>API design becomes way more important. You can't just throw together some REST
+endpoints and call it a day. Your manifest needs to be semantic — describing
+what the data means, not just what shape it is. Data contracts between services
+matter more. Versioning matters more.</p>
+<div class="mermaid" data-processed="true"><svg id="mermaid-1779423215521" width="100%" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 859.25px;" viewBox="0 0 859.25 278" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#mermaid-1779423215521{font-
+family:"trebuchet
+ms",verdana,arial,sans-serif;font-size:16px;fill:#ccc;}@keyframes
+edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes
+dash{to{stroke-dashoffset:0;}}#mermaid-1779423215521
+.edge-animation-slow{stroke-dasharray:9,5!important;stroke-
+dashoffset:900;animation:dash 50s linear
+infinite;stroke-linecap:round;}#mermaid-1779423215521
+.edge-animation-fast{stroke-dasharray:9,5!important;stroke-
+dashoffset:900;animation:dash 20s linear
+infinite;stroke-linecap:round;}#mermaid-1779423215521
+.error-icon{fill:#a44141;}#mermaid-1779423215521
+.error-text{fill:#ddd;stroke:#ddd;}#mermaid-1779423215521
+.edge-thickness-normal{stroke-width:1px;}#mermaid-1779423215521
+.edge-thickness-thick{stroke-width:3.5px;}#mermaid-1779423215521
+.edge-pattern-solid{stroke-dasharray:0;}#mermaid-1779423215521
+.edge-thickness-invisible{stroke-width:0;fill:none;}
+#mermaid-1779423215521
+.edge-pattern-dashed{stroke-dasharray:3;}#mermaid-1779423215521
+.edge-pattern-dotted{stroke-dasharray:2;}#mermaid-1779423215521
+.marker{fill:lightgrey;stroke:lightgrey;}#mermaid-1779423215521
+.marker.cross{stroke:lightgrey;}#mermaid-1779423215521
+svg{font-family:"trebuchet
+ms",verdana,arial,sans-serif;font-size:16px;}#mermaid-1779423215521
+p{margin:0;}#mermaid-1779423215521 .label{font-family:"trebuchet
+ms",verdana,arial,sans-serif;color:#ccc;}#mermaid-1779423215521
+.cluster-label text{fill:#F9FFFE;}#mermaid-1779423215521 .cluster-label
+span{color:#F9FFFE;}#mermaid-1779423215521 .cluster-label span
+p{background-color:transparent;}#mermaid-1779423215521 .label
+text,#mermaid-1779423215521
+span{fill:#ccc;color:#ccc;}#mermaid-1779423215521 .node
+rect,#mermaid-1779423215521 .node circle,#mermaid-1779423215521 .node
+ellipse,#mermaid-1779423215521 .node polygon,#mermaid-1779423215521
+.node
+path{fill:#1f2020;stroke:#ccc;stroke-width:1px;}#mermaid-1779423215521
+.rough-node .label text,#mermaid-1779423215521 .node .label
+text,#mermaid-1779423215521 .image-shape .label,#mermaid-1779423215521
+.icon-shape .label{text-anchor:middle;}#mermaid-1779423215521 .node
+.katex
+path{fill:#000;stroke:#000;stroke-width:1px;}#mermaid-1779423215521
+.rough-node .label,#mermaid-1779423215521 .node
+.label,#mermaid-1779423215521 .image-shape .label,#mermaid-1779423215521
+ .icon-shape .label{text-align:center;}#mermaid-1779423215521
+.node.clickable{cursor:pointer;}#mermaid-1779423215521 .root .anchor
+path{fill:lightgrey!important;stroke-width:0;stroke:lightgrey;}
+#mermaid-1779423215521
+.arrowheadPath{fill:lightgrey;}#mermaid-1779423215521 .edgePath
+.path{stroke:lightgrey;stroke-width:1px;}#mermaid-1779423215521
+.flowchart-link{stroke:lightgrey;fill:none;}#mermaid-1779423215521
+.edgeLabel{background-color:hsl(0, 0%,
+34.4117647059%);text-align:center;}#mermaid-1779423215521 .edgeLabel
+p{background-color:hsl(0, 0%, 34.4117647059%);}#mermaid-1779423215521
+.edgeLabel rect{opacity:0.5;background-color:hsl(0, 0%,
+34.4117647059%);fill:hsl(0, 0%, 34.4117647059%);}#mermaid-1779423215521
+.labelBkg{background-color:rgba(87.75, 87.75, 87.75,
+0.5);}#mermaid-1779423215521 .cluster rect{fill:hsl(180, 1.5873015873%,
+28.3529411765%);stroke:rgba(255, 255, 255,
+0.25);stroke-width:1px;}#mermaid-1779423215521 .cluster
+text{fill:#F9FFFE;}#mermaid-1779423215521 .cluster
+span{color:#F9FFFE;}#mermaid-1779423215521
+div.mermaidTooltip{position:absolute;text-align:center;max-
+width:200px;padding:2px;font-family:"trebuchet
+ms",verdana,arial,sans-serif;font-size:12px;background:hsl(20,
+1.5873015873%, 12.3529411765%);border:1px solid rgba(255, 255, 255,
+0.25);border-radius:2px;pointer-events:none;z-index:100;}
+#mermaid-1779423215521
+.flowchartTitleText{text-anchor:middle;font-size:18px;fill:#ccc;}
+#mermaid-1779423215521
+rect.text{fill:none;stroke-width:0;}#mermaid-1779423215521
+.icon-shape,#mermaid-1779423215521 .image-shape{background-color:hsl(0,
+0%, 34.4117647059%);text-align:center;}#mermaid-1779423215521
+.icon-shape p,#mermaid-1779423215521 .image-shape
+p{background-color:hsl(0, 0%,
+34.4117647059%);padding:2px;}#mermaid-1779423215521 .icon-shape .label
+rect,#mermaid-1779423215521 .image-shape .label
+rect{opacity:0.5;background-color:hsl(0, 0%, 34.4117647059%);fill:hsl(0,
+ 0%, 34.4117647059%);}#mermaid-1779423215521
+.label-icon{display:inline-block;height:1em;overflow:visible;vertical-
+align:-0.125em;}#mermaid-1779423215521 .node .label-icon
+path{fill:currentColor;stroke:revert;stroke-width:revert;}
+#mermaid-1779423215521 .node
+.neo-node{stroke:#ccc;}#mermaid-1779423215521 [data-look="neo"].node
+rect,#mermaid-1779423215521 [data-look="neo"].cluster
+rect,#mermaid-1779423215521 [data-look="neo"].node
+polygon{stroke:url(#mermaid-1779423215521-gradient);filter:drop-shadow(
+1px 2px 2px rgba(185,185,185,1));}#mermaid-1779423215521
+[data-look="neo"].node
+path{stroke:url(#mermaid-1779423215521-gradient);stroke-width:1px;}
+#mermaid-1779423215521 [data-look="neo"].node
+.outer-path{filter:drop-shadow( 1px 2px 2px
+rgba(185,185,185,1));}#mermaid-1779423215521 [data-look="neo"].node
+.neo-line path{stroke:#ccc;filter:none;}#mermaid-1779423215521
+[data-look="neo"].node
+circle{stroke:url(#mermaid-1779423215521-gradient);filter:drop-shadow(
+1px 2px 2px rgba(185,185,185,1));}#mermaid-1779423215521
+[data-look="neo"].node circle
+.state-start{fill:#000000;}#mermaid-1779423215521
+[data-look="neo"].icon-shape
+.icon{fill:url(#mermaid-1779423215521-gradient);filter:drop-shadow( 1px
+2px 2px rgba(185,185,185,1));}#mermaid-1779423215521
+[data-look="neo"].icon-shape .icon-neo
+path{stroke:url(#mermaid-1779423215521-gradient);filter:drop-shadow( 1px
+ 2px 2px rgba(185,185,185,1));}#mermaid-1779423215521
+:root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g><marker id="mermaid-1779423215521_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1px; stroke-dasharray: 1px, 0px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1px; stroke-dasharray: 1px, 0px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0px; stroke-dasharray: 1px, 0px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0px; stroke-dasharray: 1px, 0px;"></polygon></marker><marker id="mermaid-1779423215521_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1px; stroke-dasharray: 1px, 0px;"></circle></marker><marker id="mermaid-1779423215521_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1px; stroke-dasharray: 1px, 0px;"></circle></marker><marker id="mermaid-1779423215521_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0px; stroke-dasharray: 1px, 0px;"></circle></marker><marker id="mermaid-1779423215521_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0px; stroke-dasharray: 1px, 0px;"></circle></marker><marker id="mermaid-1779423215521_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2px; stroke-dasharray: 1px, 0px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2px; stroke-dasharray: 1px, 0px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5px;"></path></marker><marker id="mermaid-1779423215521_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5px; stroke-dasharray: 1px, 0px;"></path></marker><g class="root"><g class="clusters"></g><g class="edgePaths"><path d="M156.875,35L181.917,35C206.958,35,257.042,35,305.772,47.522C354.503,60.044,401.881,85.087,425.57,97.609L449.259,110.131" id="mermaid-1779423215521-L_A_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_B_0" data-points="W3sieCI6MTU2Ljg3NSwieSI6MzV9LHsieCI6MzA3LjEyNSwieSI6MzV9LHsieCI6NDUyLjc5NTY3MzA3NjkyMzEsInkiOjExMn1d" data-look="classic" marker-end="url(#mermaid-1779423215521_flowchart-v2-pointEnd)"></path><path d="M193.25,139L212.229,139C231.208,139,269.167,139,306.458,139C343.75,139,380.375,139,398.688,139L417,139" id="mermaid-1779423215521-L_C_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_B_0" data-points="W3sieCI6MTkzLjI1LCJ5IjoxMzl9LHsieCI6MzA3LjEyNSwieSI6MTM5fSx7IngiOjQyMSwieSI6MTM5fV0=" data-look="classic" marker-end="url(#mermaid-1779423215521_flowchart-v2-pointEnd)"></path><path d="M183.125,243L203.792,243C224.458,243,265.792,243,310.147,230.478C354.503,217.956,401.881,192.913,425.57,180.391L449.259,167.869" id="mermaid-1779423215521-L_D_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_D_B_0" data-points="W3sieCI6MTgzLjEyNSwieSI6MjQzfSx7IngiOjMwNy4xMjUsInkiOjI0M30seyJ4Ijo0NTIuNzk1NjczMDc2OTIzMSwieSI6MTY2fV0=" data-look="classic" marker-end="url(#mermaid-1779423215521_flowchart-v2-pointEnd)"></path><path d="M586.75,139L597.104,139C607.458,139,628.167,139,648.208,139C668.25,139,687.625,139,697.313,139L707,139" id="mermaid-1779423215521-L_B_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_B_E_0" data-points="W3sieCI6NTg2Ljc1LCJ5IjoxMzl9LHsieCI6NjQ4Ljg3NSwieSI6MTM5fSx7IngiOjcxMSwieSI6MTM5fV0=" data-look="classic" marker-end="url(#mermaid-1779423215521_flowchart-v2-pointEnd)"></path></g><g class="edgeLabels"><g class="edgeLabel" transform="translate(307.125, 35)"><g class="label" data-id="L_A_B_0" transform="translate(-88.875, -12)"><foreignObject width="177.75" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml" class="labelBkg"><span class="edgeLabel"><p>Publishes manifest + APIs</p></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_C_B_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml" class="labelBkg"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_D_B_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml" class="labelBkg"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(648.875, 139)"><g class="label" data-id="L_B_E_0" transform="translate(-37.125, -12)"><foreignObject width="74.25" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml" class="labelBkg"><span class="edgeLabel"><p>Generates</p></span></div></foreignObject></g></g></g><g class="nodes"><g class="node default" id="mermaid-1779423215521-flowchart-A-0" data-look="classic" transform="translate(100.625, 35)"><rect class="basic label-container" style="" x="-56.25" y="-27" width="112.5" height="54"></rect><g class="label" style="" transform="translate(-26.25, -12)"><rect></rect><foreignObject width="52.5" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel"><p>Service</p></span></div></foreignObject></g></g><g class="node default" id="mermaid-1779423215521-flowchart-B-1" data-look="classic" transform="translate(503.875, 139)"><rect class="basic label-container" style="" x="-82.875" y="-27" width="165.75" height="54"></rect><g class="label" style="" transform="translate(-52.875, -12)"><rect></rect><foreignObject width="105.75" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel"><p>Browser Agent</p></span></div></foreignObject></g></g><g class="node default" id="mermaid-1779423215521-flowchart-C-2" data-look="classic" transform="translate(100.625, 139)"><rect class="basic label-container" style="" x="-92.625" y="-27" width="185.25" height="54"></rect><g class="label" style="" transform="translate(-62.625, -12)"><rect></rect><foreignObject width="125.25" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel"><p>User Preferences</p></span></div></foreignObject></g></g><g class="node default" id="mermaid-1779423215521-flowchart-D-4" data-look="classic" transform="translate(100.625, 243)"><rect class="basic label-container" style="" x="-82.5" y="-27" width="165" height="54"></rect><g class="label" style="" transform="translate(-52.5, -12)"><rect></rect><foreignObject width="105" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel"><p>Org Guardrails</p></span></div></foreignObject></g></g><g class="node default" id="mermaid-1779423215521-flowchart-E-7" data-look="classic" transform="translate(781.125, 139)"><rect class="basic label-container" style="" x="-70.125" y="-27" width="140.25" height="54"></rect><g class="label" style="" transform="translate(-40.125, -12)"><rect></rect><foreignObject width="80.25" height="24"><div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel"><p>Bespoke UI</p></span></div></foreignObject></g></g></g></g></g><defs><filter id="mermaid-1779423215521-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#FFFFFF"></feDropShadow></filter></defs><defs><filter id="mermaid-1779423215521-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#FFFFFF"></feDropShadow></filter></defs><linearGradient id="mermaid-1779423215521-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#cccccc" stop-opacity="1"></stop><stop offset="100%" stop-color="hsl(180, 0%, 18.3529411765%)" stop-opacity="1"></stop></linearGradient></svg></div>
+<p>But here's the thing — this trade-off pushes us somewhere genuinely interesting.
+If every service needs to describe itself semantically through APIs and
+manifests, those APIs become the actual product surface. Not the frontend. The
+APIs.</p>
+<p>And once APIs are the product surface, sharing context between platforms becomes
+the interesting problem. Your project management tool knows what you're working
+on. Your email client knows who you're talking to. Your code editor knows what
+you're building. Right now, none of these talk to each other in any meaningful
+way because they're all locked behind their own UIs. In a manifest-driven world,
+that context flows through the APIs — and your browser can stitch it all
+together into something coherent.</p>
+<h2>Where this is headed (IMHO)</h2>
+<p>I reckon we're about 3-5 years from this being mainstream. The pieces are all
+there — LLMs that can reason about UI,
+<a href="https://www.builder.io/blog/ui-over-apis">standardisation efforts</a> around
+sending UI intent over APIs, and a growing expectation from users that software
+should adapt to them, not the other way around.</p>
+<p>The services that win in this world won't be the ones with the prettiest
+hand-crafted UI. They'll be the ones with the best APIs, the richest manifests,
+and the most useful data. The frontend becomes a generated output, not a
+hand-crafted input.</p>
+<p>Organisations will set preference guardrails — "our people can use dark or light
+mode, must have destructive action confirmations, these fields are always
+visible" — while individuals customise within those bounds. Your browser becomes
+your agent, not just a renderer.</p>
+<p>I built the <a href="https://github.com/jonnonz1/adaptive-browser">adaptive browser</a> as
+a proof of concept to test this thinking — it uses Claude to generate UIs from a
+GitHub manifest and user preferences defined in YAML. It's rough, but the
+direction feels right.</p>
+<p>The frontend isn't dying. But what we think of as "frontend development" is
+about to change. The interesting work moves to API design, semantic data
+contracts, and building browsers smart enough to be genuine user agents.</p>
+
+    </div>
+
+    <footer class="post-footer">
+
+      <div class="footer-title">Continue reading</div>
+      <nav class="post-nav" aria-label="Post navigation">
+
+        <a href="https://jonno.nz/posts/stealing-nanoclaw-patterns-for-webapps-and-saas/" class="cell" rel="prev">
+          <div class="dir">← Previous</div>
+          <div class="ttl">Stealing NanoClaw Patterns for Web Apps and SaaS</div>
+        </a>
+
+
+
+        <a href="https://jonno.nz/posts/claude-code-running-claude-code-in-4-second-disposable-vms/" class="cell right" rel="next">
+          <div class="dir">Next →</div>
+          <div class="ttl">Claude Code Running Claude Code in 4-Second Disposable VMs</div>
+        </a>
+
+      </nav>
+
+
+
+      <section class="related" aria-labelledby="related-heading">
+        <div class="footer-title" id="related-heading">Related</div>
+        <ul class="related-list">
+
+          <li>
+            <a href="https://jonno.nz/posts/conscious-minimalism/">
+              <span class="rl-date">14 · 05 · 2026</span>
+              <span class="rl-title">Conscious Minimalism</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="https://jonno.nz/posts/open-source-agent-that-teaches-claude-code-your-architecture/">
+              <span class="rl-date">15 · 04 · 2026</span>
+              <span class="rl-title">Open-Source Agent That Teaches Claude Code Your Architecture</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="https://jonno.nz/posts/claude-code-can-now-spawn-copies-of-itself-in-isolated-vms/">
+              <span class="rl-date">13 · 04 · 2026</span>
+              <span class="rl-title">Claude Code Can Now Spawn Copies of Itself in Isolated VMs</span>
+            </a>
+          </li>
+
+        </ul>
+      </section>
+
+
+
+<aside class="newsletter" id="newsletter" aria-label="Newsletter signup">
+  <div class="nl-text">
+    <h2 class="nl-title">Get new posts <em>in your inbox</em>.</h2>
+    <p class="nl-desc">No ads, no tracking, no AI-generated filler. One email when something's worth reading.</p>
+  </div>
+  <div class="nl-form-wrap">
+    <form class="nl-form" novalidate="">
+      <label class="sr-only" for="nl-email">Email address</label>
+      <input id="nl-email" type="email" name="email" placeholder="you@example.com" required="" autocomplete="email" data-_extension-text-contrast="">
+      <button type="submit" data-_extension-text-contrast="">
+        <span class="nl-btn-text">Subscribe</span>
+        <svg class="nl-spinner" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="28" stroke-dashoffset="8" stroke-linecap="round"></circle>
+        </svg>
+      </button>
+    </form>
+    <p class="nl-success" role="status">You're in — I'll let you know when something new drops.</p>
+    <p class="nl-error" role="alert">Something went wrong. Try again?</p>
+    <div class="nl-count"><span>Readers</span><b>1387 subscribers</b></div>
+  </div>
+</aside>
+
+      <section class="comments" aria-labelledby="comments-heading">
+        <h2 id="comments-heading">Comments</h2>
+        <div class="giscus"></div>
+      </section>
+    </footer>
+  </article>
+
+</main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>John Gregoriadis · Auckland, NZ</span>
+      <span>© 2026 · <a href="https://jonno.nz/feed.xml">rss</a> · <a href="https://jonno.nz/feed.json">json</a> · <a href="https://jonno.nz/about/">about</a></span>
+    </div>
+  </footer>
+
+
+<div class="mermaidTooltip" style="opacity: 0; position: absolute; text-align: center; max-width: 200px; padding: 2px; font-size: 12px; background: rgb(255, 255, 222); border: 1px solid rgb(51, 51, 51); border-radius: 2px; pointer-events: none; z-index: 100;"></div></body></html>

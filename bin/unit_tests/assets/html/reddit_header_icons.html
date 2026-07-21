@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      #header-bottom-right {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        background-color: #eff7ff;
+        padding: 4px;
+        line-height: 12px;
+      }
+      #mail.nohavemail {
+        background-image: url(sprite-reddit.13AvZYXRW_4.png);
+        background-position: -115px -1718px;
+        background-repeat: no-repeat;
+      }
+      #notifications {
+        background-image: url(sprite-reddit.13AvZYXRW_4.png);
+        background-position: -36px -1718px;
+        background-repeat: no-repeat;
+      }
+      #chat {
+        background-image: url(sprite-reddit.13AvZYXRW_4.png);
+        background-position: -77px -1698px;
+        background-repeat: no-repeat;
+      }
+      #chat,
+      #mail,
+      #notifications {
+        display: inline-block;
+        text-indent: -9999px;
+        width: 15px;
+        height: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header-bottom-right">
+      <a
+        title="no new mail"
+        href="https://old.reddit.com/message/inbox/"
+        class="nohavemail"
+        id="mail"
+        >messages</a
+      ><span class="separator">|</span
+      ><a
+        title="notifications"
+        href="https://reddit.com/notifications"
+        id="notifications"
+        >notifications</a
+      ><span class="separator">|</span
+      ><a
+        href="https://chat.reddit.com"
+        data-message-type="expand.chat"
+        target="chat-app"
+        id="chat"
+        >chat messages</a
+      >
+    </div>
+  </body>
+</html>

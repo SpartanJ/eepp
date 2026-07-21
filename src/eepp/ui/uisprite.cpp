@@ -199,7 +199,7 @@ bool UISprite::getDeallocSprite() {
 
 void UISprite::onSizeChange() {
 	autoAlign();
-	notifyLayoutAttrChange();
+	notifyLayoutAttrChange( LayoutInvalidation::Self );
 	UIWidget::onSizeChange();
 }
 

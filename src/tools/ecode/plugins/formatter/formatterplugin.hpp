@@ -83,8 +83,8 @@ class FormatterPlugin : public Plugin {
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
-	std::map<TextDocument*, bool> mIsAutoFormatting;
-	std::map<std::string, LSPServerCapabilities> mCapabilities;
+	UnorderedMap<TextDocument*, bool> mIsAutoFormatting;
+	UnorderedMap<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 	String::HashType mConfigHash{ 0 };
 	PluginManager* mPluginManager{ nullptr };

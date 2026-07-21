@@ -40,6 +40,8 @@ class EE_API ElementDefinition : NonCopyable {
 	bool mStructurallyVolatile;
 
 	void findVariables( const CSS::StyleSheetStyle* style );
+
+	void resolveVariables();
 };
 
 }}} // namespace EE::UI::CSS

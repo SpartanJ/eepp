@@ -5,9 +5,9 @@ on: [push, pull_request]
 jobs:
   Windows:
     runs-on: windows-latest
-    env:
-      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\
     steps:
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v3
     - name: Configure Git
       shell: cmd
       run: |
@@ -28,15 +28,24 @@ jobs:
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build --disable-static-build vs2022
+        ./premake5.exe --windows-vc-build --disable-static-build --with-debug-symbols vs2022
     - name: Build
       shell: cmd
       run: |
-        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+        msbuild .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
     - name: Install Mesa for software rendering
       uses: f3d-app/install-mesa-windows-action@v1
       with:
         path: ${{ github.workspace }}/bin/unit_tests
+    - name: Enable crash dumps
+      shell: powershell
+      run: |
+        $dumpDir = (New-Item -ItemType Directory -Force -Path "bin\unit_tests\output").FullName
+        $dumpKey = "HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\eepp-unit_tests.exe"
+        New-Item -Path $dumpKey -Force | Out-Null
+        New-ItemProperty -Path $dumpKey -Name DumpFolder -PropertyType ExpandString -Value $dumpDir -Force | Out-Null
+        New-ItemProperty -Path $dumpKey -Name DumpType -PropertyType DWord -Value 2 -Force | Out-Null
+        New-ItemProperty -Path $dumpKey -Name DumpCount -PropertyType DWord -Value 2 -Force | Out-Null
     - name: Unit Tests
       shell: cmd
       env:
@@ -49,3 +58,14 @@ jobs:
       with:
         name: windows-test-output
         path: bin\unit_tests\output\*
+    - name: Upload crash symbols
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-crash-symbols
+        if-no-files-found: warn
+        path: |
+          bin\unit_tests\eepp-unit_tests.exe
+          bin\unit_tests\eepp-unit_tests.pdb
+          libs\windows\x86_64\eepp.dll
+          libs\windows\x86_64\eepp.pdb

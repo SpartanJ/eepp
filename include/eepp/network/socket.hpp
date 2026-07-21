@@ -67,8 +67,9 @@ class EE_API Socket : NonCopyable {
 
 	/** @brief Create the internal representation of the socket
 	///
-	**  This function can only be accessed by derived classes. */
-	void create();
+	**  This function can only be accessed by derived classes.
+	**  @return True when a valid socket exists, false when socket creation failed. */
+	bool create();
 
 	/** @brief Create the internal representation of the socket from a socket handle
 	**  This function can only be accessed by derived classes.

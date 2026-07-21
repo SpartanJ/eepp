@@ -39,7 +39,7 @@ ParticleSystem::~ParticleSystem() {
 }
 
 void ParticleSystem::create( const ParticleEffect& Effect, const Uint32& NumParticles,
-							 const Uint32& TexId, const Vector2f& Pos, const Float& PartSize,
+							 ResourceId textureId, const Vector2f& Pos, const Float& PartSize,
 							 const bool& AnimLoop, const Uint32& NumLoops, const ColorAf& Color,
 							 const Vector2f& Pos2, const Float& AlphaDecay, const Vector2f& Speed,
 							 const Vector2f& Acc ) {
@@ -47,7 +47,7 @@ void ParticleSystem::create( const ParticleEffect& Effect, const Uint32& NumPart
 	mEffect = Effect;
 	mPos = Pos;
 	mPCount = NumParticles;
-	mTexture = TextureFactory::instance()->getTexture( TexId );
+	mTexture = TextureFactory::instance()->getTexture( textureId );
 	mLoop = AnimLoop;
 	mLoops = NumLoops;
 	mColor = Color;

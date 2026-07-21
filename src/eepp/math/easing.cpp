@@ -1,4 +1,5 @@
 #include <eepp/math/easing.hpp>
+#include <cstddef>
 
 namespace EE { namespace Math { namespace easing {
 
@@ -70,7 +71,7 @@ double getSlope( double aT, double aA1, double aA2 ) {
 
 double binarySubdivide( double aX, double aA, double aB, double mX1, double mX2 ) {
 	double currentX, currentT;
-	size_t i = 0;
+	std::size_t i = 0;
 	do {
 		currentT = aA + ( aB - aA ) / 2.0;
 		currentX = calcBezier( currentT, mX1, mX2 ) - aX;
@@ -84,7 +85,7 @@ double binarySubdivide( double aX, double aA, double aB, double mX1, double mX2 
 }
 
 double newtonRaphsonIterate( double aX, double aGuessT, double mX1, double mX2 ) {
-	for ( size_t i = 0; i < NEWTON_ITERATIONS; ++i ) {
+	for ( std::size_t i = 0; i < NEWTON_ITERATIONS; ++i ) {
 		double currentSlope = getSlope( aGuessT, mX1, mX2 );
 		if ( currentSlope == 0.0 ) {
 			return aGuessT;
@@ -104,12 +105,12 @@ double cubicBezierInterpolation( double x1, double y1, double x2, double y2, dou
 
 	// Precompute samples table
 	double sampleValues[kSplineTableSize];
-	for ( size_t i = 0; i < kSplineTableSize; ++i )
+	for ( std::size_t i = 0; i < kSplineTableSize; ++i )
 		sampleValues[i] = calcBezier( i * kSampleStepSize, x1, x2 );
 
 	auto getTForX = [&sampleValues, x1, x2]( double aX ) {
 		double intervalStart = 0.0;
-		size_t currentSample = 1;
+		std::size_t currentSample = 1;
 		double lastSample = kSplineTableSize - 1;
 
 		for ( ; currentSample != lastSample && sampleValues[currentSample] <= aX;

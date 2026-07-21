@@ -33,32 +33,14 @@ Texture::Texture() :
 	DrawableResource( Drawable::TEXTURE ),
 	Image(),
 	mFilepath( "" ),
+	mTextureId(),
 	mTexture( 0 ),
 	mImgWidth( 0 ),
 	mImgHeight( 0 ),
 	mFlags( 0 ),
 	mClampMode( ClampMode::ClampToEdge ),
 	mFilter( Filter::Linear ),
-	mCoordinateType( CoordinateType::Normalized ) {
-}
-
-Texture::Texture( const Texture& Copy ) :
-	DrawableResource( Drawable::TEXTURE, Copy.mName ),
-	Image(),
-	mFilepath( Copy.mFilepath ),
-	mTexture( Copy.mTexture ),
-	mImgWidth( Copy.mImgWidth ),
-	mImgHeight( Copy.mImgHeight ),
-	mFlags( Copy.mFlags ),
-	mClampMode( Copy.mClampMode ),
-	mFilter( Copy.mFilter ) {
-	mWidth = Copy.mWidth;
-	mHeight = Copy.mHeight;
-	mChannels = Copy.mChannels;
-	mSize = Copy.mSize;
-
-	setPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
-}
+	mCoordinateType( CoordinateType::Normalized ) {}
 
 Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height,
 				  const unsigned int& imgwidth, const unsigned int& imgheight,
@@ -72,10 +54,6 @@ Texture::Texture( const Uint32& texture, const unsigned int& width, const unsign
 
 Texture::~Texture() {
 	deleteTexture();
-
-	if ( !TextureFactory::instance()->isErasing() ) {
-		TextureFactory::instance()->removeReference( this );
-	}
 }
 
 void Texture::deleteTexture() {
@@ -166,7 +144,7 @@ Uint8* Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		allocate( (unsigned int)size );
 
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*>( &mPixels[0] ) );
+			GLi->getCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*>( &mPixels[0] ) );
 		} else {
 			Uint32 Channel = GL_RGBA;
 
@@ -233,7 +211,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 #ifndef EE_GLES
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = mWidth, height = mHeight;
-		unsigned int NTexId = 0;
+		unsigned int textureHandle = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) ) {
 			ScopedTexture saver( mTexture );
@@ -242,8 +220,8 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 			flags = ( mClampMode == ClampMode::ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS )
 															 : flags;
 
-			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
-											  &height, mChannels, mTexture, flags );
+			textureHandle = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ),
+													 &width, &height, mChannels, mTexture, flags );
 
 			iTextureFilter( mFilter );
 
@@ -258,7 +236,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 
 		mFlags &= ~TEX_FLAG_LOCKED;
 
-		if ( (int)NTexId == mTexture || !Modified )
+		if ( (int)textureHandle == mTexture || !Modified )
 			return true;
 	}
 
@@ -444,12 +422,13 @@ void Texture::applyClampMode() {
 	}
 }
 
-void Texture::setTextureId( const Uint32& id ) {
-	mTexId = id;
+ResourceId Texture::getTextureId() const {
+	return mTextureId;
 }
 
-const Uint32& Texture::getTextureId() const {
-	return mTexId;
+void Texture::setTextureId( ResourceId textureId ) {
+	eeASSERT( !mTextureId );
+	mTextureId = textureId;
 }
 
 void Texture::reload() {
@@ -476,13 +455,11 @@ void Texture::reload() {
 														&width, &height, mChannels, mTexture,
 														flags | SOIL_FLAG_COMPRESS_TO_DXT );
 				else
-					glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize,
-											&mPixels[0] );
+					GLi->compressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0,
+											   mSize, &mPixels[0] );
 			} else {
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
 													&height, mChannels, mTexture, flags );
-
-				TextureFactory::instance()->mMemSize -= mSize;
 
 				mSize = mWidth * mHeight * mChannels;
 
@@ -496,8 +473,6 @@ void Texture::reload() {
 						mSize += ( w * h * mChannels );
 					}
 				}
-
-				TextureFactory::instance()->mMemSize += mSize;
 			}
 
 			iTextureFilter( mFilter );
@@ -594,9 +569,7 @@ void Texture::replace( Image* image ) {
 		mHeight = mImgHeight = height;
 		mChannels = image->getChannels();
 
-		TextureFactory::instance()->mMemSize -= mSize;
 		mSize = mWidth * mHeight * mChannels;
-		TextureFactory::instance()->mMemSize += mSize;
 
 		if ( hasLocalCopy() ) {
 			// Renew the local copy

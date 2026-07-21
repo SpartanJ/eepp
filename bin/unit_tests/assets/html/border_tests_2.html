@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background-color: #f5f5f5;
+    font: 11px Verdana, Sans-Serif;
+    color: #333;
+    padding: 8px;
+  }
+  .row { clear: both; margin-bottom: 4px; }
+  .label {
+    float: left;
+    width: 130px;
+    font-size: 9px;
+    line-height: 1.2;
+    color: #555;
+    padding-top: 2px;
+    padding-right: 4px;
+    text-align: right;
+  }
+  .box {
+    float: left;
+    width: 48px;
+    height: 48px;
+    margin: 2px;
+    background-color: #e8f0f8;
+    font-size: 8px;
+    text-align: center;
+    padding: 4px;
+    overflow: hidden;
+  }
+  .clearfix { clear: both; }
+</style>
+</head>
+<body>
+
+<!-- ============ 4 BORDERS + RADIUS ============ -->
+<div class="row">
+  <div class="label">radius diff</div>
+  <div class="box" style="border: 4px solid #e74c3c; border-top-left-radius: 16px; border-bottom-right-radius: 16px;">tl+br</div>
+  <div class="box" style="border: 4px solid #27ae60; border-top-right-radius: 16px; border-bottom-left-radius: 16px;">tr+bl</div>
+  <div class="box" style="border: 4px solid #2980b9; border-top-left-radius: 4px; border-top-right-radius: 8px; border-bottom-right-radius: 12px; border-bottom-left-radius: 2px;">mixed</div>
+  <div class="box" style="border: 4px solid #8e44ad; border-top-left-radius: 32px;">tl32</div>
+</div>
+
+<!-- ============ PARTIAL BORDERS + RADIUS ============ -->
+<div class="row">
+  <div class="label">part+radius</div>
+  <div class="box" style="border-top: 4px solid #e74c3c; border-right: 4px solid #27ae60; border-radius: 8px;">t+r r8</div>
+  <div class="box" style="border-bottom: 4px solid #2980b9; border-left: 4px solid #8e44ad; border-radius: 12px;">b+l r12</div>
+  <div class="box" style="border-top: 4px solid #e74c3c; border-bottom: 4px solid #2980b9; border-radius: 8px;">t+b r8</div>
+  <div class="box" style="border: 4px solid #27ae60; border-left: 0px; border-radius: 8px;">noL r8</div>
+</div>
+
+<div class="row">
+  <div class="label">part+radius2</div>
+  <div class="box" style="border: 4px solid #e74c3c; border-bottom: 0px; border-radius: 8px;">noB r8</div>
+  <div class="box" style="border: 4px solid #2980b9; border-top: 0px; border-radius: 8px;">noT r8</div>
+  <div class="box" style="border: 4px solid #8e44ad; border-right: 0px; border-radius: 8px;">noR r8</div>
+  <div class="box" style="border-top: 2px solid #e74c3c; border-left: 6px solid #8e44ad; border-radius: 6px;">t2+l6</div>
+</div>
+
+<!-- ============ THICK BORDERS + RADIUS ============ -->
+<div class="row">
+  <div class="label">thick+radius</div>
+  <div class="box" style="border: 8px solid #e74c3c; border-radius: 12px;">8px/r12</div>
+  <div class="box" style="border: 12px solid #27ae60; border-radius: 16px;">12/r16</div>
+  <div class="box" style="border: 3px solid #2980b9; border-radius: 32px;">3px/r32</div>
+  <div class="box" style="border-top: 12px solid #e74c3c; border-radius: 8px;">t12</div>
+</div>
+
+<!-- ============ DIFFERENT SIZES ============ -->
+<div class="row">
+  <div class="label">large boxes</div>
+  <div class="box" style="width: 96px; height: 96px; border: 6px solid #e74c3c; border-radius: 16px;">96x96</div>
+  <div class="box" style="width: 96px; height: 48px; border: 4px solid #27ae60;">96x48</div>
+  <div class="box" style="width: 48px; height: 96px; border: 4px solid #2980b9; border-radius: 8px;">48x96</div>
+  <div class="box" style="width: 96px; height: 96px; border: 2px solid #e74c3c; border-top: 10px solid #8e44ad; border-left: 1px solid #2ecc71;">mixed96</div>
+</div>
+
+<div class="clearfix"></div>
+</body>
+</html>

@@ -541,7 +541,12 @@ int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 				}
 			}
 		}
-	} else {
+	} else if ( String::iequals( "default", name ) ) {
+		unsigned char r, g, b;
+		getColor( index, &r, &g, &b );
+		col = Color( r, g, b, 255 );
+		colorParsed = true;
+	} else if ( Color::isColorString( std::string_view{ name }, true ) ) {
 		col = Color::fromString( name );
 		colorParsed = true;
 	}
@@ -1359,23 +1364,29 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
 			if ( glyph.mode & ATTR_WDUMMY ) {
-				if ( mVBForeground )
+				if ( mVBForeground ) {
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+					dirtyFG = true;
+				}
 				continue;
 			}
 
 			if ( glyph.u == 32 && !( glyph.mode & ( ATTR_UNDERLINE | ATTR_STRUCK ) ) ) {
 				x += advanceX;
-				if ( mVBForeground )
+				if ( mVBForeground ) {
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+					dirtyFG = true;
+				}
 				continue;
 			}
 
 			if ( glyph.mode & ATTR_BOXDRAW ) {
 				auto bd = TerminalEmulator::boxdrawindex( &glyph );
 				drawbox( x, y, advanceX, lineHeight, fg, bg, bd );
-				if ( mVBForeground )
+				if ( mVBForeground ) {
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+					dirtyFG = true;
+				}
 			} else {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
 													glyph.mode & ATTR_ITALIC, 0 );
@@ -1871,6 +1882,7 @@ void TerminalDisplay::invalidateCursor() {
 	invalidateLine( mCursor.y );
 	mDirtyCursor = true;
 	mDirty = true;
+	updateIMELocation();
 }
 
 void TerminalDisplay::invalidateLine( const int& line ) {

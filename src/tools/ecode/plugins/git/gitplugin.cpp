@@ -1,11 +1,13 @@
 #include "gitplugin.hpp"
 #include "gitbranchmodel.hpp"
 #include "gitstatusmodel.hpp"
+#include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
@@ -33,6 +35,19 @@ namespace ecode {
 
 static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
 static constexpr auto GIT_STATUS_UPDATE_TAG = String::hash( "git::status-update" );
+
+static std::string writeGitBlobTempFile( const std::string& contents,
+										 const std::string& sourceFilePath ) {
+	if ( contents.empty() )
+		return "";
+
+	std::string ext( FileSystem::fileExtension( sourceFilePath ) );
+	std::string path( Sys::getTempPath() + ".ecode-git-diff-" + String::randString( 16 ) );
+	if ( !ext.empty() )
+		path += "." + ext;
+
+	return FileSystem::fileWrite( path, contents ) ? path : "";
+}
 
 std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	switch ( type ) {
@@ -1087,7 +1102,7 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 			return;
 
 		std::string repoName = this->repoName( repoPath );
-		getUISceneNode()->runOnMainThread( [this, mode, res, repoName] {
+		getUISceneNode()->runOnMainThread( [this, mode, res, repoName, repoPath] {
 			std::string modeName;
 			switch ( mode ) {
 				case Git::DiffHead: {
@@ -1099,7 +1114,8 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					break;
 			}
 			getPluginContext()->loadDiffFromMemory(
-				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "" );
+				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "", "",
+				repoPath );
 		} );
 	} );
 }
@@ -1119,9 +1135,27 @@ void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
 			return;
 
 		auto result = std::move( res.result );
+		std::string oldImagePath;
+		std::string newImagePath( filePath );
+		if ( EE::Graphics::Image::isImageExtension( filePath ) ) {
+			std::string repoPath( mGit->repoPath( file ) );
+			auto oldBlob = mGit->showFile(
+				filePath, status == Git::GitStatusType::Staged ? "HEAD" : ":", repoPath );
+			if ( oldBlob.success() )
+				oldImagePath = writeGitBlobTempFile( oldBlob.result, filePath );
+
+			if ( status == Git::GitStatusType::Staged ) {
+				auto newBlob = mGit->showFile( filePath, ":", repoPath );
+				if ( newBlob.success() )
+					newImagePath = writeGitBlobTempFile( newBlob.result, filePath );
+			}
+		}
+
 		getUISceneNode()->runOnMainThread(
-			[this, result = std::move( result ), filePath = std::move( filePath )] {
-				getPluginContext()->loadDiffFromMemory( result, filePath );
+			[this, result = std::move( result ), filePath = std::move( filePath ),
+			 oldImagePath = std::move( oldImagePath ), newImagePath = std::move( newImagePath )] {
+				getPluginContext()->loadDiffFromMemory(
+					result, newImagePath.empty() ? filePath : newImagePath, oldImagePath );
 			} );
 	} );
 }

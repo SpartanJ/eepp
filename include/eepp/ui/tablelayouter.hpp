@@ -1,8 +1,8 @@
 #ifndef EE_UI_TABLELAYOUTER_HPP
 #define EE_UI_TABLELAYOUTER_HPP
 
-#include <eepp/ui/uilayouter.hpp>
 #include <eepp/core/small_vector.hpp>
+#include <eepp/ui/uilayouter.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,17 +17,25 @@ enum class TableLayout { Auto, Fixed };
 class EE_API TableLayouter : public UILayouter {
   public:
 	TableLayouter( UIWidget* container ) : UILayouter( container ) {}
+
 	void updateLayout() override;
+
 	void computeIntrinsicWidths() override;
 
 	void setTableLayout( TableLayout layout );
+
 	TableLayout getTableLayout() const;
-	void setCellpadding( Float padding );
-	Float getCellpadding() const;
-	void setCellspacing( Float spacing );
-	Float getCellspacing() const;
+
+	void setCellPadding( Float padding );
+
+	Float getCellPadding() const;
+
+	void setCellSpacing( Float spacing );
+
+	Float getCellSpacing() const;
 
 	Float getMinIntrinsicWidth() override;
+
 	Float getMaxIntrinsicWidth() override;
 
   protected:

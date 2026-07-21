@@ -5,10 +5,10 @@
 
 #ifdef EE_MBEDTLS
 
-#include <mbedtls/mbedtls_config.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/debug.h>
 #include <mbedtls/entropy.h>
+#include <mbedtls/mbedtls_config.h>
 #include <mbedtls/ssl.h>
 
 namespace EE { namespace Network { namespace SSL {
@@ -40,6 +40,7 @@ class EE_API MbedTLSSocket : public SSLSocketImpl {
 	mbedtls_ctr_drbg_context mCtrDrbg;
 	mbedtls_ssl_context mSSLContext;
 	mbedtls_ssl_config mSSLConfig;
+	bool mInitialized;
 	bool mConnected;
 	bool mSessionOwner;
 	Socket::Status mStatus;

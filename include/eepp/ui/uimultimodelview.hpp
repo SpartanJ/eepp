@@ -19,7 +19,7 @@ class EE_API UIMultiModelView : public UIStackWidget {
 
 	void setViewMode( const ViewMode& mode );
 
-	UIAbstractView* getCurrentView() const;
+	UIAbstractTableView* getCurrentView() const;
 
 	std::shared_ptr<Model> getModel() const;
 

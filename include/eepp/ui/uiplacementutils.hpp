@@ -31,6 +31,12 @@ struct PopupPlacementConfig {
 	Float minVerticalSpace = 100.f;	  // Min height needed to trigger Vertical bonus
 	Float minScoreHeight;			  // Minimum height considered "good"
 	Float maxScoreHeight;			  // Cap for height in the score calculation
+
+	// Cursor-aware placement: when the popup would sit below the editing cursor
+	// while the target sits above it, try placing above the target instead.
+	// Set cursorLineHeight > 0 to enable.
+	Vector2f cursorScreenPos;
+	Float cursorLineHeight = 0;
 };
 
 struct PopupPlacementResult {

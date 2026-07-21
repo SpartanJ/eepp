@@ -10,6 +10,8 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#include <iostream>
+
 using namespace EE::Graphics;
 using namespace EE::System;
 using namespace EE::Scene;
@@ -23,10 +25,17 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
 
+	if ( displayManager->getDisplayIndex( 0 ) == nullptr ) {
+		std::cerr << "Display not found, exiting" << std::endl;
+		return;
+	}
+
 	mWindow = Engine::instance()->createWindow( windowSettings, contextSettings );
 
-	if ( !mWindow->isOpen() )
+	if ( !mWindow->isOpen() ) {
+		std::cerr << "Could not create window, exiting" << std::endl;
 		return;
+	}
 
 	mDidRun = true;
 

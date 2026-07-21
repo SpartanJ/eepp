@@ -2,14 +2,14 @@
 #define EE_UI_UITEXTSPAN_HPP
 
 #include <eepp/ui/uifontstyleconfig.hpp>
-#include <eepp/ui/uihtmlwidget.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 using SpanHitBoxes = SmallVector<Rectf, 4>;
 
-class EE_API UITextSpan : public UIHTMLWidget {
+class EE_API UITextSpan : public UIRichText {
   public:
 	static UITextSpan* New();
 
@@ -41,6 +41,12 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
+	virtual bool isInline() const;
+
+	virtual bool isInlineBlock() const;
+
+	virtual void onDisplayChange();
+
 	virtual void draw();
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
@@ -54,7 +60,7 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	UITextSpan* setText( const String& text );
 
-	const UIFontStyleConfig& getFontStyleConfig() const;
+	const FontStyleConfig& getFontStyleConfig() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -71,6 +77,10 @@ class EE_API UITextSpan : public UIHTMLWidget {
 	const Uint32& getFontStyle() const;
 
 	UITextSpan* setFontStyle( const Uint32& fontStyle );
+
+	FontWeight getFontWeight() const;
+
+	UITextSpan* setFontWeight( const FontWeight& weight );
 
 	Uint32 getTextDecoration() const;
 
@@ -100,7 +110,7 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	UITextSpan* setFontShadowOffset( const Vector2f& offset );
 
-	void setInheritedStyle( const UIFontStyleConfig& fontStyleConfig );
+	void setInheritedStyle( const FontStyleConfig& fontStyleConfig );
 
 	enum StyleState {
 		StyleStateNone = 0,
@@ -113,6 +123,7 @@ class EE_API UITextSpan : public UIHTMLWidget {
 		StyleStateFontShadowColor = 1 << 6,
 		StyleStateFontShadowOffset = 1 << 7,
 		StyleStateFontBackgroundColor = 1 << 8,
+		StyleStateTextTransform = 1 << 9,
 		StyleStateAll = 0xFFFFFFFF
 	};
 
@@ -126,19 +137,25 @@ class EE_API UITextSpan : public UIHTMLWidget {
 	bool hasFontShadowOffset() const;
 	bool hasFontBackgroundColor() const;
 
+	bool hasTextTransform() const;
+
 	SpanHitBoxes& getHitBoxes();
 
 	const SpanHitBoxes& getHitBoxes() const;
 
 	void setHitBoxes( SpanHitBoxes&& hitBoxes );
 
+	Int64 getLayoutCharCount() const { return mLayoutCharCount; }
+
+	void setLayoutCharCount( Int64 count ) { mLayoutCharCount = count; }
+
 	virtual Node* overFind( const Vector2f& point );
 
   protected:
 	Uint32 mStyleState{ StyleStateNone };
 	String mText;
-	UIFontStyleConfig mFontStyleConfig;
 	SpanHitBoxes mHitBoxes;
+	Int64 mLayoutCharCount{ 0 };
 
 	explicit UITextSpan( const std::string& tag = "span" );
 
@@ -147,10 +164,6 @@ class EE_API UITextSpan : public UIHTMLWidget {
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
-
-	virtual void onAlphaChange();
-
-	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
@@ -174,10 +187,38 @@ class EE_API UIAnchorSpan : public UITextSpan {
 	UIAnchorSpan( const std::string& tag = "a" );
 
 	std::string mHref;
+	std::string mTarget;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+};
+
+class EE_API UILabelSpan : public UITextSpan {
+  public:
+	static UILabelSpan* New();
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	void setFor( const std::string& forAttr );
+
+	const std::string& getFor() const;
+
+  protected:
+	UILabelSpan( const std::string& tag = "label" );
+
+	std::string mFor;
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	void activateTarget();
 };
 
 }} // namespace EE::UI

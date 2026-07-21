@@ -5,15 +5,23 @@ This project relies on a comprehensive suite of unit tests to prevent regression
 ## Running Tests
 The test binary manages its own current working directory, so you can execute it from anywhere.
 
-*   **Standard Execution:**
-    `bin/unit_tests/eepp-unit_tests-debug`
-*   **Linux & FreeBSD Execution (Required for Desktop Environments):**
-    Tests open ~50 individual windows. To prevent disrupting the desktop environment, run them in an isolated framebuffer using `xvfb-run`:
+*   **Default Execution for Agents on Linux & FreeBSD:**
+    Always run unit tests through the project wrapper unless the user explicitly asks for a different harness:
+    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests-debug`
+*   **Why the wrapper is required:**
+    Tests open ~400 individual windows. The wrapper runs them in an isolated framebuffer, enables race-safe automatic display selection for concurrent agent test runs, sets the default screen to `1280x1024x24`, and injects `ASAN_OPTIONS=detect_leaks=0` automatically.
+*   **Do not skip the wrapper for filtered tests:**
+    A focused test still needs the same wrapper:
+    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests-debug --filter="FontRendering.*Offset*"`
+*   **Fallback only when the wrapper itself fails:**
+    If `projects/scripts/xvfb-run-eepp` fails before launching the test binary, report that wrapper failure and then use this fallback to keep verification moving:
     `ASAN_OPTIONS=detect_leaks=0 xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests-debug`
+    Do not use plain `xvfb-run` as the first attempt for GUI/unit tests.
+*   **Direct Execution (Only for non-window tests or explicit user requests):**
+    `bin/unit_tests/eepp-unit_tests-debug`
 *   **Filtering Tests:**
     Use the `--filter` parameter to run specific tests (supports glob patterns).
-    *Example (runs all tests with "Offset" in the name):*
-    `bin/unit_tests/eepp-unit_tests-debug --filter="FontRendering.*Offset*"`
+    Keep the wrapper in front of the binary unless the test is known not to create windows.
 
 ## Writing New Tests
 Writing new tests is highly encouraged, but depends on the context of your changes:

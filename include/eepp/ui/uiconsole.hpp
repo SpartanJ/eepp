@@ -72,6 +72,10 @@ class EE_API UIConsole : public UIWidget,
 
 	UIConsole* setFontStyle( const Uint32& fontStyle );
 
+	FontWeight getFontWeight() const;
+
+	UIConsole* setFontWeight( const FontWeight& weight );
+
 	Uint32 getTextDecoration() const;
 
 	UIConsole* setTextDecoration( const Uint32& textDecoration );

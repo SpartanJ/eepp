@@ -25,7 +25,13 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mArrow->setEnabled( false );
 }
 
-UIMenuSubMenu::~UIMenuSubMenu() {}
+UIMenuSubMenu::~UIMenuSubMenu() {
+	if ( mSubMenu ) {
+		if ( mSubMenuCloseCb )
+			mSubMenu->removeEventListener( mSubMenuCloseCb );
+		mSubMenu->setOwnerNode( nullptr );
+	}
+}
 
 Uint32 UIMenuSubMenu::getType() const {
 	return UI_TYPE_MENUSUBMENU;
@@ -77,11 +83,15 @@ UIWidget* UIMenuSubMenu::getExtraInnerWidget() const {
 void UIMenuSubMenu::setSubMenu( UIMenu* subMenu ) {
 	if ( nullptr != mSubMenu && mSubMenu != subMenu ) {
 		getActionManager()->removeActionsByTagFromTarget( this, String::hash( "subMenu" ) );
+		if ( mSubMenuCloseCb )
+			mSubMenu->removeEventListener( mSubMenuCloseCb );
 		mSubMenu->setOwnerNode( nullptr );
 	}
 	mSubMenu = subMenu;
-	if ( nullptr != mSubMenu )
+	if ( nullptr != mSubMenu ) {
 		mSubMenu->setOwnerNode( this );
+		mSubMenuCloseCb = mSubMenu->on( Event::OnClose, [this]( auto ) { mSubMenu = nullptr; } );
+	}
 }
 
 UIMenu* UIMenuSubMenu::getSubMenu() const {
@@ -146,6 +156,11 @@ const Time& UIMenuSubMenu::getMouseOverTimeShowMenu() const {
 
 void UIMenuSubMenu::setMouseOverTimeShowMenu( const Time& maxTime ) {
 	mMaxTime = maxTime;
+}
+
+void UIMenuSubMenu::onClose() {
+	if ( mSubMenu )
+		mSubMenu->setOwnerNode( nullptr );
 }
 
 }} // namespace EE::UI

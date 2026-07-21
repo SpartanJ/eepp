@@ -2,7 +2,6 @@
 
 #include <eepp/config.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
-#include <vector>
 
 namespace EE::Graphics {
 
@@ -11,12 +10,12 @@ enum class LineWrapMode { NoWrap, Letter, Word };
 enum class LineWrapType { Viewport, LineBreakingColumn };
 
 struct LineWrapInfo {
-	std::vector<Int64> wraps; // Each wrap character position (where the wrap must happen)
-	Float paddingStart{ 0 }; // Padding of the wrapped lines
+	SmallVector<Int64, 4> wraps; // Each wrap character position (where the wrap must happen)
+	Float paddingStart{ 0 };	 // Padding of the wrapped lines
 };
 
 struct LineWrapInfoEx : public LineWrapInfo {
-	std::vector<Float> wrapsWidth; // Each wrap width
+	SmallVector<Float, 4> wrapsWidth; // Each wrap width
 };
 
 class EE_API LineWrap {

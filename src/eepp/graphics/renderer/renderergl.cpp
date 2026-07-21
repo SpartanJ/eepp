@@ -223,7 +223,7 @@ void RendererGL::texCoordPointer( int size, unsigned int type, int stride, const
 }
 
 void RendererGL::clientActiveTexture( unsigned int texture ) {
-	glClientActiveTexture( texture );
+	clientActiveTextureImpl( texture );
 }
 
 void RendererGL::pointSize( float size ) {
@@ -236,10 +236,10 @@ void RendererGL::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32&
 									const Int32& Height ) {
 	Rectf r( x, y, x + Width, y + Height );
 
-	double clip_left[] = {1.0, 0.0, 0.0, -r.Left};
-	double clip_right[] = {-1.0, 0.0, 0.0, r.Right};
-	double clip_top[] = {0.0, 1.0, 0.0, -r.Top};
-	double clip_bottom[] = {0.0, -1.0, 0.0, r.Bottom};
+	double clip_left[] = { 1.0, 0.0, 0.0, -r.Left };
+	double clip_right[] = { -1.0, 0.0, 0.0, r.Right };
+	double clip_top[] = { 0.0, 1.0, 0.0, -r.Top };
+	double clip_bottom[] = { 0.0, -1.0, 0.0, r.Bottom };
 
 	GLi->enable( GL_CLIP_PLANE0 );
 	GLi->enable( GL_CLIP_PLANE1 );
@@ -261,7 +261,8 @@ void RendererGL::clip2DPlaneDisable() {
 
 void RendererGL::clipPlane( unsigned int plane, const double* equation ) {
 #ifdef EE_GLES1
-	float clip[] = {(float)equation[0], (float)equation[1], (float)equation[2], (float)equation[3]};
+	float clip[] = { (float)equation[0], (float)equation[1], (float)equation[2],
+					 (float)equation[3] };
 
 	glClipPlane( plane, clip );
 #else

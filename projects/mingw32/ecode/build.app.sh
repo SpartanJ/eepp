@@ -7,6 +7,7 @@ ARCH=x86_64
 ARCHI=$ARCH
 BUILDTYPE=release
 VERSION=
+BACKEND=sdl2
 for i in "$@"; do
   case $i in
     --version)
@@ -20,6 +21,10 @@ for i in "$@"; do
       ;;
     --buildtype=*)
       BUILDTYPE_CONFIG="${i#*=}"
+      shift
+      ;;
+    --backend=*)
+      BACKEND="${i#*=}"
       shift
       ;;
     *)
@@ -39,17 +44,26 @@ elif [[ "$ARCH_CONFIG" == "arm64" ]]; then
   ARCHI=arm64
 fi
 
-../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" ecode || exit
+if [[ "${BACKEND,,}" == "sdl3" ]]; then
+  BMSDLVER=$(grep "remote_sdl3_version_number =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
+  BMSDLDLL="SDL3.dll"
+  BMSDLVERDIR="SDL3-$BMSDLVER"
+else
+  BMSDLVER=$(grep "remote_sdl2_version_number =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
+  BMSDLDLL="SDL2.dll"
+  BMSDLVERDIR="SDL2-$BMSDLVER"
+fi
 
-SDLVER=$(grep "remote_sdl2_version_number =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
+../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" --backend="$BACKEND" ecode || exit
+
 bash ../../scripts/copy_ecode_assets.sh ../../bin ecode || exit
 cp ../../../bin/ecode.exe ecode/
 cp ../../../bin/eepp.dll ecode/
 
 if [[ "$ARCH_CONFIG" == "arm64" ]]; then
-cp "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ecode/
+cp "/usr/local/cross-tools/aarch64-w64-mingw32/bin/$BMSDLDLL" ecode/
 else
-cp ../../../src/thirdparty/"SDL2-$SDLVER"/$ARCHI-w64-mingw32/bin/SDL2.dll ecode/
+cp ../../../src/thirdparty/"$BMSDLVERDIR"/$ARCHI-w64-mingw32/bin/"$BMSDLDLL" ecode/
 fi
 
 if [ -n "$VERSION" ];

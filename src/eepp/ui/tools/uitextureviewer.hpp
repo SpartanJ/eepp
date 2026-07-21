@@ -1,6 +1,7 @@
 #ifndef EE_UITEXTUREVIEWER_HPP
 #define EE_UITEXTUREVIEWER_HPP
 
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 
 using namespace EE::UI;
@@ -17,19 +18,32 @@ class EE_API UITextureViewer : public UIRelativeLayout {
 
 	virtual ~UITextureViewer();
 
+	virtual void scheduledUpdate( const Time& time );
+
   protected:
+	struct TextureEntry {
+		TextureWeakPtr texture;
+		UIWidget* preview{ nullptr };
+		bool seen{ false };
+	};
+
 	UIGridLayout* mGridLayout{ nullptr };
 	UIRelativeLayout* mImageLayout{ nullptr };
-	UnorderedMap<Texture*, Uint32> mCbs;
-	Uint32 mLoaderCb{ 0 };
+	UnorderedMap<Uint64, TextureEntry> mTextures;
+	TexturePtr mSelectedTexture;
+	Uint64 mLastRegistryGeneration{ 0 };
 
 	UITextureViewer();
 
 	void init();
 
-	void insertTexture( Texture* tex );
+	void refreshTextures();
 
-	void setImage( Drawable* );
+	void insertTexture( const TextureRegistryRecord& record );
+
+	void setImage( TexturePtr texture );
+
+	void clearSelectedTexture();
 };
 
 } // namespace Tools

@@ -447,6 +447,10 @@
         {
           "name": "minimax/minimax-m2.5:free",
           "display_name": "MiniMax: MiniMax M2.5 (free)"
+        },
+        {
+          "name": "NVIDIA: Nemotron 3 Ultra (free)",
+          "display_name": "nvidia/nemotron-3-ultra-550b-a55b:free"
         }
       ]
     },
@@ -525,6 +529,20 @@
           "name": "Qwen/Qwen3.5-9B",
           "display_name": "Qwen3.5 9B FP8",
           "cheapest": true
+        }
+      ]
+    },
+    "xiaomimimo": {
+      "api_url": "https://api.xiaomimimo.com/v1/chat/completions",
+      "display_name": "Xiaomi MiMo",
+      "models": [
+        {
+          "name": "mimo-v2.5-pro",
+          "display_name": "MiMo V2.5 Pro"
+        },
+        {
+          "name": "mimo-v2.5",
+          "display_name": "MiMo V2.5"
         }
       ]
     }

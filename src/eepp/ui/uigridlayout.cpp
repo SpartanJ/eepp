@@ -113,7 +113,7 @@ void UIGridLayout::updateLayout() {
 
 	if ( !mVisible ) {
 		setInternalPixelsSize( Sizef::Zero );
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 		mPacking = false;
 		mDirtyLayout = false;
 		return;
@@ -195,7 +195,7 @@ void UIGridLayout::updateLayout() {
 	}
 
 	if ( oldSize != getSize() ) {
-		notifyLayoutAttrChangeParent();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 	}
 
 	invalidateDraw();

@@ -669,6 +669,20 @@ template <> class Utf<32> {
 	template <typename In> static Uint32 decodeWide( In input );
 
 	////////////////////////////////////////////////////////////
+	/// \brief Decode wide characters to UTF-32
+	///
+	/// This function does not exist in other specializations
+	/// of efsw::Utf<>, it is defined for convenience (it is used by
+	/// several other conversion functions).
+	///
+	/// \param input Input wide character
+	///
+	/// \return Converted character
+	///
+	////////////////////////////////////////////////////////////
+	template <typename In> static Uint32 decodeWide( In& it, In end );
+
+	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-32 character to ANSI
 	///
 	/// This function does not exist in other specializations

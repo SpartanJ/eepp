@@ -1,6 +1,7 @@
 #ifndef EE_UICUIWINDOW_HPP
 #define EE_UICUIWINDOW_HPP
 
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -201,6 +202,10 @@ class EE_API UIWindow : public UIWidget {
 	bool stealsFocusOnShow() const;
 
 	void setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn );
+
+	virtual nlohmann::json serialize() const;
+
+	virtual void unserialize( const nlohmann::json& json );
 
   protected:
 	enum UI_RESIZE_TYPE {

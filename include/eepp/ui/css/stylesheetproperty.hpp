@@ -39,11 +39,11 @@ class EE_API StyleSheetProperty {
 								 bool cachedProperty = false );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
-								 bool trimValue = true, const Uint32& specificity = 0,
+								 bool trimValue = true, const Int64& specificity = 0,
 								 const Uint32& index = 0 );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
-								 const Uint32& specificity, bool isVolatile = false,
+								 const Int64& specificity, bool isVolatile = false,
 								 const Uint32& index = 0 );
 
 	Uint32 getId() const;
@@ -56,9 +56,9 @@ class EE_API StyleSheetProperty {
 
 	const std::string& value() const;
 
-	const Uint32& getSpecificity() const;
+	const Int64& getSpecificity() const;
 
-	void setSpecificity( const Uint32& specificity );
+	void setSpecificity( const Int64& specificity );
 
 	bool isEmpty() const;
 
@@ -144,6 +144,8 @@ class EE_API StyleSheetProperty {
 
 	bool isLightDarkValue() const;
 
+	bool needsValueSubstitution() const;
+
 	size_t getPropertyIndexCount() const;
 
 	const StyleSheetProperty& getPropertyIndex( const Uint32& index ) const;
@@ -193,7 +195,7 @@ class EE_API StyleSheetProperty {
 	String::HashType mNameHash;
 	std::string mValue;
 	String::HashType mValueHash;
-	Uint32 mSpecificity;
+	Int64 mSpecificity;
 	Uint32 mIndex;
 	bool mVolatile : 1 { false };
 	bool mImportant : 1 { false };
@@ -206,7 +208,7 @@ class EE_API StyleSheetProperty {
 	std::vector<VariableFunctionCache> mVarCache;
 
 	explicit StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
-								 const std::string& value, const Uint32& specificity = 0,
+								 const std::string& value, const Int64& specificity = 0,
 								 const Uint32& index = 0 );
 
 	void cleanValue();

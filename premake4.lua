@@ -158,6 +158,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "with-glew", description = "Compile with GLEW support (disabled by default)." }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
@@ -171,7 +172,8 @@ newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL2",  "SDL2" }
+		{ "SDL2",  "SDL2" },
+		{ "SDL3",  "SDL3" },
 	}
 }
 newoption {
@@ -218,6 +220,14 @@ end
 
 function os.is_real( os_name )
 	return os.get_real() == os_name
+end
+
+function glew_supported()
+	return not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten")
+end
+
+function glew_enabled()
+	return _OPTIONS["with-glew"] and glew_supported()
 end
 
 if os.is_real("haiku") and not os.is64bit() then
@@ -349,7 +359,7 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.32.8"
+remote_sdl2_version = "SDL2-2.32.10"
 
 function build_arch_configuration()
 	if os.is_real("mingw32") or os.is_real("mingw64") then
@@ -454,12 +464,13 @@ end
 
 function add_cross_config_links()
 	if not is_vs() then
-		if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
-			linkoptions { "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
+		if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then -- if is crosscompiling from *nix
+	    	linkoptions { "-static-libgcc", "-static-libstdc++" }
+	    	linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
 		end
 
-		if os.is_real("mingw32") or os.is_real("mingw64") then
-			linkoptions { "-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
+		if os.is_real("ios") then
+			linkoptions { "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
 	end
 end
@@ -669,19 +680,19 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("mingw64") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
+		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
 	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "CoreText.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	end
 
 	if _OPTIONS["without-mojoal"] then
@@ -706,6 +717,10 @@ function parse_args()
 
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
+	end
+
+	if glew_enabled() then
+		defines { "EE_ENABLE_GLEW" }
 	end
 
 	if _OPTIONS["thread-sanitizer"] then
@@ -774,7 +789,7 @@ function add_static_links()
 		links { "mbedtls-static" }
 	end
 
-	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+	if glew_enabled() then
 		links{ "glew-static" }
 	end
 end
@@ -804,17 +819,47 @@ function add_sdl2()
 	end
 end
 
+function add_sdl3()
+	print("Using SDL3 backend");
+	files { "src/eepp/window/backend/SDL3/*.cpp" }
+	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_3" }
+
+	if not can_add_static_backend("SDL3") then
+		if not os.is_real("emscripten") then
+			table.insert( link_list, get_backend_link_name( "SDL3" ) )
+		end
+	else
+		insert_static_backend( "SDL3" )
+	end
+end
+
 function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
-		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		if table.contains(backends, "SDL2") then
+			includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		end
+		if table.contains(backends, "SDL3") then
+			includedirs { "/Library/Frameworks/SDL3.framework/Headers" }
+		end
 	end
 	if os.is("macosx") then
-		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if table.contains(backends, "SDL2") then
+			defines { "EE_SDL2_FROM_ROOTPATH" }
+		end
+		if table.contains(backends, "SDL3") then
+			defines { "EE_SDL3_FROM_ROOTPATH" }
+		end
 		if not is_xcode() and not _OPTIONS["use-frameworks"] then
-			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
-			buildoptions { sdl2flags }
+			if table.contains(backends, "SDL2") then
+				local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+				buildoptions { sdl2flags }
+			end
+			if table.contains(backends, "SDL3") then
+				local sdl3flags = popen("sdl3-config --cflags"):gsub("\n", "")
+				buildoptions { sdl3flags }
+			end
 		end
 	end
 end
@@ -892,13 +937,25 @@ function select_backend()
 		add_sdl2()
 	end
 
+	if backend_is("SDL3", "SDL3") then
+		print("Selected SDL3")
+		add_sdl3()
+	end
+
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os_findlib("SDL2", "SDL2") then
+		if os_findlib("SDL3", "SDL3") then
+			add_sdl3()
+		elseif os_findlib("SDL2", "SDL2") then
 			add_sdl2()
 		else
-			print("ERROR: Couldnt find any backend. Forced SDL2.")
-			add_sdl2( true )
+			if table.contains( backends, "SDL3" ) then
+				add_sdl3()
+				print("ERROR: Couldnt find any backend. Forced SDL3.")
+			else
+				add_sdl2()
+				print("ERROR: Couldnt find any backend. Forced SDL2.")
+			end
 		end
 	end
 end
@@ -951,6 +1008,21 @@ function eepp_module_physics_add()
 	links { "eepp-physics-static", "chipmunk-static" }
 	defines { "EE_PHYSICS_STATIC" }
 	includedirs { "src/modules/physics/include/", "src/modules/physics/src/" }
+end
+
+function eepp_module_backward_add( ecode_mode )
+	files { "src/modules/backward/src/backward.cpp" }
+	if ecode_mode then
+		defines { "EE_BACKWARD_ECODE_MODE" }
+	end
+	configuration {}
+	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+		links { "dbghelp", "psapi" }
+	end
+	if os.is_real("linux") or os.is_real("bsd") then
+		linkoptions { "-rdynamic" }
+	end
+	configuration {}
 end
 
 function build_eepp( build_name )
@@ -1014,6 +1086,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
@@ -1085,7 +1158,7 @@ solution "eepp"
 		includedirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
-	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+	if glew_enabled() then
 		project "glew-static"
 			kind "StaticLib"
 			language "C"
@@ -1274,6 +1347,11 @@ solution "eepp"
 				buildoptions{ "/bigobj" }
 			end
 
+			if os.is("windows") and not is_vs() then
+				buildoptions{ "-Wa,-mbig-obj" }
+				linkoptions { "-Wl,--export-all-symbols" }
+			end
+
 		project "SheenBidi-static"
 			kind "StaticLib"
 			language "C"
@@ -1318,8 +1396,13 @@ solution "eepp"
 			language "C"
 			defines {"AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-			includedirs { "include/eepp/thirdparty/mojoAL" }
-			files { "src/thirdparty/mojoAL/*.c" }
+			if _OPTIONS["with-backend"] == "SDL3" then
+				includedirs { "src/thirdparty/mojoAL-SDL3", "src/thirdparty/mojoAL-SDL3/AL" }
+				files { "src/thirdparty/mojoAL-SDL3/*.c" }
+			else
+				includedirs { "src/thirdparty/mojoAL" }
+				files { "src/thirdparty/mojoAL/*.c" }
+			end
 			build_base_configuration( "mojoal" )
 	end
 
@@ -1346,6 +1429,13 @@ solution "eepp"
 		files { "src/thirdparty/libyaml/**.c" }
 		includedirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
+
+	project "tinyexpr-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/tinyexpr/tinyexpr.c" }
+		build_base_configuration( "tinyexpr" )
 
 	project "gumbo-parser-static"
 		kind "StaticLib"
@@ -1601,6 +1691,12 @@ solution "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-font-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_font_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-font-picker", true )
+
 	project "eepp-ui-dropdownmodellist"
 		set_kind()
 		language "C++"
@@ -1616,6 +1712,7 @@ solution "eepp"
 	project "eepp-ui-markdownview"
 		set_kind()
 		language "C++"
+		includedirs { "src/thirdparty" }
 		files { "src/examples/ui_markdownview/*.cpp" }
 		build_link_configuration( "eepp-ui-markdownview", true )
 
@@ -1736,8 +1833,9 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
+		eepp_module_backward_add( true )
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
 		if os.is("windows") then
 			links { "gumbo-parser-static" }
 		end
@@ -1753,11 +1851,8 @@ solution "eepp"
 
 			if os_findlib("dw") then
 				links { "dw" }
-				defines { "ECODE_HAS_DW" }
+				defines { "EE_BACKWARD_HAS_DW" }
 			end
-		end
-		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
-			links { "dbghelp", "psapi" }
 		end
 		if os.is("haiku") then
 			links { "bsd", "network" }
@@ -1779,9 +1874,6 @@ solution "eepp"
 		configuration { "release" }
 			if os.is_real("linux") or os.is_real("macosx") or os.is_real("bsd") or os.is_real("haiku") then
 				buildoptions { "-g1", "-fvisibility=default" }
-			end
-			if os.is_real("linux") or os.is_real("bsd") then
-				linkoptions { "-rdynamic" }
 			end
 
 	project "eterm"
@@ -1828,13 +1920,23 @@ solution "eepp"
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
 
+	project "eepp-benchmarks"
+		kind "ConsoleApp"
+		targetdir("./bin/benchmarks")
+		language "C++"
+		files { "src/benchmarks/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-benchmarks", true )
+
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
 		links { "eterm-static", "languages-syntax-highlighting-static" }
-		includedirs { "src/modules/eterm/include/" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
-		files { "src/tests/unit_tests/*.cpp" }
+		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
+		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

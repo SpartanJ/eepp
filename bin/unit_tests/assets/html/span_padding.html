@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #1e2a38;
+        font:
+          16px Verdana,
+          Sans-Serif;
+        color: #d0d8e0;
+        line-height: 1.5;
+        padding: 20px;
+      }
+
+      .padded-span {
+        background-color: #c06060;
+        color: #ffffff;
+        padding: 10px 20px;
+        margin: 0 5px;
+      }
+
+      .large-padding {
+        background-color: #60c060;
+        color: #ffffff;
+        padding: 30px;
+        margin: 0 10px;
+      }
+
+      .mixed-padding {
+        background-color: #6060c0;
+        color: #ffffff;
+        padding-left: 50px;
+        padding-right: 10px;
+        padding-top: 5px;
+        padding-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      This is normal text with a <span class="padded-span">padded span</span> inside it.
+    </div>
+    <div style="margin-top: 40px;">
+      Here is a <span class="large-padding">large padded span</span> which should increase the line height and spacing.
+    </div>
+    <div style="margin-top: 40px;">
+      Finally, a <span class="mixed-padding">mixed padding span</span> to test asymmetrical padding values.
+    </div>
+  </body>
+</html>

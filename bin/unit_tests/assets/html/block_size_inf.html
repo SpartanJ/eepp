@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)https://asahilinux.org/2026/04/progress-report-7-0/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Progress Report: Linux 7.0 - Asahi Linux</title><link rel="stylesheet" href="./block_size_inf_files/main.css">
+<link href="./block_size_inf_files/all.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com/">
+<link id="favicon" rel="icon" href="https://asahilinux.org/img/AsahiLinux_logomark_32px.png">
+<link href="./block_size_inf_files/css2" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,user-scalable=yes">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@AsahiLinux">
+<meta name="twitter:creator" content="@AsahiLinux">
+<meta name="twitter:title" content="Progress Report: Linux 7.0 - Asahi Linux">
+<meta name="twitter:description" content="Porting Linux to Apple Silicon">
+<meta name="twitter:image" content="https://asahilinux.org/img/AsahiLinux_logomark_256px.png">
+<meta name="twitter:image:width" content="256">
+<meta name="twitter:image:height" content="256">
+<meta property="og:image" content="https://asahilinux.org/img/AsahiLinux_logomark_256px.png">
+<meta property="og:title" content="Progress Report: Linux 7.0 - Asahi Linux">
+<script>var kawaii=new URLSearchParams(window.location.search).get("kawaii")??localStorage.getItem("kawaii");kawaii=="true"?(document.documentElement.classList.add("kawaii"),localStorage.setItem("kawaii","true")):localStorage.removeItem("kawaii")</script>
+</head><body>
+<header id="header">
+<div class="header-logo">
+<a href="https://asahilinux.org/"><img src="./block_size_inf_files/AsahiLinux_logo.svg" class="logo" alt=""></a>
+</div><div class="header-menu">
+<ul class="menu-container flex-container">
+<li><a href="https://asahilinux.org/about">About</a></li><li><a href="https://asahilinux.org/community">Community</a></li><li><a href="https://asahilinux.org/contribute">Contribute</a></li><li><a href="https://asahilinux.org/governance">Governance</a></li><li><a href="https://asahilinux.org/docs">Documentation</a></li><li><a href="https://github.com/AsahiLinux">GitHub</a></li><li><a href="https://asahilinux.org/blog">Blog</a></li><li><a href="https://asahilinux.org/merch">Merch</a></li><li><a href="https://asahilinux.org/support">Donate</a></li></ul></div></header><section id="post-section">
+<div class="post-wrapper">
+<div class="post">
+<div id="breadcrumbs">
+<a href="https://asahilinux.org/">
+<i class="fas fa-home"></i>
+</a>
+/
+<a href="https://asahilinux.org/blog/">
+Blog
+</a>
+/
+<a href="https://asahilinux.org/2026/04/progress-report-7-0/">
+Progress Report: Linux 7.0
+</a>
+</div><div class="blog-header">
+<h1 class="entry-title">Progress Report: Linux 7.0</h1><ul class="blog-nav">
+<li>
+<a href="https://asahilinux.org/2026/02/progress-report-6-19/"><i class="fas fa-arrow-left"></i>Previous</a>
+</li><li class="nav-spacer"></li></ul></div><p>After almost three years of 6.x series kernels, Linux 7.0 is finally here.
+That means it’s also time for another Asahi progress report!</p><h2 id="automate-everything">Automate Everything</h2><p>Users of alternate distros and keen-eyed individuals may have noticed some
+changes to the Asahi Installer. After almost two years, we finally got around
+to pushing an updated version of the installer to the CDN! Two years is a long
+time to go between updates, so what took so long?</p><p>Our upstream installer package is a little bit of a Rube-Goldberg machine. The
+bulk of the installer is written in Python, with some small Bash scripts to
+bootstrap it. When you run <code>curl | sh</code>, you’re actually downloading the boostrap
+script, which then fetches the actual installer bundle from our CDN. This bundle
+consists of a Python interpreter and very stripped down standard library, a built
+m1n1 stage 1 binary, and the installer itself.</p><p>Until recently, cutting an installer release meant:</p><ol>
+<li>Tagging the installer repo</li><li>Downloading a macOS Python build</li><li>Building m1n1 from a blessed commit</li><li>Bundling Python, m1n1 and the installer</li><li>Uploading the installer bundle to the CDN</li><li>Updating the CDN’s version flag file</li></ol><p>This process was time-consuming and required administrative access to the CDN.
+As a result, we neglected to push installer updated for quite some time; the
+previous installer tag was from June 2024! As upstreaming work has progressed
+and Devicetree bindings churned, this became rather problematic for our friends
+maintaining distros.</p><p>The Asahi Installer offers a UEFI-only installation option. This option
+shrinks macOS and only installs what is necessary to boot a UEFI executable,
+meaning m1n1 stage 1, the Devicetrees, and U-Boot. This allows users to
+boot from live media with Asahi support, such as specialised Gentoo Asahi
+LiveCD images.</p><p>Since the Devicetrees on a fresh UEFI-only install come from the installer
+bundle itself, a kernel will only successfully boot when the installer-bundled
+Devicetrees match what that kernel expects to see. The two have gotten rather
+out of sync as time has gone on due to Devicetree bindings changing
+as a result of the upstreaming process. This situation finally came to a
+head with kernel 6.18, which required numerous changes to both m1n1 and
+the Devicetree bindings for the Apple USB subsystem. This made booting
+kernel 6.18 and above from live media impossible. Oops.</p><p>Rather than go through the trouble of manually pushing out another update,
+we took the opportunity to build some automation and solve this problem
+permanently.</p><p>We moved the manifest of installable images into the <a href="https://github.com/AsahiLinux/asahi-installer-data">asahi-installer-data repo</a>,
+allowing us to update it independently of the installer codebase.
+On top of this, we also now deploy
+the installer using GitHub workflows. Going forward, every push to the <code>main</code>
+branch of <a href="https://github.com/AsahiLinux/asahi-installer">asahi-installer</a> will
+automatically build the installer and upload it to <code>https://alx.sh/dev</code>.
+Every tag pushed to GitHub will do the same for <code>https://alx.sh</code>.</p><p>The latest version, 0.8.0, bumps the bundled m1n1 stage 1 binary to
+version 1.5.2, introduces installer support for the Mac Pro, and adds
+a firmware update mode which ties in nicely with…</p><h2 id="how-do-you-overengineer-a-light-sensor">How do you overengineer a light sensor?</h2><p>Basically everything with a screen now comes with some sort of light
+sensor. This is usually to enable automatic brightness adjustment based
+on ambient conditions. It’s a very convenient feature in devices like
+smartphones, where a user may walk outside and find their display too
+dim to see. The cheapest versions of this use a simple photoresistor.
+This is fine if the goal is just to change brightness, but brightness
+is not the only thing affected by ambient lighting conditions. What about
+colour rendering?</p><p>Apple’s devices have had the True Tone display feature for quite some time.
+This works by measuring both the brightness <em>and</em> the colour characteristics
+of the environment’s ambient lighting. This data is then used to apply
+brightness and colour transformations to the display to ensure that it is
+always displaying content as accurately as possible. This is most noticeable
+in environments with lighting fixtures that have a low Colour Rendering
+Index, such as fluorescent tubes or cheap cool white LEDs. The devices that
+enable this, ambient light sensors, are usually little ICs that connect
+to the system over I<sup>2</sup>C or other industry-standard bus. This is
+fine for basic applications, but this is Apple. There are some other considerations
+to be had:</p><ul>
+<li>The light sensor is doing stuff whenever the screen is on, so processing its
+output should be as efficient as possible</li><li>The light sensor should be able to be calibrated for maximum accuracy</li><li>There are multiple models of light sensor in use, and the OS should not
+have to care <em>too</em> much about that</li><li>The light sensor has to have a three letter acronym like every other piece
+of hardware on this platform (ALS)</li></ul><p>Naturally, this sounds like a job for the Always-On Processor<sup id="fnref:1"><a href="https://asahilinux.org/2026/04/progress-report-7-0/#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> (AOP)!</p><p>We’ve had a working AOP+ALS driver set for a while thanks to chaos_princess,
+however the raw data AOP reports back from ALS is rather inaccurate without
+calibration. That calibration is a binary blob that must be uploaded to the AOP
+at runtime. It is essentially firmware. Since we cannot redistribute Apple’s
+binaries, it must be retrieved from macOS at install time and then stored somewhere the driver
+knows to look for it.</p><p>To achieve this, the Asahi Installer gathers up all
+the firmware it knows we will need in Linux and stores it on the EFI System
+Partition it creates. A Dracut module then mounts this to a subdirectory of
+<code>/lib/firmware/</code>, where drivers can find it. However, issues arise when we
+need to retrieve more firmware from macOS after Asahi Linux has already been
+installed. To avoid a repeat of the webcam situation, where users
+were required to manually do surgery on their EFI System Partition, chaos_princess
+added the ability for the Asahi Installer to automatically update the firmware
+package. Starting with ALS, any required firmware updates will be a simple
+matter of booting into macOS or macOS Recovery, re-running the Asahi Installer, and following
+the prompts.</p><p>To enable ALS support (and to do firmware upgrades in the future), follow these steps:</p><ol>
+<li>Ensure you are running version 6.19 or above of the Asahi kernel</li><li>Ensure your distro ships <code>iio-sensor-proxy</code> as a dependency of your DE (Fedora
+Asahi Remix does this)</li><li>Shut down your Mac</li><li><em>Hold</em> the power button until “Loading startup options” appears on the display
+for MacBooks, <em>or</em> for 5-7 seconds on the desktop machines</li><li>Select Options from the Apple boot menu</li><li>Log in with your macOS credentials, then do Command + Shift + T to
+open a terminal</li><li>Invoke the Asahi Installer by running <code>curl https://alx.sh | sh</code></li><li>Choose the “Rebuild vendor firmware package” option when prompted</li><li>Quit the installer and reboot once this is done</li></ol><h2 id="solving-the-energy-crisis">Solving the energy crisis</h2><p>Idle energy consumption has been an ongoing issue, especially on devices with
+Pro/Max/Ultra SoCs. The power management architecture on this platform is
+incredibly complex, and there are a lot of moving parts involved in making it
+all work. There is Power Manager (PMGR), which is responsible for the SoC’s power
+domains, but there is also the Power Management Processor (PMP), which does… stuff?</p><p>The actual low-level details of how power is managed across the SoC are quite
+opaque. PMGR is responsible for powering SoC regions up or down and
+is runtime-configurable. This is necessary to power up parts of the SoC on boot,
+and to power them up or down on suspend and resume. PMP, however, has a more
+interesting job. Many SoC blocks communicate their power states to PMP directly
+in a region of shared memory. PMP also takes reports
+from the application cores when PMGR power domains are powered up or down.
+PMP will not read these reports if it is not booted, and certain power management functionality will not work. We are
+not sure exactly <em>what</em> it does with this information, but it likely involves
+controlling Apple Fabric power and clocking, among other things.</p><p>To support PMP, chaos_princess wrote drivers enabling it to accept reports from
+the SoC blocks and PMGR. This alone is enough to save around half a Watt
+on a 14" M1 Pro MacBook Pro when idle. That is around a 20% decrease in idle power
+consumption! There is obviously still work to be done to reach macOS levels of
+idle and suspend time, but this is a significant step forward.</p><p>Machines with the base M1 SoC have an older variant of PMP, which is not compatible
+with the variant found on the M1 Pro and later SoCs. <a href="https://github.com/dd-dreams">dd-dreams</a>
+is working on enabling PMP support on these machines, so stay tuned!</p><p>PMP support has not yet been validated on every machine we support, and we
+do not plan to ship it enabled by default until it is merged upstream. Users
+comfortable with making Devicetree changes may define <code>APPLE_USE_PMP</code> in their device’s
+Devicetree (e.g. <code>t8112-j415.dts</code>) to enable it.</p><h2 id="bluetooth-fixes">Bluetooth fixes!</h2><p>Bluetooth and WiFi have a long history of contention and interference. Both operate
+around the same 2.4 GHz frequencies and are typically both present in a given device.
+If not dealt with, this can cause packet loss and dropouts. There are a number of
+strategies to deal with this. In modern systems, WiFi and Bluetooth are typically
+integrated into the same controller. This allows the controller to monitor active
+2.4 GHz WiFi and Bluetooth connections at the same time. By default, each connection
+is allocated a “fair” share of the available airtime, however this can cause issues
+when latency is important, or when some connections require minimal interruption.
+A connection that is actively streaming audio must be given priority over a keyboard,
+or a scan for 2.4 GHz WiFi broadcasts.</p><p>Unfortunately nothing is ever simple with Broadcom, and coexistence configuration
+is done using vendor-specific extensions to the Bluetooth Host Controller Interface
+(HCI). These were previously not supported in the upstream Linux kernel, causing
+our Bluetooth controllers to drop audio packets when, for example, KDE Connect
+would trigger a Bluetooth scan. chaos_princess recently added support for these
+commands to the kernel Bluetooth stack, and since BlueZ, the userspace Bluetooth daemon,
+marks all audio streams as high priority, these commands can be triggered whenever
+a connection is streaming audio. Bluetooth audio dropouts are now a thing of the
+past!</p><h2 id="hiding-in-plain-sight">Hiding in plain sight</h2><p>Our struggles with the display controller (DCP) have been well documented at this point.
+The firmware interface is enormous, unstable between versions, and frustratingly
+limited in weird ways that make no sense. Once we had enough of it working to get
+basic display support, attention turned to other pieces of hardware and no one really
+had the time to invest in further DCP work. It is still missing a bunch of features
+though, and one we constantly get questions about is Variable Refresh Rate (VRR).</p><p>VRR is a bit of a complicated thing to support. The display controller and display
+must communicate using special packets, which are different between HDMI and DisplayPort.
+The display controller must also be configured to “stretch” vertical blanking intervals
+based on the actual presentation of frames, not the set timing mode’s nominal
+refresh rate. The display must also advertise VRR as a capability, and this
+all needs to be wired up to the KMS API so that userspace knows about it.</p><p>DCP’s firmware interface is very layered. Like almost every other Apple coprocessor
+it runs RTKit, but sitting atop RTKit is the Endpoint Interface Client (EPIC).
+EPIC exposes “services” that each expose their own API surface, comprised of functions
+and callbacks. Each service also has “parameters” which are essentially a key-value store
+of knobs that control various runtime behaviours. These are changed by making a call
+to a “set parameter” API.</p><p>When initial DCP bringup work was being done, it was noticed that one such parameter was
+being set to 0 when a DCP was powered up for an external display. This was assumed to
+be part of some power on sequence. The Linux driver probe sequence was written to set
+this parameter on every power on accordingly.</p><p>While toggling VRR on and off during tracing, I noticed that same parameter being flipped
+between 0x300000 and 0x0. This was followed by a modeset, after which VRR would be
+either enabled or disabled. The display I was testing with has a minimum refresh rate of
+48 Hz. In the fixed-point decimal format DCP uses to represent refresh rates, 48 is
+0x300000. What if…</p><p>After hacking some code into the Linux DCP driver to set this parameter and trigger a
+modeset, I saw exactly what I wanted to see!</p><pre tabindex="0"><code>RTKit: syslog message: FramebufferDCP.cpp:5931: IOMFBParameter_adaptive_sync Req minRR = 0x300000, mediaTargetRate = 0x0, Fractional Rate = 0
+...
+RTKit: syslog message: PPipeDCP_H13P.cpp:12251: IOMFB: AdaptiveSync Range [48Hz, 165Hz]
+</code></pre><p>The parameter we had been setting this entire time had nothing to do with power sequencing,
+it was the minimum refresh rate toggle for VRR. Setting it to 0 before a modeset simply
+tells DCP to disable VRR. Turning what is usually hundreds of lines of driver code into
+effectively two function calls is one benefit of having a firmware blob as enormous as DCP’s.</p><p>I also tested this on a MacBook Pro with a ProMotion display, and found that it is activated
+in the same way. This was surprising since MacBook internal displays do not advertise
+an EDID/DisplayID for DCP to parse, which is the normal way we retrieve and set the
+display’s VRR capabilities. While DCP’s firmware is not fully understood, we suspect
+that the laptop displays receive special treatment, and DCP simply knows how to drive
+them. To work around this, the Linux driver determines if the connected display is
+an internal MacBook Pro LCD and statically sets the necessary properties accordingly
+rather than trying to pull them from a nonexistent EDID.</p><p>Productionising all of this proved to be a bit of a challenge. Both VESA DisplayPort
+specification for Adaptive Sync, <em>and</em> the KMS API contract expressly forbid needing
+a modeset to transition between VRR states. Unfortunately for us, Apple either don’t
+care about the VESA spec or could not make DCP transition VRR states without a
+modeset. As such, we cannot expose VRR to userspace, and even if we did, compositors
+such as Kwin would simply ignore it as it requires a modeset. For now, users will be able
+to force VRR unconditionally on by setting the <code>appledrm.force_vrr</code> kernel module
+parameter once the <a href="https://github.com/AsahiLinux/linux/pull/477">pull request</a> is merged.
+If your display supports VRR, DCP will enable and use it without telling KMS or the
+compositor. Kwin handles this fine, however your experience with other compositors
+may differ. Please do not raise bugs about this either with us or with your compositor’s
+developers as it is a hack that compositors are not required to tolerate gracefully.</p><p>However, that may soon change. The HDMI specification does <em>not</em> forbid modesetting
+between VRR transitions, and other display controllers (e.g. Intel’s) behave similarly
+to DCP in this regard. Discussions are ongoing upstream on how best to deal with this;
+either drivers will be expected to enable VRR modes unconditionally <em>or</em> modesetting between
+transitions will be allowed. Once the way forward is clear upstream, we will expose
+VRR in the expected way so that compositors can decide when to enable it.</p><h2 id="more-embedded-audio-quirks">More embedded audio quirks</h2><p>Work is progressing on getting the entirety of the audio stack upstream. We have already
+merged changes to Cirrus Logic and Texas Instruments drivers for the headphone jack
+and speaker amp chips used on this platform, as well as drivers for the I<sup>2</sup>S peripheral
+and Apple DMA controller.</p><p>One of the things that makes this platform special is the way in which the speakers are
+prevented from destroying themselves. The Texas Instruments amps used by Apple can
+communicate the voltage and current across the connected speaker back to the SoC
+over I<sup>2</sup>S. These values can then be used along with a set of documented
+characteristics of the connected speaker (<a href="https://en.wikipedia.org/wiki/Thiele/Small_parameters">Thiele/Small Parameters</a>)
+to work out the temperature of the voice coil at any given moment. On macOS, CoreAudio
+does this. On Linux, this is <a href="https://github.com/AsahiLinux/speakersafetyd">speakersafetyd</a>’s
+job. No other desktop-class platform does this. This is usually either not done at all,
+handled entirely in hardware, or mostly hidden from the OS by <a href="https://sofproject.org/">Sound Open Firmware</a>.</p><p>But that’s not all! Each amp chip’s data transmit pin is connected in series with
+other amps. All of the “left” speaker amps are grouped, and so too are the “right”
+amps. Each of these lines must be combined at the receiver into one data stream,
+so the lines are ORed. This only works if the amps on one side are guaranteed to
+be logic low when the other side is trying to transmit data. This is not uncommon,
+and the amp chips Apple use include bus keepers to assist with this. These are
+small circuits designed to guarantee that a bus will be in a specific state at
+any given time, usually tied to ground.</p><p>We originally had these configured entirely in the amp chip’s driver, with specific
+Devicetree bindings to specify the bus keeper configuration. This was too limited
+and inflexible for upstream, however. Instead, we created a generic API that allows
+any ASoC component to expose that it has a configurable bus keeper, allowing the
+consuming drivers (usually the “platform” driver, which ties all of the physical
+audio components into a coherent “sound card”) to configure the bus keeper as required
+at runtime. Bus keepers are not uncommon, and it is possible that this functionality
+will be useful on other embedded-style platforms. The patch set implementing this
+has been merged for 7.1.</p><h2 id="going-beyond-macos">Going beyond macOS</h2><p>One of the challenges with bringing up a completely undocumented platform is that
+we have no frame of reference for the hardware’s capabilities. As far as we can
+possibly know, the hardware is capable of exactly what macOS does to it and nothing more.
+Almost all of our m1n1 and Linux driver code is based on observing the commands macOS
+sends to a given hardware block and effectively replaying them. But that is not <em>always</em> the case…</p><p>Apple are not afraid to use their buying power to get exactly what they want
+out of third party chip vendors. Followers of certain board-level repair and
+Right to Repair Internet personalities will be aware of how Apple gets CD321x
+series chips from Texas Instruments. These are incompatible variants of other TI
+USB-C mux chips with no publicly available datasheet, and sold exclusively to
+Apple in bulk. Apple has similar arrangements for the speaker amp
+chips they use, which are variants of TI’s TAS2764 and TAS2770. The same is true
+of CS42L84, an Apple-specific variant of the Cirrus Logic CS42L42 headphone jack
+chip. The vendors often won’t even acknowledge the existence of these variants.
+Connections to their publicly available counterparts can only be deduced
+through leaks and Internet sleuthing.</p><p>These variants are often similar enough to their publicly available counterparts that
+information on their datasheets and drivers can be useful reference material. Any incompatibilities
+are often limited to slightly different register layouts or discrete features that
+do not affect the rest of the chip’s operation. In the
+case of the TI speaker amps, we were able to add support for the Apple variants to
+the upstream TAS2764 and TAS2770 drivers with minimal fuss.</p><p>That said, it is always beneficial to begin by tracing macOS, and to treat those traces
+as the sole source of truth. CS42L84 ended up being different enough from CS42L42
+that it requires its own Linux driver, which has since been upstreamed. As mentioned, this approach
+has the limitation of only allowing us to expose the functionality macOS makes use
+of. Since macOS only ever programs CS42L84 to operate at either 48 or 96 kHz, we
+could only add support for those two sample rates to the Linux driver. This is quite
+limiting, as it forces PipeWire to waste CPU cycles (and therefore battery life)
+on resampling audio streams that are not either 48 or 96 kHz. Doing so also degrades
+the quality of the audio. However, CS42L42 supports all the other common sample
+rates, and while the register layout and programming sequence is different,
+the actual values programmed in for 48 and 96 kHz are the same across both
+chips. What would happen if we simply took the values for all other sample
+rates from the CS42L42 datasheet and added those to the CS42L84 driver? As
+it turns out, you get support for those sample rates!</p><p>The patch to enable hardware support for 44.1, 88.2, 176.4 and 192 kHz sample
+rates on both the input and output of the headphone jack was submitted
+directly upstream, and has been merged for 7.1. We also backported this
+to Asahi kernel 6.19.9, allowing users to take advantage of this
+immediately.</p><h2 id="more-m3">More M3!</h2><p>Also finding their way into the Asahi kernel tree are patches to enable more
+hardware on M3 machines. This includes support for PCIe, MacBook keyboards
+and trackpads support, the SMC-based RTC and reboot controller, and the NVMe
+controller, courtesy once again of Michael Reeves and Alyssa Milburn. This
+brings Linux support for the M3 up to roughly the same level as the first
+Asahi Linux alpha for M1!</p><p>While we aren’t quite ready to enable installation on M3 machines via the Asahi
+Installer, progress is being made. Stay tuned for more!</p><h2 id="fedora-asahi-remix-44">Fedora Asahi Remix 44</h2><p>Despite the delays in getting Fedora Asahi Remix 43 to you all, we are still on
+track to release Fedora Asahi Remix 44 either on or within a few days of Fedora
+Linux 44 on 28 April! Going forward, new KDE Plasma based installs will take advantage of
+a number of new features that shipped with Plasma 6.6.</p><p><a href="https://kde.org/announcements/plasma/6/6.6.0/#plasma-setup">Plasma Setup</a> replaces
+the previous Calamares-based setup wizard, providing a Plasma-native experience for
+user account creation and system setup. Additionally, Plasma Login Manager is now
+the default greeter and session manager, replacing SDDM. This applies to <em>new</em>
+installs only; users upgrading from previous versions of Fedora Asahi Remix will not
+have their configuration changed.</p><p>Fedora Asahi Remix 44 also retires our vendored Mesa and virglrenderer packages. Users
+who have not already manually done so will be automatically transitioned to the
+upstream Mesa and virglrenderer packages provided by the upstream Fedora repositories.</p><h2 id="until-next-time">Until next time!</h2><p>As always, we would like to extend our gratitude to everyone who continues to support
+our work on <a href="https://opencollective.com/asahilinux">OpenCollective</a> and <a href="https://github.com/sponsors/AsahiLinux">GitHub Sponsors</a>.
+We would also like to thank <a href="https://bunny.net/">Bunny</a>, who have supported us with
+free CDN and hosting services since the project’s first days.</p><div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>We cannot stress enough just how misleading this name is; the Processor is <em>not</em> Always-On&nbsp;<a href="https://asahilinux.org/2026/04/progress-report-7-0/#fnref:1" class="footnote-backref" role="doc-backlink">↩︎</a></p></li></ol></div><div class="post-bottom">James Calligeros · <span class="publishdate">2026-04-26</span></div></div></div></section><footer id="footer">
+<div class="footer-menu">
+<div class="footer-logo">
+<a href="https://asahilinux.org/">
+<img src="./block_size_inf_files/AsahiLinux_logomark.svg" class="logo" alt="Asahi Linux logo">
+</a>
+<span class="license">Licensed under CC BY-SA 4.0</span>
+<span class="disclaimer">Linux® is the registered trademark of Linus Torvalds in the U.S. and other countries. All other product names, logos, and brands are property of their respective owners.
+<span class="kawaii-disclaimer">Kawaii Asahi Linux logo by <a href="https://github.com/SAWARATSUKI/Logos">SAWARATSUKI</a> (see link for license).</span>
+</span>
+</div><div class="footer-links">
+<ul class="footer-services">
+<li><a href="https://social.treehouse.systems/@AsahiLinux"><i class="fab fa-mastodon"></i></a></li><li><a href="https://bsky.app/profile/asahilinux.org"><i class="fab fa-bluesky"></i></a></li><li><a href="https://www.linkedin.com/company/asahilinux/"><i class="fab fa-linkedin"></i></a></li><li><a href="https://github.com/AsahiLinux"><i class="fab fa-github"></i></a></li></ul><ul class="footer-menu-container">
+<li><a href="https://asahilinux.org/about">About</a></li><li><a href="https://asahilinux.org/code-of-conduct">Code of Conduct</a></li><li><a href="https://asahilinux.org/copyright">Copyright policy</a></li></ul></div></div></footer></body></html>

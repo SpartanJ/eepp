@@ -269,6 +269,9 @@ class Git {
 
 	Result diff( const std::string& file, bool isStaged, const std::string& projectDir = "" );
 
+	Result showFile( const std::string& file, const std::string& ref,
+					 const std::string& projectDir = "" );
+
 	Result createBranch( const std::string& branchName, bool checkout = false,
 						 const std::string& projectDir = "" );
 

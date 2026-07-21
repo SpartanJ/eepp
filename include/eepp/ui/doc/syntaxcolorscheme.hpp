@@ -260,7 +260,9 @@ constexpr auto SyntaxStyleEmpty() {
  */
 class EE_API SyntaxColorScheme {
   public:
-	static SyntaxColorScheme getDefault();
+	static SyntaxColorScheme getDefaultDark();
+
+	static SyntaxColorScheme getDefaultLight();
 
 	static std::vector<SyntaxColorScheme> loadFromStream( IOStream& stream );
 

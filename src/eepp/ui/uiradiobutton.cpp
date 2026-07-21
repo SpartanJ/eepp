@@ -159,11 +159,19 @@ void UIRadioButton::setActive( const bool& active ) {
 	if ( active && NULL != mParentNode ) {
 		Node* tChild = mParentNode->getFirstChild();
 
-		while ( NULL != tChild ) {
-			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
-				if ( tChild != this ) {
-					UIRadioButton* tRB = tChild->asType<UIRadioButton>();
+		if ( mParentNode->isType( UI_TYPE_HTML_INPUT ) && mParentNode->getParent() ) {
+			tChild = mParentNode->getParent()->getFirstChild();
+		}
 
+		while ( NULL != tChild ) {
+			Node* tRadio = tChild;
+			if ( tChild->isType( UI_TYPE_HTML_INPUT ) &&
+				 tChild->getFirstChild()->isType( UI_TYPE_RADIOBUTTON ) )
+				tRadio = tChild->getFirstChild();
+
+			if ( tRadio->isType( UI_TYPE_RADIOBUTTON ) ) {
+				if ( tRadio != this ) {
+					UIRadioButton* tRB = tRadio->asType<UIRadioButton>();
 					if ( tRB->isActive() )
 						tRB->setActive( false );
 				}
@@ -178,10 +186,19 @@ bool UIRadioButton::checkActives() {
 	if ( NULL != mParentNode ) {
 		Node* tChild = mParentNode->getFirstChild();
 
+		if ( mParentNode->isType( UI_TYPE_HTML_INPUT ) && mParentNode->getParent() ) {
+			tChild = mParentNode->getParent()->getFirstChild();
+		}
+
 		while ( NULL != tChild ) {
-			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
-				if ( tChild != this ) {
-					UIRadioButton* tRB = tChild->asType<UIRadioButton>();
+			Node* tRadio = tChild;
+			if ( tChild->isType( UI_TYPE_HTML_INPUT ) &&
+				 tChild->getFirstChild()->isType( UI_TYPE_RADIOBUTTON ) )
+				tRadio = tChild->getFirstChild();
+
+			if ( tRadio->isType( UI_TYPE_RADIOBUTTON ) ) {
+				if ( tRadio != this ) {
+					UIRadioButton* tRB = tRadio->asType<UIRadioButton>();
 
 					if ( tRB->isActive() )
 						return true;
@@ -201,10 +218,19 @@ void UIRadioButton::autoActivate() {
 	if ( NULL != mParentNode ) {
 		Node* tChild = mParentNode->getFirstChild();
 
+		if ( mParentNode->isType( UI_TYPE_HTML_INPUT ) && mParentNode->getParent() ) {
+			tChild = mParentNode->getParent()->getFirstChild();
+		}
+
 		while ( NULL != tChild ) {
-			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
-				if ( tChild != this ) {
-					UIRadioButton* tRB = tChild->asType<UIRadioButton>();
+			Node* tRadio = tChild;
+			if ( tChild->isType( UI_TYPE_HTML_INPUT ) &&
+				 tChild->getFirstChild()->isType( UI_TYPE_RADIOBUTTON ) )
+				tRadio = tChild->getFirstChild();
+
+			if ( tRadio->isType( UI_TYPE_RADIOBUTTON ) ) {
+				if ( tRadio != this ) {
+					UIRadioButton* tRB = tRadio->asType<UIRadioButton>();
 
 					if ( tRB->isActive() ) {
 						return;

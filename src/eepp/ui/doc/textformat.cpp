@@ -110,21 +110,23 @@ struct ShiftJIS {
 			return {};
 
 		Uint8 first = view[0];
-		if ( first < 0x7F )
+		if ( first <= 0x7F || ( first >= 0xA1 && first <= 0xDF ) )
 			return { first, TextDecodeResult::Status::Valid, 1 };
 
-		if ( view.size() < 2 &&
-			 ( ( first >= secondByteRange1.first && first <= secondByteRange1.second ) ||
-			   ( first >= secondByteRange2.first && first <= secondByteRange2.second ) ) ) {
-			return { first, TextDecodeResult::Status::Valid, 1 };
-		}
+		const bool isLeadByte =
+			( first >= firstByteRange1.first && first <= firstByteRange1.second ) ||
+			( first >= firstByteRange2.first && first <= firstByteRange2.second );
+
+		if ( !isLeadByte )
+			return { first, TextDecodeResult::Status::Invalid, 1 };
+
+		if ( view.size() < 2 )
+			return { first, TextDecodeResult::Status::Truncated, 1 };
 
 		Uint8 second = view[1];
 
-		if ( ( ( first >= firstByteRange1.first && first <= firstByteRange1.second ) ||
-			   ( first >= firstByteRange2.first && first <= firstByteRange2.second ) ) &&
-			 ( ( second >= secondByteRange1.first && second <= secondByteRange1.second ) ||
-			   ( second >= secondByteRange2.first && second <= secondByteRange2.second ) ) ) {
+		if ( ( second >= secondByteRange1.first && second <= secondByteRange1.second ) ||
+			 ( second >= secondByteRange2.first && second <= secondByteRange2.second ) ) {
 			return { getUnit( view.data() ), TextDecodeResult::Status::Valid, 2 };
 		}
 

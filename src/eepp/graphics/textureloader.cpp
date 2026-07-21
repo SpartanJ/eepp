@@ -23,19 +23,6 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-UnorderedMap<Uint32, TextureLoader::OnTextureLoaded> TextureLoader::sCbs = {};
-std::atomic<Uint32> TextureLoader::sNumCbs = 0;
-
-Uint32 TextureLoader::pushLoadedCallback( const OnTextureLoaded& cb ) {
-	Uint32 newCb = ++sNumCbs;
-	sCbs.insert( { newCb, cb } );
-	return newCb;
-}
-
-void TextureLoader::popLoadedCallback( const Uint32& cbId ) {
-	sCbs.erase( cbId );
-}
-
 TextureLoader::TextureLoader( IOStream& Stream, const bool& Mipmap,
 							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
 							  const bool& KeepLocalCopy ) :
@@ -145,7 +132,8 @@ void TextureLoader::loadFromFile() {
 			loadFile();
 			mDirectUpload = true;
 		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 			loadFile();
 			mIsCompressed = mDirectUpload = true;
 			stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -201,7 +189,8 @@ void TextureLoader::loadFromMemory() {
 		memcpy( mPixels, mImagePtr, mSize );
 		mDirectUpload = true;
 	} else if ( Image::Format::PKM == mImgType &&
-				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+				GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -250,7 +239,8 @@ void TextureLoader::loadFromStream() {
 			mStream->seek( 0 );
 			mDirectUpload = true;
 		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -276,14 +266,9 @@ void TextureLoader::loadFromStream() {
 	}
 }
 
-void TextureLoader::notifyLoaded() {
-	for ( const auto& cb : sCbs )
-		cb.second( cb.first, mTexture );
-}
-
 void TextureLoader::loadFromPixels() {
 	if ( !mLoaded && mTexLoaded && Engine::isEngineRunning() ) {
-		Uint32 tTexId = 0;
+		Uint32 textureHandle = 0;
 
 		if ( NULL != mPixels ) {
 			int width = mImgWidth;
@@ -298,56 +283,70 @@ void TextureLoader::loadFromPixels() {
 
 			bool threadedLoad = !Engine::instance()->isMainThread();
 
-			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
-				Engine::instance()->getCurrentWindow()->setGLContextThread();
-			}
+			EE::Window::Window* threadedWindow =
+				threadedLoad && Engine::instance()->isSharedGLContextEnabled()
+					? Engine::instance()->getCurrentWindow()
+					: nullptr;
 
 			{
-				ScopedTexture scopedTexture;
+				struct ScopedThreadGLContext {
+					EE::Window::Window* window{ nullptr };
 
-				if ( !Engine::isEngineRunning() )
-					return;
-
-				if ( mDirectUpload ) {
-					if ( Image::Format::DDS == mImgType ) {
-						tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize,
-																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( Image::Format::PVR == mImgType ) {
-						tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize,
-																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( Image::Format::PKM == mImgType ) {
-						tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize,
-																	SOIL_CREATE_NEW_ID, flags );
-					}
-				} else {
-					if ( NULL != mColorKey ) {
-						mChannels = STBI_rgb_alpha;
-
-						Image* tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
-
-						tImg->createMaskFromColor(
-							Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
-
-						tImg->avoidFreeImage( true );
-
-						eeSAFE_DELETE( tImg );
+					explicit ScopedThreadGLContext( EE::Window::Window* window ) :
+						window( window ) {
+						if ( window )
+							window->setGLContextThread();
 					}
 
-					tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels,
-													  SOIL_CREATE_NEW_ID, flags );
+					~ScopedThreadGLContext() {
+						if ( window )
+							window->unsetGLContextThread();
+					}
+				} scopedThreadGLContext( threadedWindow );
+
+				{
+					ScopedTexture scopedTexture;
+
+					if ( !Engine::isEngineRunning() )
+						return;
+
+					if ( mDirectUpload ) {
+						if ( Image::Format::DDS == mImgType ) {
+							textureHandle = SOIL_direct_load_DDS_from_memory(
+								mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+						} else if ( Image::Format::PVR == mImgType ) {
+							textureHandle = SOIL_direct_load_PVR_from_memory(
+								mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+						} else if ( Image::Format::PKM == mImgType ) {
+							textureHandle = SOIL_direct_load_PKM_from_memory(
+								mPixels, mSize, SOIL_CREATE_NEW_ID, flags );
+						}
+					} else {
+						if ( NULL != mColorKey ) {
+							mChannels = STBI_rgb_alpha;
+
+							Image* tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
+
+							tImg->createMaskFromColor(
+								Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
+
+							tImg->avoidFreeImage( true );
+
+							eeSAFE_DELETE( tImg );
+						}
+
+						textureHandle = SOIL_create_OGL_texture(
+							mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
+					}
+				}
+
+				if ( threadedLoad ) {
+					GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to
+										// the GPU VRAM
 				}
 			}
 
-			if ( threadedLoad ) {
-				GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to the
-									// GPU VRAM
-			}
-
-			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
-				Engine::instance()->getCurrentWindow()->unsetGLContextThread();
-			}
-
-			if ( tTexId ) {
+			if ( textureHandle ) {
 				mWidth = width;
 				mHeight = height;
 
@@ -374,21 +373,21 @@ void TextureLoader::loadFromPixels() {
 				}
 
 				mTexture = TextureFactory::instance()->pushTexture(
-					mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels,
-					mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
+					mFilepath, textureHandle, width, height, mImgWidth, mImgHeight, mMipmap,
+					mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				if ( mFilepath.empty() ) {
 					Log::instance()->writef(
 						mTE.getElapsedTimeAndReset() >= Milliseconds( 1 ) ? LogLevel::Info
 																		  : LogLevel::Debug,
-						"Texture ID %d loaded in %s.", mTexture->getTextureId(),
+						"Texture ID %llu loaded in %s.",
+						static_cast<unsigned long long>( mTexture->getTextureId().value() ),
 						mTE.getElapsedTimeAndReset().toString() );
 				} else {
 					Log::info( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
 							   mTE.getElapsedTimeAndReset().asMilliseconds() );
 				}
 
-				notifyLoaded();
 			} else {
 				Log::warning( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
@@ -420,8 +419,8 @@ void TextureLoader::loadFromPixels() {
 	}
 }
 
-Uint32 TextureLoader::getId() const {
-	return mTexture != nullptr ? mTexture->getTextureId() : 0;
+ResourceId TextureLoader::getId() const {
+	return mTexture != nullptr ? mTexture->getTextureId() : ResourceId{};
 }
 
 void TextureLoader::setColorKey( RGB Color ) {

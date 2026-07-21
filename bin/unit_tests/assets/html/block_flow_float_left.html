@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Block Layout</title>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .language-section {
+            float: left;
+            width: 48%;
+            margin: 4px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-sizing: border-box;
+        }
+        .lang-name {
+            font-size: 1.25em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #0066cc;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            margin: 5px 0;
+            font-size: 1.05em;
+        }
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-section">
+            <div class="lang-name">English</div>
+            <ul>
+                <li>Hello</li>
+            </ul>
+        </div>
+        <div class="language-section">
+            <div class="lang-name">Chinese</div>
+            <ul>
+                <li>Nǐ hǎo</li>
+            </ul>
+        </div>
+        <div class="language-section">
+            <div class="lang-name">Japanese</div>
+            <ul>
+                <li>Konnichiwa</li>
+            </ul>
+        </div>
+        <div class="language-section rtl">
+            <div class="lang-name">Arabic</div>
+            <ul>
+                <li>Marhaban</li>
+            </ul>
+        </div>
+        <div class="language-section rtl">
+            <div class="lang-name">Hebrew</div>
+            <ul>
+                <li>Shalom</li>
+            </ul>
+        </div>
+        <div class="language-section">
+            <div class="lang-name">Russian</div>
+            <ul>
+                <li>Privet</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

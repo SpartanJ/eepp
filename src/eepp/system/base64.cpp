@@ -7,7 +7,7 @@ namespace EE { namespace System {
 /* $Id: base64.c 156 2007-07-12 23:29:10Z orange $ */
 
 /* decode a base64 string in one shot */
-int Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
+size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
 	static const Uint8 base64dec_tab[256] = {
 		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -26,17 +26,18 @@ int Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char
 		255, 255, 255, 255,
 	};
 
-	unsigned ii, io;
+	size_t ii, io;
 	Uint32 v;
 	unsigned rem;
 
 	for ( io = 0, ii = 0, v = 0, rem = 0; ii < in_len; ii++ ) {
 		unsigned char ch;
-		if ( isspace( in[ii] ) )
+		unsigned char c = (unsigned char)in[ii];
+		if ( isspace( c ) )
 			continue;
-		if ( in[ii] == '=' )
+		if ( c == '=' )
 			break; /* stop at = */
-		ch = base64dec_tab[(unsigned)in[ii]];
+		ch = base64dec_tab[c];
 		if ( ch == 255 )
 			break; /* stop at a parse error */
 		v = ( v << 6 ) | ch;
@@ -57,11 +58,11 @@ int Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char
 	return io;
 }
 
-int Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char* out ) {
+size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char* out ) {
 	static const Uint8 base64enc_tab[] =
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-	unsigned ii, io;
+	size_t ii, io;
 	Uint32 v;
 	unsigned rem;
 
@@ -94,14 +95,14 @@ int Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char
 	return io;
 }
 
-bool Base64::encode( const std::string& in, std::string& out ) {
+bool Base64::encode( std::string_view in, std::string& out ) {
 	size_t b64len = encodeSafeOutLen( in.size() );
 
 	if ( out.size() < b64len ) {
 		out.resize( b64len );
 	}
 
-	int len = encode( in.size(), (const unsigned char*)in.c_str(), out.size(), (char*)&out[0] );
+	int len = encode( in.size(), (const unsigned char*)in.data(), out.size(), (char*)&out[0] );
 
 	if ( -1 != len && (size_t)len != out.size() ) {
 		out.resize( len );
@@ -110,20 +111,20 @@ bool Base64::encode( const std::string& in, std::string& out ) {
 	return -1 != len;
 }
 
-bool Base64::decode( const std::string& in, std::string& out ) {
+size_t Base64::decode( std::string_view in, std::string& out ) {
 	size_t d64len = decodeSafeOutLen( in.size() );
 
 	if ( out.size() < d64len ) {
 		out.resize( d64len );
 	}
 
-	int len = decode( in.size(), in.c_str(), out.size(), (unsigned char*)&out[0] );
+	int len = decode( in.size(), in.data(), out.size(), (unsigned char*)&out[0] );
 
 	if ( -1 != len && (size_t)len != out.size() ) {
 		out.resize( len );
 	}
 
-	return -1 != len;
+	return len;
 }
 
 }} // namespace EE::System

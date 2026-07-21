@@ -86,6 +86,7 @@ static const char* MEMBER_SUCCESS = "success";
 static const char* MEMBER_LIMIT = "limit";
 static const char* MEMBER_OPTIONS = "options";
 static const char* MEMBER_PREVIOUS_RESULT_IDS = "previousResultIds";
+static const char* MEMBER_INSERT_TEXT_FORMAT = "insertTextFormat";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -885,9 +886,11 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 				item.contains( "additionalTextEdits" )
 					? parseTextEditArray( item.at( "additionalTextEdits" ) )
 					: std::vector<LSPTextEdit>{};
-
-			ret.items.push_back( { label, kind, detail, doc, sortText, insertText, filterText,
-								   textEdit, additionalTextEdits } );
+			auto itf = item.value( MEMBER_INSERT_TEXT_FORMAT, 1 );
+			LSPInsertTextFormat insertTextFormat =
+				itf == 2 ? LSPInsertTextFormat::Snippet : LSPInsertTextFormat::PlainText;
+			ret.items.push_back( { label, kind, detail, doc, sortText, insertText, insertTextFormat,
+								   filterText, textEdit, additionalTextEdits } );
 		}
 #ifndef EE_DEBUG
 	} catch ( const json::exception& err ) {

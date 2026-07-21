@@ -5,6 +5,7 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/base64.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 
 #include <eepp/network/http.hpp>
@@ -78,16 +79,14 @@ static Drawable* parseDataURI( const std::string& name ) {
 			format.svgScale( PixelDensity::getPixelDensity() );
 			if ( decodingType == "base64" ) {
 				int fileStart = formatAndEncSep + 1;
-				int base64Size = name.size() - fileStart;
-				int bufSize = Base64::decodeSafeOutLen( base64Size );
-				if ( bufSize <= 0 )
-					return nullptr;
-				ScopedBuffer buffer( bufSize );
-				int len = Base64::decode( base64Size, &name[fileStart], bufSize, buffer.get() );
-				if ( len > 0 )
+				std::string_view fileBase64 = std::string_view{ name }.substr( fileStart );
+				std::string buffer;
+				int len = Base64::decode( fileBase64, buffer );
+				if ( len > 0 ) {
 					tex = TextureFactory::instance()->loadFromMemory(
-						buffer.get(), len, false, Texture::ClampMode::ClampToEdge, false, false,
-						format );
+						(const unsigned char*)buffer.c_str(), buffer.size(), false,
+						Texture::ClampMode::ClampToEdge, false, false, format );
+				}
 			} else if ( decodingType == "urldecode" ) {
 				int fileStart = formatAndEncSep + 1;
 				std::string decoded( URI::decode( name.substr( fileStart ) ) );
@@ -154,6 +153,8 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 				filePath = filePath.substr( 1 );
 			}
 #endif
+
+			FileSystem::filePathRemoveProcessPath( filePath );
 
 			drawable = TextureFactory::instance()->getByName( filePath );
 

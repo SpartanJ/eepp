@@ -23,6 +23,14 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	}
 }
 
+void StyleSheetStyle::setSelectorSpecificity( const Int64& specificity ) {
+	const_cast<StyleSheetSelector&>( mSelector ).setSpecificity( specificity );
+	for ( auto& it : mProperties )
+		it.second.setSpecificity( specificity );
+	for ( auto& it : mVariables )
+		it.second.setSpecificity( specificity );
+}
+
 std::string StyleSheetStyle::build( bool emitMediaQueryStart, bool emitMediaQueryEnd ) {
 	std::string css;
 
@@ -146,14 +154,8 @@ void StyleSheetStyle::clearProperties() {
 }
 
 void StyleSheetStyle::clearCachedProperties() {
-	StyleSheetProperties::iterator it;
-	do {
-		it = std::find_if(
-			mProperties.begin(), mProperties.end(),
-			[]( const auto& model ) { return model.second.isCachedProperty(); } );
-		if ( it != mProperties.end() )
-			mProperties.erase( it );
-	} while ( it != mProperties.end() );
+	std::erase_if( mProperties,
+				   []( const auto& property ) { return property.second.isCachedProperty(); } );
 }
 
 bool StyleSheetStyle::hasProperties() const {
@@ -191,17 +193,11 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 	return StyleSheetVariable();
 }
 
-void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
+void StyleSheetStyle::setVariable( const StyleSheetVariable& variable,
+								   bool setSelectorSpecificity ) {
 	mVariables[variable.getNameHash()] = variable;
-	mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
-}
-
-bool StyleSheetStyle::isMediaValid() const {
-	if ( !mMediaQueryList ) {
-		return true;
-	}
-
-	return mMediaQueryList->isUsed();
+	if ( setSelectorSpecificity )
+		mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
 }
 
 const MediaQueryList::ptr& StyleSheetStyle::getMediaQueryList() const {

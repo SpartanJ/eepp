@@ -19,9 +19,44 @@ UIHTMLTable::UIHTMLTable() : UIHTMLWidget( "table" ) {
 Uint32 UIHTMLTable::getType() const {
 	return UI_TYPE_HTML_TABLE;
 }
-
 bool UIHTMLTable::isType( const Uint32& type ) const {
 	return UIHTMLTable::getType() == type || UIHTMLWidget::isType( type );
+}
+
+std::vector<PropertyId> UIHTMLTable::getPropertiesImplemented() const {
+	auto props = UIHTMLWidget::getPropertiesImplemented();
+	auto local = { PropertyId::CellSpacing, PropertyId::CellPadding, PropertyId::TableLayout };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+std::string UIHTMLTable::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& state ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::CellSpacing:
+			if ( const_cast<UIHTMLTable*>( this )->getLayouter() &&
+				 mDisplay == CSSDisplay::Table ) {
+				return String::fromFloat(
+					static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+						->getCellSpacing() );
+			}
+			return "";
+		case PropertyId::CellPadding:
+			if ( const_cast<UIHTMLTable*>( this )->getLayouter() &&
+				 mDisplay == CSSDisplay::Table ) {
+				return String::fromFloat(
+					static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+						->getCellPadding() );
+			}
+			return "";
+		case PropertyId::TableLayout:
+			return mTopEq;
+		default:
+			return UIHTMLWidget::getPropertyString( propertyDef );
+	}
 }
 
 bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
@@ -29,18 +64,18 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Cellspacing:
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
-					->setCellspacing( lengthFromValue( attribute ) );
+		case PropertyId::CellSpacing:
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
+					->setCellSpacing( lengthFromValue( attribute ) );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
 			}
 			return true;
-		case PropertyId::Cellpadding:
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
-					->setCellpadding( lengthFromValue( attribute ) );
+		case PropertyId::CellPadding:
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
+					->setCellPadding( lengthFromValue( attribute ) );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
 			}
@@ -48,8 +83,8 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TableLayout: {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
-			if ( const_cast<UIHTMLTable*>( this )->getLayouter() ) {
-				static_cast<TableLayouter*>( const_cast<UIHTMLTable*>( this )->getLayouter() )
+			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
+				static_cast<TableLayouter*>( getLayouter() )
 					->setTableLayout( val == "fixed" ? TableLayout::Fixed : TableLayout::Auto );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
@@ -61,6 +96,10 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	return UIHTMLWidget::applyProperty( attribute );
+}
+
+Float UIHTMLTable::cssWidthPropertyToBorderBoxWidth( const StyleSheetProperty& property ) const {
+	return lengthFromValueForCSS( property );
 }
 
 void UIHTMLTable::computeIntrinsicWidths() const {
@@ -85,30 +124,62 @@ Float UIHTMLTable::getMaxIntrinsicWidth() const {
 	return 0;
 }
 
-void UIHTMLTable::updateLayout() {
-	UILayouter* layouter = const_cast<UIHTMLTable*>( this )->getLayouter();
-	if ( layouter )
-		getLayouter()->updateLayout();
-	else
-		UIHTMLWidget::updateLayout();
-
-	mDirtyLayout = false;
-}
-
 Uint32 UIHTMLTable::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			if ( Msg->getSender() != this && !isPacking() ) {
+			auto reasons = layoutInvalidationFromMessage( Msg );
+
+			if ( reasons && ( reasons & ~toLayoutInvalidationFlags(
+											LayoutInvalidationReason::PaintOnly ) ) == 0 )
+				return 1;
+
+			bool isChild = Msg->getSender() != this;
+			if ( isChild && isPacking() ) {
+				mTableDirtyReasons |= reasons;
+				return 1;
+			}
+
+			if ( isChild && ( reasons & toLayoutInvalidationFlags(
+											LayoutInvalidationReason::IntrinsicSize ) ) ) {
 				if ( getLayouter() )
 					getLayouter()->invalidateIntrinsicWidths();
-				notifyLayoutAttrChangeParent();
 			}
+
+			if ( isChild ) {
+				notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
+			}
+
 			tryUpdateLayout();
 			return 1;
 		}
 	}
 
 	return 0;
+}
+
+void UIHTMLTable::onLayoutUpdate() {
+	UIHTMLWidget::onLayoutUpdate();
+
+	if ( !mTableDirtyReasons )
+		return;
+
+	LayoutInvalidationFlags reasons = mTableDirtyReasons;
+	mTableDirtyReasons = 0;
+
+	LayoutInvalidationFlags nonPaint =
+		reasons & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+	if ( !nonPaint )
+		return;
+
+	if ( nonPaint & toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) ) {
+		if ( getLayouter() )
+			getLayouter()->invalidateIntrinsicWidths();
+	}
+
+	const Sizef oldSize = getPixelsSize();
+	tryUpdateLayout();
+	if ( oldSize != getPixelsSize() )
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 }
 
 UIHTMLTableRow* UIHTMLTableRow::New() {
@@ -124,7 +195,6 @@ UIHTMLTableRow::UIHTMLTableRow() : UIHTMLWidget( "tr" ) {
 Uint32 UIHTMLTableRow::getType() const {
 	return UI_TYPE_HTML_TABLE_ROW;
 }
-
 bool UIHTMLTableRow::isType( const Uint32& type ) const {
 	return UIHTMLTableRow::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -142,9 +212,28 @@ UIHTMLTableCell::UIHTMLTableCell( const std::string& tag ) : UIRichText( tag ) {
 Uint32 UIHTMLTableCell::getType() const {
 	return UI_TYPE_HTML_TABLE_CELL;
 }
-
 bool UIHTMLTableCell::isType( const Uint32& type ) const {
 	return UIHTMLTableCell::getType() == type || UIRichText::isType( type );
+}
+
+std::vector<PropertyId> UIHTMLTableCell::getPropertiesImplemented() const {
+	auto props = UIHTMLWidget::getPropertiesImplemented();
+	auto local = { PropertyId::ColSpan };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+std::string UIHTMLTableCell::getPropertyString( const PropertyDefinition* propertyDef,
+												const Uint32& state ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::ColSpan:
+			return String::format( "%lld", mColSpan );
+		default:
+			return UIHTMLWidget::getPropertyString( propertyDef );
+	}
 }
 
 bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
@@ -152,11 +241,11 @@ bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Colspan: {
-			mColspan = attribute.asUint( 1 );
-			if ( mColspan == 0 )
-				mColspan = 1;
-			notifyLayoutAttrChangeParent();
+		case PropertyId::ColSpan: {
+			mColSpan = attribute.asUint( 1 );
+			if ( mColSpan == 0 )
+				mColSpan = 1;
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 			return true;
 		}
 		default:
@@ -165,12 +254,26 @@ bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
 	return UIRichText::applyProperty( attribute );
 }
 
-Uint32 UIHTMLTableCell::getColspan() const {
-	return mColspan;
+Uint32 UIHTMLTableCell::getColSpan() const {
+	return mColSpan;
 }
 
 void UIHTMLTableCell::onSizeChange() {
 	UIRichText::onSizeChange();
+}
+
+void UIHTMLTableCell::onLayoutUpdate() {
+	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
+	UIRichText::onLayoutUpdate();
+
+	LayoutInvalidationFlags nonPaint =
+		deferred & ~toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+
+	if ( nonPaint & ( toLayoutInvalidationFlags( LayoutInvalidationReason::NormalFlowChild ) |
+					  toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) |
+					  toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) ) ) {
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
+	}
 }
 
 UIHTMLTableHead* UIHTMLTableHead::New() {
@@ -186,7 +289,6 @@ UIHTMLTableHead::UIHTMLTableHead() : UIHTMLWidget( "thead" ) {
 Uint32 UIHTMLTableHead::getType() const {
 	return UI_TYPE_HTML_TABLE_HEAD;
 }
-
 bool UIHTMLTableHead::isType( const Uint32& type ) const {
 	return UIHTMLTableHead::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -204,7 +306,6 @@ UIHTMLTableBody::UIHTMLTableBody() : UIHTMLWidget( "tbody" ) {
 Uint32 UIHTMLTableBody::getType() const {
 	return UI_TYPE_HTML_TABLE_BODY;
 }
-
 bool UIHTMLTableBody::isType( const Uint32& type ) const {
 	return UIHTMLTableBody::getType() == type || UIHTMLWidget::isType( type );
 }
@@ -222,7 +323,6 @@ UIHTMLTableFooter::UIHTMLTableFooter() : UIHTMLWidget( "tfoot" ) {
 Uint32 UIHTMLTableFooter::getType() const {
 	return UI_TYPE_HTML_TABLE_FOOTER;
 }
-
 bool UIHTMLTableFooter::isType( const Uint32& type ) const {
 	return UIHTMLTableFooter::getType() == type || UIHTMLWidget::isType( type );
 }

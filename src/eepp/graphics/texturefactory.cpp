@@ -1,27 +1,31 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <SOIL2/src/SOIL2/stb_image.h>
 #include <algorithm>
+#include <atomic>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/window/engine.hpp>
 #include <jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 
 SINGLETON_DECLARE_IMPLEMENTATION( TextureFactory )
 
+static std::atomic<Uint64> sResourceIdSequence{ 0 };
+
+static ResourceId nextResourceId() {
+	return ResourceId( sResourceIdSequence.fetch_add( 1, std::memory_order_relaxed ) + 1 );
+}
+
 TextureFactory::TextureFactory() :
 	mCurrentTexture( EE_MAX_TEXTURE_UNITS ),
-	mMemSize( 0 ),
-	mLastCoordinateType( Texture::CoordinateType::Normalized ),
-	mErasing( false ) {
-	mTextures.clear();
-	mTextures.push_back( NULL );
-}
+	mLastCoordinateType( Texture::CoordinateType::Normalized ) {}
 
 const Texture::CoordinateType& TextureFactory::getLastCoordinateType() const {
 	return mLastCoordinateType;
@@ -29,6 +33,28 @@ const Texture::CoordinateType& TextureFactory::getLastCoordinateType() const {
 
 TextureFactory::~TextureFactory() {
 	unloadTextures();
+	collectReleasedTextures();
+	diagnoseLiveTexturesAtShutdown();
+}
+
+void TextureFactory::TextureDeleter::operator()( Texture* texture ) const noexcept {
+	if ( !texture )
+		return;
+
+	if ( TextureFactory* factory = TextureFactory::existsSingleton() ) {
+		factory->queueReleasedTexture( texture );
+		return;
+	}
+
+	// Engine shutdown defensively releases the GPU payload of contract-violating survivors. Such
+	// late handles can still release their CPU object safely without recreating any singleton.
+	if ( texture->getHandle() == 0 ) {
+		eeDelete( texture );
+		return;
+	}
+
+	eePRINTL( "Texture released after TextureFactory destruction with a live OpenGL handle" );
+	eeASSERTM( false, Texture_released_after_TextureFactory_destruction );
 }
 
 Texture* TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height,
@@ -97,53 +123,38 @@ TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap,
 	return myTex.getTexture();
 }
 
-Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId,
+Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32& textureHandle,
 									  const unsigned int& Width, const unsigned int& Height,
 									  const unsigned int& ImgWidth, const unsigned int& ImgHeight,
 									  const bool& Mipmap, const unsigned int& Channels,
 									  const Texture::ClampMode& ClampMode,
 									  const bool& CompressTexture, const bool& LocalCopy,
 									  const Uint32& MemSize ) {
-	lock();
-
-	Texture* Tex = NULL;
-	Uint32 Pos;
+	Lock l( *this );
 
 	std::string FPath( Filepath );
 
 	FileSystem::filePathRemoveProcessPath( FPath );
 
-	Pos = findFreeSlot();
-	Tex = mTextures[Pos] = eeNew( Texture, () );
+	const ResourceId resourceId = nextResourceId();
+	TexturePtr texture( eeNew( Texture, () ), TextureDeleter() );
+	Texture* Tex = texture.get();
+	Tex->setTextureId( resourceId );
 
-	Tex->create( TexId, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath, ClampMode,
-				 CompressTexture, MemSize );
-	Tex->setTextureId( Pos );
+	Tex->create( textureHandle, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath,
+				 ClampMode, CompressTexture, MemSize );
+	TextureWeakPtr weakTexture( texture );
+	mTextures.emplace( resourceId.value(), std::move( texture ) );
+	mLiveTextures.emplace( resourceId.value(),
+						   LiveTextureRecord{ resourceId, std::move( weakTexture ) } );
+	mLiveTextureGeneration.fetch_add( 1, std::memory_order_release );
 
 	if ( LocalCopy ) {
 		Tex->lock();
 		Tex->unlock( true, false );
 	}
 
-	mMemSize += MemSize;
-
-	unlock();
-
 	return Tex;
-}
-
-Uint32 TextureFactory::findFreeSlot() {
-	if ( !mVectorFreeSlots.empty() ) {
-		Uint32 Pos = mVectorFreeSlots.front();
-
-		mVectorFreeSlots.erase( mVectorFreeSlots.begin() );
-
-		return Pos;
-	}
-
-	mTextures.push_back( NULL );
-
-	return (Uint32)mTextures.size() - 1;
 }
 
 void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType,
@@ -189,65 +200,71 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 	}
 }
 
-void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordinateType,
+void TextureFactory::bind( ResourceId textureId, Texture::CoordinateType coordinateType,
 						   const Uint32& textureUnit, const bool& forceRebind ) {
-	bind( getTexture( TexId ), coordinateType, textureUnit, forceRebind );
+	bind( getTexture( textureId ), coordinateType, textureUnit, forceRebind );
 }
 
 void TextureFactory::unloadTextures() {
-	mErasing = true;
+	TextureMap textures;
+	{
+		Lock l( *this );
+		textures = std::move( mTextures );
+		std::fill( mCurrentTexture.begin(), mCurrentTexture.end(), 0 );
+	}
 
-	for ( Uint32 i = 1; i < mTextures.size(); i++ )
-		eeSAFE_DELETE( mTextures[i] );
-
-	mErasing = false;
-
-	mTextures.clear();
+	// DrawableResource destruction emits callbacks, so release factory ownership without holding
+	// the registry/factory mutex.
+	textures.clear();
 
 	Log::debug( "Textures Unloaded." );
 }
 
-bool TextureFactory::remove( Uint32 TexId ) {
-	Texture* Tex;
+bool TextureFactory::remove( ResourceId textureId ) {
+	TexturePtr texture;
+	{
+		Lock l( *this );
+		auto it = mTextures.find( textureId.value() );
+		if ( it == mTextures.end() )
+			return false;
 
-	if ( TexId < mTextures.size() && NULL != ( Tex = mTextures[TexId] ) ) {
-		removeReference( mTextures[TexId] );
-
-		mErasing = true;
-		eeDelete( Tex );
-		mErasing = false;
-
-		return true;
+		texture = std::move( it->second );
+		mTextures.erase( it );
+		resetTextureBinding( texture.get() );
 	}
 
-	return false;
+	texture.reset();
+	return true;
 }
 
 bool TextureFactory::remove( Texture* texture ) {
-	if ( std::find( mTextures.begin(), mTextures.end(), texture ) != mTextures.end() ) {
-		removeReference( texture );
-		return true;
+	TexturePtr removed;
+	{
+		Lock l( *this );
+		auto it = std::find_if( mTextures.begin(), mTextures.end(), [texture]( const auto& pair ) {
+			return pair.second.get() == texture;
+		} );
+		if ( it == mTextures.end() )
+			return false;
+
+		removed = std::move( it->second );
+		mTextures.erase( it );
+		resetTextureBinding( removed.get() );
 	}
-	return false;
+
+	removed.reset();
+	return true;
 }
 
-void TextureFactory::removeReference( Texture* Tex ) {
-	mMemSize -= Tex->getMemSize();
+void TextureFactory::resetTextureBinding( const Texture* texture ) {
+	if ( !texture )
+		return;
 
-	int glTexId = Tex->getHandle();
-
-	mTextures[Tex->getTextureId()] = NULL;
-
+	const int glTexId = texture->getHandle();
 	for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 		if ( mCurrentTexture[i] == (Int32)glTexId )
 			mCurrentTexture[i] = 0;
 	}
-
-	mVectorFreeSlots.push_back( Tex->getTextureId() );
-}
-
-const bool& TextureFactory::isErasing() const {
-	return mErasing;
 }
 
 int TextureFactory::getCurrentTexture( const Uint32& TextureUnit ) const {
@@ -255,17 +272,19 @@ int TextureFactory::getCurrentTexture( const Uint32& TextureUnit ) const {
 	return mCurrentTexture[TextureUnit];
 }
 
-void TextureFactory::setCurrentTexture( const int& TexId, const Uint32& TextureUnit ) {
+void TextureFactory::setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit ) {
 	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
-	mCurrentTexture[TextureUnit] = TexId;
+	mCurrentTexture[TextureUnit] = textureHandle;
 }
 
 std::vector<Texture*> TextureFactory::getTextures() {
+	Lock l( *this );
+
 	std::vector<Texture*> textures;
 	textures.reserve( mTextures.size() );
 
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+	for ( const auto& texture : mTextures ) {
+		Texture* Tex = texture.second.get();
 
 		if ( Tex )
 			textures.push_back( Tex );
@@ -274,38 +293,117 @@ std::vector<Texture*> TextureFactory::getTextures() {
 	return textures;
 }
 
-void TextureFactory::reloadAllTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+TextureRegistrySnapshot TextureFactory::snapshotTextures() {
+	struct LockedTextureRecord {
+		LiveTextureRecord record;
+		TexturePtr texture;
+	};
 
-		if ( Tex )
-			Tex->reload();
-	}
+	std::vector<LockedTextureRecord> liveTextures;
+	{
+		Lock l( *this );
+		liveTextures.reserve( mLiveTextures.size() );
+		for ( auto it = mLiveTextures.begin(); it != mLiveTextures.end(); ) {
+			TexturePtr texture = it->second.texture.lock();
+			if ( !texture ) {
+				it = mLiveTextures.erase( it );
+				continue;
+			}
 
-	Log::debug( "Textures Reloaded." );
-}
-
-void TextureFactory::grabTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
-
-		if ( Tex && !Tex->hasLocalCopy() ) {
-			Tex->lock();
-			Tex->setGrabbed( true );
+			liveTextures.push_back( { it->second, std::move( texture ) } );
+			++it;
 		}
 	}
+
+	TextureRegistrySnapshot snapshot;
+	snapshot.reserve( liveTextures.size() );
+	for ( const auto& live : liveTextures ) {
+		snapshot.push_back( { live.record.id, live.texture->getName(), live.record.texture,
+							  live.texture->getMemSize() } );
+	}
+	return snapshot;
 }
 
-void TextureFactory::ungrabTextures() {
-	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-		Texture* Tex = getTexture( i );
+void TextureFactory::purgeExpiredTextures() {
+	Lock l( *this );
+	for ( auto it = mLiveTextures.begin(); it != mLiveTextures.end(); ) {
+		if ( it->second.texture.expired() )
+			it = mLiveTextures.erase( it );
+		else
+			++it;
+	}
+}
 
-		if ( NULL != Tex && Tex->isGrabbed() ) {
-			Tex->reload();
-			Tex->unlock();
-			Tex->setGrabbed( false );
+Uint64 TextureFactory::getLiveTextureGeneration() const {
+	return mLiveTextureGeneration.load( std::memory_order_acquire );
+}
+
+void TextureFactory::queueReleasedTexture( Texture* texture ) {
+	eeASSERTM( Window::Engine::existsSingleton() && Window::Engine::isMainThread(),
+			   Texture_final_release_must_run_on_the_graphics_thread );
+
+	Lock l( *this );
+	mReleasedTextures.push_back( texture );
+	mLiveTextureGeneration.fetch_add( 1, std::memory_order_release );
+}
+
+void TextureFactory::collectReleasedTextures() {
+	eeASSERTM( Window::Engine::existsSingleton() && Window::Engine::isMainThread(),
+			   Texture_collection_must_run_on_the_graphics_thread );
+
+	std::vector<Texture*> releasedTextures;
+	for ( ;; ) {
+		{
+			Lock l( *this );
+			if ( mReleasedTextures.empty() ) {
+				if ( releasedTextures.capacity() > mReleasedTextures.capacity() )
+					mReleasedTextures.swap( releasedTextures );
+				break;
+			}
+			releasedTextures.swap( mReleasedTextures );
+			for ( Texture* texture : releasedTextures )
+				resetTextureBinding( texture );
+		}
+
+		for ( Texture* texture : releasedTextures )
+			eeDelete( texture );
+
+		releasedTextures.clear();
+	}
+
+	purgeExpiredTextures();
+}
+
+std::size_t TextureFactory::getPendingReleaseCount() {
+	Lock l( *this );
+	return mReleasedTextures.size();
+}
+
+void TextureFactory::diagnoseLiveTexturesAtShutdown() {
+	std::vector<TexturePtr> survivors;
+	{
+		Lock l( *this );
+		for ( const auto& record : mLiveTextures ) {
+			if ( TexturePtr texture = record.second.texture.lock() )
+				survivors.emplace_back( std::move( texture ) );
 		}
 	}
+
+	if ( survivors.empty() )
+		return;
+
+	Log::error( "TextureFactory shutdown found %zu externally retained texture(s).",
+				survivors.size() );
+	for ( const TexturePtr& texture : survivors ) {
+		Log::error( "Texture %llu ('%s') survived shutdown with %zu external owner(s).",
+					static_cast<unsigned long long>( texture->getTextureId().value() ),
+					texture->getName().c_str(), texture.use_count() - 1 );
+		texture->deleteTexture();
+	}
+
+	eeASSERTM( false, Texture_handles_must_be_released_before_Engine_shutdown );
+	survivors.clear();
+	collectReleasedTextures();
 }
 
 void TextureFactory::setActiveTextureUnit( const Uint32& Unit ) {
@@ -319,42 +417,63 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 		return Math::nextPowOfTwo( Size );
 }
 
-bool TextureFactory::existsId( const Uint32& TexId ) {
-	return ( TexId < mTextures.size() && TexId > 0 && NULL != mTextures[TexId] );
+bool TextureFactory::existsId( ResourceId textureId ) {
+	Lock l( *this );
+
+	return mTextures.find( textureId.value() ) != mTextures.end();
 }
 
 bool TextureFactory::exists( const Texture* tex ) {
-	return std::find( mTextures.begin(), mTextures.end(), tex ) != mTextures.end();
+	Lock l( *this );
+
+	return std::find_if( mTextures.begin(), mTextures.end(), [tex]( const auto& pair ) {
+			   return pair.second.get() == tex;
+		   } ) != mTextures.end();
 }
 
-Texture* TextureFactory::getTexture( const Uint32& TexId ) {
-	return mTextures[TexId];
-}
+Texture* TextureFactory::getTexture( ResourceId textureId ) {
+	Lock l( *this );
 
-void TextureFactory::allocate( const unsigned int& size ) {
-	if ( size > mTextures.size() ) {
-		mTextures.resize( size + 1, NULL );
-
-		for ( unsigned int i = 1; i < mTextures.size(); i++ )
-			mVectorFreeSlots.push_back( i );
-	}
+	auto it = mTextures.find( textureId.value() );
+	return it != mTextures.end() ? it->second.get() : NULL;
 }
 
 Texture* TextureFactory::getByName( const std::string& Name ) {
 	return getByHash( String::hash( Name ) );
 }
 
+Uint32 TextureFactory::getTextureCount() {
+	Lock l( *this );
+
+	return (Uint32)mTextures.size();
+}
+
+unsigned int TextureFactory::getTextureMemorySize() {
+	Lock l( *this );
+
+	std::size_t memorySize = 0;
+	for ( const auto& texture : mLiveTextures ) {
+		if ( TexturePtr liveTexture = texture.second.texture.lock() )
+			memorySize += liveTexture->getMemSize();
+	}
+	return static_cast<unsigned int>( memorySize );
+}
+
 Texture* TextureFactory::getByHash( const String::HashType& hash ) {
-	Texture* tTex = NULL;
+	Lock l( *this );
 
-	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
-		tTex = mTextures[i];
+	Uint64 latestId = 0;
+	Texture* latestTexture = NULL;
+	for ( const auto& texture : mTextures ) {
+		Texture* tTex = texture.second.get();
 
-		if ( NULL != tTex && tTex->getHashName() == hash )
-			return mTextures[i];
+		if ( NULL != tTex && texture.first > latestId && tTex->getHashName() == hash ) {
+			latestId = texture.first;
+			latestTexture = tTex;
+		}
 	}
 
-	return NULL;
+	return latestTexture;
 }
 
 }} // namespace EE::Graphics

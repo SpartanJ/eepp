@@ -23,9 +23,9 @@ Sprite* Sprite::New( TextureRegion* TextureRegion ) {
 	return eeNew( Sprite, ( TextureRegion ) );
 }
 
-Sprite* Sprite::New( const Uint32& TexId, const Sizef& DestSize, const Vector2i& offset,
+Sprite* Sprite::New( ResourceId textureId, const Sizef& DestSize, const Vector2i& offset,
 					 const Rect& TexSector ) {
-	return eeNew( Sprite, ( TexId, DestSize, offset, TexSector ) );
+	return eeNew( Sprite, ( textureId, DestSize, offset, TexSector ) );
 }
 
 Sprite* Sprite::fromGif( IOStream& stream ) {
@@ -53,10 +53,10 @@ Sprite::Sprite( TextureRegion* TextureRegion ) : Drawable( Drawable::SPRITE ) {
 	createStatic( TextureRegion );
 }
 
-Sprite::Sprite( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset,
+Sprite::Sprite( ResourceId textureId, const Sizef& DestSize, const Vector2i& Offset,
 				const Rect& TexSector ) :
 	Drawable( Drawable::SPRITE ) {
-	createStatic( TexId, DestSize, Offset, TexSector );
+	createStatic( textureId, DestSize, Offset, TexSector );
 }
 
 Sprite::~Sprite() {
@@ -150,7 +150,7 @@ void Sprite::cleanUpResources() {
 
 				if ( isTextureOwner() && texture &&
 					 TextureFactory::instance()->exists( texture ) ) {
-					eeSAFE_DELETE( texture );
+					TextureFactory::instance()->remove( texture );
 				}
 
 				if ( isTextureRegionOwner() )
@@ -325,12 +325,12 @@ bool Sprite::createStatic( TextureRegion* TextureRegion ) {
 	return true;
 }
 
-bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& offset,
+bool Sprite::createStatic( ResourceId textureId, const Sizef& DestSize, const Vector2i& offset,
 						   const Rect& TexSector ) {
-	if ( TextureFactory::instance()->existsId( TexId ) ) {
+	if ( TextureFactory::instance()->existsId( textureId ) ) {
 		reset();
 
-		addFrame( TexId, DestSize, offset, TexSector );
+		addFrame( textureId, DestSize, offset, TexSector );
 
 		return true;
 	}
@@ -443,11 +443,11 @@ unsigned int Sprite::addFrame( TextureRegion* TextureRegion ) {
 	return id;
 }
 
-unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset,
+unsigned int Sprite::addFrame( ResourceId textureId, const Sizef& DestSize, const Vector2i& Offset,
 							   const Rect& TexSector ) {
 	unsigned int id = framePos();
 
-	if ( addSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
+	if ( addSubFrame( textureId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
 		return id;
 
 	return 0;
@@ -472,16 +472,16 @@ bool Sprite::addSubFrame( Texture* tex, const unsigned int& NumFrame,
 	return false;
 }
 
-bool Sprite::addSubFrame( const Uint32& TexId, const unsigned int& NumFrame,
+bool Sprite::addSubFrame( ResourceId textureId, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame, const Sizef& DestSize,
 						  const Vector2i& Offset, const Rect& TexSector ) {
-	if ( !TextureFactory::instance()->existsId( TexId ) )
+	if ( !TextureFactory::instance()->existsId( textureId ) )
 		return false;
 
-	Texture* Tex = TextureFactory::instance()->getTexture( TexId );
+	Texture* Tex = TextureFactory::instance()->getTexture( textureId );
 	TextureRegion* S = GlobalTextureAtlas::instance()->add( TextureRegion::New() );
 
-	S->setTextureId( TexId );
+	S->setTextureId( textureId );
 
 	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
 		S->setSrcRect( TexSector );

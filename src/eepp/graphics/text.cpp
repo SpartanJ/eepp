@@ -7,6 +7,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -64,6 +65,60 @@ std::string Text::styleFlagToString( const Uint32& flags ) {
 	return str;
 }
 
+std::string Text::fontWeightToString( FontWeight weight ) {
+	switch ( weight ) {
+		case FontWeight::Thin:
+			return "thin";
+		case FontWeight::ExtraLight:
+			return "extra-light";
+		case FontWeight::Light:
+			return "light";
+		case FontWeight::Normal:
+			return "normal";
+		case FontWeight::Medium:
+			return "medium";
+		case FontWeight::SemiBold:
+			return "semi-bold";
+		case FontWeight::Bold:
+			return "bold";
+		case FontWeight::ExtraBold:
+			return "extra-bold";
+		case FontWeight::Black:
+			return "black";
+	}
+	return "normal";
+}
+
+FontWeight Text::stringToFontWeight( const std::string& str ) {
+	std::string lower = String::toLower( String::trim( str ) );
+	if ( lower == "thin" || lower == "100" )
+		return FontWeight::Thin;
+	if ( lower == "extralight" || lower == "extra-light" || lower == "ultralight" ||
+		 lower == "ultra-light" || lower == "200" )
+		return FontWeight::ExtraLight;
+	if ( lower == "light" || lower == "300" )
+		return FontWeight::Light;
+	if ( lower == "normal" || lower == "regular" || lower == "400" )
+		return FontWeight::Normal;
+	if ( lower == "medium" || lower == "500" )
+		return FontWeight::Medium;
+	if ( lower == "semibold" || lower == "semi-bold" || lower == "demibold" ||
+		 lower == "demi-bold" || lower == "600" )
+		return FontWeight::SemiBold;
+	if ( lower == "bold" || lower == "700" )
+		return FontWeight::Bold;
+	if ( lower == "extrabold" || lower == "extra-bold" || lower == "ultrabold" ||
+		 lower == "ultra-bold" || lower == "800" )
+		return FontWeight::ExtraBold;
+	if ( lower == "black" || lower == "heavy" || lower == "900" )
+		return FontWeight::Black;
+	if ( lower == "bolder" )
+		return FontWeight::Bold;
+	if ( lower == "lighter" )
+		return FontWeight::Light;
+	return FontWeight::Normal;
+}
+
 Uint32 Text::stringToStyleFlag( const std::string& str ) {
 	std::string valStr = String::trim( str );
 	String::toLowerInPlace( valStr );
@@ -74,6 +129,7 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 		for ( std::size_t i = 0; i < strings.size(); i++ ) {
 			std::string cur = strings[i];
 			String::toLowerInPlace( cur );
+			String::trimInPlace( cur );
 
 			if ( "underlined" == cur || "underline" == cur )
 				flags |= Text::Underlined;
@@ -85,6 +141,11 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 				flags |= Text::StrikeThrough;
 			else if ( "shadowed" == cur || "shadow" == cur )
 				flags |= Text::Shadow;
+			else {
+				FontWeight fw = Text::stringToFontWeight( cur );
+				if ( fw >= FontWeight::SemiBold )
+					flags |= Text::Bold;
+			}
 		}
 	}
 
@@ -1336,7 +1397,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				};
 
 				if ( fpos.y >= charTop && fpos.y <= charBottom ) {
-					auto findNextInsertionIndex = [&layout, sg, i, sgs, tSize, sp]() -> Int32 {
+					auto findNextInsertionIndex = [&]() -> Int32 {
 						if ( layout->isRTL() ) {
 							if ( i > 0 ) {
 								for ( auto j = i - 1; j >= 0; j-- ) {
@@ -2309,7 +2370,7 @@ Uint32 Text::getNumLines() {
 	return mString.countChar( '\n' ) + 1;
 }
 
-const std::vector<Float>& Text::getLinesWidth() {
+const SmallVector<Float, 4>& Text::getLinesWidth() {
 	cacheWidth();
 
 	return mLinesWidth;

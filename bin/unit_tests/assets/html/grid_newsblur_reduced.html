@@ -1,0 +1,451 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        height: 100%;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-color: #c2c2c2 #fafafa;
+        background-color: #fff;
+        border: 0;
+        outline: 0;
+        margin: 0;
+        padding: 0;
+        line-height: 1.3;
+        text-decoration: none;
+        list-style: none;
+        overflow: hidden;
+      }
+      a,
+      a:active,
+      a:hover,
+      a:visited,
+      button {
+        outline: none;
+      }
+      a img {
+        border: none;
+      }
+      .NB-splash {
+        display: block;
+      }
+      body,
+      .NB-theme-feed-font-whitney {
+        font-family:
+          Whitney SSm A,
+          Whitney SSm B,
+          Lucida Grande,
+          Verdana,
+          Helvetica Neue,
+          Helvetica,
+          sans-serif;
+      }
+      .NB-welcome .NB-body-inner {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        overflow: auto;
+      }
+      .NB-welcome .NB-inner {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 960px;
+        height: 100%;
+        margin: 0 auto;
+        position: relative;
+      }
+      .NB-welcome-features-wrap {
+        background: linear-gradient(#f5eedd 0%, #ebe0c2 100%);
+        border-top: 1px solid #0000000f;
+        border-bottom: 1px solid #0000000f;
+        padding-bottom: 0;
+      }
+      .NB-welcome-feature-groups {
+        margin: 48px 0 24px;
+      }
+      .NB-welcome-feature-groups > .NB-inner {
+        grid-template-columns: 1fr 1fr;
+        gap: 36px 48px;
+        display: grid;
+      }
+      .NB-feature-group {
+        border-left: 3px solid #0000;
+        padding-left: 20px;
+      }
+      .NB-feature-group-read {
+        border-left-color: #c0a06a;
+      }
+      .NB-feature-group-smart {
+        border-left-color: #7a9a5a;
+      }
+      .NB-feature-group-share {
+        border-left-color: #8a6a9a;
+      }
+      .NB-feature-group-everywhere {
+        border-left-color: #5a8aaa;
+      }
+      .NB-feature-group-label {
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0 0 14px;
+        padding: 0;
+        font-family:
+          Gotham Narrow A,
+          Gotham Narrow B,
+          sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .NB-feature-group-read .NB-feature-group-label {
+        color: #b0903a;
+      }
+      .NB-feature-group-smart .NB-feature-group-label {
+        color: #5a7a3a;
+      }
+      .NB-feature-group-share .NB-feature-group-label {
+        color: #7a5a8a;
+      }
+      .NB-feature-group-everywhere .NB-feature-group-label {
+        color: #4a7a9a;
+      }
+      .NB-feature-group-items {
+        flex-direction: column;
+        gap: 0;
+        display: flex;
+      }
+      a.NB-fgi {
+        color: inherit;
+        border-radius: 8px;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 12px 10px 0;
+        text-decoration: none;
+        transition: background-color 0.15s;
+        display: flex;
+      }
+      a.NB-fgi img {
+        object-fit: cover;
+        object-position: left top;
+        border-radius: 6px;
+        flex-shrink: 0;
+        width: 128px;
+        height: 128px;
+        box-shadow: 0 1px 4px #00000026;
+      }
+      .NB-fgi-text {
+        min-width: 0;
+      }
+      .NB-fgi-caption {
+        color: #3a2e1e;
+        font-family:
+          Gotham Narrow A,
+          Gotham Narrow B,
+          sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .NB-fgi-desc {
+        color: #8a7a6a;
+        margin-top: 4px;
+        font-size: 16px;
+        line-height: 1.45;
+      }
+    </style>
+  </head>
+  <body
+    class="NB-welcome NB-premium NB-is-premium NB-is-anonymous NB-pref-story-position-center NB-dashboard-columns-double NB-pref-sticky-story-sideoptions NB-content-preview-1 NB-intelligence-neutral NB-feedlist-hide-read-feeds NB-theme-whitney NB-theme-size-m NB-theme-feed-size-m NB-theme-feed-font-whitney NB-line-spacing-m NB-density-comfortable NB-image-preview-small-right"
+    style="background-color: rgb(26, 37, 37)"
+  >
+    <div class="NB-body-inner">
+      <div class="NB-welcome-container NB-splash">
+        <div class="NB-welcome-features-wrap">
+          <div class="NB-welcome-feature-groups">
+            <div class="NB-inner">
+              <div class="NB-feature-group NB-feature-group-read">
+                <h3 class="NB-feature-group-label">Read Your Way</h3>
+                <div class="NB-feature-group-items">
+                  <a href="https://newsblur.com/features#speed" class="NB-fgi">
+                    <img src="./grid_newsblur_files/feature_1.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Real-time RSS</div>
+                      <div class="NB-fgi-desc">
+                        Stories are pushed directly to you, so you can read news
+                        as it comes in
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#original"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/feature_2.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Original Site</div>
+                      <div class="NB-fgi-desc">
+                        Read the content in context, the way it was meant to be
+                        seen
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#text-view"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_3.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Read the Full Story</div>
+                      <div class="NB-fgi-desc">
+                        The original story from truncated RSS feeds is
+                        seamlessly expanded
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#layouts"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_8.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">
+                        Grid, List, Split, Magazine
+                      </div>
+                      <div class="NB-fgi-desc">
+                        Every site has its own story layout, so you can mix and
+                        match
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#themes" class="NB-fgi">
+                    <img src="./grid_newsblur_files/subfeature_9.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Dark Mode</div>
+                      <div class="NB-fgi-desc">
+                        Easy on the eyes and built into the web, iOS, and
+                        Android
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#river" class="NB-fgi">
+                    <img src="./grid_newsblur_files/subfeature_16.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">River of News</div>
+                      <div class="NB-fgi-desc">
+                        Read all your feeds by folder in one scrollable stream
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#shortcuts"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_15.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Keyboard Shortcuts</div>
+                      <div class="NB-fgi-desc">
+                        Navigate everything without touching the mouse
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="NB-feature-group NB-feature-group-smart">
+                <h3 class="NB-feature-group-label">Stay Smart</h3>
+                <div class="NB-feature-group-items">
+                  <a
+                    href="https://newsblur.com/features#training"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/feature_4.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Intelligence Training</div>
+                      <div class="NB-fgi-desc">
+                        Hide the stories you don't like and highlight the
+                        stories you do
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#search" class="NB-fgi">
+                    <img src="./grid_newsblur_files/feature_5.jpg" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Full Text Search</div>
+                      <div class="NB-fgi-desc">
+                        Quickly find stories across all of your subscriptions
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#search" class="NB-fgi">
+                    <img src="./grid_newsblur_files/subfeature_1.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Saved Searches</div>
+                      <div class="NB-fgi-desc">
+                        Regularly used searches are conveniently given their own
+                        feeds
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#ask-ai" class="NB-fgi">
+                    <img src="./grid_newsblur_files/subfeature_12.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Ask AI</div>
+                      <div class="NB-fgi-desc">
+                        Ask questions about any story and get answers powered by
+                        AI
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#briefing"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_13.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Daily Briefing</div>
+                      <div class="NB-fgi-desc">
+                        A summary of your top stories, customizable and
+                        delivered every day
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#changes"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_5.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Track Changes</div>
+                      <div class="NB-fgi-desc">
+                        See how a story evolved since it was first published
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#notifications"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_14.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Notifications</div>
+                      <div class="NB-fgi-desc">
+                        Get alerted the moment a feed publishes, on web, iOS, or
+                        Android
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="NB-feature-group NB-feature-group-share">
+                <h3 class="NB-feature-group-label">Share &amp; Organize</h3>
+                <div class="NB-feature-group-items">
+                  <a
+                    href="https://newsblur.com/features#blurblog"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/feature_3.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Shared Stories</div>
+                      <div class="NB-fgi-desc">
+                        Reading news is better with friends. Share stories on
+                        your public blurblog
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#blurblog"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/feature_7.jpg" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Blurblog Privacy</div>
+                      <div class="NB-fgi-desc">
+                        Share stories with the world or only with your friends
+                      </div>
+                    </div>
+                  </a>
+                  <a href="https://newsblur.com/features#saved" class="NB-fgi">
+                    <img src="./grid_newsblur_files/feature_6.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Story Tagging</div>
+                      <div class="NB-fgi-desc">
+                        Save stories with custom tags for fast references
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#newsletters"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_7.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Email Newsletters</div>
+                      <div class="NB-fgi-desc">
+                        Read your email newsletters where they belong, in a news
+                        reader
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="NB-feature-group NB-feature-group-everywhere">
+                <h3 class="NB-feature-group-label">Works Everywhere</h3>
+                <div class="NB-feature-group-items">
+                  <a href="https://newsblur.com/features#apps" class="NB-fgi">
+                    <img src="./grid_newsblur_files/feature_8.jpg" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Third-party Apps</div>
+                      <div class="NB-fgi-desc">
+                        Supports Reeder, ReadKit, Unread, and loads more
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#integrations"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_6.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">IFTTT &amp; Zapier</div>
+                      <div class="NB-fgi-desc">
+                        Hook NewsBlur up to nearly every service on the web
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#web-feeds"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_10.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">YouTube</div>
+                      <div class="NB-fgi-desc">
+                        Even sites that don't publish RSS feeds can be followed
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href="https://newsblur.com/features#web-feeds"
+                    class="NB-fgi"
+                  >
+                    <img src="./grid_newsblur_files/subfeature_11.png" />
+                    <div class="NB-fgi-text">
+                      <div class="NB-fgi-caption">Web Feeds</div>
+                      <div class="NB-fgi-desc">
+                        A creative feed for any website, even without RSS
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

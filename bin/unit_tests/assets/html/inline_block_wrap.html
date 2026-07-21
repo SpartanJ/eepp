@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      :root {
+        --bg-color: rgb(11, 26, 10);
+        --text-primary: #e5e5e5;
+        --text-secondary: #d4d4d4;
+        --text-muted: #a3a3a3;
+        --text-dim: #737373;
+        --accent: #fbbf24;
+        --border-color: #171717;
+        --white: #ffffff;
+        --font-main: "Fira Code", monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-main);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 6rem 1.5rem;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      /* Post Content */
+      .prose {
+        color: var(--text-secondary);
+        max-width: none;
+      }
+      .prose h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--white);
+        margin-top: 0;
+        line-height: 1.2;
+      }
+      .prose h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--white);
+        line-height: 1.3;
+        border-bottom: 4px solid #a98424;
+        display: inline-block;
+        margin-bottom: 30px;
+      }
+      .prose h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: var(--white);
+      }
+      .prose p {
+        margin-bottom: 1.25rem;
+        line-height: 1.75;
+      }
+      .prose hr {
+        margin: 2rem 0;
+        border: 1px solid transparent;
+        border-image: repeating-linear-gradient(
+            to right,
+            #b1b1b1 0 25px,
+            transparent 0px 40px
+          )
+          1;
+      }
+      .prose a {
+        color: var(--accent);
+        border-bottom: 2px solid rgba(251, 191, 36, 0.7);
+        transition: all 0.2s;
+      }
+      .prose a:hover {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <article class="prose">
+        <h2 id="h2-wrap">It&#39;s Mostly Just Text and Media</h2>
+        <p>
+          Most apps are just that. Text and media in a never-ending,
+          all-consuming feed or a multi-page form, cleverly disguised by the
+          user interface.
+        </p>
+        <p>
+          Excluding heavy 3D gaming or utilities that genuinely require deep
+          integration with your phone&#39;s hardware (like accessing the LiDAR
+          scanner for AR), what are we actually left with? A thin client whose
+          main job is to fetch data from an API and render it onto native views.
+        </p>
+        <p>
+          Why do I need to download a 100+ MB app, give it permission to track
+          my location, and let it run background processes just to browse
+          through a restaurant menu, buy a ticket, or scroll through a list of
+          posts? At the end of the day, it is almost always just JSON being
+          parsed and rendered. Yet, companies insist on rebuilding their basic
+          content as native shells just to claim a permanent square of real
+          estate on my home screen.
+        </p>
+        <h2>The Enshittification Loop</h2>
+        <p>
+          When that full-screen modal pops up demanding you download the app to
+          read the rest of a thread, users choose the path of least resistance.
+          They download and they move on.
+        </p>
+      </article>
+    </div>
+  </body>
+</html>

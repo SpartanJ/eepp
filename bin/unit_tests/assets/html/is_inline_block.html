@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+  .parent-container {
+    width: 450px;
+  }
+  .target {
+    background-color: #e0f7fa;
+  }
+  .is-inline-block {
+    display: inline-block;
+  }
+  .is-inline {
+    display: inline;
+  }
+</style>
+</head>
+<body>
+  <div class="parent-container" id="parent-ib">
+    <span id="t1">Here is some normal starting text.</span>
+    <span id="ib" class="target is-inline-block">This is the target inline-block element. If the container gets too narrow, this solid block drops to the next line, and its internal text will wrap, making the block taller without breaking.</span>
+    <span id="t2">And here is the text that comes immediately after. It gets pushed down correctly.</span>
+  </div>
+</body>
+</html>

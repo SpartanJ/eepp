@@ -2561,21 +2561,27 @@ void LLMChatUI::doRequest() {
 	mThinkingBubble = nullptr;
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
-		if ( fromReasoning && !mDisplayReasoning ) {
-			runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+		if ( fromReasoning && !mDisplayReasoning )
 			return;
-		}
 
 		if ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) )
 			return;
 
 		auto conversation = chunk;
 		editor->runOnMainThread( [this, conversation = std::move( conversation ), editor, thinking,
-								  thinkingID]() mutable {
+								  thinkingID, fromReasoning]() mutable {
 			mThinkingBubble = nullptr;
 			if ( editor->getDocument().isEmpty() && !conversation.empty() &&
 				 conversation.front() == '\n' ) {
 				String::trimInPlace( conversation, '\n' );
+			}
+
+			if ( fromReasoning && editor->getDocument().isEmpty() ) {
+				conversation = "```reasoning\n" + conversation;
+				mInReasoning = true;
+			} else if ( !fromReasoning && mInReasoning ) {
+				conversation = "\n```\n\n" + conversation;
+				mInReasoning = false;
 			}
 
 			editor->getDocument().textInput( String::fromUtf8( conversation ) );
@@ -2586,64 +2592,82 @@ void LLMChatUI::doRequest() {
 		} );
 	};
 
-	mRequest->cancelCb = [this, thinking, thinkingID, editor]( const LLMChatCompletionRequest& ) {
-		runOnMainThread( [this, thinking, thinkingID, editor] {
-			thinking->removeActionsByTag( thinkingID );
-			thinking->setVisible( false );
+	mRequest->cancelCb = [this]( const LLMChatCompletionRequest& ) {
+		runOnMainThread( [this] {
+			auto chat = getLastConversation();
+			if ( chat ) {
+				auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+				if ( !editor )
+					return;
+				auto* thinking = editor->findByClass<UIImage>( "thinking" );
+				if ( thinking ) {
+					auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+					thinking->removeActionsByTag( thinkingID );
+					thinking->setVisible( false );
+				}
+				editor->setEnabled( true );
+				if ( editor->hasFocus() )
+					mChatInput->setFocus();
+			}
+
 			mChatStop->setVisible( false )->setEnabled( false );
 			mChatRun->setVisible( true )->setEnabled( true );
 			toggleEnableChats( true );
-			editor->setEnabled( true );
-			if ( editor->hasFocus() )
-				mChatInput->setFocus();
 			removeLastChat();
 		} );
 	};
 
-	mRequest->doneCb =
-		[this, editor, apiUrl = std::move( apiUrl ), apiKeyStr = std::move( apiKeyStr ),
-		 model = std::move( model )]( const LLMChatCompletionRequest&, Http::Response& response ) {
-			auto status = response.getStatus();
-			auto statusDesc = response.getStatusDescription();
+	mRequest->doneCb = [this, apiUrl = std::move( apiUrl ), apiKeyStr = std::move( apiKeyStr ),
+						model = std::move( model )]( const LLMChatCompletionRequest&,
+													 Http::Response& response ) {
+		auto status = response.getStatus();
+		auto statusDesc = response.getStatusDescription();
 
-			runOnMainThread( [this, editor, status, statusDesc, apiUrl = std::move( apiUrl ),
-							  apiKeyStr = std::move( apiKeyStr ), model = std::move( model )] {
-				if ( status != Http::Response::Ok ) {
-					auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
-					if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
-						showMsg( resp["error"].value( "message", "" ) );
-					} else if ( resp.contains( "error" ) && resp["error"].is_string() ) {
-						showMsg( URI::decode( resp.value( "error", "" ) ) );
-					} else if ( resp.is_array() && !resp.empty() ) {
-						const auto& first = resp.at( 0 );
-						if ( first.contains( "error" ) && first["error"].contains( "message" ) )
-							showMsg( first["error"].value( "message", "" ) );
-						else
-							showMsg( statusDesc );
-					} else {
+		runOnMainThread( [this, status, statusDesc, apiUrl = std::move( apiUrl ),
+						  apiKeyStr = std::move( apiKeyStr ), model = std::move( model )] {
+			if ( status != Http::Response::Ok ) {
+				auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
+				if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
+					showMsg( resp["error"].value( "message", "" ) );
+				} else if ( resp.contains( "error" ) && resp["error"].is_string() ) {
+					showMsg( URI::decode( resp.value( "error", "" ) ) );
+				} else if ( resp.is_array() && !resp.empty() ) {
+					const auto& first = resp.at( 0 );
+					if ( first.contains( "error" ) && first["error"].contains( "message" ) )
+						showMsg( first["error"].value( "message", "" ) );
+					else
 						showMsg( statusDesc );
-					}
-
-					removeLastChat();
+				} else {
+					showMsg( statusDesc );
 				}
-				mRequest.reset();
-				toggleEnableChats( true );
+
+				removeLastChat();
+			}
+			mRequest.reset();
+			toggleEnableChats( true );
+
+			auto chat = getLastConversation();
+			if ( chat ) {
+				auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+				if ( !editor )
+					return;
 				editor->setEnabled( true );
-
-				mChatStop->setVisible( false )->setEnabled( false );
-				mChatRun->setVisible( true )->setEnabled( true );
-
 				if ( editor->hasFocus() )
 					mChatInput->setFocus();
+			}
 
-				if ( !mChatIsPrivate && !mSummaryRequest && mSummary.empty() &&
-					 status == Http::Response::Ok ) {
-					generateChatName( false );
-				} else {
-					saveChat();
-				}
-			} );
-		};
+			mChatStop->setVisible( false )->setEnabled( false );
+			mChatRun->setVisible( true )->setEnabled( true );
+
+			if ( !mChatIsPrivate && !mSummaryRequest && mSummary.empty() &&
+				 status == Http::Response::Ok ) {
+				generateChatName( false );
+			} else {
+				saveChat();
+			}
+		} );
+	};
+
 	mRequest->requestAsync();
 }
 

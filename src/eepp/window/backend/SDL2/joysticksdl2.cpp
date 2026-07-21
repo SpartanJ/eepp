@@ -12,7 +12,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-JoystickSDL::JoystickSDL( const Uint32& index ) : Joystick( index ), mJoystick( NULL ) {
+JoystickSDL::JoystickSDL( const Uint32& index ) : Joystick( index ), mJoystick( nullptr ) {
 	open();
 }
 
@@ -23,7 +23,7 @@ JoystickSDL::~JoystickSDL() {
 void JoystickSDL::open() {
 	mJoystick = SDL_JoystickOpen( mIndex );
 
-	if ( NULL != mJoystick ) {
+	if ( nullptr != mJoystick ) {
 		mName = SDL_JoystickName( mJoystick );
 		mHats = SDL_JoystickNumHats( mJoystick );
 		mButtons = eemin( SDL_JoystickNumButtons( mJoystick ), 32 );
@@ -35,16 +35,16 @@ void JoystickSDL::open() {
 }
 
 void JoystickSDL::close() {
-	if ( NULL != mJoystick )
+	if ( nullptr != mJoystick )
 		SDL_JoystickClose( mJoystick );
 
-	mJoystick = NULL;
+	mJoystick = nullptr;
 	mName = "";
 	mHats = mButtons = mAxes = mBalls = 0;
 }
 
 void JoystickSDL::update() {
-	if ( NULL != mJoystick ) {
+	if ( nullptr != mJoystick ) {
 		clearStates();
 
 		for ( Int32 i = 0; i < mButtons; i++ ) {
@@ -78,7 +78,7 @@ Vector2i JoystickSDL::getBallMotion( const Int32& ball ) {
 }
 
 bool JoystickSDL::isPlugged() const {
-	return NULL != mJoystick;
+	return nullptr != mJoystick;
 }
 
 }}}} // namespace EE::Window::Backend::SDL2

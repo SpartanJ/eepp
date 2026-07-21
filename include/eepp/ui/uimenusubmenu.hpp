@@ -34,10 +34,11 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	virtual UIWidget* getExtraInnerWidget() const;
 
   protected:
-	UIMenu* mSubMenu;
-	UIWidget* mArrow;
+	UIMenu* mSubMenu{ nullptr };
+	UIWidget* mArrow{ nullptr };
 	Time mMaxTime;
-	Action* mCurWait;
+	Action* mCurWait{ nullptr };
+	Uint32 mSubMenuCloseCb{ 0 };
 
 	UIMenuSubMenu();
 
@@ -54,6 +55,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	virtual void onLayoutUpdate();
 
 	virtual void onAlphaChange();
+
+	virtual void onClose();
 
 	void onSubMenuFocusLoss( const Event* Event );
 };

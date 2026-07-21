@@ -1,4 +1,5 @@
 #include <eepp/ui/doc/markdownhelper.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -28,8 +29,7 @@ bool UIMarkdownView::isType( const Uint32& type ) const {
 
 void UIMarkdownView::loadFromString( std::string_view markdown ) {
 	closeAllChildren();
-	auto xhtml = Markdown::toXHTML( markdown );
-	// printf( "%s", xhtml.c_str() );
+	auto xhtml = Tools::HTMLFormatter::HTMLtoXML( Markdown::toXHTML( markdown ) );
 	getUISceneNode()->loadLayoutFromString( xhtml, this );
 }
 

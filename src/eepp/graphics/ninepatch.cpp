@@ -4,10 +4,10 @@
 
 namespace EE { namespace Graphics {
 
-NinePatch* NinePatch::New( const Uint32& TexId, int left, int top, int right, int bottom,
+NinePatch* NinePatch::New( ResourceId textureId, int left, int top, int right, int bottom,
 						   const Float& pixelDensity, const std::string& name ) {
-	return eeNew( NinePatch, ( TextureFactory::instance()->getTexture( TexId ), left, top, right,
-							   bottom, pixelDensity, name ) );
+	return eeNew( NinePatch, ( TextureFactory::instance()->getTexture( textureId ), left, top,
+							   right, bottom, pixelDensity, name ) );
 }
 
 NinePatch* NinePatch::New( Texture* tex, int left, int top, int right, int bottom,

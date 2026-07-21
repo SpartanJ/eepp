@@ -54,7 +54,7 @@
 
 namespace EE {
 
-template <typename T> static bool _fromString( T& t, const std::string& s, int base = 10 ) {
+template <typename T> static bool _fromString( T& t, std::string_view s, int base = 10 ) {
 	const char* begin = s.data();
 	const char* end = s.data() + s.size();
 
@@ -109,83 +109,123 @@ template <class T> static std::string _toString( const T& value, size_t digitsAf
 }
 
 bool String::fromString( Int8& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int16& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int32& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Int64& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint8& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint16& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint32& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( Uint64& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
+	return fromString( t, std::string_view( s ), base );
 }
 
 bool String::fromString( float& t, const std::string& s ) {
-	return _fromString<>( t, s );
+	return fromString( t, std::string_view( s ) );
 }
 
 bool String::fromString( double& t, const std::string& s ) {
+	return fromString( t, std::string_view( s ) );
+}
+
+bool String::fromString( Int8& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, std::string_view s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, std::string_view s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, std::string_view s ) {
 	return _fromString<>( t, s );
 }
 
 bool String::fromString( Int8& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int16& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int32& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Int64& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint8& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint16& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint32& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( Uint64& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
+	return _fromString<>( t, s.toUtf8(), base );
 }
 
 bool String::fromString( float& t, const String& s ) {
-	return _fromString<>( t, s );
+	return _fromString<>( t, s.toUtf8() );
 }
 
 bool String::fromString( double& t, const String& s ) {
-	return _fromString<>( t, s );
+	return _fromString<>( t, s.toUtf8() );
 }
 
 std::string String::toString( const Int8& i ) {
@@ -415,78 +455,163 @@ bool String::globMatch( const std::string_view& text, const std::vector<std::str
  * THE SOFTWARE.
  */
 
+static inline unsigned char asciiToLower( unsigned char c ) {
+	return c >= 'A' && c <= 'Z' ? c + ( 'a' - 'A' ) : c;
+}
+
+static inline unsigned char asciiToUpper( unsigned char c ) {
+	return c >= 'a' && c <= 'z' ? c - ( 'a' - 'A' ) : c;
+}
+
+static inline bool asciiEqualCaseInsensitive( unsigned char a, unsigned char b ) {
+	return asciiToLower( a ) == asciiToLower( b );
+}
+
+static bool memEqualCaseInsensitiveAscii( const unsigned char* a, const unsigned char* b,
+										  size_t len ) {
+	for ( size_t i = 0; i < len; ++i ) {
+		if ( !asciiEqualCaseInsensitive( a[i], b[i] ) )
+			return false;
+	}
+	return true;
+}
+
 /* This function creates an occ table to be used by the search algorithms. */
 /* It only needs to be created once per a needle to search. */
 const String::BMH::OccTable String::BMH::createOccTable( const unsigned char* needle,
-														 size_t needleLength ) {
-	OccTable occ(
-		UCHAR_MAX + 1,
-		needleLength ); // initialize a table of UCHAR_MAX+1 elements to value needle_length
+														 size_t needleLength,
+														 bool caseInsensitive ) {
+	OccTable occ( UCHAR_MAX + 1, needleLength );
 
-	/* Populate it with the analysis of the needle */
-	/* But ignoring the last letter */
 	if ( needleLength >= 1 ) {
 		const size_t needleLengthMinus1 = needleLength - 1;
-		for ( size_t a = 0; a < needleLengthMinus1; ++a )
-			occ[needle[a]] = needleLengthMinus1 - a;
+
+		for ( size_t a = 0; a < needleLengthMinus1; ++a ) {
+			const size_t shift = needleLengthMinus1 - a;
+			const unsigned char c = needle[a];
+
+			occ[c] = shift;
+
+			if ( caseInsensitive ) {
+				occ[asciiToLower( c )] = shift;
+				occ[asciiToUpper( c )] = shift;
+			}
+		}
 	}
+
 	return occ;
 }
 
-/* A Boyer-Moore-Horspool search algorithm. */
-/* If it finds the needle, it returns an offset to haystack from which
- * the needle was found. Otherwise, it returns haystack_length.
- */
 size_t String::BMH::search( const unsigned char* haystack, size_t haystackLength,
 							const unsigned char* needle, const size_t needleLength,
-							const OccTable& occ ) {
+							const OccTable& occ, bool caseInsensitive ) {
 	if ( needleLength > haystackLength )
 		return haystackLength;
+
+	if ( needleLength == 0 )
+		return 0;
+
 	if ( needleLength == 1 ) {
-		const unsigned char* result =
-			(const unsigned char*)std::memchr( haystack, *needle, haystackLength );
-		return result ? size_t( result - haystack ) : haystackLength;
+		if ( !caseInsensitive ) {
+			const unsigned char* result =
+				(const unsigned char*)std::memchr( haystack, *needle, haystackLength );
+			return result ? size_t( result - haystack ) : haystackLength;
+		}
+
+		const unsigned char needleChar = asciiToLower( *needle );
+
+		for ( size_t i = 0; i < haystackLength; ++i ) {
+			if ( asciiToLower( haystack[i] ) == needleChar )
+				return i;
+		}
+
+		return haystackLength;
 	}
 
 	const size_t needleLengthMinus1 = needleLength - 1;
-
 	const unsigned char lastNeedleChar = needle[needleLengthMinus1];
 
 	size_t haystackPosition = 0;
-	while ( haystackPosition <= haystackLength - needleLength ) {
-		const unsigned char occChar = haystack[haystackPosition + needleLengthMinus1];
 
-		// The author modified this part. Original algorithm matches needle right-to-left.
-		// This code calls memcmp() (usually matches left-to-right) after matching the last
-		// character, thereby incorporating some ideas from
-		// "Tuning the Boyer-Moore-Horspool String Searching Algorithm"
-		// by Timo Raita, 1992.
-		if ( lastNeedleChar == occChar &&
-			 std::memcmp( needle, haystack + haystackPosition, needleLengthMinus1 ) == 0 ) {
-			return haystackPosition;
+	if ( !caseInsensitive ) {
+		while ( haystackPosition <= haystackLength - needleLength ) {
+			const unsigned char occChar = haystack[haystackPosition + needleLengthMinus1];
+
+			// The author modified this part. Original algorithm matches needle right-to-left.
+			// This code calls memcmp() (usually matches left-to-right) after matching the last
+			// character, thereby incorporating some ideas from
+			// "Tuning the Boyer-Moore-Horspool String Searching Algorithm"
+			// by Timo Raita, 1992.
+			if ( lastNeedleChar == occChar &&
+				 std::memcmp( needle, haystack + haystackPosition, needleLengthMinus1 ) == 0 ) {
+				return haystackPosition;
+			}
+
+			haystackPosition += occ[occChar];
 		}
+	} else {
+		const unsigned char lastNeedleCharLower = asciiToLower( lastNeedleChar );
 
-		haystackPosition += occ[occChar];
+		while ( haystackPosition <= haystackLength - needleLength ) {
+			const unsigned char occChar = haystack[haystackPosition + needleLengthMinus1];
+
+			if ( lastNeedleCharLower == asciiToLower( occChar ) &&
+				 memEqualCaseInsensitiveAscii( needle, haystack + haystackPosition,
+											   needleLengthMinus1 ) ) {
+				return haystackPosition;
+			}
+
+			haystackPosition += occ[occChar];
+		}
 	}
+
 	return haystackLength;
 }
 
 Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
-						 const size_t& haystackOffset, const OccTable& occ ) {
-	size_t result = search( (const unsigned char*)haystack.c_str() + haystackOffset,
-							haystack.size() - haystackOffset, (const unsigned char*)needle.c_str(),
-							needle.size(), occ );
-	if ( result == haystack.size() - haystackOffset ) {
+						 const size_t& haystackOffset, const OccTable& occ, bool caseInsensitive ) {
+	if ( haystackOffset > haystack.size() )
 		return -1;
-	} else {
-		return (Int64)haystackOffset + result;
-	}
+
+	size_t result = search(
+		reinterpret_cast<const unsigned char*>( haystack.data() ) + haystackOffset,
+		haystack.size() - haystackOffset, reinterpret_cast<const unsigned char*>( needle.data() ),
+		needle.size(), occ, caseInsensitive );
+
+	return result == haystack.size() - haystackOffset
+			   ? -1
+			   : static_cast<Int64>( haystackOffset + result );
 }
 
 Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
-						 const size_t& haystackOffset ) {
-	const auto occ = createOccTable( (const unsigned char*)needle.c_str(), needle.size() );
-	return find( haystack, needle, haystackOffset, occ );
+						 const size_t& haystackOffset, bool caseInsensitive ) {
+	const auto occ = createOccTable( reinterpret_cast<const unsigned char*>( needle.data() ),
+									 needle.size(), caseInsensitive );
+
+	return find( haystack, needle, haystackOffset, occ, caseInsensitive );
+}
+
+Int64 String::BMH::find( std::string_view haystack, std::string_view needle,
+						 const size_t& haystackOffset, const OccTable& occ, bool caseInsensitive ) {
+	if ( haystackOffset > haystack.size() )
+		return -1;
+
+	size_t result = search(
+		reinterpret_cast<const unsigned char*>( haystack.data() ) + haystackOffset,
+		haystack.size() - haystackOffset, reinterpret_cast<const unsigned char*>( needle.data() ),
+		needle.size(), occ, caseInsensitive );
+
+	return result == haystack.size() - haystackOffset
+			   ? -1
+			   : static_cast<Int64>( haystackOffset + result );
+}
+
+Int64 String::BMH::find( std::string_view haystack, std::string_view needle,
+						 const size_t& haystackOffset, bool caseInsensitive ) {
+	const auto occ = createOccTable( reinterpret_cast<const unsigned char*>( needle.data() ),
+									 needle.size(), caseInsensitive );
+
+	return find( haystack, needle, haystackOffset, occ, caseInsensitive );
 }
 
 String String::escape( const String& str ) {
@@ -683,18 +808,23 @@ bool String::isCharacter( const int& value ) {
 	return ( value >= 32 && value <= 126 ) || ( value >= 161 && value <= 255 ) || ( value == 9 );
 }
 
-bool String::isNumber( const int& value, bool AllowDot ) {
+bool String::isNumber( const int& value, bool AllowDot, bool AllowScientific ) {
+	if ( AllowScientific )
+		return ( value >= 48 && value <= 57 ) || value == 46 || value == 101 || value == 69 ||
+			   value == 45 || value == 43;
 	if ( AllowDot )
 		return ( value >= 48 && value <= 57 ) || value == 46;
-
 	return value >= 48 && value <= 57;
 }
 
-bool String::isNumber( const std::string& value, bool AllowDot ) {
+bool String::isNumber( const std::string& value, bool AllowDot, bool AllowScientific ) {
+	if ( AllowScientific ) {
+		Float t;
+		return fromString( t, value );
+	}
 	for ( auto& val : value ) {
-		if ( !isNumber( val, AllowDot ) ) {
+		if ( !isNumber( val, AllowDot ) )
 			return false;
-		}
 	}
 	return true;
 }
@@ -2438,15 +2568,27 @@ String operator+( const String& left, const String& right ) {
 
 bool String::isWholeWord( const std::string& haystack, const std::string& needle,
 						  const Int64& startPos ) {
-	return ( 0 == startPos || !( std::isalnum( haystack[startPos - 1] ) ) ) &&
+	return ( 0 == startPos ||
+			 !( std::isalnum( static_cast<unsigned char>( haystack[startPos - 1] ) ) ) ) &&
 		   ( startPos + needle.size() >= haystack.size() ||
-			 !( std::isalnum( haystack[startPos + needle.size()] ) ) );
+			 !( std::isalnum(
+				 static_cast<unsigned char>( haystack[startPos + needle.size()] ) ) ) );
+}
+
+bool String::isWholeWord( std::string_view haystack, std::string_view needle,
+						  const Int64& startPos ) {
+	return ( 0 == startPos ||
+			 !( std::isalnum( static_cast<unsigned char>( haystack[startPos - 1] ) ) ) ) &&
+		   ( startPos + needle.size() >= haystack.size() ||
+			 !( std::isalnum(
+				 static_cast<unsigned char>( haystack[startPos + needle.size()] ) ) ) );
 }
 
 bool String::isWholeWord( const String& haystack, const String& needle, const Int64& startPos ) {
-	return ( 0 == startPos || !( isAlphaNum( haystack[startPos - 1] ) ) ) &&
+	return ( 0 == startPos ||
+			 !( isAlphaNum( static_cast<unsigned char>( haystack[startPos - 1] ) ) ) ) &&
 		   ( startPos + needle.size() >= haystack.size() ||
-			 !( isAlphaNum( haystack[startPos + needle.size()] ) ) );
+			 !( isAlphaNum( static_cast<unsigned char>( haystack[startPos + needle.size()] ) ) ) );
 }
 
 size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer,

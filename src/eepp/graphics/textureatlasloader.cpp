@@ -102,7 +102,7 @@ TextureAtlasLoader::TextureAtlasLoader( IOStream& IOS, const bool& Threaded,
 	loadFromStream( IOS );
 }
 
-TextureAtlasLoader::~TextureAtlasLoader() {}
+TextureAtlasLoader::~TextureAtlasLoader() = default;
 
 void TextureAtlasLoader::setLoadCallback( GLLoadCallback LoadCallback ) {
 	mLoadCallback = LoadCallback;
@@ -115,12 +115,12 @@ sTextureAtlasHdr TextureAtlasLoader::getTextureAtlasHeader() {
 void TextureAtlasLoader::setTextureFilter( const Texture::Filter& textureFilter ) {
 	mTexGrHdr.TextureFilter = (char)textureFilter;
 
-	size_t count = getTextureAtlas()->getTexturesCount() == 0;
+	if ( NULL == mTextureAtlas )
+		return;
 
-	if ( count > 0 ) {
-		for ( size_t i = 0; i < count; i++ )
-			getTextureAtlas()->getTexture( i )->setFilter( textureFilter );
-	}
+	const size_t count = mTextureAtlas->getTexturesCount();
+	for ( size_t i = 0; i < count; i++ )
+		mTextureAtlas->getTexture( i )->setFilter( textureFilter );
 }
 
 void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
@@ -319,12 +319,12 @@ void TextureAtlasLoader::setThreaded( const bool& threaded ) {
 	mThreaded = threaded;
 }
 
-const bool& TextureAtlasLoader::isLoaded() const {
-	return mLoaded;
+bool TextureAtlasLoader::isLoaded() const {
+	return mLoaded.load();
 }
 
-const bool& TextureAtlasLoader::isLoading() const {
-	return mIsLoading;
+bool TextureAtlasLoader::isLoading() const {
+	return mIsLoading.load();
 }
 
 Texture* TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
