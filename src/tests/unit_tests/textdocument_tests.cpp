@@ -145,6 +145,25 @@ UTEST( TextDocument, newLineNormal ) {
 	EXPECT_STDSTREQ( TextPosition( 1, 2 ).toString(), doc.getSelection().start().toString() );
 }
 
+UTEST( TextDocument, moveToStartOfContent ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "    content" );
+
+	doc.setSelection( { 0, 8 } );
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
+
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 0 ).toString(), doc.getSelection().start().toString() );
+
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
+
+	doc.setSelection( { 0, 2 } );
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
+}
+
 UTEST( TextDocument, autoCloseBrackets ) {
 	TextDocument doc;
 	doc.setAutoCloseBrackets( true );

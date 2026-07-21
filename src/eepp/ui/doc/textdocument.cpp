@@ -2489,7 +2489,7 @@ void TextDocument::moveToEndOfDoc() {
 void TextDocument::moveToStartOfContent() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indented = startOfContent( start );
+		TextPosition indented = startOfContent( endOfLine( start ) );
 		setSelection( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
 															 : indented );
 	}

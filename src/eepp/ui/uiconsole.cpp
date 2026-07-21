@@ -625,6 +625,7 @@ void UIConsole::createDefaultCommands() {
 	addCommand( "showfps", [this]( const auto& params ) { cmdShowFps( params ); } );
 	addCommand( "gettexturememory", [this]( const auto& ) { cmdGetTextureMemory(); } );
 	addCommand( "hide", [this]( const auto& ) { hide(); } );
+	addCommand( "exit", [this]( const auto& ) { hide(); } );
 	addCommand( "grep", [this]( const auto& params ) { cmdGrep( params ); } );
 	addCommand( "arch", [this]( const auto& ) { privPushText( Sys::getOSArchitecture() ); } );
 	addCommand( "pwd", [this]( const auto& ) {

@@ -3627,14 +3627,14 @@ void UICodeEditor::moveToStartOfContent() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition start = mDoc->getSelectionIndex( i ).start();
 		auto info = mDocView.getVisibleLineRange( start );
+		TextPosition contentStart = mDoc->startOfContent( mDoc->endOfLine( start ) );
 		if ( info.range.start().column() != 0 ) {
-			mDoc->setSelection( i, info.range.start() != start ? info.range.start()
-															   : mDoc->startOfContent( start ) );
+			mDoc->setSelection( i,
+								info.range.start() != start ? info.range.start() : contentStart );
 		} else {
-			TextPosition indented = mDoc->startOfContent( mDoc->getSelectionIndex( i ).start() );
-			mDoc->setSelection( i, indented.column() == start.column()
+			mDoc->setSelection( i, contentStart.column() == start.column()
 									   ? TextPosition( start.line(), 0 )
-									   : indented );
+									   : contentStart );
 		}
 	}
 	mDoc->mergeSelection();
