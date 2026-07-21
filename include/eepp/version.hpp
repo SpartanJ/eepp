@@ -5,8 +5,8 @@
 #include <string>
 
 #define EEPP_MAJOR_VERSION 3
-#define EEPP_MINOR_VERSION 0
-#define EEPP_PATCH_LEVEL 1
+#define EEPP_MINOR_VERSION 1
+#define EEPP_PATCH_LEVEL 0
 #define EEPP_CODENAME "Khaya"
 
 /** The compiled version of the library */
