@@ -1,4 +1,3 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>

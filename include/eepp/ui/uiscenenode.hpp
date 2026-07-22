@@ -10,6 +10,7 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 
@@ -566,6 +567,12 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	DrawablePtr findIconDrawable( const std::string& iconName, const size_t& drawableSize );
 
+	/** @return This scene's drawable resolver. */
+	DrawableResolver& getDrawableResolver();
+
+	/** @return This scene's drawable resolver. */
+	const DrawableResolver& getDrawableResolver() const;
+
 	/**
 	 * @brief Gets the keybindings manager.
 	 *
@@ -910,6 +917,7 @@ class EE_API UISceneNode : public SceneNode {
 	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
 	Graphics::ResourceScopePtr mResourceScope;
+	DrawableResolver mDrawableResolver;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;

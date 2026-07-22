@@ -1,4 +1,3 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
@@ -216,13 +215,14 @@ bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 				path = func.getParameters().at( 0 );
 			}
 
-			DrawablePtr res;
 			UISceneNode* scene = getUISceneNode();
-			if ( scene )
-				res = DrawableSearcher::searchByName( path, true, scene->getReferer(),
-													  scene->getResourceScope().get() );
-			else
-				res = DrawableSearcher::searchByName( path, true );
+			DrawablePtr res;
+			if ( scene ) {
+				res = scene->getDrawableResolver().resolve( path, true );
+			} else {
+				DrawableResolver resolver( defaultResourceScope() );
+				res = resolver.resolve( path, true );
+			}
 
 			if ( res ) {
 				switch ( res->getDrawableType() ) {

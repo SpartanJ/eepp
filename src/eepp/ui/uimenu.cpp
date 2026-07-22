@@ -1,4 +1,3 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -553,18 +552,23 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 	return UIWidget::onKeyDown( event );
 }
 
-static DrawablePtr getIconDrawable( const std::string& name,
-									UIIconThemeManager* iconThemeManager ) {
+static DrawablePtr getIconDrawable( const std::string& name, UISceneNode* sceneNode ) {
 	DrawablePtr iconDrawable;
-	if ( nullptr != iconThemeManager ) {
-		UIIcon* icon = iconThemeManager->findIcon( name );
+	if ( sceneNode ) {
+		UIIcon* icon = sceneNode->findIcon( name );
 		if ( icon ) {
 			// TODO: Fix size
 			iconDrawable = icon->createDrawable( PixelDensity::dpToPx( 16 ) );
 		}
 	}
-	if ( nullptr == iconDrawable )
-		iconDrawable = DrawableSearcher::searchByName( name );
+	if ( !iconDrawable ) {
+		if ( sceneNode ) {
+			iconDrawable = sceneNode->getDrawableResolver().resolve( name );
+		} else {
+			DrawableResolver resolver( defaultResourceScope() );
+			iconDrawable = resolver.resolve( name );
+		}
+	}
 	return iconDrawable;
 }
 
@@ -579,8 +583,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			std::string icon( item.attribute( "icon" ).as_string() );
 			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				add( getTranslatorString( text ),
-					 getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ) );
+				add( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
@@ -598,8 +601,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( nullptr != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
 			subMenu->loadFromXmlNode( item );
-			addSubMenu( getTranslatorString( text ),
-						getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
+			addSubMenu( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ),
 						subMenu );
 		}
 	}

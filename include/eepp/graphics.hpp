@@ -10,7 +10,6 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
 #include <eepp/graphics/drawableresource.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontfamily.hpp>

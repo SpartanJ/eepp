@@ -1,6 +1,6 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0 through Stage 4 complete, 2026-07-20.
+Status: active implementation baseline; Stage 0 through Stage 5 complete, 2026-07-21.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -726,6 +726,18 @@ Exit criteria:
 - No drawable `ownIt` or manual child deletion remains.
 
 ### Stage 5: layered UI resolution
+
+Status: complete, 2026-07-21. `DrawableSearcher` was removed from Graphics. `ResourceScope` now
+provides scoped drawable lookup for textures, atlas regions, nine-patches, and sprites, preserving a
+pure Graphics entry point with no UI dependency. Each `UISceneNode` owns an allocation-free
+`UI::DrawableResolver` that reads the scene's current scope and referer when resolving file, data,
+HTTP, and named drawable references. UI images, sprites, menus, CSS parsing, and tests use the scene
+resolver; callers without a scene explicitly construct one over `defaultResourceScope()`.
+
+CSS icon resolution now uses the requesting node's scene instead of the process-global scene.
+Texture names remain isolated by local/imported catalogs and become visible across scenes only when
+their scopes or catalogs are shared intentionally. Atlas, nine-patch, and sprite manager migration
+to scoped catalogs remains Stage 7 work for those resource families.
 
 Implement UI::DrawableResolver and replace DrawableSearcher. Scene resolvers delegate Graphics work
 to their explicit scope. Keep CSS/icon/glyph interpretation in UI and cookie/navigation concerns in

@@ -372,6 +372,11 @@ UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImporte
 
 	EXPECT_EQ( first.get(), firstScope->findTexture( "same-name" ).get() );
 	EXPECT_EQ( second.get(), secondScope->findTexture( "same-name" ).get() );
+	DrawablePtr scopedDrawable = firstScope->findDrawable( "same-name" );
+	ASSERT_TRUE( scopedDrawable != nullptr );
+	ASSERT_EQ( scopedDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	EXPECT_EQ( first.get(),
+			   static_cast<TextureDrawable*>( scopedDrawable.get() )->getTexture().get() );
 	EXPECT_EQ( shared.get(), firstScope->findTexture( "shared-name" ).get() );
 	EXPECT_TRUE( secondScope->findTexture( "shared-name" ) == nullptr );
 	EXPECT_TRUE( firstScope->findTexture( "observed-only" ) == nullptr );
@@ -382,6 +387,7 @@ UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImporte
 
 	TextureWeakPtr externallyRetainedWeak = first;
 	TexturePtr externallyRetained = first;
+	scopedDrawable.reset();
 	firstScope.reset();
 	EXPECT_FALSE( externallyRetainedWeak.expired() );
 
@@ -423,10 +429,22 @@ UTEST( ResourcePrerequisites, uiScenesOwnIsolatedScopesThatCanBeSharedExplicitly
 
 	firstScene->getResourceScope()->publishLocal( "scene-texture", texture );
 	EXPECT_TRUE( secondScene->getResourceScope()->findTexture( "scene-texture" ) == nullptr );
+	DrawablePtr firstDrawable = firstScene->getDrawableResolver().resolve( "scene-texture" );
+	ASSERT_TRUE( firstDrawable != nullptr );
+	ASSERT_EQ( firstDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	EXPECT_EQ( texture.get(),
+			   static_cast<TextureDrawable*>( firstDrawable.get() )->getTexture().get() );
+	EXPECT_TRUE( secondScene->getDrawableResolver().resolve( "scene-texture" ) == nullptr );
 	secondScene->setResourceScope( firstScene->getResourceScope() );
 	EXPECT_EQ( texture.get(),
 			   secondScene->getResourceScope()->findTexture( "scene-texture" ).get() );
+	DrawablePtr sharedDrawable = secondScene->getDrawableResolver().resolve( "scene-texture" );
+	ASSERT_TRUE( sharedDrawable != nullptr );
+	EXPECT_EQ( texture.get(),
+			   static_cast<TextureDrawable*>( sharedDrawable.get() )->getTexture().get() );
 
+	sharedDrawable.reset();
+	firstDrawable.reset();
 	texture.reset();
 	eeDelete( secondScene );
 	eeDelete( firstScene );

@@ -142,6 +142,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mAsyncResourceLoadState( std::make_shared<AsyncResourceLoadState>() ),
 	mResourceScope( ResourceScope::New() ),
+	mDrawableResolver( *this ),
 	mKeyBindings( mWindow->getInput() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
 	// the required events to its children.
@@ -1348,9 +1349,17 @@ UIIcon* UISceneNode::findIcon( const std::string& iconName ) {
 }
 
 DrawablePtr UISceneNode::findIconDrawable( const std::string& iconName,
-												 const size_t& drawableSize ) {
+										 const size_t& drawableSize ) {
 	UIIcon* icon = findIcon( iconName );
 	return icon ? icon->createDrawable( drawableSize ) : DrawablePtr{};
+}
+
+DrawableResolver& UISceneNode::getDrawableResolver() {
+	return mDrawableResolver;
+}
+
+const DrawableResolver& UISceneNode::getDrawableResolver() const {
+	return mDrawableResolver;
 }
 
 CSS::MediaFeatures UISceneNode::getMediaFeatures() const {

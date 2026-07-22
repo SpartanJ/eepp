@@ -1,11 +1,9 @@
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/triangledrawable.hpp>
-#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
@@ -16,7 +14,6 @@
 #include <eepp/ui/uiscenenode.hpp>
 
 using namespace EE::Graphics;
-using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -163,9 +160,8 @@ DrawablePtr DrawableImageParser::createDrawable( const std::string& value, const
 	if ( !functionType.isEmpty() ) {
 		if ( exists( functionType.getName() ) )
 			return mFuncs[functionType.getName()]( functionType, size, node );
-	} else if ( DrawablePtr drawable = DrawableSearcher::searchByName(
-					value, false, node->getUISceneNode()->getReferer(),
-					node->getUISceneNode()->getResourceScope().get() ) ) {
+	} else if ( DrawablePtr drawable =
+					node->getUISceneNode()->getDrawableResolver().resolve( value ) ) {
 		return drawable;
 	}
 
@@ -909,10 +905,8 @@ void DrawableImageParser::registerBaseParsers() {
 		const auto& param = functionType.getParameters().at( 0 );
 		if ( functionType.getName() == "url" && !param.empty() && param[0] != '@' &&
 			 !String::startsWith( param, "data:image/" ) ) {
-			DrawablePtr drawable = DrawableSearcher::searchByName(
-				node->getUISceneNode()->solveRelativePath( param ).toString(), false,
-				node->getUISceneNode()->getReferer(),
-				node->getUISceneNode()->getResourceScope().get() );
+			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve(
+				node->getUISceneNode()->solveRelativePath( param ).toString() );
 			return drawable;
 		} else if ( functionType.getParameters().size() > 1 &&
 					String::startsWith( param, "data:image/" ) ) {
@@ -921,20 +915,17 @@ void DrawableImageParser::registerBaseParsers() {
 				cparam += ',';
 				cparam += functionType.getParameters().at( i );
 			}
-			DrawablePtr drawable = DrawableSearcher::searchByName(
-				cparam, false, node->getUISceneNode()->getReferer(),
-				node->getUISceneNode()->getResourceScope().get() );
+			DrawablePtr drawable =
+				node->getUISceneNode()->getDrawableResolver().resolve( cparam );
 			return drawable;
 		}
-		DrawablePtr drawable = DrawableSearcher::searchByName(
-			param, false, node->getUISceneNode()->getReferer(),
-			node->getUISceneNode()->getResourceScope().get() );
+		DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( param );
 		return drawable;
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size,
 							 UINode* node ) -> DrawablePtr {
-		auto* uiScene = SceneManager::instance()->getUISceneNode();
+		auto* uiScene = node->getUISceneNode();
 		const auto& params = functionType.getParameters();
 		if ( params.size() < 2 )
 			return nullptr;

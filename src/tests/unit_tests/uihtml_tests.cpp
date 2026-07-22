@@ -1,7 +1,6 @@
 #include "compareimages.hpp"
 #include "utest.hpp"
 
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -5142,8 +5141,7 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	sceneNode->setURI( URI( "file://" + processPath ) );
 	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
 	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
-	DrawablePtr cached = DrawableSearcher::searchByName(
-		imageURI.toString(), false, sceneNode->getReferer(), sceneNode->getResourceScope().get() );
+	DrawablePtr cached = sceneNode->getDrawableResolver().resolve( imageURI.toString() );
 	ASSERT_TRUE( cached != nullptr );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(

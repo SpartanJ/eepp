@@ -1,5 +1,9 @@
 #include <algorithm>
+#include <eepp/core/string.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -28,6 +32,70 @@ TexturePtr ResourceScope::findTexture( const std::string& key ) const {
 			return texture;
 	}
 	return {};
+}
+
+DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSearchSprite ) const {
+	if ( name.empty() )
+		return {};
+
+	auto findSprite = []( const std::string& pattern ) -> DrawablePtr {
+		std::vector<TextureRegion*> textureRegions =
+			TextureAtlasManager::instance()->getTextureRegionsByPattern( pattern );
+		if ( textureRegions.empty() )
+			return {};
+		SpritePtr sprite = Sprite::New();
+		sprite->createAnimation();
+		sprite->addFrames( textureRegions );
+		return sprite;
+	};
+
+	bool searchedSprite = false;
+	if ( firstSearchSprite ) {
+		DrawablePtr sprite =
+			findSprite( String::startsWith( name, "@sprite/" ) ? name.substr( 8 ) : name );
+		if ( sprite )
+			return sprite;
+		searchedSprite = true;
+	}
+
+	if ( name[0] == '@' ) {
+		if ( String::startsWith( name, "@textureregion/" ) ) {
+			Drawable* source =
+				TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
+			return source ? source->clone() : DrawablePtr{};
+		}
+		if ( String::startsWith( name, "@image/" ) ) {
+			TexturePtr texture = findTexture( name.substr( 7 ) );
+			return texture ? texture->clone() : DrawablePtr{};
+		}
+		if ( String::startsWith( name, "@texture/" ) ) {
+			TexturePtr texture = findTexture( name.substr( 9 ) );
+			return texture ? texture->clone() : DrawablePtr{};
+		}
+		if ( String::startsWith( name, "@sprite/" ) && !searchedSprite )
+			return findSprite( name.substr( 8 ) );
+		if ( String::startsWith( name, "@drawable/" ) )
+			return findDrawable( name.substr( 10 ) );
+		if ( String::startsWith( name, "@9p/" ) ) {
+			Drawable* source = NinePatchManager::instance()->getByName( name.substr( 4 ) );
+			return source ? source->clone() : DrawablePtr{};
+		}
+	}
+
+	String::HashType id = String::hash( name );
+	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
+	if ( source == nullptr )
+		source = NinePatchManager::instance()->getById( id );
+	if ( source )
+		return source->clone();
+
+	TexturePtr texture = findTexture( name );
+	return texture ? texture->clone() : DrawablePtr{};
+}
+
+DrawablePtr ResourceScope::findDrawable( const Uint32& id ) const {
+	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
+	return source ? source->clone() : DrawablePtr{};
 }
 
 void ResourceScope::publishLocal( ResourceKey key, TexturePtr texture ) {

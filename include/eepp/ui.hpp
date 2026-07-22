@@ -47,6 +47,7 @@
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
+#include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/inlinelayouter.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>

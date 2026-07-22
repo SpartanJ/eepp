@@ -1,5 +1,4 @@
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -555,9 +554,12 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( createdDrawable ) {
 				setDrawable( std::move( createdDrawable ) );
 			} else {
-				setDrawable( DrawableSearcher::searchByName(
-					path, false, scene ? scene->getReferer() : URI(),
-					scene ? scene->getResourceScope().get() : nullptr ) );
+				if ( scene ) {
+					setDrawable( scene->getDrawableResolver().resolve( path ) );
+				} else {
+					DrawableResolver resolver( defaultResourceScope() );
+					setDrawable( resolver.resolve( path ) );
+				}
 			}
 			break;
 		}

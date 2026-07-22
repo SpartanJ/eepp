@@ -57,7 +57,7 @@
 ../../include/eepp/graphics/drawablegroup.hpp
 ../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/drawableresource.hpp
-../../include/eepp/graphics/drawablesearcher.hpp
+../../include/eepp/ui/drawableresolver.hpp
 ../../include/eepp/graphics/fontbmfont.hpp
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontfamily.hpp
@@ -555,7 +555,7 @@
 ../../src/eepp/graphics/drawable.cpp
 ../../src/eepp/graphics/drawablegroup.cpp
 ../../src/eepp/graphics/drawableresource.cpp
-../../src/eepp/graphics/drawablesearcher.cpp
+../../src/eepp/ui/drawableresolver.cpp
 ../../src/eepp/graphics/fontbmfont.cpp
 ../../src/eepp/graphics/font.cpp
 ../../src/eepp/graphics/fontfamily.cpp

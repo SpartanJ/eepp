@@ -1,6 +1,7 @@
 #ifndef EE_GRAPHICS_RESOURCESCOPE_HPP
 #define EE_GRAPHICS_RESOURCESCOPE_HPP
 
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
 
 namespace EE { namespace Graphics {
@@ -17,6 +18,8 @@ class EE_API ResourceScope {
 
 	TexturePtr findTexture( const ResourceKey& key ) const;
 	TexturePtr findTexture( const std::string& key ) const;
+	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
+	DrawablePtr findDrawable( const Uint32& id ) const;
 
 	void publishLocal( ResourceKey key, TexturePtr texture );
 	void publishLocal( std::string key, TexturePtr texture );
