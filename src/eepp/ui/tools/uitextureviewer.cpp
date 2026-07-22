@@ -6,6 +6,59 @@
 
 namespace EE { namespace UI { namespace Tools {
 
+namespace {
+
+class UIWeakTexturePreview : public UIImage {
+  public:
+	static UIWeakTexturePreview* New( TextureWeakPtr texture ) {
+		return eeNew( UIWeakTexturePreview, ( std::move( texture ) ) );
+	}
+
+	virtual void draw() {
+		UINode::draw();
+
+		if ( !mVisible || mAlpha == 0.f )
+			return;
+
+		TexturePtr texture = mTexture.lock();
+		if ( !texture )
+			return;
+
+		const Sizef textureSize( texture->getPixelsSize() );
+		if ( textureSize.x <= 0.f || textureSize.y <= 0.f )
+			return;
+
+		const Sizef availableSize( mSize.x - mPaddingPx.Left - mPaddingPx.Right,
+								   mSize.y - mPaddingPx.Top - mPaddingPx.Bottom );
+		Float scale = eemax( 0.f, eemin( 1.f, eemin( availableSize.x / textureSize.x,
+													 availableSize.y / textureSize.y ) ) );
+		Sizef destSize( ( textureSize * scale ).floor() );
+		Vector2f position( std::trunc( mScreenPos.x ) + mPaddingPx.Left,
+						   std::trunc( mScreenPos.y ) + mPaddingPx.Top );
+
+		if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER )
+			position.x += ( availableSize.x - destSize.x ) * 0.5f;
+		else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT )
+			position.x += availableSize.x - destSize.x;
+		if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER )
+			position.y += ( availableSize.y - destSize.y ) * 0.5f;
+		else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM )
+			position.y += availableSize.y - destSize.y;
+
+		const Color previousColor( texture->getColor() );
+		texture->setColor( mColor );
+		texture->draw( position, destSize );
+		texture->setColor( previousColor );
+	}
+
+  protected:
+	explicit UIWeakTexturePreview( TextureWeakPtr texture ) : mTexture( std::move( texture ) ) {}
+
+	TextureWeakPtr mTexture;
+};
+
+} // namespace
+
 UITextureViewer* UITextureViewer::New() {
 	return eeNew( UITextureViewer, () );
 }
@@ -107,11 +160,10 @@ void UITextureViewer::insertTexture( const TextureRegistryRecord& record ) {
 	if ( !texture )
 		return;
 
-	UIImage* img = UIImage::New();
+	UIImage* img = UIWeakTexturePreview::New( record.texture );
 	std::string uid(
 		String::format( "texture-%llu", static_cast<unsigned long long>( record.id.value() ) ) );
-	img->setDrawable( texture )
-		->setScaleType( UIScaleType::FitInside )
+	img->setScaleType( UIScaleType::FitInside )
 		->setClasses( { "texture-preview", uid } )
 		->setTooltipText( getTextureDescription( texture.get() ) )
 		->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )

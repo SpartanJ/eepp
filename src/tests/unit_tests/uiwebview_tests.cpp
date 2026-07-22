@@ -3107,6 +3107,81 @@ UTEST( UIWebView, NewerNavigationSupersedesStartedLoad ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWebView, CacheGenerationAdvancesWhenReplacementDocumentIsInstalled ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Cache Lease Boundary Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto cache = WebResourceCache::New();
+	cache->setTTL( Time::Zero );
+	std::vector<WebResourceCache::FetchCompletion> documentCompletions;
+	cache->setFetcher( [&documentCompletions]( const WebResourceRequest& request,
+											   WebResourceCache::FetchCompletion completion ) {
+		if ( request.kind == WebResourceKind::Document ) {
+			documentCompletions.emplace_back( std::move( completion ) );
+		} else {
+			Http::Response::FieldTable fields;
+			auto status = Http::Response::Status::Ok;
+			completion( Http::Response::createFakeResponse( fields, status, "resource" ) );
+		}
+	} );
+	webView->setWebResourceCache( cache );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; ++i ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	auto completeDocument = [&] {
+		ASSERT_FALSE( documentCompletions.empty() );
+		auto completion = std::move( documentCompletions.front() );
+		documentCompletions.erase( documentCompletions.begin() );
+		Http::Response::FieldTable fields;
+		auto status = Http::Response::Status::Ok;
+		completion(
+			Http::Response::createFakeResponse( fields, status, "<html><body></body></html>" ) );
+		pump( 10 );
+	};
+
+	webView->loadURI( URI( "https://first.example/" ) );
+	EXPECT_EQ( 0u, documentScene->getDocumentGeneration() );
+	completeDocument();
+	EXPECT_EQ( 1u, documentScene->getDocumentGeneration() );
+
+	webView->loadURI( URI( "https://second.example/" ) );
+	EXPECT_EQ( 1u, documentScene->getDocumentGeneration() );
+	WebResourceRequest oldDocumentResource;
+	oldDocumentResource.uri = URI( "https://first.example/late.css" );
+	oldDocumentResource.kind = WebResourceKind::StyleSheet;
+	documentScene->requestWebResource( std::move( oldDocumentResource ), {} );
+	completeDocument();
+	EXPECT_EQ( 2u, documentScene->getDocumentGeneration() );
+
+	pump( 61 );
+	EXPECT_EQ( 0u, cache->getEntryCount() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIWebView, RepeatedRemoteNavigationHandlesSubresourceFanOut ) {
 	constexpr int NavigationCount = 6;
 	constexpr int ImagesPerDocument = 100;

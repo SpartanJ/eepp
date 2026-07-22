@@ -753,8 +753,9 @@ Exit criteria:
 ### Stage 6: WebResourceCache and document leases
 
 Status: complete, 2026-07-21. Each UISceneNode now owns a WebResourceCache document session with
-an explicit cache partition and navigation generation. UIWebView advances that session at the
-existing navigation boundary. Document, stylesheet, remote font, image, and CSS background image
+an explicit cache partition and navigation generation. UIWebView advances that session when the
+replacement document is installed, after the previous document has been detached. Document,
+stylesheet, remote font, image, and CSS background image
 requests share canonical fragment-free keys that include the partition, request method/body and
 headers, resource kind, and image decode options.
 

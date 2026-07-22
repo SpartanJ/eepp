@@ -296,8 +296,6 @@ void UIWebView::loadURI( URI uri, const std::string& method, const std::string& 
 void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 						 const std::string& body, const Http::Request::FieldTable& headers ) {
 	Uint64 generation = beginNavigationLoad();
-	if ( mDocumentScene )
-		mDocumentScene->beginDocumentNavigation( uri );
 	mIsLoading = true;
 
 	if ( !isHistoryNav )
@@ -415,6 +413,10 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 		self->getHorizontalScrollBar()->setValue( 0 );
 		static_cast<UIWebViewDocumentContainer*>( self->mDocContainer )->clearDocumentChildren();
 		ui->invalidateAsyncResourceLoads();
+		// The previous document remains active while its replacement is downloading. Advance the
+		// cache generation only now, after that document has been detached, so late updates from
+		// the visible document cannot lease resources as if they belonged to its replacement.
+		ui->beginDocumentNavigation( url );
 		ui->clearFontFaces();
 		ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
 		ui->setURIFromURL( url );
