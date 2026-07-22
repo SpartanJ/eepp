@@ -145,9 +145,6 @@ class EE_API UINodeDrawable : public Drawable {
 		Origin mOrigin{ Origin::PaddingBox };
 		Clip mClip{ Clip::BorderBox };
 		Attachment mAttachment{ Attachment::Scroll };
-		std::shared_ptr<std::atomic<bool>> mAsyncDrawableAlive;
-		Uint64 mRemoteDrawableLoadId{ 0 };
-
 		virtual void onPositionChange();
 
 		virtual void onColorFilterChange();

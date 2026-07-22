@@ -418,9 +418,6 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable* container ) :
 	mAttachment( Attachment::Scroll ) {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
-	if ( mAsyncDrawableAlive )
-		mAsyncDrawableAlive->store( false, std::memory_order_release );
-
 	mResourceChangeConnection.disconnect();
 }
 
@@ -677,65 +674,34 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 		return true;
 
 	std::string url = uri.toString();
-	ResourceScopePtr resourceScope = scene->getResourceScope();
-	if ( TexturePtr texture = resourceScope->findTexture( url ) ) {
-		TextureDrawable* textureDrawable =
+	if ( TexturePtr texture = scene->getResourceScope()->findTexture( url ) ) {
+		TextureDrawable* current =
 			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
 				? static_cast<TextureDrawable*>( mDrawable.get() )
 				: nullptr;
-		if ( !textureDrawable || textureDrawable->getTexture() != texture ) {
-			++mRemoteDrawableLoadId;
+		if ( !current || current->getTexture() != texture )
 			setDrawable( std::move( texture ) );
-		}
 		return true;
 	}
-
-	auto resourceState = scene->getAsyncResourceLoadState();
-	Uint64 resourceGeneration =
-		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
-	Uint64 loadId = ++mRemoteDrawableLoadId;
-	if ( !mAsyncDrawableAlive )
-		mAsyncDrawableAlive = std::make_shared<std::atomic<bool>>( true );
-	auto alive = mAsyncDrawableAlive;
-	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
-		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
-	if ( texture ) {
-		resourceScope->publishLocal( url, texture );
-		setDrawable( texture );
-	}
-
-	Http::Request::FieldTable headers;
-	if ( !scene->getReferer().empty() )
-		headers["referer"] = scene->getReferer().toString();
-	Http::getAsync(
-		[resourceState, resourceGeneration, alive, loadId, texture, url = std::move( url ),
-		 this]( const Http&, Http::Request&, Http::Response& response ) {
-			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) ||
-				 !alive || !alive->load( std::memory_order_acquire ) || texture == nullptr )
-				return;
-
-			if ( response.isOK() && !response.getBody().empty() ) {
-				std::string imageData( response.getBody() );
-				UISceneNode::runAsyncResourceOnMainThread(
-					resourceState, resourceGeneration,
-					[alive, loadId, texture, imageData = std::move( imageData ),
-					 this]( UISceneNode* ) mutable {
-						if ( !alive || !alive->load( std::memory_order_acquire ) ||
-							 loadId != mRemoteDrawableLoadId )
-							return;
-
-						Image image( reinterpret_cast<const Uint8*>( imageData.data() ),
-									 imageData.size() );
-						if ( image.getPixels() != nullptr )
-							texture->replace( &image );
-					} );
-			} else {
+	WebResourceRequest request;
+	request.uri = uri;
+	request.kind = WebResourceKind::Image;
+	request.proxy = Http::getEnvProxyURI();
+	TexturePtr texture = scene->requestWebTexture(
+		std::move( request ), [url = std::move( url )]( const WebResourceResult& result ) {
+			if ( !result.success )
 				Log::debug( "UINodeDrawable::LayerDrawable::loadRemoteDrawable: could not "
 							"download image: %s. Error: %d\n%s",
-							url, response.getStatus(), response.getBody() );
-			}
-		},
-		uri, Seconds( 5 ), {}, headers, "", true, Http::getEnvProxyURI() );
+							url, result.status, result.error );
+		} );
+	if ( texture ) {
+		TextureDrawable* current =
+			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
+				? static_cast<TextureDrawable*>( mDrawable.get() )
+				: nullptr;
+		if ( !current || current->getTexture() != texture )
+			setDrawable( std::move( texture ) );
+	}
 
 	return true;
 }

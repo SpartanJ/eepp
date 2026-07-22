@@ -103,7 +103,21 @@ DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearch
 		drawable = texture ? texture->clone() : DrawablePtr{};
 	} else if ( String::startsWith( name, "http://" ) || String::startsWith( name, "https://" ) ) {
 		TexturePtr texture = resourceScope.findTexture( name );
-		if ( !texture && Engine::instance()->isSharedGLContextEnabled() ) {
+		if ( mSceneNode && Engine::instance()->isSharedGLContextEnabled() ) {
+			if ( !texture ) {
+				WebResourceRequest request;
+				request.uri = URI( name );
+				request.kind = WebResourceKind::Image;
+				texture = mSceneNode->requestWebTexture(
+					std::move( request ), [name]( const WebResourceResult& result ) {
+						if ( !result.success )
+							Log::debug( "DrawableResolver::resolve: could not download image: %s. "
+										"Error: %d\n%s",
+										name, result.status, result.error );
+					} );
+			}
+		}
+		if ( !mSceneNode && !texture && Engine::instance()->isSharedGLContextEnabled() ) {
 			texture = TextureFactory::instance()->createEmptyTexture(
 				1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false,
 				name );

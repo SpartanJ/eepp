@@ -266,6 +266,12 @@ void UIWebView::scheduledUpdate( const Time& time ) {
 	if ( mDocumentScene ) {
 		mDocumentScene->update( time );
 		updateDocumentMetricsIfNeeded();
+		mWebResourceCachePruneElapsed += time;
+		if ( mWebResourceCachePruneElapsed >= Seconds( 1 ) ) {
+			mWebResourceCachePruneElapsed = Time::Zero;
+			if ( const auto& cache = mDocumentScene->getWebResourceCache() )
+				cache->prune();
+		}
 	}
 }
 
@@ -290,6 +296,8 @@ void UIWebView::loadURI( URI uri, const std::string& method, const std::string& 
 void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 						 const std::string& body, const Http::Request::FieldTable& headers ) {
 	Uint64 generation = beginNavigationLoad();
+	if ( mDocumentScene )
+		mDocumentScene->beginDocumentNavigation( uri );
 	mIsLoading = true;
 
 	if ( !isHistoryNav )
@@ -348,61 +356,32 @@ void UIWebView::loadDocumentAsync( const URI& url, const std::string& method,
 	}
 
 	auto reqHeaders = headers;
-	auto& cookieManager = ui->getCookieManager();
-	if ( cookieManager.hasCookie( url.getAuthority() ) ) {
-		std::string cookieHeader = cookieManager.getCookieHeader( url.getAuthority() );
-		if ( !cookieHeader.empty() )
-			reqHeaders["Cookie"] = cookieHeader;
-	}
-
 	if ( !mUserAgent.empty() )
 		reqHeaders["User-Agent"] = mUserAgent;
 
-	Http::AsyncResponseCallback responseCb =
-		[loadState, generation, url]( const Http&, Http::Request&, Http::Response& response ) {
+	WebResourceRequest request;
+	request.uri = url;
+	request.kind = WebResourceKind::Document;
+	request.method = method == "POST" ? Http::Request::Method::Post : Http::Request::Method::Get;
+	request.headers = std::move( reqHeaders );
+	request.body = body;
+	request.timeout = mDefaultTimeout;
+	ui->requestWebResource(
+		std::move( request ), [loadState, generation, url]( const WebResourceResult& result ) {
 			UIWebView* self = resolveNavigationLoad( loadState, generation );
 			if ( !self )
 				return;
-			auto ui = self->getDocumentSceneNode();
-			if ( !ui )
-				return;
-			if ( response.isOK() ) {
-				std::string data = response.getBody();
-				if ( response.hasField( "set-cookie" ) ) {
-					ui->getCookieManager().storeCookiesFromHeader(
-						url.getAuthority(), response.getField( "set-cookie" ) );
-				}
+			if ( result.success && result.data ) {
+				std::string data( *result.data );
 				self->loadDocumentData( url, std::move( data ), generation );
 			} else {
 				if ( !self->isNavigationLoadCurrent( generation ) )
 					return;
 				self->mIsLoading = false;
-				NavigationEvent ev( self, Event::OnNavigationError, url, false,
-									response.getStatusDescription() );
+				NavigationEvent ev( self, Event::OnNavigationError, url, false, result.error );
 				self->sendEvent( &ev );
 			}
-		};
-
-	Http::Request::ProgressCallback progressCb =
-		[loadState, generation,
-		 url]( const Http&, const Http::Request&, const Http::Response& response,
-			   const Http::Request::Status& status, std::size_t, std::size_t ) {
-			UIWebView* self = resolveNavigationLoad( loadState, generation );
-			if ( !self )
-				return false;
-			auto ui = self->getDocumentSceneNode();
-			if ( !ui )
-				return false;
-			if ( status == Http::Request::Status::Redirect && response.hasField( "set-cookie" ) ) {
-				ui->getCookieManager().storeCookiesFromHeader( url.getAuthority(),
-															   response.getField( "set-cookie" ) );
-			}
-			return true;
-		};
-
-	Http::requestAsync( responseCb, url, mDefaultTimeout,
-						method == "POST" ? Http::Request::Method::Post : Http::Request::Method::Get,
-						progressCb, reqHeaders, body, true, {} );
+		} );
 }
 
 void UIWebView::loadDocumentData( URI url, std::string data ) {
@@ -544,6 +523,16 @@ UIWidget* UIWebView::getDocumentContainer() const {
 
 UISceneNode* UIWebView::getDocumentSceneNode() const {
 	return mDocumentScene;
+}
+
+const WebResourceCachePtr& UIWebView::getWebResourceCache() const {
+	return mDocumentScene->getWebResourceCache();
+}
+
+UIWebView* UIWebView::setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition ) {
+	if ( mDocumentScene )
+		mDocumentScene->setWebResourceCache( std::move( cache ), partition );
+	return this;
 }
 
 bool UIWebView::updateDocumentViewportMetrics() {

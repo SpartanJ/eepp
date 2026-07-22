@@ -1,6 +1,6 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0 through Stage 5 complete, 2026-07-21.
+Status: active implementation baseline; Stage 0 through Stage 6 complete, 2026-07-21.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -752,6 +752,28 @@ Exit criteria:
 
 ### Stage 6: WebResourceCache and document leases
 
+Status: complete, 2026-07-21. Each UISceneNode now owns a WebResourceCache document session with
+an explicit cache partition and navigation generation. UIWebView advances that session at the
+existing navigation boundary. Document, stylesheet, remote font, image, and CSS background image
+requests share canonical fragment-free keys that include the partition, request method/body and
+headers, resource kind, and image decode options.
+
+Concurrent requests coalesce into one fetch and one image decode/upload. Subscribers retain their
+own document generation, so navigation or destruction removes stale delivery without cancelling a
+request needed by another session. Applications can install one cache and explicit partition into
+multiple WebViews to share eligible public resources; distinct partitions and content-affecting
+headers remain isolated. Scene ResourceScope entries remain an explicit override but fetched Web
+resources are retained only by consumers, document leases, and the cache.
+
+Completed entries use monotonic TTL and LRU timestamps plus a configurable byte budget. Active
+document leases are not evicted; the TTL starts when the final document lease is released, allowing
+Back/Forward navigation to reuse resources regardless of how long the previous document remained
+open. Navigation releases only that session's previous leases, and UIWebView performs throttled
+cache maintenance so expired unleased entries are collected even when no new requests complete. Failed loads
+retry, redirect/final cookies are delivered only to current subscribers, and image upload is
+dispatched through the scene's guarded main-thread resource queue. Common lease lists use inline
+small vectors, and completed entries release starter request bodies, headers, and dispatchers.
+
 Implement cache partitions, canonical keys/origins, per-document sessions and leases, in-flight
 coalescing, per-subscriber generation guards, retries, TTL/LRU, and byte budgets. Integrate WebView
 navigation at its existing document replacement boundary.
@@ -837,8 +859,6 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 2 is complete with the repository-wide TexturePtr API and holder migration while temporary
-factory retention preserves existing global lookup behavior. The next coding deliverable is Stage
-3: introduce catalogs and Graphics scopes, migrate semantic name lookup out of TextureFactory, move
-intentional persistence into catalogs/caches, and then remove the factory's temporary strong
-retention.
+Stage 7 migrates the remaining ResourceManager families one at a time: fonts and font caches,
+themes/icons, shaders/programs, nine-patches, atlases, and any remaining raw-owning manager. The
+raw-owning ResourceManager template is removed only after its final consumer is migrated.

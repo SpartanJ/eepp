@@ -57,6 +57,7 @@
 ../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/drawableresource.hpp
 ../../include/eepp/ui/drawableresolver.hpp
+../../include/eepp/ui/webresourcecache.hpp
 ../../include/eepp/graphics/fontbmfont.hpp
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontmanager.hpp
@@ -539,6 +540,7 @@
 ../../src/eepp/graphics/drawablegroup.cpp
 ../../src/eepp/graphics/drawableresource.cpp
 ../../src/eepp/ui/drawableresolver.cpp
+../../src/eepp/ui/webresourcecache.cpp
 ../../src/eepp/graphics/fontbmfont.cpp
 ../../src/eepp/graphics/font.cpp
 ../../src/eepp/graphics/fontmanager.cpp

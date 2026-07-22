@@ -7,6 +7,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/webresourcecache.hpp>
 
 #include <functional>
 #include <memory>
@@ -72,6 +73,10 @@ class EE_API UIWebView : public UIScrollView {
 
 	UISceneNode* getDocumentSceneNode() const;
 
+	const WebResourceCachePtr& getWebResourceCache() const;
+
+	UIWebView* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
 	void setStyleSheetDefaultMarker( Uint32 marker );
 
 	void setUserAgent( const std::string& userAgent );
@@ -117,6 +122,7 @@ class EE_API UIWebView : public UIScrollView {
 	Uint64 mNavigationGeneration{ 0 };
 	std::string mUserAgent;
 	Time mDefaultTimeout{ Seconds( 30 ) };
+	Time mWebResourceCachePruneElapsed;
 	Uint32 mStyleSheetDefaultMarker{ 0 };
 
 	void loadURI( URI uri, bool isHistoryNav );

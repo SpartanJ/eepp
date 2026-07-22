@@ -13,6 +13,7 @@
 #include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
+#include <eepp/ui/webresourcecache.hpp>
 
 #include <atomic>
 #include <functional>
@@ -850,6 +851,21 @@ class EE_API UISceneNode : public SceneNode {
 
 	Network::CookieManager& getCookieManager() { return mCookieManager; }
 
+	const WebResourceCachePtr& getWebResourceCache() const { return mWebResourceCache; }
+
+	UISceneNode* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
+	DocumentSessionId getDocumentSessionId() const { return mDocumentSessionId; }
+
+	Uint64 beginDocumentNavigation( const URI& uri );
+
+	Uint64 getDocumentGeneration() const;
+
+	void requestWebResource( WebResourceRequest request, WebResourceCache::Callback callback );
+
+	Graphics::TexturePtr requestWebTexture( WebResourceRequest request,
+											WebResourceCache::Callback callback = {} );
+
 	void invalidateAsyncResourceLoads();
 
 	virtual void invalidate( Node* invalidator );
@@ -918,6 +934,8 @@ class EE_API UISceneNode : public SceneNode {
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
 	Graphics::ResourceScopePtr mResourceScope;
 	DrawableResolver mDrawableResolver;
+	WebResourceCachePtr mWebResourceCache;
+	DocumentSessionId mDocumentSessionId{ 0 };
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;

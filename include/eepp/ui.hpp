@@ -180,6 +180,7 @@
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/undostack.hpp>
+#include <eepp/ui/webresourcecache.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
 #endif
