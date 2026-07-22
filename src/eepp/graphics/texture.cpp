@@ -18,7 +18,7 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-DrawablePtr Texture::createInstance() const {
+DrawablePtr Texture::clone() const {
 	TexturePtr texture = TextureFactory::instance()->getTexture( getTextureId() );
 	if ( !texture )
 		return {};

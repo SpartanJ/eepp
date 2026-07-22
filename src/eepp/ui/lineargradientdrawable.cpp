@@ -18,7 +18,7 @@ LinearGradientDrawable* LinearGradientDrawable::NewRepeating() {
 LinearGradientDrawable::LinearGradientDrawable( Graphics::Drawable::Type drawableType ) :
 	Drawable( drawableType ) {}
 
-DrawablePtr LinearGradientDrawable::createInstance() const {
+DrawablePtr LinearGradientDrawable::clone() const {
 	auto instance = makeResource<LinearGradientDrawable>( mDrawableType );
 	instance->mColorStops = mColorStops;
 	instance->mAngle = mAngle;

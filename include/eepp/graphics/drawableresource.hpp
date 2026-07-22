@@ -2,6 +2,7 @@
 #define EE_GRAPHICS_DRAWABLERESOURCE_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <memory>
 
@@ -12,7 +13,7 @@ class DrawableResource;
 struct DrawableResourceCallbackState {
 	using Callback = std::function<void( DrawableResource& )>;
 	Uint32 nextId{ 0 };
-	UnorderedMap<Uint32, Callback> callbacks;
+	SmallVector<std::pair<Uint32, Callback>, 2> callbacks;
 };
 
 class EE_API DrawableResourceConnection {

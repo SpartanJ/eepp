@@ -36,7 +36,7 @@ const DrawablePtr& UIIcon::getSource( const int& size ) const {
 
 DrawablePtr UIIcon::createDrawable( const int& size ) const {
 	const DrawablePtr& source = getSource( size );
-	return source ? source->createInstance() : DrawablePtr{};
+	return source ? source->clone() : DrawablePtr{};
 }
 
 void UIIcon::setSource( const int& size, DrawablePtr drawable ) {
@@ -57,7 +57,7 @@ const DrawablePtr& UIGlyphIcon::getSource( const int& size ) const {
 	GlyphDrawable* drawable = mFont->getGlyphDrawable( mCodePoint, size );
 	if ( !drawable )
 		return empty;
-	const_cast<UIGlyphIcon*>( this )->setSource( size, drawable->createInstance() );
+	const_cast<UIGlyphIcon*>( this )->setSource( size, drawable->clone() );
 	return UIIcon::getSource( size );
 }
 

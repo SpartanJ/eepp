@@ -29,7 +29,7 @@ RectangleDrawable::RectangleDrawable( const Vector2f& position, const Sizef& siz
 	mPosition = position;
 }
 
-DrawablePtr RectangleDrawable::createInstance() const {
+DrawablePtr RectangleDrawable::clone() const {
 	auto instance = makeResource<RectangleDrawable>( mPosition, mSize );
 	instance->mRotation = mRotation;
 	instance->mScale = mScale;

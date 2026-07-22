@@ -187,8 +187,6 @@ class AutoCompletePlugin : public Plugin {
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
-	UnorderedMap<int, DrawablePtr> mSuggestionIconDrawables;
-	int mSuggestionIconDrawableSize{ 0 };
 
 	struct SnippetTabStopOccurrence {
 		TextRange range;

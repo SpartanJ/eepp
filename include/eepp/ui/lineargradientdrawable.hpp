@@ -50,7 +50,7 @@ class EE_API LinearGradientDrawable : public Graphics::Drawable {
 
 	virtual bool isStateful() { return false; }
 
-	Graphics::DrawablePtr createInstance() const;
+	Graphics::DrawablePtr clone() const;
 
 	const std::vector<ColorStop>& getColorStops() const;
 

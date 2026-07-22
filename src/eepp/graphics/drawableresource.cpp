@@ -1,5 +1,7 @@
 #include <eepp/graphics/drawableresource.hpp>
 
+#include <algorithm>
+
 namespace EE { namespace Graphics {
 
 DrawableResourceConnection::DrawableResourceConnection(
@@ -29,8 +31,13 @@ DrawableResourceConnection::operator=( DrawableResourceConnection&& other ) noex
 
 void DrawableResourceConnection::disconnect() {
 	if ( mId != 0 ) {
-		if ( auto state = mState.lock() )
-			state->callbacks.erase( mId );
+		if ( auto state = mState.lock() ) {
+			auto callback =
+				std::find_if( state->callbacks.begin(), state->callbacks.end(),
+							  [this]( const auto& callback ) { return callback.first == mId; } );
+			if ( callback != state->callbacks.end() )
+				state->callbacks.erase( callback );
+		}
 	}
 	mState.reset();
 	mId = 0;
@@ -40,17 +47,12 @@ DrawableResourceConnection::operator bool() const {
 	return mId != 0 && !mState.expired();
 }
 
-DrawableResource::DrawableResource( Type drawableType ) :
-	Drawable( drawableType ),
-	mId( 0 ),
-	mCallbackState( std::make_shared<DrawableResourceCallbackState>() ) {
+DrawableResource::DrawableResource( Type drawableType ) : Drawable( drawableType ), mId( 0 ) {
 	createUnnamed();
 }
 
 DrawableResource::DrawableResource( Type drawableType, const std::string& name ) :
-	Drawable( drawableType ),
-	mId( 0 ),
-	mCallbackState( std::make_shared<DrawableResourceCallbackState>() ) {
+	Drawable( drawableType ), mId( 0 ) {
 	setName( name );
 }
 
@@ -83,8 +85,10 @@ void DrawableResource::onResourceChange() {
 }
 
 void DrawableResource::sendResourceChanged() {
-	std::vector<OnResourceChangeCallback> callbacks;
-	callbacks.reserve( mCallbackState->callbacks.size() );
+	if ( !mCallbackState )
+		return;
+
+	SmallVector<OnResourceChangeCallback, 4> callbacks;
 	for ( const auto& callback : mCallbackState->callbacks )
 		callbacks.emplace_back( callback.second );
 	for ( const auto& callback : callbacks )
@@ -93,8 +97,11 @@ void DrawableResource::sendResourceChanged() {
 
 DrawableResourceConnection
 DrawableResource::connectResourceChange( OnResourceChangeCallback callback ) {
+	if ( !mCallbackState )
+		mCallbackState = std::make_shared<DrawableResourceCallbackState>();
+
 	Uint32 id = ++mCallbackState->nextId;
-	mCallbackState->callbacks.emplace( id, std::move( callback ) );
+	mCallbackState->callbacks.emplace_back( id, std::move( callback ) );
 	return DrawableResourceConnection( mCallbackState, id );
 }
 

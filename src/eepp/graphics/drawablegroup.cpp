@@ -15,7 +15,7 @@ DrawableGroup::~DrawableGroup() {
 	clearDrawables();
 }
 
-DrawablePtr DrawableGroup::createInstance() const {
+DrawablePtr DrawableGroup::clone() const {
 	auto instance = makeResource<DrawableGroup>();
 	instance->mPosition = mPosition;
 	instance->mColor = mColor;
@@ -25,7 +25,7 @@ DrawablePtr DrawableGroup::createInstance() const {
 	for ( const auto& drawable : mGroup ) {
 		if ( !drawable )
 			continue;
-		DrawablePtr drawableInstance = drawable->createInstance();
+		DrawablePtr drawableInstance = drawable->clone();
 		if ( !drawableInstance )
 			return {};
 		instance->addDrawable( std::move( drawableInstance ) );

@@ -28,7 +28,7 @@ class EE_API TriangleDrawable : public PrimitiveDrawable {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	void setSize( const Sizef& size );
 

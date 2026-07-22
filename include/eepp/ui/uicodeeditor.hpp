@@ -997,8 +997,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Text mLineTextCache;
 	size_t mJumpLinesLength{ 5 };
 	UIIcon* mFileLockIcon{ nullptr };
-	DrawablePtr mFileLockDrawable;
-	int mFileLockDrawableSize{ 0 };
 	std::string mFileLockIconName{ "file-lock-fill" };
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
 	DrawablePtr mFoldDrawable;

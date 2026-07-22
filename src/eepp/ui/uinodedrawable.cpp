@@ -415,8 +415,7 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable* container ) :
 	mAttachmentEq( "scroll" ),
 	mOrigin( Origin::PaddingBox ),
 	mClip( Clip::BorderBox ),
-	mAttachment( Attachment::Scroll ),
-	mAsyncDrawableAlive( std::make_shared<std::atomic<bool>>( true ) ) {}
+	mAttachment( Attachment::Scroll ) {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
 	if ( mAsyncDrawableAlive )
@@ -695,6 +694,8 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	Uint64 loadId = ++mRemoteDrawableLoadId;
+	if ( !mAsyncDrawableAlive )
+		mAsyncDrawableAlive = std::make_shared<std::atomic<bool>>( true );
 	auto alive = mAsyncDrawableAlive;
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );

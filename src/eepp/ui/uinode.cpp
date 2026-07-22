@@ -1253,7 +1253,7 @@ UINode* UINode::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 
 UINode* UINode::setSkin( const UISkin& Skin ) {
 	removeSkin();
-	mSkinState = UISkinState::New( Skin.clone() );
+	mSkinState = UISkinState::New( Skin.cloneSkin() );
 
 	onThemeLoaded();
 
@@ -1273,7 +1273,7 @@ UINode* UINode::setSkin( UISkin* skin ) {
 
 		removeSkin();
 
-		mSkinState = UISkinState::New( skin->clone() );
+		mSkinState = UISkinState::New( skin->cloneSkin() );
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();

@@ -271,42 +271,8 @@ LSPClientPlugin::~LSPClientPlugin() {
 	}
 }
 
-void LSPClientPlugin::update( UICodeEditor* editor ) {
+void LSPClientPlugin::update( UICodeEditor* ) {
 	mClientManager.updateDirty();
-
-	if ( !mBreadcrumb )
-		return;
-	Font* font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
-	if ( !font )
-		return;
-
-	const Float fontSize = getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
-	const int separatorSize =
-		PixelDensity::dpToPxI( font->getLineSpacing( fontSize ) * 0.5f );
-	if ( mDrawSepIcon == nullptr )
-		mDrawSepIcon = getUISceneNode()->findIcon( "chevron-right" );
-	if ( mDrawSepIcon &&
-		 ( mDrawSepDrawable == nullptr || mDrawSepDrawableSize != separatorSize ) ) {
-		mDrawSepDrawable = mDrawSepIcon->createDrawable( separatorSize );
-		mDrawSepDrawableSize = separatorSize;
-	}
-
-	const int symbolIconSize = (int)fontSize;
-	if ( mBreadcrumbIconDrawableSize != symbolIconSize ) {
-		mBreadcrumbIconDrawables.clear();
-		mBreadcrumbIconDrawableSize = symbolIconSize;
-	}
-	Lock l( mDocCurrentSymbolsMutex );
-	auto symbolsIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
-	if ( symbolsIt == mDocCurrentSymbols.end() )
-		return;
-	for ( const auto& symbol : symbolsIt->second ) {
-		if ( mBreadcrumbIconDrawables.find( symbol.icon ) != mBreadcrumbIconDrawables.end() )
-			continue;
-		UIIcon* icon = getUISceneNode()->findIcon( symbol.icon );
-		if ( icon )
-			mBreadcrumbIconDrawables[symbol.icon] = icon->createDrawable( symbolIconSize );
-	}
 }
 
 struct LSPPositionAndServer {
@@ -1998,28 +1964,34 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	pos.x += drawn.getWidth();
 	Float textHeight = drawn.getHeight();
+	if ( mDrawSepIcon == nullptr )
+		mDrawSepIcon = getUISceneNode()->findIcon( "chevron-right" );
+	Drawable* separatorDrawable =
+		mDrawSepIcon
+			? mDrawSepIcon->getSource( PixelDensity::dpToPxI( drawn.getHeight() * 0.5f ) ).get()
+			: nullptr;
 
 	const auto& symbolsInfo = symbolsInfoIt->second;
 
 	for ( const auto& info : symbolsInfo ) {
-		if ( mDrawSepDrawable ) {
+		if ( separatorDrawable ) {
 			pos.x += eefloor( PixelDensity::dpToPx( 8 ) );
-			Color c = mDrawSepDrawable->getColor();
-			mDrawSepDrawable->setColor( textColor );
-			Float iconHeight = mDrawSepDrawable->getPixelsSize().getHeight();
+			Color c = separatorDrawable->getColor();
+			separatorDrawable->setColor( textColor );
+			Float iconHeight = separatorDrawable->getPixelsSize().getHeight();
 			Vector2f iconPos( { pos.x, screenStart.y + textOffsetY +
 										   eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
-			mDrawSepDrawable->draw( iconPos );
+			separatorDrawable->draw( iconPos );
 			pos.x +=
-				mDrawSepDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
-			mDrawSepDrawable->setColor( c );
+				separatorDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
+			separatorDrawable->setColor( c );
 		} else {
 			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );
 		}
 
-		auto iconIt = mBreadcrumbIconDrawables.find( info.icon );
-		if ( iconIt != mBreadcrumbIconDrawables.end() && iconIt->second ) {
-			DrawablePtr& iconDrawable = iconIt->second;
+		UIIcon* icon = getUISceneNode()->findIcon( info.icon );
+		Drawable* iconDrawable = icon ? icon->getSource( (int)fontSize ).get() : nullptr;
+		if ( iconDrawable ) {
 			Color c = iconDrawable->getColor();
 			iconDrawable->setColor( textColor );
 			Float iconHeight = iconDrawable->getPixelsSize().getHeight();

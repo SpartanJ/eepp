@@ -31,7 +31,7 @@ ArcDrawable::ArcDrawable( const Float& radius, Uint32 segmentsCount, const Float
 	mSegmentsCount = mSegmentsCount > 360 ? 360 : mSegmentsCount;
 }
 
-DrawablePtr ArcDrawable::createInstance() const {
+DrawablePtr ArcDrawable::clone() const {
 	auto instance = makeResource<ArcDrawable>( mRadius, mSegmentsCount, mArcAngle, mArcStartAngle );
 	instance->mOffset = mOffset;
 	instance->mFillMode = mFillMode;

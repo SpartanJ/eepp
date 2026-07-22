@@ -20,14 +20,14 @@ void StateListDrawable::clearDrawables() {
 	mDrawables.clear();
 }
 
-DrawablePtr StateListDrawable::createInstance() const {
+DrawablePtr StateListDrawable::clone() const {
 	auto instance = ResourcePtr<StateListDrawable>( eeNew( StateListDrawable, ( mName ) ),
 													ResourceDeleter<StateListDrawable>() );
 	instance->setColor( mColor );
 	instance->setPosition( mPosition );
 	for ( const auto& state : mDrawables ) {
 		if ( state.second ) {
-			DrawablePtr drawable = state.second->createInstance();
+			DrawablePtr drawable = state.second->clone();
 			if ( !drawable )
 				return {};
 			instance->setStateDrawable( state.first, std::move( drawable ) );

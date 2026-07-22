@@ -41,7 +41,7 @@ bool TextureDrawable::isStateful() {
 	return false;
 }
 
-DrawablePtr TextureDrawable::createInstance() const {
+DrawablePtr TextureDrawable::clone() const {
 	TextureDrawablePtr instance = New( mTexture );
 	instance->setColor( mColor );
 	instance->setPosition( mPosition );

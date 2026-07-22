@@ -26,7 +26,7 @@ class EE_API DrawableGroup : public Drawable {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	void clearDrawables();
 

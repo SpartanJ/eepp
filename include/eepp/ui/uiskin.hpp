@@ -20,9 +20,9 @@ class EE_API UISkin : public StateListDrawable {
 
 	virtual Sizef getPixelsSize();
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
-	ResourcePtr<UISkin> clone() const;
+	ResourcePtr<UISkin> cloneSkin() const;
 
 	ResourcePtr<UISkin> clone( const std::string& newName ) const;
 

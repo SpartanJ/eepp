@@ -966,7 +966,7 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 		Drawable* drawable = font->getGlyphDrawable(
 			codePoint, node->convertLength( params[1], size.getWidth() ) );
-		return drawable ? drawable->createInstance() : DrawablePtr{};
+		return drawable ? drawable->clone() : DrawablePtr{};
 	};
 }
 

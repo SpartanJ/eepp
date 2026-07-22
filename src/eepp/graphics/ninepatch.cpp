@@ -65,14 +65,14 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 
 NinePatch::~NinePatch() {}
 
-DrawablePtr NinePatch::createInstance() const {
+DrawablePtr NinePatch::clone() const {
 	if ( !mDrawable[Center] )
 		return {};
 	auto instance = makeResource<NinePatch>( mDrawable[Center]->getTexture(), mRect.Left, mRect.Top,
 											 mRect.Right, mRect.Bottom, mPixelDensity, mName );
 	for ( int i = 0; i < SideCount; ++i ) {
 		instance->mDrawable[i] =
-			mDrawable[i] ? std::static_pointer_cast<TextureRegion>( mDrawable[i]->createInstance() )
+			mDrawable[i] ? std::static_pointer_cast<TextureRegion>( mDrawable[i]->clone() )
 						 : TextureRegionPtr{};
 		if ( mDrawable[i] && !instance->mDrawable[i] )
 			return {};

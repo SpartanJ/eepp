@@ -20,7 +20,7 @@ TextureRegion* ScrollParallax::getTextureRegion() const {
 
 void ScrollParallax::setTextureRegion( TextureRegion* textureRegion ) {
 	mTextureRegion =
-		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->createInstance() )
+		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->clone() )
 					  : TextureRegionPtr{};
 
 	setTextureRegion();
@@ -46,7 +46,7 @@ bool ScrollParallax::create( TextureRegion* textureRegion, const Vector2f& Posit
 							 const Sizef& Size, const Vector2f& Speed, const Color& Color,
 							 const BlendMode& Blend ) {
 	mTextureRegion =
-		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->createInstance() )
+		textureRegion ? std::static_pointer_cast<TextureRegion>( textureRegion->clone() )
 					  : TextureRegionPtr{};
 	mPos = Position;
 	mSize = Size;

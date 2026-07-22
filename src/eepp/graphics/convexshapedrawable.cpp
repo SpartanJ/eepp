@@ -9,7 +9,7 @@ ConvexShapeDrawable* ConvexShapeDrawable::New() {
 
 ConvexShapeDrawable::ConvexShapeDrawable() : PrimitiveDrawable( Drawable::CONVEXSHAPE ) {}
 
-DrawablePtr ConvexShapeDrawable::createInstance() const {
+DrawablePtr ConvexShapeDrawable::clone() const {
 	auto instance = makeResource<ConvexShapeDrawable>();
 	instance->mPolygon = mPolygon;
 	instance->mIndexColor = mIndexColor;

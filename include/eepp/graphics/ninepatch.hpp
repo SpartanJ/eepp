@@ -51,7 +51,7 @@ class EE_API NinePatch : public DrawableResource {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	TextureRegion* getTextureRegion( const int& side );
 

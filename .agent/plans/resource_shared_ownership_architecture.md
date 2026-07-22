@@ -350,14 +350,14 @@ Resource resolution caches immutable source data. UI consumers own per-consumer 
 ```cpp
 using DrawablePtr = ResourcePtr<Drawable>;
 
-DrawablePtr Drawable::createInstance() const;
+DrawablePtr Drawable::clone() const;
 DrawablePtr DrawableResolver::createDrawable( const DrawableRequest& request );
 ```
 
 Stage 4 established this contract without introducing a parallel `DrawableSource` class hierarchy.
 Existing drawable resource types serve as source prototypes while retained by an atlas, theme,
 icon, catalog, or resolver. A prototype is never handed directly to an unrelated consumer:
-`createInstance()` returns independently mutable presentation state while sharing underlying
+`clone()` returns independently mutable presentation state while sharing underlying
 texture/resource handles. This is simpler than duplicating every drawable type into source and
 instance classes and remains compatible with introducing immutable source-only types later when a
 concrete resource requires one.
@@ -387,18 +387,21 @@ const DrawablePtr& UIIcon::getSource( int size ) const;
 DrawablePtr UIIcon::createDrawable( int size ) const;
 ```
 
-`getSource()` supports lookup and measurement without cloning an existing prototype. Glyph and SVG
-icons may materialize and cache a missing size source once. `createDrawable()` is the explicit
-consumer-instance boundary. Callers retain its result for as long as they render that icon.
+`getSource()` supports lookup, measurement, and immediate rendering without cloning an existing
+prototype. Glyph and SVG icons may materialize and cache a missing size source once.
+`createDrawable()` is the explicit consumer-instance boundary for callers that retain the drawable
+or need persistent independent state.
 
-The migration will remove draw-time mutation of shared child/source objects. Rendering APIs may use
-external draw parameters where that simplifies an implementation, but no shared source can be
-temporarily recolored, resized, repositioned, or advanced by a consumer.
+Immediate, single-threaded render paths may borrow an icon source and temporarily change
+presentation state when they restore every changed value before returning and never retain the raw
+pointer. Retained widget, menu, model, animated, or otherwise independently stateful consumers must
+create and own an instance. Shared child mutation remains forbidden where drawing can be reentrant
+or where the complete state cannot be restored locally.
 
-No rendering callback may call `createInstance()`, `UIIcon::createDrawable()`, or an API that
-performs either operation internally. Rendered instances are prepared during assignment,
-deserialization, style/resource resolution, scheduled update, or plugin update and retained by the
-consumer. The Stage 4 call-site audit classifies all remaining direct `createInstance()` calls as:
+No rendering callback may call `clone()`, `UIIcon::createDrawable()`, or an API that performs either
+operation internally. It must render either a previously retained instance or a borrowed source
+under the temporary-state contract above. The Stage 4 call-site audit classifies all remaining
+direct `clone()` calls as:
 
 - implementations recursively cloning their private child state;
 - constructors and setters adopting a private region/sprite/map instance;
@@ -407,8 +410,8 @@ consumer. The Stage 4 call-site audit classifies all remaining direct `createIns
 - focused ownership tests.
 
 The code editor lock icon and ecode debugger, linter, LSP breadcrumb, and autocomplete icon paths
-retain instances populated before drawing. Draw callbacks only look up and render those retained
-instances; a cache miss skips the icon for that frame instead of cloning while rendering.
+borrow their per-size icon sources at the point of immediate rendering and restore temporary color
+changes before returning. Icons assigned to widgets, menus, or models still use owned instances.
 
 ### 7.2 Consumer API
 
@@ -684,22 +687,28 @@ Exit criteria:
 
 Status: complete, 2026-07-20. Drawable ownership
 now uses `DrawablePtr`; textures create private
-`TextureDrawable` wrappers; mutable prototypes implement `createInstance()`; sprites, state lists,
+`TextureDrawable` wrappers; mutable prototypes implement `clone()`; sprites, state lists,
 skins, groups, nine-patches, regions, glyphs, gradients, and primitive drawables clone their
 presentation state. UIImage, UINodeDrawable, menus/icons/themes, parsers, editor/tool consumers,
 maps, physics, ecode, and eeiv were migrated in the same API cut.
 
 `DrawableResource::Unload` and callback IDs were replaced by Change-only RAII connections.
+Callback state is allocated lazily on the first connection, so ordinary drawable resources carry
+no callback allocation. Callback storage and notification snapshots use small inline buffers;
+snapshotting preserves safe self-disconnection and reentrant mutation during notification without
+allocating in the common case.
 `Variant` stores DrawablePtr outside its scalar union. UITextureRegion and ScrollParallax render
 with local geometry rather than temporarily resizing shared source regions; region-based map
 objects retain private instances. `DrawableSearcher` already returns fresh instances as a safe
 bridge, but its replacement by the layered UI resolver remains Stage 5.
 
-`UIIcon::getSource()` now returns a cached source/prototype for lookup and measurement, while
+`UIIcon::getSource()` now returns a cached source/prototype for lookup, measurement, and immediate
+single-threaded rendering under the temporary-state restoration contract, while
 `UIIcon::createDrawable()` explicitly creates one private consumer instance. `UIGlyphIcon` and
-`UISVGIcon` cache their lazily materialized sources under the same contract. The complete
-`createInstance()` call-site audit found no remaining render-loop cloning; previously hot code
-editor, debugger, linter, LSP breadcrumb, and autocomplete paths retain update-time instances.
+`UISVGIcon` cache their lazily materialized sources under the same contract. The complete `clone()`
+call-site audit found no remaining render-loop cloning. The code editor, debugger, linter, LSP
+breadcrumb, and autocomplete draw-only paths borrow sources directly; retained widget and menu
+icons continue to own instances.
 
 Introduce source types and per-consumer instances, remove shared draw-state mutation, replace manual
 ownership with DrawablePtr, remove Unload lifetime callbacks, add RAII change connections, and

@@ -107,7 +107,7 @@ Graphics::TextureRegion* GameObjectTextureRegion::getTextureRegion() const {
 void GameObjectTextureRegion::setTextureRegion( Graphics::TextureRegion* TextureRegion ) {
 	mTextureRegion =
 		TextureRegion
-			? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->createInstance() )
+			? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->clone() )
 			: TextureRegionPtr{};
 }
 

@@ -77,7 +77,7 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 		frame.Spr.reserve( otherFrame.Spr.size() );
 		for ( const TextureRegionPtr& region : otherFrame.Spr ) {
 			frame.Spr.emplace_back(
-				region ? std::static_pointer_cast<TextureRegion>( region->createInstance() )
+				region ? std::static_pointer_cast<TextureRegion>( region->clone() )
 					   : nullptr );
 		}
 		mFrames.emplace_back( std::move( frame ) );
@@ -115,12 +115,12 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 	return *this;
 }
 
-SpritePtr Sprite::clone() const {
+SpritePtr Sprite::cloneSprite() const {
 	return makeResource<Sprite>( *this );
 }
 
-DrawablePtr Sprite::createInstance() const {
-	return clone();
+DrawablePtr Sprite::clone() const {
+	return cloneSprite();
 }
 
 void Sprite::clearFrame() {
@@ -381,7 +381,7 @@ bool Sprite::addFramesByPattern( const std::string& name, const std::string& ext
 bool Sprite::addSubFrame( TextureRegion* TextureRegion, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame ) {
 	return addSubFrame( TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>(
-											TextureRegion->createInstance() )
+											TextureRegion->clone() )
 									  : TextureRegionPtr{},
 						NumFrame, NumSubFrame );
 }

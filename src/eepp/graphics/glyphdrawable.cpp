@@ -80,7 +80,7 @@ bool GlyphDrawable::isStateful() {
 	return false;
 }
 
-DrawablePtr GlyphDrawable::createInstance() const {
+DrawablePtr GlyphDrawable::clone() const {
 	auto instance = makeResource<GlyphDrawable>( mTexture, mSrcRect.asInt(), mDestSize, mName );
 	instance->setPixelDensity( mPixelDensity );
 	instance->setGlyphOffset( mGlyphOffset );

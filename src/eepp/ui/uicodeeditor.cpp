@@ -484,17 +484,6 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 
-	if ( mLocked && mDisplayLockedIcon ) {
-		if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
-			mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
-		const int iconSize = PixelDensity::dpToPxI( 16 );
-		if ( mFileLockIcon &&
-			 ( mFileLockDrawable == nullptr || mFileLockDrawableSize != iconSize ) ) {
-			mFileLockDrawable = mFileLockIcon->createDrawable( iconSize );
-			mFileLockDrawableSize = iconSize;
-		}
-	}
-
 	if ( mDoc && !mDoc->isLoading() && !mDoc->isEmpty() &&
 		 !mDoc->getSyntaxDefinition().getPatterns().empty() &&
 		 mDoc->getHighlighter()->updateDirty( getVisibleLinesCount() ) ) {
@@ -1157,21 +1146,27 @@ void UICodeEditor::updateIMELocation() {
 }
 
 void UICodeEditor::drawLockedIcon( const Vector2f start ) {
-	if ( mFileLockDrawable == nullptr )
+	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
+		mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
+	if ( mFileLockIcon == nullptr )
 		return;
 
-	Float w = mFileLockDrawable->getPixelsSize().getWidth();
+	Drawable* fileLockIcon = mFileLockIcon->getSource( PixelDensity::dpToPxI( 16 ) ).get();
+	if ( fileLockIcon == nullptr )
+		return;
+
+	Float w = fileLockIcon->getPixelsSize().getWidth();
 	Float posX =
 		mMinimapEnabled
 			? getMinimapRect( getScreenStart() ).Left - w
 			: ( start.x + mSize.getWidth() -
 				( mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0 ) ) -
 				  mPadding.Right - w;
-	Color col( mFileLockDrawable->getColor() );
-	mFileLockDrawable->setColor( Color( mFontStyleConfig.getFontColor() ).blendAlpha( mAlpha ) );
+	Color col( fileLockIcon->getColor() );
+	fileLockIcon->setColor( Color( mFontStyleConfig.getFontColor() ).blendAlpha( mAlpha ) );
 	Float margin = PixelDensity::dpToPxI( 4 );
-	mFileLockDrawable->draw( { posX - margin, start.y + margin } );
-	mFileLockDrawable->setColor( col );
+	fileLockIcon->draw( { posX - margin, start.y + margin } );
+	fileLockIcon->setColor( col );
 }
 
 size_t UICodeEditor::getTotalVisibleLines() const {
@@ -3758,8 +3753,6 @@ void UICodeEditor::setFileLockIconName( const std::string& fileLockIconName ) {
 	if ( mFileLockIconName != fileLockIconName ) {
 		mFileLockIconName = fileLockIconName;
 		mFileLockIcon = nullptr;
-		mFileLockDrawable.reset();
-		mFileLockDrawableSize = 0;
 	}
 }
 

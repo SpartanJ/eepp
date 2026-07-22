@@ -22,7 +22,7 @@ class EE_API TextureDrawable : public DrawableResource {
 	void draw( const Vector2f& position );
 	void draw( const Vector2f& position, const Sizef& size );
 	bool isStateful();
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	const TexturePtr& getTexture() const;
 

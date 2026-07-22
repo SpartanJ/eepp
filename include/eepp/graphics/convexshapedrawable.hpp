@@ -24,7 +24,7 @@ class EE_API ConvexShapeDrawable : public PrimitiveDrawable {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	void setPolygon( const Polygon2f& polygon );
 

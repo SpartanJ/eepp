@@ -129,7 +129,7 @@ class EE_API TextureRegion : public DrawableResource {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	/** @return The texture instance used by the TextureRegion. */
 	const TexturePtr& getTexture() const;

@@ -294,7 +294,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	/** @return The process-wide identity assigned to this texture. */
 	ResourceId getTextureId() const;

@@ -15,7 +15,7 @@ CircleDrawable::CircleDrawable() : ArcDrawable( 0, 64 ) {}
 CircleDrawable::CircleDrawable( const Float& radius, const Uint32& segmentsCount ) :
 	ArcDrawable( radius, segmentsCount ) {}
 
-DrawablePtr CircleDrawable::createInstance() const {
+DrawablePtr CircleDrawable::clone() const {
 	auto instance = makeResource<CircleDrawable>( mRadius, mSegmentsCount );
 	instance->mArcAngle = mArcAngle;
 	instance->mArcStartAngle = mArcStartAngle;

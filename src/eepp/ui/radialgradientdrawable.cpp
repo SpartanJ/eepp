@@ -18,7 +18,7 @@ RadialGradientDrawable* RadialGradientDrawable::NewRepeating() {
 RadialGradientDrawable::RadialGradientDrawable( Graphics::Drawable::Type drawableType ) :
 	Drawable( drawableType ) {}
 
-DrawablePtr RadialGradientDrawable::createInstance() const {
+DrawablePtr RadialGradientDrawable::clone() const {
 	auto instance = makeResource<RadialGradientDrawable>( mDrawableType );
 	instance->mColorStops = mColorStops;
 	instance->mShape = mShape;

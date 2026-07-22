@@ -1451,21 +1451,6 @@ std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
 }
 
 void AutoCompletePlugin::update( UICodeEditor* editor ) {
-	const int iconSize = PixelDensity::dpToPxI( 12 );
-	if ( mSuggestionIconDrawableSize != iconSize ) {
-		mSuggestionIconDrawables.clear();
-		mSuggestionIconDrawableSize = iconSize;
-	}
-	for ( const auto& suggestion : mSuggestions ) {
-		const int iconKind = (int)suggestion.kind;
-		if ( mSuggestionIconDrawables.find( iconKind ) != mSuggestionIconDrawables.end() )
-			continue;
-		UIIcon* icon = editor->getUISceneNode()->findIcon(
-			LSPCompletionItemHelper::toIconString( suggestion.kind ) );
-		if ( icon )
-			mSuggestionIconDrawables[iconKind] = icon->createDrawable( iconSize );
-	}
-
 	for ( auto clientIt = mSnippetClients.begin(); clientIt != mSnippetClients.end(); ) {
 		if ( !clientIt->second->isAttached() )
 			clientIt = mSnippetClients.erase( clientIt );
@@ -1717,8 +1702,11 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
 				   cursorPos.y + mRowHeight * count + mBoxPadding.Top );
 
-		auto iconIt = mSuggestionIconDrawables.find( (int)suggestion.kind );
-		DrawablePtr icon = iconIt != mSuggestionIconDrawables.end() ? iconIt->second : DrawablePtr{};
+		Drawable* icon = nullptr;
+		UIIcon* iconSource = editor->getUISceneNode()->findIcon(
+			LSPCompletionItemHelper::toIconString( suggestion.kind ) );
+		if ( iconSource )
+			icon = iconSource->getSource( PixelDensity::dpToPxI( 12 ) ).get();
 
 		if ( icon ) {
 			Color iconColor( icon->getColor() );

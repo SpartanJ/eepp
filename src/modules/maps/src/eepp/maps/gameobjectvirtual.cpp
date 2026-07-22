@@ -18,7 +18,7 @@ GameObjectVirtual::GameObjectVirtual( TextureRegion* TextureRegion, MapLayer* La
 	if ( NULL != TextureRegion ) {
 		mDataId = TextureRegion->getId();
 		mTextureRegion = std::static_pointer_cast<EE::Graphics::TextureRegion>(
-			TextureRegion->createInstance() );
+			TextureRegion->clone() );
 	}
 }
 

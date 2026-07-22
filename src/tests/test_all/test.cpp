@@ -741,7 +741,7 @@ void EETest::createNewUI() {
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setPosition( 50, 600 )->setParent( container );
-	sprite->setSprite( SP.clone() );
+	sprite->setSprite( SP.cloneSprite() );
 
 	UIScrollBar* scrollBar = UIScrollBar::New();
 	scrollBar->setOrientation( UIOrientation::Horizontal )

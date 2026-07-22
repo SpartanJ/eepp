@@ -117,7 +117,7 @@ TextureRegion::~TextureRegion() {
 	clearCache();
 }
 
-DrawablePtr TextureRegion::createInstance() const {
+DrawablePtr TextureRegion::clone() const {
 	auto instance = makeResource<TextureRegion>( mTexture, mSrcRect, mDestSize, mOffset, mName );
 	instance->setOriDestSize( mOriDestSize );
 	instance->setPixelDensity( mPixelDensity );

@@ -317,7 +317,7 @@ class EE_API Sprite : public Drawable {
 
 	virtual bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	/** Set the number of repetitions of the animation. Any number below 0 the animation will loop.
 	 */
@@ -386,8 +386,8 @@ class EE_API Sprite : public Drawable {
 	/** Pop the event callback id indicated. */
 	bool popEventsCallback( const Uint32& callbackId );
 
-	/** Creates an independent instance sharing the same texture resources. */
-	SpritePtr clone() const;
+	/** Creates an independent sprite sharing the same texture resources. */
+	SpritePtr cloneSprite() const;
 
 	/** Update the sprite animation */
 	void update( const Time& ElapsedTime );

@@ -744,15 +744,6 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::update( UICodeEditor* editor ) {
-	if ( mLightbulbIcon == nullptr )
-		mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
-			"lightbulb-autofix" );
-	if ( mLightbulbIcon ) {
-		const int iconSize = (int)eefloor( editor->getLineHeight() );
-		if ( mLightbulbDrawables.find( iconSize ) == mLightbulbDrawables.end() )
-			mLightbulbDrawables[iconSize] = mLightbulbIcon->createDrawable( iconSize );
-	}
-
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
@@ -1153,12 +1144,15 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			if ( !match.diagnostic.codeActions.empty() ) {
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
+				if ( mLightbulbIcon == nullptr )
+					mLightbulbIcon =
+						editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
+							"lightbulb-autofix" );
 				if ( nullptr != mLightbulbIcon ) {
 					const int iconSize = (int)eefloor( lineHeight );
-					auto drawableIt = mLightbulbDrawables.find( iconSize );
-					if ( drawableIt == mLightbulbDrawables.end() || drawableIt->second == nullptr )
+					Drawable* drawable = mLightbulbIcon->getSource( iconSize ).get();
+					if ( drawable == nullptr )
 						return;
-					DrawablePtr& drawable = drawableIt->second;
 
 					Color oldColor( drawable->getColor() );
 					drawable->setColor( wcolor );

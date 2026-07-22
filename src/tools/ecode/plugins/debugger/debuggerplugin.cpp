@@ -183,23 +183,6 @@ DebuggerPlugin::~DebuggerPlugin() {
 	}
 }
 
-void DebuggerPlugin::update( UICodeEditor* editor ) {
-	if ( mBreakpointIcon == nullptr )
-		mBreakpointIcon = getUISceneNode()->findIcon( "circle-perfect" );
-	if ( mBreakpointIcon ) {
-		const int iconSize = (int)eefloor( editor->getLineHeight() * 0.875f );
-		if ( mBreakpointDrawables.find( iconSize ) == mBreakpointDrawables.end() )
-			mBreakpointDrawables[iconSize] = mBreakpointIcon->createDrawable( iconSize );
-	}
-	if ( mStackFrameIcon == nullptr )
-		mStackFrameIcon = getUISceneNode()->findIcon( "debug-stackframe" );
-	if ( mStackFrameIcon ) {
-		const int iconSize = (int)eefloor( editor->getLineHeight() );
-		if ( mStackFrameDrawables.find( iconSize ) == mStackFrameDrawables.end() )
-			mStackFrameDrawables[iconSize] = mStackFrameIcon->createDrawable( iconSize );
-	}
-}
-
 void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 									const std::string& projectStatePath,
 									bool rewriteStateOnlyIfNeeded ) {
@@ -1619,11 +1602,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 									 .blendAlpha( editor->getAlpha() ) );
 
 					bool iconDrawn = false;
+					if ( mBreakpointIcon == nullptr )
+						mBreakpointIcon = getUISceneNode()->findIcon( "circle-perfect" );
 					if ( mBreakpointIcon ) {
 						Float finalHeight = eefloor( radius * 1.75f );
-						auto drawableIt = mBreakpointDrawables.find( (int)finalHeight );
-						if ( drawableIt != mBreakpointDrawables.end() && drawableIt->second ) {
-							DrawablePtr& drawable = drawableIt->second;
+						Drawable* drawable = mBreakpointIcon->getSource( (int)finalHeight ).get();
+						if ( drawable ) {
 							Color oldColor = drawable->getColor();
 							drawable->setColor( color );
 							drawable->draw(
@@ -1664,12 +1648,16 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 			Float dim = radius * 2;
 			Float gutterSpace = editor->getGutterSpace( this );
 
+			if ( mStackFrameIcon == nullptr )
+				mStackFrameIcon = getUISceneNode()->findIcon( "debug-stackframe" );
 			if ( mStackFrameIcon ) {
 				const int iconSize = (int)eefloor( lineHeight );
-				auto drawableIt = mStackFrameDrawables.find( iconSize );
-				if ( drawableIt != mStackFrameDrawables.end() && drawableIt->second ) {
-					drawableIt->second->setColor( color );
-					drawableIt->second->draw( lnPos.floor() );
+				Drawable* drawable = mStackFrameIcon->getSource( iconSize ).get();
+				if ( drawable ) {
+					Color oldColor = drawable->getColor();
+					drawable->setColor( color );
+					drawable->draw( lnPos.floor() );
+					drawable->setColor( oldColor );
 					return;
 				}
 			}

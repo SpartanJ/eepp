@@ -38,7 +38,7 @@ ResourcePtr<UISkin> UISkin::clone( const std::string& newName ) const {
 	for ( const auto& state : mDrawables ) {
 		if ( !state.second )
 			continue;
-		DrawablePtr drawable = state.second->createInstance();
+		DrawablePtr drawable = state.second->clone();
 		if ( !drawable )
 			return {};
 		skin->setStateDrawable( state.first, std::move( drawable ) );
@@ -48,12 +48,12 @@ ResourcePtr<UISkin> UISkin::clone( const std::string& newName ) const {
 	return skin;
 }
 
-ResourcePtr<UISkin> UISkin::clone() const {
+ResourcePtr<UISkin> UISkin::cloneSkin() const {
 	return clone( mName );
 }
 
-DrawablePtr UISkin::createInstance() const {
-	return clone();
+DrawablePtr UISkin::clone() const {
+	return cloneSkin();
 }
 
 Rectf UISkin::getBorderSize() {

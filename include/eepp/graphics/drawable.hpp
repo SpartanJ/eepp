@@ -65,7 +65,7 @@ class EE_API Drawable {
 
 	/** Creates an independently mutable instance backed by the same immutable resource data.
 	 * This is an ownership/setup operation; rendering loops must retain and reuse the result. */
-	virtual DrawablePtr createInstance() const;
+	virtual DrawablePtr clone() const;
 
 	void setAlpha( Uint8 alpha );
 

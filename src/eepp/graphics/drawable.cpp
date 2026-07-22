@@ -9,7 +9,7 @@ Drawable::Drawable( Type drawableType ) :
 
 Drawable::~Drawable() {}
 
-DrawablePtr Drawable::createInstance() const {
+DrawablePtr Drawable::clone() const {
 	return {};
 }
 

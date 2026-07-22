@@ -108,6 +108,7 @@ class TestDrawableResource : public DrawableResource {
 	bool isStateful() { return false; }
 
 	void notifyChange() { onResourceChange(); }
+	bool hasCallbackState() const { return mCallbackState != nullptr; }
 };
 
 class CountingDrawable : public Drawable {
@@ -122,7 +123,7 @@ class CountingDrawable : public Drawable {
 	void draw( const Vector2f&, const Sizef& ) {}
 	bool isStateful() { return false; }
 
-	DrawablePtr createInstance() const {
+	DrawablePtr clone() const {
 		++*mInstanceCount;
 		auto instance = makeResource<CountingDrawable>( mInstanceCount );
 		instance->setColor( mColor );
@@ -527,10 +528,12 @@ UTEST( ResourcePrerequisites, textureRegionRetainsItsTexture ) {
 
 UTEST( ResourcePrerequisites, drawableResourceConnectionsDisconnectWithTheirLifetime ) {
 	auto resource = makeResource<TestDrawableResource>();
+	EXPECT_FALSE( resource->hasCallbackState() );
 	int notifications = 0;
 	{
 		DrawableResourceConnection connection = resource->connectResourceChange(
 			[&notifications]( DrawableResource& ) { ++notifications; } );
+		EXPECT_TRUE( resource->hasCallbackState() );
 		EXPECT_TRUE( static_cast<bool>( connection ) );
 		resource->notifyChange();
 		EXPECT_EQ( notifications, 1 );
@@ -546,13 +549,27 @@ UTEST( ResourcePrerequisites, drawableResourceConnectionsDisconnectWithTheirLife
 	expiredConnection.disconnect();
 }
 
+UTEST( ResourcePrerequisites, drawableResourceCallbacksCanDisconnectDuringNotification ) {
+	auto resource = makeResource<TestDrawableResource>();
+	int notifications = 0;
+	DrawableResourceConnection connection;
+	connection = resource->connectResourceChange( [&]( DrawableResource& ) {
+		++notifications;
+		connection.disconnect();
+	} );
+
+	resource->notifyChange();
+	resource->notifyChange();
+	EXPECT_EQ( notifications, 1 );
+}
+
 UTEST( ResourcePrerequisites, textureCreatesIndependentDrawableInstances ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Texture drawable instance test" );
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 2, 2 );
 	ASSERT_TRUE( texture != nullptr );
 
-	DrawablePtr firstDrawable = texture->createInstance();
-	DrawablePtr secondDrawable = texture->createInstance();
+	DrawablePtr firstDrawable = texture->clone();
+	DrawablePtr secondDrawable = texture->clone();
 	ASSERT_TRUE( firstDrawable != nullptr );
 	ASSERT_TRUE( secondDrawable != nullptr );
 	ASSERT_EQ( firstDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
@@ -620,7 +637,7 @@ UTEST( ResourcePrerequisites, stateListsCloneStateAndChildrenIndependently ) {
 	source->setStateDrawable( 2, secondRegion );
 	source->setState( 1 );
 
-	DrawablePtr drawableInstance = source->createInstance();
+	DrawablePtr drawableInstance = source->clone();
 	ASSERT_TRUE( drawableInstance != nullptr );
 	ASSERT_EQ( drawableInstance->getDrawableType(), Drawable::STATELIST );
 	auto instance = std::static_pointer_cast<StateListDrawable>( drawableInstance );
@@ -659,7 +676,7 @@ UTEST( ResourcePrerequisites, spritesCloneFramesAndAnimationStateIndependently )
 	source->addFrame( texture, Sizef( 2.f, 2.f ) );
 	source->setCurrentFrame( 0 );
 
-	SpritePtr instance = source->clone();
+	SpritePtr instance = source->cloneSprite();
 	ASSERT_TRUE( instance != nullptr );
 	TextureRegion* sourceFrame = source->getTextureRegion( 0 );
 	TextureRegion* instanceFrame = instance->getTextureRegion( 0 );
@@ -724,7 +741,7 @@ UTEST( ResourcePrerequisites, drawableGroupsAndVariantsHoldSafeIndependentHandle
 	auto rectangle = makeResource<RectangleDrawable>( Vector2f( 1.f, 2.f ), Sizef( 3.f, 4.f ) );
 	source->addDrawable( rectangle );
 
-	DrawablePtr drawableInstance = source->createInstance();
+	DrawablePtr drawableInstance = source->clone();
 	ASSERT_TRUE( drawableInstance != nullptr );
 	ASSERT_EQ( drawableInstance->getDrawableType(), Drawable::GROUP );
 	auto instance = std::static_pointer_cast<DrawableGroup>( drawableInstance );
@@ -898,7 +915,7 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		auto* scene = UISceneNode::New();
 		SceneManager::instance()->add( scene );
 		scene->enableFrameBuffer();
-		UIImage::New()->setDrawable( ninePatch->createInstance() )->setParent( scene->getRoot() );
+		UIImage::New()->setDrawable( ninePatch->clone() )->setParent( scene->getRoot() );
 
 		auto* font = FontTrueType::New( "engine-teardown-font" );
 		ASSERT_TRUE(

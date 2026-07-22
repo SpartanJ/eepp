@@ -18,7 +18,7 @@ TriangleDrawable::TriangleDrawable( const Vector2f& position, const Sizef& size 
 	mPosition = position;
 }
 
-DrawablePtr TriangleDrawable::createInstance() const {
+DrawablePtr TriangleDrawable::clone() const {
 	auto instance = makeResource<TriangleDrawable>( mPosition, mSize );
 	instance->mTriangle = mTriangle;
 	instance->mComputedTriangle = mComputedTriangle;

@@ -28,7 +28,7 @@ class EE_API StateListDrawable : public StatefulDrawable {
 
 	virtual bool isStateful();
 
-	DrawablePtr createInstance() const;
+	DrawablePtr clone() const;
 
 	virtual StatefulDrawable* setState( Uint32 state );
 

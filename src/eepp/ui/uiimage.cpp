@@ -68,8 +68,7 @@ UIImage::UIImage( const std::string& tag ) :
 	UIWidget( tag ),
 	mScaleType( UIScaleType::None ),
 	mColor(),
-	mAlignOffset( 0, 0 ),
-	mAsyncImageAlive( std::make_shared<std::atomic<bool>>( true ) ) {
+	mAlignOffset( 0, 0 ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	applyDefaultTheme();
@@ -347,6 +346,8 @@ bool UIImage::loadFileDrawable( const Network::URI& uri ) {
 	auto resourceState = scene->getAsyncResourceLoadState();
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
+	if ( !mAsyncImageAlive )
+		mAsyncImageAlive = std::make_shared<std::atomic<bool>>( true );
 	auto alive = mAsyncImageAlive;
 
 	scene->getThreadPool()->run( [resourceState, resourceGeneration, resourceScope, alive, loadId,
@@ -396,6 +397,8 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	Uint64 loadId = ++mRemoteImageLoadId;
+	if ( !mAsyncImageAlive )
+		mAsyncImageAlive = std::make_shared<std::atomic<bool>>( true );
 	auto alive = mAsyncImageAlive;
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture(
 		1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, url );
