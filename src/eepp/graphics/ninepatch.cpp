@@ -4,20 +4,21 @@
 
 namespace EE { namespace Graphics {
 
-NinePatch* NinePatch::New( ResourceId textureId, int left, int top, int right, int bottom,
-						   const Float& pixelDensity, const std::string& name ) {
-	return eeNew( NinePatch, ( TextureFactory::instance()->getTexture( textureId ), left, top,
-							   right, bottom, pixelDensity, name ) );
+NinePatchPtr NinePatch::New( ResourceId textureId, int left, int top, int right, int bottom,
+							 const Float& pixelDensity, const std::string& name ) {
+	return makeResource<NinePatch>( TextureFactory::instance()->getTexture( textureId ), left, top,
+									right, bottom, pixelDensity, name );
 }
 
-NinePatch* NinePatch::New( TexturePtr tex, int left, int top, int right, int bottom,
-						   const Float& pixelDensity, const std::string& name ) {
-	return eeNew( NinePatch, ( std::move( tex ), left, top, right, bottom, pixelDensity, name ) );
+NinePatchPtr NinePatch::New( TexturePtr tex, int left, int top, int right, int bottom,
+							 const Float& pixelDensity, const std::string& name ) {
+	return makeResource<NinePatch>( std::move( tex ), left, top, right, bottom, pixelDensity,
+									name );
 }
 
-NinePatch* NinePatch::New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
-						   const std::string& name ) {
-	return eeNew( NinePatch, ( textureRegion, left, top, right, bottom, name ) );
+NinePatchPtr NinePatch::New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
+							 const std::string& name ) {
+	return makeResource<NinePatch>( textureRegion, left, top, right, bottom, name );
 }
 
 NinePatch::NinePatch( TexturePtr tex, int left, int top, int right, int bottom,

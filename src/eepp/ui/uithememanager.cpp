@@ -20,7 +20,57 @@ UIThemeManager::UIThemeManager() :
 	mTooltipFollowMouse( false ),
 	mCursorSize( 16, 16 ) {}
 
-UIThemeManager::~UIThemeManager() {}
+UIThemeManager::~UIThemeManager() {
+	if ( mResourceScope ) {
+		each( [this]( const auto& resource ) {
+			if ( resource.second )
+				mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
+		} );
+	}
+}
+
+UITheme* UIThemeManager::add( UITheme* theme ) {
+	UITheme* added = ResourceManager<UITheme>::add( theme );
+	if ( added && mResourceScope )
+		mResourceScope->importCatalog( added->getResourceCatalog() );
+	return added;
+}
+
+bool UIThemeManager::remove( UITheme* theme, bool destroy ) {
+	if ( theme && mResourceScope )
+		mResourceScope->removeCatalog( theme->getResourceCatalog() );
+	if ( theme == mThemeDefault )
+		mThemeDefault = nullptr;
+	return ResourceManager<UITheme>::remove( theme, destroy );
+}
+
+bool UIThemeManager::removeById( const String::HashType& id, bool destroy ) {
+	return remove( getById( id ), destroy );
+}
+
+bool UIThemeManager::removeByName( const std::string& name, bool destroy ) {
+	return remove( getByName( name ), destroy );
+}
+
+UIThemeManager* UIThemeManager::setResourceScope( ResourceScopePtr resourceScope ) {
+	if ( mResourceScope == resourceScope )
+		return this;
+
+	if ( mResourceScope ) {
+		each( [this]( const auto& resource ) {
+			if ( resource.second )
+				mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
+		} );
+	}
+	mResourceScope = std::move( resourceScope );
+	if ( mResourceScope ) {
+		each( [this]( const auto& resource ) {
+			if ( resource.second )
+				mResourceScope->importCatalog( resource.second->getResourceCatalog() );
+		} );
+	}
+	return this;
+}
 
 UIThemeManager* UIThemeManager::setDefaultFont( Font* Font ) {
 	mFont = Font;
@@ -46,7 +96,15 @@ const Float& UIThemeManager::getDefaultFontSize() const {
 }
 
 UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {
+	UITheme* previousTheme = mThemeDefault;
+	if ( previousTheme && previousTheme != Theme && mResourceScope &&
+		 !findIf( [previousTheme]( const auto& resource ) {
+			 return resource.second == previousTheme;
+		 } ) )
+		mResourceScope->removeCatalog( previousTheme->getResourceCatalog() );
 	mThemeDefault = Theme;
+	if ( mThemeDefault && mResourceScope )
+		mResourceScope->importCatalog( mThemeDefault->getResourceCatalog() );
 
 	if ( NULL != mThemeDefault && NULL == mThemeDefault->getDefaultFont() ) {
 		setDefaultFont( mFont );

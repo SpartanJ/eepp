@@ -790,6 +790,17 @@ Exit criteria:
 
 ### Stage 7: remaining resource families
 
+Status: in progress. Nine-patches are the first migrated family: `NinePatch::New()` returns a
+`NinePatchPtr`, theme-owned `ResourceCatalog` instances retain their named sources, and scene
+`ResourceScope` imports make those sources visible intentionally. `NinePatchManager` was removed.
+Removing a catalog entry releases only catalog ownership and leaves retained consumers valid.
+
+This is the required pattern for the remaining process-wide singleton resource managers. A
+singleton must not be modernized into another process-global semantic namespace. Each family moves
+to ordinary catalogs owned by its application, scene, theme, document, or other natural lifetime
+boundary. `globalResourceCatalog()` is reserved for resources deliberately published process-wide;
+scene scopes see non-global resources only through their local catalog or explicit imports.
+
 Migrate fonts, font faces/fallback caches, themes, shader programs/shaders, nine-patch catalogs,
 atlas managers, and every remaining raw-owning ResourceManager subclass one family at a time. Their
 self-contained GPU objects retain the established graphics-thread destruction contract unless a
@@ -860,6 +871,8 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 7 migrates the remaining ResourceManager families one at a time: fonts and font caches,
-themes/icons, shaders/programs, nine-patches, atlases, and any remaining raw-owning manager. The
-raw-owning ResourceManager template is removed only after its final consumer is migrated.
+Stage 7 continues with the remaining ResourceManager families one at a time: fonts and font caches,
+themes/icons, shaders/programs, atlases, and any remaining raw-owning manager. Each singleton
+semantic namespace is replaced by naturally owned catalogs plus explicit scope imports, following
+the completed nine-patch migration. The raw-owning ResourceManager template is removed only after
+its final consumer is migrated.

@@ -1,7 +1,6 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/ninepatch.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
@@ -132,8 +131,8 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 				std::string skinName( elemNameFromSkin( nameParts ) );
 
-				Drawable* drawable = NinePatchManager::instance()->add(
-					NinePatch::New( textureRegion, l, t, r, b, realName ) );
+				NinePatchPtr drawable = NinePatch::New( textureRegion, l, t, r, b, realName );
+				tTheme->getResourceCatalog()->publishDrawable( realName, drawable );
 
 				if ( skins.find( skinName ) == skins.end() )
 					skins[skinName] = tTheme->add( UISkin::New( skinName ) );
@@ -232,9 +231,10 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 
 					std::string skinName( elemNameFromSkin( nameParts ) );
 
-					Drawable* drawable = NinePatchManager::instance()->add(
+					NinePatchPtr drawable =
 						NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r,
-										b, pixelDensity, realName ) );
+										b, pixelDensity, realName );
+					tTheme->getResourceCatalog()->publishDrawable( realName, drawable );
 
 					if ( skins.find( skinName ) == skins.end() )
 						skins[skinName] = tTheme->add( UISkin::New( skinName ) );
@@ -298,7 +298,8 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mTextureAtlas( NULL ),
 	mDefaultFont( defaultFont ),
 	mDefaultFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
-	mIconTheme( UIIconTheme::New( name ) ) {}
+	mIconTheme( UIIconTheme::New( name ) ),
+	mResourceCatalog( ResourceCatalog::New() ) {}
 
 UITheme::~UITheme() {
 	eeSAFE_DELETE( mIconTheme );
@@ -367,6 +368,10 @@ void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
 
 UIIconTheme* UITheme::getIconTheme() const {
 	return mIconTheme;
+}
+
+const ResourceCatalogPtr& UITheme::getResourceCatalog() const {
+	return mResourceCatalog;
 }
 
 const std::string& UITheme::getStyleSheetPath() const {

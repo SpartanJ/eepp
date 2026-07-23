@@ -25,7 +25,6 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/ninepatch.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/particle.hpp>
 #include <eepp/graphics/particlesystem.hpp>

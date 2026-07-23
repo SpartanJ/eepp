@@ -7,6 +7,10 @@
 
 namespace EE { namespace Graphics {
 
+class NinePatch;
+using NinePatchPtr = ResourcePtr<NinePatch>;
+using NinePatchWeakPtr = ResourceWeakPtr<NinePatch>;
+
 class EE_API NinePatch : public DrawableResource {
   public:
 	enum NinePatchSides {
@@ -22,14 +26,14 @@ class EE_API NinePatch : public DrawableResource {
 		SideCount
 	};
 
-	static NinePatch* New( ResourceId textureId, int left, int top, int right, int bottom,
-						   const Float& pixelDensity = 1, const std::string& name = "" );
+	static NinePatchPtr New( ResourceId textureId, int left, int top, int right, int bottom,
+							 const Float& pixelDensity = 1, const std::string& name = "" );
 
-	static NinePatch* New( TexturePtr tex, int left, int top, int right, int bottom,
-						   const Float& pixelDensity = 1, const std::string& name = "" );
+	static NinePatchPtr New( TexturePtr tex, int left, int top, int right, int bottom,
+							 const Float& pixelDensity = 1, const std::string& name = "" );
 
-	static NinePatch* New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
-						   const std::string& name = "" );
+	static NinePatchPtr New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
+							 const std::string& name = "" );
 
 	NinePatch( TexturePtr tex, int left, int top, int right, int bottom,
 			   const Float& pixelDensity = 1, const std::string& name = "" );

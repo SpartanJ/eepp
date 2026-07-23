@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <eepp/core/string.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
@@ -30,6 +29,22 @@ TexturePtr ResourceScope::findTexture( const std::string& key ) const {
 	for ( const ResourceCatalogPtr& catalog : mImports ) {
 		if ( TexturePtr texture = catalog->findTexture( key ) )
 			return texture;
+	}
+	return {};
+}
+
+DrawablePtr ResourceScope::findDrawableSource( const ResourceKey& key ) const {
+	return findDrawableSource( key.value() );
+}
+
+DrawablePtr ResourceScope::findDrawableSource( const std::string& key ) const {
+	if ( DrawablePtr drawable = mLocalCatalog->findDrawable( key ) )
+		return drawable;
+
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		if ( DrawablePtr drawable = catalog->findDrawable( key ) )
+			return drawable;
 	}
 	return {};
 }
@@ -77,15 +92,17 @@ DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSear
 		if ( String::startsWith( name, "@drawable/" ) )
 			return findDrawable( name.substr( 10 ) );
 		if ( String::startsWith( name, "@9p/" ) ) {
-			Drawable* source = NinePatchManager::instance()->getByName( name.substr( 4 ) );
-			return source ? source->clone() : DrawablePtr{};
+			DrawablePtr source = findDrawableSource( name.substr( 4 ) );
+			return source && source->getDrawableType() == Drawable::NINEPATCH ? source->clone()
+																			  : DrawablePtr{};
 		}
 	}
 
+	if ( DrawablePtr source = findDrawableSource( name ) )
+		return source->clone();
+
 	String::HashType id = String::hash( name );
 	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
-	if ( source == nullptr )
-		source = NinePatchManager::instance()->getById( id );
 	if ( source )
 		return source->clone();
 
@@ -106,12 +123,28 @@ void ResourceScope::publishLocal( std::string key, TexturePtr texture ) {
 	mLocalCatalog->publish( std::move( key ), std::move( texture ) );
 }
 
+void ResourceScope::publishLocalDrawable( ResourceKey key, DrawablePtr drawable ) {
+	publishLocalDrawable( key.value(), std::move( drawable ) );
+}
+
+void ResourceScope::publishLocalDrawable( std::string key, DrawablePtr drawable ) {
+	mLocalCatalog->publishDrawable( std::move( key ), std::move( drawable ) );
+}
+
 bool ResourceScope::eraseLocal( const ResourceKey& key ) {
 	return mLocalCatalog->erase( key );
 }
 
 bool ResourceScope::eraseLocal( const std::string& key ) {
 	return mLocalCatalog->erase( key );
+}
+
+bool ResourceScope::eraseLocalDrawable( const ResourceKey& key ) {
+	return mLocalCatalog->eraseDrawable( key );
+}
+
+bool ResourceScope::eraseLocalDrawable( const std::string& key ) {
+	return mLocalCatalog->eraseDrawable( key );
 }
 
 void ResourceScope::clearLocal() {

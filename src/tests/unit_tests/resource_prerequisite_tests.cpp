@@ -9,7 +9,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
@@ -33,6 +33,8 @@
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 #include <limits>
@@ -343,6 +345,35 @@ UTEST( ResourcePrerequisites, resourceCatalogOwnsPublishedTextures ) {
 	Engine::destroySingleton();
 }
 
+UTEST( ResourcePrerequisites, resourceCatalogRemovalPreservesRetainedDrawableConsumers ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Nine-patch catalog ownership test" );
+	TextureFactory* factory = TextureFactory::instance();
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TexturePtr texture = factory->createEmptyTexture( 4, 4 );
+	ASSERT_TRUE( texture != nullptr );
+
+	NinePatchPtr ninePatch = NinePatch::New( texture, 1, 1, 1, 1, 1, "retained-nine-patch" );
+	ASSERT_TRUE( ninePatch != nullptr );
+	catalog->publishDrawable( "retained-nine-patch", ninePatch );
+	NinePatchWeakPtr weakNinePatch = ninePatch;
+	TextureWeakPtr weakTexture = texture;
+	texture.reset();
+
+	EXPECT_TRUE( catalog->findDrawable( "retained-nine-patch" ) == ninePatch );
+	EXPECT_TRUE( catalog->eraseDrawable( "retained-nine-patch" ) );
+	EXPECT_TRUE( catalog->findDrawable( "retained-nine-patch" ) == nullptr );
+	EXPECT_FALSE( weakNinePatch.expired() );
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( ninePatch->getPixelsSize() == Sizef( 4, 4 ) );
+
+	ninePatch.reset();
+	EXPECT_TRUE( weakNinePatch.expired() );
+	EXPECT_TRUE( weakTexture.expired() );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
 UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImportedCatalogs ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Resource scope isolation test" );
 	TextureFactory* factory = TextureFactory::instance();
@@ -446,6 +477,44 @@ UTEST( ResourcePrerequisites, uiScenesOwnIsolatedScopesThatCanBeSharedExplicitly
 	sharedDrawable.reset();
 	firstDrawable.reset();
 	texture.reset();
+	eeDelete( secondScene );
+	eeDelete( firstScene );
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiThemeCatalogIsImportedOnlyByItsOwningScene ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI theme resource catalog test" );
+	UISceneNode* firstScene = UISceneNode::New( window );
+	UISceneNode* secondScene = UISceneNode::New( window );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
+	ASSERT_TRUE( texture != nullptr );
+
+	UITheme* theme = UITheme::New( "catalog-theme", "catalog-theme" );
+	NinePatchPtr ninePatch = NinePatch::New( texture, 1, 1, 1, 1, 1, "theme-nine-patch" );
+	theme->getResourceCatalog()->publishDrawable( "theme-nine-patch", ninePatch );
+	firstScene->getUIThemeManager()->add( theme );
+
+	DrawablePtr firstResolved = firstScene->getResourceScope()->findDrawable( "theme-nine-patch" );
+	ASSERT_TRUE( firstResolved != nullptr );
+	EXPECT_EQ( firstResolved->getDrawableType(), Drawable::NINEPATCH );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
+
+	EXPECT_TRUE( firstScene->getUIThemeManager()->remove( theme, false ) );
+	EXPECT_TRUE( firstScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
+
+	UITheme* defaultOnlyTheme = UITheme::New( "default-only-theme", "default-only-theme" );
+	defaultOnlyTheme->getResourceCatalog()->publishDrawable( "default-nine-patch", ninePatch );
+	secondScene->getUIThemeManager()->setDefaultTheme( defaultOnlyTheme );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) != nullptr );
+	secondScene->getUIThemeManager()->setDefaultTheme( static_cast<UITheme*>( nullptr ) );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) == nullptr );
+
+	firstResolved.reset();
+	ninePatch.reset();
+	texture.reset();
+	eeDelete( defaultOnlyTheme );
+	eeDelete( theme );
 	eeDelete( secondScene );
 	eeDelete( firstScene );
 	window->display( false );
@@ -926,9 +995,10 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
 		ASSERT_TRUE( texture != nullptr );
 
-		NinePatch* ninePatch = NinePatchManager::instance()->add(
-			NinePatch::New( texture, 1, 1, 1, 1, 1, "engine-teardown-nine-patch" ) );
+		NinePatchPtr ninePatch =
+			NinePatch::New( texture, 1, 1, 1, 1, 1, "engine-teardown-nine-patch" );
 		ASSERT_TRUE( ninePatch != nullptr );
+		globalResourceCatalog().publishDrawable( "engine-teardown-nine-patch", ninePatch );
 
 		auto* scene = UISceneNode::New();
 		SceneManager::instance()->add( scene );
@@ -945,6 +1015,7 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		auto* batch = GlobalBatchRenderer::instance();
 		batch->setTexture( texture );
 		batch->batchQuad( 0, 0, 4, 4 );
+		ninePatch.reset();
 		texture.reset();
 
 		Engine::destroySingleton();
@@ -953,7 +1024,6 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		EXPECT_TRUE( Engine::existsSingleton() == nullptr );
 		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
-		EXPECT_TRUE( NinePatchManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( FontManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureAtlasManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );

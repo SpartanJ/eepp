@@ -39,6 +39,35 @@ void ResourceCatalog::publish( std::string key, TexturePtr texture ) {
 	previous.reset();
 }
 
+void ResourceCatalog::publishDrawable( ResourceKey key, DrawablePtr drawable ) {
+	publishDrawable( key.value(), std::move( drawable ) );
+}
+
+void ResourceCatalog::publishDrawable( std::string key, DrawablePtr drawable ) {
+	if ( key.empty() )
+		return;
+
+	if ( !drawable ) {
+		eraseDrawable( key );
+		return;
+	}
+
+	DrawablePtr previous;
+	{
+		Lock lock( mMutex );
+		auto it = mDrawables.find( key );
+		if ( it == mDrawables.end() ) {
+			mDrawables.emplace( std::move( key ), std::move( drawable ) );
+			return;
+		}
+
+		previous = std::move( it->second );
+		it->second = std::move( drawable );
+	}
+
+	previous.reset();
+}
+
 TexturePtr ResourceCatalog::findTexture( const ResourceKey& key ) const {
 	return findTexture( key.value() );
 }
@@ -47,6 +76,16 @@ TexturePtr ResourceCatalog::findTexture( const std::string& key ) const {
 	Lock lock( mMutex );
 	auto it = mTextures.find( key );
 	return it != mTextures.end() ? it->second : TexturePtr{};
+}
+
+DrawablePtr ResourceCatalog::findDrawable( const ResourceKey& key ) const {
+	return findDrawable( key.value() );
+}
+
+DrawablePtr ResourceCatalog::findDrawable( const std::string& key ) const {
+	Lock lock( mMutex );
+	auto it = mDrawables.find( key );
+	return it != mDrawables.end() ? it->second : DrawablePtr{};
 }
 
 bool ResourceCatalog::erase( const ResourceKey& key ) {
@@ -69,19 +108,42 @@ bool ResourceCatalog::erase( const std::string& key ) {
 	return true;
 }
 
+bool ResourceCatalog::eraseDrawable( const ResourceKey& key ) {
+	return eraseDrawable( key.value() );
+}
+
+bool ResourceCatalog::eraseDrawable( const std::string& key ) {
+	DrawablePtr drawable;
+	{
+		Lock lock( mMutex );
+		auto it = mDrawables.find( key );
+		if ( it == mDrawables.end() )
+			return false;
+
+		drawable = std::move( it->second );
+		mDrawables.erase( it );
+	}
+
+	drawable.reset();
+	return true;
+}
+
 void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TexturePtr> textures;
+	UnorderedMap<std::string, DrawablePtr> drawables;
 	{
 		Lock lock( mMutex );
 		textures = std::move( mTextures );
+		drawables = std::move( mDrawables );
 	}
 
 	textures.clear();
+	drawables.clear();
 }
 
 std::size_t ResourceCatalog::size() const {
 	Lock lock( mMutex );
-	return mTextures.size();
+	return mTextures.size() + mDrawables.size();
 }
 
 }} // namespace EE::Graphics

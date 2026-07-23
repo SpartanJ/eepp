@@ -18,13 +18,19 @@ class EE_API ResourceScope {
 
 	TexturePtr findTexture( const ResourceKey& key ) const;
 	TexturePtr findTexture( const std::string& key ) const;
+	DrawablePtr findDrawableSource( const ResourceKey& key ) const;
+	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
 	DrawablePtr findDrawable( const Uint32& id ) const;
 
 	void publishLocal( ResourceKey key, TexturePtr texture );
 	void publishLocal( std::string key, TexturePtr texture );
+	void publishLocalDrawable( ResourceKey key, DrawablePtr drawable );
+	void publishLocalDrawable( std::string key, DrawablePtr drawable );
 	bool eraseLocal( const ResourceKey& key );
 	bool eraseLocal( const std::string& key );
+	bool eraseLocalDrawable( const ResourceKey& key );
+	bool eraseLocalDrawable( const std::string& key );
 	void clearLocal();
 
 	void importCatalog( ResourceCatalogPtr catalog );

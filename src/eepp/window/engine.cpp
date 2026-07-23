@@ -1,7 +1,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
@@ -107,8 +106,6 @@ Engine::~Engine() {
 	CSS::StyleSheetSpecification::destroySingleton();
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
-
-	NinePatchManager::destroySingleton();
 
 	FontManager::destroySingleton();
 

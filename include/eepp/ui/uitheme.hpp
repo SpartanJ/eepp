@@ -1,6 +1,7 @@
 #ifndef EE_UICUITHEME_HPP
 #define EE_UICUITHEME_HPP
 
+#include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/system/resourcemanager.hpp>
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
@@ -87,6 +88,8 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	UIIconTheme* getIconTheme() const;
 
+	const Graphics::ResourceCatalogPtr& getResourceCatalog() const;
+
 	const std::string& getStyleSheetPath() const;
 
 	void setStyleSheetPath( const std::string& styleSheetPath );
@@ -103,6 +106,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	CSS::StyleSheet mStyleSheet;
 	std::string mStyleSheetPath;
 	UIIconTheme* mIconTheme;
+	Graphics::ResourceCatalogPtr mResourceCatalog;
 
 	void setTextureAtlas( Graphics::TextureAtlas* SG );
 

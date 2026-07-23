@@ -74,7 +74,6 @@
 ../../include/eepp/graphics/glyphdrawable.hpp
 ../../include/eepp/graphics/image.hpp
 ../../include/eepp/graphics/ninepatch.hpp
-../../include/eepp/graphics/ninepatchmanager.hpp
 ../../include/eepp/graphics/packerhelper.hpp
 ../../include/eepp/graphics/particle.hpp
 ../../include/eepp/graphics/particlesystem.hpp
@@ -574,7 +573,6 @@
 ../../src/eepp/graphics/glyphdrawable.cpp
 ../../src/eepp/graphics/image.cpp
 ../../src/eepp/graphics/ninepatch.cpp
-../../src/eepp/graphics/ninepatchmanager.cpp
 ../../src/eepp/graphics/particle.cpp
 ../../src/eepp/graphics/particlesystem.cpp
 ../../src/eepp/graphics/pixeldensity.cpp

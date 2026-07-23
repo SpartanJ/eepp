@@ -162,6 +162,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mRoot->enableReportSizeChangeToChildren();
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
+	mUIThemeManager->setResourceScope( mResourceScope );
 
 	resizeNode( mWindow );
 }
@@ -763,6 +764,7 @@ const ResourceScopePtr& UISceneNode::getResourceScope() const {
 
 UISceneNode* UISceneNode::setResourceScope( ResourceScopePtr resourceScope ) {
 	mResourceScope = resourceScope ? std::move( resourceScope ) : ResourceScope::New();
+	mUIThemeManager->setResourceScope( mResourceScope );
 	return this;
 }
 
