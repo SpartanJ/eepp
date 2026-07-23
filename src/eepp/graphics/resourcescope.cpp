@@ -2,7 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -49,18 +49,110 @@ DrawablePtr ResourceScope::findDrawableSource( const std::string& key ) const {
 	return {};
 }
 
+TextureAtlasPtr ResourceScope::findAtlas( const ResourceKey& key ) const {
+	return findAtlas( key.value() );
+}
+
+TextureAtlasPtr ResourceScope::findAtlas( const std::string& key ) const {
+	if ( TextureAtlasPtr atlas = mLocalCatalog->findAtlas( key ) )
+		return atlas;
+
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		if ( TextureAtlasPtr atlas = catalog->findAtlas( key ) )
+			return atlas;
+	}
+	return {};
+}
+
+std::vector<TextureAtlasPtr> ResourceScope::getAtlases() const {
+	std::vector<TextureAtlasPtr> atlases = mLocalCatalog->getAtlases();
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		std::vector<TextureAtlasPtr> imported = catalog->getAtlases();
+		atlases.insert( atlases.end(), imported.begin(), imported.end() );
+	}
+	return atlases;
+}
+
+std::vector<TextureRegionPtr>
+ResourceScope::findTextureRegionsByPattern( const std::string& name, const std::string& extension,
+											TextureAtlas* searchInTextureAtlas ) const {
+	std::vector<TextureRegionPtr> regions;
+	std::string suffix = extension.empty() ? "" : "." + extension;
+	int padding = 0;
+
+	auto findRegion = [&]( const std::string& key ) -> TextureRegionPtr {
+		DrawablePtr drawable = searchInTextureAtlas ? searchInTextureAtlas->getByName( key )
+													: findDrawableSource( key );
+		return drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+				   ? std::static_pointer_cast<TextureRegion>( drawable )
+				   : TextureRegionPtr{};
+	};
+
+	for ( int len = 1; len < 7 && padding == 0; ++len ) {
+		for ( int i = 0; i < 2; ++i ) {
+			std::string format( "%s%0" + String::toString( len ) + "d%s" );
+			if ( findRegion( String::format( format.c_str(), name.c_str(), i, suffix.c_str() ) ) ) {
+				padding = len;
+				break;
+			}
+		}
+	}
+
+	if ( padding == 0 )
+		return regions;
+
+	for ( int i = 0;; ++i ) {
+		std::string format( "%s%0" + String::toString( padding ) + "d%s" );
+		TextureRegionPtr region =
+			findRegion( String::format( format.c_str(), name.c_str(), i, suffix.c_str() ) );
+		if ( region ) {
+			regions.emplace_back( std::move( region ) );
+		} else if ( i != 0 ) {
+			break;
+		}
+	}
+	return regions;
+}
+
+std::vector<TextureRegionPtr>
+ResourceScope::findTextureRegionsByPatternId( const String::HashType& id,
+											  const std::string& extension,
+											  TextureAtlas* searchInTextureAtlas ) const {
+	DrawablePtr drawable;
+	if ( searchInTextureAtlas ) {
+		drawable = searchInTextureAtlas->getById( id );
+	} else {
+		drawable = mLocalCatalog->findDrawable( id );
+		if ( !drawable ) {
+			Lock lock( mMutex );
+			for ( const ResourceCatalogPtr& catalog : mImports ) {
+				if ( ( drawable = catalog->findDrawable( id ) ) )
+					break;
+			}
+		}
+	}
+
+	if ( !drawable || drawable->getDrawableType() != Drawable::TEXTUREREGION )
+		return {};
+	std::string name = String::removeNumbersAtEnd( FileSystem::fileRemoveExtension(
+		static_cast<TextureRegion*>( drawable.get() )->getName() ) );
+	return findTextureRegionsByPattern( name, extension, searchInTextureAtlas );
+}
+
 DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSearchSprite ) const {
 	if ( name.empty() )
 		return {};
 
-	auto findSprite = []( const std::string& pattern ) -> DrawablePtr {
-		std::vector<TextureRegion*> textureRegions =
-			TextureAtlasManager::instance()->getTextureRegionsByPattern( pattern );
+	auto findSprite = [this]( const std::string& pattern ) -> DrawablePtr {
+		std::vector<TextureRegionPtr> textureRegions = findTextureRegionsByPattern( pattern );
 		if ( textureRegions.empty() )
 			return {};
 		SpritePtr sprite = Sprite::New();
 		sprite->createAnimation();
-		sprite->addFrames( textureRegions );
+		for ( const TextureRegionPtr& textureRegion : textureRegions )
+			sprite->addFrame( textureRegion.get() );
 		return sprite;
 	};
 
@@ -75,8 +167,7 @@ DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSear
 
 	if ( name[0] == '@' ) {
 		if ( String::startsWith( name, "@textureregion/" ) ) {
-			Drawable* source =
-				TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
+			DrawablePtr source = findDrawableSource( name.substr( 12 ) );
 			return source ? source->clone() : DrawablePtr{};
 		}
 		if ( String::startsWith( name, "@image/" ) ) {
@@ -101,17 +192,19 @@ DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSear
 	if ( DrawablePtr source = findDrawableSource( name ) )
 		return source->clone();
 
-	String::HashType id = String::hash( name );
-	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
-	if ( source )
-		return source->clone();
-
 	TexturePtr texture = findTexture( name );
 	return texture ? texture->clone() : DrawablePtr{};
 }
 
 DrawablePtr ResourceScope::findDrawable( const Uint32& id ) const {
-	Drawable* source = TextureAtlasManager::instance()->getTextureRegionById( id );
+	DrawablePtr source = mLocalCatalog->findDrawable( id );
+	if ( !source ) {
+		Lock lock( mMutex );
+		for ( const ResourceCatalogPtr& catalog : mImports ) {
+			if ( ( source = catalog->findDrawable( id ) ) )
+				break;
+		}
+	}
 	return source ? source->clone() : DrawablePtr{};
 }
 
@@ -131,6 +224,14 @@ void ResourceScope::publishLocalDrawable( std::string key, DrawablePtr drawable 
 	mLocalCatalog->publishDrawable( std::move( key ), std::move( drawable ) );
 }
 
+void ResourceScope::publishLocalAtlas( ResourceKey key, TextureAtlasPtr atlas ) {
+	publishLocalAtlas( key.value(), std::move( atlas ) );
+}
+
+void ResourceScope::publishLocalAtlas( std::string key, TextureAtlasPtr atlas ) {
+	mLocalCatalog->publishAtlas( std::move( key ), std::move( atlas ) );
+}
+
 bool ResourceScope::eraseLocal( const ResourceKey& key ) {
 	return mLocalCatalog->erase( key );
 }
@@ -145,6 +246,14 @@ bool ResourceScope::eraseLocalDrawable( const ResourceKey& key ) {
 
 bool ResourceScope::eraseLocalDrawable( const std::string& key ) {
 	return mLocalCatalog->eraseDrawable( key );
+}
+
+bool ResourceScope::eraseLocalAtlas( const ResourceKey& key ) {
+	return mLocalCatalog->eraseAtlas( key );
+}
+
+bool ResourceScope::eraseLocalAtlas( const std::string& key ) {
+	return mLocalCatalog->eraseAtlas( key );
 }
 
 void ResourceScope::clearLocal() {

@@ -941,6 +941,7 @@ class EE_API UISceneNode : public SceneNode {
 	UnorderedSet<UIWidget*> mDirtyStyle;
 	UnorderedSet<UIWidget*> mDirtyStyleState;
 	UnorderedMap<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	SmallVector<std::pair<UIWidget*, bool>, 64> mDirtyStyleStateSnapshot;
 	UnorderedSet<UILayout*> mDirtyLayouts;
 	SmallVector<UILayout*, 64> mDirtyLayoutsSnapshot;
 	std::vector<std::pair<Float, std::string>> mTimes;

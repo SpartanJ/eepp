@@ -5,6 +5,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -361,6 +362,25 @@ UTEST( UISceneNode, NestedSceneInvalidationPropagatesToHostScene ) {
 
 	EXPECT_TRUE( nestedScene->invalidated() );
 	EXPECT_TRUE( hostScene->invalidated() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Style State Widget Creation Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_scene_node();
+	UIFileDialog* dialog = UIFileDialog::New();
+	dialog->setParent( sceneNode->getRoot() );
+
+	// Applying the select-button state creates its UIImage icon. The new widget invalidates style
+	// state while the current dirty-state pass is still being processed.
+	sceneNode->flushDirtyStyleAndLayout();
+
+	EXPECT_TRUE( dialog->getButtonOpen() != nullptr );
 
 	Engine::destroySingleton();
 }

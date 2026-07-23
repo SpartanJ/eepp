@@ -4,6 +4,7 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/iostream.hpp>
@@ -12,8 +13,6 @@
 namespace EE { namespace Graphics {
 
 using namespace Private;
-
-class TextureAtlas;
 
 /** @brief The Texture Atlas Loader loads any previously created Texture Atlas. */
 class EE_API TextureAtlasLoader {
@@ -153,7 +152,7 @@ class EE_API TextureAtlasLoader {
 	Uint32 getTexturesLoadedCount();
 
 	/** @return The texture atlas instance pointer ( NULL if the atlas isn't loaded yet ). */
-	TextureAtlas* getTextureAtlas() const;
+	const TextureAtlasPtr& getTextureAtlas() const;
 
 	/** Sets a load notification callback. */
 	void setLoadCallback( GLLoadCallback LoadCallback );
@@ -174,7 +173,7 @@ class EE_API TextureAtlasLoader {
 	Pack* mPack;
 	bool mSkipResourceLoad;
 	std::atomic<bool> mIsLoading;
-	TextureAtlas* mTextureAtlas;
+	TextureAtlasPtr mTextureAtlas;
 	GLLoadCallback mLoadCallback;
 	ResourceScopePtr mResourceScope;
 	std::vector<TexturePtr> mTexturesLoaded;

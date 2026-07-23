@@ -12,6 +12,7 @@ using namespace EE::System;
 namespace EE { namespace Graphics {
 
 class Sprite;
+class ResourceScope;
 using SpritePtr = ResourcePtr<Sprite>;
 
 /** @brief A Sprite controller class, can hold and control sprites animations. */
@@ -32,13 +33,17 @@ class EE_API Sprite : public Drawable {
 	static SpritePtr New();
 
 	static SpritePtr New( const std::string& name, const std::string& extension = "",
-						TextureAtlas* SearchInTextureAtlas = NULL );
+						  TextureAtlas* SearchInTextureAtlas = NULL );
+
+	static SpritePtr New( ResourceScope& resourceScope, const std::string& name,
+						  const std::string& extension = "",
+						  TextureAtlas* SearchInTextureAtlas = NULL );
 
 	static SpritePtr New( TextureRegion* TextureRegion );
 
 	static SpritePtr New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
-						const Vector2i& offset = Vector2i( 0, 0 ),
-						const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+						  const Vector2i& offset = Vector2i( 0, 0 ),
+						  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
 	static SpritePtr fromGif( IOStream& gif );
 
@@ -56,10 +61,13 @@ class EE_API Sprite : public Drawable {
 	 * @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you
 	 * want to search in all atlases )
 	 * @note Texture atlases saves the TextureRegions names without extension by default.
-	 * @see TextureAtlasManager::GetTextureRegionsByPattern
+	 * @see ResourceScope::findTextureRegionsByPattern
 	 */
 	Sprite( const std::string& name, const std::string& extension = "",
 			TextureAtlas* SearchInTextureAtlas = NULL );
+
+	Sprite( ResourceScope& resourceScope, const std::string& name,
+			const std::string& extension = "", TextureAtlas* SearchInTextureAtlas = NULL );
 
 	/** Creates a Sprite from a TextureRegion
 	**	@param TextureRegion The TextureRegion to use */
@@ -258,12 +266,20 @@ class EE_API Sprite : public Drawable {
 	 */
 	bool addFrames( const std::vector<TextureRegion*> TextureRegions );
 
-	/** @see TextureAtlasManager::GetTextureRegionsByPattern */
+	/** @see ResourceScope::findTextureRegionsByPattern */
 	bool addFramesByPattern( const std::string& name, const std::string& extension = "",
+							 TextureAtlas* SearchInTextureAtlas = NULL );
+
+	bool addFramesByPattern( ResourceScope& resourceScope, const std::string& name,
+							 const std::string& extension = "",
 							 TextureAtlas* SearchInTextureAtlas = NULL );
 
 	bool addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension,
 							   TextureAtlas* SearchInTextureAtlas );
+
+	bool addFramesByPatternId( ResourceScope& resourceScope, const Uint32& TextureRegionId,
+							   const std::string& extension,
+							   TextureAtlas* SearchInTextureAtlas = NULL );
 
 	/** Add a frame on an specific subframe to the sprite
 	 * @param tex The texture

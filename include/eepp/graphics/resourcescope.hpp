@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -22,15 +23,28 @@ class EE_API ResourceScope {
 	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
 	DrawablePtr findDrawable( const Uint32& id ) const;
+	TextureAtlasPtr findAtlas( const ResourceKey& key ) const;
+	TextureAtlasPtr findAtlas( const std::string& key ) const;
+	std::vector<TextureAtlasPtr> getAtlases() const;
+	std::vector<TextureRegionPtr>
+	findTextureRegionsByPattern( const std::string& name, const std::string& extension = "",
+								 TextureAtlas* searchInTextureAtlas = nullptr ) const;
+	std::vector<TextureRegionPtr>
+	findTextureRegionsByPatternId( const String::HashType& id, const std::string& extension = "",
+								   TextureAtlas* searchInTextureAtlas = nullptr ) const;
 
 	void publishLocal( ResourceKey key, TexturePtr texture );
 	void publishLocal( std::string key, TexturePtr texture );
 	void publishLocalDrawable( ResourceKey key, DrawablePtr drawable );
 	void publishLocalDrawable( std::string key, DrawablePtr drawable );
+	void publishLocalAtlas( ResourceKey key, TextureAtlasPtr atlas );
+	void publishLocalAtlas( std::string key, TextureAtlasPtr atlas );
 	bool eraseLocal( const ResourceKey& key );
 	bool eraseLocal( const std::string& key );
 	bool eraseLocalDrawable( const ResourceKey& key );
 	bool eraseLocalDrawable( const std::string& key );
+	bool eraseLocalAtlas( const ResourceKey& key );
+	bool eraseLocalAtlas( const std::string& key );
 	void clearLocal();
 
 	void importCatalog( ResourceCatalogPtr catalog );

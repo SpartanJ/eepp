@@ -2,7 +2,6 @@
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -51,7 +50,7 @@ TextureAtlasLoader::TextureAtlasLoader() :
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ) {}
+	mTextureAtlas() {}
 
 TextureAtlasLoader::TextureAtlasLoader( const std::string& TextureAtlasPath, const bool& Threaded,
 										GLLoadCallback LoadCallback ) :
@@ -61,7 +60,7 @@ TextureAtlasLoader::TextureAtlasLoader( const std::string& TextureAtlasPath, con
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromFile();
 }
@@ -75,7 +74,7 @@ TextureAtlasLoader::TextureAtlasLoader( const Uint8* Data, const Uint32& DataSiz
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromMemory( Data, DataSize, TextureAtlasName );
 }
@@ -88,7 +87,7 @@ TextureAtlasLoader::TextureAtlasLoader( Pack* Pack, const std::string& FilePackP
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromPack( Pack, FilePackPath );
 }
@@ -100,7 +99,7 @@ TextureAtlasLoader::TextureAtlasLoader( IOStream& IOS, const bool& Threaded,
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromStream( IOS );
 }
@@ -242,7 +241,7 @@ void TextureAtlasLoader::loadFromMemory( const Uint8* Data, const Uint32& DataSi
 	loadFromStream( IOS );
 }
 
-TextureAtlas* TextureAtlasLoader::getTextureAtlas() const {
+const TextureAtlasPtr& TextureAtlasLoader::getTextureAtlas() const {
 	return mTextureAtlas;
 }
 
@@ -273,7 +272,7 @@ void TextureAtlasLoader::createTextureRegions() {
 			std::string etapath =
 				FileSystem::fileRemoveExtension( path ) + EE_TEXTURE_ATLAS_EXTENSION;
 
-			TextureAtlas* tTextureAtlas = TextureAtlasManager::instance()->getByName( name );
+			TextureAtlasPtr tTextureAtlas = mResourceScope->findAtlas( name );
 
 			if ( NULL != tTextureAtlas && tTextureAtlas->getPath() == etapath ) {
 				mTextureAtlas = tTextureAtlas;
@@ -284,7 +283,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 				mTextureAtlas->setPath( etapath );
 
-				TextureAtlasManager::instance()->add( mTextureAtlas );
+				mResourceScope->publishLocalAtlas( name, mTextureAtlas );
 			}
 		}
 
@@ -300,7 +299,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-					TextureRegion* tTextureRegion = TextureRegion::New(
+					TextureRegionPtr tTextureRegion = TextureRegion::New(
 						tTex->getTextureId(), tRect,
 						Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ),
 						Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
@@ -309,7 +308,8 @@ void TextureAtlasLoader::createTextureRegions() {
 					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED )
 					// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
-					mTextureAtlas->add( tTextureRegion );
+					tTextureRegion = mTextureAtlas->add( std::move( tTextureRegion ) );
+					mResourceScope->publishLocalDrawable( TextureRegionName, tTextureRegion );
 				}
 			}
 		} else {
@@ -373,7 +373,7 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 
 		for ( Int32 i = 0; i < tTexHdr->TextureRegionCount; i++ ) {
 			sTextureRegionHdr* tSh = &tTexAtlas->TextureRegions[i];
-			TextureRegion* tTextureRegion = mTextureAtlas->getById( tSh->ResourceID );
+			TextureRegionPtr tTextureRegion = mTextureAtlas->getById( tSh->ResourceID );
 
 			if ( NULL != tTextureRegion ) {
 				tSh->OffsetX = tTextureRegion->getOffset().x;

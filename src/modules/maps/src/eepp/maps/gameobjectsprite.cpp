@@ -1,5 +1,5 @@
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/maps/tilemaplayer.hpp>
@@ -134,19 +134,23 @@ void GameObjectSprite::setDataId( Uint32 Id ) {
 	Graphics::SpritePtr tSprite;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<TextureRegion*> tTextureRegionVec =
-			TextureAtlasManager::instance()->getTextureRegionsByPatternId( Id );
+		std::vector<TextureRegionPtr> tTextureRegionVec =
+			defaultResourceScope().findTextureRegionsByPatternId( Id );
 
 		if ( tTextureRegionVec.size() ) {
 			tSprite = Graphics::Sprite::New();
 			tSprite->createAnimation();
-			tSprite->addFrames( tTextureRegionVec );
+			for ( const TextureRegionPtr& textureRegion : tTextureRegionVec )
+				tSprite->addFrame( textureRegion.get() );
 
 			setSprite( std::move( tSprite ) );
 		}
 	} else {
+		DrawablePtr drawable = defaultResourceScope().findDrawable( Id );
 		Graphics::TextureRegion* tTextureRegion =
-			TextureAtlasManager::instance()->getTextureRegionById( Id );
+			drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+				? static_cast<TextureRegion*>( drawable.get() )
+				: nullptr;
 
 		if ( NULL != tTextureRegion ) {
 			setSprite( Graphics::Sprite::New( tTextureRegion ) );

@@ -1,4 +1,3 @@
-#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/scene/scenenode.hpp>

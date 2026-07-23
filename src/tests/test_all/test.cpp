@@ -1399,14 +1399,14 @@ void EETest::loadTextures() {
 	Tiles.resize( 10 );
 
 	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	TextureAtlas* SG = TextureAtlasManager::instance()->getByName( "tiles" );
+	TextureAtlas* SG = tgl.getTextureAtlas().get();
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
-			Tiles[i] = SG->getByName( String::toString( i + 1 ) );
+			Tiles[i] = SG->getByName( String::toString( i + 1 ) ).get();
 		}
 
-		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" ).get();
 
 #ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
@@ -1415,7 +1415,7 @@ void EETest::loadTextures() {
 												tImg.getHeight(), tImg.getChannels() ),
 							"8" );
 #else
-		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" ).get();
 		Tiles[7]->getTexture()->createMaskFromColor( Color( 0, 0, 0, 255 ), 0 );
 #endif
 	}
@@ -1483,10 +1483,10 @@ void EETest::loadTextures() {
 	mMonster.addFramesByPattern( "rn" );
 	mMonster.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite =
-		Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
-	mCircleSprite = Sprite::New(
-		GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
+	TextureRegionPtr boxRegion = TextureRegion::New( TN[3], "ilmare" );
+	mBoxSprite = Sprite::New( boxRegion.get() );
+	TextureRegionPtr circleRegion = TextureRegion::New( TN[1], "thecircle" );
+	mCircleSprite = Sprite::New( circleRegion.get() );
 
 	Log::info( "Textures loading time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 

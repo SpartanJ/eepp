@@ -16,7 +16,6 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 using namespace EE::Graphics;
@@ -672,8 +671,11 @@ GameObject* TileMap::createGameObject( const Uint32& Type, const Uint32& Flags, 
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				GameObjectVirtual* tVirtual;
+				DrawablePtr drawable = defaultResourceScope().findDrawable( DataId );
 				TextureRegion* tIsTextureRegion =
-					TextureAtlasManager::instance()->getTextureRegionById( DataId );
+					drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+						? static_cast<TextureRegion*>( drawable.get() )
+						: nullptr;
 
 				if ( NULL != tIsTextureRegion ) {
 					tVirtual = eeNew( GameObjectVirtual, ( tIsTextureRegion, Layer, Flags, Type ) );
@@ -861,7 +863,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					std::string sgname = FileSystem::fileRemoveExtension(
 						FileSystem::fileNameFromPath( TextureAtlases[i] ) );
 
-					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
+					if ( !defaultResourceScope().findAtlas( sgname ) ) {
 						TextureAtlasLoader* tgl = eeNew( TextureAtlasLoader, () );
 
 						if ( !VirtualFileSystem::instance()->fileExists( TextureAtlases[i] ) &&
@@ -1439,8 +1441,7 @@ void TileMap::saveToFile( const std::string& path ) {
 }
 
 std::vector<std::string> TileMap::getTextureAtlases() {
-	TextureAtlasManager* SGM = TextureAtlasManager::instance();
-	auto& res = SGM->getResources();
+	std::vector<TextureAtlasPtr> atlases = defaultResourceScope().getAtlases();
 
 	std::vector<std::string> items;
 
@@ -1453,9 +1454,9 @@ std::vector<std::string> TileMap::getTextureAtlases() {
 										   ->getTextureAtlas()
 										   ->getName() );
 
-	for ( auto& it : res ) {
-		if ( it.second->getId() != Restricted1 && it.second->getId() != Restricted2 )
-			items.push_back( it.second->getPath() );
+	for ( const TextureAtlasPtr& atlas : atlases ) {
+		if ( atlas->getId() != Restricted1 && atlas->getId() != Restricted2 )
+			items.push_back( atlas->getPath() );
 	}
 
 	return items;

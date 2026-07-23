@@ -20,7 +20,6 @@
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/linewrap.hpp>
@@ -66,7 +65,6 @@
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturepacker.hpp>

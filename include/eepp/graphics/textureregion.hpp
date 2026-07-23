@@ -10,32 +10,34 @@ namespace EE { namespace Graphics {
 
 class TextureRegion;
 using TextureRegionPtr = ResourcePtr<TextureRegion>;
+using TextureRegionWeakPtr = ResourceWeakPtr<TextureRegion>;
 
 /** @brief A TextureRegion is a part of a texture that represent an sprite.*/
 class EE_API TextureRegion : public DrawableResource {
   public:
-	static TextureRegion* New();
+	static TextureRegionPtr New();
 
-	static TextureRegion* New( ResourceId textureId, const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-							   const Vector2i& offset, const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
+								 const Vector2i& offset, const std::string& name = "" );
 
-	static TextureRegion* New( TexturePtr tex, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const std::string& name = "" );
 
-	static TextureRegion* New( TexturePtr tex, const Rect& srcRect, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
-							   const Vector2i& offset, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+								 const Vector2i& offset, const std::string& name = "" );
 
 	/** Creates an empty TextureRegion */
 	TextureRegion();

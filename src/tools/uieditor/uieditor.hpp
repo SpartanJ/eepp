@@ -194,7 +194,7 @@ class App : public UICodeEditorSplitter::Client {
 	IniFile mIni;
 	Uint32 mRecentProjectEventClickId{ 0xFFFFFFFF };
 	Uint32 mRecentFilesEventClickId{ 0xFFFFFFFF };
-	std::map<ResourceId, TextureRegion*> mImagesLoaded;
+	std::map<ResourceId, TextureRegionPtr> mImagesLoaded;
 	std::map<Font*, std::string> mFontsLoaded;
 	UpdateListener* mListener{ nullptr };
 	std::string mConfigPath;

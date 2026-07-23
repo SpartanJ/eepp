@@ -135,7 +135,7 @@ void App::saveConfig() {
 
 void App::unloadImages() {
 	for ( auto it = mImagesLoaded.begin(); it != mImagesLoaded.end(); ++it ) {
-		GlobalTextureAtlas::instance()->remove( it->second );
+		mUISceneNode->getResourceScope()->eraseLocalDrawable( it->second->getName() );
 	}
 	mImagesLoaded.clear();
 }
@@ -151,8 +151,8 @@ void App::loadImage( std::string path ) {
 	TexturePtr tex = TextureFactory::instance()->loadFromFile( path );
 	if ( tex ) {
 		ResourceId texId = tex->getTextureId();
-		TextureRegion* texRegion =
-			GlobalTextureAtlas::instance()->add( std::move( tex ), filename );
+		TextureRegionPtr texRegion = TextureRegion::New( std::move( tex ), filename );
+		mUISceneNode->getResourceScope()->publishLocalDrawable( filename, texRegion );
 		mImagesLoaded[texId] = texRegion;
 	}
 }
@@ -584,13 +584,15 @@ std::string App::pathFix( std::string path ) {
 }
 
 void App::loadUITheme( std::string themePath ) {
-	TextureAtlasLoader tgl( themePath );
+	TextureAtlasLoader tgl;
+	tgl.setResourceScope( mUISceneNode->getResourceScope() );
+	tgl.loadFromFile( themePath );
 
 	std::string name(
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
 
-	UITheme* uitheme = UITheme::loadFromTextureAtlas(
-		UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
+	UITheme* uitheme =
+		UITheme::loadFromTextureAtlas( UITheme::New( name, name ), tgl.getTextureAtlas() );
 
 	mUISceneNode->getUIThemeManager()->setDefaultTheme( uitheme )->add( uitheme );
 }

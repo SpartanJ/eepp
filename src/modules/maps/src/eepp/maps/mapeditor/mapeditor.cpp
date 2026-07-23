@@ -1,8 +1,7 @@
 #include <algorithm>
-#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
 #include <eepp/maps/gameobjectpolyline.hpp>
@@ -935,8 +934,7 @@ void MapEditor::onNewGOTypeAdded( std::string name, String::HashType ) {
 }
 
 void MapEditor::fillSGCombo() {
-	TextureAtlasManager* SGM = TextureAtlasManager::instance();
-	auto& res = SGM->getResources();
+	std::vector<TextureAtlasPtr> atlases = defaultResourceScope().getAtlases();
 
 	mTextureAtlasesList->getListBox()->clear();
 
@@ -947,9 +945,9 @@ void MapEditor::fillSGCombo() {
 	if ( NULL != mTheme && NULL != mTheme->getTextureAtlas() )
 		Restricted2 = String::hash( mTheme->getTextureAtlas()->getName() );
 
-	for ( auto& it : res ) {
-		if ( it.second->getId() != Restricted1 && it.second->getId() != Restricted2 )
-			items.push_back( it.second->getName() );
+	for ( const TextureAtlasPtr& atlas : atlases ) {
+		if ( atlas->getId() != Restricted1 && atlas->getId() != Restricted2 )
+			items.push_back( atlas->getName() );
 	}
 
 	if ( items.size() ) {
@@ -963,13 +961,12 @@ void MapEditor::fillSGCombo() {
 }
 
 void MapEditor::fillTextureRegionList() {
-	TextureAtlasManager* SGM = TextureAtlasManager::instance();
-	mCurSG = SGM->getByName( mTextureAtlasesList->getText() );
-	auto& res = mCurSG->getResources();
+	mCurSG = defaultResourceScope().findAtlas( mTextureAtlasesList->getText() ).get();
 
 	mTextureRegionList->clear();
 
 	if ( NULL != mCurSG ) {
+		auto& res = mCurSG->getResources();
 		std::vector<String> items;
 
 		for ( auto& it : res ) {
@@ -991,7 +988,7 @@ void MapEditor::fillTextureRegionList() {
 void MapEditor::onTextureRegionChange( const Event* ) {
 	if ( NULL != mCurSG ) {
 		TextureRegion* tTextureRegion =
-			mCurSG->getByName( mTextureRegionList->getItemSelectedText() );
+			mCurSG->getByName( mTextureRegionList->getItemSelectedText() ).get();
 
 		if ( NULL != tTextureRegion ) {
 			mGfxPreview->setTextureRegion( tTextureRegion );
@@ -1373,9 +1370,9 @@ void MapEditor::cextureAtlasOpen( const Event* Event ) {
 	std::string sgname =
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( CDL->getFullPath() ) );
 
-	TextureAtlas* SG = TextureAtlasManager::instance()->getByName( sgname );
+	TextureAtlasPtr atlas = defaultResourceScope().findAtlas( sgname );
 
-	if ( NULL == SG ) {
+	if ( !atlas ) {
 		TextureAtlasLoader tgl( CDL->getFullPath() );
 
 		if ( tgl.isLoaded() ) {
@@ -1443,14 +1440,13 @@ GameObject* MapEditor::createGameObject() {
 			SpritePtr tAnimSprite = Sprite::New(
 				String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) );
 			tAnimSprite->setAutoAnimate( false );
-			tObj = eeNew( GameObjectSprite,
-						  ( mCurGOFlags, mCurLayer, std::move( tAnimSprite ) ) );
+			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, std::move( tAnimSprite ) ) );
 
 		} else {
 
 			SpritePtr tStaticSprite = Sprite::New( mGfxPreview->getTextureRegion() );
-			tObj = eeNew( GameObjectSprite,
-						  ( mCurGOFlags, mCurLayer, std::move( tStaticSprite ) ) );
+			tObj =
+				eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, std::move( tStaticSprite ) ) );
 		}
 	} else {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and

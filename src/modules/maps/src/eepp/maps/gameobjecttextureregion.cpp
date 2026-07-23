@@ -1,4 +1,4 @@
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/maps/gameobjecttextureregion.hpp>
 #include <eepp/maps/maplightmanager.hpp>
 #include <eepp/maps/tilemap.hpp>
@@ -106,9 +106,8 @@ Graphics::TextureRegion* GameObjectTextureRegion::getTextureRegion() const {
 
 void GameObjectTextureRegion::setTextureRegion( Graphics::TextureRegion* TextureRegion ) {
 	mTextureRegion =
-		TextureRegion
-			? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->clone() )
-			: TextureRegionPtr{};
+		TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->clone() )
+					  : TextureRegionPtr{};
 }
 
 Uint32 GameObjectTextureRegion::getDataId() {
@@ -116,7 +115,10 @@ Uint32 GameObjectTextureRegion::getDataId() {
 }
 
 void GameObjectTextureRegion::setDataId( Uint32 Id ) {
-	setTextureRegion( TextureAtlasManager::instance()->getTextureRegionById( Id ) );
+	DrawablePtr drawable = defaultResourceScope().findDrawable( Id );
+	setTextureRegion( drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+						  ? static_cast<TextureRegion*>( drawable.get() )
+						  : nullptr );
 }
 
 }} // namespace EE::Maps

@@ -1,7 +1,6 @@
-#include <eepp/graphics/globaltextureatlas.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 
 namespace EE { namespace UI {
@@ -221,17 +220,15 @@ bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
-			Drawable* res = NULL;
 			std::string name( attribute.asString() );
 
 			if ( String::startsWith( name, "@textureregion/" ) ) {
 				name = name.substr( 12 );
 			}
 
-			if ( NULL !=
-					 ( res = TextureAtlasManager::instance()->getTextureRegionByName( name ) ) &&
-				 res->getDrawableType() == Drawable::TEXTUREREGION ) {
-				setTextureRegion( static_cast<TextureRegion*>( res ) );
+			DrawablePtr resource = getUISceneNode()->getResourceScope()->findDrawableSource( name );
+			if ( resource && resource->getDrawableType() == Drawable::TEXTUREREGION ) {
+				setTextureRegion( static_cast<TextureRegion*>( resource.get() ) );
 			}
 			break;
 		}

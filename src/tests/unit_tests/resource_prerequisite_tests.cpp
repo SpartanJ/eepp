@@ -21,7 +21,6 @@
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
@@ -84,7 +83,9 @@ class TestTextureAtlas : public TextureAtlas {
 
 class TestTextureAtlasLoader : public TextureAtlasLoader {
   public:
-	void setTextureAtlas( TextureAtlas* textureAtlas ) { mTextureAtlas = textureAtlas; }
+	void setTextureAtlas( TextureAtlasPtr textureAtlas ) {
+		mTextureAtlas = std::move( textureAtlas );
+	}
 
 	void loadDelayed( const std::shared_ptr<LoaderGate>& gate,
 					  const std::shared_ptr<std::atomic<bool>>& callbackCompleted ) {
@@ -234,11 +235,11 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
 		ASSERT_TRUE( first != NULL );
 		ASSERT_TRUE( second != NULL );
 
-		TestTextureAtlas atlas;
-		atlas.setTextures( { first, second } );
+		auto atlas = makeResource<TestTextureAtlas>();
+		atlas->setTextures( { first, second } );
 
 		TestTextureAtlasLoader loader;
-		loader.setTextureAtlas( &atlas );
+		loader.setTextureAtlas( atlas );
 		loader.setTextureFilter( Texture::Filter::Nearest );
 
 		EXPECT_EQ( first->getFilter(), Texture::Filter::Nearest );
@@ -253,6 +254,49 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAcceptsFilterBeforeAtlasExists )
 	loader.setTextureFilter( Texture::Filter::Nearest );
 	EXPECT_EQ( static_cast<Texture::Filter>( loader.getTextureAtlasHeader().TextureFilter ),
 			   Texture::Filter::Nearest );
+}
+
+UTEST( ResourcePrerequisites, textureAtlasAndCatalogRetainRegionsByHandle ) {
+	TextureAtlasPtr atlas = TextureAtlas::New( "owned-atlas" );
+	TextureRegionPtr region = TextureRegion::New( TexturePtr{}, "owned-region" );
+	TextureRegionWeakPtr weakRegion = region;
+	atlas->add( region );
+	region.reset();
+	ASSERT_FALSE( weakRegion.expired() );
+
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TextureAtlasWeakPtr weakAtlas = atlas;
+	catalog->publishAtlas( atlas->getName(), atlas );
+	atlas.reset();
+	ASSERT_FALSE( weakAtlas.expired() );
+	EXPECT_TRUE( catalog->findAtlas( "owned-atlas" ) != nullptr );
+
+	catalog->eraseAtlas( "owned-atlas" );
+	EXPECT_TRUE( weakAtlas.expired() );
+	EXPECT_TRUE( weakRegion.expired() );
+}
+
+UTEST( ResourcePrerequisites, resourceScopeResolvesPublishedAtlasRegionPatterns ) {
+	ResourceScopePtr scope = ResourceScope::New();
+	TextureAtlasPtr atlas = TextureAtlas::New( "pattern-atlas" );
+	TextureRegionPtr first = atlas->add( TextureRegion::New( TexturePtr{}, "walk00" ) );
+	TextureRegionPtr second = atlas->add( TextureRegion::New( TexturePtr{}, "walk01" ) );
+	scope->publishLocalAtlas( atlas->getName(), atlas );
+	scope->publishLocalDrawable( first->getName(), first );
+	scope->publishLocalDrawable( second->getName(), second );
+
+	std::vector<TextureRegionPtr> pattern = scope->findTextureRegionsByPattern( "walk" );
+	ASSERT_EQ( pattern.size(), 2u );
+	EXPECT_EQ( pattern[0].get(), first.get() );
+	EXPECT_EQ( pattern[1].get(), second.get() );
+	std::vector<TextureRegionPtr> patternById =
+		scope->findTextureRegionsByPatternId( first->getId() );
+	ASSERT_EQ( patternById.size(), 2u );
+	EXPECT_EQ( patternById[0].get(), first.get() );
+
+	SpritePtr sprite = Sprite::New( *scope, "walk" );
+	ASSERT_TRUE( sprite != nullptr );
+	EXPECT_EQ( sprite->getNumFrames(), 2u );
 }
 
 UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithoutOwning ) {
@@ -1025,7 +1069,6 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
 		EXPECT_TRUE( FontManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( TextureAtlasManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
 		EXPECT_TRUE( ShaderProgramManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( Graphics::Private::FrameBufferManager::existsSingleton() == nullptr );

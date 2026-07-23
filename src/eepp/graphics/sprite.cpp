@@ -1,6 +1,5 @@
-#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/math/originpoint.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -17,6 +16,11 @@ SpritePtr Sprite::New() {
 SpritePtr Sprite::New( const std::string& name, const std::string& extension,
 					   TextureAtlas* SearchInTextureAtlas ) {
 	return makeResource<Sprite>( name, extension, SearchInTextureAtlas );
+}
+
+SpritePtr Sprite::New( ResourceScope& resourceScope, const std::string& name,
+					   const std::string& extension, TextureAtlas* SearchInTextureAtlas ) {
+	return makeResource<Sprite>( resourceScope, name, extension, SearchInTextureAtlas );
 }
 
 SpritePtr Sprite::New( TextureRegion* TextureRegion ) {
@@ -51,6 +55,12 @@ Sprite::Sprite( const std::string& name, const std::string& extension,
 	addFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
+Sprite::Sprite( ResourceScope& resourceScope, const std::string& name, const std::string& extension,
+				TextureAtlas* SearchInTextureAtlas ) :
+	Drawable( Drawable::SPRITE ) {
+	addFramesByPattern( resourceScope, name, extension, SearchInTextureAtlas );
+}
+
 Sprite::Sprite( TextureRegion* TextureRegion ) : Drawable( Drawable::SPRITE ) {
 	createStatic( TextureRegion );
 }
@@ -77,8 +87,7 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 		frame.Spr.reserve( otherFrame.Spr.size() );
 		for ( const TextureRegionPtr& region : otherFrame.Spr ) {
 			frame.Spr.emplace_back(
-				region ? std::static_pointer_cast<TextureRegion>( region->clone() )
-					   : nullptr );
+				region ? std::static_pointer_cast<TextureRegion>( region->clone() ) : nullptr );
 		}
 		mFrames.emplace_back( std::move( frame ) );
 	}
@@ -345,12 +354,19 @@ bool Sprite::addFrames( const std::vector<TextureRegion*> TextureRegions ) {
 
 bool Sprite::addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension,
 								   TextureAtlas* SearchInTextureAtlas ) {
-	std::vector<TextureRegion*> TextureRegions =
-		TextureAtlasManager::instance()->getTextureRegionsByPatternId( TextureRegionId, extension,
-																	   SearchInTextureAtlas );
+	return addFramesByPatternId( defaultResourceScope(), TextureRegionId, extension,
+								 SearchInTextureAtlas );
+}
+
+bool Sprite::addFramesByPatternId( ResourceScope& resourceScope, const Uint32& TextureRegionId,
+								   const std::string& extension,
+								   TextureAtlas* SearchInTextureAtlas ) {
+	std::vector<TextureRegionPtr> TextureRegions = resourceScope.findTextureRegionsByPatternId(
+		TextureRegionId, extension, SearchInTextureAtlas );
 
 	if ( TextureRegions.size() ) {
-		addFrames( TextureRegions );
+		for ( const TextureRegionPtr& textureRegion : TextureRegions )
+			addFrame( textureRegion.get() );
 
 		return true;
 	}
@@ -363,12 +379,18 @@ bool Sprite::addFramesByPatternId( const Uint32& TextureRegionId, const std::str
 
 bool Sprite::addFramesByPattern( const std::string& name, const std::string& extension,
 								 TextureAtlas* SearchInTextureAtlas ) {
-	std::vector<TextureRegion*> TextureRegions =
-		TextureAtlasManager::instance()->getTextureRegionsByPattern( name, extension,
-																	 SearchInTextureAtlas );
+	return addFramesByPattern( defaultResourceScope(), name, extension, SearchInTextureAtlas );
+}
+
+bool Sprite::addFramesByPattern( ResourceScope& resourceScope, const std::string& name,
+								 const std::string& extension,
+								 TextureAtlas* SearchInTextureAtlas ) {
+	std::vector<TextureRegionPtr> TextureRegions =
+		resourceScope.findTextureRegionsByPattern( name, extension, SearchInTextureAtlas );
 
 	if ( TextureRegions.size() ) {
-		addFrames( TextureRegions );
+		for ( const TextureRegionPtr& textureRegion : TextureRegions )
+			addFrame( textureRegion.get() );
 
 		return true;
 	}
@@ -380,10 +402,10 @@ bool Sprite::addFramesByPattern( const std::string& name, const std::string& ext
 
 bool Sprite::addSubFrame( TextureRegion* TextureRegion, const unsigned int& NumFrame,
 						  const unsigned int& NumSubFrame ) {
-	return addSubFrame( TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>(
-											TextureRegion->clone() )
-									  : TextureRegionPtr{},
-						NumFrame, NumSubFrame );
+	return addSubFrame(
+		TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->clone() )
+					  : TextureRegionPtr{},
+		NumFrame, NumSubFrame );
 }
 
 bool Sprite::addSubFrame( TextureRegionPtr TextureRegion, const unsigned int& NumFrame,

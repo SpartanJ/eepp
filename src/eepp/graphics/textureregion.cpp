@@ -10,48 +10,50 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-TextureRegion* TextureRegion::New() {
-	return eeNew( TextureRegion, () );
+TextureRegionPtr TextureRegion::New() {
+	return makeResource<TextureRegion>();
 }
 
-TextureRegion* TextureRegion::New( ResourceId textureId, const std::string& name ) {
-	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), name ) );
+TextureRegionPtr TextureRegion::New( ResourceId textureId, const std::string& name ) {
+	return makeResource<TextureRegion>( TextureFactory::instance()->getTexture( textureId ), name );
 }
 
-TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect,
-								   const std::string& name ) {
-	return eeNew( TextureRegion,
-				  ( TextureFactory::instance()->getTexture( textureId ), srcRect, name ) );
+TextureRegionPtr TextureRegion::New( ResourceId textureId, const Rect& srcRect,
+									 const std::string& name ) {
+	return makeResource<TextureRegion>( TextureFactory::instance()->getTexture( textureId ),
+										srcRect, name );
 }
 
-TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-								   const std::string& name ) {
-	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), srcRect,
-								   destSize, name ) );
+TextureRegionPtr TextureRegion::New( ResourceId textureId, const Rect& srcRect,
+									 const Sizef& destSize, const std::string& name ) {
+	return makeResource<TextureRegion>( TextureFactory::instance()->getTexture( textureId ),
+										srcRect, destSize, name );
 }
 
-TextureRegion* TextureRegion::New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-								   const Vector2i& offset, const std::string& name ) {
-	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( textureId ), srcRect,
-								   destSize, offset, name ) );
+TextureRegionPtr TextureRegion::New( ResourceId textureId, const Rect& srcRect,
+									 const Sizef& destSize, const Vector2i& offset,
+									 const std::string& name ) {
+	return makeResource<TextureRegion>( TextureFactory::instance()->getTexture( textureId ),
+										srcRect, destSize, offset, name );
 }
 
-TextureRegion* TextureRegion::New( TexturePtr tex, const std::string& name ) {
-	return eeNew( TextureRegion, ( std::move( tex ), name ) );
+TextureRegionPtr TextureRegion::New( TexturePtr tex, const std::string& name ) {
+	return makeResource<TextureRegion>( std::move( tex ), name );
 }
 
-TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const std::string& name ) {
-	return eeNew( TextureRegion, ( std::move( tex ), srcRect, name ) );
+TextureRegionPtr TextureRegion::New( TexturePtr tex, const Rect& srcRect,
+									 const std::string& name ) {
+	return makeResource<TextureRegion>( std::move( tex ), srcRect, name );
 }
 
-TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
-								   const std::string& name ) {
-	return eeNew( TextureRegion, ( std::move( tex ), srcRect, destSize, name ) );
+TextureRegionPtr TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+									 const std::string& name ) {
+	return makeResource<TextureRegion>( std::move( tex ), srcRect, destSize, name );
 }
 
-TextureRegion* TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
-								   const Vector2i& offset, const std::string& name ) {
-	return eeNew( TextureRegion, ( std::move( tex ), srcRect, destSize, offset, name ) );
+TextureRegionPtr TextureRegion::New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+									 const Vector2i& offset, const std::string& name ) {
+	return makeResource<TextureRegion>( std::move( tex ), srcRect, destSize, offset, name );
 }
 
 TextureRegion::TextureRegion() :

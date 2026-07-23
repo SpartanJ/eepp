@@ -1418,11 +1418,23 @@ void UISceneNode::updateDirtyStyles() {
 void UISceneNode::updateDirtyStyleStates() {
 	if ( !mDirtyStyleState.empty() ) {
 		Clock clock;
-		for ( auto& node : mDirtyStyleState ) {
-			node->reportStyleStateChangeRecursive( mDirtyStyleStateCSSAnimations[node] );
+
+		// Applying a style state can create widgets (for example a button icon). Widget
+		// construction invalidates its style state, so iterating mDirtyStyleState directly would
+		// mutate and potentially reallocate its vector-backed unordered_dense storage. Snapshot the
+		// current pass and leave new invalidations queued for the outer invalidation-depth loop.
+		mDirtyStyleStateSnapshot.clear();
+		mDirtyStyleStateSnapshot.reserve( mDirtyStyleState.size() );
+		for ( UIWidget* node : mDirtyStyleState ) {
+			auto animations = mDirtyStyleStateCSSAnimations.find( node );
+			mDirtyStyleStateSnapshot.emplace_back(
+				node, animations != mDirtyStyleStateCSSAnimations.end() && animations->second );
 		}
 		mDirtyStyleState.clear();
 		mDirtyStyleStateCSSAnimations.clear();
+
+		for ( const auto& dirtyState : mDirtyStyleStateSnapshot )
+			dirtyState.first->reportStyleStateChangeRecursive( dirtyState.second );
 
 		if ( mVerbose )
 			Log::debug( "CSS Style State Invalidated, reapplied state in %.2f ms",

@@ -6,7 +6,6 @@
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/textlayout.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/network/http.hpp>
@@ -75,7 +74,6 @@ Engine::Engine() :
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );
 #endif
 
-	TextureAtlasManager::createSingleton();
 	UISceneNode::openAsyncResourceMainThreadQueue();
 }
 
@@ -108,8 +106,6 @@ Engine::~Engine() {
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
 	FontManager::destroySingleton();
-
-	TextureAtlasManager::destroySingleton();
 
 	Graphics::Private::FrameBufferManager::destroySingleton();
 

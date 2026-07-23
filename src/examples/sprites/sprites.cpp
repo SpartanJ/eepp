@@ -121,9 +121,9 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		// Create a static sprite
 		Planet.createStatic( PlanetTex );
 
-		// It will look for a TextureRegion ( in any Texture Atlas loaded, or the GlobalTextureAtlas
-		// ) animation by its name, it will search for "gn00" to "gnXX" to create a new animation
-		// see TextureAtlasManager::GetTextureRegionsByPattern for more information.
+		// It will look for a TextureRegion animation in the default resource scope by its name. It
+		// will search for "gn00" to "gnXX" to create a new animation. See
+		// ResourceScope::findTextureRegionsByPattern for more information.
 		// This is the easiest way to load animated sprites.
 		Monster.addFramesByPattern( "gn" );
 

@@ -5,7 +5,6 @@
 #include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
@@ -51,14 +50,18 @@ UITheme* UITheme::load( const std::string& name, const std::string& abbr,
 	if ( textureAtlasPath.empty() )
 		return theme;
 
-	TextureAtlasLoader tgl( textureAtlasPath );
+	ResourceScopePtr resourceScope = ResourceScope::New();
+	theme->mResourceCatalog = resourceScope->getLocalCatalog();
+	TextureAtlasLoader tgl;
+	tgl.setResourceScope( std::move( resourceScope ) );
+	tgl.loadFromFile( textureAtlasPath );
 
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
 UITheme* UITheme::loadFromString( const std::string& name, const std::string& abbr,
-						const std::string& textureAtlasPath, Font* defaultFont,
-						const std::string& styleSheetString ) {
+								  const std::string& textureAtlasPath, Font* defaultFont,
+								  const std::string& styleSheetString ) {
 	UITheme* theme = UITheme::New( name, abbr, defaultFont );
 
 	CSS::StyleSheetParser styleSheetParser;
@@ -70,12 +73,16 @@ UITheme* UITheme::loadFromString( const std::string& name, const std::string& ab
 	if ( textureAtlasPath.empty() )
 		return theme;
 
-	TextureAtlasLoader tgl( textureAtlasPath );
+	ResourceScopePtr resourceScope = ResourceScope::New();
+	theme->mResourceCatalog = resourceScope->getLocalCatalog();
+	TextureAtlasLoader tgl;
+	tgl.setResourceScope( std::move( resourceScope ) );
+	tgl.loadFromFile( textureAtlasPath );
 
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
-UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas* textureAtlas ) {
+UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, TextureAtlasPtr textureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != textureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
@@ -93,14 +100,13 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 	std::map<std::string, UISkin*> skins;
 
 	for ( auto& it : resources ) {
-		TextureRegion* textureRegion = it.second;
+		TextureRegion* textureRegion = it.second.get();
 
 		std::string name( textureRegion->getName() );
 
 		if ( String::startsWith( name, sAbbrIcon ) ) {
 			auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
-			icon->setSource( textureRegion->getPixelsSize().getWidth(),
-						   textureRegion->clone() );
+			icon->setSource( textureRegion->getPixelsSize().getWidth(), textureRegion->clone() );
 			tTheme->getIconTheme()->add( icon );
 		} else if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
@@ -155,8 +161,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 							skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 						if ( -1 != stateNum )
-							skins[skinName]->setStateDrawable( stateNum,
-															 textureRegion->clone() );
+							skins[skinName]->setStateDrawable( stateNum, textureRegion->clone() );
 					}
 				}
 			}
@@ -180,7 +185,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;
 
-	Graphics::TextureAtlas* tSG = Graphics::TextureAtlas::New( tTheme->getAbbr() );
+	TextureAtlasPtr tSG = TextureAtlas::New( tTheme->getAbbr() );
 
 	tTheme->setTextureAtlas( tSG );
 
@@ -196,7 +201,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 
 		if ( !FileSystem::isDirectory( fpath ) ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
-				auto* drawable =
+				auto drawable =
 					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name );
 				tSG->add( drawable );
 				auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
@@ -250,7 +255,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 						int lPart = nameParts.size() - 1;
 
 						if ( UIState::isStateName( nameParts[lPart] ) ) {
-							TextureRegion* textureRegion = tSG->add( TextureRegion::New(
+							TextureRegionPtr textureRegion = tSG->add( TextureRegion::New(
 								TextureFactory::instance()->loadFromFile( fpath ), name ) );
 
 							std::string skinName( elemNameFromSkin( nameParts ) );
@@ -260,8 +265,8 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 								skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 							if ( -1 != stateNum )
-								skins[skinName]->setStateDrawable(
-									stateNum, textureRegion->clone() );
+								skins[skinName]->setStateDrawable( stateNum,
+																   textureRegion->clone() );
 						}
 					}
 				}
@@ -270,9 +275,9 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 	}
 
 	if ( tSG->getCount() )
-		TextureAtlasManager::instance()->add( tSG );
+		tTheme->setTextureAtlas( tSG );
 	else
-		eeSAFE_DELETE( tSG );
+		tTheme->setTextureAtlas( {} );
 
 	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )",
 			   TE.getElapsedTimeAndReset().asMilliseconds() );
@@ -285,9 +290,9 @@ UITheme* UITheme::loadFromDirectory( const std::string& Path, const std::string&
 	return loadFromDirectory( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
-UITheme* UITheme::loadFromTextureAtlas( Graphics::TextureAtlas* TextureAtlas,
-										const std::string& Name, const std::string& NameAbbr ) {
-	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), TextureAtlas );
+UITheme* UITheme::loadFromTextureAtlas( TextureAtlasPtr textureAtlas, const std::string& Name,
+										const std::string& NameAbbr ) {
+	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), std::move( textureAtlas ) );
 }
 
 UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Font* defaultFont ) :
@@ -295,7 +300,7 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mDefaultFont( defaultFont ),
 	mDefaultFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
 	mIconTheme( UIIconTheme::New( name ) ),
@@ -327,11 +332,16 @@ UISkin* UITheme::add( UISkin* Resource ) {
 }
 
 Graphics::TextureAtlas* UITheme::getTextureAtlas() const {
-	return mTextureAtlas;
+	return mTextureAtlas.get();
 }
 
-void UITheme::setTextureAtlas( Graphics::TextureAtlas* SG ) {
-	mTextureAtlas = SG;
+void UITheme::setTextureAtlas( TextureAtlasPtr textureAtlas ) {
+	mTextureAtlas = std::move( textureAtlas );
+	if ( !mTextureAtlas )
+		return;
+	mResourceCatalog->publishAtlas( mTextureAtlas->getName(), mTextureAtlas );
+	for ( const auto& resource : mTextureAtlas->getResources() )
+		mResourceCatalog->publishDrawable( resource.second->getName(), resource.second );
 }
 
 UIIcon* UITheme::getIconByName( const std::string& name ) {

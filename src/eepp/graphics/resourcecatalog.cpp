@@ -53,18 +53,48 @@ void ResourceCatalog::publishDrawable( std::string key, DrawablePtr drawable ) {
 	}
 
 	DrawablePtr previous;
+	String::HashType id = String::hash( key );
 	{
 		Lock lock( mMutex );
 		auto it = mDrawables.find( key );
 		if ( it == mDrawables.end() ) {
-			mDrawables.emplace( std::move( key ), std::move( drawable ) );
+			mDrawables.emplace( std::move( key ), drawable );
+			mDrawablesById[id] = drawable;
 			return;
 		}
 
 		previous = std::move( it->second );
-		it->second = std::move( drawable );
+		it->second = drawable;
+		mDrawablesById[id] = drawable;
 	}
 
+	previous.reset();
+}
+
+void ResourceCatalog::publishAtlas( ResourceKey key, TextureAtlasPtr atlas ) {
+	publishAtlas( key.value(), std::move( atlas ) );
+}
+
+void ResourceCatalog::publishAtlas( std::string key, TextureAtlasPtr atlas ) {
+	if ( key.empty() )
+		return;
+
+	if ( !atlas ) {
+		eraseAtlas( key );
+		return;
+	}
+
+	TextureAtlasPtr previous;
+	{
+		Lock lock( mMutex );
+		auto it = mAtlases.find( key );
+		if ( it == mAtlases.end() ) {
+			mAtlases.emplace( std::move( key ), std::move( atlas ) );
+			return;
+		}
+		previous = std::move( it->second );
+		it->second = std::move( atlas );
+	}
 	previous.reset();
 }
 
@@ -86,6 +116,31 @@ DrawablePtr ResourceCatalog::findDrawable( const std::string& key ) const {
 	Lock lock( mMutex );
 	auto it = mDrawables.find( key );
 	return it != mDrawables.end() ? it->second : DrawablePtr{};
+}
+
+DrawablePtr ResourceCatalog::findDrawable( const String::HashType& id ) const {
+	Lock lock( mMutex );
+	auto it = mDrawablesById.find( id );
+	return it != mDrawablesById.end() ? it->second.lock() : DrawablePtr{};
+}
+
+TextureAtlasPtr ResourceCatalog::findAtlas( const ResourceKey& key ) const {
+	return findAtlas( key.value() );
+}
+
+TextureAtlasPtr ResourceCatalog::findAtlas( const std::string& key ) const {
+	Lock lock( mMutex );
+	auto it = mAtlases.find( key );
+	return it != mAtlases.end() ? it->second : TextureAtlasPtr{};
+}
+
+std::vector<TextureAtlasPtr> ResourceCatalog::getAtlases() const {
+	std::vector<TextureAtlasPtr> atlases;
+	Lock lock( mMutex );
+	atlases.reserve( mAtlases.size() );
+	for ( const auto& atlas : mAtlases )
+		atlases.emplace_back( atlas.second );
+	return atlases;
 }
 
 bool ResourceCatalog::erase( const ResourceKey& key ) {
@@ -122,28 +177,55 @@ bool ResourceCatalog::eraseDrawable( const std::string& key ) {
 
 		drawable = std::move( it->second );
 		mDrawables.erase( it );
+		auto idIt = mDrawablesById.find( String::hash( key ) );
+		if ( idIt != mDrawablesById.end() )
+			mDrawablesById.erase( idIt );
 	}
 
 	drawable.reset();
 	return true;
 }
 
+bool ResourceCatalog::eraseAtlas( const ResourceKey& key ) {
+	return eraseAtlas( key.value() );
+}
+
+bool ResourceCatalog::eraseAtlas( const std::string& key ) {
+	TextureAtlasPtr atlas;
+	{
+		Lock lock( mMutex );
+		auto it = mAtlases.find( key );
+		if ( it == mAtlases.end() )
+			return false;
+		atlas = std::move( it->second );
+		mAtlases.erase( it );
+	}
+	atlas.reset();
+	return true;
+}
+
 void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TexturePtr> textures;
 	UnorderedMap<std::string, DrawablePtr> drawables;
+	UnorderedMap<String::HashType, DrawableWeakPtr> drawablesById;
+	UnorderedMap<std::string, TextureAtlasPtr> atlases;
 	{
 		Lock lock( mMutex );
 		textures = std::move( mTextures );
 		drawables = std::move( mDrawables );
+		drawablesById = std::move( mDrawablesById );
+		atlases = std::move( mAtlases );
 	}
 
 	textures.clear();
 	drawables.clear();
+	drawablesById.clear();
+	atlases.clear();
 }
 
 std::size_t ResourceCatalog::size() const {
 	Lock lock( mMutex );
-	return mTextures.size() + mDrawables.size();
+	return mTextures.size() + mDrawables.size() + mAtlases.size();
 }
 
 }} // namespace EE::Graphics

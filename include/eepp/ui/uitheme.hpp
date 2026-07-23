@@ -40,10 +40,9 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 									Graphics::Font* defaultFont,
 									const std::string& styleSheetString );
 
-	static UITheme* loadFromTextureAtlas( UITheme* tTheme,
-										  Graphics::TextureAtlas* getTextureAtlas );
+	static UITheme* loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlasPtr textureAtlas );
 
-	static UITheme* loadFromTextureAtlas( Graphics::TextureAtlas* getTextureAtlas,
+	static UITheme* loadFromTextureAtlas( Graphics::TextureAtlasPtr textureAtlas,
 										  const std::string& Name, const std::string& NameAbbr );
 
 	static UITheme* loadFromDirectory( UITheme* tTheme, const std::string& Path,
@@ -100,7 +99,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	std::string mName;
 	String::HashType mNameHash;
 	std::string mAbbr;
-	Graphics::TextureAtlas* mTextureAtlas;
+	Graphics::TextureAtlasPtr mTextureAtlas;
 	Font* mDefaultFont;
 	Float mDefaultFontSize;
 	CSS::StyleSheet mStyleSheet;
@@ -108,7 +107,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	UIIconTheme* mIconTheme;
 	Graphics::ResourceCatalogPtr mResourceCatalog;
 
-	void setTextureAtlas( Graphics::TextureAtlas* SG );
+	void setTextureAtlas( Graphics::TextureAtlasPtr textureAtlas );
 
 	UITheme( const std::string& name, const std::string& abbr, Graphics::Font* defaultFont = NULL );
 };
