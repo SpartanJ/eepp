@@ -1,7 +1,9 @@
 #include "utest.hpp"
 #include <algorithm>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
@@ -47,6 +49,16 @@ template <typename Predicate> static void pumpUntil( UISceneNode* sceneNode, Pre
 	}
 }
 
+class TestFontPickerDialog : public UIFontPickerDialog {
+  public:
+	static TestFontPickerDialog* New() { return eeNew( TestFontPickerDialog, () ); }
+
+	FontTrueTypeWeakPtr getPreviewFontHandle() const { return mPreviewFont; }
+
+  protected:
+	TestFontPickerDialog() : UIFontPickerDialog() {}
+};
+
 UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
@@ -55,7 +67,6 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 
 	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
-
 	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
 	dialog->setSelectedFont( fontPath );
 
@@ -71,6 +82,150 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 
 	EXPECT_STDSTREQ( fontPath, selectionDialog->getSelection().font.path );
 	EXPECT_FALSE( selectionDialog->getSelection().font.family.empty() );
+}
+
+UTEST( UIFontPickerDialog, PreviewFontsDoNotPopulateSceneFontCatalog ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const std::string koreanFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	const std::string hebrewFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansHebrew-Regular.ttf";
+	ASSERT_TRUE( FileSystem::fileExists( koreanFontPath ) );
+	ASSERT_TRUE( FileSystem::fileExists( hebrewFontPath ) );
+
+	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
+	ResourceScope& sceneScope = *app.getUI()->getResourceScope();
+	const size_t sceneFontCount = sceneScope.getFonts().size();
+
+	dialog->setSelectedFont( koreanFontPath );
+	dialog->setSelectedFont( hebrewFontPath );
+
+	EXPECT_EQ( sceneFontCount, sceneScope.getFonts().size() );
+}
+
+UTEST( UIFontPickerDialog, SelectingFontDoesNotCreateMetricOnlyPage ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
+	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
+	dialog->setSelectedFont( fontPath );
+	app.getUI()->draw();
+	GlobalBatchRenderer::instance()->draw();
+
+	bool foundPreviewPage = false;
+	for ( const auto& texture : TextureFactory::instance()->snapshotTextures() ) {
+		if ( String::startsWith( texture.displayName, "@font:TrueType:Noto Sans KR:" ) ) {
+			foundPreviewPage = true;
+			EXPECT_FALSE( String::endsWith( texture.displayName, ":10" ) );
+		}
+	}
+	EXPECT_TRUE( foundPreviewPage );
+}
+
+UTEST( UIFontPickerDialog, ReleasesPreviewFontTexturesOnClose ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const std::string koreanFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	const std::string hebrewFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansHebrew-Regular.ttf";
+	ASSERT_TRUE( FileSystem::fileExists( koreanFontPath ) );
+	ASSERT_TRUE( FileSystem::fileExists( hebrewFontPath ) );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	UnorderedSet<ResourceId> baselineIds;
+	for ( const auto& texture : textureFactory->snapshotTextures() )
+		baselineIds.insert( texture.id );
+
+	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
+	dialog->setSelectedFont( koreanFontPath );
+	app.getUI()->draw();
+	dialog->setSelectedFont( hebrewFontPath );
+	app.getUI()->draw();
+	GlobalBatchRenderer::instance()->draw();
+
+	std::vector<std::pair<std::string, TextureWeakPtr>> previewTextures;
+	for ( const auto& texture : textureFactory->snapshotTextures() ) {
+		if ( baselineIds.find( texture.id ) == baselineIds.end() &&
+			 ( String::contains( texture.displayName, "Noto Sans KR" ) ||
+			   String::contains( texture.displayName, "Noto Sans Hebrew" ) ) )
+			previewTextures.emplace_back( texture.displayName, texture.texture );
+	}
+	ASSERT_FALSE( previewTextures.empty() );
+
+	dialog->close();
+	app.getUI()->update( Time::Zero );
+	GlobalBatchRenderer::instance()->draw();
+	textureFactory->collectReleasedTextures();
+
+	for ( const auto& texture : previewTextures )
+		EXPECT_TRUE( texture.second.expired() );
+}
+
+UTEST( UIFontPickerDialog, ReleasesEnumeratedSystemFontTexturesOnClose ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	app.getUI()->getResourceScope()->clearImports();
+
+	std::vector<FontDesc> systemFonts;
+	UnorderedSet<std::string> families;
+	for ( const FontDesc& font : SystemFontResolver::instance()->enumerate() ) {
+		if ( font.path.empty() || font.family.empty() || !families.insert( font.family ).second )
+			continue;
+		systemFonts.emplace_back( font );
+		if ( systemFonts.size() == 3 )
+			break;
+	}
+	if ( systemFonts.size() < 2 )
+		UTEST_SKIP( "fewer than two distinct system font families available" );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	TestFontPickerDialog* dialog = TestFontPickerDialog::New();
+	app.getUI()->draw();
+	GlobalBatchRenderer::instance()->draw();
+	std::vector<FontTrueTypeWeakPtr> previewFonts;
+	std::vector<TextureWeakPtr> previewTextures;
+
+	for ( const FontDesc& font : systemFonts ) {
+		dialog->setSelectedFont( font );
+		app.getUI()->draw();
+		GlobalBatchRenderer::instance()->draw();
+		FontTrueTypePtr previewFont = dialog->getPreviewFontHandle().lock();
+		ASSERT_TRUE( previewFont );
+		previewFonts.emplace_back( previewFont );
+		previewTextures.emplace_back(
+			previewFont->getTexture( PixelDensity::dpToPxI( dialog->getSelection().size * 2 ) ) );
+		previewTextures.emplace_back( previewFont->getTexture( PixelDensity::dpToPxI( 12 ) ) );
+	}
+
+	dialog->close();
+	GlobalBatchRenderer::instance()->draw();
+	pumpUntil( app.getUI(), [&] {
+		textureFactory->collectReleasedTextures();
+		textureFactory->purgeExpiredTextures();
+		return std::all_of( previewFonts.begin(), previewFonts.end(),
+							[]( const FontTrueTypeWeakPtr& font ) { return font.expired(); } ) &&
+			   std::all_of( previewTextures.begin(), previewTextures.end(),
+							[]( const TextureWeakPtr& texture ) { return texture.expired(); } );
+	} );
+
+	for ( const auto& font : previewFonts )
+		EXPECT_TRUE( font.expired() );
+	for ( const auto& texture : previewTextures )
+		EXPECT_TRUE( texture.expired() );
 }
 
 UTEST( UIFontPickerDialog, AsyncLoadPreservesExternalFontPreselection ) {
@@ -108,7 +263,7 @@ UTEST( UIFontPickerDialog, DefaultColorComesFromTheme ) {
 	EXPECT_TRUE( dialog->getSelection().color.a != 0 );
 }
 
-UTEST( UIFontPickerDialog, IncludesDiskFontsLoadedInFontManager ) {
+UTEST( UIFontPickerDialog, IncludesDiskFontsLoadedInDefaultScope ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
 						WindowBackend::Default, 32 ),
@@ -117,7 +272,9 @@ UTEST( UIFontPickerDialog, IncludesDiskFontsLoadedInFontManager ) {
 	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	FontTrueType* font = FontTrueType::New( "UIFontPickerDialogManagedNotoSansKR", fontPath );
+	FontTrueTypePtr fontHandle =
+		FontTrueType::New( "UIFontPickerDialogManagedNotoSansKR", fontPath );
+	FontTrueType* font = fontHandle.get();
 	ASSERT_TRUE( font != nullptr );
 	ASSERT_TRUE( font->loaded() );
 	ASSERT_FALSE( font->getInfo().family.empty() );

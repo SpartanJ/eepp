@@ -14,7 +14,7 @@ struct MonospaceFontPreview {
 	std::string previewPath;
 	FontTrueType* originalFont{ nullptr };
 	bool confirmed{ false };
-	UnorderedMap<std::string, FontTrueType*> loadedFonts;
+	UnorderedMap<std::string, FontTrueTypePtr> loadedFonts;
 };
 
 void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMonoFont,
@@ -29,7 +29,8 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 		return path;
 	};
 
-	const auto applyMonospaceFont = [this, terminalFont]( FontTrueType* fontMono ) {
+	const auto applyMonospaceFont = [this, terminalFont]( FontTrueType* fontMono,
+														  bool loadFamily = false ) {
 		if ( !fontMono )
 			return;
 
@@ -40,7 +41,10 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 
 		fontMono->setEnableDynamicMonospace( true );
 		fontMono->setBoldAdvanceSameAsRegular( true );
-		FontFamily::loadFromRegular( fontMono );
+		// Related faces are published by FontFamily. Keep transient previews isolated and only
+		// publish/load their family after the user confirms the selection.
+		if ( loadFamily )
+			FontFamily::loadFromRegular( fontMono );
 
 		if ( !mApp->getSplitter() )
 			return;
@@ -75,19 +79,28 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 																		 : mApp->getFontMono() );
 	}
 
-	const auto loadPreviewFont = [this, preview]( const std::string& newPath ) -> FontTrueType* {
+	const auto loadPreviewFont = [this, preview]( const FontDesc& desc ) -> FontTrueTypePtr {
 		if ( !preview )
-			return nullptr;
+			return {};
 
-		auto found = preview->loadedFonts.find( newPath );
+		auto found = preview->loadedFonts.find( desc.path );
 		if ( found != preview->loadedFonts.end() )
 			return found->second;
 
-		auto fontName = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
-		FontTrueType* fontMono = mApp->loadFont( fontName, newPath );
-		if ( fontMono )
-			preview->loadedFonts[newPath] = fontMono;
+		FontTrueTypePtr fontMono = defaultResourceScope().getFontService().loadSystemFont( desc );
+		if ( fontMono ) {
+			fontMono->setHinting( mApp->getConfig().ui.fontHinting );
+			fontMono->setAntialiasing( mApp->getConfig().ui.fontAntialiasing );
+			preview->loadedFonts[desc.path] = fontMono;
+		}
 		return fontMono;
+	};
+
+	const auto publishPreviewFont = []( const std::string& path, const FontTrueTypePtr& font ) {
+		if ( !font )
+			return;
+		auto fontName = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) );
+		defaultResourceScope().publishLocalFont( std::move( fontName ), font );
 	};
 
 	const Uint32 flags = UIFontPickerDialog::DefaultFlags |
@@ -97,7 +110,7 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->on( Event::OnWindowClose, [this, preview, applyMonospaceFont]( const Event* ) {
 		if ( preview && !preview->confirmed )
-			applyMonospaceFont( preview->originalFont );
+			applyMonospaceFont( preview->originalFont, false );
 
 		if ( App::instance() && mApp->getSplitter() && mApp->getSplitter()->getCurWidget() &&
 			 !SceneManager::instance()->isShuttingDown() ) {
@@ -113,20 +126,20 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 					return;
 
 				if ( newPath == preview->originalPath ) {
-					applyMonospaceFont( preview->originalFont );
+					applyMonospaceFont( preview->originalFont, false );
 					preview->previewPath = newPath;
 					return;
 				}
 
-				FontTrueType* fontMono = loadPreviewFont( newPath );
+				FontTrueTypePtr fontMono = loadPreviewFont( selection.font );
 				if ( fontMono ) {
-					applyMonospaceFont( fontMono );
+					applyMonospaceFont( fontMono.get(), false );
 					preview->previewPath = newPath;
 				}
 			} );
 	}
 	dialog->setOnFontPicked( [&fontPath, loadingMonoFont, onFinish, preview, normalizedFontPath,
-							  loadPreviewFont,
+							  loadPreviewFont, publishPreviewFont,
 							  applyMonospaceFont]( const UIFontSelection& selection ) {
 		auto newPath = normalizedFontPath( selection.font.path );
 		if ( newPath.empty() )
@@ -139,18 +152,20 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 				return;
 			}
 
-			FontTrueType* fontMono = preview && newPath == preview->originalPath
-										 ? preview->originalFont
-										 : loadPreviewFont( newPath );
+			FontTrueTypePtr previewFont = preview && newPath != preview->originalPath
+											  ? loadPreviewFont( selection.font )
+											  : FontTrueTypePtr{};
+			FontTrueType* fontMono = previewFont ? previewFont.get() : preview->originalFont;
 			if ( fontMono ) {
 				fontPath = newPath;
 				if ( preview )
 					preview->confirmed = true;
-				applyMonospaceFont( fontMono );
+				publishPreviewFont( newPath, previewFont );
+				applyMonospaceFont( fontMono, previewFont != nullptr );
 			}
 		} else if ( preview ) {
 			preview->confirmed = true;
-			applyMonospaceFont( preview->originalFont );
+			applyMonospaceFont( preview->originalFont, false );
 		}
 	} );
 	dialog->setSelectedFont( absoluteFontPath );

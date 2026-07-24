@@ -25,7 +25,7 @@ using namespace EE::UI::CSS;
 static UISceneNode* initDrawableParserTest() {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -54,7 +54,7 @@ UTEST( DrawableImageParser, TwoStopsWithPosition ) {
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
 	DrawablePtr drawable = parser.createDrawable( "linear-gradient(#f5eedd 0%, #ebe0c2 100%)",
-												Sizef( 100, 100 ), node );
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_EQ( drawable->getDrawableType(), Drawable::LINEARGRADIENT );
@@ -82,8 +82,8 @@ UTEST( DrawableImageParser, DirectionToRight ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "linear-gradient(to right, red, blue)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(to right, red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -105,7 +105,7 @@ UTEST( DrawableImageParser, AngleDegrees ) {
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
 	DrawablePtr drawable = parser.createDrawable( "linear-gradient(45deg, red 0%, blue 100%)",
-												Sizef( 100, 100 ), node );
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -124,8 +124,8 @@ UTEST( DrawableImageParser, AngleTurn ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "linear-gradient(0.25turn, red, blue)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(0.25turn, red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -145,7 +145,7 @@ UTEST( DrawableImageParser, ThreeStops ) {
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
 	DrawablePtr drawable = parser.createDrawable( "linear-gradient(red 0%, green 50%, blue 100%)",
-												Sizef( 100, 100 ), node );
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -168,8 +168,8 @@ UTEST( DrawableImageParser, ColorHint ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "linear-gradient(red 0%, 25%, blue 100%)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(red 0%, 25%, blue 100%)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -209,8 +209,8 @@ UTEST( DrawableImageParser, StopsWithoutPositions ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "linear-gradient(red, green, blue)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(red, green, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -254,8 +254,8 @@ UTEST( DrawableImageParser, RepeatingTwoStops ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "repeating-linear-gradient(red, blue)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "repeating-linear-gradient(red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_TRUE( drawable->getDrawableType() == Drawable::REPEATINGLINEARGRADIENT );
@@ -301,7 +301,7 @@ UTEST( DrawableImageParser, RepeatingWithPositions ) {
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
 	DrawablePtr drawable = parser.createDrawable( "repeating-linear-gradient(red 10%, blue 40%)",
-												Sizef( 100, 100 ), node );
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
@@ -347,8 +347,8 @@ UTEST( DrawableImageParser, RadialCircleKeyword ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "radial-gradient(circle, #f00, #00f)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "radial-gradient(circle, #f00, #00f)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
@@ -367,8 +367,8 @@ UTEST( DrawableImageParser, RadialWithPositions ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	DrawablePtr drawable = parser.createDrawable( "radial-gradient(red 10%, blue 80%)",
-												Sizef( 100, 100 ), node );
+	DrawablePtr drawable =
+		parser.createDrawable( "radial-gradient(red 10%, blue 80%)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
@@ -390,7 +390,7 @@ UTEST( DrawableImageParser, RepeatingRadial ) {
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
 	DrawablePtr drawable = parser.createDrawable( "repeating-radial-gradient(red 10%, blue 40%)",
-												Sizef( 100, 100 ), node );
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_TRUE( drawable->getDrawableType() == Drawable::REPEATINGRADIALGRADIENT );

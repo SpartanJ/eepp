@@ -12,12 +12,20 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
+class FontBMFont;
+class ResourceScope;
+using FontBMFontPtr = ResourcePtr<FontBMFont>;
+using FontBMFontWeakPtr = ResourceWeakPtr<FontBMFont>;
+
 /** @brief Implementation of AngelCode BMFont fonts. */
 class EE_API FontBMFont : public Font {
   public:
-	static FontBMFont* New( const std::string fontName );
+	static FontBMFontPtr New( const std::string fontName );
+	static FontBMFontPtr New( const std::string fontName, ResourceScope& resourceScope );
 
-	static FontBMFont* New( const std::string fontName, const std::string& filename );
+	static FontBMFontPtr New( const std::string fontName, const std::string& filename );
+	static FontBMFontPtr New( const std::string fontName, const std::string& filename,
+							  ResourceScope& resourceScope );
 
 	~FontBMFont();
 
@@ -38,6 +46,9 @@ class EE_API FontBMFont : public Font {
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 					Float outlineThickness = 0 ) const;
+
+	Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
+						   bool italic = false, Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,

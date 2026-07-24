@@ -1,4 +1,4 @@
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
@@ -1391,7 +1391,12 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
 													glyph.mode & ATTR_ITALIC, 0 );
 
-				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
+				FontService* fontService =
+					mFont->getType() == FontType::TTF
+						? static_cast<FontTrueType*>( mFont )->getFontService()
+						: nullptr;
+				if ( ( glyph.mode & ATTR_EMOJI ) && fontService &&
+					 fontService->getColorEmojiFont() ) {
 					gd->setColor( Color::White );
 				} else {
 					gd->setColor( fg );

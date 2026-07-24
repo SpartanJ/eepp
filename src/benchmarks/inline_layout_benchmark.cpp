@@ -236,7 +236,7 @@ UTEST( Benchmark, InlineLayout ) {
 		800, 600, "bench", WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( !font->loaded() ) {
 		Engine::destroySingleton();
@@ -323,9 +323,9 @@ UTEST( Benchmark, MarkdownReadme ) {
 	UISceneNode* ui = UISceneNode::New( window );
 	SceneManager::instance()->add( ui );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 	if ( !font->loaded() || !monoFont->loaded() ) {
 		Engine::destroySingleton();

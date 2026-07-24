@@ -4,15 +4,16 @@
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -35,34 +36,127 @@ using namespace EE::Window;
 using namespace EE::UI;
 using namespace EE::UI::CSS;
 
-UTEST( FontRendering, relatedFontsDisconnectReplacedCallbacks ) {
-	FontTrueType* font = FontTrueType::New( "RelatedFontsDisconnect-Regular" );
-	FontTrueType* oldBold = FontTrueType::New( "RelatedFontsDisconnect-OldBold" );
-	FontTrueType* newBold = FontTrueType::New( "RelatedFontsDisconnect-NewBold" );
-	FontTrueType* oldItalic = FontTrueType::New( "RelatedFontsDisconnect-OldItalic" );
-	FontTrueType* newItalic = FontTrueType::New( "RelatedFontsDisconnect-NewItalic" );
-	FontTrueType* oldBoldItalic = FontTrueType::New( "RelatedFontsDisconnect-OldBoldItalic" );
-	FontTrueType* newBoldItalic = FontTrueType::New( "RelatedFontsDisconnect-NewBoldItalic" );
+UTEST( FontRendering, drawingEmptyTextDoesNotCreateFontPage ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Empty Text Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 
-	font->setBoldFont( oldBold );
-	font->setBoldFont( newBold );
-	eeDelete( oldBold );
-	EXPECT_EQ( newBold, font->getBoldFont() );
+	FontDesc desc;
+	desc.family = "Empty Text Test";
+	desc.path = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	FontTrueTypePtr font = app.getUI()->getResourceScope()->getFontService().loadSystemFont( desc );
+	ASSERT_TRUE( font );
 
-	font->setItalicFont( oldItalic );
-	font->setItalicFont( newItalic );
-	eeDelete( oldItalic );
-	EXPECT_EQ( newItalic, font->getItalicFont() );
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+	Text::draw( String{}, Vector2f::Zero, font.get(), 10, Color::White );
 
-	font->setBoldItalicFont( oldBoldItalic );
-	font->setBoldItalicFont( newBoldItalic );
-	eeDelete( oldBoldItalic );
-	EXPECT_EQ( newBoldItalic, font->getBoldItalicFont() );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
 
-	eeDelete( font );
-	eeDelete( newBold );
-	eeDelete( newItalic );
-	eeDelete( newBoldItalic );
+UTEST( FontRendering, glyphAdvanceDoesNotCreateTexturePages ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Glyph Advance Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "GlyphAdvance-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+	const Float advance = font->getGlyphAdvance( ' ', 10 );
+	const Float outlinedAdvance = font->getGlyphAdvance( ' ', 10, false, false, 2.f );
+	EXPECT_TRUE( advance > 0 );
+	EXPECT_EQ( advance, outlinedAdvance );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
+
+UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Font Family Metrics Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "FontFamilyMetrics-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+
+	FontFamily::loadFromRegular( font.get() );
+	EXPECT_TRUE( font->hasBold() );
+	EXPECT_TRUE( font->hasItalic() );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
+
+UTEST( FontRendering, regularFontOwnsRelatedFonts ) {
+	FontTrueTypePtr font = FontTrueType::New( "RelatedFonts-Regular" );
+	FontTrueTypePtr bold = FontTrueType::New( "RelatedFonts-Bold" );
+	FontTrueTypePtr italic = FontTrueType::New( "RelatedFonts-Italic" );
+	FontTrueTypePtr boldItalic = FontTrueType::New( "RelatedFonts-BoldItalic" );
+	FontTrueTypeWeakPtr weakBold = bold;
+	FontTrueTypeWeakPtr weakItalic = italic;
+	FontTrueTypeWeakPtr weakBoldItalic = boldItalic;
+
+	font->setBoldFont( bold );
+	font->setItalicFont( italic );
+	font->setBoldItalicFont( boldItalic );
+
+	defaultResourceScope().eraseLocalFont( bold.get() );
+	defaultResourceScope().eraseLocalFont( italic.get() );
+	defaultResourceScope().eraseLocalFont( boldItalic.get() );
+	bold.reset();
+	italic.reset();
+	boldItalic.reset();
+
+	EXPECT_TRUE( font->getBoldFont() );
+	EXPECT_TRUE( font->getItalicFont() );
+	EXPECT_TRUE( font->getBoldItalicFont() );
+	EXPECT_FALSE( weakBold.expired() );
+	EXPECT_FALSE( weakItalic.expired() );
+	EXPECT_FALSE( weakBoldItalic.expired() );
+
+	defaultResourceScope().eraseLocalFont( font.get() );
+	font.reset();
+
+	EXPECT_TRUE( weakBold.expired() );
+	EXPECT_TRUE( weakItalic.expired() );
+	EXPECT_TRUE( weakBoldItalic.expired() );
+}
+
+UTEST( FontRendering, destroyingFontInvalidatesTextLayoutCache ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Text Layout Cache Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "TextLayoutCache-Regular", scope );
+	FontTrueTypePtr retainedFont = FontTrueType::New( "TextLayoutCache-Retained", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	ASSERT_TRUE( retainedFont->loadFromFile( Sys::getProcessPath() +
+											 "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextLayout::Cache layout =
+		TextLayout::layout( String( "cached shaped text" ), font.get(), 14, Text::Regular );
+	TextLayout::Cache retainedLayout = TextLayout::layout( String( "unrelated cached text" ),
+														   retainedFont.get(), 14, Text::Regular );
+	std::weak_ptr<const TextLayout> layoutWeak = layout;
+	std::weak_ptr<const TextLayout> retainedLayoutWeak = retainedLayout;
+	layout.reset();
+	retainedLayout.reset();
+	EXPECT_FALSE( layoutWeak.expired() );
+	EXPECT_FALSE( retainedLayoutWeak.expired() );
+
+	EXPECT_TRUE( scope.eraseLocalFont( font.get() ) );
+	font.reset();
+
+	EXPECT_TRUE( layoutWeak.expired() );
+	EXPECT_FALSE( retainedLayoutWeak.expired() );
 }
 
 UTEST( FontRendering, fontsTest ) {
@@ -85,22 +179,22 @@ UTEST( FontRendering, fontsTest ) {
 				"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
 				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
-	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" );
+	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" ).get();
 	fontTest->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 
-	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" ).get();
 	fontTest2->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
-	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" );
+	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" ).get();
 	fontEmoji->loadFromFile( "../assets/fonts/NotoEmoji-Regular.ttf" );
 
-	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" ).get();
 	fontEmojiColor->loadFromFile( "../assets/fonts/NotoColorEmoji.ttf" );
 
-	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" );
+	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" ).get();
 	fontBMFont->loadFromFile( "../assets/fonts/bmfont.fnt" );
 
-	FontSprite* fontSprite = FontSprite::New( "alagard" );
+	FontSprite* fontSprite = FontSprite::New( "alagard" ).get();
 	fontSprite->loadFromFile( "../assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
 
 	Text text;
@@ -288,7 +382,7 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 
-	FontTrueType* baseFont = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* baseFont = FontTrueType::New( "NotoSans-Regular" ).get();
 	baseFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	themeManager->setDefaultFont( baseFont );
 
@@ -315,7 +409,7 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 	Font* loadedFont = sceneNode->getFontFromNamesList( "DataURIFont" );
 	ASSERT_NE( loadedFont, nullptr );
 	ASSERT_TRUE_MSG( loadedFont->loaded(), "Font loaded via data URI is not loaded" );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "DataURIFont" ) );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "DataURIFont" ).get() );
 
 	Engine::destroySingleton();
 }
@@ -353,7 +447,7 @@ UTEST( FontRendering, fontFaceAuthorFamilyIsSceneScoped ) {
 	EXPECT_TRUE( fontB->loaded() );
 	EXPECT_NE( fontA, fontB );
 	EXPECT_TRUE( fontA->getName() != fontB->getName() );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "ScopedAuthorFace" ) );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "ScopedAuthorFace" ).get() );
 
 	Engine::destroySingleton();
 }
@@ -631,8 +725,9 @@ UTEST( FontRendering, textEditBengaliTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* bengaliFont =
-		FontTrueType::New( "NotoSansBengali-Regular", "assets/fonts/NotoSansBengali-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( bengaliFont );
+		FontTrueType::New( "NotoSansBengali-Regular", "assets/fonts/NotoSansBengali-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( bengaliFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -651,8 +746,9 @@ UTEST( FontRendering, textEditArabicTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* arabicFont =
-		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( arabicFont );
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( arabicFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -671,8 +767,9 @@ UTEST( FontRendering, textEditHebrewTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* hebrewFont =
-		FontTrueType::New( "NotoSansHebrew-Regular", "assets/fonts/NotoSansHebrew-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( hebrewFont );
+		FontTrueType::New( "NotoSansHebrew-Regular", "assets/fonts/NotoSansHebrew-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( hebrewFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -692,7 +789,7 @@ UTEST( FontRendering, textSizes ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 	FontStyleConfig config;
@@ -793,7 +890,7 @@ UTEST( FontRendering, textStyles ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -876,11 +973,11 @@ UTEST( FontRendering, emojisWithText ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" ).get();
 	fontEmojiColor->loadFromFile( "../assets/fonts/NotoColorEmoji.ttf" );
 
 	win->setClearColor( RGB( 255, 255, 255 ) );
@@ -934,7 +1031,8 @@ UTEST( FontRendering, textSetFillColor ) {
 	win->setClearColor( RGB( 230, 230, 230 ) );
 
 	FontTrueType* arabicFont =
-		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" )
+			.get();
 
 	Text text;
 	text.setFont( arabicFont );
@@ -1364,7 +1462,7 @@ UTEST( FontRendering, TextSoftWrapPos ) {
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-		FontTrueType* font = FontTrueType::New( "DejaVuSansMono" );
+		FontTrueType* font = FontTrueType::New( "DejaVuSansMono" ).get();
 		font->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 
 		Text text;
@@ -1414,7 +1512,7 @@ UTEST( FontRendering, TextSelection ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	bool loaded = font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( loaded );
 	FontFamily::loadFromRegular( font );
@@ -1501,7 +1599,7 @@ UTEST( FontRendering, TextInitialOffset ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Primitives p;
@@ -1568,7 +1666,7 @@ UTEST( FontRendering, TextContiguousOffset ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Float maxWidth = 450.f;
@@ -1681,7 +1779,7 @@ UTEST( FontRendering, TextBackgroundColor ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Vector2f pos{ 20, 20 };

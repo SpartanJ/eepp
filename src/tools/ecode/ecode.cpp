@@ -4261,24 +4261,25 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	}
 	if ( fontPath.empty() )
 		return nullptr;
-	FontTrueType* font = FontTrueType::New( name );
+	ResourceScope& resourceScope = defaultResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( name, resourceScope );
 	if ( font->loadFromFile( fontPath ) ) {
 		font->setHinting( mConfig.ui.fontHinting );
 		font->setAntialiasing( mConfig.ui.fontAntialiasing );
-		return font;
+		return font.get();
 	}
-	eeSAFE_DELETE( font );
+	resourceScope.eraseLocalFont( font.get() );
 	// Failed to load original font? Try to fallback
 	if ( !fallback.empty() && !wasFallback ) {
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
-		font = FontTrueType::New( name );
+		font = FontTrueType::New( name, resourceScope );
 		if ( font->loadFromFile( fontPath ) ) {
 			font->setHinting( mConfig.ui.fontHinting );
 			font->setAntialiasing( mConfig.ui.fontAntialiasing );
-			return font;
+			return font.get();
 		}
-		eeSAFE_DELETE( font );
+		resourceScope.eraseLocalFont( font.get() );
 	}
 	return nullptr;
 }
@@ -4533,12 +4534,12 @@ void App::init( InitParameters& params ) {
 
 		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
 		if ( mFallbackFont )
-			FontManager::instance()->addFallbackFont( mFallbackFont );
+			defaultResourceScope().getFontService().addFallbackFont( mFallbackFont );
 
 		if ( mConfig.ui.fallbackFont != "fonts/DroidSansFallbackFull.ttf" ) {
 			mUserFallbackFont = loadFont( "fallback-font", mConfig.ui.fallbackFont );
 			if ( mUserFallbackFont )
-				FontManager::instance()->addFallbackFont( mUserFallbackFont );
+				defaultResourceScope().getFontService().addFallbackFont( mUserFallbackFont );
 		}
 
 		Log::info( "Fonts loaded in: %s", fontsClock.getElapsedTime().toString() );
@@ -4812,7 +4813,6 @@ void App::init( InitParameters& params ) {
 			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
 										  [this]() { return mAsyncResourcesLoaded; } );
 		}
-
 		if ( !mFont || !mFontMono || !mRemixIconFont || !mNoniconsFont || !mCodIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );

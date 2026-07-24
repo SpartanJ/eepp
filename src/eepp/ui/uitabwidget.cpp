@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>

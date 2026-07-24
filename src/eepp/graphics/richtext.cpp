@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
 
 namespace EE { namespace Graphics {

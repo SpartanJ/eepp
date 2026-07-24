@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -104,8 +103,6 @@ Engine::~Engine() {
 	CSS::StyleSheetSpecification::destroySingleton();
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
-
-	FontManager::destroySingleton();
 
 	Graphics::Private::FrameBufferManager::destroySingleton();
 

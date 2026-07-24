@@ -1,8 +1,8 @@
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -151,7 +151,7 @@ bool DrawableImageParser::exists( const std::string& name ) const {
 }
 
 DrawablePtr DrawableImageParser::createDrawable( const std::string& value, const Sizef& size,
-											  UINode* node ) {
+												 UINode* node ) {
 	FunctionString functionType = FunctionString::parse( value );
 
 	if ( "none" == value )
@@ -183,7 +183,7 @@ void DrawableImageParser::addParser( const std::string& name,
 void DrawableImageParser::registerBaseParsers() {
 	// Shared parsing logic for linear-gradient and repeating-linear-gradient
 	auto parseGradient = []( const FunctionString& functionType, UINode* node,
-								 bool repeating ) -> DrawablePtr {
+							 bool repeating ) -> DrawablePtr {
 		const auto& params( functionType.getParameters() );
 		if ( params.size() < 2 )
 			return {};
@@ -459,14 +459,14 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["repeating-linear-gradient"] = [parseGradient]( const FunctionString& functionType,
-															   const Sizef& /*size*/,
-															   UINode* node ) -> DrawablePtr {
+														   const Sizef& /*size*/,
+														   UINode* node ) -> DrawablePtr {
 		return parseGradient( functionType, node, true );
 	};
 
 	// Shared parsing logic for radial-gradient and repeating-radial-gradient
 	auto parseRadialGradient = []( const FunctionString& functionType, UINode* node,
-									   bool repeating ) -> DrawablePtr {
+								   bool repeating ) -> DrawablePtr {
 		const auto& params( functionType.getParameters() );
 		if ( params.size() < 2 )
 			return {};
@@ -681,13 +681,13 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["repeating-radial-gradient"] = [parseRadialGradient]( const FunctionString& functionType,
-																		 const Sizef& /*size*/,
-																		 UINode* node ) -> DrawablePtr {
+																 const Sizef& /*size*/,
+																 UINode* node ) -> DrawablePtr {
 		return parseRadialGradient( functionType, node, true );
 	};
 
 	mFuncs["circle"] = []( const FunctionString& functionType, const Sizef& size,
-							   UINode* node ) -> DrawablePtr {
+						   UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 ) {
 			return {};
 		}
@@ -717,7 +717,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["rectangle"] = []( const FunctionString& functionType, const Sizef& size,
-								  UINode* node ) -> DrawablePtr {
+							  UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 ) {
 			return {};
 		}
@@ -776,7 +776,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["triangle"] = []( const FunctionString& functionType, const Sizef& size,
-								 UINode* node ) -> DrawablePtr {
+							 UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 2 ) {
 			return {};
 		}
@@ -843,7 +843,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["poly"] = []( const FunctionString& functionType, const Sizef& size,
-							 UINode* node ) -> DrawablePtr {
+						 UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 2 ) {
 			return {};
 		}
@@ -899,7 +899,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/,
-							UINode* node ) -> DrawablePtr {
+						UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 )
 			return {};
 		const auto& param = functionType.getParameters().at( 0 );
@@ -915,8 +915,7 @@ void DrawableImageParser::registerBaseParsers() {
 				cparam += ',';
 				cparam += functionType.getParameters().at( i );
 			}
-			DrawablePtr drawable =
-				node->getUISceneNode()->getDrawableResolver().resolve( cparam );
+			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( cparam );
 			return drawable;
 		}
 		DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( param );
@@ -924,7 +923,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size,
-							 UINode* node ) -> DrawablePtr {
+						 UINode* node ) -> DrawablePtr {
 		auto* uiScene = node->getUISceneNode();
 		const auto& params = functionType.getParameters();
 		if ( params.size() < 2 )
@@ -935,11 +934,11 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["glyph"] = []( const FunctionString& functionType, const Sizef& size,
-							  UINode* node ) -> DrawablePtr {
+						  UINode* node ) -> DrawablePtr {
 		const auto& params = functionType.getParameters();
 		if ( params.size() < 3 )
 			return nullptr;
-		Font* font = FontManager::instance()->getByName( params[0] );
+		Font* font = node->getUISceneNode()->getResourceScope()->findFont( params[0] ).get();
 		if ( font == nullptr )
 			return nullptr;
 		Uint32 codePoint = 0;
@@ -955,8 +954,8 @@ void DrawableImageParser::registerBaseParsers() {
 		} else if ( String::fromString( value, buffer ) ) {
 			codePoint = value;
 		}
-		Drawable* drawable = font->getGlyphDrawable(
-			codePoint, node->convertLength( params[1], size.getWidth() ) );
+		Drawable* drawable =
+			font->getGlyphDrawable( codePoint, node->convertLength( params[1], size.getWidth() ) );
 		return drawable ? drawable->clone() : DrawablePtr{};
 	};
 }

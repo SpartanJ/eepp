@@ -26,7 +26,7 @@ using namespace EE::Graphics;
 
 static void init_grid_test() {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 	UISceneNode* sceneNode = UISceneNode::New();

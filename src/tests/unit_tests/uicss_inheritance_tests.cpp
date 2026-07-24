@@ -1,7 +1,7 @@
 #include "utest.hpp"
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheet.hpp>

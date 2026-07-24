@@ -1,8 +1,8 @@
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -649,7 +649,10 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
-			setHintFont( FontManager::instance()->getByName( attribute.value() ) );
+			setHintFont(
+				getUISceneNode()
+					? getUISceneNode()->getResourceScope()->findFont( attribute.value() ).get()
+					: nullptr );
 			break;
 		case PropertyId::HintFontStyle:
 			setHintFontStyle( attribute.asFontStyle() );

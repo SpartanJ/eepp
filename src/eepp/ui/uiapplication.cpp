@@ -59,17 +59,20 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 	if ( !appSettings.loadBaseResources )
 		return;
-
-	Font* font = appSettings.baseFont
-					 ? appSettings.baseFont
-					 : FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+	FontTrueTypePtr loadedBaseFont;
+	if ( !appSettings.baseFont )
+		loadedBaseFont =
+			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+	Font* font = appSettings.baseFont ? appSettings.baseFont : loadedBaseFont.get();
 
 	if ( font && font->getType() == FontType::TTF )
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( font ) );
 
-	Font* monospaceFont = appSettings.monospaceFont
-							  ? appSettings.monospaceFont
-							  : FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+	FontTrueTypePtr loadedMonospaceFont;
+	if ( !appSettings.monospaceFont )
+		loadedMonospaceFont = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+	Font* monospaceFont =
+		appSettings.monospaceFont ? appSettings.monospaceFont : loadedMonospaceFont.get();
 
 	if ( monospaceFont && monospaceFont->getType() == FontType::TTF ) {
 		static_cast<FontTrueType*>( monospaceFont )->setEnableDynamicMonospace( true );

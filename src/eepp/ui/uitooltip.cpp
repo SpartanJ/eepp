@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/log.hpp>

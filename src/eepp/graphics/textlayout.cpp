@@ -13,7 +13,12 @@
 
 namespace EE::Graphics {
 
-using LRULayoutCache = LRUCache<8192, Uint64, TextLayout::Cache>;
+struct LayoutCacheEntry {
+	Font* sourceFont{ nullptr };
+	TextLayout::Cache layout;
+};
+
+using LRULayoutCache = LRUCache<8192, Uint64, LayoutCacheEntry>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 
@@ -236,15 +241,30 @@ static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 						std::hash<Float>()( initialXOffset ) );
 }
 
-static LRULayoutCache& getLayoutCache( bool invalidate = false ) {
+static LRULayoutCache& getLayoutCache( bool invalidate = false, Font* font = nullptr ) {
 	static LRULayoutCache sLayoutCache;
-	if ( invalidate )
-		sLayoutCache.clear();
+	if ( invalidate ) {
+		if ( !font ) {
+			sLayoutCache.clear();
+		} else {
+			sLayoutCache.eraseIf( [font]( Uint64, const LayoutCacheEntry& entry ) {
+				if ( !entry.layout || entry.sourceFont == font )
+					return true;
+				for ( const ShapedTextParagraph& paragraph : entry.layout->paragraphs ) {
+					for ( const ShapedGlyph& glyph : paragraph.shapedGlyphs ) {
+						if ( glyph.font == font )
+							return true;
+					}
+				}
+				return false;
+			} );
+		}
+	}
 	return sLayoutCache;
 }
 
-void TextLayout::clearLayoutCache() {
-	getLayoutCache( true );
+void TextLayout::clearLayoutCache( Font* font ) {
+	getLayoutCache( true, font );
 }
 
 TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
@@ -270,13 +290,13 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 
 		auto cacheHit = getLayoutCache().get( hash );
 		if ( cacheHit.has_value() )
-			return *cacheHit;
+			return cacheHit->layout;
 	}
 
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
 	Uint32 spaceGlyphIndex = 0;
-	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
+	Float hspace = font->getGlyphAdvance( ' ', characterSize, bold, italic, outlineThickness );
 	Float vspace = font->getLineSpacing( characterSize );
 	Vector2f pen{ initialXOffset, 0 };
 	Float maxWidth = 0;
@@ -523,7 +543,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 					characterSize, style, tabWidth, outlineThickness, hspace );
 	}
 
-	getLayoutCache().put( hash, resultPtr );
+	getLayoutCache().put( hash, { font, resultPtr } );
 	return resultPtr;
 }
 

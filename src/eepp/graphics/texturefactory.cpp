@@ -1,6 +1,5 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <SOIL2/src/SOIL2/stb_image.h>
-#include <algorithm>
 #include <atomic>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>

@@ -118,6 +118,9 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	std::vector<Uint32> mSizes;
 	UnorderedSet<std::string> mLoadedFontKeys;
 	UnorderedMap<std::string, std::string> mFontTags;
+	Graphics::FontTrueTypePtr mPreviewFont;
+	Graphics::Font* mPreviewTextDefaultFont{ nullptr };
+	Graphics::Font* mPreviewInputDefaultFont{ nullptr };
 	std::shared_ptr<Models::Model> mFamilyModel;
 	std::shared_ptr<Models::Model> mStyleModel;
 	std::shared_ptr<Models::Model> mSizeModel;
@@ -171,7 +174,7 @@ class EE_API UIFontPickerDialog : public UIWindow {
 
 	void sortFonts();
 
-	void mergeFontManagerFonts( std::vector<FontDesc>& fonts );
+	void mergeLoadedFonts( std::vector<FontDesc>& fonts );
 
 	void updateFontTags();
 
@@ -188,6 +191,8 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	void emitSelectionChanged();
 
 	void updatePreview();
+
+	void clearPreviewFont();
 
 	void selectInitialRows();
 

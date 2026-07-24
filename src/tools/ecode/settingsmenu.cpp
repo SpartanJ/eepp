@@ -3163,7 +3163,7 @@ UIMenu* SettingsMenu::createFontHintMenu() {
 		if ( String::startsWith( id, "hint_" ) ) {
 			auto hint = id.substr( 5 ).toUtf8();
 			mApp->getConfig().ui.fontHinting = FontTrueType::fontHintingFromString( hint );
-			FontManager::instance()->setHinting( mApp->getConfig().ui.fontHinting );
+			defaultResourceScope().getFontService().setHinting( mApp->getConfig().ui.fontHinting );
 		}
 	} );
 
@@ -3204,7 +3204,8 @@ UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
 			auto hint = id.substr( 3 ).toUtf8();
 			mApp->getConfig().ui.fontAntialiasing =
 				FontTrueType::fontAntialiasingFromString( hint );
-			FontManager::instance()->setAntialiasing( mApp->getConfig().ui.fontAntialiasing );
+			defaultResourceScope().getFontService().setAntialiasing(
+				mApp->getConfig().ui.fontAntialiasing );
 		}
 	} );
 

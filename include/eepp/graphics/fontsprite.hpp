@@ -13,12 +13,20 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
+class FontSprite;
+class ResourceScope;
+using FontSpritePtr = ResourcePtr<FontSprite>;
+using FontSpriteWeakPtr = ResourceWeakPtr<FontSprite>;
+
 /** @brief Implementation of XNA Font Sprites */
 class EE_API FontSprite : public Font {
   public:
-	static FontSprite* New( const std::string fontName );
+	static FontSpritePtr New( const std::string fontName );
+	static FontSpritePtr New( const std::string fontName, ResourceScope& resourceScope );
 
-	static FontSprite* New( const std::string fontName, const std::string& filename );
+	static FontSpritePtr New( const std::string fontName, const std::string& filename );
+	static FontSpritePtr New( const std::string fontName, const std::string& filename,
+							  ResourceScope& resourceScope );
 
 	~FontSprite();
 

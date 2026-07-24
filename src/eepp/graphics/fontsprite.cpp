@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontsprite.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
@@ -10,12 +11,27 @@
 
 namespace EE { namespace Graphics {
 
-FontSprite* FontSprite::New( const std::string fontName ) {
-	return eeNew( FontSprite, ( fontName ) );
+FontSpritePtr FontSprite::New( const std::string fontName ) {
+	FontSpritePtr font( eeNew( FontSprite, ( fontName ) ), ResourceDeleter<FontSprite>() );
+	defaultResourceScope().publishLocalFont( fontName, font );
+	return font;
 }
 
-FontSprite* FontSprite::New( const std::string fontName, const std::string& filename ) {
-	FontSprite* fontSprite = New( fontName );
+FontSpritePtr FontSprite::New( const std::string fontName, ResourceScope& resourceScope ) {
+	FontSpritePtr font( eeNew( FontSprite, ( fontName ) ), ResourceDeleter<FontSprite>() );
+	resourceScope.publishLocalFont( fontName, font );
+	return font;
+}
+
+FontSpritePtr FontSprite::New( const std::string fontName, const std::string& filename ) {
+	FontSpritePtr fontSprite = New( fontName );
+	fontSprite->loadFromFile( filename );
+	return fontSprite;
+}
+
+FontSpritePtr FontSprite::New( const std::string fontName, const std::string& filename,
+							   ResourceScope& resourceScope ) {
+	FontSpritePtr fontSprite = New( fontName, resourceScope );
 	fontSprite->loadFromFile( filename );
 	return fontSprite;
 }

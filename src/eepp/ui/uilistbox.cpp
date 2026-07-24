@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>

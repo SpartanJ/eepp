@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
@@ -10,12 +11,27 @@
 
 namespace EE { namespace Graphics {
 
-FontBMFont* FontBMFont::New( const std::string fontName ) {
-	return eeNew( FontBMFont, ( fontName ) );
+FontBMFontPtr FontBMFont::New( const std::string fontName ) {
+	FontBMFontPtr font( eeNew( FontBMFont, ( fontName ) ), ResourceDeleter<FontBMFont>() );
+	defaultResourceScope().publishLocalFont( fontName, font );
+	return font;
 }
 
-FontBMFont* FontBMFont::New( const std::string fontName, const std::string& filename ) {
-	FontBMFont* fontBMFont = New( fontName );
+FontBMFontPtr FontBMFont::New( const std::string fontName, ResourceScope& resourceScope ) {
+	FontBMFontPtr font( eeNew( FontBMFont, ( fontName ) ), ResourceDeleter<FontBMFont>() );
+	resourceScope.publishLocalFont( fontName, font );
+	return font;
+}
+
+FontBMFontPtr FontBMFont::New( const std::string fontName, const std::string& filename ) {
+	FontBMFontPtr fontBMFont = New( fontName );
+	fontBMFont->loadFromFile( filename );
+	return fontBMFont;
+}
+
+FontBMFontPtr FontBMFont::New( const std::string fontName, const std::string& filename,
+							   ResourceScope& resourceScope ) {
+	FontBMFontPtr fontBMFont = New( fontName, resourceScope );
 	fontBMFont->loadFromFile( filename );
 	return fontBMFont;
 }
@@ -192,6 +208,11 @@ Glyph FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize, bool b
 		glyphs[characterSize] = loadGlyph( codePoint, characterSize, bold, outlineThickness );
 		return glyphs[characterSize];
 	}
+}
+
+Float FontBMFont::getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold,
+								   bool italic, Float outlineThickness ) const {
+	return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
 }
 
 GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,

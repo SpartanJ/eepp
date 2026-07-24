@@ -62,7 +62,7 @@
 ../../include/eepp/graphics/fontbmfont.hpp
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontfamily.hpp
-../../include/eepp/graphics/fontmanager.hpp
+../../include/eepp/graphics/fontservice.hpp
 ../../include/eepp/graphics/fontsprite.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
@@ -560,7 +560,7 @@
 ../../src/eepp/graphics/fontbmfont.cpp
 ../../src/eepp/graphics/font.cpp
 ../../src/eepp/graphics/fontfamily.cpp
-../../src/eepp/graphics/fontmanager.cpp
+../../src/eepp/graphics/fontservice.cpp
 ../../src/eepp/graphics/fontsprite.cpp
 ../../src/eepp/graphics/fonttruetype.cpp
 ../../src/eepp/graphics/framebuffer.cpp

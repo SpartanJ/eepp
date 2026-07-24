@@ -5,7 +5,8 @@
 #include <condition_variable>
 #include <eepp/core/lrucache.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
@@ -199,6 +200,18 @@ EE::Window::Window* createLifecycleTestWindow( const std::string& title ) {
 
 static_assert( !std::is_copy_constructible<Texture>::value, "Texture must not be copyable" );
 static_assert( !std::is_copy_assignable<Texture>::value, "Texture must not be copy-assignable" );
+static_assert( std::is_invocable_r_v<std::size_t, std::hash<ResourceId>, const ResourceId&>,
+			   "ResourceId must support standard unordered containers" );
+
+UTEST( ResourcePrerequisites, resourceIdSupportsUnorderedContainers ) {
+	UnorderedMap<ResourceId, int> resources;
+	resources[ResourceId( 1 )] = 10;
+	resources[ResourceId( 2 )] = 20;
+
+	EXPECT_EQ( 10, resources[ResourceId( 1 )] );
+	EXPECT_EQ( 20, resources[ResourceId( 2 )] );
+	EXPECT_EQ( (size_t)2, resources.size() );
+}
 
 UTEST( ResourcePrerequisites, lruCacheEvictsOnlyLeastRecentlyUsedAndReleasesKeys ) {
 	LRUCache<2, int, bool> recencyCache;
@@ -221,6 +234,21 @@ UTEST( ResourcePrerequisites, lruCacheEvictsOnlyLeastRecentlyUsedAndReleasesKeys
 
 	owningKeyCache.clear();
 	EXPECT_TRUE( weakKey.expired() );
+
+	LRUCache<3, int, int> selectiveCache;
+	selectiveCache.put( 1, 10 );
+	selectiveCache.put( 2, 20 );
+	selectiveCache.put( 3, 30 );
+	ASSERT_TRUE( selectiveCache.get( 1 ).has_value() );
+	selectiveCache.eraseIf( []( int key, int ) { return key == 2; } );
+	EXPECT_TRUE( !selectiveCache.get( 2 ).has_value() );
+	EXPECT_EQ( (size_t)2, selectiveCache.size() );
+	selectiveCache.put( 4, 40 );
+	selectiveCache.put( 5, 50 );
+	EXPECT_TRUE( !selectiveCache.get( 3 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 1 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 4 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 5 ).has_value() );
 }
 
 UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
@@ -491,6 +519,92 @@ UTEST( ResourcePrerequisites, defaultResourceScopeImportsGlobalCatalog ) {
 
 	texture.reset();
 	isolatedScope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiScenesImportDefaultResourcesUnlessDisabled ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI scene default resources test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	defaultResourceScope().publishLocal( "ui-scene-default-texture", texture );
+
+	UISceneNode* defaultScene = UISceneNode::New( window );
+	UISceneNode* isolatedScene = UISceneNode::New( window, false );
+	EXPECT_EQ( texture.get(),
+			   defaultScene->getResourceScope()->findTexture( "ui-scene-default-texture" ).get() );
+	EXPECT_TRUE( isolatedScene->getResourceScope()->findTexture( "ui-scene-default-texture" ) ==
+				 nullptr );
+
+	defaultScene->setResourceScope( ResourceScope::New() );
+	EXPECT_EQ( texture.get(),
+			   defaultScene->getResourceScope()->findTexture( "ui-scene-default-texture" ).get() );
+
+	eeDelete( isolatedScene );
+	eeDelete( defaultScene );
+	defaultResourceScope().eraseLocal( "ui-scene-default-texture" );
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, fontServiceFollowsScopeOwnershipAndDetachesRetainedFonts ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Font service scope test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	FontTrueTypePtr font = FontTrueType::New( "scoped-font-service", *scope );
+	ASSERT_TRUE( font != nullptr );
+
+	EXPECT_EQ( &scope->getFontService(), font->getFontService() );
+	EXPECT_EQ( font.get(), scope->findFont( "scoped-font-service" ).get() );
+	EXPECT_TRUE( scope->getFontService().addFallbackFont( font ) );
+	EXPECT_TRUE( scope->getFontService().hasFallbackFonts() );
+
+	EXPECT_TRUE( scope->eraseLocalFont( font.get() ) );
+	EXPECT_EQ( nullptr, font->getFontService() );
+	EXPECT_FALSE( scope->getFontService().hasFallbackFonts() );
+	EXPECT_TRUE( scope->findFont( "scoped-font-service" ) == nullptr );
+
+	font.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, fontFactoriesPublishIntoExplicitScope ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Scoped font factories test" );
+	auto scope = ResourceScope::New();
+	auto bmFont = FontBMFont::New( "scoped-bm-font", *scope );
+	auto spriteFont = FontSprite::New( "scoped-sprite-font", *scope );
+
+	EXPECT_EQ( bmFont.get(), scope->findFont( "scoped-bm-font" ).get() );
+	EXPECT_EQ( spriteFont.get(), scope->findFont( "scoped-sprite-font" ).get() );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "scoped-bm-font" ).get() );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "scoped-sprite-font" ).get() );
+
+	bmFont.reset();
+	spriteFont.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, duplicateFontNamesReplaceCatalogBinding ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Font replacement semantics test" );
+	auto scope = ResourceScope::New();
+	FontTrueTypePtr first = FontTrueType::New( "replaceable-font", *scope );
+	FontTrueTypePtr second = FontTrueType::New( "replaceable-font", *scope );
+	FontTrueTypeWeakPtr firstWeak = first;
+
+	EXPECT_STRINGEQ( "replaceable-font", first->getName() );
+	EXPECT_STRINGEQ( "replaceable-font", second->getName() );
+	EXPECT_EQ( second.get(), scope->findFont( "replaceable-font" ).get() );
+	EXPECT_EQ( nullptr, first->getFontService() );
+	EXPECT_EQ( &scope->getFontService(), second->getFontService() );
+
+	first.reset();
+	EXPECT_TRUE( firstWeak.expired() );
+	second.reset();
+	scope.reset();
 	window->display( false );
 	Engine::destroySingleton();
 }
@@ -1049,10 +1163,11 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		scene->enableFrameBuffer();
 		UIImage::New()->setDrawable( ninePatch->clone() )->setParent( scene->getRoot() );
 
-		auto* font = FontTrueType::New( "engine-teardown-font" );
+		FontTrueTypePtr font = FontTrueType::New( "engine-teardown-font" );
 		ASSERT_TRUE(
 			font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
-		auto layout = TextLayout::layout( String( "cached before Engine teardown" ), font, 14, 0 );
+		auto layout =
+			TextLayout::layout( String( "cached before Engine teardown" ), font.get(), 14, 0 );
 		std::weak_ptr<const TextLayout> layoutWeak = layout;
 		layout.reset();
 
@@ -1061,6 +1176,7 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		batch->batchQuad( 0, 0, 4, 4 );
 		ninePatch.reset();
 		texture.reset();
+		font.reset();
 
 		Engine::destroySingleton();
 
@@ -1068,7 +1184,6 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		EXPECT_TRUE( Engine::existsSingleton() == nullptr );
 		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
-		EXPECT_TRUE( FontManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
 		EXPECT_TRUE( ShaderProgramManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( Graphics::Private::FrameBufferManager::existsSingleton() == nullptr );

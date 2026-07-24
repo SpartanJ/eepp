@@ -10,10 +10,15 @@ EE_MAIN_FUNC int main( int, char** ) {
 		return EXIT_FAILURE;
 
 	app.getUI()->setThreadPool( threadPool );
+	ResourceScope& resourceScope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr remixIconFont =
+		FontTrueType::New( "icon", "assets/fonts/remixicon.ttf", resourceScope );
+	FontTrueTypePtr noniconsFont =
+		FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf", resourceScope );
+	FontTrueTypePtr codIconFont =
+		FontTrueType::New( "codicon", "assets/fonts/codicon.ttf", resourceScope );
 	app.getUI()->getUIIconThemeManager()->setCurrentTheme(
-		IconManager::init( "icons", FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" ),
-						   FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf" ),
-						   FontTrueType::New( "codicon", "assets/fonts/codicon.ttf" ) ) );
+		IconManager::init( "icons", remixIconFont.get(), noniconsFont.get(), codIconFont.get() ) );
 
 	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
 	dialog->setCloseShortcut( KEY_ESCAPE );

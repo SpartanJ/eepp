@@ -20,12 +20,11 @@ using namespace EE::Scene;
 using namespace EE::UI;
 
 static UISceneNode* init_test_scene_node() {
-	FontTrueType* font = nullptr;
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );

@@ -1,10 +1,10 @@
 #include "eepp/ui/uistyle.hpp"
 #include <algorithm>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/actions/sequence.hpp>
@@ -138,7 +138,7 @@ const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UIWidget( elementTag ),
-	mFont( FontManager::instance()->getByName( "monospace" ) ),
+	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
 	mDocView( mDoc, mFontStyleConfig, { .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),

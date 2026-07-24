@@ -233,9 +233,11 @@ Frozen lookup rules:
 - Never search the live registry.
 - Never implicitly search a parent, host scene, sibling scene, or every live resource.
 - The default Graphics scope imports the global catalog explicitly.
-- A UI/application scene receives only the catalogs deliberately imported into it.
-- A Web document does not inherit host/global resources unless the host exports and imports them
-  intentionally.
+- A UI/application scene imports the default resource catalog automatically for the common case;
+  callers can disable this at construction for strict isolation and then import only the catalogs
+  they deliberately expose.
+- A Web document receives the same default-catalog baseline unless created with automatic import
+  disabled. It never implicitly inherits host, sibling, or other document-local catalogs.
 - Scopes import catalogs, not arbitrary scopes. This avoids recursive lookup and import cycles.
 
 Pure `EE::Graphics` users may use TextureFactory for unpinned creation or Engine's default Graphics
@@ -566,7 +568,7 @@ focused regression coverage while preserving current raw factory ownership:
 - Externally executed HTTP tasks cannot retain a dangling raw Http after Pool destruction.
 - TextureAtlasLoader joins/stops ResourceLoader work before callback-visible loader state is
   destroyed.
-- Engine destroys ShaderProgramManager before Renderer and clears TextLayout before FontManager.
+- Engine clears TextLayout before destroying the default ResourceScope and its FontService.
 - Engine stops asynchronous resource producers before resource consumers and GPU managers.
 - UISceneNode's static async delivery queue has an explicit shutdown purge/rejection boundary.
 - Obsolete FrameBuffer context-loss reload APIs were removed.
@@ -808,6 +810,17 @@ raw-owning ResourceManager subclass one family at a time. Their self-contained G
 the established graphics-thread destruction contract unless a concrete migration requires
 otherwise.
 
+For fonts, ownership is separate from rendering policy. Font handles and semantic lookup live in
+naturally owned catalogs: application defaults use the default scope, while author `@font-face`
+resources are owned by their document scene. Every `ResourceScope` owns an inline `FontService` for
+its rendering configuration, emoji fonts, configured fallbacks, and system fallback cache. Fonts
+retain only a borrowed service pointer while published in that scope and are detached when removed
+or when the scope is destroyed. Raw `Font*` values in text/layout/style structures remain borrowed
+views whose enclosing application, scene, theme, or fallback service retains the corresponding
+handle. The former process-wide `FontManager` singleton and compatibility namespace were removed.
+Publishing a font with an existing local key replaces that catalog binding; the legacy manager
+behavior that silently suffixed duplicate font names is intentionally not preserved.
+
 Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends on it.
 
 ## 11. Required validation matrix
@@ -873,8 +886,8 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 7 continues with the remaining ResourceManager families one at a time: fonts and font caches,
-themes/icons, shaders/programs, and any remaining raw-owning manager. Each singleton semantic
-namespace is replaced by naturally owned catalogs plus explicit scope imports, following the
-completed nine-patch and texture-atlas migrations. The raw-owning ResourceManager template is
-removed only after its final consumer is migrated.
+Stage 7 continues with the remaining ResourceManager families one at a time. Fonts and font caches
+now use scope catalogs plus `FontService`; the next families are themes/icons, shaders/programs, and
+any remaining raw-owning manager. Each singleton semantic namespace is replaced by naturally owned
+catalogs plus explicit scope imports. The raw-owning ResourceManager template is removed only after
+its final consumer is migrated.

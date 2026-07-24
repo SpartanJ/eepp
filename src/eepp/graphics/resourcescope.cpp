@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -15,7 +16,37 @@ ResourceScopePtr ResourceScope::New() {
 	return ResourceScopePtr( eeNew( ResourceScope, () ), ResourceDeleter<ResourceScope>() );
 }
 
-ResourceScope::ResourceScope() : mLocalCatalog( ResourceCatalog::New() ) {}
+ResourceScope::ResourceScope() : mLocalCatalog( ResourceCatalog::New() ), mFontService( *this ) {}
+
+ResourceScope::~ResourceScope() {
+	for ( const FontPtr& font : mLocalCatalog->getFonts() )
+		detachFontService( font );
+}
+
+void ResourceScope::attachFontService( const FontPtr& font ) {
+	if ( font && font->getType() == FontType::TTF )
+		static_cast<FontTrueType*>( font.get() )->setFontService( &mFontService );
+}
+
+void ResourceScope::detachFontService( const FontPtr& font ) {
+	if ( font ) {
+		mFontService.onFontRemoved( font.get() );
+		if ( font->getType() != FontType::TTF )
+			return;
+		auto* ttf = static_cast<FontTrueType*>( font.get() );
+		if ( ttf->getFontService() == &mFontService ) {
+			ttf->setFontService( nullptr );
+		}
+	}
+}
+
+FontService& ResourceScope::getFontService() {
+	return mFontService;
+}
+
+const FontService& ResourceScope::getFontService() const {
+	return mFontService;
+}
 
 TexturePtr ResourceScope::findTexture( const ResourceKey& key ) const {
 	return findTexture( key.value() );
@@ -73,6 +104,42 @@ std::vector<TextureAtlasPtr> ResourceScope::getAtlases() const {
 		atlases.insert( atlases.end(), imported.begin(), imported.end() );
 	}
 	return atlases;
+}
+
+FontPtr ResourceScope::findFont( const ResourceKey& key ) const {
+	return findFont( key.value() );
+}
+
+FontPtr ResourceScope::findFont( const std::string& key ) const {
+	if ( FontPtr font = mLocalCatalog->findFont( key ) )
+		return font;
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		if ( FontPtr font = catalog->findFont( key ) )
+			return font;
+	}
+	return {};
+}
+
+FontPtr ResourceScope::findFont( const String::HashType& id ) const {
+	if ( FontPtr font = mLocalCatalog->findFont( id ) )
+		return font;
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		if ( FontPtr font = catalog->findFont( id ) )
+			return font;
+	}
+	return {};
+}
+
+std::vector<FontPtr> ResourceScope::getFonts() const {
+	std::vector<FontPtr> fonts = mLocalCatalog->getFonts();
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		std::vector<FontPtr> imported = catalog->getFonts();
+		fonts.insert( fonts.end(), imported.begin(), imported.end() );
+	}
+	return fonts;
 }
 
 std::vector<TextureRegionPtr>
@@ -232,6 +299,18 @@ void ResourceScope::publishLocalAtlas( std::string key, TextureAtlasPtr atlas ) 
 	mLocalCatalog->publishAtlas( std::move( key ), std::move( atlas ) );
 }
 
+void ResourceScope::publishLocalFont( ResourceKey key, FontPtr font ) {
+	publishLocalFont( key.value(), std::move( font ) );
+}
+
+void ResourceScope::publishLocalFont( std::string key, FontPtr font ) {
+	FontPtr replaced = mLocalCatalog->findFont( key );
+	if ( replaced && replaced != font )
+		detachFontService( replaced );
+	attachFontService( font );
+	mLocalCatalog->publishFont( std::move( key ), std::move( font ) );
+}
+
 bool ResourceScope::eraseLocal( const ResourceKey& key ) {
 	return mLocalCatalog->erase( key );
 }
@@ -256,7 +335,33 @@ bool ResourceScope::eraseLocalAtlas( const std::string& key ) {
 	return mLocalCatalog->eraseAtlas( key );
 }
 
+bool ResourceScope::eraseLocalFont( const ResourceKey& key ) {
+	return eraseLocalFont( key.value() );
+}
+
+bool ResourceScope::eraseLocalFont( const std::string& key ) {
+	FontPtr font = mLocalCatalog->findFont( key );
+	if ( !font )
+		return false;
+	detachFontService( font );
+	return mLocalCatalog->eraseFont( key );
+}
+
+bool ResourceScope::eraseLocalFont( Font* font ) {
+	if ( !font )
+		return false;
+	FontPtr handle = mLocalCatalog->findFont( font->getId() );
+	if ( handle.get() != font )
+		return false;
+	if ( !mLocalCatalog->eraseFont( font ) )
+		return false;
+	detachFontService( handle );
+	return true;
+}
+
 void ResourceScope::clearLocal() {
+	for ( const FontPtr& font : mLocalCatalog->getFonts() )
+		detachFontService( font );
 	mLocalCatalog->clear();
 }
 

@@ -142,7 +142,7 @@ void App::unloadImages() {
 
 void App::unloadFonts() {
 	for ( auto it = mFontsLoaded.begin(); it != mFontsLoaded.end(); ++it )
-		FontManager::instance()->remove( it->first );
+		mUISceneNode->getResourceScope()->eraseLocalFont( it->first.get() );
 	mFontsLoaded.clear();
 }
 
@@ -168,7 +168,9 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	}
 	if ( fontPath.empty() )
 		return nullptr;
-	return FontTrueType::New( name, fontPath );
+	FontTrueTypePtr font = FontTrueType::New( name, fontPath, *mUISceneNode->getResourceScope() );
+	mFontsLoaded[font] = name;
+	return font.get();
 }
 
 void App::createWidgetInspector() {
@@ -179,7 +181,7 @@ void App::createWidgetInspector() {
 
 void App::loadFont( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	FontTrueType* font = FontTrueType::New( filename );
+	FontTrueTypePtr font = FontTrueType::New( filename, *mUISceneNode->getResourceScope() );
 	font->loadFromFile( path );
 	mFontsLoaded[font] = filename;
 }
@@ -614,7 +616,7 @@ void App::onLayoutSelected( const Event* event ) {
 	UIMenuCheckBox* chk = static_cast<UIMenuCheckBox*>( event->getNode() );
 	chk->setActive( true );
 
-	std::map<std::string, std::string>::iterator it;
+	UnorderedMap<std::string, std::string>::iterator it;
 
 	if ( ( it = mLayouts.find( txt.toUtf8() ) ) != mLayouts.end() )
 		loadLayout( it->second );
@@ -1271,16 +1273,16 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mResPath += "assets";
 		FileSystem::dirAddSlashAtEnd( mResPath );
 
-		FontTrueType* font =
+		FontTrueTypePtr font =
 			FontTrueType::New( "NotoSans-Regular", mResPath + "fonts/NotoSans-Regular.ttf" );
-		FontTrueType* fontMono =
+		FontTrueTypePtr fontMono =
 			FontTrueType::New( "monospace", mResPath + "fonts/DejaVuSansMono.ttf" );
 
-		FontFamily::loadFromRegular( font );
-		FontFamily::loadFromRegular( fontMono );
+		FontFamily::loadFromRegular( font.get() );
+		FontFamily::loadFromRegular( fontMono.get() );
 
 		mBaseStyleSheet = mResPath + "ui/breeze.css";
-		mTheme = UITheme::load( "uitheme", "uitheme", "", font, mBaseStyleSheet );
+		mTheme = UITheme::load( "uitheme", "uitheme", "", font.get(), mBaseStyleSheet );
 
 		mUISceneNode = UISceneNode::New();
 		mUISceneNode->setId( "uiSceneNode" );
@@ -1311,10 +1313,12 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mAppUISceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( mTheme )
-			->setDefaultFont( font )
+			->setDefaultFont( font.get() )
 			->add( mTheme );
 
-		mUISceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
+		mUISceneNode->getUIThemeManager()
+			->setDefaultFont( font.get() )
+			->setDefaultEffectsEnabled( true );
 
 		mAppUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

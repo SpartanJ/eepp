@@ -2,10 +2,10 @@
 #include "utest.hpp"
 
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
@@ -80,10 +80,10 @@ static void init_ui_test() {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monospace = FontTrueType::New( "monospace" );
+	FontTrueType* monospace = FontTrueType::New( "monospace" ).get();
 	monospace->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 	FontFamily::loadFromRegular( monospace );
 
@@ -131,7 +131,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -192,7 +192,7 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -251,7 +251,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 		UTEST_SKIP( "old Reddit fixture CSS asset is not readable" );
 	}
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1048,7 +1048,7 @@ UTEST( UIRichText, anchorMargins ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1090,7 +1090,7 @@ UTEST( UIRichText, spanPadding ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1124,7 +1124,7 @@ UTEST( UIRichText, anchorPadding ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1164,7 +1164,7 @@ UTEST( UIRichText, anchorPaddingLineHeight ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1204,7 +1204,7 @@ UTEST( UIHTML, InlineBaselineAlignmentProperties ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1257,7 +1257,7 @@ UTEST( UIHTML, InlineBlockVerticalAlignDoesNotInflateOwnTextLine ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1306,7 +1306,7 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1339,7 +1339,7 @@ UTEST( UIHTMLTable, nestedPerformance ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1390,7 +1390,7 @@ UTEST( UIHTMLTable, specifiedWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1430,7 +1430,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1975,7 +1975,7 @@ UTEST( UIHTMLTable, tableLayoutFixed ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2023,7 +2023,7 @@ UTEST( UIHTMLBody, backgroundColorPropagation ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2100,7 +2100,7 @@ UTEST( UILayout, marginAuto ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2368,7 +2368,7 @@ UTEST( UIHTMLDetails, lobstersInlineBlockCachesWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -2548,7 +2548,7 @@ UTEST( UIBorder, renderingVariations ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2582,7 +2582,7 @@ UTEST( UIBorder, renderingVariations2 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2610,12 +2610,11 @@ UTEST( UIBorder, renderingVariations2 ) {
 }
 
 static UISceneNode* init_test_inline_block() {
-	FontTrueType* font = nullptr;
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
@@ -4379,7 +4378,7 @@ static UISceneNode* createWinAndLoadHTML( std::string winName, std::string htmlP
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( font == nullptr || !font->loaded() )
 		return nullptr;
@@ -4447,7 +4446,7 @@ UTEST( FontTrueType, glyphScaleZeroDimensionsNoCrash ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -5326,7 +5325,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -5416,7 +5415,7 @@ UTEST( UIHTML, NewsBlurStoryArchiveLayoutStabilizes ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );

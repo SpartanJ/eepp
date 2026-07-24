@@ -1,6 +1,7 @@
 #ifndef EE_GRAPHICS_RESOURCE_HPP
 #define EE_GRAPHICS_RESOURCE_HPP
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -56,5 +57,15 @@ template <typename T, typename... Args> ResourcePtr<T> makeResource( Args&&... a
 }
 
 }} // namespace EE::Graphics
+
+namespace std {
+
+template <> struct hash<EE::Graphics::ResourceId> {
+	std::size_t operator()( const EE::Graphics::ResourceId& id ) const noexcept {
+		return std::hash<EE::Uint64>{}( id.value() );
+	}
+};
+
+} // namespace std
 
 #endif

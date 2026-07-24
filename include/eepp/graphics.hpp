@@ -13,7 +13,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -43,9 +43,9 @@
 #include <eepp/graphics/renderer/rendererglshader.hpp>
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 #include <eepp/graphics/rendermode.hpp>
-#include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/graphics/shader.hpp>
@@ -62,9 +62,9 @@
 #include <eepp/graphics/textshaperun.hpp>
 #include <eepp/graphics/texttransform.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturepacker.hpp>

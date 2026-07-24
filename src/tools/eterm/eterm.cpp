@@ -276,7 +276,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		FontTrueType* fontMono = nullptr;
 		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
 			FileInfo file( fontPath.Get() );
-			fontMono = FontTrueType::New( "monospace" );
+			fontMono = FontTrueType::New( "monospace" ).get();
 			if ( fontMono->loadFromFile( file.getFilepath() ) ) {
 				FontFamily::loadFromRegular( fontMono );
 			} else {
@@ -284,7 +284,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			}
 		}
 		if ( fontMono == nullptr ) {
-			fontMono = FontTrueType::New( "monospace" );
+			fontMono = FontTrueType::New( "monospace" ).get();
 			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 			FontFamily::loadFromRegular( fontMono, "DejaVuSansMono" );
 		}
@@ -301,9 +301,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 										  ? fallbackFontPathF.Get()
 										  : resPath + "fonts/DroidSansFallbackFull.ttf" );
 		if ( FileSystem::fileExists( fallbackFontPath ) ) {
-			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" );
+			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" ).get();
 			if ( fallbackFont->loadFromFile( fallbackFontPath ) )
-				FontManager::instance()->addFallbackFont( fallbackFont );
+				defaultResourceScope().getFontService().addFallbackFont( fallbackFont );
 		}
 
 		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();

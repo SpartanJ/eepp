@@ -26,7 +26,7 @@ static void init_float_test() {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -1161,7 +1161,7 @@ UTEST( UIHTMLFloat, floatNotAffectedByTextAlignCenter ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 

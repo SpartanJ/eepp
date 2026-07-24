@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>

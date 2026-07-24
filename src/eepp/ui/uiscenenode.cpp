@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <eepp/core/string.hpp>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
@@ -129,11 +129,11 @@ static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 	}
 }
 
-UISceneNode* UISceneNode::New( EE::Window::Window* window ) {
-	return eeNew( UISceneNode, ( window ) );
+UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources ) {
+	return eeNew( UISceneNode, ( window, importDefaultResources ) );
 }
 
-UISceneNode::UISceneNode( EE::Window::Window* window ) :
+UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
@@ -141,10 +141,14 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mAsyncResourceLoadState( std::make_shared<AsyncResourceLoadState>() ),
+	mImportDefaultResources( importDefaultResources ),
 	mResourceScope( ResourceScope::New() ),
 	mDrawableResolver( *this ),
 	mWebResourceCache( WebResourceCache::New() ),
 	mKeyBindings( mWindow->getInput() ) {
+	if ( mImportDefaultResources )
+		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
+
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
 	// the required events to its children.
 	mSize = Sizef();
@@ -764,6 +768,8 @@ const ResourceScopePtr& UISceneNode::getResourceScope() const {
 
 UISceneNode* UISceneNode::setResourceScope( ResourceScopePtr resourceScope ) {
 	mResourceScope = resourceScope ? std::move( resourceScope ) : ResourceScope::New();
+	if ( mImportDefaultResources )
+		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
 	mUIThemeManager->setResourceScope( mResourceScope );
 	return this;
 }
@@ -1455,7 +1461,7 @@ UIIcon* UISceneNode::findIcon( const std::string& iconName ) {
 }
 
 DrawablePtr UISceneNode::findIconDrawable( const std::string& iconName,
-										 const size_t& drawableSize ) {
+										   const size_t& drawableSize ) {
 	UIIcon* icon = findIcon( iconName );
 	return icon ? icon->createDrawable( drawableSize ) : DrawablePtr{};
 }
@@ -1530,7 +1536,7 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 		CSS::StyleSheetProperty glyphProp( *glyph );
 
 		if ( !familyProp.isEmpty() && !nameProp.isEmpty() && !glyphProp.isEmpty() ) {
-			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+			Font* fontSearch = mResourceScope->findFont( familyProp.getValue() ).get();
 
 			if ( nullptr == fontSearch )
 				continue;
@@ -1675,11 +1681,11 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 								   fontStyle, static_cast<Uint32>( fontWeight ) );
 		};
 		auto registerLoadedFont = [this, authorFamily, fontStyle,
-								   fontWeight]( FontTrueType* font ) {
+								   fontWeight]( FontTrueTypePtr font ) {
 			if ( font == nullptr || !font->loaded() )
 				return false;
 			font->setVariableFontWeight( fontWeight );
-			registerFontFaceAlias( authorFamily, fontStyle, fontWeight, font );
+			registerFontFaceAlias( authorFamily, fontStyle, fontWeight, font.get() );
 			mFontFaces.push_back( font );
 			mRoot->reloadFontFamily();
 			return true;
@@ -1706,12 +1712,13 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 				if ( isBase64 && !data.empty() ) {
 					std::string decoded;
 					Base64::decode( data, decoded );
-					FontTrueType* font = FontTrueType::New(
-						makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
+					FontTrueTypePtr font = FontTrueType::New(
+						makeInternalFontName( authorFamily, fontStyle, fontWeight ),
+						*mResourceScope );
 					if ( font->loadFromMemory( &decoded[0], decoded.size() ) ) {
 						registerLoadedFont( font );
 					} else
-						eeSAFE_DELETE( font );
+						mResourceScope->eraseLocalFont( font.get() );
 				}
 			}
 			return;
@@ -1723,14 +1730,14 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 		if ( String::startsWith( path, "file://" ) ) {
 			std::string filePath( resolvedURI.getFSPath() );
 
-			FontTrueType* font =
-				FontTrueType::New( makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
+			FontTrueTypePtr font = FontTrueType::New(
+				makeInternalFontName( authorFamily, fontStyle, fontWeight ), *mResourceScope );
 
 			if ( font->loadFromFile( filePath ) ) {
 				registerLoadedFont( font );
 				runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 			} else
-				eeSAFE_DELETE( font );
+				mResourceScope->eraseLocalFont( font.get() );
 		} else if ( String::startsWith( path, "http://" ) ||
 					String::startsWith( path, "https://" ) ) {
 			std::string internalFontName(
@@ -1755,17 +1762,18 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 						resourceState, resourceGeneration,
 						[fontData = std::move( fontData ), internalFontName, authorFamily,
 						 fontStyle, fontWeight]( UISceneNode* scene ) mutable {
-							FontTrueType* font = FontTrueType::New( internalFontName );
+							FontTrueTypePtr font =
+								FontTrueType::New( internalFontName, *scene->mResourceScope );
 							if ( font->loadFromMemory( &fontData[0], fontData.size() ) &&
 								 font->loaded() ) {
 								font->setVariableFontWeight( fontWeight );
 								scene->registerFontFaceAlias( authorFamily, fontStyle, fontWeight,
-															  font );
+															  font.get() );
 								scene->mFontFaces.push_back( font );
 								if ( scene->mRoot )
 									scene->mRoot->reloadFontFamily();
 							} else {
-								eeSAFE_DELETE( font );
+								scene->mResourceScope->eraseLocalFont( font.get() );
 							}
 						} );
 				} else {
@@ -1781,14 +1789,14 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 				}
 			} );
 		} else if ( VFS::instance()->fileExists( path ) ) {
-			FontTrueType* font =
-				FontTrueType::New( makeInternalFontName( authorFamily, fontStyle, fontWeight ) );
+			FontTrueTypePtr font = FontTrueType::New(
+				makeInternalFontName( authorFamily, fontStyle, fontWeight ), *mResourceScope );
 
 			IOStream* stream = VFS::instance()->getFileFromPath( path );
 			if ( font->loadFromStream( *stream ) ) {
 				registerLoadedFont( font );
 			} else
-				eeSAFE_DELETE( font );
+				mResourceScope->eraseLocalFont( font.get() );
 		}
 	};
 
@@ -2204,7 +2212,6 @@ void UISceneNode::invalidate( Node* invalidator ) {
 
 Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyle,
 										 FontWeight weight ) const {
-	FontManager* fm = FontManager::instance();
 	Font* font = nullptr;
 	String::readBySeparatorStoppable(
 		names,
@@ -2222,7 +2229,7 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 			if ( fontStyle )
 				fontFamily += "#" + Text::styleFlagToString( fontStyle );
 
-			font = fm->getByName( fontFamily );
+			font = mResourceScope->findFont( fontFamily ).get();
 
 			// Remove the font style part (ex: `Arial#bold` to `Arial`)
 			// We need this for SystemFontResolver::genericFamilyFromName
@@ -2243,7 +2250,7 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 				if ( fontStyle )
 					fontFamily += "#" + Text::styleFlagToString( fontStyle );
 
-				font = fm->getByName( fontFamily );
+				font = mResourceScope->findFont( fontFamily ).get();
 			}
 
 			if ( font == nullptr && SystemFontResolver::isEnabled() ) {
@@ -2258,15 +2265,16 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 					if ( fontStyle )
 						family += "#" + Text::styleFlagToString( fontStyle );
 
-					if ( ( font = fm->getByName( family ) ) )
+					if ( ( font = mResourceScope->findFont( family ).get() ) )
 						return true;
 
-					FontTrueType* ttf = FontTrueType::New( family, desc.path, desc.faceIndex );
+					FontTrueTypePtr ttf =
+						FontTrueType::New( family, desc.path, desc.faceIndex, *mResourceScope );
 					if ( ttf && ttf->loaded() ) {
-						font = ttf;
+						font = ttf.get();
 						Uint32 weightStyle = fontStyle & ( Text::Bold | Text::Italic );
 						if ( weightStyle ) {
-							Font* regular = fm->getByName( desc.family );
+							Font* regular = mResourceScope->findFont( desc.family ).get();
 							if ( regular && regular != font &&
 								 regular->getType() == FontType::TTF ) {
 								auto* regularFT = static_cast<FontTrueType*>( regular );
@@ -2309,8 +2317,8 @@ void UISceneNode::clearFontFaces() {
 	if ( mRoot )
 		mRoot->reloadFontFamily();
 
-	for ( auto& font : mFontFaces )
-		FontManager::instance()->remove( font );
+	for ( const FontPtr& font : mFontFaces )
+		mResourceScope->eraseLocalFont( font.get() );
 
 	mFontFaces.clear();
 }
@@ -2348,7 +2356,7 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 		return;
 	auto* ft = static_cast<FontTrueType*>( font );
 
-	auto loadVariant = [family]( FontWeight weight, bool italic ) -> FontTrueType* {
+	auto loadVariant = [this, family]( FontWeight weight, bool italic ) -> FontTrueTypePtr {
 		Uint32 style = 0;
 		if ( italic )
 			style |= Text::Italic;
@@ -2357,9 +2365,10 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 		std::string queryFamily = family;
 		if ( style )
 			queryFamily += "#" + Text::styleFlagToString( style );
-		Font* existing = FontManager::instance()->getByName( queryFamily );
+		FontPtr existingHandle = mResourceScope->findFont( queryFamily );
+		Font* existing = existingHandle.get();
 		if ( existing && existing->getType() == FontType::TTF )
-			return static_cast<FontTrueType*>( existing );
+			return std::static_pointer_cast<FontTrueType>( existingHandle );
 
 		FontDesc desc = SystemFontResolver::instance()->resolveGeneric(
 			SystemFontResolver::genericFamilyFromName( family ), weight, italic );
@@ -2373,23 +2382,24 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 		if ( desc.path.empty() )
 			return nullptr;
 
-		auto* ttf = FontTrueType::New( queryFamily, desc.path, desc.faceIndex );
+		FontTrueTypePtr ttf =
+			FontTrueType::New( queryFamily, desc.path, desc.faceIndex, *mResourceScope );
 		if ( !ttf || !ttf->loaded() ) {
-			eeSAFE_DELETE( ttf );
+			mResourceScope->eraseLocalFont( ttf.get() );
 			return nullptr;
 		}
 		return ttf;
 	};
 
-	FontTrueType* boldFont = loadVariant( FontWeight::Bold, false );
+	FontTrueTypePtr boldFont = loadVariant( FontWeight::Bold, false );
 	if ( boldFont )
 		ft->setBoldFont( boldFont );
 
-	FontTrueType* italicFont = loadVariant( FontWeight::Normal, true );
+	FontTrueTypePtr italicFont = loadVariant( FontWeight::Normal, true );
 	if ( italicFont )
 		ft->setItalicFont( italicFont );
 
-	FontTrueType* boldItalicFont = loadVariant( FontWeight::Bold, true );
+	FontTrueTypePtr boldItalicFont = loadVariant( FontWeight::Bold, true );
 	if ( boldItalicFont )
 		ft->setBoldItalicFont( boldItalicFont );
 }

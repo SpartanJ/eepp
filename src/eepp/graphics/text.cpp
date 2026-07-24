@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
@@ -341,11 +341,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	String::StringBaseType prevChar = 0;
 	bool isBold = ( style & Text::Bold ) != 0;
 	bool isItalic = ( style & Text::Italic ) != 0;
-	bool fallbacksToColorEmoji =
-		font && font->getType() == FontType::TTF &&
-		!static_cast<FontTrueType*>( font )->isColorEmojiFont() &&
-		FontManager::instance()->getColorEmojiFont() != nullptr &&
-		FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF;
+	FontTrueType* trueTypeFont =
+		font && font->getType() == FontType::TTF ? static_cast<FontTrueType*>( font ) : nullptr;
+	FontService* fontService = trueTypeFont ? trueTypeFont->getFontService() : nullptr;
+	bool fallbacksToColorEmoji = trueTypeFont && !trueTypeFont->isColorEmojiFont() && fontService &&
+								 fontService->getColorEmojiFont() != nullptr &&
+								 fontService->getColorEmojiFont()->getType() == FontType::TTF;
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
@@ -355,12 +356,14 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	Float height = font->getLineSpacing( fontSize );
 	Sizef size{ 0, height };
 	size_t ssize = string.size();
+	if ( ssize == 0 )
+		return size;
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 	const TexturePtr& fontTexture = font->getTexture( fontSize );
 	Float tabAlign = 0;
 	GlyphDrawable* spaceGlyph = nullptr;
 	GlyphDrawable* tabGlyph = nullptr;
-	Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+	Float hspace = font->getGlyphAdvance( ' ', fontSize, isBold, isItalic );
 	std::optional<Float> tabOffset{ whitespaceDisplayConfig.tabOffset };
 	if ( whitespaceDisplayConfig.tabDisplayCharacter )
 		tabGlyph = font->getGlyphDrawable( whitespaceDisplayConfig.tabDisplayCharacter, fontSize );
@@ -640,9 +643,10 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 
 void Text::checkColorEmojis() {
 	mContainsColorEmoji = false;
-	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
-		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
-			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+	if ( mFontStyleConfig.Font && mFontStyleConfig.Font->getType() == FontType::TTF ) {
+		FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+		FontService* fontService = fontTrueType->getFontService();
+		if ( fontService && fontService->getColorEmojiFont() != nullptr ) {
 			if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
 				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
 		}
@@ -2963,11 +2967,9 @@ SmallVector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
 
 	size_t startLine = findVisualLineFromCharIndex( range.start );
 	size_t endLine = findVisualLineFromCharIndex( range.end );
-	Float hspace =
-		mFontStyleConfig.Font
-			->getGlyph( ' ', mFontStyleConfig.CharacterSize, mFontStyleConfig.Style & Text::Bold,
-						mFontStyleConfig.Style & Text::Italic )
-			.advance;
+	Float hspace = mFontStyleConfig.Font->getGlyphAdvance( ' ', mFontStyleConfig.CharacterSize,
+														   mFontStyleConfig.Style & Text::Bold,
+														   mFontStyleConfig.Style & Text::Italic );
 	Float vspace = getLineSpacing();
 
 	for ( size_t i = startLine; i <= endLine; ++i ) {

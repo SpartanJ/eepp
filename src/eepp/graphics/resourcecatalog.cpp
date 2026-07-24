@@ -98,6 +98,35 @@ void ResourceCatalog::publishAtlas( std::string key, TextureAtlasPtr atlas ) {
 	previous.reset();
 }
 
+void ResourceCatalog::publishFont( ResourceKey key, FontPtr font ) {
+	publishFont( key.value(), std::move( font ) );
+}
+
+void ResourceCatalog::publishFont( std::string key, FontPtr font ) {
+	if ( key.empty() )
+		return;
+	if ( !font ) {
+		eraseFont( key );
+		return;
+	}
+
+	FontPtr previous;
+	String::HashType id = String::hash( key );
+	{
+		Lock lock( mMutex );
+		auto it = mFonts.find( key );
+		if ( it == mFonts.end() ) {
+			mFonts.emplace( std::move( key ), font );
+			mFontsById[id] = font;
+			return;
+		}
+		previous = std::move( it->second );
+		it->second = font;
+		mFontsById[id] = font;
+	}
+	previous.reset();
+}
+
 TexturePtr ResourceCatalog::findTexture( const ResourceKey& key ) const {
 	return findTexture( key.value() );
 }
@@ -141,6 +170,31 @@ std::vector<TextureAtlasPtr> ResourceCatalog::getAtlases() const {
 	for ( const auto& atlas : mAtlases )
 		atlases.emplace_back( atlas.second );
 	return atlases;
+}
+
+FontPtr ResourceCatalog::findFont( const ResourceKey& key ) const {
+	return findFont( key.value() );
+}
+
+FontPtr ResourceCatalog::findFont( const std::string& key ) const {
+	Lock lock( mMutex );
+	auto it = mFonts.find( key );
+	return it != mFonts.end() ? it->second : FontPtr{};
+}
+
+FontPtr ResourceCatalog::findFont( const String::HashType& id ) const {
+	Lock lock( mMutex );
+	auto it = mFontsById.find( id );
+	return it != mFontsById.end() ? it->second.lock() : FontPtr{};
+}
+
+std::vector<FontPtr> ResourceCatalog::getFonts() const {
+	std::vector<FontPtr> fonts;
+	Lock lock( mMutex );
+	fonts.reserve( mFonts.size() );
+	for ( const auto& font : mFonts )
+		fonts.emplace_back( font.second );
+	return fonts;
 }
 
 bool ResourceCatalog::erase( const ResourceKey& key ) {
@@ -204,28 +258,74 @@ bool ResourceCatalog::eraseAtlas( const std::string& key ) {
 	return true;
 }
 
+bool ResourceCatalog::eraseFont( const ResourceKey& key ) {
+	return eraseFont( key.value() );
+}
+
+bool ResourceCatalog::eraseFont( const std::string& key ) {
+	FontPtr font;
+	{
+		Lock lock( mMutex );
+		auto it = mFonts.find( key );
+		if ( it == mFonts.end() )
+			return false;
+		font = std::move( it->second );
+		mFonts.erase( it );
+		auto idIt = mFontsById.find( String::hash( key ) );
+		if ( idIt != mFontsById.end() )
+			mFontsById.erase( idIt );
+	}
+	font.reset();
+	return true;
+}
+
+bool ResourceCatalog::eraseFont( Font* font ) {
+	if ( !font )
+		return false;
+	FontPtr removed;
+	{
+		Lock lock( mMutex );
+		auto it = mFonts.find( font->getName() );
+		if ( it == mFonts.end() || it->second.get() != font )
+			return false;
+		removed = std::move( it->second );
+		mFonts.erase( it );
+		auto idIt = mFontsById.find( font->getId() );
+		if ( idIt != mFontsById.end() )
+			mFontsById.erase( idIt );
+	}
+	removed.reset();
+	return true;
+}
+
 void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TexturePtr> textures;
 	UnorderedMap<std::string, DrawablePtr> drawables;
 	UnorderedMap<String::HashType, DrawableWeakPtr> drawablesById;
 	UnorderedMap<std::string, TextureAtlasPtr> atlases;
+	UnorderedMap<std::string, FontPtr> fonts;
+	UnorderedMap<String::HashType, FontWeakPtr> fontsById;
 	{
 		Lock lock( mMutex );
 		textures = std::move( mTextures );
 		drawables = std::move( mDrawables );
 		drawablesById = std::move( mDrawablesById );
 		atlases = std::move( mAtlases );
+		fonts = std::move( mFonts );
+		fontsById = std::move( mFontsById );
 	}
 
 	textures.clear();
 	drawables.clear();
 	drawablesById.clear();
 	atlases.clear();
+	fonts.clear();
+	fontsById.clear();
 }
 
 std::size_t ResourceCatalog::size() const {
 	Lock lock( mMutex );
-	return mTextures.size() + mDrawables.size() + mAtlases.size();
+	return mTextures.size() + mDrawables.size() + mAtlases.size() + mFonts.size();
 }
 
 }} // namespace EE::Graphics

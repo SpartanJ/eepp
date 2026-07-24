@@ -256,8 +256,8 @@ void EETest::loadFonts() {
 }
 
 void EETest::onFontLoaded() {
-	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
-	Font* monospace = FontManager::instance()->getByName( "monospace" );
+	TTF = defaultResourceScope().findFont( "NotoSans-Regular" ).get();
+	Font* monospace = defaultResourceScope().findFont( "monospace" ).get();
 
 	Log::info( "Fonts loading time: %4.3f ms.", mFTE.getElapsedTimeAndReset().asMilliseconds() );
 

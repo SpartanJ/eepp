@@ -23,6 +23,7 @@ using namespace EE::Network;
 
 namespace EE { namespace Graphics {
 class Font;
+using FontPtr = ResourcePtr<Font>;
 }} // namespace EE::Graphics
 
 namespace EE { namespace Window {
@@ -57,9 +58,14 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param window Pointer to the window to associate with this UI scene node.
 	 *               If NULL, uses the current window from Engine.
+	 * @param importDefaultResources Whether the scene scope automatically imports the catalog from
+	 *                               Graphics::defaultResourceScope(). Keep this enabled for normal
+	 *                               application scenes. Disable it for intentionally isolated
+	 * scenes that must only resolve local or explicitly imported resources.
 	 * @return Pointer to the newly created UISceneNode instance.
 	 */
-	static UISceneNode* New( EE::Window::Window* window = NULL );
+	static UISceneNode* New( EE::Window::Window* window = NULL,
+							 bool importDefaultResources = true );
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -782,7 +788,12 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return The Graphics resource lookup and ownership boundary of this scene. */
 	const Graphics::ResourceScopePtr& getResourceScope() const;
 
-	/** Replaces this scene's resource boundary, allowing intentional sharing between scenes. */
+	/**
+	 * @brief Replaces this scene's resource boundary, allowing intentional sharing between scenes.
+	 *
+	 * Scenes created with default-resource importing enabled also import the default catalog into
+	 * the replacement scope. Scenes created with it disabled leave the replacement scope unchanged.
+	 */
 	UISceneNode* setResourceScope( Graphics::ResourceScopePtr resourceScope );
 
 	/**
@@ -928,10 +939,11 @@ class EE_API UISceneNode : public SceneNode {
 	bool mStyleDuringLoad{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
-	std::vector<Font*> mFontFaces;
+	std::vector<Graphics::FontPtr> mFontFaces;
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
 	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
+	bool mImportDefaultResources{ true };
 	Graphics::ResourceScopePtr mResourceScope;
 	DrawableResolver mDrawableResolver;
 	WebResourceCachePtr mWebResourceCache;
@@ -971,8 +983,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * Creates a UISceneNode with optional window association.
 	 *
 	 * @param window Pointer to the window, or NULL for default.
+	 * @param importDefaultResources Whether the scene scope imports the default resource catalog.
 	 */
-	explicit UISceneNode( EE::Window::Window* window = NULL );
+	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true );
 
 	/**
 	 * @brief Handles node resize.
