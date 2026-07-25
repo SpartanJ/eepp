@@ -1420,7 +1420,8 @@ void EETest::loadTextures() {
 		tImg.createMaskFromColor( ColorA( 0, 0, 0, 255 ), 0 );
 		Tiles[7] = SG->add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(),
 												tImg.getHeight(), tImg.getChannels() ),
-							"8" );
+							"8" )
+					   .get();
 #else
 		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" ).get();
 		Tiles[7]->getTexture()->createMaskFromColor( Color( 0, 0, 0, 255 ), 0 );
