@@ -14,6 +14,8 @@ class EE_API RendererGL : public Renderer {
 
 	~RendererGL();
 
+	void init();
+
 	GraphicsLibraryVersion version();
 
 	std::string versionStr();

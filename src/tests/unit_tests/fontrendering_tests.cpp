@@ -77,7 +77,7 @@ UTEST( FontRendering, glyphAdvanceDoesNotCreateTexturePages ) {
 
 UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 	UIApplication app(
-		WindowSettings( 360, 120, "eepp - Subpixel Text Test", WindowStyle::Default,
+		WindowSettings( 360, 220, "eepp - Subpixel Text Test", WindowStyle::Default,
 						WindowBackend::Default, 32 ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 	ResourceScope& scope = *app.getUI()->getResourceScope();
@@ -103,7 +103,16 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 
 	Text retained( "Subpixel retained", font.get(), 28 );
 	retained.setFillColor( Color::Black );
-	retained.draw( 8.f, 60.f );
+	retained.draw( 8.f, 52.f );
+
+	Primitives primitives;
+	primitives.setColor( Color( 40, 42, 54 ) );
+	primitives.drawRectangle( Rectf( Vector2f( 0.f, 110.f ), Sizef( 360.f, 110.f ) ) );
+	const Color lightText( 248, 248, 242 );
+	Text::draw( String( "Subpixel static light" ), { 8.f, 114.f }, font.get(), 28, lightText );
+	retained.setString( "Subpixel retained light" );
+	retained.setFillColor( lightText );
+	retained.draw( 8.f, 162.f );
 
 	Image image = window->getFrontBufferImage();
 	auto hasColoredCoverage = [&image]( Uint32 top, Uint32 bottom ) {
@@ -122,6 +131,7 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 					 "Static text lost independent LCD channel coverage" );
 	EXPECT_TRUE_MSG( hasColoredCoverage( image.getHeight() / 2, image.getHeight() ),
 					 "Retained text lost independent LCD channel coverage" );
+	compareImages( utest_state, utest_result, window, "eepp-subpixel-text" );
 
 	FrameBufferUniquePtr frameBuffer = FrameBuffer::New( 240, 48, false, false, false, 4, window );
 	ASSERT_TRUE( frameBuffer && frameBuffer->created() );

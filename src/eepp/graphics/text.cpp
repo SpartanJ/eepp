@@ -1732,7 +1732,8 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 
 	unsigned int numvert = mVertices.size();
-	const bool containsSubpixel = !mRenderModes.empty();
+	const bool containsSubpixel = std::find( mRenderModes.begin(), mRenderModes.end(),
+											 GlyphRenderMode::Subpixel ) != mRenderModes.end();
 	const Float drawX = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( X ) : X;
 	const Float drawY = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( Y ) : Y;
 
@@ -2681,9 +2682,8 @@ void Text::setFillColor( const std::vector<Color>& colors ) {
 // Add an underline or strikethrough line to the vertex array
 void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
 					Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX ) {
-	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
-	if ( !renderModes.empty() )
-		renderModes.push_back( GlyphRenderMode::Mask );
+	( &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes )
+		.push_back( GlyphRenderMode::Mask );
 	Float top = std::floor( lineTop + offset - ( thickness / 2 ) + 0.5f );
 	Float bottom = top + std::floor( thickness + 0.5f );
 	Float u1 = 0;
@@ -2759,13 +2759,8 @@ void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float
 void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 						 const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
 						 Int32 centerDiffX ) {
-	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
-	if ( glyph.renderMode == GlyphRenderMode::Subpixel && renderModes.empty() )
-		renderModes.resize( vertices.size() / GLi->quadVertex(), GlyphRenderMode::Mask );
-	if ( !renderModes.empty() )
-		renderModes.push_back( glyph.renderMode == GlyphRenderMode::Subpixel
-								   ? GlyphRenderMode::Subpixel
-								   : GlyphRenderMode::Mask );
+	( &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes )
+		.push_back( glyph.renderMode );
 	if ( glyph.renderMode == GlyphRenderMode::Subpixel )
 		position = position.trunc();
 	Float padding = 1.0;

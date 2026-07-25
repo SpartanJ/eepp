@@ -64,8 +64,6 @@ class EE_API RendererGLShader : public Renderer {
 	int mTextureColorMode_id;
 	int mTextureColorChannel_id;
 	Int32 mTextureColorMode;
-	ShaderProgram* mTextureColorPreviousShader;
-	bool mUsingTextureColorFallbackShader;
 	unsigned int mCurrentMode;
 	ShaderProgram* mCurShader;
 	ShaderProgram* mShaderPrev;

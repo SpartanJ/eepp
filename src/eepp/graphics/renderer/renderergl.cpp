@@ -61,6 +61,10 @@ RendererGL::RendererGL() {
 
 RendererGL::~RendererGL() {}
 
+void RendererGL::init() {
+	Renderer::init();
+}
+
 bool RendererGL::ensureSubpixelShader() {
 #ifndef EE_GLES1
 	if ( mSubpixelShader )
@@ -117,8 +121,6 @@ bool RendererGL::setTextureColorMode( Int32 mode ) {
 #ifdef EE_GLES1
 	return false;
 #else
-	if ( mode < 0 || mode > 4 )
-		return false;
 	if ( mode != 0 && !ensureSubpixelShader() )
 		return false;
 	if ( !mSubpixelShader || !mSubpixelShader->isValid() || mSubpixelChannelLoc == -1 )
@@ -134,7 +136,12 @@ bool RendererGL::setTextureColorMode( Int32 mode ) {
 		Renderer::setShader( mSubpixelShader.get() );
 		mUsingSubpixelShader = true;
 	}
-	mSubpixelShader->setUniform( mSubpixelChannelLoc, textureColorChannel( mode ) );
+	static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
+										  { 1.f, 0.f, 0.f },
+										  { 0.f, 1.f, 0.f },
+										  { 0.f, 0.f, 1.f },
+										  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
+	mSubpixelShader->setUniform( mSubpixelChannelLoc, channels[mode] );
 	return true;
 #endif
 }
