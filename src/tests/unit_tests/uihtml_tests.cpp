@@ -2769,6 +2769,29 @@ UTEST( UIHTML, StyleSheetTraversalBoundaries ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, MarkdownViewLoadsBodyChildrenIntoNativeTree ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{ "MarkdownView p { color: red; }" } ) );
+	sceneNode->setStyleSheet( parser.getStyleSheet() );
+
+	auto* markdownView = UIMarkdownView::New();
+	markdownView->setParent( sceneNode->getRoot() );
+	markdownView->loadFromString( "Paragraph" );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* paragraph = markdownView->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	ASSERT_TRUE( paragraph->isType( UI_TYPE_RICHTEXT ) );
+	EXPECT_TRUE( markdownView->findByType( UI_TYPE_HTML_HTML ) == nullptr );
+	EXPECT_TRUE( markdownView->findByType( UI_TYPE_HTML_BODY ) == nullptr );
+	EXPECT_TRUE( paragraph->getStyleSheetParentElement() == markdownView );
+	EXPECT_TRUE( Color::Red == paragraph->asType<UIRichText>()->getFontColor() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, StyleSheetSiblingCombinators ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "CSS Sibling Test",
 													  WindowStyle::Default, WindowBackend::Default,

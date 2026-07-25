@@ -156,7 +156,28 @@ static void serializeGumboNodeToXML( GumboNode* node, std::string& out ) {
 	}
 }
 
-std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
+static GumboNode* findElement( GumboNode* node, GumboTag tag ) {
+	if ( !node )
+		return nullptr;
+	if ( node->type == GUMBO_NODE_ELEMENT && node->v.element.tag == tag )
+		return node;
+
+	GumboVector* children = nullptr;
+	if ( node->type == GUMBO_NODE_DOCUMENT )
+		children = &node->v.document.children;
+	else if ( node->type == GUMBO_NODE_ELEMENT )
+		children = &node->v.element.children;
+	if ( !children )
+		return nullptr;
+
+	for ( unsigned int i = 0; i < children->length; ++i ) {
+		if ( auto* element = findElement( static_cast<GumboNode*>( children->data[i] ), tag ) )
+			return element;
+	}
+	return nullptr;
+}
+
+static std::string htmlToXML( const std::string& layoutString, bool bodyChildrenOnly ) {
 	if ( layoutString.empty() )
 		return "";
 
@@ -174,12 +195,28 @@ std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
 
 	// 2. Serialize the AST into strict XML
 	std::string strict_xml;
-	serializeGumboNodeToXML( output->root, strict_xml );
+	if ( bodyChildrenOnly ) {
+		if ( auto* body = findElement( output->root, GUMBO_TAG_BODY ) ) {
+			GumboVector* children = &body->v.element.children;
+			for ( unsigned int i = 0; i < children->length; ++i )
+				serializeGumboNodeToXML( static_cast<GumboNode*>( children->data[i] ), strict_xml );
+		}
+	} else {
+		serializeGumboNodeToXML( output->root, strict_xml );
+	}
 
 	// 3. Cleanup Gumbo's memory
 	gumbo_destroy_output( &kGumboDefaultOptions, output );
 
 	return strict_xml;
+}
+
+std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
+	return htmlToXML( layoutString, false );
+}
+
+std::string HTMLFormatter::HTMLBodyToXML( const std::string& layoutString ) {
+	return htmlToXML( layoutString, true );
 }
 
 }}} // namespace EE::UI::Tools

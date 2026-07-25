@@ -4537,7 +4537,10 @@ void App::init( InitParameters& params ) {
 			defaultResourceScope().getFontService().addFallbackFont( mFallbackFont );
 
 		if ( mConfig.ui.fallbackFont != "fonts/DroidSansFallbackFull.ttf" ) {
-			mUserFallbackFont = loadFont( "fallback-font", mConfig.ui.fallbackFont );
+			// Keep the user fallback under a distinct resource key. Publishing it as
+			// "fallback-font" would replace the built-in CJK font in the default scope and remove
+			// that font from FontService's fallback chain.
+			mUserFallbackFont = loadFont( "user-fallback-font", mConfig.ui.fallbackFont );
 			if ( mUserFallbackFont )
 				defaultResourceScope().getFontService().addFallbackFont( mUserFallbackFont );
 		}

@@ -635,6 +635,35 @@ UTEST( ResourcePrerequisites, fontServiceFollowsScopeOwnershipAndDetachesRetaine
 	Engine::destroySingleton();
 }
 
+UTEST( ResourcePrerequisites, distinctFallbackResourcesRemainInFallbackChain ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Multiple font fallback test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	const std::string fontsPath = Sys::getProcessPath() + "assets/fonts/";
+	FontTrueTypePtr baseFont =
+		FontTrueType::New( "base-font", fontsPath + "NotoNaskhArabic-Regular.ttf", *scope );
+	FontTrueTypePtr cjkFallback =
+		FontTrueType::New( "fallback-font", fontsPath + "NotoSansKR-Regular.ttf", *scope );
+	FontTrueTypePtr userFallback =
+		FontTrueType::New( "user-fallback-font", fontsPath + "NotoSansHebrew-Regular.ttf", *scope );
+	ASSERT_TRUE( baseFont && baseFont->loaded() );
+	ASSERT_TRUE( cjkFallback && cjkFallback->loaded() );
+	ASSERT_TRUE( userFallback && userFallback->loaded() );
+
+	FontService& fontService = scope->getFontService();
+	EXPECT_TRUE( fontService.addFallbackFont( cjkFallback ) );
+	EXPECT_TRUE( fontService.addFallbackFont( userFallback ) );
+	ASSERT_EQ( (size_t)2, fontService.getFallbackFonts().size() );
+	EXPECT_EQ( cjkFallback.get(), fontService.getFallbackFonts()[0].get() );
+	EXPECT_EQ( userFallback.get(), fontService.getFallbackFonts()[1].get() );
+
+	baseFont.reset();
+	cjkFallback.reset();
+	userFallback.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
 UTEST( ResourcePrerequisites, fontFactoriesPublishIntoExplicitScope ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Scoped font factories test" );
 	auto scope = ResourceScope::New();

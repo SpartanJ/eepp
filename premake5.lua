@@ -372,7 +372,7 @@ function build_base_configuration( package_name )
 		buildoptions { "/utf-8" }
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -412,7 +412,7 @@ function build_base_cpp_configuration( package_name )
 		symbols "On"
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -603,8 +603,8 @@ function build_link_configuration( package_name, use_ee_icon )
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			targetextension ".html"
 		end
-		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
