@@ -31,12 +31,7 @@ bool RendererGLShader::setTextureColorMode( Int32 mode ) {
 		mTextureColorMode = mode;
 		mCurShader->setUniform( mTextureColorMode_id, mode );
 		if ( mTextureColorChannel_id != -1 ) {
-			static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
-												  { 1.f, 0.f, 0.f },
-												  { 0.f, 1.f, 0.f },
-												  { 0.f, 0.f, 1.f },
-												  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
-			mCurShader->setUniform( mTextureColorChannel_id, channels[mode] );
+			mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mode ) );
 		}
 	}
 	return true;

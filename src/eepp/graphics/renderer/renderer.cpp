@@ -589,6 +589,15 @@ bool Renderer::setTextureColorMode( Int32 ) {
 	return false;
 }
 
+const Vector3ff& Renderer::textureColorChannel( Int32 mode ) {
+	static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
+										  { 1.f, 0.f, 0.f },
+										  { 0.f, 1.f, 0.f },
+										  { 0.f, 0.f, 1.f },
+										  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
+	return channels[mode];
+}
+
 bool Renderer::isLineSmooth() {
 	return BitOp::readBitKey( &mStateFlags, RSF_LINE_SMOOTH );
 }

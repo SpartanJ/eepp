@@ -362,6 +362,8 @@ class EE_API Renderer {
 	void waitForIdle();
 
   protected:
+	static const Vector3ff& textureColorChannel( Int32 mode );
+
 	static Renderer* sSingleton;
 
 	enum RendererStateFlags {

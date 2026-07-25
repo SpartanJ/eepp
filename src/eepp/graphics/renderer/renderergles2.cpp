@@ -227,12 +227,7 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	if ( mTextureColorMode_id != -1 )
 		mCurShader->setUniform( mTextureColorMode_id, mTextureColorMode );
 	if ( mTextureColorChannel_id != -1 && mTextureColorMode != 0 ) {
-		static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
-											  { 1.f, 0.f, 0.f },
-											  { 0.f, 1.f, 0.f },
-											  { 0.f, 0.f, 1.f },
-											  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
-		mCurShader->setUniform( mTextureColorChannel_id, channels[mTextureColorMode] );
+		mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mTextureColorMode ) );
 	}
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
