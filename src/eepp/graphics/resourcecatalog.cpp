@@ -53,19 +53,19 @@ void ResourceCatalog::publishDrawable( std::string key, DrawablePtr drawable ) {
 	}
 
 	DrawablePtr previous;
-	String::HashType id = String::hash( key );
+	ResourceNameHash hash = resourceNameHash( key );
 	{
 		Lock lock( mMutex );
 		auto it = mDrawables.find( key );
 		if ( it == mDrawables.end() ) {
 			mDrawables.emplace( std::move( key ), drawable );
-			mDrawablesById[id] = drawable;
+			mDrawablesByNameHash[hash] = drawable;
 			return;
 		}
 
 		previous = std::move( it->second );
 		it->second = drawable;
-		mDrawablesById[id] = drawable;
+		mDrawablesByNameHash[hash] = drawable;
 	}
 
 	previous.reset();
@@ -111,18 +111,18 @@ void ResourceCatalog::publishFont( std::string key, FontPtr font ) {
 	}
 
 	FontPtr previous;
-	String::HashType id = String::hash( key );
+	ResourceNameHash hash = resourceNameHash( key );
 	{
 		Lock lock( mMutex );
 		auto it = mFonts.find( key );
 		if ( it == mFonts.end() ) {
 			mFonts.emplace( std::move( key ), font );
-			mFontsById[id] = font;
+			mFontsByNameHash[hash] = font;
 			return;
 		}
 		previous = std::move( it->second );
 		it->second = font;
-		mFontsById[id] = font;
+		mFontsByNameHash[hash] = font;
 	}
 	previous.reset();
 }
@@ -172,10 +172,19 @@ DrawablePtr ResourceCatalog::findDrawable( const std::string& key ) const {
 	return it != mDrawables.end() ? it->second : DrawablePtr{};
 }
 
-DrawablePtr ResourceCatalog::findDrawable( const String::HashType& id ) const {
+DrawablePtr ResourceCatalog::findDrawable( ResourceNameHash hash ) const {
 	Lock lock( mMutex );
-	auto it = mDrawablesById.find( id );
-	return it != mDrawablesById.end() ? it->second.lock() : DrawablePtr{};
+	auto it = mDrawablesByNameHash.find( hash );
+	return it != mDrawablesByNameHash.end() ? it->second.lock() : DrawablePtr{};
+}
+
+DrawablePtr ResourceCatalog::findDrawable( String::HashType legacyHash ) const {
+	Lock lock( mMutex );
+	for ( const auto& [key, drawable] : mDrawables ) {
+		if ( String::hash( key ) == legacyHash )
+			return drawable;
+	}
+	return {};
 }
 
 TextureAtlasPtr ResourceCatalog::findAtlas( const ResourceKey& key ) const {
@@ -207,10 +216,10 @@ FontPtr ResourceCatalog::findFont( const std::string& key ) const {
 	return it != mFonts.end() ? it->second : FontPtr{};
 }
 
-FontPtr ResourceCatalog::findFont( const String::HashType& id ) const {
+FontPtr ResourceCatalog::findFont( ResourceNameHash hash ) const {
 	Lock lock( mMutex );
-	auto it = mFontsById.find( id );
-	return it != mFontsById.end() ? it->second.lock() : FontPtr{};
+	auto it = mFontsByNameHash.find( hash );
+	return it != mFontsByNameHash.end() ? it->second.lock() : FontPtr{};
 }
 
 std::vector<FontPtr> ResourceCatalog::getFonts() const {
@@ -275,9 +284,7 @@ bool ResourceCatalog::eraseDrawable( const std::string& key ) {
 
 		drawable = std::move( it->second );
 		mDrawables.erase( it );
-		auto idIt = mDrawablesById.find( String::hash( key ) );
-		if ( idIt != mDrawablesById.end() )
-			mDrawablesById.erase( idIt );
+		mDrawablesByNameHash.erase( resourceNameHash( key ) );
 	}
 
 	drawable.reset();
@@ -315,9 +322,7 @@ bool ResourceCatalog::eraseFont( const std::string& key ) {
 			return false;
 		font = std::move( it->second );
 		mFonts.erase( it );
-		auto idIt = mFontsById.find( String::hash( key ) );
-		if ( idIt != mFontsById.end() )
-			mFontsById.erase( idIt );
+		mFontsByNameHash.erase( resourceNameHash( key ) );
 	}
 	font.reset();
 	return true;
@@ -334,9 +339,7 @@ bool ResourceCatalog::eraseFont( Font* font ) {
 			return false;
 		removed = std::move( it->second );
 		mFonts.erase( it );
-		auto idIt = mFontsById.find( font->getId() );
-		if ( idIt != mFontsById.end() )
-			mFontsById.erase( idIt );
+		mFontsByNameHash.erase( resourceNameHash( font->getName() ) );
 	}
 	removed.reset();
 	return true;
@@ -363,28 +366,28 @@ bool ResourceCatalog::eraseShaderProgram( const std::string& key ) {
 void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TexturePtr> textures;
 	UnorderedMap<std::string, DrawablePtr> drawables;
-	UnorderedMap<String::HashType, DrawableWeakPtr> drawablesById;
+	UnorderedMap<ResourceNameHash, DrawableWeakPtr> drawablesByNameHash;
 	UnorderedMap<std::string, TextureAtlasPtr> atlases;
 	UnorderedMap<std::string, FontPtr> fonts;
-	UnorderedMap<String::HashType, FontWeakPtr> fontsById;
+	UnorderedMap<ResourceNameHash, FontWeakPtr> fontsByNameHash;
 	UnorderedMap<std::string, ShaderProgramPtr> shaderPrograms;
 	{
 		Lock lock( mMutex );
 		textures = std::move( mTextures );
 		drawables = std::move( mDrawables );
-		drawablesById = std::move( mDrawablesById );
+		drawablesByNameHash = std::move( mDrawablesByNameHash );
 		atlases = std::move( mAtlases );
 		fonts = std::move( mFonts );
-		fontsById = std::move( mFontsById );
+		fontsByNameHash = std::move( mFontsByNameHash );
 		shaderPrograms = std::move( mShaderPrograms );
 	}
 
 	textures.clear();
 	drawables.clear();
-	drawablesById.clear();
+	drawablesByNameHash.clear();
 	atlases.clear();
 	fonts.clear();
-	fontsById.clear();
+	fontsByNameHash.clear();
 	shaderPrograms.clear();
 }
 

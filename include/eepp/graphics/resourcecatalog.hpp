@@ -29,10 +29,12 @@ using ResourceCatalogPtr = ResourcePtr<ResourceCatalog>;
  * released after dropping the catalog mutex so resource destruction and callbacks never execute
  * while the catalog is locked.
  *
- * Drawable and font hash lookups use String::hash() of the semantic key as a weak secondary index.
- * They are compatibility/convenience lookups and do not replace full-key lookup when collision-safe
- * identity is required. Textures use ResourceId for process-wide object identity elsewhere; the
- * hash accepted by findDrawable() and findFont() is not a ResourceId.
+ * Drawable and font hash lookups use resourceNameHash() as a direct secondary index. The dedicated
+ * 64-bit hash provides a cheap expected-O(1) convenience lookup for trusted names without changing
+ * the repository-wide 32-bit String::HashType. A hash is not mathematically collision-free, so
+ * complete ResourceKey lookup remains authoritative and must be used for attacker-controlled names
+ * or persistent identity. ResourceNameHash values are process-local conveniences and must not be
+ * serialized.
  *
  * ResourceCatalog performs no parent, scene, live-registry, filesystem, or fallback search. A
  * ResourceScope defines lookup precedence by searching its local catalog and then explicitly
@@ -82,11 +84,17 @@ class EE_API ResourceCatalog {
 	/** @copydoc findDrawable(const ResourceKey&)const */
 	DrawablePtr findDrawable( const std::string& key ) const;
 	/**
-	 * @brief Looks up a drawable through the weak String::hash(key) secondary index.
-	 * @return An owning handle when the indexed drawable is still present, otherwise an empty
-	 * handle.
+	 * @brief Looks up a drawable through the resourceNameHash(key) convenience index.
 	 */
-	DrawablePtr findDrawable( const String::HashType& id ) const;
+	DrawablePtr findDrawable( ResourceNameHash hash ) const;
+	/**
+	 * @brief Legacy lookup for persisted 32-bit drawable hashes.
+	 *
+	 * This compatibility path scans full bindings and should not be used by new code. Persistent
+	 * formats should migrate to complete ResourceKey values rather than serializing another hash.
+	 * If several names share @p legacyHash, which matching drawable is returned is unspecified.
+	 */
+	DrawablePtr findDrawable( String::HashType legacyHash ) const;
 
 	/** @return The texture atlas bound to @p key, or an empty handle when it is not present. */
 	TextureAtlasPtr findAtlas( const ResourceKey& key ) const;
@@ -100,10 +108,9 @@ class EE_API ResourceCatalog {
 	/** @copydoc findFont(const ResourceKey&)const */
 	FontPtr findFont( const std::string& key ) const;
 	/**
-	 * @brief Looks up a font through the weak String::hash(key) secondary index.
-	 * @return An owning handle when the indexed font is still present, otherwise an empty handle.
+	 * @brief Looks up a font through the resourceNameHash(key) convenience index.
 	 */
-	FontPtr findFont( const String::HashType& id ) const;
+	FontPtr findFont( ResourceNameHash hash ) const;
 	/** @return An owning snapshot of all fonts currently published in this catalog. */
 	std::vector<FontPtr> getFonts() const;
 
@@ -155,10 +162,10 @@ class EE_API ResourceCatalog {
 	mutable System::Mutex mMutex;
 	UnorderedMap<std::string, TexturePtr> mTextures;
 	UnorderedMap<std::string, DrawablePtr> mDrawables;
-	UnorderedMap<String::HashType, DrawableWeakPtr> mDrawablesById;
+	UnorderedMap<ResourceNameHash, DrawableWeakPtr> mDrawablesByNameHash;
 	UnorderedMap<std::string, TextureAtlasPtr> mAtlases;
 	UnorderedMap<std::string, FontPtr> mFonts;
-	UnorderedMap<String::HashType, FontWeakPtr> mFontsById;
+	UnorderedMap<ResourceNameHash, FontWeakPtr> mFontsByNameHash;
 	UnorderedMap<std::string, ShaderProgramPtr> mShaderPrograms;
 };
 

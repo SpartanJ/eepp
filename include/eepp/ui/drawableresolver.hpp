@@ -15,7 +15,8 @@ class EE_API DrawableResolver {
 	explicit DrawableResolver( Graphics::ResourceScope& resourceScope );
 
 	Graphics::DrawablePtr resolve( const std::string& name, bool firstSearchSprite = false ) const;
-	Graphics::DrawablePtr resolveById( const Uint32& id ) const;
+	Graphics::DrawablePtr resolveById( Graphics::ResourceNameHash hash ) const;
+	Graphics::DrawablePtr resolveById( String::HashType legacyHash ) const;
 
 	void setPrintWarnings( bool printWarnings );
 	bool getPrintWarnings() const;

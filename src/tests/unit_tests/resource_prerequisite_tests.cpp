@@ -466,6 +466,51 @@ UTEST( ResourcePrerequisites, resourceCatalogRemovalPreservesRetainedDrawableCon
 	Engine::destroySingleton();
 }
 
+UTEST( ResourcePrerequisites, resourceNameHashSeparatesLegacyDrawableCollision ) {
+	constexpr const char* firstKey = "BA";
+	constexpr const char* secondKey = "Ab";
+	ASSERT_EQ( String::hash( firstKey ), String::hash( secondKey ) );
+	const ResourceNameHash firstHash = resourceNameHash( firstKey );
+	const ResourceNameHash secondHash = resourceNameHash( secondKey );
+	ASSERT_NE( firstHash.value(), secondHash.value() );
+
+	auto catalog = ResourceCatalog::New();
+	auto first = makeResource<TestDrawableResource>();
+	auto second = makeResource<TestDrawableResource>();
+	catalog->publishDrawable( firstKey, first );
+	catalog->publishDrawable( secondKey, second );
+	EXPECT_EQ( first.get(), catalog->findDrawable( firstHash ).get() );
+	EXPECT_EQ( second.get(), catalog->findDrawable( secondHash ).get() );
+
+	EXPECT_TRUE( catalog->eraseDrawable( firstKey ) );
+	EXPECT_TRUE( catalog->findDrawable( firstHash ) == nullptr );
+	EXPECT_EQ( second.get(), catalog->findDrawable( secondHash ).get() );
+	EXPECT_TRUE( catalog->eraseDrawable( secondKey ) );
+	EXPECT_TRUE( catalog->findDrawable( secondHash ) == nullptr );
+}
+
+UTEST( ResourcePrerequisites, resourceNameHashSeparatesLegacyFontCollision ) {
+	constexpr const char* firstKey = "BA";
+	constexpr const char* secondKey = "Ab";
+	ASSERT_EQ( String::hash( firstKey ), String::hash( secondKey ) );
+	const ResourceNameHash firstHash = resourceNameHash( firstKey );
+	const ResourceNameHash secondHash = resourceNameHash( secondKey );
+	ASSERT_NE( firstHash.value(), secondHash.value() );
+
+	auto scope = ResourceScope::New();
+	auto first = FontBMFont::New( firstKey, *scope );
+	auto second = FontBMFont::New( secondKey, *scope );
+	auto catalog = scope->getLocalCatalog();
+	EXPECT_EQ( first.get(), catalog->findFont( firstHash ).get() );
+	EXPECT_EQ( second.get(), catalog->findFont( secondHash ).get() );
+
+	EXPECT_TRUE( scope->eraseLocalFont( firstKey ) );
+	EXPECT_TRUE( catalog->findFont( firstHash ) == nullptr );
+	EXPECT_EQ( second.get(), catalog->findFont( secondHash ).get() );
+	EXPECT_TRUE( scope->eraseLocalFont( secondKey ) );
+	EXPECT_TRUE( catalog->findFont( secondHash ) == nullptr );
+}
+
 UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImportedCatalogs ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Resource scope isolation test" );
 	TextureFactory* factory = TextureFactory::instance();

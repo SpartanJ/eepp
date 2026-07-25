@@ -155,11 +155,20 @@ DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearch
 	return drawable;
 }
 
-DrawablePtr DrawableResolver::resolveById( const Uint32& id ) const {
+DrawablePtr DrawableResolver::resolveById( ResourceNameHash hash ) const {
 	ResourceScope& resourceScope = mSceneNode ? *mSceneNode->getResourceScope() : *mResourceScope;
-	DrawablePtr drawable = resourceScope.findDrawable( id );
+	DrawablePtr drawable = resourceScope.findDrawable( hash );
 	if ( !drawable && mPrintWarnings )
-		Log::warning( "DrawableResolver::resolveById: \"%ld\" not found", id );
+		Log::warning( "DrawableResolver::resolveById: \"%llu\" not found",
+					  static_cast<unsigned long long>( hash.value() ) );
+	return drawable;
+}
+
+DrawablePtr DrawableResolver::resolveById( String::HashType legacyHash ) const {
+	ResourceScope& resourceScope = mSceneNode ? *mSceneNode->getResourceScope() : *mResourceScope;
+	DrawablePtr drawable = resourceScope.findDrawable( legacyHash );
+	if ( !drawable && mPrintWarnings )
+		Log::warning( "DrawableResolver::resolveById: legacy hash \"%u\" not found", legacyHash );
 	return drawable;
 }
 

@@ -41,13 +41,14 @@ class EE_API ResourceScope {
 	DrawablePtr findDrawableSource( const ResourceKey& key ) const;
 	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
-	DrawablePtr findDrawable( const Uint32& id ) const;
+	DrawablePtr findDrawable( ResourceNameHash hash ) const;
+	DrawablePtr findDrawable( String::HashType legacyHash ) const;
 	TextureAtlasPtr findAtlas( const ResourceKey& key ) const;
 	TextureAtlasPtr findAtlas( const std::string& key ) const;
 	std::vector<TextureAtlasPtr> getAtlases() const;
 	FontPtr findFont( const ResourceKey& key ) const;
 	FontPtr findFont( const std::string& key ) const;
-	FontPtr findFont( const String::HashType& id ) const;
+	FontPtr findFont( ResourceNameHash hash ) const;
 	std::vector<FontPtr> getFonts() const;
 	ShaderProgramPtr findShaderProgram( const ResourceKey& key ) const;
 	ShaderProgramPtr findShaderProgram( const std::string& key ) const;

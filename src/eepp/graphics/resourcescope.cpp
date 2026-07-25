@@ -121,12 +121,12 @@ FontPtr ResourceScope::findFont( const std::string& key ) const {
 	return {};
 }
 
-FontPtr ResourceScope::findFont( const String::HashType& id ) const {
-	if ( FontPtr font = mLocalCatalog->findFont( id ) )
+FontPtr ResourceScope::findFont( ResourceNameHash hash ) const {
+	if ( FontPtr font = mLocalCatalog->findFont( hash ) )
 		return font;
 	Lock lock( mMutex );
 	for ( const ResourceCatalogPtr& catalog : mImports ) {
-		if ( FontPtr font = catalog->findFont( id ) )
+		if ( FontPtr font = catalog->findFont( hash ) )
 			return font;
 	}
 	return {};
@@ -288,12 +288,24 @@ DrawablePtr ResourceScope::findDrawable( const std::string& name, bool firstSear
 	return texture ? texture->clone() : DrawablePtr{};
 }
 
-DrawablePtr ResourceScope::findDrawable( const Uint32& id ) const {
-	DrawablePtr source = mLocalCatalog->findDrawable( id );
+DrawablePtr ResourceScope::findDrawable( ResourceNameHash hash ) const {
+	DrawablePtr source = mLocalCatalog->findDrawable( hash );
 	if ( !source ) {
 		Lock lock( mMutex );
 		for ( const ResourceCatalogPtr& catalog : mImports ) {
-			if ( ( source = catalog->findDrawable( id ) ) )
+			if ( ( source = catalog->findDrawable( hash ) ) )
+				break;
+		}
+	}
+	return source ? source->clone() : DrawablePtr{};
+}
+
+DrawablePtr ResourceScope::findDrawable( String::HashType legacyHash ) const {
+	DrawablePtr source = mLocalCatalog->findDrawable( legacyHash );
+	if ( !source ) {
+		Lock lock( mMutex );
+		for ( const ResourceCatalogPtr& catalog : mImports ) {
+			if ( ( source = catalog->findDrawable( legacyHash ) ) )
 				break;
 		}
 	}
@@ -383,7 +395,7 @@ bool ResourceScope::eraseLocalFont( const std::string& key ) {
 bool ResourceScope::eraseLocalFont( Font* font ) {
 	if ( !font )
 		return false;
-	FontPtr handle = mLocalCatalog->findFont( font->getId() );
+	FontPtr handle = mLocalCatalog->findFont( font->getName() );
 	if ( handle.get() != font )
 		return false;
 	if ( !mLocalCatalog->eraseFont( font ) )

@@ -15,7 +15,7 @@ ResourceScope& FontService::getResourceScope() const {
 FontPtr FontService::findHandle( Font* font ) const {
 	if ( !font )
 		return {};
-	FontPtr handle = mResourceScope.findFont( font->getId() );
+	FontPtr handle = mResourceScope.findFont( font->getName() );
 	return handle.get() == font ? handle : FontPtr{};
 }
 
