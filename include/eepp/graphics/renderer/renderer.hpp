@@ -90,6 +90,12 @@ class EE_API Renderer {
 
 	void drawArrays( unsigned int mode, int first, int count );
 
+	/** Draws an LCD coverage range into RGB independently and updates destination alpha. */
+	bool drawSubpixelArrays( unsigned int mode, int first, int count );
+
+	/** Draws an LCD coverage range as neutral grayscale using its mean coverage. */
+	bool drawSubpixelFallbackArrays( unsigned int mode, int first, int count );
+
 	void drawElements( unsigned int mode, int count, unsigned int type, const void* indices );
 
 	void bindTexture( unsigned int target, unsigned int texture );
@@ -197,6 +203,9 @@ class EE_API Renderer {
 
 	virtual void setShader( ShaderProgram* Shader );
 
+	/** Selects built-in texture sampling: normal RGBA (0), LCD R/G/B (1-3), or LCD mean (4). */
+	virtual bool setTextureColorMode( Int32 mode );
+
 	virtual void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
 									const Int32& Height ) = 0;
 
@@ -236,6 +245,8 @@ class EE_API Renderer {
 	void stencilMask( unsigned int mask );
 
 	void colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
+
+	void getColorMask( Uint8 mask[4] ) const;
 
 	void bindVertexArray( unsigned int array );
 
@@ -351,6 +362,8 @@ class EE_API Renderer {
 	void waitForIdle();
 
   protected:
+	static const Vector3ff& textureColorChannel( Int32 mode );
+
 	static Renderer* sSingleton;
 
 	enum RendererStateFlags {
@@ -366,6 +379,7 @@ class EE_API Renderer {
 	int mQuadVertex;
 	float mLineWidth;
 	unsigned int mCurVAO;
+	Uint8 mColorMask[4]{ 1, 1, 1, 1 };
 
 	ClippingMask* mClippingMask;
 

@@ -6,6 +6,7 @@
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -72,6 +73,75 @@ UTEST( FontRendering, glyphAdvanceDoesNotCreateTexturePages ) {
 	EXPECT_TRUE( advance > 0 );
 	EXPECT_EQ( advance, outlinedAdvance );
 	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
+
+UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
+	UIApplication app(
+		WindowSettings( 360, 120, "eepp - Subpixel Text Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "SubpixelText-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	const Float grayscaleLAdvance = font->getGlyphAdvance( 'l', 28 );
+	const Float grayscaleDAdvance = font->getGlyphAdvance( 'd', 28 );
+	const Float grayscaleKerning = font->getKerning( 'i', 'd', 28, false, false );
+	font->setAntialiasing( FontAntialiasing::Subpixel );
+	EXPECT_EQ( grayscaleLAdvance, font->getGlyphAdvance( 'l', 28 ) );
+	EXPECT_EQ( grayscaleDAdvance, font->getGlyphAdvance( 'd', 28 ) );
+	EXPECT_EQ( grayscaleKerning, font->getKerning( 'i', 'd', 28, false, false ) );
+
+	GlyphDrawable* drawable = font->getGlyphDrawable( 'S', 28 );
+	ASSERT_TRUE( drawable );
+	ASSERT_EQ( GlyphRenderMode::Subpixel, drawable->getGlyphRenderMode() );
+
+	EE::Window::Window* window = app.getWindow();
+	window->setClearColor( Color::White );
+	window->clear();
+	Text::draw( String( "Subpixel static" ), { 8.f, 4.f }, font.get(), 28, Color::Black );
+
+	Text retained( "Subpixel retained", font.get(), 28 );
+	retained.setFillColor( Color::Black );
+	retained.draw( 8.f, 60.f );
+
+	Image image = window->getFrontBufferImage();
+	auto hasColoredCoverage = [&image]( Uint32 top, Uint32 bottom ) {
+		for ( Uint32 y = top; y < bottom; ++y ) {
+			for ( Uint32 x = 0; x < image.getWidth(); ++x ) {
+				Color pixel = image.getPixel( x, y );
+				if ( eeabs( static_cast<Int32>( pixel.r ) - static_cast<Int32>( pixel.g ) ) > 3 ||
+					 eeabs( static_cast<Int32>( pixel.g ) - static_cast<Int32>( pixel.b ) ) > 3 )
+					return true;
+			}
+		}
+		return false;
+	};
+
+	EXPECT_TRUE_MSG( hasColoredCoverage( 0, image.getHeight() / 2 ),
+					 "Static text lost independent LCD channel coverage" );
+	EXPECT_TRUE_MSG( hasColoredCoverage( image.getHeight() / 2, image.getHeight() ),
+					 "Retained text lost independent LCD channel coverage" );
+
+	FrameBufferUniquePtr frameBuffer = FrameBuffer::New( 240, 48, false, false, false, 4, window );
+	ASSERT_TRUE( frameBuffer && frameBuffer->created() );
+	frameBuffer->setClearColor( ColorAf( 0.f, 0.f, 0.f, 0.f ) );
+	frameBuffer->bind();
+	frameBuffer->clear();
+	Text::draw( String( "Transparent subpixel" ), { 4.f, 4.f }, font.get(), 28, Color::White );
+	GlobalBatchRenderer::instance()->draw();
+	std::vector<Uint8> pixels( frameBuffer->getWidth() * frameBuffer->getHeight() * 4 );
+	GLi->readPixels( 0, 0, frameBuffer->getWidth(), frameBuffer->getHeight(), pixels.data() );
+	frameBuffer->unbind();
+	bool hasCoverageAlpha = false;
+	for ( size_t i = 3; i < pixels.size(); i += 4 ) {
+		if ( pixels[i] != 0 ) {
+			hasCoverageAlpha = true;
+			break;
+		}
+	}
+	EXPECT_TRUE_MSG( hasCoverageAlpha,
+					 "Subpixel text did not update a transparent target's alpha" );
 }
 
 UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {

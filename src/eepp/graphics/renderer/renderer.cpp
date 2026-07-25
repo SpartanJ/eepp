@@ -476,6 +476,36 @@ void Renderer::drawArrays( unsigned int mode, int first, int count ) {
 	glDrawArrays( mode, first, count );
 }
 
+bool Renderer::drawSubpixelArrays( unsigned int mode, int first, int count ) {
+	if ( !setTextureColorMode( 1 ) )
+		return false;
+
+	Uint8 previousColorMask[4];
+	getColorMask( previousColorMask );
+	for ( Int32 channel = 0; channel < 3; ++channel ) {
+		if ( channel != 0 )
+			setTextureColorMode( channel + 1 );
+		colorMask( channel == 0 && previousColorMask[0], channel == 1 && previousColorMask[1],
+				   channel == 2 && previousColorMask[2], 0 );
+		drawArrays( mode, first, count );
+	}
+	setTextureColorMode( 4 );
+	colorMask( 0, 0, 0, previousColorMask[3] );
+	drawArrays( mode, first, count );
+	setTextureColorMode( 0 );
+	colorMask( previousColorMask[0], previousColorMask[1], previousColorMask[2],
+			   previousColorMask[3] );
+	return true;
+}
+
+bool Renderer::drawSubpixelFallbackArrays( unsigned int mode, int first, int count ) {
+	if ( !setTextureColorMode( 4 ) )
+		return false;
+	drawArrays( mode, first, count );
+	setTextureColorMode( 0 );
+	return true;
+}
+
 void Renderer::drawElements( unsigned int mode, int count, unsigned int type,
 							 const void* indices ) {
 	glDrawElements( mode, count, type, indices );
@@ -554,6 +584,19 @@ void Renderer::setShader( ShaderProgram* Shader ) {
 		useProgram( 0 );
 	}
 #endif
+}
+
+bool Renderer::setTextureColorMode( Int32 ) {
+	return false;
+}
+
+const Vector3ff& Renderer::textureColorChannel( Int32 mode ) {
+	static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
+										  { 1.f, 0.f, 0.f },
+										  { 0.f, 1.f, 0.f },
+										  { 0.f, 0.f, 1.f },
+										  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
+	return channels[mode];
 }
 
 bool Renderer::isLineSmooth() {
@@ -743,7 +786,15 @@ void Renderer::stencilMask( unsigned int mask ) {
 }
 
 void Renderer::colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
+	mColorMask[0] = red;
+	mColorMask[1] = green;
+	mColorMask[2] = blue;
+	mColorMask[3] = alpha;
 	glColorMask( red, green, blue, alpha );
+}
+
+void Renderer::getColorMask( Uint8 mask[4] ) const {
+	std::copy( std::begin( mColorMask ), std::end( mColorMask ), mask );
 }
 
 const int& Renderer::quadVertex() const {

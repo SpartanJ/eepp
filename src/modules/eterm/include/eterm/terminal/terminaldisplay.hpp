@@ -209,6 +209,16 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setFont( Font* font );
 
+	FontHinting getFontHinting() const;
+
+	/** Updates the externally-owned font hinting policy and invalidates cached terminal glyphs. */
+	void setFontHinting( FontHinting fontHinting );
+
+	FontAntialiasing getFontAntialiasing() const;
+
+	/** Updates the externally-owned antialiasing policy and selects the matching draw path. */
+	void setFontAntialiasing( FontAntialiasing fontAntialiasing );
+
 	const Float& getFontSize() const;
 
 	void setFontSize( const Float& FontSize );
@@ -317,6 +327,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	Uint32 mColumns{ 0 };
 	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
+	FontHinting mFontHinting{ FontHinting::Full };
+	FontAntialiasing mFontAntialiasing{ FontAntialiasing::Grayscale };
 	FrameBufferUniquePtr mFrameBuffer;
 	VertexBufferUniquePtr mVBBackground;
 	VertexBufferUniquePtr mVBForeground;

@@ -52,6 +52,9 @@ class UITerminal : public UIWidget {
 
 	void setFont( Font* font );
 
+	/** Synchronizes terminal rendering policy from the service that owns its font. */
+	void syncFontRenderingConfig();
+
 	void setKeyBindings( const KeyBindings& keyBindings );
 
 	void addKeyBindingString( const std::string& shortcut, const std::string& command );

@@ -54,11 +54,18 @@ class EE_API RendererGLShader : public Renderer {
 				   const float projMatrix[16], const int viewport[4], float* objx, float* objy,
 				   float* objz );
 
+	bool setTextureColorMode( Int32 mode );
+
   protected:
 	Private::MatrixStack* mStack;
 	int mProjectionMatrix_id; // cpu-side hook to shader uniform
 	int mModelViewMatrix_id;  // cpu-side hook to shader uniform
 	int mTextureMatrix_id;	  // cpu-side hook to shader uniform
+	int mTextureColorMode_id;
+	int mTextureColorChannel_id;
+	Int32 mTextureColorMode;
+	ShaderProgram* mTextureColorPreviousShader;
+	bool mUsingTextureColorFallbackShader;
 	unsigned int mCurrentMode;
 	ShaderProgram* mCurShader;
 	ShaderProgram* mShaderPrev;

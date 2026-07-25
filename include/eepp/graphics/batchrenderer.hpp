@@ -50,6 +50,9 @@ class EE_API BatchRenderer {
 	/** Set the predefined blending function to use on the batch */
 	void setBlendMode( const BlendMode& blend );
 
+	/** Selects RGB subpixel coverage compositing for subsequently queued textured quads. */
+	void setSubpixelText( bool enabled );
+
 	/** Set if every batch call have to be immediately rendered */
 	void setBatchForceRendering( const bool& force ) { mForceRendering = force; }
 
@@ -339,6 +342,7 @@ class EE_API BatchRenderer {
 
 	bool mForceRendering{ false };
 	bool mForceBlendMode{ true };
+	bool mSubpixelText{ false };
 
 	void flush();
 

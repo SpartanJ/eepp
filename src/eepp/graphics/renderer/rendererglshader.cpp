@@ -8,6 +8,11 @@ RendererGLShader::RendererGLShader() :
 	mProjectionMatrix_id( 0 ),
 	mModelViewMatrix_id( 0 ),
 	mTextureMatrix_id( 0 ),
+	mTextureColorMode_id( -1 ),
+	mTextureColorChannel_id( -1 ),
+	mTextureColorMode( 0 ),
+	mTextureColorPreviousShader( nullptr ),
+	mUsingTextureColorFallbackShader( false ),
 	mCurrentMode( 0 ),
 	mCurShader( NULL ),
 	mShaderPrev( NULL ) {
@@ -19,6 +24,35 @@ RendererGLShader::RendererGLShader() :
 
 RendererGLShader::~RendererGLShader() {
 	eeSAFE_DELETE( mStack );
+}
+
+bool RendererGLShader::setTextureColorMode( Int32 mode ) {
+	if ( mode < 0 || mode > 4 )
+		return false;
+	if ( mode != 0 && ( mTextureColorMode_id == -1 || mTextureColorChannel_id == -1 ) ) {
+		mTextureColorPreviousShader = mCurShader;
+		setShader( static_cast<ShaderProgram*>( nullptr ) );
+		if ( mTextureColorMode_id == -1 || mTextureColorChannel_id == -1 ) {
+			setShader( mTextureColorPreviousShader );
+			mTextureColorPreviousShader = nullptr;
+			return false;
+		}
+		mUsingTextureColorFallbackShader = true;
+	}
+	if ( mTextureColorMode != mode ) {
+		mTextureColorMode = mode;
+		mCurShader->setUniform( mTextureColorMode_id, mode );
+		if ( mTextureColorChannel_id != -1 ) {
+			mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mode ) );
+		}
+	}
+	if ( mode == 0 && mUsingTextureColorFallbackShader ) {
+		ShaderProgram* previousShader = mTextureColorPreviousShader;
+		mTextureColorPreviousShader = nullptr;
+		mUsingTextureColorFallbackShader = false;
+		setShader( previousShader );
+	}
+	return true;
 }
 
 void RendererGLShader::updateMatrix() {

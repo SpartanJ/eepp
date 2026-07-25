@@ -9,6 +9,8 @@ namespace EE { namespace Graphics {
 
 class VertexBuffer;
 
+enum class GlyphRenderMode : Uint8 { Mask, Subpixel, Color };
+
 class EE_API GlyphDrawable : public DrawableResource {
   public:
 	static GlyphDrawable* New( TexturePtr texture, const Rect& srcRect, const Sizef& destSize = {},
@@ -70,6 +72,10 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	void setAdvance( Float advance );
 
+	GlyphRenderMode getGlyphRenderMode() const;
+
+	void setGlyphRenderMode( GlyphRenderMode renderMode );
+
   protected:
 	TexturePtr mTexture;
 	Rectf mSrcRect;
@@ -78,6 +84,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Vector2f mGlyphOffset;
 	DrawMode mDrawMode{ DrawMode::Image };
 	Float mAdvance{ 0 };
+	GlyphRenderMode mGlyphRenderMode{ GlyphRenderMode::Mask };
 	bool mIsItalic{ false };
 };
 

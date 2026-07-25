@@ -83,7 +83,18 @@ class EE_API RendererGL : public Renderer {
 				   const float projMatrix[16], const int viewport[4], float* objx, float* objy,
 				   float* objz );
 
+	void setShader( ShaderProgram* shader );
+
+	bool setTextureColorMode( Int32 mode );
+
   protected:
+	bool ensureSubpixelShader();
+
+	ShaderProgramPtr mSubpixelShader;
+	ShaderProgram* mPreviousShader{ nullptr };
+	Int32 mSubpixelChannelLoc{ -1 };
+	bool mUsingSubpixelShader{ false };
+	bool mSubpixelShaderInitializationAttempted{ false };
 };
 
 #endif

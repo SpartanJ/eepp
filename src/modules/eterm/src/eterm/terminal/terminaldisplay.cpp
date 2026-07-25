@@ -1214,6 +1214,9 @@ void TerminalDisplay::drawbox( float x, float y, float w, float h, Color fg, Col
 }
 
 void TerminalDisplay::drawGrid( const Vector2f& pos ) {
+	const bool subpixelFont = mFontAntialiasing == FontAntialiasing::Subpixel;
+	VertexBuffer* foregroundVBO = subpixelFont ? nullptr : mVBForeground.get();
+
 	if ( mFrameBuffer ) {
 		mFrameBuffer->setPosition( mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top ) );
 		mFrameBuffer->bind();
@@ -1313,7 +1316,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
 
-		if ( ( mFrameBuffer || mVBForeground ) && !mDirtyLines[j] ) {
+		if ( ( mFrameBuffer || foregroundVBO ) && !mDirtyLines[j] ) {
 			y += lineHeight;
 			continue;
 		}
@@ -1358,8 +1361,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
 			if ( glyph.mode & ATTR_WDUMMY ) {
-				if ( mVBForeground ) {
-					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+				if ( foregroundVBO ) {
+					foregroundVBO->setQuadColor( mCurGridPos, Color::Transparent );
 					dirtyFG = true;
 				}
 				continue;
@@ -1367,8 +1370,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			if ( glyph.u == 32 && !( glyph.mode & ( ATTR_UNDERLINE | ATTR_STRUCK ) ) ) {
 				x += advanceX;
-				if ( mVBForeground ) {
-					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+				if ( foregroundVBO ) {
+					foregroundVBO->setQuadColor( mCurGridPos, Color::Transparent );
 					dirtyFG = true;
 				}
 				continue;
@@ -1377,8 +1380,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			if ( glyph.mode & ATTR_BOXDRAW ) {
 				auto bd = TerminalEmulator::boxdrawindex( &glyph );
 				drawbox( x, y, advanceX, lineHeight, fg, bg, bd );
-				if ( mVBForeground ) {
-					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+				if ( foregroundVBO ) {
+					foregroundVBO->setQuadColor( mCurGridPos, Color::Transparent );
 					dirtyFG = true;
 				}
 			} else {
@@ -1399,8 +1402,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
 														  : GlyphDrawable::DrawMode::Text );
 
-				if ( mVBForeground ) {
-					gd->drawIntoVertexBuffer( mVBForeground.get(), mCurGridPos, { x, y } );
+				if ( foregroundVBO ) {
+					gd->drawIntoVertexBuffer( foregroundVBO, mCurGridPos, { x, y } );
 				} else {
 					gd->draw( { x, y } );
 				}
@@ -1515,13 +1518,13 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 	}
 
-	if ( mVBForeground ) {
+	if ( foregroundVBO ) {
 		mFont->getTexture( mFontSize )->bind();
 		if ( dirtyFG )
-			mVBForeground->update( VERTEX_FLAGS_DEFAULT, false );
-		mVBForeground->bind();
-		mVBForeground->draw();
-		mVBForeground->unbind();
+			foregroundVBO->update( VERTEX_FLAGS_DEFAULT, false );
+		foregroundVBO->bind();
+		foregroundVBO->draw();
+		foregroundVBO->unbind();
 	}
 
 	if ( !mVBStyles.empty() ) {
@@ -1838,6 +1841,28 @@ void TerminalDisplay::setFont( Font* font ) {
 	if ( mFont != font ) {
 		mFont = font;
 		onSizeChange();
+	}
+}
+
+FontHinting TerminalDisplay::getFontHinting() const {
+	return mFontHinting;
+}
+
+void TerminalDisplay::setFontHinting( FontHinting fontHinting ) {
+	if ( mFontHinting != fontHinting ) {
+		mFontHinting = fontHinting;
+		invalidateLines();
+	}
+}
+
+FontAntialiasing TerminalDisplay::getFontAntialiasing() const {
+	return mFontAntialiasing;
+}
+
+void TerminalDisplay::setFontAntialiasing( FontAntialiasing fontAntialiasing ) {
+	if ( mFontAntialiasing != fontAntialiasing ) {
+		mFontAntialiasing = fontAntialiasing;
+		invalidateLines();
 	}
 }
 

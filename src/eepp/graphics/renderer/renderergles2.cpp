@@ -198,6 +198,8 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	mProjectionMatrix_id = mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id = mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
 	mTextureMatrix_id = mCurShader->getUniformLocation( "dgl_TextureMatrix" );
+	mTextureColorMode_id = mCurShader->getUniformLocation( "dgl_TextureColorMode" );
+	mTextureColorChannel_id = mCurShader->getUniformLocation( "dgl_TextureColorChannel" );
 	mTexActiveLoc = mCurShader->getUniformLocation( "dgl_TexActive" );
 	mClippingEnabledLoc = mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
 	mPointSizeLoc = mCurShader->getUniformLocation( "dgl_PointSize" );
@@ -222,6 +224,11 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	}
 
 	useProgram( mCurShader->getHandler() );
+	if ( mTextureColorMode_id != -1 )
+		mCurShader->setUniform( mTextureColorMode_id, mTextureColorMode );
+	if ( mTextureColorChannel_id != -1 && mTextureColorMode != 0 ) {
+		mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mTextureColorMode ) );
+	}
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
 		enableClientState( GL_VERTEX_ARRAY );

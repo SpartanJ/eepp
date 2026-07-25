@@ -60,6 +60,7 @@ void BatchRenderer::setTexture( const Texture* texture, Texture::CoordinateType 
 	if ( mTexture != texture || mCoordinateType != coordinateType ) {
 		flush();
 		mTextureOwner.reset();
+		mSubpixelText = false;
 	}
 
 	mTexture = texture;
@@ -79,6 +80,12 @@ void BatchRenderer::setBlendMode( const BlendMode& blend ) {
 
 	if ( mBlend != blend )
 		mBlend = blend;
+}
+
+void BatchRenderer::setSubpixelText( bool enabled ) {
+	if ( enabled != mSubpixelText )
+		flush();
+	mSubpixelText = enabled;
 }
 
 void BatchRenderer::addVertices( const unsigned int& num ) {
@@ -151,17 +158,21 @@ void BatchRenderer::flush() {
 		4, GL_UNSIGNED_BYTE, sizeof( VertexData ),
 		reinterpret_cast<char*>( &mVertex[0] ) + sizeof( Vector2f ) + sizeof( Vector2f ), alloc );
 
-	if ( !GLi->quadsSupported() ) {
-		if ( PRIMITIVE_QUADS == mCurrentMode ) {
-			GLi->drawArrays( PRIMITIVE_TRIANGLES, 0, NumVertex );
-		} else if ( PRIMITIVE_POLYGON == mCurrentMode ) {
-			GLi->drawArrays( PRIMITIVE_TRIANGLE_FAN, 0, NumVertex );
-		} else {
-			GLi->drawArrays( mCurrentMode, 0, NumVertex );
-		}
-	} else {
-		GLi->drawArrays( mCurrentMode, 0, NumVertex );
+	unsigned int drawMode = mCurrentMode;
+	if ( !GLi->quadsSupported() && PRIMITIVE_QUADS == mCurrentMode )
+		drawMode = PRIMITIVE_TRIANGLES;
+	else if ( !GLi->quadsSupported() && PRIMITIVE_POLYGON == mCurrentMode )
+		drawMode = PRIMITIVE_TRIANGLE_FAN;
+
+	bool drawn = false;
+	if ( mSubpixelText && NULL != mTexture ) {
+		if ( mRotation == 0.f && mScale == 1.f )
+			drawn = GLi->drawSubpixelArrays( drawMode, 0, NumVertex );
+		if ( !drawn )
+			drawn = GLi->drawSubpixelFallbackArrays( drawMode, 0, NumVertex );
 	}
+	if ( !drawn )
+		GLi->drawArrays( drawMode, 0, NumVertex );
 
 	if ( createMatrix ) {
 		GLi->popMatrix();

@@ -61,6 +61,84 @@ RendererGL::RendererGL() {
 
 RendererGL::~RendererGL() {}
 
+bool RendererGL::ensureSubpixelShader() {
+#ifndef EE_GLES1
+	if ( mSubpixelShader )
+		return true;
+	if ( mSubpixelShaderInitializationAttempted || !shadersSupported() )
+		return false;
+	mSubpixelShaderInitializationAttempted = true;
+	static const char vertexShader[] = R"(
+#version 120
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+void main() {
+	gl_Position = ftransform();
+	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
+	dgl_Color = gl_Color;
+	dgl_TexCoord = ( gl_TextureMatrix[0] * gl_MultiTexCoord0 ).xy;
+}
+)";
+	static const char fragmentShader[] = R"(
+#version 120
+uniform sampler2D textureUnit0;
+uniform vec3 dgl_TextureColorChannel;
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+void main() {
+	vec4 texel = texture2D( textureUnit0, dgl_TexCoord );
+	float coverage = dot( texel.rgb, dgl_TextureColorChannel );
+	gl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * coverage );
+}
+)";
+	mSubpixelShader = ShaderProgram::New( vertexShader, sizeof( vertexShader ) - 1, fragmentShader,
+										  sizeof( fragmentShader ) - 1, "eepp-subpixel-text" );
+	if ( mSubpixelShader && mSubpixelShader->isValid() ) {
+		Renderer::setShader( mSubpixelShader.get() );
+		mSubpixelChannelLoc = mSubpixelShader->getUniformLocation( "dgl_TextureColorChannel" );
+		mSubpixelShader->setUniform( "textureUnit0", 0 );
+		Renderer::setShader( mPreviousShader );
+	} else {
+		mSubpixelShader.reset();
+	}
+	return mSubpixelShader && mSubpixelChannelLoc != -1;
+#else
+	return false;
+#endif
+}
+
+void RendererGL::setShader( ShaderProgram* shader ) {
+	if ( !mUsingSubpixelShader )
+		mPreviousShader = shader;
+	Renderer::setShader( shader );
+}
+
+bool RendererGL::setTextureColorMode( Int32 mode ) {
+#ifdef EE_GLES1
+	return false;
+#else
+	if ( mode < 0 || mode > 4 )
+		return false;
+	if ( mode != 0 && !ensureSubpixelShader() )
+		return false;
+	if ( !mSubpixelShader || !mSubpixelShader->isValid() || mSubpixelChannelLoc == -1 )
+		return false;
+	if ( mode == 0 ) {
+		if ( mUsingSubpixelShader ) {
+			Renderer::setShader( mPreviousShader );
+			mUsingSubpixelShader = false;
+		}
+		return true;
+	}
+	if ( !mUsingSubpixelShader ) {
+		Renderer::setShader( mSubpixelShader.get() );
+		mUsingSubpixelShader = true;
+	}
+	mSubpixelShader->setUniform( mSubpixelChannelLoc, textureColorChannel( mode ) );
+	return true;
+#endif
+}
+
 GraphicsLibraryVersion RendererGL::version() {
 #ifndef EE_GLES1
 	return GLv_2;
