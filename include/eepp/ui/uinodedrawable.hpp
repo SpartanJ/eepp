@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/texture.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
@@ -38,6 +39,8 @@ class EE_API UINodeDrawable : public Drawable {
 		static LayerDrawable* New( UINodeDrawable* container );
 
 		LayerDrawable( UINodeDrawable* container );
+		LayerDrawable( const LayerDrawable& ) = delete;
+		LayerDrawable& operator=( const LayerDrawable& ) = delete;
 
 		virtual ~LayerDrawable();
 
@@ -55,11 +58,13 @@ class EE_API UINodeDrawable : public Drawable {
 
 		virtual void setSize( const Sizef& size );
 
-		Drawable* getDrawable() const;
+		const DrawablePtr& getDrawable() const;
 
 		const std::string& getDrawableRef() const;
 
-		void setDrawable( Drawable* drawable, const bool& ownIt );
+		void setDrawable( DrawablePtr drawable );
+
+		void setDrawable( TexturePtr texture );
 
 		void setDrawable( const std::string& drawableRef );
 
@@ -128,11 +133,10 @@ class EE_API UINodeDrawable : public Drawable {
 		std::string mPositionY;
 		std::string mSizeEq;
 		bool mNeedsUpdate{ false };
-		bool mOwnsDrawable{ false };
 		bool mColorWasSet{ false };
-		Drawable* mDrawable;
+		DrawablePtr mDrawable;
 		std::string mDrawableRef;
-		Uint32 mResourceChangeCbId;
+		DrawableResourceConnection mResourceChangeConnection;
 		RepeatX mRepeatX{ RepeatX::NoRepeat };
 		RepeatY mRepeatY{ RepeatY::NoRepeat };
 		std::string mOriginEq{ "padding-box" };
@@ -141,16 +145,13 @@ class EE_API UINodeDrawable : public Drawable {
 		Origin mOrigin{ Origin::PaddingBox };
 		Clip mClip{ Clip::BorderBox };
 		Attachment mAttachment{ Attachment::Scroll };
-		std::shared_ptr<std::atomic<bool>> mAsyncDrawableAlive;
-		Uint64 mRemoteDrawableLoadId{ 0 };
-
 		virtual void onPositionChange();
 
 		virtual void onColorFilterChange();
 
 		void update();
 
-		Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt );
+		DrawablePtr createDrawable( const std::string& value, const Sizef& size );
 
 		bool loadRemoteDrawable( const std::string& value );
 	};
@@ -158,6 +159,8 @@ class EE_API UINodeDrawable : public Drawable {
 	static UINodeDrawable* New( UINode* owner );
 
 	UINodeDrawable( UINode* owner );
+	UINodeDrawable( const UINodeDrawable& ) = delete;
+	UINodeDrawable& operator=( const UINodeDrawable& ) = delete;
 
 	virtual ~UINodeDrawable();
 
@@ -187,7 +190,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 	LayerDrawable* getLayer( int index );
 
-	void setDrawable( int index, Drawable* drawable, bool ownIt );
+	void setDrawable( int index, DrawablePtr drawable );
 
 	void setDrawable( int index, const std::string& drawable );
 
@@ -234,7 +237,8 @@ class EE_API UINodeDrawable : public Drawable {
   protected:
 	UINode* mOwner;
 	UIBackgroundDrawable mBackgroundColor;
-	std::map<int, LayerDrawable*> mGroup;
+	using LayerDrawablePtr = std::unique_ptr<LayerDrawable, ResourceDeleter<LayerDrawable>>;
+	std::map<int, LayerDrawablePtr> mGroup;
 	Sizef mSize;
 	bool mNeedsUpdate{ true };
 	bool mClipEnabled{ false };

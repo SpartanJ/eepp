@@ -7,23 +7,28 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-VertexBuffer* VertexBuffer::New( const Uint32& vertexFlags, PrimitiveType drawType,
-								 const Int32& reserveVertexSize, const Int32& reserveIndexSize,
-								 VertexBufferUsageType usageType ) {
+VertexBufferUniquePtr VertexBuffer::New( const Uint32& vertexFlags, PrimitiveType drawType,
+										 const Int32& reserveVertexSize,
+										 const Int32& reserveIndexSize,
+										 VertexBufferUsageType usageType ) {
 	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) || GLi->version() == GLv_3CP )
-		return eeNew( VertexBufferVBO,
-					  ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) );
+		return VertexBufferUniquePtr(
+			eeNew( VertexBufferVBO,
+				   ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) ) );
 
-	return eeNew( VertexBufferOGL,
-				  ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) );
+	return VertexBufferUniquePtr(
+		eeNew( VertexBufferOGL,
+			   ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) ) );
 }
 
-VertexBuffer* VertexBuffer::NewVertexArray( const Uint32& vertexFlags, PrimitiveType drawType,
-											const Int32& reserveVertexSize,
-											const Int32& reserveIndexSize,
-											VertexBufferUsageType usageType ) {
-	return eeNew( VertexBufferOGL,
-				  ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) );
+VertexBufferUniquePtr VertexBuffer::NewVertexArray( const Uint32& vertexFlags,
+													PrimitiveType drawType,
+													const Int32& reserveVertexSize,
+													const Int32& reserveIndexSize,
+													VertexBufferUsageType usageType ) {
+	return VertexBufferUniquePtr(
+		eeNew( VertexBufferOGL,
+			   ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) ) );
 }
 
 VertexBuffer::VertexBuffer( const Uint32& vertexFlags, PrimitiveType drawType,
@@ -48,11 +53,12 @@ VertexBuffer::VertexBuffer( const Uint32& vertexFlags, PrimitiveType drawType,
 		mIndexArray.reserve( reserveIndexSize );
 	}
 
-	VertexBufferManager::instance()->add( this );
+	VertexBufferRegistry::instance()->add( this );
 }
 
 VertexBuffer::~VertexBuffer() {
-	VertexBufferManager::instance()->remove( this );
+	if ( VertexBufferRegistry::existsSingleton() )
+		VertexBufferRegistry::instance()->remove( this );
 }
 
 void VertexBuffer::addVertex( const Uint32& type, const Vector2f& vertex ) {

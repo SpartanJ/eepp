@@ -20,9 +20,7 @@ UIBorderDrawable::UIBorderDrawable( const UINode* owner ) :
 	mColorNeedsUpdate( false ),
 	mHasBorder( false ) {}
 
-UIBorderDrawable::~UIBorderDrawable() {
-	eeSAFE_DELETE( mVertexBuffer );
-}
+UIBorderDrawable::~UIBorderDrawable() = default;
 
 void UIBorderDrawable::draw() {
 	draw( mPosition, mSize );
@@ -309,12 +307,12 @@ void UIBorderDrawable::update() {
 				size.y += mBorders.bottom.width * 2;
 			}
 
-			Borders::createBorders( mVertexBuffer, mBorders, pos, size );
+			Borders::createBorders( mVertexBuffer.get(), mBorders, pos, size );
 
 			break;
 		}
 		case BorderType::Inside: {
-			Borders::createBorders( mVertexBuffer, mBorders, Vector2f::Zero, mSize );
+			Borders::createBorders( mVertexBuffer.get(), mBorders, Vector2f::Zero, mSize );
 			break;
 		}
 		case BorderType::Outline: {
@@ -337,7 +335,7 @@ void UIBorderDrawable::update() {
 				size.y += mBorders.bottom.width;
 			}
 
-			Borders::createBorders( mVertexBuffer, mBorders, pos, size );
+			Borders::createBorders( mVertexBuffer.get(), mBorders, pos, size );
 
 			break;
 		}

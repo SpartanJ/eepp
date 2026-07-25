@@ -38,7 +38,7 @@ void TileMapLayer::draw( const Vector2f& Offset ) {
 		}
 	}
 
-	Texture* Tex = mMap->getBlankTileTexture();
+	const TexturePtr& Tex = mMap->getBlankTileTexture();
 
 	if ( mMap->getShowBlocked() && NULL != Tex ) {
 		for ( Int32 x = start.x; x < end.x; x++ ) {

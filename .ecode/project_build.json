@@ -387,6 +387,18 @@
         "command": "${project_root}/bin/eepp-ui-font-picker-debug",
         "name": "eepp-ui-font-picker-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-TextureAtlasEditor-debug",
+        "name": "eepp-TextureAtlasEditor-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-sprites-debug",
+        "name": "eepp-sprites-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

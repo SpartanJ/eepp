@@ -9,15 +9,19 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
+class UIIconTheme;
+using UIIconThemePtr = ResourcePtr<UIIconTheme>;
+using UIIconThemeWeakPtr = ResourceWeakPtr<UIIconTheme>;
+
 class EE_API UIIconTheme {
   public:
-	static UIIconTheme* New( const std::string& name );
+	static UIIconThemePtr New( const std::string& name );
 
 	~UIIconTheme();
 
-	UIIconTheme* add( UIIcon* icon );
+	UIIconTheme* add( UIIconPtr icon );
 
-	UIIconTheme* add( const std::unordered_map<std::string, UIIcon*>& icons );
+	UIIconTheme* add( const std::unordered_map<std::string, UIIconPtr>& icons );
 
 	const std::string& getName() const;
 
@@ -25,7 +29,7 @@ class EE_API UIIconTheme {
 
   protected:
 	std::string mName;
-	std::unordered_map<std::string, UIIcon*> mIcons;
+	std::unordered_map<std::string, UIIconPtr> mIcons;
 
 	UIIconTheme( const std::string& name );
 };

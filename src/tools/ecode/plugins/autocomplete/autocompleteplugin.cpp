@@ -1450,7 +1450,7 @@ std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
 	return doc->getText( { start, end } ).toUtf8();
 }
 
-void AutoCompletePlugin::update( UICodeEditor* ) {
+void AutoCompletePlugin::update( UICodeEditor* editor ) {
 	for ( auto clientIt = mSnippetClients.begin(); clientIt != mSnippetClients.end(); ) {
 		if ( !clientIt->second->isAttached() )
 			clientIt = mSnippetClients.erase( clientIt );
@@ -1702,8 +1702,11 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
 				   cursorPos.y + mRowHeight * count + mBoxPadding.Top );
 
-		Drawable* icon = editor->getUISceneNode()->findIconDrawable(
-			LSPCompletionItemHelper::toIconString( suggestion.kind ), PixelDensity::dpToPxI( 12 ) );
+		Drawable* icon = nullptr;
+		UIIcon* iconSource = editor->getUISceneNode()->findIcon(
+			LSPCompletionItemHelper::toIconString( suggestion.kind ) );
+		if ( iconSource )
+			icon = iconSource->getSource( PixelDensity::dpToPxI( 12 ) ).get();
 
 		if ( icon ) {
 			Color iconColor( icon->getColor() );
@@ -2101,7 +2104,7 @@ bool AutoCompletePlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu*
 	menu->addSubMenu( i18n( "autocomplete", "Auto-Complete" ),
 					  mManager->getUISceneNode()
 						  ->findIcon( "symbol-string" )
-						  ->getSize( PixelDensity::dpToPxI( 12 ) ),
+						  ->createDrawable( PixelDensity::dpToPxI( 12 ) ),
 					  subMenu );
 
 	return false;

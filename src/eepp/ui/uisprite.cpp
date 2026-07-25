@@ -1,8 +1,8 @@
-#include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisprite.hpp>
 
 namespace EE { namespace UI {
@@ -13,17 +13,13 @@ UISprite* UISprite::New() {
 
 UISprite::UISprite() :
 	UIWidget( "sprite" ),
-	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
 	mAlignOffset( 0, 0 ),
 	mTextureRegionLast( NULL ) {
 	subscribeScheduledUpdate();
 }
 
-UISprite::~UISprite() {
-	if ( deallocSprite() )
-		eeSAFE_DELETE( mSprite );
-}
+UISprite::~UISprite() {}
 
 Uint32 UISprite::getType() const {
 	return UI_TYPE_SPRITE;
@@ -33,16 +29,10 @@ bool UISprite::isType( const Uint32& type ) const {
 	return UISprite::getType() == type ? true : UIWidget::isType( type );
 }
 
-Uint32 UISprite::deallocSprite() {
-	return mNodeFlags & NODE_FLAG_FREE_USE;
-}
-
-UISprite* UISprite::setSprite( Graphics::Sprite* sprite ) {
-	if ( deallocSprite() )
-		eeSAFE_DELETE( mSprite );
-
-	mSprite = sprite;
-	mSprite->setAutoAnimate( false );
+UISprite* UISprite::setSprite( Graphics::SpritePtr sprite ) {
+	mSprite = std::move( sprite );
+	if ( mSprite )
+		mSprite->setAutoAnimate( false );
 
 	updateSize();
 	return this;
@@ -102,11 +92,7 @@ void UISprite::setAlpha( const Float& alpha ) {
 	UIWidget::setAlpha( alpha );
 }
 
-Graphics::Sprite* UISprite::getSprite() const {
-	return mSprite;
-}
-
-Drawable* UISprite::getDrawable() const {
+const Graphics::SpritePtr& UISprite::getSprite() const {
 	return mSprite;
 }
 
@@ -188,15 +174,6 @@ const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-UISprite* UISprite::setIsSpriteOwner( const bool& dealloc ) {
-	writeNodeFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
-	return this;
-}
-
-bool UISprite::getDeallocSprite() {
-	return 0 != ( mNodeFlags & NODE_FLAG_FREE_USE );
-}
-
 void UISprite::onSizeChange() {
 	autoAlign();
 	notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -237,16 +214,39 @@ bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 				path = func.getParameters().at( 0 );
 			}
 
-			Drawable* res = NULL;
-			if ( NULL != ( res = DrawableSearcher::searchByName( path, true ) ) ) {
-				setIsSpriteOwner( true );
+			UISceneNode* scene = getUISceneNode();
+			DrawablePtr res;
+			if ( scene ) {
+				res = scene->getDrawableResolver().resolve( path, true );
+			} else {
+				DrawableResolver resolver( defaultResourceScope() );
+				res = resolver.resolve( path, true );
+			}
 
-				if ( res->getDrawableType() == Drawable::SPRITE ) {
-					setSprite( static_cast<Sprite*>( res ) );
-				} else if ( res->getDrawableType() == Drawable::TEXTUREREGION ) {
-					setSprite( Sprite::New( static_cast<TextureRegion*>( res ) ) );
-				} else if ( res->getDrawableType() == Drawable::TEXTURE ) {
-					setSprite( Sprite::New( static_cast<Texture*>( res )->getTextureId() ) );
+			if ( res ) {
+				switch ( res->getDrawableType() ) {
+					case Drawable::SPRITE:
+						setSprite( std::static_pointer_cast<Sprite>( std::move( res ) ) );
+						break;
+					case Drawable::TEXTUREREGION:
+						setSprite(
+							Sprite::New( std::static_pointer_cast<TextureRegion>( res ).get() ) );
+						break;
+					case Drawable::TEXTUREDRAWABLE: {
+						auto sprite = Sprite::New();
+						sprite->createStatic(
+							std::static_pointer_cast<TextureDrawable>( res )->getTexture() );
+						setSprite( std::move( sprite ) );
+						break;
+					}
+					case Drawable::TEXTURE: {
+						auto sprite = Sprite::New();
+						sprite->createStatic( std::static_pointer_cast<Texture>( res ) );
+						setSprite( std::move( sprite ) );
+						break;
+					}
+					default:
+						break;
 				}
 			}
 			break;

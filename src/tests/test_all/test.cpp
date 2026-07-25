@@ -11,18 +11,18 @@ namespace Demo_Test {
 
 class UIBlurredWindow : public UIWindow {
   public:
-	static UIBlurredWindow* New( ShaderProgram* blurShader ) {
-		return eeNew( UIBlurredWindow, ( blurShader ) );
+	static UIBlurredWindow* New( ShaderProgramPtr blurShader ) {
+		return eeNew( UIBlurredWindow, ( std::move( blurShader ) ) );
 	}
 
-	explicit UIBlurredWindow( ShaderProgram* blurShader ) :
-		UIWindow(), mBlurShader( blurShader ), mFboBlur( NULL ) {}
+	explicit UIBlurredWindow( ShaderProgramPtr blurShader ) :
+		UIWindow(), mBlurShader( std::move( blurShader ) ) {}
 
-	~UIBlurredWindow() { eeSAFE_DELETE( mFboBlur ); }
+	~UIBlurredWindow() = default;
 
   protected:
-	ShaderProgram* mBlurShader;
-	FrameBuffer* mFboBlur;
+	ShaderProgramPtr mBlurShader;
+	FrameBufferUniquePtr mFboBlur[2];
 
 	void preDraw() {
 		if ( !ownsFrameBuffer() )
@@ -30,47 +30,54 @@ class UIBlurredWindow : public UIWindow {
 
 		FrameBuffer* curFBO = getSceneNode()->getFrameBuffer();
 
-		if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
+		if ( curFBO && curFBO->getTexture() && mBlurShader ) {
 			static int fboDiv = 2;
+			const Sizei blurSize( std::max( 1, static_cast<Int32>( mSize.x / fboDiv ) ),
+								  std::max( 1, static_cast<Int32>( mSize.y / fboDiv ) ) );
 
-			if ( NULL == mFboBlur ) {
-				mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-			} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) ||
-						mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
-				mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
+			for ( auto& fbo : mFboBlur ) {
+				if ( !fbo ) {
+					fbo = FrameBuffer::New( blurSize.x, blurSize.y );
+				} else if ( fbo->getSize() != blurSize ) {
+					fbo->resize( blurSize.x, blurSize.y );
+				}
 			}
+			if ( !mFboBlur[0] || !mFboBlur[1] )
+				return;
 
 			TextureRegion textureRegion( curFBO->getTexture(),
 										 Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.x,
 											   mScreenPos.y + mSize.y ) );
 
 			RGB cc = getSceneNode()->getWindow()->getClearColor();
-			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
-			mFboBlur->bind();
-			mFboBlur->clear();
-			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[0]->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
+			mFboBlur[0]->bind();
+			mFboBlur[0]->clear();
+			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur[0]->getSizef() );
+			mFboBlur[0]->unbind();
 
 			mBlurShader->bind();
+			mBlurShader->setUniform( "textureRes", mFboBlur[0]->getSizef() );
 
+			// Never sample a texture while it is attached to the currently bound draw framebuffer:
+			// that creates an undefined framebuffer feedback loop. Some desktop OpenGL drivers made
+			// the old in-place blur appear to work, but GLES/WebGL commonly produce no useful
+			// output. A separable blur therefore ping-pongs its horizontal and vertical passes
+			// between two FBO textures: read A/write B, then read B/write A.
 			mBlurShader->setUniform( "dir", (Int32)0 );
-			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-			mFboBlur->bind();
-			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[1]->bind();
+			mFboBlur[0]->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur[1]->getSizef() );
+			mFboBlur[1]->unbind();
 
 			mBlurShader->setUniform( "dir", (Int32)1 );
-			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-			mFboBlur->bind();
-			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[0]->bind();
+			mFboBlur[1]->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur[0]->getSizef() );
+			mFboBlur[0]->unbind();
 
 			mBlurShader->unbind();
 
-			mFboBlur->getTexture()->draw( Vector2f( mScreenPos.x, mScreenPos.y ),
-										  Sizef( mSize.x, mSize.y ) );
+			mFboBlur[0]->getTexture()->draw( Vector2f( mScreenPos.x, mScreenPos.y ),
+											 Sizef( mSize.x, mSize.y ) );
 		}
 	}
 };
@@ -256,8 +263,8 @@ void EETest::loadFonts() {
 }
 
 void EETest::onFontLoaded() {
-	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
-	Font* monospace = FontManager::instance()->getByName( "monospace" );
+	TTF = defaultResourceScope().findFont( "NotoSans-Regular" ).get();
+	Font* monospace = defaultResourceScope().findFont( "monospace" ).get();
 
 	Log::info( "Fonts loading time: %4.3f ms.", mFTE.getElapsedTimeAndReset().asMilliseconds() );
 
@@ -292,7 +299,7 @@ void EETest::onFontLoaded() {
 void EETest::createShaders() {
 	mUseShaders = mUseShaders && GLi->shadersSupported();
 
-	mShaderProgram = NULL;
+	mShaderProgram.reset();
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
@@ -379,7 +386,6 @@ void EETest::createBaseUI() {
 	sprite->setSprite( Sprite::New( "gn" ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
-	sprite->setIsSpriteOwner( true );
 
 	UITextView* Text = UITextView::New();
 	Text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
@@ -742,7 +748,7 @@ void EETest::createNewUI() {
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setPosition( 50, 600 )->setParent( container );
-	sprite->setSprite( &SP );
+	sprite->setSprite( SP.cloneSprite() );
 
 	UIScrollBar* scrollBar = UIScrollBar::New();
 	scrollBar->setOrientation( UIOrientation::Horizontal )
@@ -974,18 +980,21 @@ void EETest::createNewUI() {
 	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
-		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
+		TextureRegistrySnapshot textures = TextureFactory::instance()->snapshotTextures();
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
+				TexturePtr texture = textures[i].texture.lock();
+				if ( !texture )
+					continue;
 				UIImage* img = UIImage::New();
-				img->setDrawable( textures[i] )
+				img->setDrawable( texture )
 					->setScaleType( UIScaleType::FitInside )
 					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 					->setEnabled( false )
 					->setParent( gridLayout );
 
-				img->setBackgroundColor( Color::fromPointer( textures[i] ) );
+				img->setBackgroundColor( Color::fromPointer( texture.get() ) );
 			}
 		}
 	}
@@ -1368,8 +1377,11 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( [this, name = std::move( name )] {
-				TextureFactory::instance()->loadFromPack( PakTest, name );
+			const std::size_t textureIndex = mLoadedTextures.size();
+			mLoadedTextures.emplace_back();
+			mResLoad.add( [this, textureIndex, name = std::move( name )] {
+				mLoadedTextures[textureIndex] =
+					TextureFactory::instance()->loadFromPack( PakTest, name );
 			} );
 		}
 	}
@@ -1394,24 +1406,24 @@ void EETest::loadTextures() {
 	Tiles.resize( 10 );
 
 	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	TextureAtlas* SG = TextureAtlasManager::instance()->getByName( "tiles" );
+	TextureAtlas* SG = tgl.getTextureAtlas().get();
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
-			Tiles[i] = SG->getByName( String::toString( i + 1 ) );
+			Tiles[i] = SG->getByName( String::toString( i + 1 ) ).get();
 		}
 
-		Tiles[6] =
-			SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" )->getTextureId(), "7" );
+		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" ).get();
 
 #ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.createMaskFromColor( ColorA( 0, 0, 0, 255 ), 0 );
 		Tiles[7] = SG->add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(),
 												tImg.getHeight(), tImg.getChannels() ),
-							"8" );
+							"8" )
+					   .get();
 #else
-		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" ).get();
 		Tiles[7]->getTexture()->createMaskFromColor( Color( 0, 0, 0, 255 ), 0 );
 #endif
 	}
@@ -1431,7 +1443,7 @@ void EETest::loadTextures() {
 	PS[3].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
-	Texture* Tex = TNP[2];
+	Texture* Tex = TNP[2].get();
 
 	if ( NULL != Tex && Tex->lock() ) {
 		int w = (int)Tex->getWidth();
@@ -1464,7 +1476,7 @@ void EETest::loadTextures() {
 	CurMan->set( Cursor::SysHand );
 	CurMan->setGlobalCursor(
 		Cursor::Arrow,
-		CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
+		CurMan->add( CurMan->create( CursorP[0].get(), Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->set( Cursor::Arrow );
 
 	CL1.addFrame( TN[2] );
@@ -1479,10 +1491,10 @@ void EETest::loadTextures() {
 	mMonster.addFramesByPattern( "rn" );
 	mMonster.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite =
-		Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
-	mCircleSprite = Sprite::New(
-		GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
+	TextureRegionPtr boxRegion = TextureRegion::New( TN[3], "ilmare" );
+	mBoxSprite = Sprite::New( boxRegion.get() );
+	TextureRegionPtr circleRegion = TextureRegion::New( TN[1], "thecircle" );
+	mCircleSprite = Sprite::New( circleRegion.get() );
 
 	Log::info( "Textures loading time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 
@@ -1522,7 +1534,13 @@ void EETest::screen1() {
 
 void EETest::screen2() {
 	if ( mResLoad.isLoaded() ) {
-		Texture* TexLoaded = TF->getByName( "1.jpg" );
+		TexturePtr TexLoaded;
+		for ( const TexturePtr& texture : mLoadedTextures ) {
+			if ( texture && texture->getName() == "1.jpg" ) {
+				TexLoaded = texture;
+				break;
+			}
+		}
 
 		if ( NULL != TexLoaded )
 			TexLoaded->draw( 0, 0 );
@@ -1791,26 +1809,26 @@ void EETest::screen5() {
 	Color col( 0x000000CC );
 
 	if ( drawableGroup.getDrawableCount() == 0 ) {
-		ArcDrawable* arc = ArcDrawable::New();
+		auto arc = makeResource<ArcDrawable>();
 		arc->setPosition( Vector2f( 60, 60 ) );
 		arc->setArcStartAngle( 90 );
 		arc->setArcAngle( 180 );
 		arc->setRadius( 60 );
 		arc->setColor( col );
 
-		RectangleDrawable* rect = RectangleDrawable::New();
+		auto rect = makeResource<RectangleDrawable>();
 		rect->setPosition( Vector2f( 0, 60 ) );
 		rect->setSize( Sizef( 120, 60 ) );
 		rect->setColor( col );
 
-		ArcDrawable* arc2 = ArcDrawable::New();
+		auto arc2 = makeResource<ArcDrawable>();
 		arc2->setPosition( Vector2f( 60, 120 ) );
 		arc2->setArcStartAngle( -90 );
 		arc2->setArcAngle( 180 );
 		arc2->setRadius( 60 );
 		arc2->setColor( col );
 
-		ConvexShapeDrawable* poly = ConvexShapeDrawable::New();
+		auto poly = makeResource<ConvexShapeDrawable>();
 		poly->setPosition( Vector2f( 60, 90 ) );
 		poly->addPoint( Vector2f( -10, -10 ) );
 		poly->addPoint( Vector2f( -10, 10 ) );
@@ -1920,7 +1938,7 @@ void EETest::input() {
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->isKeyUp( KEY_F1 ) )
-		Graphics::ShaderProgramManager::instance()->reload();
+		Graphics::ShaderProgramRegistry::instance()->reload();
 
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
@@ -2538,10 +2556,10 @@ void EETest::end() {
 
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
-	eeSAFE_DELETE( mFBO );
-	eeSAFE_DELETE( mVBO );
-	eeSAFE_DELETE( mBoxSprite );
-	eeSAFE_DELETE( mCircleSprite );
+	mFBO.reset();
+	mVBO.reset();
+	mBoxSprite.reset();
+	mCircleSprite.reset();
 	eeSAFE_DELETE( PakTest );
 
 	Log::instance()->save();

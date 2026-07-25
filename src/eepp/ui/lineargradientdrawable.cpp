@@ -18,6 +18,16 @@ LinearGradientDrawable* LinearGradientDrawable::NewRepeating() {
 LinearGradientDrawable::LinearGradientDrawable( Graphics::Drawable::Type drawableType ) :
 	Drawable( drawableType ) {}
 
+DrawablePtr LinearGradientDrawable::clone() const {
+	auto instance = makeResource<LinearGradientDrawable>( mDrawableType );
+	instance->mColorStops = mColorStops;
+	instance->mAngle = mAngle;
+	instance->mSize = mSize;
+	instance->mColor = mColor;
+	instance->mPosition = mPosition;
+	return instance;
+}
+
 Sizef LinearGradientDrawable::getSize() {
 	return mSize;
 }

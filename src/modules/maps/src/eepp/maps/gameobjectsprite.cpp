@@ -1,5 +1,5 @@
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/sprite.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/maps/tilemaplayer.hpp>
@@ -7,8 +7,8 @@
 namespace EE { namespace Maps {
 
 GameObjectSprite::GameObjectSprite( const Uint32& Flags, MapLayer* Layer,
-									Graphics::Sprite* Sprite ) :
-	GameObject( Flags, Layer ), mSprite( Sprite ) {
+									Graphics::SpritePtr sprite ) :
+	GameObject( Flags, Layer ), mSprite( std::move( sprite ) ) {
 	if ( NULL != mSprite ) {
 		mSprite->setRenderMode( getRenderModeFromFlags() );
 		mSprite->setBlendMode( getBlendModeFromFlags() );
@@ -17,9 +17,7 @@ GameObjectSprite::GameObjectSprite( const Uint32& Flags, MapLayer* Layer,
 	assignTilePos();
 }
 
-GameObjectSprite::~GameObjectSprite() {
-	eeSAFE_DELETE( mSprite );
-}
+GameObjectSprite::~GameObjectSprite() {}
 
 Uint32 GameObjectSprite::getType() const {
 	return GAMEOBJECT_TYPE_SPRITE;
@@ -109,13 +107,12 @@ Sizei GameObjectSprite::getSize() {
 	return Sizei();
 }
 
-Graphics::Sprite* GameObjectSprite::getSprite() const {
+const Graphics::SpritePtr& GameObjectSprite::getSprite() const {
 	return mSprite;
 }
 
-void GameObjectSprite::setSprite( Graphics::Sprite* sprite ) {
-	eeSAFE_DELETE( mSprite );
-	mSprite = sprite;
+void GameObjectSprite::setSprite( Graphics::SpritePtr sprite ) {
+	mSprite = std::move( sprite );
 	mSprite->setRenderMode( getRenderModeFromFlags() );
 	mSprite->setBlendMode( getBlendModeFromFlags() );
 	mSprite->setAutoAnimate( false );
@@ -134,22 +131,26 @@ Uint32 GameObjectSprite::getDataId() {
 }
 
 void GameObjectSprite::setDataId( Uint32 Id ) {
-	Graphics::Sprite* tSprite = NULL;
+	Graphics::SpritePtr tSprite;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<TextureRegion*> tTextureRegionVec =
-			TextureAtlasManager::instance()->getTextureRegionsByPatternId( Id );
+		std::vector<TextureRegionPtr> tTextureRegionVec =
+			defaultResourceScope().findTextureRegionsByPatternId( Id );
 
 		if ( tTextureRegionVec.size() ) {
 			tSprite = Graphics::Sprite::New();
 			tSprite->createAnimation();
-			tSprite->addFrames( tTextureRegionVec );
+			for ( const TextureRegionPtr& textureRegion : tTextureRegionVec )
+				tSprite->addFrame( textureRegion.get() );
 
-			setSprite( tSprite );
+			setSprite( std::move( tSprite ) );
 		}
 	} else {
+		DrawablePtr drawable = defaultResourceScope().findDrawable( Id );
 		Graphics::TextureRegion* tTextureRegion =
-			TextureAtlasManager::instance()->getTextureRegionById( Id );
+			drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+				? static_cast<TextureRegion*>( drawable.get() )
+				: nullptr;
 
 		if ( NULL != tTextureRegion ) {
 			setSprite( Graphics::Sprite::New( tTextureRegion ) );

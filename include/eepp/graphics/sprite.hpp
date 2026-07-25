@@ -11,6 +11,10 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class Sprite;
+class ResourceScope;
+using SpritePtr = ResourcePtr<Sprite>;
+
 /** @brief A Sprite controller class, can hold and control sprites animations. */
 class EE_API Sprite : public Drawable {
   public:
@@ -26,21 +30,27 @@ class EE_API Sprite : public Drawable {
 		SPRITE_EVENT_USER // User vents
 	};
 
-	static Sprite* New();
+	static SpritePtr New();
 
-	static Sprite* New( const std::string& name, const std::string& extension = "",
-						TextureAtlas* SearchInTextureAtlas = NULL );
+	static SpritePtr New( const std::string& name, const std::string& extension = "",
+						  TextureAtlas* SearchInTextureAtlas = NULL );
 
-	static Sprite* New( TextureRegion* TextureRegion );
+	static SpritePtr New( ResourceScope& resourceScope, const std::string& name,
+						  const std::string& extension = "",
+						  TextureAtlas* SearchInTextureAtlas = NULL );
 
-	static Sprite* New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
-						const Vector2i& offset = Vector2i( 0, 0 ),
-						const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+	static SpritePtr New( TextureRegion* TextureRegion );
 
-	static Sprite* fromGif( IOStream& gif );
+	static SpritePtr New( ResourceId textureId, const Sizef& DestSize = Sizef( 0, 0 ),
+						  const Vector2i& offset = Vector2i( 0, 0 ),
+						  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+
+	static SpritePtr fromGif( IOStream& gif );
 
 	/** Instantiate an empty sprite */
 	Sprite();
+
+	Sprite( const Sprite& other );
 
 	/** Creates an animated Sprite from a animation name. It will search for a pattern name.
 	 * For example search for name "car" with extensions "png", i will try to find car00.png
@@ -51,10 +61,13 @@ class EE_API Sprite : public Drawable {
 	 * @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you
 	 * want to search in all atlases )
 	 * @note Texture atlases saves the TextureRegions names without extension by default.
-	 * @see TextureAtlasManager::GetTextureRegionsByPattern
+	 * @see ResourceScope::findTextureRegionsByPattern
 	 */
 	Sprite( const std::string& name, const std::string& extension = "",
 			TextureAtlas* SearchInTextureAtlas = NULL );
+
+	Sprite( ResourceScope& resourceScope, const std::string& name,
+			const std::string& extension = "", TextureAtlas* SearchInTextureAtlas = NULL );
 
 	/** Creates a Sprite from a TextureRegion
 	**	@param TextureRegion The TextureRegion to use */
@@ -211,7 +224,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool createStatic( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
+	bool createStatic( TexturePtr tex, const Sizef& DestSize = Sizef( 0, 0 ),
 					   const Vector2i& offset = Vector2i( 0, 0 ),
 					   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -238,7 +251,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return The frame position or 0 if fails
 	 */
-	unsigned int addFrame( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
+	unsigned int addFrame( TexturePtr tex, const Sizef& DestSize = Sizef( 0, 0 ),
 						   const Vector2i& offset = Vector2i( 0, 0 ),
 						   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -253,12 +266,20 @@ class EE_API Sprite : public Drawable {
 	 */
 	bool addFrames( const std::vector<TextureRegion*> TextureRegions );
 
-	/** @see TextureAtlasManager::GetTextureRegionsByPattern */
+	/** @see ResourceScope::findTextureRegionsByPattern */
 	bool addFramesByPattern( const std::string& name, const std::string& extension = "",
+							 TextureAtlas* SearchInTextureAtlas = NULL );
+
+	bool addFramesByPattern( ResourceScope& resourceScope, const std::string& name,
+							 const std::string& extension = "",
 							 TextureAtlas* SearchInTextureAtlas = NULL );
 
 	bool addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension,
 							   TextureAtlas* SearchInTextureAtlas );
+
+	bool addFramesByPatternId( ResourceScope& resourceScope, const Uint32& TextureRegionId,
+							   const std::string& extension,
+							   TextureAtlas* SearchInTextureAtlas = NULL );
 
 	/** Add a frame on an specific subframe to the sprite
 	 * @param tex The texture
@@ -269,7 +290,7 @@ class EE_API Sprite : public Drawable {
 	 * @param TexSector The texture sector to be rendered ( default all the texture )
 	 * @return True if success
 	 */
-	bool addSubFrame( Texture* tex, const unsigned int& NumFrame, const unsigned int& NumSubFrame,
+	bool addSubFrame( TexturePtr tex, const unsigned int& NumFrame, const unsigned int& NumSubFrame,
 					  const Sizef& DestSize = Sizef( 0, 0 ),
 					  const Vector2i& offset = Vector2i( 0, 0 ),
 					  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
@@ -311,6 +332,8 @@ class EE_API Sprite : public Drawable {
 	void draw( const Vector2f& position, const Sizef& size );
 
 	virtual bool isStateful() { return false; }
+
+	DrawablePtr clone() const;
 
 	/** Set the number of repetitions of the animation. Any number below 0 the animation will loop.
 	 */
@@ -379,8 +402,8 @@ class EE_API Sprite : public Drawable {
 	/** Pop the event callback id indicated. */
 	bool popEventsCallback( const Uint32& callbackId );
 
-	/** Creates a copy of the current sprite and returns it */
-	Sprite clone();
+	/** Creates an independent sprite sharing the same texture resources. */
+	SpritePtr cloneSprite() const;
 
 	/** Update the sprite animation */
 	void update( const Time& ElapsedTime );
@@ -391,14 +414,6 @@ class EE_API Sprite : public Drawable {
 	/** Fire a User Event in the sprite */
 	void fireEvent( const Uint32& Event );
 
-	Sprite& setAsTextureRegionOwner( bool set );
-
-	bool isTextureRegionOwner() const;
-
-	Sprite& setAsTextureOwner( bool set );
-
-	bool isTextureOwner() const;
-
   protected:
 	enum SpriteFlags {
 		SPRITE_FLAG_AUTO_ANIM = ( 1 << 0 ),
@@ -406,8 +421,6 @@ class EE_API Sprite : public Drawable {
 		SPRITE_FLAG_ANIM_PAUSED = ( 1 << 2 ),
 		SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP = ( 1 << 3 ),
 		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 ),
-		SPRITE_FLAG_TEXTURE_OWNER = ( 1 << 5 ),
-		SPRITE_FLAG_TEXTURE_REGION_OWNER = ( 1 << 6 ),
 	};
 
 	Uint32 mFlags{ SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED };
@@ -438,7 +451,7 @@ class EE_API Sprite : public Drawable {
 	UnorderedMap<Uint32, SpriteCbData> mCallbacks;
 
 	struct Frame {
-		std::vector<TextureRegion*> Spr;
+		std::vector<TextureRegionPtr> Spr;
 	};
 	std::vector<Frame> mFrames;
 
@@ -446,11 +459,12 @@ class EE_API Sprite : public Drawable {
 
 	void clearFrame();
 
-	void cleanUpResources();
-
 	unsigned int getFrame( const unsigned int& FrameNum );
 
 	unsigned int getSubFrame( const unsigned int& SubFrame );
+
+	bool addSubFrame( TextureRegionPtr textureRegion, const unsigned int& numFrame,
+					  const unsigned int& numSubFrame );
 };
 
 }} // namespace EE::Graphics

@@ -1,12 +1,15 @@
 #include <eepp/graphics/textureatlas.hpp>
+#include <eepp/system/lock.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-TextureAtlas* TextureAtlas::New( const std::string& name ) {
-	return eeNew( TextureAtlas, ( name ) );
+TextureAtlasPtr TextureAtlas::New( const std::string& name ) {
+	return makeResource<TextureAtlas>( name );
 }
 
-TextureAtlas::TextureAtlas( const std::string& name ) : ResourceManager<TextureRegion>() {
+TextureAtlas::TextureAtlas( const std::string& name ) {
 	setName( name );
 }
 
@@ -33,62 +36,140 @@ const String::HashType& TextureAtlas::getId() const {
 	return mId;
 }
 
-TextureRegion* TextureAtlas::add( TextureRegion* textureRegion ) {
-	return ResourceManager<TextureRegion>::add( textureRegion );
+TextureRegionPtr TextureAtlas::add( TextureRegionPtr textureRegion ) {
+	if ( !textureRegion )
+		return {};
+
+	std::string realName( textureRegion->getName() );
+	Uint32 count = 1;
+	for ( ;; ) {
+		{
+			Lock lock( mMutex );
+			if ( mResources.find( textureRegion->getId() ) == mResources.end() ) {
+				mResources[textureRegion->getId()] = textureRegion;
+				return textureRegion;
+			}
+		}
+
+		// setName() can notify listeners. Never invoke callbacks while holding the atlas mutex.
+		textureRegion->setName( realName + String::toString( ++count ) );
+	}
 }
 
-TextureRegion* TextureAtlas::add( ResourceId textureId, const std::string& Name ) {
+TextureRegionPtr TextureAtlas::add( ResourceId textureId, const std::string& Name ) {
 	return add( TextureRegion::New( textureId, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect,
-								  const std::string& Name ) {
+TextureRegionPtr TextureAtlas::add( ResourceId textureId, const Rect& SrcRect,
+									const std::string& Name ) {
 	return add( TextureRegion::New( textureId, SrcRect, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
-								  const std::string& Name ) {
+TextureRegionPtr TextureAtlas::add( ResourceId textureId, const Rect& SrcRect,
+									const Sizef& DestSize, const std::string& Name ) {
 	return add( TextureRegion::New( textureId, SrcRect, DestSize, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( ResourceId textureId, const Rect& SrcRect, const Sizef& DestSize,
-								  const Vector2i& Offset, const std::string& Name ) {
+TextureRegionPtr TextureAtlas::add( ResourceId textureId, const Rect& SrcRect,
+									const Sizef& DestSize, const Vector2i& Offset,
+									const std::string& Name ) {
 	return add( TextureRegion::New( textureId, SrcRect, DestSize, Offset, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const std::string& Name ) {
-	return add( TextureRegion::New( tex, Name ) );
+TextureRegionPtr TextureAtlas::add( TexturePtr tex, const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, Name ) );
+TextureRegionPtr TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), SrcRect, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
-								  const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, DestSize, Name ) );
+TextureRegionPtr TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
+									const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), SrcRect, DestSize, Name ) );
 }
 
-TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
-								  const Vector2i& Offset, const std::string& Name ) {
-	return add( TextureRegion::New( tex, SrcRect, DestSize, Offset, Name ) );
+TextureRegionPtr TextureAtlas::add( TexturePtr tex, const Rect& SrcRect, const Sizef& DestSize,
+									const Vector2i& Offset, const std::string& Name ) {
+	return add( TextureRegion::New( std::move( tex ), SrcRect, DestSize, Offset, Name ) );
 }
 
-Uint32 TextureAtlas::getCount() {
-	return ResourceManager<TextureRegion>::getCount();
+TextureRegionPtr TextureAtlas::getByName( const std::string& name ) const {
+	return getById( String::hash( name ) );
 }
 
-void TextureAtlas::setTextures( std::vector<Texture*> textures ) {
-	mTextures = textures;
+TextureRegionPtr TextureAtlas::getById( const String::HashType& id ) const {
+	Lock lock( mMutex );
+	auto it = mResources.find( id );
+	return it != mResources.end() ? it->second : TextureRegionPtr{};
 }
 
-Texture* TextureAtlas::getTexture( const Uint32& texnum ) const {
+bool TextureAtlas::remove( const TextureRegionPtr& textureRegion ) {
+	return textureRegion && removeById( textureRegion->getId() );
+}
+
+bool TextureAtlas::removeByName( const std::string& name ) {
+	return removeById( String::hash( name ) );
+}
+
+bool TextureAtlas::removeById( const String::HashType& id ) {
+	TextureRegionPtr textureRegion;
+	{
+		Lock lock( mMutex );
+		auto it = mResources.find( id );
+		if ( it == mResources.end() )
+			return false;
+		textureRegion = std::move( it->second );
+		mResources.erase( it );
+	}
+	textureRegion.reset();
+	return true;
+}
+
+bool TextureAtlas::exists( const std::string& name ) const {
+	return existsId( String::hash( name ) );
+}
+
+bool TextureAtlas::existsId( const String::HashType& id ) const {
+	Lock lock( mMutex );
+	return mResources.find( id ) != mResources.end();
+}
+
+void TextureAtlas::clear() {
+	UnorderedMap<String::HashType, TextureRegionPtr> resources;
+	{
+		Lock lock( mMutex );
+		resources = std::move( mResources );
+	}
+	resources.clear();
+}
+
+void TextureAtlas::printNames() const {
+	Lock lock( mMutex );
+	for ( const auto& resource : mResources )
+		eePRINTL( "'%s'", resource.second->getName().c_str() );
+}
+
+const UnorderedMap<String::HashType, TextureRegionPtr>& TextureAtlas::getResources() const {
+	return mResources;
+}
+
+Uint32 TextureAtlas::getCount() const {
+	Lock lock( mMutex );
+	return static_cast<Uint32>( mResources.size() );
+}
+
+void TextureAtlas::setTextures( std::vector<TexturePtr> textures ) {
+	mTextures = std::move( textures );
+}
+
+const TexturePtr& TextureAtlas::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTextures.size() );
 	return mTextures[texnum];
 }
 
-Uint32 TextureAtlas::getTexturesCount() {
-	return mTextures.size();
+Uint32 TextureAtlas::getTexturesCount() const {
+	return static_cast<Uint32>( mTextures.size() );
 }
 
 }} // namespace EE::Graphics

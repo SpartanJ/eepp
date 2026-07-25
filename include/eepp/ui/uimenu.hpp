@@ -24,7 +24,7 @@ class EE_API UIMenu : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	UIMenuItem* add( const String& text, Drawable* icon = NULL, const String& shortcutText = "" );
+	UIMenuItem* add( const String& text, DrawablePtr icon = {}, const String& shortcutText = "" );
 
 	UIWidget* add( UIWidget* widget );
 
@@ -35,7 +35,8 @@ class EE_API UIMenu : public UIWidget {
 
 	UIMenuRadioButton* addRadioButton( const String& text, const bool& active = false );
 
-	UIMenuSubMenu* addSubMenu( const String& text, Drawable* icon = NULL, UIMenu* subMenu = NULL );
+	UIMenuSubMenu* addSubMenu( const String& text, DrawablePtr icon = {},
+								   UIMenu* subMenu = NULL );
 
 	UIWidget* getItem( const Uint32& index );
 
@@ -55,7 +56,7 @@ class EE_API UIMenu : public UIWidget {
 
 	void removeAll();
 
-	void insert( const String& text, Drawable* icon, const Uint32& index );
+	void insert( const String& text, DrawablePtr icon, const Uint32& index );
 
 	void insert( UIWidget* widget, const Uint32& index );
 
@@ -121,7 +122,7 @@ class EE_API UIMenu : public UIWidget {
 
 	void resizeMe();
 
-	UIMenuItem* createMenuItem( const String& text, Drawable* icon,
+	UIMenuItem* createMenuItem( const String& text, DrawablePtr icon,
 								const String& shortcutText = "" );
 
 	UIMenuCheckBox* createMenuCheckBox( const String& text, const bool& active,
@@ -129,7 +130,7 @@ class EE_API UIMenu : public UIWidget {
 
 	UIMenuRadioButton* createMenuRadioButton( const String& text, const bool& active );
 
-	UIMenuSubMenu* createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu );
+	UIMenuSubMenu* createSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu );
 
 	void onThemeLoaded();
 

@@ -10,11 +10,12 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics { namespace Private {
 
-class EE_API FrameBufferManager : public Container<FrameBuffer> {
-	SINGLETON_DECLARE_HEADERS( FrameBufferManager )
+/** Non-owning registry of framebuffers visible to the active graphics context. */
+class EE_API FrameBufferRegistry : public Container<FrameBuffer> {
+	SINGLETON_DECLARE_HEADERS( FrameBufferRegistry )
 
   public:
-	virtual ~FrameBufferManager();
+	virtual ~FrameBufferRegistry();
 
 	FrameBuffer* getCurrentlyBound();
 
@@ -23,7 +24,7 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
 	FrameBuffer* getFromId( const String::HashType& id );
 
   protected:
-	FrameBufferManager();
+	FrameBufferRegistry();
 };
 
 }}} // namespace EE::Graphics::Private

@@ -158,7 +158,7 @@ class App : public UICodeEditorSplitter::Client {
 	EE::Window::Window* mWindow{ nullptr };
 	UIMessageBox* mMsgBox{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
-	UITheme* mTheme{ nullptr };
+	UIThemePtr mTheme;
 	UIWindow* mUIContainer{ nullptr };
 	UIMenuBar* mUIMenuBar{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -184,18 +184,18 @@ class App : public UICodeEditorSplitter::Client {
 	efsw::WatchID mWatch{ 0 };
 	efsw::WatchID mStyleSheetWatch{ 0 };
 	efsw::WatchID mBaseStyleSheetWatch{ 0 };
-	std::map<std::string, std::string> mWidgetRegistered;
+	UnorderedMap<std::string, std::string> mWidgetRegistered;
 	std::string mResPath;
 	std::string mBasePath;
 	UIConsole* mConsole{ nullptr };
-	std::map<std::string, std::string> mLayouts;
+	UnorderedMap<std::string, std::string> mLayouts;
 	std::vector<std::string> mRecentProjects;
 	std::vector<std::string> mRecentFiles;
 	IniFile mIni;
 	Uint32 mRecentProjectEventClickId{ 0xFFFFFFFF };
 	Uint32 mRecentFilesEventClickId{ 0xFFFFFFFF };
-	std::map<ResourceId, TextureRegion*> mImagesLoaded;
-	std::map<Font*, std::string> mFontsLoaded;
+	UnorderedMap<ResourceId, TextureRegionPtr> mImagesLoaded;
+	UnorderedMap<FontPtr, std::string> mFontsLoaded;
 	UpdateListener* mListener{ nullptr };
 	std::string mConfigPath;
 	std::string mColorSchemesPath;
@@ -207,7 +207,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	ColorSchemeExtPreference mUIColorScheme;
 
-	Drawable* findIcon( const std::string& icon );
+	DrawablePtr findIcon( const std::string& icon );
 };
 
 } // namespace uieditor

@@ -14,7 +14,7 @@ class SettingsMenu {
 
 	std::string getKeybind( const std::string& command );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void runCommand( const std::string& command );
 

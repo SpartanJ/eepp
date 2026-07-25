@@ -20,16 +20,13 @@ UIIconThemeManager* UIIconThemeManager::New() {
 	return eeNew( UIIconThemeManager, () );
 }
 
-UIIconThemeManager::~UIIconThemeManager() {
-	for ( UIIconTheme* theme : mIconThemes )
-		eeDelete( theme );
-}
+UIIconThemeManager::~UIIconThemeManager() = default;
 
 UIIconThemeManager::UIIconThemeManager() {}
 
-UIIconThemeManager* UIIconThemeManager::add( UIIconTheme* iconTheme ) {
-	if ( !isPresent( iconTheme ) ) {
-		mIconThemes.push_back( iconTheme );
+UIIconThemeManager* UIIconThemeManager::add( UIIconThemePtr iconTheme ) {
+	if ( iconTheme && !isPresent( iconTheme.get() ) ) {
+		mIconThemes.emplace_back( std::move( iconTheme ) );
 	}
 	return this;
 }
@@ -38,11 +35,10 @@ UIIconTheme* UIIconThemeManager::getCurrentTheme() const {
 	return mCurrentTheme;
 }
 
-UIIconThemeManager* UIIconThemeManager::setCurrentTheme( UIIconTheme* currentTheme ) {
-	if ( currentTheme != mCurrentTheme && currentTheme != mFallbackTheme ) {
-		if ( !isPresent( currentTheme ) )
-			add( currentTheme );
-		mCurrentTheme = currentTheme;
+UIIconThemeManager* UIIconThemeManager::setCurrentTheme( UIIconThemePtr currentTheme ) {
+	if ( currentTheme.get() != mCurrentTheme && currentTheme.get() != mFallbackTheme ) {
+		mCurrentTheme = currentTheme.get();
+		add( std::move( currentTheme ) );
 	}
 	return this;
 }
@@ -51,11 +47,10 @@ UIIconTheme* UIIconThemeManager::getFallbackTheme() const {
 	return mFallbackTheme;
 }
 
-UIIconThemeManager* UIIconThemeManager::setFallbackTheme( UIIconTheme* fallbackTheme ) {
-	if ( fallbackTheme != mFallbackTheme && fallbackTheme != mCurrentTheme ) {
-		if ( !isPresent( fallbackTheme ) )
-			add( fallbackTheme );
-		mFallbackTheme = fallbackTheme;
+UIIconThemeManager* UIIconThemeManager::setFallbackTheme( UIIconThemePtr fallbackTheme ) {
+	if ( fallbackTheme.get() != mFallbackTheme && fallbackTheme.get() != mCurrentTheme ) {
+		mFallbackTheme = fallbackTheme.get();
+		add( std::move( fallbackTheme ) );
 	}
 	return this;
 }
@@ -89,12 +84,14 @@ UIIconThemeManager::setFallbackThemeManager( UIThemeManager* fallbackThemeManage
 }
 
 void UIIconThemeManager::remove( UIIconTheme* iconTheme ) {
-	auto pos = std::find( mIconThemes.begin(), mIconThemes.end(), iconTheme );
+	auto pos = std::find_if(
+		mIconThemes.begin(), mIconThemes.end(),
+		[iconTheme]( const UIIconThemePtr& theme ) { return theme.get() == iconTheme; } );
 	if ( pos != mIconThemes.end() ) {
-		if ( *pos == mCurrentTheme ) {
+		if ( pos->get() == mCurrentTheme ) {
 			mCurrentTheme = mFallbackTheme;
 			mFallbackTheme = nullptr;
-		} else if ( *pos == mFallbackTheme ) {
+		} else if ( pos->get() == mFallbackTheme ) {
 			mFallbackTheme = nullptr;
 		}
 		mIconThemes.erase( pos );
@@ -102,7 +99,10 @@ void UIIconThemeManager::remove( UIIconTheme* iconTheme ) {
 }
 
 bool UIIconThemeManager::isPresent( UIIconTheme* iconTheme ) {
-	return std::find( mIconThemes.begin(), mIconThemes.end(), iconTheme ) != mIconThemes.end();
+	return std::find_if( mIconThemes.begin(), mIconThemes.end(),
+						 [iconTheme]( const UIIconThemePtr& theme ) {
+							 return theme.get() == iconTheme;
+						 } ) != mIconThemes.end();
 }
 
 }} // namespace EE::UI

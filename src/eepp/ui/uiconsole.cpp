@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <eepp/audio/listener.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/scene/actions/actions.hpp>
@@ -52,7 +52,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 
 	mFontStyleConfig.Font = font;
 	if ( nullptr == font )
-		mFontStyleConfig.Font = FontManager::instance()->getByName( "monospace" );
+		mFontStyleConfig.Font = getUISceneNode()->getResourceScope()->findFont( "monospace" ).get();
 
 	mMaxLogLines = maxLogLines;
 
@@ -1227,11 +1227,9 @@ void UIConsole::onDocumentSaved( TextDocument* ) {}
 
 void UIConsole::onDocumentMoved( TextDocument* ) {}
 
-Drawable* UIConsole::findIcon( const std::string& name ) {
+DrawablePtr UIConsole::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 void UIConsole::copySelection() {

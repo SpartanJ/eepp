@@ -134,7 +134,7 @@ void RendererGL3CP::init() {
 
 	clientActiveTexture( GL_TEXTURE0 );
 
-	setShader( mShaders[EEGL3CP_SHADER_BASE] );
+	setShader( mShaders[EEGL3CP_SHADER_BASE].get() );
 
 	mLoaded = true;
 }
@@ -154,12 +154,12 @@ void RendererGL3CP::reloadShader( ShaderProgram* Shader ) {
 }
 
 void RendererGL3CP::setShader( const EEGL3CP_SHADERS& Shader ) {
-	setShader( mShaders[Shader] );
+	setShader( mShaders[Shader].get() );
 }
 
 void RendererGL3CP::setShader( ShaderProgram* Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[EEGL3CP_SHADER_BASE];
+		Shader = mShaders[EEGL3CP_SHADER_BASE].get();
 	}
 
 	if ( mCurShader == Shader ) {

@@ -1,11 +1,12 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uiicon.hpp>
+#include <limits>
 
 namespace EE { namespace UI {
 
-UIIcon* UIIcon::New( const std::string& name ) {
-	return eeNew( UIIcon, ( name ) );
+UIIconPtr UIIcon::New( const std::string& name ) {
+	return UIIconPtr( eeNew( UIIcon, ( name ) ), ResourceDeleter<UIIcon>() );
 }
 
 UIIcon::UIIcon( const std::string& name ) : mName( name ) {}
@@ -16,39 +17,48 @@ const std::string& UIIcon::getName() const {
 	return mName;
 }
 
-Drawable* UIIcon::getSize( const int& size ) const {
+const DrawablePtr& UIIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
 	auto it = mSizes.find( size );
 	if ( it != mSizes.end() )
 		return it->second;
-	int distance = UINT32_MAX;
-	Drawable* closest = nullptr;
+	int distance = std::numeric_limits<int>::max();
+	const DrawablePtr* closest = nullptr;
 	for ( const auto& sit : mSizes ) {
 		int diff = abs( sit.first - size );
 		if ( diff < distance ) {
 			distance = diff;
-			closest = sit.second;
+			closest = &sit.second;
 		}
 	}
-	return closest;
+	return closest ? *closest : empty;
 }
 
-void UIIcon::setSize( const int& size, Drawable* drawable ) {
-	mSizes[size] = drawable;
+DrawablePtr UIIcon::createDrawable( const int& size ) const {
+	const DrawablePtr& source = getSource( size );
+	return source ? source->clone() : DrawablePtr{};
 }
 
-UIIcon* UIGlyphIcon::New( const std::string& name, FontTrueType* font, const Uint32& codePoint ) {
-	return eeNew( UIGlyphIcon, ( name, font, codePoint ) );
+void UIIcon::setSource( const int& size, DrawablePtr drawable ) {
+	mSizes[size] = std::move( drawable );
 }
 
-Drawable* UIGlyphIcon::getSize( const int& size ) const {
+UIIconPtr UIGlyphIcon::New( const std::string& name, FontTrueType* font, const Uint32& codePoint ) {
+	return UIIconPtr( eeNew( UIGlyphIcon, ( name, font, codePoint ) ), ResourceDeleter<UIIcon>() );
+}
+
+const DrawablePtr& UIGlyphIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
 	if ( !mFont )
-		return nullptr;
+		return empty;
 	auto it = mSizes.find( size );
 	if ( it != mSizes.end() )
 		return it->second;
 	GlyphDrawable* drawable = mFont->getGlyphDrawable( mCodePoint, size );
-	const_cast<UIGlyphIcon*>( this )->setSize( size, drawable );
-	return drawable;
+	if ( !drawable )
+		return empty;
+	const_cast<UIGlyphIcon*>( this )->setSource( size, drawable->clone() );
+	return UIIcon::getSource( size );
 }
 
 UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint ) :
@@ -68,15 +78,16 @@ UIGlyphIcon::~UIGlyphIcon() {
 	}
 }
 
-UIIcon* UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
-	return eeNew( UISVGIcon, ( name, svgXML ) );
+UIIconPtr UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
+	return UIIconPtr( eeNew( UISVGIcon, ( name, svgXML ) ), ResourceDeleter<UIIcon>() );
 }
 
 UISVGIcon::~UISVGIcon() {}
 
-Drawable* UISVGIcon::getSize( const int& size ) const {
-	auto it = mSVGs.find( size );
-	if ( it != mSVGs.end() )
+const DrawablePtr& UISVGIcon::getSource( const int& size ) const {
+	static const DrawablePtr empty;
+	auto it = mSizes.find( size );
+	if ( it != mSizes.end() )
 		return it->second;
 
 	Image::FormatConfiguration format;
@@ -87,16 +98,18 @@ Drawable* UISVGIcon::getSize( const int& size ) const {
 			mOriSize = { w, h };
 			mOriChannels = c;
 		} else {
-			return nullptr;
+			return empty;
 		}
 	}
 	format.svgScale( size / (Float)eemax( mOriSize.x, mOriSize.y ) );
-	Texture* texture = TextureFactory::instance()->loadFromMemory(
+	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
 		(const unsigned char*)&mSVGXml[0], mSVGXml.size(), false, Texture::ClampMode::ClampToEdge,
 		false, false, format );
 
-	mSVGs[size] = texture;
-	return texture;
+	if ( !texture )
+		return empty;
+	const_cast<UISVGIcon*>( this )->setSource( size, std::move( texture ) );
+	return UIIcon::getSource( size );
 }
 
 UISVGIcon::UISVGIcon( const std::string& name, const std::string& svgXML ) :

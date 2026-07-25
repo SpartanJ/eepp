@@ -3,13 +3,13 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-SINGLETON_DECLARE_IMPLEMENTATION( FrameBufferManager )
+SINGLETON_DECLARE_IMPLEMENTATION( FrameBufferRegistry )
 
-FrameBufferManager::FrameBufferManager() {}
+FrameBufferRegistry::FrameBufferRegistry() {}
 
-FrameBufferManager::~FrameBufferManager() {}
+FrameBufferRegistry::~FrameBufferRegistry() {}
 
-FrameBuffer* FrameBufferManager::getCurrentlyBound() {
+FrameBuffer* FrameBufferRegistry::getCurrentlyBound() {
 	int curFB;
 
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
@@ -25,11 +25,11 @@ FrameBuffer* FrameBufferManager::getCurrentlyBound() {
 	return NULL;
 }
 
-FrameBuffer* FrameBufferManager::getFromName( const std::string& name ) {
+FrameBuffer* FrameBufferRegistry::getFromName( const std::string& name ) {
 	return getFromId( String::hash( name ) );
 }
 
-FrameBuffer* FrameBufferManager::getFromId( const String::HashType& id ) {
+FrameBuffer* FrameBufferRegistry::getFromId( const String::HashType& id ) {
 	for ( auto& fb : mResources ) {
 		if ( fb->getId() == id ) {
 			return fb;

@@ -28,6 +28,8 @@ class EE_API TriangleDrawable : public PrimitiveDrawable {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr clone() const;
+
 	void setSize( const Sizef& size );
 
 	const Triangle2f& getTriangle() const;
@@ -41,7 +43,7 @@ class EE_API TriangleDrawable : public PrimitiveDrawable {
 	Triangle2f mComputedTriangle;
 	Sizef mSize;
 	Color mColors[3];
-	bool mCustomColors;
+	bool mCustomColors{ false };
 
 	virtual void onColorFilterChange();
 

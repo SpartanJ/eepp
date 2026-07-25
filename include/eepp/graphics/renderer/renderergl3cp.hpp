@@ -70,7 +70,7 @@ class EE_API RendererGL3CP : public RendererGLShader {
 	void reloadCurrentShader();
 
   protected:
-	ShaderProgram* mShaders[EEGL3CP_SHADERS_COUNT];
+	ShaderProgramPtr mShaders[EEGL3CP_SHADERS_COUNT];
 	unsigned int mVAO;
 	unsigned int mVBO[8];
 	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];

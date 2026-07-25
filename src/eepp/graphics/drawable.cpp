@@ -9,6 +9,10 @@ Drawable::Drawable( Type drawableType ) :
 
 Drawable::~Drawable() {}
 
+DrawablePtr Drawable::clone() const {
+	return {};
+}
+
 void Drawable::setAlpha( Uint8 alpha ) {
 	if ( mColor.a != alpha ) {
 		mColor.a = alpha;

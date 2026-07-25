@@ -2257,7 +2257,9 @@ static bool _isOSUsingDarkColorScheme() {
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	// Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
 	return EM_ASM_INT( {
-			   if ( typeof window != = 'undefined' && window.matchMedia ) {
+			   // EM_ASM stringifies C/C++ preprocessing tokens. JavaScript's !== is split into
+			   // "!= =" and becomes invalid, so use != for this typeof string comparison.
+			   if ( typeof window != 'undefined' && window.matchMedia ) {
 				   return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 1 : 0;
 			   }
 			   return 0;

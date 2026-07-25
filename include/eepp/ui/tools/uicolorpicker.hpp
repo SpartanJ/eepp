@@ -78,9 +78,9 @@ class EE_API UIColorPicker {
 
 	void windowClose( const Event* Event );
 
-	Texture* createHueTexture( const Sizef& size );
+	TexturePtr createHueTexture( const Sizef& size );
 
-	Texture* createGridTexture();
+	TexturePtr createGridTexture();
 
 	void updateColorPicker();
 

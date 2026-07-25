@@ -9,6 +9,19 @@ ConvexShapeDrawable* ConvexShapeDrawable::New() {
 
 ConvexShapeDrawable::ConvexShapeDrawable() : PrimitiveDrawable( Drawable::CONVEXSHAPE ) {}
 
+DrawablePtr ConvexShapeDrawable::clone() const {
+	auto instance = makeResource<ConvexShapeDrawable>();
+	instance->mPolygon = mPolygon;
+	instance->mIndexColor = mIndexColor;
+	instance->mFillMode = mFillMode;
+	instance->mBlendMode = mBlendMode;
+	instance->mLineWidth = mLineWidth;
+	instance->mSmooth = mSmooth;
+	instance->mColor = mColor;
+	instance->mPosition = mPosition;
+	return instance;
+}
+
 Sizef ConvexShapeDrawable::getSize() {
 	return mPolygon.getBounds().getSize();
 }

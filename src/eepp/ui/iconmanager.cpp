@@ -6,10 +6,11 @@ namespace EE { namespace UI {
 
 using IconPair = std::pair<const char*, Uint32>;
 
-UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* remixIconFont,
-								FontTrueType* noniconFont, FontTrueType* codIconFont ) {
+ResourcePtr<UIIconTheme> IconManager::init( const std::string& iconThemeName,
+											FontTrueType* remixIconFont, FontTrueType* noniconFont,
+											FontTrueType* codIconFont ) {
 
-	UIIconTheme* iconTheme = UIIconTheme::New( iconThemeName );
+	auto iconTheme = UIIconTheme::New( iconThemeName );
 
 	if ( remixIconFont && remixIconFont->loaded() ) {
 		remixIconFont->setIsEmojiFont( true );

@@ -336,12 +336,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables background fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setBackgroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setBackgroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a background drawable from a skin name.
@@ -521,12 +520,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables foreground fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setForegroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setForegroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a foreground drawable from a skin name.
@@ -852,12 +850,12 @@ class EE_API UINode : public Node {
 	void setThemeByName( const std::string& Theme );
 
 	/**
-	 * @brief Sets the theme for this node.
+	 * @brief Sets the borrowed theme used by this node.
 	 *
-	 * Applies the specified UITheme to this node, affecting its visual appearance
-	 * through skins and styles.
+	 * The node does not retain @p Theme. Its owner, normally the containing scene's UIThemeManager,
+	 * must keep the theme alive until this node switches themes or is destroyed.
 	 *
-	 * @param Theme Pointer to the UITheme to apply.
+	 * @param Theme Borrowed theme to apply, or null to use no explicit theme.
 	 */
 	virtual void setTheme( UITheme* Theme );
 

@@ -89,7 +89,7 @@ class EE_API ScrollParallax {
 	const Vector2f& getSpeed() const;
 
   private:
-	TextureRegion* mTextureRegion;
+	TextureRegionPtr mTextureRegion;
 	BlendMode mBlend;
 	Color mColor;
 	Vector2f mInitPos;

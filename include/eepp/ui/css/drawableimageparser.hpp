@@ -2,14 +2,12 @@
 #define EE_UI_CSS_DRAWABLEIMAGEPARSER_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <functional>
 #include <map>
 
-namespace EE { namespace Graphics {
-class Drawable;
-}} // namespace EE::Graphics
 namespace EE { namespace UI {
 class UINode;
 }} // namespace EE::UI
@@ -20,8 +18,8 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-typedef std::function<Drawable*( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-								 UINode* node )>
+typedef std::function<DrawablePtr( const FunctionString& functionType, const Sizef& size,
+								   UINode* node )>
 	DrawableImageParserFunc;
 
 class EE_API DrawableImageParser {
@@ -30,8 +28,7 @@ class EE_API DrawableImageParser {
 
 	bool exists( const std::string& name ) const;
 
-	Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt,
-							  UINode* node );
+	DrawablePtr createDrawable( const std::string& value, const Sizef& size, UINode* node );
 
 	void addParser( const std::string& name, const DrawableImageParserFunc& func );
 

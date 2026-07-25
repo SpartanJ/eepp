@@ -4,25 +4,37 @@
 #include <atomic>
 #include <condition_variable>
 #include <eepp/core/lrucache.hpp>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/drawablegroup.hpp>
+#include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/ninepatch.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcecatalog.hpp>
+#include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/models/variant.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 #include <limits>
@@ -72,7 +84,9 @@ class TestTextureAtlas : public TextureAtlas {
 
 class TestTextureAtlasLoader : public TextureAtlasLoader {
   public:
-	void setTextureAtlas( TextureAtlas* textureAtlas ) { mTextureAtlas = textureAtlas; }
+	void setTextureAtlas( TextureAtlasPtr textureAtlas ) {
+		mTextureAtlas = std::move( textureAtlas );
+	}
 
 	void loadDelayed( const std::shared_ptr<LoaderGate>& gate,
 					  const std::shared_ptr<std::atomic<bool>>& callbackCompleted ) {
@@ -84,6 +98,45 @@ class TestTextureAtlasLoader : public TextureAtlasLoader {
 			*callbackCompleted = true;
 		} );
 	}
+};
+
+class TestDrawableResource : public DrawableResource {
+  public:
+	TestDrawableResource() : DrawableResource( Drawable::CUSTOM ) {}
+
+	Sizef getSize() { return {}; }
+	Sizef getPixelsSize() { return {}; }
+	void draw() {}
+	void draw( const Vector2f& ) {}
+	void draw( const Vector2f&, const Sizef& ) {}
+	bool isStateful() { return false; }
+
+	void notifyChange() { onResourceChange(); }
+	bool hasCallbackState() const { return mCallbackState != nullptr; }
+};
+
+class CountingDrawable : public Drawable {
+  public:
+	CountingDrawable( std::shared_ptr<int> instanceCount ) :
+		Drawable( Drawable::CUSTOM ), mInstanceCount( std::move( instanceCount ) ) {}
+
+	Sizef getSize() { return { 16.f, 16.f }; }
+	Sizef getPixelsSize() { return getSize(); }
+	void draw() {}
+	void draw( const Vector2f& ) {}
+	void draw( const Vector2f&, const Sizef& ) {}
+	bool isStateful() { return false; }
+
+	DrawablePtr clone() const {
+		++*mInstanceCount;
+		auto instance = makeResource<CountingDrawable>( mInstanceCount );
+		instance->setColor( mColor );
+		instance->setPosition( mPosition );
+		return instance;
+	}
+
+  private:
+	std::shared_ptr<int> mInstanceCount;
 };
 
 class AsyncDeliveryProducerScene : public UISceneNode {
@@ -147,6 +200,18 @@ EE::Window::Window* createLifecycleTestWindow( const std::string& title ) {
 
 static_assert( !std::is_copy_constructible<Texture>::value, "Texture must not be copyable" );
 static_assert( !std::is_copy_assignable<Texture>::value, "Texture must not be copy-assignable" );
+static_assert( std::is_invocable_r_v<std::size_t, std::hash<ResourceId>, const ResourceId&>,
+			   "ResourceId must support standard unordered containers" );
+
+UTEST( ResourcePrerequisites, resourceIdSupportsUnorderedContainers ) {
+	UnorderedMap<ResourceId, int> resources;
+	resources[ResourceId( 1 )] = 10;
+	resources[ResourceId( 2 )] = 20;
+
+	EXPECT_EQ( 10, resources[ResourceId( 1 )] );
+	EXPECT_EQ( 20, resources[ResourceId( 2 )] );
+	EXPECT_EQ( (size_t)2, resources.size() );
+}
 
 UTEST( ResourcePrerequisites, lruCacheEvictsOnlyLeastRecentlyUsedAndReleasesKeys ) {
 	LRUCache<2, int, bool> recencyCache;
@@ -169,6 +234,21 @@ UTEST( ResourcePrerequisites, lruCacheEvictsOnlyLeastRecentlyUsedAndReleasesKeys
 
 	owningKeyCache.clear();
 	EXPECT_TRUE( weakKey.expired() );
+
+	LRUCache<3, int, int> selectiveCache;
+	selectiveCache.put( 1, 10 );
+	selectiveCache.put( 2, 20 );
+	selectiveCache.put( 3, 30 );
+	ASSERT_TRUE( selectiveCache.get( 1 ).has_value() );
+	selectiveCache.eraseIf( []( int key, int ) { return key == 2; } );
+	EXPECT_TRUE( !selectiveCache.get( 2 ).has_value() );
+	EXPECT_EQ( (size_t)2, selectiveCache.size() );
+	selectiveCache.put( 4, 40 );
+	selectiveCache.put( 5, 50 );
+	EXPECT_TRUE( !selectiveCache.get( 3 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 1 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 4 ).has_value() );
+	EXPECT_TRUE( selectiveCache.get( 5 ).has_value() );
 }
 
 UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
@@ -178,16 +258,16 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAppliesFilterToEveryTexture ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 
 	{
-		Texture* first = TextureFactory::instance()->createEmptyTexture( 1, 1 );
-		Texture* second = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+		TexturePtr first = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+		TexturePtr second = TextureFactory::instance()->createEmptyTexture( 1, 1 );
 		ASSERT_TRUE( first != NULL );
 		ASSERT_TRUE( second != NULL );
 
-		TestTextureAtlas atlas;
-		atlas.setTextures( { first, second } );
+		auto atlas = makeResource<TestTextureAtlas>();
+		atlas->setTextures( { first, second } );
 
 		TestTextureAtlasLoader loader;
-		loader.setTextureAtlas( &atlas );
+		loader.setTextureAtlas( atlas );
 		loader.setTextureFilter( Texture::Filter::Nearest );
 
 		EXPECT_EQ( first->getFilter(), Texture::Filter::Nearest );
@@ -204,15 +284,80 @@ UTEST( ResourcePrerequisites, textureAtlasLoaderAcceptsFilterBeforeAtlasExists )
 			   Texture::Filter::Nearest );
 }
 
+UTEST( ResourcePrerequisites, textureAtlasAndCatalogRetainRegionsByHandle ) {
+	TextureAtlasPtr atlas = TextureAtlas::New( "owned-atlas" );
+	TextureRegionPtr region = TextureRegion::New( TexturePtr{}, "owned-region" );
+	TextureRegionWeakPtr weakRegion = region;
+	atlas->add( region );
+	region.reset();
+	ASSERT_FALSE( weakRegion.expired() );
+
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TextureAtlasWeakPtr weakAtlas = atlas;
+	catalog->publishAtlas( atlas->getName(), atlas );
+	atlas.reset();
+	ASSERT_FALSE( weakAtlas.expired() );
+	EXPECT_TRUE( catalog->findAtlas( "owned-atlas" ) != nullptr );
+
+	catalog->eraseAtlas( "owned-atlas" );
+	EXPECT_TRUE( weakAtlas.expired() );
+	EXPECT_TRUE( weakRegion.expired() );
+}
+
+UTEST( ResourcePrerequisites, resourceScopeResolvesPublishedAtlasRegionPatterns ) {
+	ResourceScopePtr scope = ResourceScope::New();
+	TextureAtlasPtr atlas = TextureAtlas::New( "pattern-atlas" );
+	TextureRegionPtr first = atlas->add( TextureRegion::New( TexturePtr{}, "walk00" ) );
+	TextureRegionPtr second = atlas->add( TextureRegion::New( TexturePtr{}, "walk01" ) );
+	scope->publishLocalAtlas( atlas->getName(), atlas );
+	scope->publishLocalDrawable( first->getName(), first );
+	scope->publishLocalDrawable( second->getName(), second );
+
+	std::vector<TextureRegionPtr> pattern = scope->findTextureRegionsByPattern( "walk" );
+	ASSERT_EQ( pattern.size(), 2u );
+	EXPECT_EQ( pattern[0].get(), first.get() );
+	EXPECT_EQ( pattern[1].get(), second.get() );
+	std::vector<TextureRegionPtr> patternById =
+		scope->findTextureRegionsByPatternId( first->getId() );
+	ASSERT_EQ( patternById.size(), 2u );
+	EXPECT_EQ( patternById[0].get(), first.get() );
+
+	SpritePtr sprite = Sprite::New( *scope, "walk" );
+	ASSERT_TRUE( sprite != nullptr );
+	EXPECT_EQ( sprite->getNumFrames(), 2u );
+}
+
+UTEST( ResourcePrerequisites, resourceScopeOwnsShaderProgramsWhileRegistryOnlyObservesThem ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Shader program scope ownership test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	ShaderProgramPtr program = ShaderProgram::New( "scoped-program" );
+	ShaderProgramWeakPtr weakProgram = program;
+	scope->publishLocalShaderProgram( "scoped-program", program );
+	program.reset();
+
+	ASSERT_FALSE( weakProgram.expired() );
+	EXPECT_EQ( scope->findShaderProgram( "scoped-program" ).get(), weakProgram.lock().get() );
+	EXPECT_TRUE( ShaderProgramRegistry::existsSingleton() != nullptr );
+
+	EXPECT_TRUE( scope->eraseLocalShaderProgram( "scoped-program" ) );
+	EXPECT_TRUE( weakProgram.expired() );
+
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
 UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithoutOwning ) {
 	createLifecycleTestWindow( "Texture registry identity test" );
 	TextureFactory* factory = TextureFactory::instance();
-	Texture* first = factory->createEmptyTexture( 2, 3, 4, Color::Transparent, false,
-												  Texture::ClampMode::ClampToEdge, false, false,
-												  "registry-first" );
-	Texture* second = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
-												   Texture::ClampMode::ClampToEdge, false, false,
-												   "registry-second" );
+	Uint8 firstPixels[2 * 3 * 4]{};
+	TextureLoader firstLoader( firstPixels, 2, 3, 4, false, Texture::ClampMode::ClampToEdge, false,
+							   false, "registry-first" );
+	firstLoader.load();
+	TexturePtr first = firstLoader.getTexture();
+	TexturePtr second = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
+													 Texture::ClampMode::ClampToEdge, false, false,
+													 "registry-second" );
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
 
@@ -242,41 +387,413 @@ UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithou
 	TextureWeakPtr firstWeak = firstRecord->texture;
 	TexturePtr retainedFirst = firstWeak.lock();
 	ASSERT_TRUE( retainedFirst != nullptr );
-	ASSERT_TRUE( factory->remove( first ) );
+	firstLoader.reset();
+	first.reset();
 	EXPECT_FALSE( firstWeak.expired() );
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u * 3u * 4u + 4u );
 	retainedFirst.reset();
 	EXPECT_TRUE( firstWeak.expired() );
+	EXPECT_TRUE( factory->getTexture( firstId ) == nullptr );
 
 	snapshot = factory->snapshotTextures();
 	EXPECT_TRUE( std::none_of( snapshot.begin(), snapshot.end(),
 							   [firstId]( const auto& record ) { return record.id == firstId; } ) );
 	EXPECT_EQ( factory->getTextureMemorySize(), 4u );
 
+	second.reset();
 	Engine::destroySingleton();
 
 	createLifecycleTestWindow( "Texture registry identity restart test" );
-	Texture* afterRestart = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	TexturePtr afterRestart = TextureFactory::instance()->createEmptyTexture( 1, 1 );
 	ASSERT_TRUE( afterRestart != nullptr );
 	EXPECT_TRUE( secondId < afterRestart->getTextureId() );
+	afterRestart.reset();
 	Engine::destroySingleton();
 }
 
-UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
-	EE::Window::Window* window = createLifecycleTestWindow( "Texture deferred release test" );
+UTEST( ResourcePrerequisites, resourceCatalogOwnsPublishedTextures ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Resource catalog ownership test" );
 	TextureFactory* factory = TextureFactory::instance();
-	Texture* texture = factory->createEmptyTexture( 2, 2 );
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TexturePtr texture = factory->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	catalog->publish( "catalog-texture", texture );
+	catalog->publish( "catalog-texture-alias", texture );
+	texture.reset();
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( catalog->findTexture( "catalog-texture" ) != nullptr );
+
+	EXPECT_TRUE( catalog->erase( "catalog-texture" ) );
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( catalog->erase( "catalog-texture-alias" ) );
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+
+	catalog.reset();
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, resourceCatalogRemovalPreservesRetainedDrawableConsumers ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Nine-patch catalog ownership test" );
+	TextureFactory* factory = TextureFactory::instance();
+	ResourceCatalogPtr catalog = ResourceCatalog::New();
+	TexturePtr texture = factory->createEmptyTexture( 4, 4 );
 	ASSERT_TRUE( texture != nullptr );
 
-	bool unloaded = false;
-	texture->pushResourceChangeCallback(
-		[&unloaded]( Uint32, DrawableResource::Event event, DrawableResource* ) {
-			if ( event == DrawableResource::Event::Unload )
-				unloaded = true;
-		} );
+	NinePatchPtr ninePatch = NinePatch::New( texture, 1, 1, 1, 1, 1, "retained-nine-patch" );
+	ASSERT_TRUE( ninePatch != nullptr );
+	catalog->publishDrawable( "retained-nine-patch", ninePatch );
+	NinePatchWeakPtr weakNinePatch = ninePatch;
+	TextureWeakPtr weakTexture = texture;
+	texture.reset();
+
+	EXPECT_TRUE( catalog->findDrawable( "retained-nine-patch" ) == ninePatch );
+	EXPECT_TRUE( catalog->eraseDrawable( "retained-nine-patch" ) );
+	EXPECT_TRUE( catalog->findDrawable( "retained-nine-patch" ) == nullptr );
+	EXPECT_FALSE( weakNinePatch.expired() );
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_TRUE( ninePatch->getPixelsSize() == Sizef( 4, 4 ) );
+
+	ninePatch.reset();
+	EXPECT_TRUE( weakNinePatch.expired() );
+	EXPECT_TRUE( weakTexture.expired() );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, resourceNameHashSeparatesLegacyDrawableCollision ) {
+	constexpr const char* firstKey = "BA";
+	constexpr const char* secondKey = "Ab";
+	ASSERT_EQ( String::hash( firstKey ), String::hash( secondKey ) );
+	const ResourceNameHash firstHash = resourceNameHash( firstKey );
+	const ResourceNameHash secondHash = resourceNameHash( secondKey );
+	ASSERT_NE( firstHash.value(), secondHash.value() );
+
+	auto catalog = ResourceCatalog::New();
+	auto first = makeResource<TestDrawableResource>();
+	auto second = makeResource<TestDrawableResource>();
+	catalog->publishDrawable( firstKey, first );
+	catalog->publishDrawable( secondKey, second );
+	EXPECT_EQ( first.get(), catalog->findDrawable( firstHash ).get() );
+	EXPECT_EQ( second.get(), catalog->findDrawable( secondHash ).get() );
+
+	EXPECT_TRUE( catalog->eraseDrawable( firstKey ) );
+	EXPECT_TRUE( catalog->findDrawable( firstHash ) == nullptr );
+	EXPECT_EQ( second.get(), catalog->findDrawable( secondHash ).get() );
+	EXPECT_TRUE( catalog->eraseDrawable( secondKey ) );
+	EXPECT_TRUE( catalog->findDrawable( secondHash ) == nullptr );
+}
+
+UTEST( ResourcePrerequisites, resourceNameHashSeparatesLegacyFontCollision ) {
+	constexpr const char* firstKey = "BA";
+	constexpr const char* secondKey = "Ab";
+	ASSERT_EQ( String::hash( firstKey ), String::hash( secondKey ) );
+	const ResourceNameHash firstHash = resourceNameHash( firstKey );
+	const ResourceNameHash secondHash = resourceNameHash( secondKey );
+	ASSERT_NE( firstHash.value(), secondHash.value() );
+
+	auto scope = ResourceScope::New();
+	auto first = FontBMFont::New( firstKey, *scope );
+	auto second = FontBMFont::New( secondKey, *scope );
+	auto catalog = scope->getLocalCatalog();
+	EXPECT_EQ( first.get(), catalog->findFont( firstHash ).get() );
+	EXPECT_EQ( second.get(), catalog->findFont( secondHash ).get() );
+
+	EXPECT_TRUE( scope->eraseLocalFont( firstKey ) );
+	EXPECT_TRUE( catalog->findFont( firstHash ) == nullptr );
+	EXPECT_EQ( second.get(), catalog->findFont( secondHash ).get() );
+	EXPECT_TRUE( scope->eraseLocalFont( secondKey ) );
+	EXPECT_TRUE( catalog->findFont( secondHash ) == nullptr );
+}
+
+UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImportedCatalogs ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Resource scope isolation test" );
+	TextureFactory* factory = TextureFactory::instance();
+	ResourceScopePtr firstScope = ResourceScope::New();
+	ResourceScopePtr secondScope = ResourceScope::New();
+	ResourceCatalogPtr sharedCatalog = ResourceCatalog::New();
+	ResourceCatalogPtr laterCatalog = ResourceCatalog::New();
+	TexturePtr first = factory->createEmptyTexture( 1, 1 );
+	TexturePtr second = factory->createEmptyTexture( 1, 1 );
+	TexturePtr shared = factory->createEmptyTexture( 1, 1 );
+	TexturePtr later = factory->createEmptyTexture( 1, 1 );
+	TexturePtr observedOnly = factory->createEmptyTexture( 1, 1, 4, Color::Transparent, false,
+														   Texture::ClampMode::ClampToEdge, false,
+														   false, "observed-only" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( shared != nullptr );
+	ASSERT_TRUE( later != nullptr );
+	ASSERT_TRUE( observedOnly != nullptr );
+
+	firstScope->publishLocal( "same-name", first );
+	secondScope->publishLocal( "same-name", second );
+	sharedCatalog->publish( "shared-name", shared );
+	laterCatalog->publish( "shared-name", later );
+	firstScope->importCatalog( sharedCatalog );
+	firstScope->importCatalog( laterCatalog );
+
+	EXPECT_EQ( first.get(), firstScope->findTexture( "same-name" ).get() );
+	EXPECT_EQ( second.get(), secondScope->findTexture( "same-name" ).get() );
+	DrawablePtr scopedDrawable = firstScope->findDrawable( "same-name" );
+	ASSERT_TRUE( scopedDrawable != nullptr );
+	ASSERT_EQ( scopedDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	EXPECT_EQ( first.get(),
+			   static_cast<TextureDrawable*>( scopedDrawable.get() )->getTexture().get() );
+	EXPECT_EQ( shared.get(), firstScope->findTexture( "shared-name" ).get() );
+	EXPECT_TRUE( secondScope->findTexture( "shared-name" ) == nullptr );
+	EXPECT_TRUE( firstScope->findTexture( "observed-only" ) == nullptr );
+	EXPECT_TRUE( secondScope->findTexture( "observed-only" ) == nullptr );
+	EXPECT_TRUE( firstScope->removeCatalog( sharedCatalog ) );
+	EXPECT_EQ( later.get(), firstScope->findTexture( "shared-name" ).get() );
+	EXPECT_FALSE( firstScope->removeCatalog( sharedCatalog ) );
+
+	TextureWeakPtr externallyRetainedWeak = first;
+	TexturePtr externallyRetained = first;
+	scopedDrawable.reset();
+	firstScope.reset();
+	EXPECT_FALSE( externallyRetainedWeak.expired() );
+
+	first.reset();
+	second.reset();
+	shared.reset();
+	later.reset();
+	observedOnly.reset();
+	externallyRetained.reset();
+	secondScope.reset();
+	sharedCatalog.reset();
+	laterCatalog.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, defaultResourceScopeImportsGlobalCatalog ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Default resource scope test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	globalResourceCatalog().publish( "global-texture", texture );
+
+	EXPECT_EQ( texture.get(), defaultResourceScope().findTexture( "global-texture" ).get() );
+	ResourceScopePtr isolatedScope = ResourceScope::New();
+	EXPECT_TRUE( isolatedScope->findTexture( "global-texture" ) == nullptr );
+
+	texture.reset();
+	isolatedScope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiScenesImportDefaultResourcesUnlessDisabled ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI scene default resources test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	defaultResourceScope().publishLocal( "ui-scene-default-texture", texture );
+
+	UISceneNode* defaultScene = UISceneNode::New( window );
+	UISceneNode* isolatedScene = UISceneNode::New( window, false );
+	EXPECT_EQ( texture.get(),
+			   defaultScene->getResourceScope()->findTexture( "ui-scene-default-texture" ).get() );
+	EXPECT_TRUE( isolatedScene->getResourceScope()->findTexture( "ui-scene-default-texture" ) ==
+				 nullptr );
+
+	defaultScene->setResourceScope( ResourceScope::New() );
+	EXPECT_EQ( texture.get(),
+			   defaultScene->getResourceScope()->findTexture( "ui-scene-default-texture" ).get() );
+
+	eeDelete( isolatedScene );
+	eeDelete( defaultScene );
+	defaultResourceScope().eraseLocal( "ui-scene-default-texture" );
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, fontServiceFollowsScopeOwnershipAndDetachesRetainedFonts ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Font service scope test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	FontTrueTypePtr font = FontTrueType::New( "scoped-font-service", *scope );
+	ASSERT_TRUE( font != nullptr );
+
+	EXPECT_EQ( &scope->getFontService(), font->getFontService() );
+	EXPECT_EQ( font.get(), scope->findFont( "scoped-font-service" ).get() );
+	EXPECT_TRUE( scope->getFontService().addFallbackFont( font ) );
+	EXPECT_TRUE( scope->getFontService().hasFallbackFonts() );
+
+	EXPECT_TRUE( scope->eraseLocalFont( font.get() ) );
+	EXPECT_EQ( nullptr, font->getFontService() );
+	EXPECT_FALSE( scope->getFontService().hasFallbackFonts() );
+	EXPECT_TRUE( scope->findFont( "scoped-font-service" ) == nullptr );
+
+	font.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, distinctFallbackResourcesRemainInFallbackChain ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Multiple font fallback test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	const std::string fontsPath = Sys::getProcessPath() + "assets/fonts/";
+	FontTrueTypePtr baseFont =
+		FontTrueType::New( "base-font", fontsPath + "NotoNaskhArabic-Regular.ttf", *scope );
+	FontTrueTypePtr cjkFallback =
+		FontTrueType::New( "fallback-font", fontsPath + "NotoSansKR-Regular.ttf", *scope );
+	FontTrueTypePtr userFallback =
+		FontTrueType::New( "user-fallback-font", fontsPath + "NotoSansHebrew-Regular.ttf", *scope );
+	ASSERT_TRUE( baseFont && baseFont->loaded() );
+	ASSERT_TRUE( cjkFallback && cjkFallback->loaded() );
+	ASSERT_TRUE( userFallback && userFallback->loaded() );
+
+	FontService& fontService = scope->getFontService();
+	EXPECT_TRUE( fontService.addFallbackFont( cjkFallback ) );
+	EXPECT_TRUE( fontService.addFallbackFont( userFallback ) );
+	ASSERT_EQ( (size_t)2, fontService.getFallbackFonts().size() );
+	EXPECT_EQ( cjkFallback.get(), fontService.getFallbackFonts()[0].get() );
+	EXPECT_EQ( userFallback.get(), fontService.getFallbackFonts()[1].get() );
+
+	baseFont.reset();
+	cjkFallback.reset();
+	userFallback.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, fontFactoriesPublishIntoExplicitScope ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Scoped font factories test" );
+	auto scope = ResourceScope::New();
+	auto bmFont = FontBMFont::New( "scoped-bm-font", *scope );
+	auto spriteFont = FontSprite::New( "scoped-sprite-font", *scope );
+
+	EXPECT_EQ( bmFont.get(), scope->findFont( "scoped-bm-font" ).get() );
+	EXPECT_EQ( spriteFont.get(), scope->findFont( "scoped-sprite-font" ).get() );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "scoped-bm-font" ).get() );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "scoped-sprite-font" ).get() );
+
+	bmFont.reset();
+	spriteFont.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, duplicateFontNamesReplaceCatalogBinding ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Font replacement semantics test" );
+	auto scope = ResourceScope::New();
+	FontTrueTypePtr first = FontTrueType::New( "replaceable-font", *scope );
+	FontTrueTypePtr second = FontTrueType::New( "replaceable-font", *scope );
+	FontTrueTypeWeakPtr firstWeak = first;
+
+	EXPECT_STRINGEQ( "replaceable-font", first->getName() );
+	EXPECT_STRINGEQ( "replaceable-font", second->getName() );
+	EXPECT_EQ( second.get(), scope->findFont( "replaceable-font" ).get() );
+	EXPECT_EQ( nullptr, first->getFontService() );
+	EXPECT_EQ( &scope->getFontService(), second->getFontService() );
+
+	first.reset();
+	EXPECT_TRUE( firstWeak.expired() );
+	second.reset();
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiScenesOwnIsolatedScopesThatCanBeSharedExplicitly ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI scene resource scope test" );
+	UISceneNode* firstScene = UISceneNode::New( window );
+	UISceneNode* secondScene = UISceneNode::New( window );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+
+	firstScene->getResourceScope()->publishLocal( "scene-texture", texture );
+	EXPECT_TRUE( secondScene->getResourceScope()->findTexture( "scene-texture" ) == nullptr );
+	DrawablePtr firstDrawable = firstScene->getDrawableResolver().resolve( "scene-texture" );
+	ASSERT_TRUE( firstDrawable != nullptr );
+	ASSERT_EQ( firstDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	EXPECT_EQ( texture.get(),
+			   static_cast<TextureDrawable*>( firstDrawable.get() )->getTexture().get() );
+	EXPECT_TRUE( secondScene->getDrawableResolver().resolve( "scene-texture" ) == nullptr );
+	secondScene->setResourceScope( firstScene->getResourceScope() );
+	EXPECT_EQ( texture.get(),
+			   secondScene->getResourceScope()->findTexture( "scene-texture" ).get() );
+	DrawablePtr sharedDrawable = secondScene->getDrawableResolver().resolve( "scene-texture" );
+	ASSERT_TRUE( sharedDrawable != nullptr );
+	EXPECT_EQ( texture.get(),
+			   static_cast<TextureDrawable*>( sharedDrawable.get() )->getTexture().get() );
+
+	sharedDrawable.reset();
+	firstDrawable.reset();
+	texture.reset();
+	eeDelete( secondScene );
+	eeDelete( firstScene );
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiThemeCatalogIsImportedOnlyByItsOwningScene ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "UI theme resource catalog test" );
+	UISceneNode* firstScene = UISceneNode::New( window );
+	UISceneNode* secondScene = UISceneNode::New( window );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
+	ASSERT_TRUE( texture != nullptr );
+
+	UIThemePtr theme = UITheme::New( "catalog-theme", "catalog-theme" );
+	NinePatchPtr ninePatch = NinePatch::New( texture, 1, 1, 1, 1, 1, "theme-nine-patch" );
+	theme->getResourceCatalog()->publishDrawable( "theme-nine-patch", ninePatch );
+	firstScene->getUIThemeManager()->add( theme );
+
+	DrawablePtr firstResolved = firstScene->getResourceScope()->findDrawable( "theme-nine-patch" );
+	ASSERT_TRUE( firstResolved != nullptr );
+	EXPECT_EQ( firstResolved->getDrawableType(), Drawable::NINEPATCH );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
+
+	EXPECT_TRUE( firstScene->getUIThemeManager()->remove( theme.get() ) );
+	EXPECT_TRUE( firstScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
+
+	UIThemePtr defaultOnlyTheme = UITheme::New( "default-only-theme", "default-only-theme" );
+	defaultOnlyTheme->getResourceCatalog()->publishDrawable( "default-nine-patch", ninePatch );
+	secondScene->getUIThemeManager()->setDefaultTheme( defaultOnlyTheme );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) != nullptr );
+	secondScene->getUIThemeManager()->setDefaultTheme( static_cast<UITheme*>( nullptr ) );
+	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) == nullptr );
+
+	UIThemePtr original = UITheme::New( "replace-theme", "replace-theme" );
+	UIThemeWeakPtr originalWeak = original;
+	firstScene->getUIThemeManager()->add( original );
+	firstScene->getUIThemeManager()->setDefaultTheme( original.get() );
+	original.reset();
+	UIThemePtr replacement = UITheme::New( "replace-theme", "replace-theme" );
+	firstScene->getUIThemeManager()->add( replacement );
+	EXPECT_TRUE( originalWeak.expired() );
+	EXPECT_EQ( firstScene->getUIThemeManager()->getDefaultTheme(), replacement.get() );
+
+	firstResolved.reset();
+	ninePatch.reset();
+	texture.reset();
+	defaultOnlyTheme.reset();
+	theme.reset();
+	eeDelete( secondScene );
+	eeDelete( firstScene );
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, pendingBatchRetainsTextureUntilDisplayCollection ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture deferred release test" );
+	TextureFactory* factory = TextureFactory::instance();
+	Uint8 pixels[2 * 2 * 4]{};
+	TextureLoader loader( pixels, 2, 2, 4 );
+	loader.load();
+	TexturePtr texture = loader.getTexture();
+	ASSERT_TRUE( texture != nullptr );
 
 	TextureRegistrySnapshot snapshot = factory->snapshotTextures();
-	auto record = std::find_if( snapshot.begin(), snapshot.end(), [texture]( const auto& entry ) {
+	auto record = std::find_if( snapshot.begin(), snapshot.end(), [&texture]( const auto& entry ) {
 		return entry.id == texture->getTextureId();
 	} );
 	ASSERT_TRUE( record != snapshot.end() );
@@ -284,20 +801,311 @@ UTEST( ResourcePrerequisites, textureFinalReleaseWaitsForDisplayCollection ) {
 	TexturePtr retainedTexture = weakTexture.lock();
 	ASSERT_TRUE( retainedTexture != nullptr );
 
-	ASSERT_TRUE( factory->remove( texture ) );
+	loader.reset();
 	GlobalBatchRenderer::instance()->setTexture( texture );
 	GlobalBatchRenderer::instance()->batchQuad( 0, 0, 2, 2 );
+	texture.reset();
 	retainedTexture.reset();
 
+	EXPECT_FALSE( weakTexture.expired() );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+
+	window->display( false );
+
 	EXPECT_TRUE( weakTexture.expired() );
-	EXPECT_FALSE( unloaded );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, workerFinalReleaseDefersDestructionUntilDisplay ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Worker texture release test" );
+	TextureFactory* factory = TextureFactory::instance();
+	TexturePtr texture = factory->createEmptyTexture( 1, 1 );
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	std::thread worker( [texture = std::move( texture )]() mutable { texture.reset(); } );
+	worker.join();
+
+	EXPECT_TRUE( weakTexture.expired() );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
+	window->display( false );
+	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, workerFileTextureLoadReleasesDecoderPixelsCorrectly ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Worker file texture load test" );
+	TexturePtr texture;
+	std::thread worker( [&texture] {
+		texture = TextureFactory::instance()->loadFromFile( Sys::getProcessPath() +
+															"../assets/atlases/bnb/007.png" );
+	} );
+	worker.join();
+	ASSERT_TRUE( texture != nullptr );
+
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, textureRegionRetainsItsTexture ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture region ownership test" );
+	TextureFactory* factory = TextureFactory::instance();
+	Uint8 pixels[2 * 2 * 4]{};
+	TextureLoader loader( pixels, 2, 2, 4 );
+	loader.load();
+	TexturePtr texture = loader.getTexture();
+	ASSERT_TRUE( texture != nullptr );
+	TextureWeakPtr weakTexture = texture;
+
+	{
+		TextureRegion region( texture );
+		loader.reset();
+		texture.reset();
+		EXPECT_FALSE( weakTexture.expired() );
+	}
+
+	EXPECT_TRUE( weakTexture.expired() );
 	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 1 ) );
 
 	window->display( false );
 
-	EXPECT_TRUE( unloaded );
 	EXPECT_EQ( factory->getPendingReleaseCount(), static_cast<std::size_t>( 0 ) );
 	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, drawableResourceConnectionsDisconnectWithTheirLifetime ) {
+	auto resource = makeResource<TestDrawableResource>();
+	EXPECT_FALSE( resource->hasCallbackState() );
+	int notifications = 0;
+	{
+		DrawableResourceConnection connection = resource->connectResourceChange(
+			[&notifications]( DrawableResource& ) { ++notifications; } );
+		EXPECT_TRUE( resource->hasCallbackState() );
+		EXPECT_TRUE( static_cast<bool>( connection ) );
+		resource->notifyChange();
+		EXPECT_EQ( notifications, 1 );
+	}
+
+	resource->notifyChange();
+	EXPECT_EQ( notifications, 1 );
+
+	DrawableResourceConnection expiredConnection =
+		resource->connectResourceChange( []( DrawableResource& ) {} );
+	resource.reset();
+	EXPECT_FALSE( static_cast<bool>( expiredConnection ) );
+	expiredConnection.disconnect();
+}
+
+UTEST( ResourcePrerequisites, drawableResourceCallbacksCanDisconnectDuringNotification ) {
+	auto resource = makeResource<TestDrawableResource>();
+	int notifications = 0;
+	DrawableResourceConnection connection;
+	connection = resource->connectResourceChange( [&]( DrawableResource& ) {
+		++notifications;
+		connection.disconnect();
+	} );
+
+	resource->notifyChange();
+	resource->notifyChange();
+	EXPECT_EQ( notifications, 1 );
+}
+
+UTEST( ResourcePrerequisites, textureCreatesIndependentDrawableInstances ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture drawable instance test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 2, 2 );
+	ASSERT_TRUE( texture != nullptr );
+
+	DrawablePtr firstDrawable = texture->clone();
+	DrawablePtr secondDrawable = texture->clone();
+	ASSERT_TRUE( firstDrawable != nullptr );
+	ASSERT_TRUE( secondDrawable != nullptr );
+	ASSERT_EQ( firstDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	ASSERT_EQ( secondDrawable->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	auto first = std::static_pointer_cast<TextureDrawable>( firstDrawable );
+	auto second = std::static_pointer_cast<TextureDrawable>( secondDrawable );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_NE( first.get(), second.get() );
+	EXPECT_EQ( first->getTexture().get(), texture.get() );
+	EXPECT_EQ( second->getTexture().get(), texture.get() );
+
+	first->setColor( Color::Red );
+	second->setColor( Color::Blue );
+	first->setPosition( { 3.f, 4.f } );
+	EXPECT_TRUE( first->getColor() == Color::Red );
+	EXPECT_TRUE( second->getColor() == Color::Blue );
+	EXPECT_TRUE( second->getPosition() == Vector2f::Zero );
+
+	firstDrawable.reset();
+	secondDrawable.reset();
+	first.reset();
+	second.reset();
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, uiIconSeparatesSourceLookupFromInstanceCreation ) {
+	auto instanceCount = std::make_shared<int>( 0 );
+	DrawablePtr source = makeResource<CountingDrawable>( instanceCount );
+	UIIconPtr icon = UIIcon::New( "counting-icon" );
+	icon->setSource( 16, source );
+
+	const DrawablePtr& exactSource = icon->getSource( 16 );
+	const DrawablePtr& closestSource = icon->getSource( 14 );
+	EXPECT_EQ( exactSource.get(), source.get() );
+	EXPECT_EQ( closestSource.get(), source.get() );
+	EXPECT_EQ( *instanceCount, 0 );
+
+	DrawablePtr first = icon->createDrawable( 16 );
+	DrawablePtr second = icon->createDrawable( 14 );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( *instanceCount, 2 );
+	EXPECT_NE( first.get(), second.get() );
+	EXPECT_NE( first.get(), source.get() );
+
+	first->setColor( Color::Red );
+	EXPECT_TRUE( source->getColor() == Color::White );
+	EXPECT_TRUE( second->getColor() == Color::White );
+
+	icon.reset();
+}
+
+UTEST( ResourcePrerequisites, stateListsCloneStateAndChildrenIndependently ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "State list instance test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 2, 2 );
+	ASSERT_TRUE( texture != nullptr );
+	auto firstRegion = makeResource<TextureRegion>( texture );
+	auto secondRegion = makeResource<TextureRegion>( texture );
+	auto source = ResourcePtr<StateListDrawable>( StateListDrawable::New(),
+												  ResourceDeleter<StateListDrawable>() );
+	source->setStateDrawable( 1, firstRegion );
+	source->setStateDrawable( 2, secondRegion );
+	source->setState( 1 );
+
+	DrawablePtr drawableInstance = source->clone();
+	ASSERT_TRUE( drawableInstance != nullptr );
+	ASSERT_EQ( drawableInstance->getDrawableType(), Drawable::STATELIST );
+	auto instance = std::static_pointer_cast<StateListDrawable>( drawableInstance );
+	ASSERT_TRUE( instance != nullptr );
+	EXPECT_EQ( source->getState(), 1u );
+	EXPECT_EQ( instance->getState(), 1u );
+	EXPECT_NE( source->getStateDrawable( 1 ), instance->getStateDrawable( 1 ) );
+
+	instance->setState( 2 );
+	instance->setStateColor( 1, Color::Red );
+	EXPECT_EQ( source->getState(), 1u );
+	EXPECT_EQ( instance->getState(), 2u );
+	EXPECT_TRUE( source->getStateDrawable( 1 )->getColor() == Color::White );
+	EXPECT_TRUE( instance->getStateDrawable( 1 )->getColor() == Color::Red );
+	EXPECT_FALSE( source->hasDrawableState( 99 ) );
+	source->setState( 99 );
+	EXPECT_FALSE( source->hasDrawableState( 99 ) );
+
+	instance.reset();
+	drawableInstance.reset();
+	source.reset();
+	firstRegion.reset();
+	secondRegion.reset();
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, spritesCloneFramesAndAnimationStateIndependently ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Sprite instance test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 2, 2 );
+	ASSERT_TRUE( texture != nullptr );
+	SpritePtr source = Sprite::New();
+	source->createAnimation();
+	source->addFrame( texture, Sizef( 2.f, 2.f ) );
+	source->addFrame( texture, Sizef( 2.f, 2.f ) );
+	source->setCurrentFrame( 0 );
+
+	SpritePtr instance = source->cloneSprite();
+	ASSERT_TRUE( instance != nullptr );
+	TextureRegion* sourceFrame = source->getTextureRegion( 0 );
+	TextureRegion* instanceFrame = instance->getTextureRegion( 0 );
+	ASSERT_TRUE( sourceFrame != nullptr );
+	ASSERT_TRUE( instanceFrame != nullptr );
+	EXPECT_NE( sourceFrame, instanceFrame );
+	EXPECT_EQ( sourceFrame->getTexture().get(), instanceFrame->getTexture().get() );
+
+	instance->setCurrentFrame( 2 );
+	instanceFrame->setDestSize( Sizef( 8.f, 9.f ) );
+	EXPECT_EQ( source->getCurrentFrame(), 0u );
+	EXPECT_EQ( instance->getCurrentFrame(), 1u );
+	EXPECT_TRUE( sourceFrame->getDestSize() == Sizef( 2.f, 2.f ) );
+	EXPECT_TRUE( instanceFrame->getDestSize() == Sizef( 8.f, 9.f ) );
+
+	instance.reset();
+	source.reset();
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, regionConsumersDoNotMutateSharedSourceGeometryWhileDrawing ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Texture region draw isolation test" );
+	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 8, 8 );
+	ASSERT_TRUE( texture != nullptr );
+	auto source = makeResource<TextureRegion>( texture, Rect( 1, 2, 7, 8 ), Sizef( 6.f, 6.f ),
+											   Vector2i( 2, 3 ) );
+	const Rect originalRect = source->getSrcRect();
+	const Sizef originalSize = source->getDestSize();
+	const Vector2i originalOffset = source->getOffset();
+
+	UITextureRegion* widget = UITextureRegion::New();
+	widget->setTextureRegion( source.get() );
+	widget->setSize( Sizef( 20.f, 20.f ) );
+	widget->setScaleType( UIScaleType::Expand );
+	widget->draw();
+	EXPECT_TRUE( source->getSrcRect() == originalRect );
+	EXPECT_TRUE( source->getDestSize() == originalSize );
+	EXPECT_TRUE( source->getOffset() == originalOffset );
+	eeDelete( widget );
+
+	{
+		ScrollParallax parallax( source.get(), Vector2f::Zero, Sizef( 20.f, 20.f ) );
+		ASSERT_TRUE( parallax.getTextureRegion() != nullptr );
+		EXPECT_NE( parallax.getTextureRegion(), source.get() );
+		EXPECT_EQ( parallax.getTextureRegion()->getTexture().get(), texture.get() );
+		parallax.draw();
+		EXPECT_TRUE( source->getSrcRect() == originalRect );
+		EXPECT_TRUE( source->getDestSize() == originalSize );
+		EXPECT_TRUE( source->getOffset() == originalOffset );
+	}
+
+	source.reset();
+	texture.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, drawableGroupsAndVariantsHoldSafeIndependentHandles ) {
+	auto source = DrawableGroup::New();
+	auto rectangle = makeResource<RectangleDrawable>( Vector2f( 1.f, 2.f ), Sizef( 3.f, 4.f ) );
+	source->addDrawable( rectangle );
+
+	DrawablePtr drawableInstance = source->clone();
+	ASSERT_TRUE( drawableInstance != nullptr );
+	ASSERT_EQ( drawableInstance->getDrawableType(), Drawable::GROUP );
+	auto instance = std::static_pointer_cast<DrawableGroup>( drawableInstance );
+	ASSERT_TRUE( instance != nullptr );
+	ASSERT_EQ( instance->getDrawableCount(), 1u );
+	EXPECT_NE( source->getGroup()[0].get(), instance->getGroup()[0].get() );
+	instance->getGroup()[0]->setColor( Color::Blue );
+	EXPECT_TRUE( source->getGroup()[0]->getColor() == Color::White );
+	EXPECT_TRUE( instance->getGroup()[0]->getColor() == Color::Blue );
+
+	Variant original( instance );
+	Variant copied( original );
+	instance.reset();
+	EXPECT_TRUE( original.asDrawable() != nullptr );
+	EXPECT_EQ( original.asDrawable().get(), copied.asDrawable().get() );
 }
 
 UTEST( ResourcePrerequisites, unsignedVariantPreservesTypeAndValue ) {
@@ -446,28 +1254,33 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 	for ( int cycle = 0; cycle < 2; ++cycle ) {
 		createLifecycleTestWindow( "Engine teardown test" );
 
-		Texture* texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
+		TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
 		ASSERT_TRUE( texture != nullptr );
 
-		NinePatch* ninePatch = NinePatchManager::instance()->add(
-			NinePatch::New( texture, 1, 1, 1, 1, 1, "engine-teardown-nine-patch" ) );
+		NinePatchPtr ninePatch =
+			NinePatch::New( texture, 1, 1, 1, 1, 1, "engine-teardown-nine-patch" );
 		ASSERT_TRUE( ninePatch != nullptr );
+		globalResourceCatalog().publishDrawable( "engine-teardown-nine-patch", ninePatch );
 
 		auto* scene = UISceneNode::New();
 		SceneManager::instance()->add( scene );
 		scene->enableFrameBuffer();
-		UIImage::New()->setDrawable( ninePatch )->setParent( scene->getRoot() );
+		UIImage::New()->setDrawable( ninePatch->clone() )->setParent( scene->getRoot() );
 
-		auto* font = FontTrueType::New( "engine-teardown-font" );
+		FontTrueTypePtr font = FontTrueType::New( "engine-teardown-font" );
 		ASSERT_TRUE(
 			font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
-		auto layout = TextLayout::layout( String( "cached before Engine teardown" ), font, 14, 0 );
+		auto layout =
+			TextLayout::layout( String( "cached before Engine teardown" ), font.get(), 14, 0 );
 		std::weak_ptr<const TextLayout> layoutWeak = layout;
 		layout.reset();
 
 		auto* batch = GlobalBatchRenderer::instance();
 		batch->setTexture( texture );
 		batch->batchQuad( 0, 0, 4, 4 );
+		ninePatch.reset();
+		texture.reset();
+		font.reset();
 
 		Engine::destroySingleton();
 
@@ -475,13 +1288,10 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		EXPECT_TRUE( Engine::existsSingleton() == nullptr );
 		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
-		EXPECT_TRUE( NinePatchManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( FontManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( TextureAtlasManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
-		EXPECT_TRUE( ShaderProgramManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( Graphics::Private::FrameBufferManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( Graphics::Private::VertexBufferManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( ShaderProgramRegistry::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::FrameBufferRegistry::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::VertexBufferRegistry::existsSingleton() == nullptr );
 		EXPECT_TRUE( Renderer::existsSingleton() == nullptr );
 	}
 }

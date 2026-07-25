@@ -220,7 +220,7 @@ class EE_API UIWindow : public UIWidget {
 		RESIZE_TOPRIGHT
 	};
 
-	FrameBuffer* mFrameBuffer;
+	Graphics::FrameBufferUniquePtr mFrameBuffer;
 	StyleConfig mStyleConfig;
 	UIWidget* mWindowDecoration;
 	UIWidget* mBorderLeft;

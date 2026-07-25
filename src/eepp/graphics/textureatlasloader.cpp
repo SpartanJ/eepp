@@ -2,7 +2,6 @@
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -10,7 +9,10 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/window/engine.hpp>
 #include <iterator>
+
+using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
@@ -48,7 +50,7 @@ TextureAtlasLoader::TextureAtlasLoader() :
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ) {}
+	mTextureAtlas() {}
 
 TextureAtlasLoader::TextureAtlasLoader( const std::string& TextureAtlasPath, const bool& Threaded,
 										GLLoadCallback LoadCallback ) :
@@ -58,7 +60,7 @@ TextureAtlasLoader::TextureAtlasLoader( const std::string& TextureAtlasPath, con
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromFile();
 }
@@ -72,7 +74,7 @@ TextureAtlasLoader::TextureAtlasLoader( const Uint8* Data, const Uint32& DataSiz
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromMemory( Data, DataSize, TextureAtlasName );
 }
@@ -85,7 +87,7 @@ TextureAtlasLoader::TextureAtlasLoader( Pack* Pack, const std::string& FilePackP
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromPack( Pack, FilePackPath );
 }
@@ -97,7 +99,7 @@ TextureAtlasLoader::TextureAtlasLoader( IOStream& IOS, const bool& Threaded,
 	mPack( NULL ),
 	mSkipResourceLoad( false ),
 	mIsLoading( false ),
-	mTextureAtlas( NULL ),
+	mTextureAtlas(),
 	mLoadCallback( LoadCallback ) {
 	loadFromStream( IOS );
 }
@@ -123,13 +125,26 @@ void TextureAtlasLoader::setTextureFilter( const Texture::Filter& textureFilter 
 		mTextureAtlas->getTexture( i )->setFilter( textureFilter );
 }
 
+void TextureAtlasLoader::setResourceScope( ResourceScopePtr resourceScope ) {
+	mResourceScope = std::move( resourceScope );
+}
+
+const ResourceScopePtr& TextureAtlasLoader::getResourceScope() const {
+	return mResourceScope;
+}
+
 void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
+	if ( !mResourceScope )
+		mResourceScope = Engine::instance()->getDefaultResourceScope();
+
 	mRL.setThreaded( mThreaded );
 
 	if ( IOS.isOpen() ) {
 		IOS.read( (char*)&mTexGrHdr, sizeof( sTextureAtlasHdr ) );
 
 		if ( mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC ) {
+			// The complete entry vector is built before mRL starts. Each task below writes only the
+			// LoadedTexture member at its captured index, so worker execution cannot race a resize.
 			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
 				sTextureHdr tTextureHdr;
 				sTempTexAtlas tTexAtlas;
@@ -141,18 +156,28 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				std::string name( &tTextureHdr.Name[0] );
 				std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
+				FileSystem::filePathRemoveProcessPath( path );
 
 				//! Checks if the texture is already loaded
-				Texture* tTex = TextureFactory::instance()->getByName( path );
+				TexturePtr tTex = mResourceScope->findTexture( path );
+				tTexAtlas.LoadedTexture = tTex;
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
+					const std::size_t textureIndex = mTempAtlass.size();
 					if ( NULL != mPack ) {
-						mRL.add( [this, path = std::move( path )] {
-							TextureFactory::instance()->loadFromPack( mPack, path );
+						mRL.add( [this, textureIndex, path = std::move( path )] {
+							TexturePtr texture =
+								TextureFactory::instance()->loadFromPack( mPack, path );
+							if ( texture )
+								mResourceScope->publishLocal( path, texture );
+							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );
 						} );
 					} else {
-						mRL.add( [path = std::move( path )] {
-							TextureFactory::instance()->loadFromFile( path );
+						mRL.add( [this, textureIndex, path = std::move( path )] {
+							TexturePtr texture = TextureFactory::instance()->loadFromFile( path );
+							if ( texture )
+								mResourceScope->publishLocal( path, texture );
+							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );
 						} );
 					}
 				}
@@ -160,7 +185,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 				IOS.read( (char*)&tTexAtlas.TextureRegions[0],
 						  sizeof( sTextureRegionHdr ) * tTextureHdr.TextureRegionCount );
 
-				mTempAtlass.push_back( tTexAtlas );
+				mTempAtlass.push_back( std::move( tTexAtlas ) );
 			}
 		}
 
@@ -216,7 +241,7 @@ void TextureAtlasLoader::loadFromMemory( const Uint8* Data, const Uint32& DataSi
 	loadFromStream( IOS );
 }
 
-TextureAtlas* TextureAtlasLoader::getTextureAtlas() const {
+const TextureAtlasPtr& TextureAtlasLoader::getTextureAtlas() const {
 	return mTextureAtlas;
 }
 
@@ -233,7 +258,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 		FileSystem::filePathRemoveProcessPath( path );
 
-		Texture* tTex = TextureFactory::instance()->getByName( path );
+		TexturePtr tTex = tTexAtlas->LoadedTexture;
 
 		if ( NULL != tTex )
 			mTexturesLoaded.push_back( tTex );
@@ -247,7 +272,7 @@ void TextureAtlasLoader::createTextureRegions() {
 			std::string etapath =
 				FileSystem::fileRemoveExtension( path ) + EE_TEXTURE_ATLAS_EXTENSION;
 
-			TextureAtlas* tTextureAtlas = TextureAtlasManager::instance()->getByName( name );
+			TextureAtlasPtr tTextureAtlas = mResourceScope->findAtlas( name );
 
 			if ( NULL != tTextureAtlas && tTextureAtlas->getPath() == etapath ) {
 				mTextureAtlas = tTextureAtlas;
@@ -258,7 +283,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 				mTextureAtlas->setPath( etapath );
 
-				TextureAtlasManager::instance()->add( mTextureAtlas );
+				mResourceScope->publishLocalAtlas( name, mTextureAtlas );
 			}
 		}
 
@@ -274,7 +299,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-					TextureRegion* tTextureRegion = TextureRegion::New(
+					TextureRegionPtr tTextureRegion = TextureRegion::New(
 						tTex->getTextureId(), tRect,
 						Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ),
 						Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
@@ -283,7 +308,8 @@ void TextureAtlasLoader::createTextureRegions() {
 					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED )
 					// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
-					mTextureAtlas->add( tTextureRegion );
+					tTextureRegion = mTextureAtlas->add( std::move( tTextureRegion ) );
+					mResourceScope->publishLocalDrawable( TextureRegionName, tTextureRegion );
 				}
 			}
 		} else {
@@ -327,7 +353,7 @@ bool TextureAtlasLoader::isLoading() const {
 	return mIsLoading.load();
 }
 
-Texture* TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
+const TexturePtr& TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTexturesLoaded.size() );
 	return mTexturesLoaded[texnum];
 }
@@ -347,7 +373,7 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 
 		for ( Int32 i = 0; i < tTexHdr->TextureRegionCount; i++ ) {
 			sTextureRegionHdr* tSh = &tTexAtlas->TextureRegions[i];
-			TextureRegion* tTextureRegion = mTextureAtlas->getById( tSh->ResourceID );
+			TextureRegionPtr tTextureRegion = mTextureAtlas->getById( tSh->ResourceID );
 
 			if ( NULL != tTextureRegion ) {
 				tSh->OffsetX = tTextureRegion->getOffset().x;

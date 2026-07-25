@@ -168,13 +168,13 @@ int testTextRendering() {
 	editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	editor->setParent( ll );
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
-	FontManager::instance()->addFallbackFont(
+	defaultResourceScope().getFontService().addFallbackFont(
 		FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
-	FontManager::instance()->addFallbackFont( FontTrueType::New(
+	defaultResourceScope().getFontService().addFallbackFont( FontTrueType::New(
 		"NotoSerifBengali-Regular", "unit_tests/assets/fonts/NotoSansBengali-Regular.ttf" ) );
 	editor->setWordWrap( true );
 	// editor->setLineWrapMode( LineWrapMode::Word );
-	// editor->setFont( FontManager::instance()->getByName( "monospace" ) );
+	// editor->setFont( defaultResourceScope().findFont( "monospace" ).get() );
 	// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-simple.uext" );
 	// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic.uext" );
 	// editor->loadFromFile( "unit_tests/assets/textfiles/test-bengali.uext" );
@@ -211,15 +211,17 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	PixelDensity::setPixelDensity(
 		Engine::instance()->getDisplayManager()->getDisplayIndex( 0 )->getPixelDensity() );
-	FontTrueType* font =
-		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
-	FontTrueType* iconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
-	UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
+	auto fontHandle = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+	auto iconFontHandle = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
+	FontTrueType* font = fontHandle.get();
+	FontTrueType* iconFont = iconFontHandle.get();
+	auto iconTheme = UIIconTheme::New( "remixicon" );
 	auto addIcon = [iconTheme, iconFont]( const std::string& name,
 										  const Uint32& codePoint ) -> UIIcon* {
-		auto* icon = UIGlyphIcon::New( name, iconFont, codePoint );
+		auto icon = UIGlyphIcon::New( name, iconFont, codePoint );
+		auto* result = icon.get();
 		iconTheme->add( icon );
-		return icon;
+		return result;
 	};
 	addIcon( "folder", 0xed6a );
 	addIcon( "folder-open", 0xed70 );
@@ -243,7 +245,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	/*UITheme* theme =
 		UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font,
 					   "assets/ui/uitheme.css" );*/
-	UITheme* theme = UITheme::load( "breeze", "breeze", "", font, "assets/ui/breeze.css" );
+	auto theme = UITheme::load( "breeze", "breeze", "", font, "assets/ui/breeze.css" );
 	uiSceneNode->setStyleSheet( theme->getStyleSheet() );
 	uiSceneNode->getUIThemeManager()
 		->setDefaultEffectsEnabled( true )

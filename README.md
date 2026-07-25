@@ -9,6 +9,7 @@ framework heavily focused on the development of rich graphical user interfaces.
 [![macOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-macos-build-check.yml?branch=develop&label=macOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AmacOS)
 [![iOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-ios-build-check.yml?branch=develop&label=iOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AiOS)
 [![Android status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-android-build-check.yml?branch=develop&label=Android)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AAndroid)
+[![emscripten status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-emscripten-build-check.yml?branch=develop&label=emscripten)](https://github.com/SpartanJ/eepp/actions?query=workflow%3Aemscripten)
 
 ## Features
 

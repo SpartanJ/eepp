@@ -135,24 +135,24 @@ void App::saveConfig() {
 
 void App::unloadImages() {
 	for ( auto it = mImagesLoaded.begin(); it != mImagesLoaded.end(); ++it ) {
-		GlobalTextureAtlas::instance()->remove( it->second );
-		TextureFactory::instance()->remove( it->first );
+		mUISceneNode->getResourceScope()->eraseLocalDrawable( it->second->getName() );
 	}
 	mImagesLoaded.clear();
 }
 
 void App::unloadFonts() {
 	for ( auto it = mFontsLoaded.begin(); it != mFontsLoaded.end(); ++it )
-		FontManager::instance()->remove( it->first );
+		mUISceneNode->getResourceScope()->eraseLocalFont( it->first.get() );
 	mFontsLoaded.clear();
 }
 
 void App::loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	Texture* tex = TextureFactory::instance()->loadFromFile( path );
+	TexturePtr tex = TextureFactory::instance()->loadFromFile( path );
 	if ( tex ) {
 		ResourceId texId = tex->getTextureId();
-		TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
+		TextureRegionPtr texRegion = TextureRegion::New( std::move( tex ), filename );
+		mUISceneNode->getResourceScope()->publishLocalDrawable( filename, texRegion );
 		mImagesLoaded[texId] = texRegion;
 	}
 }
@@ -168,7 +168,9 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	}
 	if ( fontPath.empty() )
 		return nullptr;
-	return FontTrueType::New( name, fontPath );
+	FontTrueTypePtr font = FontTrueType::New( name, fontPath, *mUISceneNode->getResourceScope() );
+	mFontsLoaded[font] = name;
+	return font.get();
 }
 
 void App::createWidgetInspector() {
@@ -179,7 +181,7 @@ void App::createWidgetInspector() {
 
 void App::loadFont( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	FontTrueType* font = FontTrueType::New( filename );
+	FontTrueTypePtr font = FontTrueType::New( filename, *mUISceneNode->getResourceScope() );
 	font->loadFromFile( path );
 	mFontsLoaded[font] = filename;
 }
@@ -584,13 +586,15 @@ std::string App::pathFix( std::string path ) {
 }
 
 void App::loadUITheme( std::string themePath ) {
-	TextureAtlasLoader tgl( themePath );
+	TextureAtlasLoader tgl;
+	tgl.setResourceScope( mUISceneNode->getResourceScope() );
+	tgl.loadFromFile( themePath );
 
 	std::string name(
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
 
-	UITheme* uitheme = UITheme::loadFromTextureAtlas(
-		UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
+	auto uitheme =
+		UITheme::loadFromTextureAtlas( UITheme::New( name, name ), tgl.getTextureAtlas() );
 
 	mUISceneNode->getUIThemeManager()->setDefaultTheme( uitheme )->add( uitheme );
 }
@@ -612,7 +616,7 @@ void App::onLayoutSelected( const Event* event ) {
 	UIMenuCheckBox* chk = static_cast<UIMenuCheckBox*>( event->getNode() );
 	chk->setActive( true );
 
-	std::map<std::string, std::string>::iterator it;
+	UnorderedMap<std::string, std::string>::iterator it;
 
 	if ( ( it = mLayouts.find( txt.toUtf8() ) ) != mLayouts.end() )
 		loadLayout( it->second );
@@ -650,7 +654,7 @@ void App::refreshLayoutList() {
 }
 
 void App::loadProjectNodes( pugi::xml_node node ) {
-	mUISceneNode->getUIThemeManager()->setDefaultTheme( mUseDefaultTheme ? mTheme : NULL );
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( mUseDefaultTheme ? mTheme : UIThemePtr{} );
 
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
 		std::string name = String::toLower( std::string( resources.name() ) );
@@ -872,7 +876,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	mMsgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
-	mMsgBox->setTheme( mTheme );
+	mMsgBox->setTheme( mTheme.get() );
 	mMsgBox->on( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
 	mMsgBox->on( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
@@ -966,7 +970,7 @@ void App::projectOpen( const Event* event ) {
 void App::showFileDialog( const String& title, const std::function<void( const Event* )>& cb,
 						  const std::string& filePattern, const Uint32& dialogFlags ) {
 	UIFileDialog* dialog = UIFileDialog::New( dialogFlags, filePattern );
-	dialog->setTheme( mTheme );
+	dialog->setTheme( mTheme.get() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( title );
 	dialog->on( Event::OpenFile, cb );
@@ -1111,7 +1115,7 @@ void App::fileMenuClick( const Event* event ) {
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-Drawable* App::findIcon( const std::string& icon ) {
+DrawablePtr App::findIcon( const std::string& icon ) {
 	return mAppUISceneNode->findIconDrawable( icon, mMenuIconSize );
 }
 
@@ -1269,16 +1273,16 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mResPath += "assets";
 		FileSystem::dirAddSlashAtEnd( mResPath );
 
-		FontTrueType* font =
+		FontTrueTypePtr font =
 			FontTrueType::New( "NotoSans-Regular", mResPath + "fonts/NotoSans-Regular.ttf" );
-		FontTrueType* fontMono =
+		FontTrueTypePtr fontMono =
 			FontTrueType::New( "monospace", mResPath + "fonts/DejaVuSansMono.ttf" );
 
-		FontFamily::loadFromRegular( font );
-		FontFamily::loadFromRegular( fontMono );
+		FontFamily::loadFromRegular( font.get() );
+		FontFamily::loadFromRegular( fontMono.get() );
 
 		mBaseStyleSheet = mResPath + "ui/breeze.css";
-		mTheme = UITheme::load( "uitheme", "uitheme", "", font, mBaseStyleSheet );
+		mTheme = UITheme::load( "uitheme", "uitheme", "", font.get(), mBaseStyleSheet );
 
 		mUISceneNode = UISceneNode::New();
 		mUISceneNode->setId( "uiSceneNode" );
@@ -1299,20 +1303,20 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		FontTrueType* noniconsFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
 		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
 
-		UIIconTheme* iconTheme =
-			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
-		UIIconTheme* iconTheme2 =
-			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		auto iconTheme = IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		auto iconTheme2 = IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
 		StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 		mMenuIconSize = fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		mAppUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mAppUISceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( mTheme )
-			->setDefaultFont( font )
+			->setDefaultFont( font.get() )
 			->add( mTheme );
 
-		mUISceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
+		mUISceneNode->getUIThemeManager()
+			->setDefaultFont( font.get() )
+			->setDefaultEffectsEnabled( true );
 
 		mAppUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

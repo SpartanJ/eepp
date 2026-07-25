@@ -43,10 +43,7 @@ class EE_API Variant {
 	explicit Variant( const String* string ) : mType( Type::StringPtr ) {
 		mValue.asStringPtr = string;
 	}
-	Variant( Drawable* drawable, bool ownDrawable = false ) : mType( Type::Drawable ) {
-		mValue.asDrawable = drawable;
-		mOwnsObject = ownDrawable;
-	}
+	Variant( DrawablePtr drawable ) : mDrawable( std::move( drawable ) ), mType( Type::Drawable ) {}
 	Variant( UIIcon* icon ) : mType( Type::Icon ) { mValue.asIcon = icon; }
 	Variant( const Vector2f& v ) : mType( Type::Vector2f ) {
 		mValue.asVector2f = eeNew( Vector2f, ( v ) );
@@ -62,7 +59,7 @@ class EE_API Variant {
 	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }
 	~Variant() { reset(); }
 
-	Variant( const Variant& other ) : mType( Type::Invalid ), mOwnsObject( other.mOwnsObject ) {
+	Variant( const Variant& other ) : mType( Type::Invalid ) {
 		switch ( other.mType ) {
 			case Type::StdString:
 				mValue.asStdString = eeNew( std::string, ( *other.mValue.asStdString ) );
@@ -74,7 +71,7 @@ class EE_API Variant {
 				mValue.asStringPtr = other.mValue.asStringPtr;
 				break;
 			case Type::Drawable:
-				mValue.asDrawable = other.mValue.asDrawable;
+				mDrawable = other.mDrawable;
 				break;
 			case Type::Icon:
 				mValue.asIcon = other.mValue.asIcon;
@@ -116,9 +113,8 @@ class EE_API Variant {
 	}
 
 	Variant( Variant&& other ) noexcept :
-		mValue( other.mValue ), mType( other.mType ), mOwnsObject( other.mOwnsObject ) {
+		mValue( other.mValue ), mDrawable( std::move( other.mDrawable ) ), mType( other.mType ) {
 		other.mType = Type::Invalid;
-		other.mOwnsObject = false;
 		other.mValue = {};
 	}
 
@@ -134,10 +130,9 @@ class EE_API Variant {
 		if ( this != &other ) {
 			reset();
 			mType = other.mType;
-			mOwnsObject = other.mOwnsObject;
+			mDrawable = std::move( other.mDrawable );
 			mValue = other.mValue;
 			other.mType = Type::Invalid;
-			other.mOwnsObject = false;
 			other.mValue = {};
 		}
 		return *this;
@@ -146,7 +141,7 @@ class EE_API Variant {
 	const std::string& asStdString() const { return *mValue.asStdString; }
 	const String& asString() const { return *mValue.asString; }
 	const String& asStringPtr() const { return *mValue.asStringPtr; }
-	Drawable* asDrawable() const { return mValue.asDrawable; }
+	const DrawablePtr& asDrawable() const { return mDrawable; }
 	const bool& asBool() const { return mValue.asBool; }
 	const Float& asFloat() const { return mValue.asFloat; }
 	const int& asInt() const { return mValue.asInt; }
@@ -172,8 +167,7 @@ class EE_API Variant {
 				eeSAFE_DELETE( mValue.asString );
 				break;
 			case Type::Drawable:
-				if ( mOwnsObject )
-					eeSAFE_DELETE( mValue.asDrawable );
+				mDrawable.reset();
 				break;
 			case Type::Vector2f:
 				eeSAFE_DELETE( mValue.asVector2f );
@@ -210,7 +204,7 @@ class EE_API Variant {
 				return asStringPtr();
 			case Type::Drawable:
 				return asDrawable()->isDrawableResource()
-						   ? static_cast<DrawableResource*>( asDrawable() )->getName()
+						   ? static_cast<DrawableResource*>( asDrawable().get() )->getName()
 						   : "Drawable";
 			case Type::Icon:
 				return asIcon()->getName();
@@ -330,7 +324,7 @@ class EE_API Variant {
 			case Type::StringPtr:
 				return asStringPtr().size();
 			case Type::Drawable:
-				return sizeof( mValue.asDrawable );
+				return sizeof( mDrawable );
 			case Type::Icon:
 				return asIcon()->getName().size();
 			case Type::DataPtr:
@@ -350,7 +344,6 @@ class EE_API Variant {
   private:
 	union {
 		void* asDataPtr{ nullptr };
-		Drawable* asDrawable;
 		UIIcon* asIcon;
 		std::string* asStdString;
 		String* asString;
@@ -365,8 +358,8 @@ class EE_API Variant {
 		Rectf* asRectf;
 		const char* asCStr;
 	} mValue;
+	DrawablePtr mDrawable;
 	Type mType;
-	bool mOwnsObject{ false };
 };
 
 }}} // namespace EE::UI::Models

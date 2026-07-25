@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCFRAMEBUFFER_HPP
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/view.hpp>
 
@@ -12,6 +13,9 @@ class Window;
 using namespace EE::Window;
 
 namespace EE { namespace Graphics {
+
+class FrameBuffer;
+using FrameBufferUniquePtr = std::unique_ptr<FrameBuffer, ResourceDeleter<FrameBuffer>>;
 
 /** @brief A frame buffer allows rendering to a off-screen 2D texture  */
 class EE_API FrameBuffer {
@@ -26,9 +30,10 @@ class EE_API FrameBuffer {
 	**	@param window In case that the application is using more than one window, the user can
 	*indicate which one to use ( by default uses the current active window )
 	*/
-	static FrameBuffer* New( const Uint32& Width, const Uint32& Height, bool StencilBuffer = true,
-							 bool DepthBuffer = false, bool useColorBuffer = false,
-							 const Uint32& channels = 4, EE::Window::Window* window = NULL );
+	static FrameBufferUniquePtr New( const Uint32& Width, const Uint32& Height,
+									 bool StencilBuffer = true, bool DepthBuffer = false,
+									 bool useColorBuffer = false, const Uint32& channels = 4,
+									 EE::Window::Window* window = NULL );
 
 	virtual ~FrameBuffer();
 
@@ -62,7 +67,7 @@ class EE_API FrameBuffer {
 	** The frame buffer must be unbinded before any rendering is done outside the frame buffer.
 	** For example MyFrameBufferPtr->getTexture()->Draw(0,0);
 	*/
-	Texture* getTexture() const;
+	const TexturePtr& getTexture() const;
 
 	/** @brief Sets the frame buffer clear color. */
 	void setClearColor( const ColorAf& color );
@@ -123,7 +128,7 @@ class EE_API FrameBuffer {
 	bool mHasStencilBuffer{ false };
 	bool mAdjustCurrentClipping{ true };
 	bool mNeedsToRestoreScissorsClipping{ false };
-	Texture* mTexture{ nullptr };
+	TexturePtr mTexture;
 	ColorAf mClearColor;
 	View mView;
 	float mProjMat[16];

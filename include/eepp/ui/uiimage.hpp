@@ -24,9 +24,11 @@ class EE_API UIImage : public UIWidget {
 
 	virtual void setAlpha( const Float& alpha );
 
-	Drawable* getDrawable() const;
+	const DrawablePtr& getDrawable() const;
 
-	UIImage* setDrawable( Drawable* drawable, bool ownIt = false );
+	UIImage* setDrawable( DrawablePtr drawable );
+
+	UIImage* setDrawable( TexturePtr texture );
 
 	const Color& getColor() const;
 
@@ -53,12 +55,12 @@ class EE_API UIImage : public UIWidget {
 
   protected:
 	UIScaleType mScaleType;
-	Drawable* mDrawable;
+	DrawablePtr mDrawable;
 	Color mColor;
 	Vector2f mAlignOffset;
 	Vector2f mDestSize;
-	Uint32 mResourceChangeCb;
-	bool mDrawableOwner;
+	DrawableResourceConnection mResourceChangeConnection;
+	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
 	std::shared_ptr<std::atomic<bool>> mAsyncImageAlive;
 	Uint64 mRemoteImageLoadId{ 0 };
@@ -79,9 +81,9 @@ class EE_API UIImage : public UIWidget {
 
 	void autoAlign();
 
-	void safeDeleteDrawable();
+	void clearDrawable();
 
-	void onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* );
+	void onDrawableResourceChange();
 
 	bool loadFileDrawable( const Network::URI& uri );
 

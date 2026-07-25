@@ -561,11 +561,9 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
 }
 
-Drawable* UITerminal::findIcon( const std::string& name ) {
+DrawablePtr UITerminal::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const String& translateString,

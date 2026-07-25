@@ -1316,17 +1316,17 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 	} );
 }
 
-Drawable* App::findIcon( const std::string& name ) {
+DrawablePtr App::findIcon( const std::string& name ) {
 	return findIcon( name, mMenuIconSize );
 }
 
-Drawable* App::findIcon( const std::string& name, const size_t iconSize ) {
+DrawablePtr App::findIcon( const std::string& name, const size_t iconSize ) {
 	if ( name.empty() )
-		return nullptr;
+		return {};
 	UIIcon* icon = mUISceneNode->findIcon( name );
 	if ( icon )
-		return icon->getSize( iconSize );
-	return nullptr;
+		return icon->createDrawable( iconSize );
+	return {};
 }
 
 String App::i18n( const std::string& key, const String& def ) {
@@ -1905,7 +1905,7 @@ const SyntaxColorScheme* App::getCurrentColorScheme() const {
 }
 
 void App::setTheme( const std::string& path ) {
-	UITheme* theme = nullptr;
+	UIThemePtr theme;
 
 	if ( path == "syntax_color_scheme" ) {
 		const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
@@ -1965,12 +1965,12 @@ void App::setTheme( const std::string& path ) {
 		->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) )
 		->add( theme );
 
-	mUISceneNode->setTheme( theme );
+	mUISceneNode->setTheme( theme.get() );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
 
 	if ( mTheme )
-		mUISceneNode->getUIThemeManager()->remove( mTheme );
+		mUISceneNode->getUIThemeManager()->remove( mTheme.get() );
 
 	mTheme = theme;
 
@@ -2599,7 +2599,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content, repoPath );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
-			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
@@ -2629,7 +2629,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	if ( !icon )
 		icon = getUISceneNode()->findIcon( "file" );
 	if ( icon )
-		tab->setIcon( icon->getSize( getMenuIconSize() ) );
+		tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath, oldFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
@@ -2651,7 +2651,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
-			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
@@ -3158,7 +3158,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		if ( editor->getData() ) {
 			UITab* tab = (UITab*)editor->getData();
-			tab->setIcon( icon->getSize( mMenuIconSize ) );
+			tab->setIcon( icon->createDrawable( mMenuIconSize ) );
 		}
 		editor->getDocument().setHExtLanguageType( mProjectDocConfig.hExtLanguageType );
 
@@ -4261,24 +4261,25 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	}
 	if ( fontPath.empty() )
 		return nullptr;
-	FontTrueType* font = FontTrueType::New( name );
+	ResourceScope& resourceScope = defaultResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( name, resourceScope );
 	if ( font->loadFromFile( fontPath ) ) {
 		font->setHinting( mConfig.ui.fontHinting );
 		font->setAntialiasing( mConfig.ui.fontAntialiasing );
-		return font;
+		return font.get();
 	}
-	eeSAFE_DELETE( font );
+	resourceScope.eraseLocalFont( font.get() );
 	// Failed to load original font? Try to fallback
 	if ( !fallback.empty() && !wasFallback ) {
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
-		font = FontTrueType::New( name );
+		font = FontTrueType::New( name, resourceScope );
 		if ( font->loadFromFile( fontPath ) ) {
 			font->setHinting( mConfig.ui.fontHinting );
 			font->setAntialiasing( mConfig.ui.fontAntialiasing );
-			return font;
+			return font.get();
 		}
-		eeSAFE_DELETE( font );
+		resourceScope.eraseLocalFont( font.get() );
 	}
 	return nullptr;
 }
@@ -4533,12 +4534,15 @@ void App::init( InitParameters& params ) {
 
 		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
 		if ( mFallbackFont )
-			FontManager::instance()->addFallbackFont( mFallbackFont );
+			defaultResourceScope().getFontService().addFallbackFont( mFallbackFont );
 
 		if ( mConfig.ui.fallbackFont != "fonts/DroidSansFallbackFull.ttf" ) {
-			mUserFallbackFont = loadFont( "fallback-font", mConfig.ui.fallbackFont );
+			// Keep the user fallback under a distinct resource key. Publishing it as
+			// "fallback-font" would replace the built-in CJK font in the default scope and remove
+			// that font from FontService's fallback chain.
+			mUserFallbackFont = loadFont( "user-fallback-font", mConfig.ui.fallbackFont );
 			if ( mUserFallbackFont )
-				FontManager::instance()->addFallbackFont( mUserFallbackFont );
+				defaultResourceScope().getFontService().addFallbackFont( mUserFallbackFont );
 		}
 
 		Log::info( "Fonts loaded in: %s", fontsClock.getElapsedTime().toString() );
@@ -4812,7 +4816,6 @@ void App::init( InitParameters& params ) {
 			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
 										  [this]() { return mAsyncResourcesLoaded; } );
 		}
-
 		if ( !mFont || !mFontMono || !mRemixIconFont || !mNoniconsFont || !mCodIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );

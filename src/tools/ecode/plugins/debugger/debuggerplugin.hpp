@@ -138,6 +138,8 @@ class DebuggerPlugin : public PluginBase {
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
 	std::vector<std::string> mRegisteredCommands;
+	UIIcon* mBreakpointIcon{ nullptr };
+	UIIcon* mStackFrameIcon{ nullptr };
 
 	class DebuggerPluginClient : public TextDocument::Client {
 	  public:

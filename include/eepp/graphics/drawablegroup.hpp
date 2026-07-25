@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 class EE_API DrawableGroup : public Drawable {
   public:
-	static DrawableGroup* New();
+	static ResourcePtr<DrawableGroup> New();
 
 	DrawableGroup();
 
@@ -26,9 +26,11 @@ class EE_API DrawableGroup : public Drawable {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr clone() const;
+
 	void clearDrawables();
 
-	Drawable* addDrawable( Drawable* drawable );
+	DrawablePtr addDrawable( DrawablePtr drawable );
 
 	Uint32 getDrawableCount() const;
 
@@ -36,19 +38,14 @@ class EE_API DrawableGroup : public Drawable {
 
 	void setClipEnabled( bool clipEnabled );
 
-	bool isDrawableOwner() const;
-
-	void setDrawableOwner( bool drawableOwner );
-
-	std::vector<Drawable*>& getGroup();
+	std::vector<DrawablePtr>& getGroup();
 
   protected:
-	std::vector<Drawable*> mGroup;
+	std::vector<DrawablePtr> mGroup;
 	std::vector<Vector2f> mPos;
 	Sizef mSize;
 	bool mNeedsUpdate;
 	bool mClipEnabled;
-	bool mDrawableOwner;
 
 	virtual void onPositionChange();
 

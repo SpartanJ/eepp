@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
@@ -10,12 +11,27 @@
 
 namespace EE { namespace Graphics {
 
-FontBMFont* FontBMFont::New( const std::string fontName ) {
-	return eeNew( FontBMFont, ( fontName ) );
+FontBMFontPtr FontBMFont::New( const std::string fontName ) {
+	FontBMFontPtr font( eeNew( FontBMFont, ( fontName ) ), ResourceDeleter<FontBMFont>() );
+	defaultResourceScope().publishLocalFont( fontName, font );
+	return font;
 }
 
-FontBMFont* FontBMFont::New( const std::string fontName, const std::string& filename ) {
-	FontBMFont* fontBMFont = New( fontName );
+FontBMFontPtr FontBMFont::New( const std::string fontName, ResourceScope& resourceScope ) {
+	FontBMFontPtr font( eeNew( FontBMFont, ( fontName ) ), ResourceDeleter<FontBMFont>() );
+	resourceScope.publishLocalFont( fontName, font );
+	return font;
+}
+
+FontBMFontPtr FontBMFont::New( const std::string fontName, const std::string& filename ) {
+	FontBMFontPtr fontBMFont = New( fontName );
+	fontBMFont->loadFromFile( filename );
+	return fontBMFont;
+}
+
+FontBMFontPtr FontBMFont::New( const std::string fontName, const std::string& filename,
+							   ResourceScope& resourceScope ) {
+	FontBMFontPtr fontBMFont = New( fontName, resourceScope );
 	fontBMFont->loadFromFile( filename );
 	return fontBMFont;
 }
@@ -113,13 +129,13 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 					}
 				}
 
-				Texture* tex = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
-												   rgbaImg.getHeight(), rgbaImg.getChannels() );
+				TexturePtr tex = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
+													 rgbaImg.getHeight(), rgbaImg.getChannels() );
 
 				mPages[mFontSize].texture = tex;
 			} else {
-				Texture* tex = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
-												   img.getHeight(), img.getChannels() );
+				TexturePtr tex = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
+													 img.getHeight(), img.getChannels() );
 				mPages[mFontSize].texture = tex;
 			}
 
@@ -194,6 +210,11 @@ Glyph FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize, bool b
 	}
 }
 
+Float FontBMFont::getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold,
+								   bool italic, Float outlineThickness ) const {
+	return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
+}
+
 GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 											 bool bold, bool italic,
 											 Float outlineThickness ) const {
@@ -254,7 +275,7 @@ Float FontBMFont::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontBMFont::getTexture( unsigned int ) const {
+const TexturePtr& FontBMFont::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
@@ -274,9 +295,6 @@ FontBMFont& FontBMFont::operator=( const FontBMFont& right ) {
 FontBMFont::Page::~Page() {
 	for ( auto drawable : drawables )
 		eeDelete( drawable.second );
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

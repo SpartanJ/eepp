@@ -83,9 +83,27 @@ TextureLoader::TextureLoader( const unsigned char* Pixels, const unsigned int& W
 
 TextureLoader::~TextureLoader() {
 	eeSAFE_DELETE( mColorKey );
+	freePixels();
+}
 
-	if ( TEX_LT_PIXELS != mLoadType )
-		eeSAFE_FREE( mPixels );
+void TextureLoader::freePixels() {
+	if ( !mPixels ) {
+		mPixelsUseSystemFree = false;
+		return;
+	}
+
+	if ( TEX_LT_PIXELS == mLoadType ) {
+		mPixels = nullptr;
+		mPixelsUseSystemFree = false;
+		return;
+	}
+
+	if ( mPixelsUseSystemFree )
+		::free( mPixels );
+	else
+		eeFree( mPixels );
+	mPixels = nullptr;
+	mPixelsUseSystemFree = false;
 }
 
 void TextureLoader::load() {
@@ -146,6 +164,7 @@ void TextureLoader::loadFromFile() {
 						 mFormatConfiguration );
 			image.avoidFreeImage( true );
 			mPixels = image.getPixels();
+			mPixelsUseSystemFree = true;
 			mImgWidth = image.getWidth();
 			mImgHeight = image.getHeight();
 			mChannels = image.getChannels();
@@ -200,6 +219,7 @@ void TextureLoader::loadFromMemory() {
 					 mFormatConfiguration );
 		image.avoidFreeImage( true );
 		mPixels = image.getPixels();
+		mPixelsUseSystemFree = true;
 		mImgWidth = image.getWidth();
 		mImgHeight = image.getHeight();
 		mChannels = image.getChannels();
@@ -257,6 +277,7 @@ void TextureLoader::loadFromStream() {
 						 mFormatConfiguration );
 			image.avoidFreeImage( true );
 			mPixels = image.getPixels();
+			mPixelsUseSystemFree = true;
 			mImgWidth = image.getWidth();
 			mImgHeight = image.getHeight();
 			mChannels = image.getChannels();
@@ -432,7 +453,7 @@ const std::string& TextureLoader::getFilepath() const {
 	return mFilepath;
 }
 
-Texture* TextureLoader::getTexture() const {
+const TexturePtr& TextureLoader::getTexture() const {
 	return mTexture;
 }
 
@@ -445,17 +466,9 @@ void TextureLoader::setFormatConfiguration(
 	mFormatConfiguration = formatConfiguration;
 }
 
-void TextureLoader::unload() {
-	if ( mLoaded && mTexture != nullptr ) {
-		TextureFactory::instance()->remove( mTexture->getTextureId() );
-
-		reset();
-	}
-}
-
 void TextureLoader::reset() {
-	mPixels = nullptr;
-	mTexture = nullptr;
+	freePixels();
+	mTexture.reset();
 	mImgWidth = 0;
 	mImgHeight = 0;
 	mWidth = 0;

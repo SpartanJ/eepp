@@ -11,6 +11,8 @@ using namespace std::literals;
 namespace EE { namespace Graphics {
 
 class Font;
+using FontPtr = ResourcePtr<Font>;
+using FontWeakPtr = ResourceWeakPtr<Font>;
 
 struct EE_API Glyph {
 	Float advance{ 0 }; ///< Offset to move horizontally to the next character
@@ -135,6 +137,10 @@ class EE_API Font {
 	virtual Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 							Float outlineThickness = 0 ) const = 0;
 
+	/** Returns the horizontal advance without requiring a renderable glyph texture. */
+	virtual Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
+								   bool italic = false, Float outlineThickness = 0 ) const;
+
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
@@ -156,7 +162,7 @@ class EE_API Font {
 
 	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
 
-	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+	virtual const TexturePtr& getTexture( unsigned int characterSize ) const = 0;
 
 	virtual Uint32 getFontStyle() const;
 

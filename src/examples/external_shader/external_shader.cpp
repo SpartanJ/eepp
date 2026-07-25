@@ -8,31 +8,35 @@ namespace Demo_ExternalShader {
 static Float sqrt_approx[20001];
 #endif
 
-Uint32 ParticlesNum = 30000;
+static constexpr Uint32 ParticlesNum = 30000;
 
-EE::Window::Window* win = NULL;
-Input* imp = NULL;
-ShaderProgram* shaderProgram = NULL;
-bool ShadersSupported = false;
-Float tw;
-Float th;
-Float aspectRatio;
-Vector3ff* vertices = eeNewArray( Vector3ff, ParticlesNum );
-Vector3ff* velocities = eeNewArray( Vector3ff, ParticlesNum );
-ColorAf* colors = eeNewArray( ColorAf, ParticlesNum );
+struct ExampleState {
+	EE::Window::Window* win{ nullptr };
+	Input* input{ nullptr };
+	ShaderProgramPtr shaderProgram;
+	bool shadersSupported{ false };
+	Float halfWidth{ 0 };
+	Float halfHeight{ 0 };
+	Float aspectRatio{ 0 };
+	std::vector<Vector3ff> vertices{ ParticlesNum };
+	std::vector<Vector3ff> velocities{ ParticlesNum };
+	std::vector<ColorAf> colors{ ParticlesNum };
+};
 
-void videoResize( EE::Window::Window* ) {
+void videoResize( ExampleState& state, EE::Window::Window* ) {
+	auto* win = state.win;
+	auto& shaderProgram = state.shaderProgram;
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
-	aspectRatio = (Float)win->getWidth() / (Float)win->getHeight();
-	tw = (Float)win->getWidth() / 2;
-	th = (Float)win->getHeight() / 2;
+	state.aspectRatio = (Float)win->getWidth() / (Float)win->getHeight();
+	state.halfWidth = (Float)win->getWidth() / 2;
+	state.halfHeight = (Float)win->getHeight() / 2;
 
 	float fieldOfView = 30.0;
 	float nearPlane = 1.0;
 	float farPlane = 10000.0;
 	float top = nearPlane * eetan( fieldOfView * EE_PI_360 );
 	float bottom = -top;
-	float right = top * aspectRatio;
+	float right = top * state.aspectRatio;
 	float left = -right;
 
 	float a = ( right + left ) / ( right - left );
@@ -63,7 +67,7 @@ void videoResize( EE::Window::Window* ) {
 	/// Set the line width
 	GLi->lineWidth( 2 );
 
-	if ( ShadersSupported ) {
+	if ( state.shadersSupported ) {
 		/// Rebind the Shader
 		shaderProgram->bind();
 
@@ -87,7 +91,13 @@ void videoResize( EE::Window::Window* ) {
 } // namespace Demo_ExternalShader
 using namespace Demo_ExternalShader;
 
-void mainLoop() {
+void mainLoop( ExampleState& state ) {
+	auto* win = state.win;
+	auto* imp = state.input;
+	auto& vertices = state.vertices;
+	auto& velocities = state.velocities;
+	auto& colors = state.colors;
+	const Float aspectRatio = state.aspectRatio;
 	win->clear();
 
 	imp->update();
@@ -108,9 +118,9 @@ void mainLoop() {
 
 	Float p;
 	Vector2f mf = imp->getMousePos().asFloat();
-	Float tratio = tw / th;
-	Float touchX = ( mf.x / tw - 1 ) * tratio;
-	Float touchY = -( mf.y / th - 1 );
+	Float tratio = state.halfWidth / state.halfHeight;
+	Float touchX = ( mf.x / state.halfWidth - 1 ) * tratio;
+	Float touchY = -( mf.y / state.halfHeight - 1 );
 	bool touch = imp->isMouseLeftPressed();
 
 	for ( Uint32 i = 0; i < ParticlesNum; i += 2 ) {
@@ -197,7 +207,13 @@ void mainLoop() {
 	win->display();
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+static int run() {
+	ExampleState state;
+	auto& win = state.win;
+	auto& shaderProgram = state.shaderProgram;
+	auto& vertices = state.vertices;
+	auto& velocities = state.velocities;
+	auto& colors = state.colors;
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - External Shaders" ),
 											ContextSettings( true ) );
 
@@ -205,13 +221,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 
 	/// This will work without shaders too
-	ShadersSupported = GLi->shadersSupported();
+	state.shadersSupported = GLi->shadersSupported();
 
-	imp = win->getInput();
+	state.input = win->getInput();
 
 	/// We really don't need shaders for this, but the purpose of the example is to show how to
 	/// work with external shaders
-	if ( ShadersSupported ) {
+	if ( state.shadersSupported ) {
 		/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
 		Shader::ensure( false );
 
@@ -246,10 +262,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	/// Set the projection
-	videoResize( win );
+	videoResize( state, win );
 
 	/// Push a window resize callback the reset the projection when needed
-	win->pushResizeCallback( videoResize );
+	win->pushResizeCallback(
+		[&state]( EE::Window::Window* window ) { videoResize( state, window ); } );
 
 	Uint32 i;
 
@@ -269,15 +286,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 #endif
 
-	win->runMainLoop( &mainLoop );
+	win->runMainLoop( [&state] { mainLoop( state ); } );
 
-	eeSAFE_DELETE_ARRAY( vertices );
-	eeSAFE_DELETE_ARRAY( velocities );
-	eeSAFE_DELETE_ARRAY( colors );
+	return EXIT_SUCCESS;
+}
+
+EE_MAIN_FUNC int main( int, char*[] ) {
+	int result = run();
 
 	Engine::destroySingleton();
 
 	MemoryManager::showResults();
 
-	return EXIT_SUCCESS;
+	return result;
 }

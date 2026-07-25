@@ -343,7 +343,7 @@ class EE_API UIConsole : public UIWidget,
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void copySelection();
 

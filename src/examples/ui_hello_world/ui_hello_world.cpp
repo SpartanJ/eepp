@@ -13,13 +13,12 @@ EE_MAIN_FUNC int main( int, char** ) {
 	// is always correct even if we load the application from other directory than the binary
 	// path.
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-	// Load a font to use as the default font in our UI.
-	FontTrueType* font =
-		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
-
 	// Create a new scene node to add our widgets.
 	UISceneNode* uiSceneNode = UISceneNode::New();
+	// Load a font to use as the default font in our UI.
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf",
+											*uiSceneNode->getResourceScope() )
+							 .get();
 
 	// Set the default font used in the scene node (otherwise we won't have any font to create
 	// text views.

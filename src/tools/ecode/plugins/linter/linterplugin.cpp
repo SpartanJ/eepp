@@ -1144,12 +1144,13 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			if ( !match.diagnostic.codeActions.empty() ) {
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
-				if ( nullptr == mLightbulbIcon ) {
-					mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
-						"lightbulb-autofix" );
-				}
+				if ( mLightbulbIcon == nullptr )
+					mLightbulbIcon =
+						editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
+							"lightbulb-autofix" );
 				if ( nullptr != mLightbulbIcon ) {
-					Drawable* drawable = mLightbulbIcon->getSize( (int)eefloor( lineHeight ) );
+					const int iconSize = (int)eefloor( lineHeight );
+					Drawable* drawable = mLightbulbIcon->getSource( iconSize ).get();
 					if ( drawable == nullptr )
 						return;
 
@@ -1501,7 +1502,7 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 			 match.lensBox[editor].contains( localPos ) ) {
 			menu->addSeparator();
 			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
-					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
+					   mManager->getUISceneNode()->findIcon( "copy" )->createDrawable(
 						   PixelDensity::dpToPxI( 12 ) ) )
 				->setId( "linter-copy-error-message" );
 			mErrorMsg = match.text;

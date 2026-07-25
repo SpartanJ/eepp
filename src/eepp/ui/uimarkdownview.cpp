@@ -17,6 +17,7 @@ UIMarkdownView* UIMarkdownView::New() {
 UIMarkdownView::UIMarkdownView() : UILinearLayout( "markdownview", UIOrientation::Vertical ) {
 	mWidthPolicy = SizePolicy::MatchParent;
 	mHeightPolicy = SizePolicy::WrapContent;
+	getUISceneNode()->loadHTMLBaseCSS();
 }
 
 Uint32 UIMarkdownView::getType() const {
@@ -29,7 +30,7 @@ bool UIMarkdownView::isType( const Uint32& type ) const {
 
 void UIMarkdownView::loadFromString( std::string_view markdown ) {
 	closeAllChildren();
-	auto xhtml = Tools::HTMLFormatter::HTMLtoXML( Markdown::toXHTML( markdown ) );
+	auto xhtml = Tools::HTMLFormatter::HTMLBodyToXML( Markdown::toXHTML( markdown ) );
 	getUISceneNode()->loadLayoutFromString( xhtml, this );
 }
 

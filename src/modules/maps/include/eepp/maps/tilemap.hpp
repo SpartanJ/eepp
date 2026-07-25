@@ -194,7 +194,7 @@ class EE_MAPS_API TileMap {
 
 	void setUpdateCallback( MapUpdateCb Cb );
 
-	Texture* getBlankTileTexture();
+	const TexturePtr& getBlankTileTexture() const;
 
 	bool isTileBlocked( const Vector2i& TilePos );
 
@@ -269,7 +269,7 @@ class EE_MAPS_API TileMap {
 	PropertiesMap mProperties;
 	GOTypesList mObjTypes;
 	CreateGOCb mCreateGOCb;
-	Texture* mTileTex;
+	TexturePtr mTileTex;
 	Rectf mScreenAABB;
 	MapLightManager* mLightManager;
 	MapDrawCb mDrawCb;

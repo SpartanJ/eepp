@@ -3,26 +3,23 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
-
-#include <eepp/system/resourcemanager.hpp>
+#include <eepp/system/container.hpp>
 #include <eepp/system/singleton.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-/** @brief The Shader Program Manager is a singleton class that manages all the instances of Shader
-   Programs instantiated. Releases the Shader Program instances automatically. So the user doesn't
-   need to release any Shader Program instance. */
-class EE_API ShaderProgramManager : public ResourceManager<ShaderProgram> {
-	SINGLETON_DECLARE_HEADERS( ShaderProgramManager )
+/** Non-owning registry of shader programs associated with the active graphics context. */
+class EE_API ShaderProgramRegistry : public Container<ShaderProgram> {
+	SINGLETON_DECLARE_HEADERS( ShaderProgramRegistry )
 
   public:
-	virtual ~ShaderProgramManager();
+	virtual ~ShaderProgramRegistry();
 
 	void reload();
 
   protected:
-	ShaderProgramManager();
+	ShaderProgramRegistry();
 };
 
 }} // namespace EE::Graphics

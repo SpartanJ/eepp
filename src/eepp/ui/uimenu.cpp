@@ -1,4 +1,3 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -58,20 +57,20 @@ void UIMenu::onPaddingChange() {
 	widgetsSetPos();
 }
 
-UIMenuItem* UIMenu::createMenuItem( const String& text, Drawable* icon,
+UIMenuItem* UIMenu::createMenuItem( const String& text, DrawablePtr icon,
 									const String& shortcutText ) {
 	UIMenuItem* widget = UIMenuItem::New();
 	widget->setHorizontalAlign( UI_HALIGN_LEFT );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
-	widget->setIcon( icon );
+	widget->setIcon( std::move( icon ) );
 	widget->setText( text );
 	widget->setShortcutText( shortcutText );
 	return widget;
 }
 
-UIMenuItem* UIMenu::add( const String& text, Drawable* icon, const String& shortcutText ) {
-	UIMenuItem* menuItem = createMenuItem( text, icon, shortcutText );
+UIMenuItem* UIMenu::add( const String& text, DrawablePtr icon, const String& shortcutText ) {
+	UIMenuItem* menuItem = createMenuItem( text, std::move( icon ), shortcutText );
 	add( menuItem );
 	return menuItem;
 }
@@ -113,19 +112,19 @@ UIMenuRadioButton* UIMenu::addRadioButton( const String& text, const bool& activ
 	return radioButton;
 }
 
-UIMenuSubMenu* UIMenu::createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
+UIMenuSubMenu* UIMenu::createSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu ) {
 	UIMenuSubMenu* menu = UIMenuSubMenu::New();
 	menu->setHorizontalAlign( UI_HALIGN_LEFT );
 	menu->setParent( this );
 	menu->setIconMinimumSize( mIconMinSize );
-	menu->setIcon( icon );
+	menu->setIcon( std::move( icon ) );
 	menu->setText( text );
 	menu->setSubMenu( subMenu );
 	return menu;
 }
 
-UIMenuSubMenu* UIMenu::addSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
-	UIMenuSubMenu* menu = createSubMenu( text, icon, subMenu );
+UIMenuSubMenu* UIMenu::addSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu ) {
+	UIMenuSubMenu* menu = createSubMenu( text, std::move( icon ), subMenu );
 	add( menu );
 	return menu;
 }
@@ -269,8 +268,8 @@ void UIMenu::removeAll() {
 	resizeMe();
 }
 
-void UIMenu::insert( const String& text, Drawable* icon, const Uint32& index ) {
-	insert( createMenuItem( text, icon ), index );
+void UIMenu::insert( const String& text, DrawablePtr icon, const Uint32& index ) {
+	insert( createMenuItem( text, std::move( icon ) ), index );
 }
 
 void UIMenu::insert( UIWidget* widget, const Uint32& index ) {
@@ -553,17 +552,23 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 	return UIWidget::onKeyDown( event );
 }
 
-static Drawable* getIconDrawable( const std::string& name, UIIconThemeManager* iconThemeManager ) {
-	Drawable* iconDrawable = nullptr;
-	if ( nullptr != iconThemeManager ) {
-		UIIcon* icon = iconThemeManager->findIcon( name );
+static DrawablePtr getIconDrawable( const std::string& name, UISceneNode* sceneNode ) {
+	DrawablePtr iconDrawable;
+	if ( sceneNode ) {
+		UIIcon* icon = sceneNode->findIcon( name );
 		if ( icon ) {
 			// TODO: Fix size
-			iconDrawable = icon->getSize( PixelDensity::dpToPx( 16 ) );
+			iconDrawable = icon->createDrawable( PixelDensity::dpToPx( 16 ) );
 		}
 	}
-	if ( nullptr == iconDrawable )
-		iconDrawable = DrawableSearcher::searchByName( name );
+	if ( !iconDrawable ) {
+		if ( sceneNode ) {
+			iconDrawable = sceneNode->getDrawableResolver().resolve( name );
+		} else {
+			DrawableResolver resolver( defaultResourceScope() );
+			iconDrawable = resolver.resolve( name );
+		}
+	}
 	return iconDrawable;
 }
 
@@ -578,8 +583,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			std::string icon( item.attribute( "icon" ).as_string() );
 			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				add( getTranslatorString( text ),
-					 getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ) );
+				add( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
@@ -597,8 +601,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( nullptr != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
 			subMenu->loadFromXmlNode( item );
-			addSubMenu( getTranslatorString( text ),
-						getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
+			addSubMenu( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ),
 						subMenu );
 		}
 	}

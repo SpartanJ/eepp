@@ -1303,7 +1303,7 @@ bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vec
 								  const std::string& icon = "" ) {
 		subMenu
 			->add( i18n( txtKey, txtVal ),
-				   !icon.empty() ? findIcon( icon )->getSize( PixelDensity::dpToPxI( 12 ) )
+				   !icon.empty() ? findIcon( icon )->createDrawable( PixelDensity::dpToPxI( 12 ) )
 								 : nullptr,
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );
@@ -1314,7 +1314,7 @@ bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vec
 	menu->addSubMenu( i18n( "git", "Git" ),
 					  mManager->getUISceneNode()
 						  ->findIcon( "source-control" )
-						  ->getSize( PixelDensity::dpToPxI( 12 ) ),
+						  ->createDrawable( PixelDensity::dpToPxI( 12 ) ),
 					  subMenu );
 
 	return false;
@@ -1453,7 +1453,7 @@ void GitPlugin::buildSidePanelTab() {
 			return;
 		UIIcon* icon = findIcon( "source-control" );
 		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
-								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+								icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "source_control_tab" );
 		mTab->setTextAsFallback( true );
 		return;
@@ -1526,7 +1526,7 @@ void GitPlugin::buildSidePanelTab() {
 		String::format( STYLE, color, color ), nullptr, String::hash( "git_plugin_style" ) );
 
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
-							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control_tab" );
 	mTab->setTextAsFallback( true );
 

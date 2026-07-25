@@ -56,12 +56,9 @@ TabWidget {
 }
 
 MarkdownView {
+	color: var(--font);
 	background-color: var(--list-back);
 	padding: 4dp;
-}
-
-MarkdownView body {
-	color: var(--font);
 }
 
 MarkdownView p,

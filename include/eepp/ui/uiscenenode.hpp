@@ -1,6 +1,7 @@
 #ifndef EE_UISCENENODE_HPP
 #define EE_UISCENENODE_HPP
 
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/network/cookiemanager.hpp>
 #include <eepp/network/uri.hpp>
@@ -9,8 +10,10 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
+#include <eepp/ui/webresourcecache.hpp>
 
 #include <atomic>
 #include <functional>
@@ -20,6 +23,7 @@ using namespace EE::Network;
 
 namespace EE { namespace Graphics {
 class Font;
+using FontPtr = ResourcePtr<Font>;
 }} // namespace EE::Graphics
 
 namespace EE { namespace Window {
@@ -54,9 +58,14 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param window Pointer to the window to associate with this UI scene node.
 	 *               If NULL, uses the current window from Engine.
+	 * @param importDefaultResources Whether the scene scope automatically imports the catalog from
+	 *                               Graphics::defaultResourceScope(). Keep this enabled for normal
+	 *                               application scenes. Disable it for intentionally isolated
+	 * scenes that must only resolve local or explicitly imported resources.
 	 * @return Pointer to the newly created UISceneNode instance.
 	 */
-	static UISceneNode* New( EE::Window::Window* window = NULL );
+	static UISceneNode* New( EE::Window::Window* window = NULL,
+							 bool importDefaultResources = true );
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -153,8 +162,8 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * Copies only shared platform/configuration services: dispatcher, DPI/window pointer,
 	 * thread pool, color/contrast preferences, and default font/theme pointers. Stylesheets,
-	 * URI, referer, cookies, navigation callbacks, actions, roots, and dirty queues remain owned
-	 * by this scene.
+	 * URI, referer, cookies, navigation callbacks, actions, roots, resource scope, and dirty queues
+	 * remain owned by this scene.
 	 */
 	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 
@@ -563,7 +572,13 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param drawableSize The desired size of the drawable in pixels.
 	 * @return Pointer to the Drawable, or nullptr if not found.
 	 */
-	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+	DrawablePtr findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+
+	/** @return This scene's drawable resolver. */
+	DrawableResolver& getDrawableResolver();
+
+	/** @return This scene's drawable resolver. */
+	const DrawableResolver& getDrawableResolver() const;
 
 	/**
 	 * @brief Gets the keybindings manager.
@@ -770,12 +785,27 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
 
+	/** @return The Graphics resource lookup and ownership boundary of this scene. */
+	const Graphics::ResourceScopePtr& getResourceScope() const;
+
 	/**
-	 * @brief Sets the theme for the entire UI scene.
+	 * @brief Replaces this scene's resource boundary, allowing intentional sharing between scenes.
 	 *
-	 * Applies the theme to the root widget and all children.
+	 * Scenes created with default-resource importing enabled also import the default catalog into
+	 * the replacement scope. Scenes created with it disabled leave the replacement scope unchanged.
+	 */
+	UISceneNode* setResourceScope( Graphics::ResourceScopePtr resourceScope );
+
+	/**
+	 * @brief Applies a borrowed theme to the widgets in this UI scene.
 	 *
-	 * @param theme Pointer to the UITheme to set.
+	 * Each affected widget stores a non-owning `UITheme*`; this function does not retain @p theme.
+	 * The theme must therefore outlive every widget using it. Normally callers establish that
+	 * lifetime first by adding the corresponding `UIThemePtr` to this scene's UIThemeManager or by
+	 * setting it as the manager's default theme.
+	 *
+	 * @param theme Borrowed theme to apply recursively. May be null to clear explicit widget
+	 * themes.
 	 */
 	void setTheme( UITheme* theme );
 
@@ -835,6 +865,21 @@ class EE_API UISceneNode : public SceneNode {
 	const Network::CookieManager& getCookieManager() const { return mCookieManager; }
 
 	Network::CookieManager& getCookieManager() { return mCookieManager; }
+
+	const WebResourceCachePtr& getWebResourceCache() const { return mWebResourceCache; }
+
+	UISceneNode* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
+	DocumentSessionId getDocumentSessionId() const { return mDocumentSessionId; }
+
+	Uint64 beginDocumentNavigation( const URI& uri );
+
+	Uint64 getDocumentGeneration() const;
+
+	void requestWebResource( WebResourceRequest request, WebResourceCache::Callback callback );
+
+	Graphics::TexturePtr requestWebTexture( WebResourceRequest request,
+											WebResourceCache::Callback callback = {} );
 
 	void invalidateAsyncResourceLoads();
 
@@ -898,15 +943,21 @@ class EE_API UISceneNode : public SceneNode {
 	bool mStyleDuringLoad{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
-	std::vector<Font*> mFontFaces;
+	std::vector<Graphics::FontPtr> mFontFaces;
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
 	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
+	bool mImportDefaultResources{ true };
+	Graphics::ResourceScopePtr mResourceScope;
+	DrawableResolver mDrawableResolver;
+	WebResourceCachePtr mWebResourceCache;
+	DocumentSessionId mDocumentSessionId{ 0 };
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;
 	UnorderedSet<UIWidget*> mDirtyStyleState;
 	UnorderedMap<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	SmallVector<std::pair<UIWidget*, bool>, 64> mDirtyStyleStateSnapshot;
 	UnorderedSet<UILayout*> mDirtyLayouts;
 	SmallVector<UILayout*, 64> mDirtyLayoutsSnapshot;
 	std::vector<std::pair<Float, std::string>> mTimes;
@@ -936,8 +987,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * Creates a UISceneNode with optional window association.
 	 *
 	 * @param window Pointer to the window, or NULL for default.
+	 * @param importDefaultResources Whether the scene scope imports the default resource catalog.
 	 */
-	explicit UISceneNode( EE::Window::Window* window = NULL );
+	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true );
 
 	/**
 	 * @brief Handles node resize.
@@ -1151,11 +1203,13 @@ class EE_API UISceneNode : public SceneNode {
 	void resetTooltips( Node* node );
 
 	/**
-	 * @brief Applies a theme to a node and its subtree.
+	 * @brief Applies a borrowed theme to the widgets below a node.
 	 *
-	 * Recursively applies the specified UITheme to all widgets in the subtree.
+	 * Each affected widget stores a non-owning pointer. This function does not retain @p theme; an
+	 * owner such as this scene's UIThemeManager must keep it alive for the complete period in which
+	 * the subtree uses it.
 	 *
-	 * @param theme Pointer to the UITheme to apply.
+	 * @param theme Borrowed theme to apply. May be null to clear explicit widget themes.
 	 * @param to The root node of the subtree to theme.
 	 */
 	void setTheme( UITheme* theme, Node* to );

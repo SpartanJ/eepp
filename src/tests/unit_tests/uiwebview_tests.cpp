@@ -9,9 +9,9 @@
 #include <vector>
 
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
@@ -65,7 +65,7 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -136,7 +136,7 @@ UTEST( UIWebView, DocumentRootHitTestingTraversesScrollableExtent ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -215,7 +215,7 @@ UTEST( UIWebView, FontSizeEmDoesNotCompoundOnViewportRelayout ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -287,7 +287,7 @@ UTEST( UIWebView, FontFaceWeightSurvivesViewportRelayout ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -369,7 +369,7 @@ UTEST( UIWebView, AbsoluteTextareaPercentageHeightDoesNotRecurse ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -436,7 +436,7 @@ UTEST( UIWebView, RedditLoggedOutCommentSignupTextareaDoesNotGrowWithDocument ) 
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -575,7 +575,7 @@ UTEST( UIWebView, VerticalScrollbarViewportDoesNotCreateHorizontalScroll ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -660,7 +660,7 @@ UTEST( UIWebView, ExplicitWideDocumentStillCreatesHorizontalScroll ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -713,7 +713,7 @@ UTEST( UIWebView, ExplicitWideDocumentHorizontalScrollReachesRightEdgeAtPixelDen
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -777,7 +777,7 @@ UTEST( UIWebView, ResponsiveDocumentShrinksAfterGrowResize ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -867,7 +867,7 @@ UTEST( UIWebView, HorizontalScrollDisappearsAfterResponsiveShrink ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -951,7 +951,7 @@ UTEST( UIWebView, HiddenAndClippedWideDescendantsDoNotCreateHorizontalScroll ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1019,7 +1019,7 @@ UTEST( UIWebView, VerticalScrollbarDisappearsWithoutViewportWidthOscillation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1090,7 +1090,7 @@ UTEST( UIWebView, HackerNewsGrowUntilVerticalScrollbarDisappearsSettlesViewport 
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1147,7 +1147,7 @@ UTEST( UIWebView, HackerNewsFrontPageBottomIsReachable ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1282,7 +1282,7 @@ UTEST( UIWebView, NavigationAfterGrowDoesNotKeepMaximizedWidthOnShrink ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1350,7 +1350,7 @@ UTEST( UIWebView, NavigationFromTallToShortShrinksDocumentExtent ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1414,7 +1414,7 @@ UTEST( UIWebView, AsyncCSSCanShrinkDocumentExtent ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1470,7 +1470,7 @@ UTEST( UIWebView, FixedPositionStaysPinnedToViewportWhenScrolled ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1537,7 +1537,7 @@ UTEST( UIWebView, StickyPositionUsesWebViewViewportWhenScrolled ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1607,7 +1607,7 @@ UTEST( UIWebView, DeferredLocalCSSIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1686,7 +1686,7 @@ UTEST( UIWebView, RemoteCSSIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1793,7 +1793,7 @@ UTEST( UIWebView, RemoteImageIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1903,7 +1903,7 @@ UTEST( UIWebView, RemoteBackgroundImageIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2025,7 +2025,7 @@ UTEST( UIWebView, LinearGradientRendersToFramebuffer ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	win->setClearColor( Color::Black );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2101,7 +2101,7 @@ UTEST( UIWebView, CoalescesViewportResizeDocumentMetrics ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2152,7 +2152,7 @@ UTEST( UIWebView, HackerNewsSingleStepRestoreSettlesViewportInOneFrame ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2228,7 +2228,7 @@ UTEST( UIWebView, LayoutDrivenResizeKeepsDocumentRootAtViewport ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2468,7 +2468,7 @@ UTEST( UIWebView, DocumentScenesIsolateStylesUriAndLookup ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2574,7 +2574,7 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2647,9 +2647,9 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 	EXPECT_TRUE( fontA->loaded() );
 	EXPECT_TRUE( fontB->loaded() );
 	EXPECT_NE( fontA, fontB );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "SharedDocFace" ) );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "SharedDocFace" ).get() );
 	const std::string fontAResourceName = fontA->getName();
-	EXPECT_EQ( fontA, FontManager::instance()->getByName( fontAResourceName ) );
+	EXPECT_EQ( fontA, docA->getResourceScope()->findFont( fontAResourceName ).get() );
 
 	webViewA->loadURI( URI( "file://" + pathAWithoutFont ) );
 	pump();
@@ -2657,7 +2657,7 @@ UTEST( UIWebView, DocumentScenesIsolateAuthorFontFaces ) {
 	auto targetAWithoutFont = docA->getRoot()->find( "target-a-empty" );
 	ASSERT_TRUE( targetAWithoutFont != nullptr );
 	EXPECT_EQ( nullptr, docA->getFontFromNamesList( "SharedDocFace" ) );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( fontAResourceName ) );
+	EXPECT_EQ( nullptr, docA->getResourceScope()->findFont( fontAResourceName ).get() );
 
 	webViewA->loadURI( URI( "file://" + pathA2 ) );
 	pump();
@@ -2679,7 +2679,7 @@ UTEST( UIWebView, DocumentSceneAuthorFontFacesCleanUpOnDestruction ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2739,14 +2739,15 @@ UTEST( UIWebView, DocumentSceneAuthorFontFacesCleanUpOnDestruction ) {
 	EXPECT_NE( loadedFontA, loadedFontB );
 	const std::string loadedFontAName = loadedFontA->getName();
 	const std::string loadedFontBName = loadedFontB->getName();
-	EXPECT_EQ( loadedFontA, FontManager::instance()->getByName( loadedFontAName ) );
-	EXPECT_EQ( loadedFontB, FontManager::instance()->getByName( loadedFontBName ) );
+	FontWeakPtr loadedFontAWeak = docA->getResourceScope()->findFont( loadedFontAName );
+	EXPECT_EQ( loadedFontA, docA->getResourceScope()->findFont( loadedFontAName ).get() );
+	EXPECT_EQ( loadedFontB, docB->getResourceScope()->findFont( loadedFontBName ).get() );
 
 	webViewA->close();
 	pump();
 
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( loadedFontAName ) );
-	EXPECT_EQ( loadedFontB, FontManager::instance()->getByName( loadedFontBName ) );
+	EXPECT_TRUE( loadedFontAWeak.expired() );
+	EXPECT_EQ( loadedFontB, docB->getResourceScope()->findFont( loadedFontBName ).get() );
 	EXPECT_EQ( loadedFontB, docB->getFontFromNamesList( "DestroyDocFace" ) );
 
 	Engine::destroySingleton();
@@ -2759,7 +2760,7 @@ UTEST( UIWebView, RemoteFontFaceIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	const std::string fontPath = Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf";
 	font->loadFromFile( fontPath );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
@@ -2873,7 +2874,7 @@ UTEST( UIWebView, StaleRedirectCookieIgnoredAfterNavigation ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2965,7 +2966,7 @@ UTEST( UIWebView, DestroyWithPendingSubresourcesIsSafe ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	const std::string fontPath = Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf";
 	font->loadFromFile( fontPath );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
@@ -3065,7 +3066,7 @@ UTEST( UIWebView, NewerNavigationSupersedesStartedLoad ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -3107,6 +3108,81 @@ UTEST( UIWebView, NewerNavigationSupersedesStartedLoad ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWebView, CacheGenerationAdvancesWhenReplacementDocumentIsInstalled ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Cache Lease Boundary Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto cache = WebResourceCache::New();
+	cache->setTTL( Time::Zero );
+	std::vector<WebResourceCache::FetchCompletion> documentCompletions;
+	cache->setFetcher( [&documentCompletions]( const WebResourceRequest& request,
+											   WebResourceCache::FetchCompletion completion ) {
+		if ( request.kind == WebResourceKind::Document ) {
+			documentCompletions.emplace_back( std::move( completion ) );
+		} else {
+			Http::Response::FieldTable fields;
+			auto status = Http::Response::Status::Ok;
+			completion( Http::Response::createFakeResponse( fields, status, "resource" ) );
+		}
+	} );
+	webView->setWebResourceCache( cache );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+
+	auto pump = [&]( int frames ) {
+		for ( int i = 0; i < frames; ++i ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	auto completeDocument = [&] {
+		ASSERT_FALSE( documentCompletions.empty() );
+		auto completion = std::move( documentCompletions.front() );
+		documentCompletions.erase( documentCompletions.begin() );
+		Http::Response::FieldTable fields;
+		auto status = Http::Response::Status::Ok;
+		completion(
+			Http::Response::createFakeResponse( fields, status, "<html><body></body></html>" ) );
+		pump( 10 );
+	};
+
+	webView->loadURI( URI( "https://first.example/" ) );
+	EXPECT_EQ( 0u, documentScene->getDocumentGeneration() );
+	completeDocument();
+	EXPECT_EQ( 1u, documentScene->getDocumentGeneration() );
+
+	webView->loadURI( URI( "https://second.example/" ) );
+	EXPECT_EQ( 1u, documentScene->getDocumentGeneration() );
+	WebResourceRequest oldDocumentResource;
+	oldDocumentResource.uri = URI( "https://first.example/late.css" );
+	oldDocumentResource.kind = WebResourceKind::StyleSheet;
+	documentScene->requestWebResource( std::move( oldDocumentResource ), {} );
+	completeDocument();
+	EXPECT_EQ( 2u, documentScene->getDocumentGeneration() );
+
+	pump( 61 );
+	EXPECT_EQ( 0u, cache->getEntryCount() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIWebView, RepeatedRemoteNavigationHandlesSubresourceFanOut ) {
 	constexpr int NavigationCount = 6;
 	constexpr int ImagesPerDocument = 100;
@@ -3119,7 +3195,7 @@ UTEST( UIWebView, RepeatedRemoteNavigationHandlesSubresourceFanOut ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );

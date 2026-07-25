@@ -1,12 +1,10 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/textlayout.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/network/http.hpp>
@@ -50,6 +48,8 @@
 
 #endif
 
+using namespace EE::Graphics;
+
 namespace EE { namespace Window {
 
 static UintPtr sMainThreadId{ 0 };
@@ -62,7 +62,10 @@ Engine::Engine() :
 	mSharedGLContext( true ),
 	mPlatformHelper( NULL ),
 	mZip( NULL ),
-	mDisplayManager( NULL ) {
+	mDisplayManager( NULL ),
+	mGlobalResourceCatalog( ResourceCatalog::New() ),
+	mDefaultResourceScope( ResourceScope::New() ) {
+	mDefaultResourceScope->importCatalog( mGlobalResourceCatalog );
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mZip = Zip::New();
 	mZip->open( getPlatformHelper()->getApkPath() );
@@ -70,7 +73,6 @@ Engine::Engine() :
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );
 #endif
 
-	TextureAtlasManager::createSingleton();
 	UISceneNode::openAsyncResourceMainThreadQueue();
 }
 
@@ -102,15 +104,14 @@ Engine::~Engine() {
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
-	NinePatchManager::destroySingleton();
+	Graphics::Private::FrameBufferRegistry::destroySingleton();
 
-	FontManager::destroySingleton();
+	Graphics::Private::VertexBufferRegistry::destroySingleton();
 
-	TextureAtlasManager::destroySingleton();
-
-	Graphics::Private::FrameBufferManager::destroySingleton();
-
-	Graphics::Private::VertexBufferManager::destroySingleton();
+	// Catalogs are the final intentional texture owners. Clear them while the factory and current
+	// graphics context are still available for deferred release collection.
+	mDefaultResourceScope.reset();
+	mGlobalResourceCatalog.reset();
 
 	if ( TextureFactory* textureFactory = TextureFactory::existsSingleton() )
 		textureFactory->collectReleasedTextures();
@@ -119,7 +120,7 @@ Engine::~Engine() {
 
 	// Shader and renderer destructors issue GL commands. Programs must go first while GLi and the
 	// current window context are still valid.
-	ShaderProgramManager::destroySingleton();
+	ShaderProgramRegistry::destroySingleton();
 
 	Graphics::Renderer::destroySingleton();
 
@@ -151,6 +152,14 @@ Engine::~Engine() {
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
+}
+
+std::shared_ptr<ResourceCatalog> Engine::getGlobalResourceCatalog() const {
+	return mGlobalResourceCatalog;
+}
+
+std::shared_ptr<ResourceScope> Engine::getDefaultResourceScope() const {
+	return mDefaultResourceScope;
 }
 
 void Engine::destroy() {

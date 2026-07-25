@@ -54,6 +54,8 @@ class EE_API RadialGradientDrawable : public Graphics::Drawable {
 
 	virtual bool isStateful() { return false; }
 
+	Graphics::DrawablePtr clone() const;
+
 	const std::vector<ColorStop>& getColorStops() const;
 
 	void setColorStops( std::vector<ColorStop> stops );

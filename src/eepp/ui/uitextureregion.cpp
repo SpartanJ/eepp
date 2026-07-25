@@ -1,7 +1,6 @@
-#include <eepp/graphics/globaltextureatlas.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 
 namespace EE { namespace UI {
@@ -75,21 +74,15 @@ void UITextureRegion::draw() {
 		UINode::draw();
 
 		if ( NULL != mTextureRegion && 0.f != mAlpha ) {
-			Sizef oDestSize = mTextureRegion->getDestSize();
-			Vector2i oOff = mTextureRegion->getOffset();
+			Sizef destSize = mTextureRegion->getDestSize();
+			Vector2i offset = mTextureRegion->getOffset();
 
 			if ( mScaleType == UIScaleType::Expand ) {
-				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
-				mTextureRegion->setDestSize(
-					Vector2f( (int)mSize.x - mPaddingPx.Left - mPaddingPx.Right,
-							  (int)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) );
-
-				autoAlign();
-
-				drawTextureRegion();
-
+				offset = Vector2i::Zero;
+				destSize = Vector2f( (int)mSize.x - mPaddingPx.Left - mPaddingPx.Right,
+									 (int)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom );
 			} else if ( mScaleType == UIScaleType::FitInside ) {
-				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
+				offset = Vector2i::Zero;
 
 				Sizef pxSize = mTextureRegion->getPixelsSize();
 				Float Scale1 = ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / (Float)pxSize.x;
@@ -99,44 +92,33 @@ void UITextureRegion::draw() {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					Sizef dst( pxSize.x * Scale1, pxSize.y * Scale1 );
-					mTextureRegion->setDestSize( dst.floor() );
-
-					autoAlign();
-
-					drawTextureRegion();
+					destSize = Sizef( pxSize.x * Scale1, pxSize.y * Scale1 ).floor();
 				} else {
-					mTextureRegion->setDestSize( Vector2f( (Float)pxSize.x, (Float)pxSize.y ) );
-
-					autoAlign();
-
-					drawTextureRegion();
+					destSize = Vector2f( (Float)pxSize.x, (Float)pxSize.y );
 				}
 			} else {
-				mTextureRegion->setOffset(
-					Vector2i( (Int32)( (Float)oOff.x / mTextureRegion->getPixelDensity() *
-									   PixelDensity::getPixelDensity() ),
-							  (Int32)( (Float)oOff.y / mTextureRegion->getPixelDensity() *
-									   PixelDensity::getPixelDensity() ) ) );
-
-				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPixelsSize().x,
-													   (Float)mTextureRegion->getPixelsSize().y ) );
-
-				autoAlign();
-
-				drawTextureRegion();
+				offset = Vector2i( (Int32)( (Float)offset.x / mTextureRegion->getPixelDensity() *
+											PixelDensity::getPixelDensity() ),
+								   (Int32)( (Float)offset.y / mTextureRegion->getPixelDensity() *
+											PixelDensity::getPixelDensity() ) );
+				destSize = Vector2f( (Float)mTextureRegion->getPixelsSize().x,
+									 (Float)mTextureRegion->getPixelsSize().y );
 			}
 
-			mTextureRegion->setDestSize( oDestSize );
-			mTextureRegion->setOffset( oOff );
+			autoAlign( destSize );
+			drawTextureRegion( destSize, offset );
 		}
 	}
 }
 
-void UITextureRegion::drawTextureRegion() {
-	mTextureRegion->draw( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x,
-						  std::trunc( mScreenPos.y ) + (int)mAlignOffset.y, mColor, 0.f,
-						  Vector2f::One, getBlendMode(), mRender );
+void UITextureRegion::drawTextureRegion( const Sizef& destSize, const Vector2i& offset ) {
+	const TexturePtr& texture = mTextureRegion->getTexture();
+	if ( texture )
+		texture->drawEx( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x + offset.x,
+						 std::trunc( mScreenPos.y ) + (int)mAlignOffset.y + offset.y, destSize.x,
+						 destSize.y, 0.f, Vector2f::One, mColor, mColor, mColor, mColor,
+						 getBlendMode(), mRender, OriginPoint( OriginPoint::OriginCenter ),
+						 mTextureRegion->getSrcRect() );
 }
 
 void UITextureRegion::setAlpha( const Float& alpha ) {
@@ -169,19 +151,22 @@ void UITextureRegion::setRenderMode( const RenderMode& render ) {
 void UITextureRegion::autoAlign() {
 	if ( NULL == mTextureRegion )
 		return;
+	autoAlign( mTextureRegion->getDestSize() );
+}
 
+void UITextureRegion::autoAlign( const Sizef& drawableSize ) {
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = ( mSize.getWidth() - mTextureRegion->getDestSize().x ) / 2;
+		mAlignOffset.x = ( mSize.getWidth() - drawableSize.x ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x = mSize.getWidth() - mTextureRegion->getDestSize().x - mPaddingPx.Right;
+		mAlignOffset.x = mSize.getWidth() - drawableSize.x - mPaddingPx.Right;
 	} else {
 		mAlignOffset.x = mPaddingPx.Left;
 	}
 
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = ( mSize.getHeight() - mTextureRegion->getDestSize().y ) / 2;
+		mAlignOffset.y = ( mSize.getHeight() - drawableSize.y ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y - mPaddingPx.Bottom;
+		mAlignOffset.y = mSize.getHeight() - drawableSize.y - mPaddingPx.Bottom;
 	} else {
 		mAlignOffset.y = mPaddingPx.Top;
 	}
@@ -235,17 +220,15 @@ bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
-			Drawable* res = NULL;
 			std::string name( attribute.asString() );
 
 			if ( String::startsWith( name, "@textureregion/" ) ) {
 				name = name.substr( 12 );
 			}
 
-			if ( NULL !=
-					 ( res = TextureAtlasManager::instance()->getTextureRegionByName( name ) ) &&
-				 res->getDrawableType() == Drawable::TEXTUREREGION ) {
-				setTextureRegion( static_cast<TextureRegion*>( res ) );
+			DrawablePtr resource = getUISceneNode()->getResourceScope()->findDrawableSource( name );
+			if ( resource && resource->getDrawableType() == Drawable::TEXTUREREGION ) {
+				setTextureRegion( static_cast<TextureRegion*>( resource.get() ) );
 			}
 			break;
 		}

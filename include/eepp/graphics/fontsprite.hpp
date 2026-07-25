@@ -13,12 +13,20 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
+class FontSprite;
+class ResourceScope;
+using FontSpritePtr = ResourcePtr<FontSprite>;
+using FontSpriteWeakPtr = ResourceWeakPtr<FontSprite>;
+
 /** @brief Implementation of XNA Font Sprites */
 class EE_API FontSprite : public Font {
   public:
-	static FontSprite* New( const std::string fontName );
+	static FontSpritePtr New( const std::string fontName );
+	static FontSpritePtr New( const std::string fontName, ResourceScope& resourceScope );
 
-	static FontSprite* New( const std::string fontName, const std::string& filename );
+	static FontSpritePtr New( const std::string fontName, const std::string& filename );
+	static FontSpritePtr New( const std::string fontName, const std::string& filename,
+							  ResourceScope& resourceScope );
 
 	~FontSprite();
 
@@ -58,7 +66,7 @@ class EE_API FontSprite : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
 
@@ -75,8 +83,8 @@ class EE_API FontSprite : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture; ///< Texture containing the pixels of the glyphs
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

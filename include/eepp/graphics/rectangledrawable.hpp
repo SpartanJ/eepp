@@ -28,6 +28,8 @@ class EE_API RectangleDrawable : public PrimitiveDrawable {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr clone() const;
+
 	Float getRotation() const;
 
 	void setRotation( const Float& rotation );

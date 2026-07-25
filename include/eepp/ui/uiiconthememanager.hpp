@@ -17,15 +17,15 @@ class EE_API UIIconThemeManager {
 
 	~UIIconThemeManager();
 
-	UIIconThemeManager* add( UIIconTheme* iconTheme );
+	UIIconThemeManager* add( UIIconThemePtr iconTheme );
 
 	UIIconTheme* getCurrentTheme() const;
 
-	UIIconThemeManager* setCurrentTheme( UIIconTheme* currentTheme );
+	UIIconThemeManager* setCurrentTheme( UIIconThemePtr currentTheme );
 
 	UIIconTheme* getFallbackTheme() const;
 
-	UIIconThemeManager* setFallbackTheme( UIIconTheme* fallbackTheme );
+	UIIconThemeManager* setFallbackTheme( UIIconThemePtr fallbackTheme );
 
 	UIIcon* findIcon( const std::string& name );
 
@@ -36,7 +36,7 @@ class EE_API UIIconThemeManager {
 	void remove( UIIconTheme* iconTheme );
 
   protected:
-	std::vector<UIIconTheme*> mIconThemes;
+	std::vector<UIIconThemePtr> mIconThemes;
 	UIIconTheme* mCurrentTheme{ nullptr };
 	UIIconTheme* mFallbackTheme{ nullptr };
 	UIThemeManager* mFallbackThemeManager{ nullptr };

@@ -2,6 +2,7 @@
 #define EE_UI_UIBORDERDRAWABLE_HPP
 
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/border.hpp>
 
@@ -87,7 +88,7 @@ class EE_API UIBorderDrawable : public Drawable {
 
   protected:
 	const UINode* mOwner;
-	VertexBuffer* mVertexBuffer;
+	Graphics::VertexBufferUniquePtr mVertexBuffer;
 	mutable Borders mBorders;
 	BorderStr mBorderStr;
 	BorderType mBorderType;

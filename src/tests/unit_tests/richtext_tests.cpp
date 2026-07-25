@@ -40,7 +40,7 @@ static UISceneNode* createRichTextScene() {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( !font->loaded() ) {
 		Engine::destroySingleton();
@@ -94,7 +94,7 @@ UTEST( RichText, basicFunctionality ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 	ASSERT_TRUE( font->loaded() );
@@ -141,7 +141,7 @@ UTEST( RichText, selection ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -222,7 +222,7 @@ UTEST( RichText, BaselineAlignment ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -260,7 +260,7 @@ UTEST( RichText, VerticalAlignAtomicBoxes ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -355,7 +355,7 @@ UTEST( RichText, InlineTextUsesActiveInlineBoxAlignment ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -403,7 +403,7 @@ UTEST( RichText, InlineAncestorLineHeightContributesToLineHeight ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -452,7 +452,7 @@ UTEST( RichText, FloatAwareInlineLayoutUsesTreeOrder ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -487,7 +487,7 @@ UTEST( RichText, RenderSpanPayloadSupportsDrawableAndAtomicSelection ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -545,7 +545,7 @@ UTEST( RichText, InlineBoxHorizontalEdgesContributeToAdvance ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -607,7 +607,7 @@ UTEST( RichText, HitTestingSnapsAcrossInlineBoxSpacing ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -653,7 +653,7 @@ UTEST( RichText, SelectionRectsUseInlineFragments ) {
 						WindowBackend::Default, 32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -699,7 +699,7 @@ UTEST( RichText, InlineParentTextDecorationReachesFragments ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -748,7 +748,7 @@ UTEST( RichText, AtomicInlineBoxBaselineAlignment ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -778,7 +778,7 @@ UTEST( LineWrap, SoftWrapPreventsWordSplitWithOffset ) {
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 
@@ -797,8 +797,6 @@ UTEST( LineWrap, SoftWrapPreventsWordSplitWithOffset ) {
 	// If we wrap at 1 (skipping space), we should have at least 2 wraps: 0 and 1.
 	ASSERT_GE( info.wraps.size(), (size_t)2 );
 	EXPECT_EQ( info.wraps[1], 1 );
-
-	delete font;
 
 	Engine::destroySingleton();
 }
@@ -840,7 +838,7 @@ UTEST( RichText, RichTextTest ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		FontTrueType* font =
-			FontTrueType::New( "NotoSans-Regular", "../assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType::New( "NotoSans-Regular", "../assets/fonts/NotoSans-Regular.ttf" ).get();
 
 		ASSERT_TRUE( font && font->loaded() );
 
@@ -1738,7 +1736,7 @@ UTEST( RichText, BreakSpacesWrapsAfterPreservedSpacesAndTabs ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font->loaded() );
 	FontFamily::loadFromRegular( font );

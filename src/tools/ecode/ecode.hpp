@@ -167,9 +167,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string getCurrentFileDir() const;
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
-	Drawable* findIcon( const std::string& name, const size_t iconSize );
+	DrawablePtr findIcon( const std::string& name, const size_t iconSize );
 
 	const std::map<KeyBindings::Shortcut, std::string>& getRealDefaultKeybindings();
 
@@ -755,7 +755,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<DateTimeController> mDateTimeController;
 	std::unique_ptr<FontPickerController> mFontPickerController;
 	std::string mFileToOpen;
-	UITheme* mTheme{ nullptr };
+	UIThemePtr mTheme;
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
 	UIMessageBox* mCloseMsgBox{ nullptr };

@@ -372,7 +372,7 @@ function build_base_configuration( package_name )
 		buildoptions { "/utf-8" }
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -412,7 +412,7 @@ function build_base_cpp_configuration( package_name )
 		symbols "On"
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -444,6 +444,23 @@ end
 function build_link_configuration( package_name, use_ee_icon )
 	incdirs { "include" }
 	local extension = "";
+
+	if os.istarget("emscripten") and package_name ~= "eepp" and package_name ~= "eepp-static" then
+		local without_assets = {
+			["eepp-empty-window"] = true,
+			["eepp-sound"] = true,
+			["eepp-vbo-fbo-batch"] = true,
+			["eepp-physics-demo"] = true,
+			["eepp-http-request"] = true,
+		}
+		if not without_assets[package_name] then
+			if package_name == "ecode" then
+				linkoptions { "--preload-file " .. package_name .. "/assets/" }
+			else
+				linkoptions { "--preload-file assets/" }
+			end
+		end
+	end
 
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
@@ -583,8 +600,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
-		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if package_name ~= "eepp" and package_name ~= "eepp-static" then
+			targetextension ".html"
+		end
+		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
@@ -739,7 +759,9 @@ end
 function add_sdl2()
 	print("Using SDL2 backend");
 	if not can_add_static_backend("SDL2") then
-		table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		if not os.istarget("emscripten") then
+			table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		end
 	else
 		print("Using static backend")
 		insert_static_backend( "SDL2" )
@@ -1042,6 +1064,8 @@ function build_eepp( build_name )
 end
 
 function target_dir_lib(path)
+	filter "architecture:wasm32"
+		targetdir("libs/" .. os.target() .. "/wasm32/" .. path .. "/")
 	filter "architecture:x86"
 		targetdir("libs/" .. os.target() .. "/x86/" .. path .. "/")
 	filter "architecture:x86_64"
@@ -1084,6 +1108,9 @@ workspace "eepp"
 	if _ACTION == "ninja" then
 		configurations { "debug", "release" }
 		platforms { get_architecture() }
+	elseif os.istarget("emscripten") then
+		configurations { "debug", "release" }
+		platforms { "wasm32" }
 	else
 		configurations { "debug", "release" }
 		platforms { "x86_64", "x86", "arm64" }
@@ -1110,6 +1137,9 @@ workspace "eepp"
 
 	filter "platforms:x86_64"
 		architecture "x86_64"
+
+	filter "platforms:wasm32"
+		architecture "wasm32"
 
 	filter { "platforms:x86_64", "system:macosx" }
 		architecture "x86_64"
@@ -1518,19 +1548,21 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
-	project "eepp-maps"
-		kind "SharedLib"
-		language "C++"
-		cppdialect "C++20"
-		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
-		files { "src/modules/maps/src/**.cpp" }
-		links { "eepp-shared" }
-		defines { "EE_MAPS_EXPORTS" }
-		build_base_cpp_configuration( "eepp-maps" )
-		postsymlinklib_arch( "eepp-maps" )
-		target_dir_lib("")
-		filter "action:not vs*"
-			buildoptions { "-Wall" }
+	if not os.istarget("emscripten") then
+		project "eepp-maps"
+			kind "SharedLib"
+			language "C++"
+			cppdialect "C++20"
+			incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+			files { "src/modules/maps/src/**.cpp" }
+			links { "eepp-shared" }
+			defines { "EE_MAPS_EXPORTS" }
+			build_base_cpp_configuration( "eepp-maps" )
+			postsymlinklib_arch( "eepp-maps" )
+			target_dir_lib("")
+			filter "action:not vs*"
+				buildoptions { "-Wall" }
+	end
 
 	project "eepp-physics-static"
 		kind "StaticLib"
@@ -1547,19 +1579,21 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
-	project "eepp-physics"
-		kind "SharedLib"
-		language "C++"
-		cppdialect "C++20"
-		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
-		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
-		links { "chipmunk-static", "eepp-shared" }
-		defines { "EE_PHYSICS_EXPORTS" }
-		build_base_cpp_configuration( "eepp-physics" )
-		postsymlinklib_arch( "eepp-physics" )
-		target_dir_lib("")
-		filter "action:not vs*"
-			buildoptions { "-Wall" }
+	if not os.istarget("emscripten") then
+		project "eepp-physics"
+			kind "SharedLib"
+			language "C++"
+			cppdialect "C++20"
+			incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+			files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+			links { "chipmunk-static", "eepp-shared" }
+			defines { "EE_PHYSICS_EXPORTS" }
+			build_base_cpp_configuration( "eepp-physics" )
+			postsymlinklib_arch( "eepp-physics" )
+			target_dir_lib("")
+			filter "action:not vs*"
+				buildoptions { "-Wall" }
+	end
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1605,12 +1639,14 @@ workspace "eepp"
 		target_dir_lib("")
 	end
 
-	project "eepp-shared"
-		kind "SharedLib"
-		language "C++"
-		build_eepp( "eepp" )
-		postsymlinklib_arch( "eepp" )
-		target_dir_lib("")
+	if not os.istarget("emscripten") then
+		project "eepp-shared"
+			kind "SharedLib"
+			language "C++"
+			build_eepp( "eepp" )
+			postsymlinklib_arch( "eepp" )
+			target_dir_lib("")
+	end
 
 	-- Examples
 	project "eepp-external-shader"

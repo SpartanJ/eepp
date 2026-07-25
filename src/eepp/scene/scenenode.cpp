@@ -18,7 +18,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	Node(),
 	mWindow( window ),
 	mActionManager( ActionManager::New() ),
-	mFrameBuffer( NULL ),
+	mFrameBuffer( nullptr ),
 	mEventDispatcher( NULL ),
 	mFrameBufferBound( false ),
 	mUseInvalidation( false ),
@@ -65,7 +65,7 @@ SceneNode::~SceneNode() {
 	if ( !mParentNode )
 		eeSAFE_DELETE( mEventDispatcher );
 
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 }
 
 void SceneNode::enableFrameBuffer() {
@@ -74,7 +74,7 @@ void SceneNode::enableFrameBuffer() {
 }
 
 void SceneNode::disableFrameBuffer() {
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 
 	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 0 );
 }
@@ -260,7 +260,7 @@ Sizei SceneNode::getFrameBufferSize() {
 
 void SceneNode::createFrameBuffer() {
 	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 1 );
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 )
 		fboSize.setWidth( 1 );
@@ -271,7 +271,7 @@ void SceneNode::createFrameBuffer() {
 
 	// Frame buffer failed to create?
 	if ( mFrameBuffer == nullptr || !mFrameBuffer->created() ) {
-		eeSAFE_DELETE( mFrameBuffer );
+		mFrameBuffer.reset();
 	}
 }
 
@@ -351,7 +351,7 @@ void SceneNode::resizeNode( EE::Window::Window* ) {
 }
 
 FrameBuffer* SceneNode::getFrameBuffer() const {
-	return mFrameBuffer;
+	return mFrameBuffer.get();
 }
 
 void SceneNode::setEventDispatcher( EventDispatcher* eventDispatcher ) {

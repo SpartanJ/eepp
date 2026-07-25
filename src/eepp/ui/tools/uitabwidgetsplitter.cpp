@@ -912,7 +912,7 @@ void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget*
 					!result.title.empty() ? result.title : file.value( "title", "" );
 				auto [tab, _] = createWidgetInTabWidget( curTabWidget, result.widget, title );
 				if ( result.icon )
-					tab->setIcon( result.icon );
+					tab->setIcon( result.icon->clone() );
 			}
 		}
 		if ( curTabWidget->getTabCount() > 0 ) {

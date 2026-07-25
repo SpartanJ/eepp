@@ -10,16 +10,17 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics { namespace Private {
 
-class EE_API VertexBufferManager : public Container<VertexBuffer> {
-	SINGLETON_DECLARE_HEADERS( VertexBufferManager )
+/** Non-owning registry of vertex buffers visible to the active graphics context. */
+class EE_API VertexBufferRegistry : public Container<VertexBuffer> {
+	SINGLETON_DECLARE_HEADERS( VertexBufferRegistry )
 
   public:
-	virtual ~VertexBufferManager();
+	virtual ~VertexBufferRegistry();
 
 	void reload();
 
   protected:
-	VertexBufferManager();
+	VertexBufferRegistry();
 };
 
 }}} // namespace EE::Graphics::Private

@@ -5,15 +5,15 @@
 
 namespace EE { namespace Graphics {
 
-GlyphDrawable* GlyphDrawable::New( Texture* texture, const Rect& srcRect, const Sizef& destSize,
+GlyphDrawable* GlyphDrawable::New( TexturePtr texture, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& resourceName ) {
-	return eeNew( GlyphDrawable, ( texture, srcRect, destSize, resourceName ) );
+	return eeNew( GlyphDrawable, ( std::move( texture ), srcRect, destSize, resourceName ) );
 }
 
-GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef& destSize,
+GlyphDrawable::GlyphDrawable( TexturePtr texture, const Rect& srcRect, const Sizef& destSize,
 							  const std::string& resourceName ) :
 	DrawableResource( Drawable::GLYPH, resourceName ),
-	mTexture( texture ),
+	mTexture( std::move( texture ) ),
 	mSrcRect( srcRect.asFloat() ),
 	mDestSize( destSize ),
 	mAdvance( destSize.getWidth() ) {
@@ -80,7 +80,19 @@ bool GlyphDrawable::isStateful() {
 	return false;
 }
 
-Texture* GlyphDrawable::getTexture() {
+DrawablePtr GlyphDrawable::clone() const {
+	auto instance = makeResource<GlyphDrawable>( mTexture, mSrcRect.asInt(), mDestSize, mName );
+	instance->setPixelDensity( mPixelDensity );
+	instance->setGlyphOffset( mGlyphOffset );
+	instance->setDrawMode( mDrawMode );
+	instance->setIsItalic( mIsItalic );
+	instance->setAdvance( mAdvance );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
+
+const TexturePtr& GlyphDrawable::getTexture() const {
 	return mTexture;
 }
 

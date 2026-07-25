@@ -1,20 +1,62 @@
 #include <eepp/graphics/drawableresource.hpp>
 
+#include <algorithm>
+
 namespace EE { namespace Graphics {
 
-DrawableResource::DrawableResource( Type drawableType ) :
-	Drawable( drawableType ), mId( 0 ), mNumCallBacks( 0 ) {
+DrawableResourceConnection::DrawableResourceConnection(
+	std::weak_ptr<DrawableResourceCallbackState> state, Uint32 id ) :
+	mState( std::move( state ) ), mId( id ) {}
+
+DrawableResourceConnection::~DrawableResourceConnection() {
+	disconnect();
+}
+
+DrawableResourceConnection::DrawableResourceConnection(
+	DrawableResourceConnection&& other ) noexcept :
+	mState( std::move( other.mState ) ), mId( other.mId ) {
+	other.mId = 0;
+}
+
+DrawableResourceConnection&
+DrawableResourceConnection::operator=( DrawableResourceConnection&& other ) noexcept {
+	if ( this != &other ) {
+		disconnect();
+		mState = std::move( other.mState );
+		mId = other.mId;
+		other.mId = 0;
+	}
+	return *this;
+}
+
+void DrawableResourceConnection::disconnect() {
+	if ( mId != 0 ) {
+		if ( auto state = mState.lock() ) {
+			auto callback =
+				std::find_if( state->callbacks.begin(), state->callbacks.end(),
+							  [this]( const auto& callback ) { return callback.first == mId; } );
+			if ( callback != state->callbacks.end() )
+				state->callbacks.erase( callback );
+		}
+	}
+	mState.reset();
+	mId = 0;
+}
+
+DrawableResourceConnection::operator bool() const {
+	return mId != 0 && !mState.expired();
+}
+
+DrawableResource::DrawableResource( Type drawableType ) : Drawable( drawableType ), mId( 0 ) {
 	createUnnamed();
 }
 
 DrawableResource::DrawableResource( Type drawableType, const std::string& name ) :
-	Drawable( drawableType ), mId( 0 ), mNumCallBacks( 0 ) {
+	Drawable( drawableType ), mId( 0 ) {
 	setName( name );
 }
 
-DrawableResource::~DrawableResource() {
-	sendEvent( Event::Unload );
-}
+DrawableResource::~DrawableResource() {}
 
 const String::HashType& DrawableResource::getId() const {
 	return mId;
@@ -39,23 +81,28 @@ bool DrawableResource::isDrawableResource() const {
 }
 
 void DrawableResource::onResourceChange() {
-	sendEvent( Event::Change );
+	sendResourceChanged();
 }
 
-void DrawableResource::sendEvent( const Event& event ) {
-	for ( const auto& cb : mCallbacks ) {
-		cb.second( cb.first, event, this );
-	}
+void DrawableResource::sendResourceChanged() {
+	if ( !mCallbackState )
+		return;
+
+	SmallVector<OnResourceChangeCallback, 4> callbacks;
+	for ( const auto& callback : mCallbackState->callbacks )
+		callbacks.emplace_back( callback.second );
+	for ( const auto& callback : callbacks )
+		callback( *this );
 }
 
-Uint32 DrawableResource::pushResourceChangeCallback( const OnResourceChangeCallback& cb ) {
-	mNumCallBacks++;
-	mCallbacks[mNumCallBacks] = cb;
-	return mNumCallBacks;
-}
+DrawableResourceConnection
+DrawableResource::connectResourceChange( OnResourceChangeCallback callback ) {
+	if ( !mCallbackState )
+		mCallbackState = std::make_shared<DrawableResourceCallbackState>();
 
-bool DrawableResource::popResourceChangeCallback( const Uint32& callbackId ) {
-	return mCallbacks.erase( callbackId ) > 0;
+	Uint32 id = ++mCallbackState->nextId;
+	mCallbackState->callbacks.emplace_back( id, std::move( callback ) );
+	return DrawableResourceConnection( mCallbackState, id );
 }
 
 }} // namespace EE::Graphics

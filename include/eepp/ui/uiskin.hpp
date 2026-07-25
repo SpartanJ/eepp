@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UISkin : public StateListDrawable {
   public:
-	static UISkin* New( const std::string& name = "" );
+	static ResourcePtr<UISkin> New( const std::string& name = "" );
 
 	virtual ~UISkin();
 
@@ -20,9 +20,11 @@ class EE_API UISkin : public StateListDrawable {
 
 	virtual Sizef getPixelsSize();
 
-	virtual UISkin* clone();
+	DrawablePtr clone() const;
 
-	virtual UISkin* clone( const std::string& NewName );
+	ResourcePtr<UISkin> cloneSkin() const;
+
+	ResourcePtr<UISkin> clone( const std::string& newName ) const;
 
 	virtual Rectf getBorderSize( const Uint32& state );
 

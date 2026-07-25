@@ -1,5 +1,4 @@
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/window/engine.hpp>
@@ -80,17 +79,17 @@ std::vector<std::size_t> Font::emojiCodePointsPositions( const String& string ) 
 
 Font::Font( const FontType& Type, const std::string& Name ) : mType( Type ), mNumCallBacks( 0 ) {
 	this->setName( Name );
-	FontManager::instance()->add( this );
 }
 
-Font::~Font() {
-	if ( !FontManager::instance()->isDestroying() ) {
-		FontManager::instance()->remove( this, false );
-	}
-}
+Font::~Font() {}
 
 const FontType& Font::getType() const {
 	return mType;
+}
+
+Float Font::getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							 Float outlineThickness ) const {
+	return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
 }
 
 const std::string& Font::getName() const {

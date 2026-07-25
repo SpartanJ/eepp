@@ -7,6 +7,7 @@
 #include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/stbi_iocb.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/system/thread.hpp>
@@ -16,6 +17,16 @@ using namespace EE::Window;
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
+
+DrawablePtr Texture::clone() const {
+	TexturePtr texture = TextureFactory::instance()->getTexture( getTextureId() );
+	if ( !texture )
+		return {};
+	TextureDrawablePtr instance = TextureDrawable::New( std::move( texture ) );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
 
 Uint32 Texture::getMaximumSize() {
 	static bool checked = false;
@@ -919,7 +930,7 @@ void Texture::draw( const Vector2f& position, const Sizef& size ) {
 			  size.y );
 }
 
-std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
+std::pair<std::vector<TexturePtr>, int> Texture::loadGif( IOStream& stream ) {
 	stbi_io_callbacks callbacks;
 	callbacks.read = &IOCb::read;
 	callbacks.skip = &IOCb::skip;
@@ -929,7 +940,7 @@ std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
 	if ( type != STBI_gif )
 		return {};
 	stream.seek( 0 );
-	std::vector<Texture*> gif;
+	std::vector<TexturePtr> gif;
 	ScopedBuffer buf( stream.getSize() );
 	stream.read( (char*)buf.get(), buf.size() );
 	int width, height, frames, comp;

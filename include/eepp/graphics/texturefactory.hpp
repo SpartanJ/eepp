@@ -21,7 +21,7 @@ struct TextureRegistryRecord {
 
 using TextureRegistrySnapshot = std::vector<TextureRegistryRecord>;
 
-/** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
+/** Creates textures and weakly observes every live texture for diagnostics. */
 class EE_API TextureFactory : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( TextureFactory )
 
@@ -39,7 +39,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param Filename A filename to recognize the texture.
 	 * @return The created texture
 	 */
-	Texture* createEmptyTexture(
+	TexturePtr createEmptyTexture(
 		const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4,
 		const Color& DefaultColor = Color( 0, 0, 0, 255 ), const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
@@ -60,12 +60,13 @@ class EE_API TextureFactory : protected Mutex {
 	 * outside the texture factory ).
 	 * @return The texture loaded or null if error
 	 */
-	Texture* loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
-							 const unsigned int& Height, const unsigned int& Channels,
-							 const bool& Mipmap = false,
-							 const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
-							 const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
-							 const std::string& FileName = std::string( "" ) );
+	TexturePtr
+	loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
+					const unsigned int& Height, const unsigned int& Channels,
+					const bool& Mipmap = false,
+					const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
+					const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
+					const std::string& FileName = std::string( "" ) );
 
 	/** Load a texture from Pack file
 	 * @param Pack Pointer to the pack instance
@@ -79,7 +80,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * the image.
 	 * @return The texture loaded or null if error
 	 */
-	Texture* loadFromPack(
+	TexturePtr loadFromPack(
 		Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -97,7 +98,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * the image.
 	 * @return The texture loaded or null if error
 	 */
-	Texture* loadFromMemory(
+	TexturePtr loadFromMemory(
 		const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -114,7 +115,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * the image.
 	 * @return The texture loaded or null if error
 	 */
-	Texture* loadFromStream(
+	TexturePtr loadFromStream(
 		IOStream& Stream, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -131,23 +132,11 @@ class EE_API TextureFactory : protected Mutex {
 	 * the image.
 	 * @return The texture loaded or null if error
 	 */
-	Texture* loadFromFile(
+	TexturePtr loadFromFile(
 		const std::string& Filepath, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
 		const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
-
-	/** Removes and unloads the texture identified by @p textureId.
-	 * @param textureId The process-wide texture identity.
-	 * @return True if was removed
-	 */
-	bool remove( ResourceId textureId );
-
-	/** Removes and Unload the Texture
-	 * @param texture The texture pointer
-	 * @return True if was removed
-	 */
-	bool remove( Texture* texture );
 
 	/** Binds the texture identity indicated. This is useful if you are rendering a texture
 	 * outside this class.
@@ -183,11 +172,8 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	void setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit );
 
-	/** Returns the number of textures loaded */
+	/** Returns the number of currently live textures. */
 	Uint32 getTextureCount();
-
-	/** @return All the active textures */
-	std::vector<Texture*> getTextures();
 
 	/** @return A non-owning diagnostic snapshot of every currently live texture. */
 	TextureRegistrySnapshot snapshotTextures();
@@ -215,14 +201,11 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	unsigned int getValidTextureSize( const unsigned int& Size );
 
-	/** Determines whether the texture identity exists in the factory. */
+	/** Determines whether the texture identity is currently live. */
 	bool existsId( ResourceId textureId );
 
-	/** Determines whether the texture is retained by the factory. */
-	bool exists( const Texture* tex );
-
-	/** @return The texture matching @p textureId, or null if it is not factory-retained. */
-	Texture* getTexture( ResourceId textureId );
+	/** @return The live texture matching @p textureId, or null if it has expired. */
+	TexturePtr getTexture( ResourceId textureId );
 
 	/** @return The memory used by the textures (in bytes) */
 	unsigned int getTextureMemorySize();
@@ -243,24 +226,12 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param MemSize The size of the texture in memory ( just if you need to specify the real size
 	 * in memory, just useful to calculate the total texture memory ).
 	 */
-	Texture* pushTexture( const std::string& Filepath, const Uint32& textureHandle,
-						  const unsigned int& Width, const unsigned int& Height,
-						  const unsigned int& ImgWidth, const unsigned int& ImgHeight,
-						  const bool& Mipmap, const unsigned int& Channels,
-						  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
-						  const bool& LocalCopy = false, const Uint32& MemSize = 0 );
-
-	/** Return a texture by it file path name
-	 * @param Name File path name
-	 * @return The texture, NULL if not exists.
-	 */
-	Texture* getByName( const std::string& Name );
-
-	/** Return a texture by it hash path name
-	 * @param Hash The file path hash
-	 * @return The texture, NULL if not exists
-	 */
-	Texture* getByHash( const String::HashType& hash );
+	TexturePtr pushTexture( const std::string& Filepath, const Uint32& textureHandle,
+							const unsigned int& Width, const unsigned int& Height,
+							const unsigned int& ImgWidth, const unsigned int& ImgHeight,
+							const bool& Mipmap, const unsigned int& Channels,
+							const Texture::ClampMode& ClampMode, const bool& CompressTexture,
+							const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 
 	~TextureFactory();
 
@@ -273,8 +244,6 @@ class EE_API TextureFactory : protected Mutex {
 
 	std::vector<int> mCurrentTexture;
 
-	using TextureMap = UnorderedMap<Uint64, TexturePtr>;
-
 	struct LiveTextureRecord {
 		ResourceId id;
 		TextureWeakPtr texture;
@@ -284,17 +253,16 @@ class EE_API TextureFactory : protected Mutex {
 		void operator()( Texture* texture ) const noexcept;
 	};
 
-	TextureMap mTextures;
 	UnorderedMap<Uint64, LiveTextureRecord> mLiveTextures;
 	std::vector<Texture*> mReleasedTextures;
 	std::atomic<Uint64> mLiveTextureGeneration{ 0 };
 
 	Texture::CoordinateType mLastCoordinateType;
 
-	void unloadTextures();
-
 	void resetTextureBinding( const Texture* texture );
 
+	/** Thread-safe final-handle handoff. Actual Texture destruction remains graphics-thread-only.
+	 */
 	void queueReleasedTexture( Texture* texture );
 
 	void diagnoseLiveTexturesAtShutdown();

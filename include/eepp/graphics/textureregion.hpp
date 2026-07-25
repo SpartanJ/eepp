@@ -8,31 +8,36 @@
 
 namespace EE { namespace Graphics {
 
+class TextureRegion;
+using TextureRegionPtr = ResourcePtr<TextureRegion>;
+using TextureRegionWeakPtr = ResourceWeakPtr<TextureRegion>;
+
 /** @brief A TextureRegion is a part of a texture that represent an sprite.*/
 class EE_API TextureRegion : public DrawableResource {
   public:
-	static TextureRegion* New();
+	static TextureRegionPtr New();
 
-	static TextureRegion* New( ResourceId textureId, const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
-							   const Vector2i& offset, const std::string& name = "" );
+	static TextureRegionPtr New( ResourceId textureId, const Rect& srcRect, const Sizef& destSize,
+								 const Vector2i& offset, const std::string& name = "" );
 
-	static TextureRegion* New( Texture* tex, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const std::string& name = "" );
 
-	static TextureRegion* New( Texture* tex, const Rect& srcRect, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
-							   const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+								 const std::string& name = "" );
 
-	static TextureRegion* New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
-							   const Vector2i& offset, const std::string& name = "" );
+	static TextureRegionPtr New( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+								 const Vector2i& offset, const std::string& name = "" );
 
 	/** Creates an empty TextureRegion */
 	TextureRegion();
@@ -41,14 +46,14 @@ class EE_API TextureRegion : public DrawableResource {
 	 *	@param tex The texture
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( Texture* tex, const std::string& name = "" );
+	TextureRegion( TexturePtr tex, const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
 	 *	@param tex The texture
 	 *	@param srcRect The texture part that will be used as the TextureRegion.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( Texture* tex, const Rect& srcRect, const std::string& name = "" );
+	TextureRegion( TexturePtr tex, const Rect& srcRect, const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
 	 *	@param tex The texture
@@ -56,7 +61,7 @@ class EE_API TextureRegion : public DrawableResource {
 	 *	@param destSize The destination size that the TextureRegion will have when rendered.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+	TextureRegion( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
 				   const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
@@ -67,8 +72,8 @@ class EE_API TextureRegion : public DrawableResource {
 	 *used.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( Texture* tex, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset,
-				   const std::string& name = "" );
+	TextureRegion( TexturePtr tex, const Rect& srcRect, const Sizef& destSize,
+				   const Vector2i& offset, const std::string& name = "" );
 
 	virtual ~TextureRegion();
 
@@ -76,7 +81,7 @@ class EE_API TextureRegion : public DrawableResource {
 	void setTextureId( ResourceId textureId );
 
 	/** Set the Texture that holds the TextureRegion. */
-	void setTexture( Texture* texture );
+	void setTexture( TexturePtr texture );
 
 	/** @return The Texture sector that represents the TextureRegion */
 	const Rect& getSrcRect() const;
@@ -126,8 +131,10 @@ class EE_API TextureRegion : public DrawableResource {
 
 	virtual bool isStateful() { return false; }
 
+	DrawablePtr clone() const;
+
 	/** @return The texture instance used by the TextureRegion. */
-	Graphics::Texture* getTexture();
+	const TexturePtr& getTexture() const;
 
 	/** Replaces a color in the TextureRegion ( needs Lock() ) */
 	void replaceColor( Color ColorKey, Color NewColor );
@@ -204,7 +211,7 @@ class EE_API TextureRegion : public DrawableResource {
   protected:
 	Uint8* mPixels;
 	Uint8* mAlphaMask;
-	Graphics::Texture* mTexture;
+	TexturePtr mTexture;
 	Rect mSrcRect;
 	Sizef mOriDestSize;
 	Sizef mDestSize;

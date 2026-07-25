@@ -1963,33 +1963,35 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 		return;
 
 	pos.x += drawn.getWidth();
+	Float textHeight = drawn.getHeight();
 	if ( mDrawSepIcon == nullptr )
 		mDrawSepIcon = getUISceneNode()->findIcon( "chevron-right" );
-	Float textHeight = drawn.getHeight();
+	Drawable* separatorDrawable =
+		mDrawSepIcon
+			? mDrawSepIcon->getSource( PixelDensity::dpToPxI( drawn.getHeight() * 0.5f ) ).get()
+			: nullptr;
 
 	const auto& symbolsInfo = symbolsInfoIt->second;
 
 	for ( const auto& info : symbolsInfo ) {
-		if ( mDrawSepIcon ) {
+		if ( separatorDrawable ) {
 			pos.x += eefloor( PixelDensity::dpToPx( 8 ) );
-			Float iconSize = PixelDensity::dpToPxI( drawn.getHeight() * 0.5f );
-			auto iconDrawable = mDrawSepIcon->getSize( iconSize );
-			Color c = iconDrawable->getColor();
-			iconDrawable->setColor( textColor );
-			Float iconHeight = iconDrawable->getPixelsSize().getHeight();
+			Color c = separatorDrawable->getColor();
+			separatorDrawable->setColor( textColor );
+			Float iconHeight = separatorDrawable->getPixelsSize().getHeight();
 			Vector2f iconPos( { pos.x, screenStart.y + textOffsetY +
 										   eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
-			iconDrawable->draw( iconPos );
+			separatorDrawable->draw( iconPos );
 			pos.x +=
-				iconDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
-			iconDrawable->setColor( c );
+				separatorDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
+			separatorDrawable->setColor( c );
 		} else {
 			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );
 		}
 
-		UIIcon* iconKind = getUISceneNode()->findIcon( info.icon );
-		if ( iconKind ) {
-			auto iconDrawable = iconKind->getSize( fontSize );
+		UIIcon* icon = getUISceneNode()->findIcon( info.icon );
+		Drawable* iconDrawable = icon ? icon->getSource( (int)fontSize ).get() : nullptr;
+		if ( iconDrawable ) {
 			Color c = iconDrawable->getColor();
 			iconDrawable->setColor( textColor );
 			Float iconHeight = iconDrawable->getPixelsSize().getHeight();

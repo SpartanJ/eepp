@@ -1,4 +1,4 @@
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
@@ -461,13 +461,7 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	return terminal;
 }
 
-TerminalDisplay::~TerminalDisplay() {
-	eeSAFE_DELETE( mVBBackground );
-	eeSAFE_DELETE( mVBForeground );
-	for ( VertexBuffer* vb : mVBStyles )
-		eeSAFE_DELETE( vb );
-	eeSAFE_DELETE( mFrameBuffer );
-}
+TerminalDisplay::~TerminalDisplay() = default;
 
 TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
 								  const Sizef& pixelsSize, const bool& useFrameBuffer ) :
@@ -1391,7 +1385,12 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
 													glyph.mode & ATTR_ITALIC, 0 );
 
-				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
+				FontService* fontService =
+					mFont->getType() == FontType::TTF
+						? static_cast<FontTrueType*>( mFont )->getFontService()
+						: nullptr;
+				if ( ( glyph.mode & ATTR_EMOJI ) && fontService &&
+					 fontService->getColorEmojiFont() ) {
 					gd->setColor( Color::White );
 				} else {
 					gd->setColor( fg );
@@ -1401,7 +1400,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 														  : GlyphDrawable::DrawMode::Text );
 
 				if ( mVBForeground ) {
-					gd->drawIntoVertexBuffer( mVBForeground, mCurGridPos, { x, y } );
+					gd->drawIntoVertexBuffer( mVBForeground.get(), mCurGridPos, { x, y } );
 				} else {
 					gd->draw( { x, y } );
 				}
@@ -1527,12 +1526,12 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 	if ( !mVBStyles.empty() ) {
 		if ( dirtyFG ) {
-			for ( auto vbo : mVBStyles ) {
+			for ( const auto& vbo : mVBStyles ) {
 				if ( vbo->getVertexCount() )
 					vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
 			}
 		}
-		for ( auto vbo : mVBStyles ) {
+		for ( const auto& vbo : mVBStyles ) {
 			if ( vbo->getVertexCount() == 0 )
 				continue;
 			vbo->bind();
@@ -1932,7 +1931,7 @@ Sizei TerminalDisplay::getFrameBufferSize() {
 }
 
 void TerminalDisplay::createFrameBuffer() {
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 )
 		fboSize.setWidth( 1 );
@@ -1941,8 +1940,8 @@ void TerminalDisplay::createFrameBuffer() {
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true );
 
 	// Frame buffer failed to create?
-	if ( !mFrameBuffer->created() )
-		eeSAFE_DELETE( mFrameBuffer );
+	if ( !mFrameBuffer || !mFrameBuffer->created() )
+		mFrameBuffer.reset();
 }
 
 void TerminalDisplay::drawFrameBuffer() {
@@ -1953,8 +1952,8 @@ void TerminalDisplay::drawFrameBuffer() {
 	}
 }
 
-VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
-	auto* VBO = VertexBuffer::NewVertexArray(
+VertexBufferUniquePtr TerminalDisplay::createRowVBO( bool usesTexCoords ) {
+	auto VBO = VertexBuffer::NewVertexArray(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
 		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
 		mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
@@ -1962,24 +1961,21 @@ VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
 	return VBO;
 }
 
-void TerminalDisplay::createVBO( VertexBuffer** vbo, bool usesTexCoords ) {
-	eeSAFE_DELETE( ( *vbo ) );
-	( *vbo ) = VertexBuffer::New(
-		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
-		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
-	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertex );
-	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertex );
-	( *vbo )->setGridSize( Sizei( mColumns, mRows ) );
+void TerminalDisplay::createVBO( VertexBufferUniquePtr& vbo, bool usesTexCoords ) {
+	vbo = VertexBuffer::New( usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
+							 mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES
+											  : EE::Graphics::PRIMITIVE_QUADS,
+							 mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
+	vbo->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertex );
+	vbo->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertex );
+	vbo->setGridSize( Sizei( mColumns, mRows ) );
 	if ( usesTexCoords )
-		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertex );
+		vbo->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertex );
 }
 
 void TerminalDisplay::initVBOs() {
-	createVBO( &mVBBackground, false );
-	createVBO( &mVBForeground, true );
-	for ( VertexBuffer* vb : mVBStyles )
-		eeSAFE_DELETE( vb );
+	createVBO( mVBBackground, false );
+	createVBO( mVBForeground, true );
 	mVBStyles.clear();
 	for ( Uint32 i = 0; i < mRows; ++i )
 		mVBStyles.emplace_back( createRowVBO( false ) );

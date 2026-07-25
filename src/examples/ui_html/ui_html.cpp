@@ -63,11 +63,15 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	auto ui = app.getUI();
 	ui->setThreadPool( threadPool );
 
-	FontTrueType* remixIconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
-	FontTrueType* noniconsFont = FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf" );
-	FontTrueType* codIconFont = FontTrueType::New( "codicon", "assets/fonts/codicon.ttf" );
+	ResourceScope& resourceScope = *ui->getResourceScope();
+	FontTrueTypePtr remixIconFont =
+		FontTrueType::New( "icon", "assets/fonts/remixicon.ttf", resourceScope );
+	FontTrueTypePtr noniconsFont =
+		FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf", resourceScope );
+	FontTrueTypePtr codIconFont =
+		FontTrueType::New( "codicon", "assets/fonts/codicon.ttf", resourceScope );
 	ui->getUIIconThemeManager()->setCurrentTheme(
-		IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont ) );
+		IconManager::init( "icons", remixIconFont.get(), noniconsFont.get(), codIconFont.get() ) );
 
 	ui->setColorSchemePreference(
 		!prefersColorScheme.Get().empty()

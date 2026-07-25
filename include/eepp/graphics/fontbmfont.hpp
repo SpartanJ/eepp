@@ -12,12 +12,20 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
+class FontBMFont;
+class ResourceScope;
+using FontBMFontPtr = ResourcePtr<FontBMFont>;
+using FontBMFontWeakPtr = ResourceWeakPtr<FontBMFont>;
+
 /** @brief Implementation of AngelCode BMFont fonts. */
 class EE_API FontBMFont : public Font {
   public:
-	static FontBMFont* New( const std::string fontName );
+	static FontBMFontPtr New( const std::string fontName );
+	static FontBMFontPtr New( const std::string fontName, ResourceScope& resourceScope );
 
-	static FontBMFont* New( const std::string fontName, const std::string& filename );
+	static FontBMFontPtr New( const std::string fontName, const std::string& filename );
+	static FontBMFontPtr New( const std::string fontName, const std::string& filename,
+							  ResourceScope& resourceScope );
 
 	~FontBMFont();
 
@@ -37,7 +45,10 @@ class EE_API FontBMFont : public Font {
 	const Font::Info& getInfo() const;
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness = 0 ) const;
+					Float outlineThickness = 0 ) const;
+
+	Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
+						   bool italic = false, Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,
@@ -54,7 +65,7 @@ class EE_API FontBMFont : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
 
@@ -71,8 +82,8 @@ class EE_API FontBMFont : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture; ///< Texture containing the pixels of the glyphs
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

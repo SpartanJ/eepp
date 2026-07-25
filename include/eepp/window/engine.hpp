@@ -6,6 +6,13 @@
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 
+#include <memory>
+
+namespace EE { namespace Graphics {
+class ResourceCatalog;
+class ResourceScope;
+}} // namespace EE::Graphics
+
 namespace EE { namespace System {
 class IniFile;
 class Pack;
@@ -140,6 +147,12 @@ class EE_API Engine {
 	/** @return The display manager. Holds the physical displays information. */
 	DisplayManager* getDisplayManager();
 
+	/** @return The catalog used for resources intentionally exported application-wide. */
+	std::shared_ptr<Graphics::ResourceCatalog> getGlobalResourceCatalog() const;
+
+	/** @return The default Graphics scope. It explicitly imports the global resource catalog. */
+	std::shared_ptr<Graphics::ResourceScope> getDefaultResourceScope() const;
+
 	/** Open a URL in a separate, system-provided application.
 	 * @return true if success
 	 */
@@ -156,6 +169,8 @@ class EE_API Engine {
 	PlatformHelper* mPlatformHelper;
 	Pack* mZip;
 	DisplayManager* mDisplayManager;
+	std::shared_ptr<Graphics::ResourceCatalog> mGlobalResourceCatalog;
+	std::shared_ptr<Graphics::ResourceScope> mDefaultResourceScope;
 
 	Engine();
 

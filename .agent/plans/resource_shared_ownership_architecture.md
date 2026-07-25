@@ -1,7 +1,6 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0, prerequisite fixes, and Stage 1 complete;
-Stage 2 is next, 2026-07-15.
+Status: implementation complete through Stage 7, 2026-07-24.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -19,9 +18,9 @@ The final model is:
   reporting. It is never searched for semantic names.
 - Catalogs define names and persistence.
 - Scopes define which catalogs and typed caches are visible.
-- GPU resources remain graphics-thread-affine. The project contract requires final owning releases
-  and destruction to run through the graphics/update lifecycle rather than supporting arbitrary
-  last-release threads.
+- GPU resources remain graphics-thread-affine. A final owning release may happen on a worker, but
+  the texture deleter only performs a thread-safe handoff to TextureFactory. Actual destruction runs
+  through the graphics/display lifecycle.
 - UI drawable resolution is layered over Graphics resource lookup; browser caching and navigation
   remain outside Graphics.
 - A UISceneNode can own a scope and resolver, but neither texture lifetime nor pure Graphics usage
@@ -105,10 +104,10 @@ Factories use an equivalent private helper for protected constructors. `std::mak
 used for tracked eepp resources unless the memory manager is redesigned to understand its combined
 allocation. No second control block may be created from `handle.get()`.
 
-Texture is the deliberate exception to immediate `eeDelete`: its factory-controlled deleter queues
-the final raw object for graphics-thread destruction. `TextureFactory::collectReleasedTextures()`
-performs the eventual `eeDelete` after queued rendering has been flushed. This is the same deferred
-destruction contract used by scene nodes; it is not a general arbitrary-thread GPU disposal system.
+Texture is the deliberate exception to immediate `eeDelete`: its factory-controlled deleter may
+queue the final raw object from any thread. `TextureFactory::collectReleasedTextures()` performs the
+eventual `eeDelete` on the graphics thread after queued rendering has been flushed. This is the same
+deferred destruction contract used by scene nodes; it is not a general GPU disposal system.
 
 ### 3.3 Identity, keys, and labels
 
@@ -234,9 +233,11 @@ Frozen lookup rules:
 - Never search the live registry.
 - Never implicitly search a parent, host scene, sibling scene, or every live resource.
 - The default Graphics scope imports the global catalog explicitly.
-- A UI/application scene receives only the catalogs deliberately imported into it.
-- A Web document does not inherit host/global resources unless the host exports and imports them
-  intentionally.
+- A UI/application scene imports the default resource catalog automatically for the common case;
+  callers can disable this at construction for strict isolation and then import only the catalogs
+  they deliberately expose.
+- A Web document receives the same default-catalog baseline unless created with automatic import
+  disabled. It never implicitly inherits host, sibling, or other document-local catalogs.
 - Scopes import catalogs, not arbitrary scopes. This avoids recursive lookup and import cycles.
 
 Pure `EE::Graphics` users may use TextureFactory for unpinned creation or Engine's default Graphics
@@ -270,14 +271,14 @@ performs the same collection explicitly because no later display is guaranteed.
 
 ### 5.1 Graphics-thread lifetime contract
 
-GPU resources are graphics-thread-affine. Creating, mutating and finally releasing owning handles
-must follow the engine's graphics/update lifecycle. `std::shared_ptr` provides ownership safety; it
-does not expand eepp's supported threading contract. Async CPU decoding may run elsewhere, but
-ownership handoff and final release are marshalled to the main/scene update path unless an existing
-API explicitly acquires a shared GL context.
+GPU operations remain graphics-context-affine and follow the existing graphics/update or explicitly
+shared-context rules. Releasing the final `TexturePtr` is different: it performs no GPU operation and
+may enqueue the raw texture from any thread. Only collection and actual destruction require the
+graphics thread and a current context.
 
-Debug builds should assert this contract at factory release and collection boundaries. The design
-does not add a generic device state, epoch or arbitrary-thread disposal queue for unsupported usage.
+Debug builds assert the collection boundary. The design does not add a generic device state, epoch,
+or disposal mechanism for other GPU resource families; TextureFactory's small deferred-release queue
+is the texture-specific lifetime boundary already required by batched rendering.
 
 ### 5.2 Texture deferred destruction
 
@@ -344,34 +345,75 @@ fixed:
 Shared lifetime and shareable instance state are separate concerns. `isStateful()` is not a sharing
 contract and will not be used as one.
 
-### 7.1 Frozen source/instance split
+### 7.1 Source/instance split
 
 Resource resolution caches immutable source data. UI consumers own per-consumer drawable instances:
 
 ```cpp
-using DrawableSourcePtr = ResourcePtr<const DrawableSource>;
 using DrawablePtr = ResourcePtr<Drawable>;
 
-DrawableSourcePtr DrawableResolver::findSource( const DrawableRequest& request );
+DrawablePtr Drawable::clone() const;
 DrawablePtr DrawableResolver::createDrawable( const DrawableRequest& request );
 ```
+
+Stage 4 established this contract without introducing a parallel `DrawableSource` class hierarchy.
+Existing drawable resource types serve as source prototypes while retained by an atlas, theme,
+icon, catalog, or resolver. A prototype is never handed directly to an unrelated consumer:
+`clone()` returns independently mutable presentation state while sharing underlying
+texture/resource handles. This is simpler than duplicating every drawable type into source and
+instance classes and remains compatible with introducing immutable source-only types later when a
+concrete resource requires one.
+
+eepp continues to use `Drawable::Type` for runtime drawable dispatch. Generic handle conversion
+checks that tag and then uses `static_pointer_cast`; cloning code for a statically known concrete
+type also uses `static_pointer_cast`. The ownership migration does not introduce RTTI casts.
 
 Representative split:
 
 - `Texture` is shared GPU/resource data, not a globally shared mutable drawable instance.
-- `TextureRegionSource` contains a TexturePtr, immutable source rectangle, offset, and intrinsic size.
-- `NinePatchSource` contains immutable region and border data.
-- `TextureDrawable`/`TextureRegionDrawable` hold per-consumer destination size, tint, alpha, position,
-  and other presentation state while retaining their source.
+- `TextureRegion` prototypes and instances retain a TexturePtr; instances copy rectangle, offset,
+  intrinsic size, destination size, tint, and position.
+- `NinePatch` instances clone their nine mutable region children while sharing the textures.
+- `TextureDrawable` holds per-consumer destination size, tint, alpha, and position while retaining
+  the shared TexturePtr.
 - `StateListDrawable`, `DrawableGroup`, and `Sprite` are per-consumer state machines/instances that
   refer to source handles or private child instances.
 
 `DrawableImageParser::createDrawable()` always returns a fresh consumer instance for CSS-generated
 or resolved content, even when its immutable source came from a cache.
 
-The migration will remove draw-time mutation of shared child/source objects. Rendering APIs may use
-external draw parameters where that simplifies an implementation, but no shared source can be
-temporarily recolored, resized, repositioned, or advanced by a consumer.
+`UIIcon`, `UIGlyphIcon`, and `UISVGIcon` expose the split directly:
+
+```cpp
+const DrawablePtr& UIIcon::getSource( int size ) const;
+DrawablePtr UIIcon::createDrawable( int size ) const;
+```
+
+`getSource()` supports lookup, measurement, and immediate rendering without cloning an existing
+prototype. Glyph and SVG icons may materialize and cache a missing size source once.
+`createDrawable()` is the explicit consumer-instance boundary for callers that retain the drawable
+or need persistent independent state.
+
+Immediate, single-threaded render paths may borrow an icon source and temporarily change
+presentation state when they restore every changed value before returning and never retain the raw
+pointer. Retained widget, menu, model, animated, or otherwise independently stateful consumers must
+create and own an instance. Shared child mutation remains forbidden where drawing can be reentrant
+or where the complete state cannot be restored locally.
+
+No rendering callback may call `clone()`, `UIIcon::createDrawable()`, or an API that performs either
+operation internally. It must render either a previously retained instance or a borrowed source
+under the temporary-state contract above. The Stage 4 call-site audit classifies all remaining
+direct `clone()` calls as:
+
+- implementations recursively cloning their private child state;
+- constructors and setters adopting a private region/sprite/map instance;
+- theme, skin, icon, CSS, and name-resolution source-to-instance boundaries;
+- widget deserialization and one-time assignment; or
+- focused ownership tests.
+
+The code editor lock icon and ecode debugger, linter, LSP breadcrumb, and autocomplete icon paths
+borrow their per-size icon sources at the point of immediate rendering and restore temporary color
+changes before returning. Icons assigned to widgets, menus, or models still use owned instances.
 
 ### 7.2 Consumer API
 
@@ -526,7 +568,7 @@ focused regression coverage while preserving current raw factory ownership:
 - Externally executed HTTP tasks cannot retain a dangling raw Http after Pool destruction.
 - TextureAtlasLoader joins/stops ResourceLoader work before callback-visible loader state is
   destroyed.
-- Engine destroys ShaderProgramManager before Renderer and clears TextLayout before FontManager.
+- Engine clears TextLayout before destroying the default ResourceScope and its FontService.
 - Engine stops asynchronous resource producers before resource consumers and GPU managers.
 - UISceneNode's static async delivery queue has an explicit shutdown purge/rejection boundary.
 - Obsolete FrameBuffer context-loss reload APIs were removed.
@@ -571,10 +613,21 @@ Exit tests:
 - Pending batches flush before texture collection.
 - Engine teardown leaves no pending released textures or unexpected live registry entries.
 - Repeated test-only Engine create/destroy cycles start with empty resource state.
-- Wrong-thread final release triggers the documented debug contract assertion.
+- Worker-thread final release only queues the texture; it does not run GL or destruction work.
 - `EE_MEMORY_MANAGER` accurately removes texture allocations through the factory-controlled deleter.
 
 ### Stage 2: one complete TexturePtr ownership cut
+
+Status: complete, 2026-07-19. TextureFactory creation and acquisition APIs now return TexturePtr,
+and TextureLoader exposes handle-based state with `reset()` replacing destructive `unload()`
+semantics. TextureRegion, atlases/loaders, framebuffers, font pages and glyphs, nine-patches,
+sprites, particle systems, SVG caches, UI image/background paths, maps, tools, tests, ecode, and
+eeiv now retain texture handles. Atlas worker loads store their returned handles directly instead
+of depending on later global lookup. BatchRenderer retains handle-aware submissions until flush;
+its raw overload is limited to Texture's immediate draw path, whose queued object lifetime is
+protected by display-time deferred destruction. Sprite's obsolete texture-owner flag and public
+factory texture-removal APIs are removed. Factory-wide strong retention remains only as the
+planned temporary bridge to Stage 3.
 
 Change creation/acquisition APIs to return TexturePtr and migrate every required holder in the same
 repository-wide cut. During conversion, TextureFactory temporarily retains strong handles so an
@@ -608,6 +661,15 @@ Exit criteria:
 
 ### Stage 3: catalog and scope ownership cutover
 
+Status: complete, 2026-07-19. Engine now owns the global catalog and default Graphics scope;
+UISceneNode owns an isolated scope that can be shared explicitly. TextureFactory is an unpinned
+creator and weak live registry with no semantic name/hash lookup. Atlas, map, UI image/background,
+DrawableSearcher, ecode, tests, and other name-based consumers publish to and resolve through their
+explicit scope. Catalog aliases and imports provide intentional persistence and deterministic
+sharing. Worker-thread final TexturePtr release is handed to the factory's thread-safe queue and
+actual deletion remains display/shutdown-bound. The full cut also corrected TextureLoader's decoder
+pixel allocator provenance, which asynchronous scoped loading exposed.
+
 Implement the global catalog, default Graphics scope, application/scene catalogs, explicit imports,
 immutable keys, and aliases. Move intended persistent resources from temporary factory retention into
 catalogs/caches. Remove factory-wide strong retention and activate final unpinned creation.
@@ -624,6 +686,31 @@ Exit criteria:
 - Scope destruction does not invalidate externally retained resources.
 
 ### Stage 4: drawable source/instance conversion
+
+Status: complete, 2026-07-20. Drawable ownership
+now uses `DrawablePtr`; textures create private
+`TextureDrawable` wrappers; mutable prototypes implement `clone()`; sprites, state lists,
+skins, groups, nine-patches, regions, glyphs, gradients, and primitive drawables clone their
+presentation state. UIImage, UINodeDrawable, menus/icons/themes, parsers, editor/tool consumers,
+maps, physics, ecode, and eeiv were migrated in the same API cut.
+
+`DrawableResource::Unload` and callback IDs were replaced by Change-only RAII connections.
+Callback state is allocated lazily on the first connection, so ordinary drawable resources carry
+no callback allocation. Callback storage and notification snapshots use small inline buffers;
+snapshotting preserves safe self-disconnection and reentrant mutation during notification without
+allocating in the common case.
+`Variant` stores DrawablePtr outside its scalar union. UITextureRegion and ScrollParallax render
+with local geometry rather than temporarily resizing shared source regions; region-based map
+objects retain private instances. `DrawableSearcher` already returns fresh instances as a safe
+bridge, but its replacement by the layered UI resolver remains Stage 5.
+
+`UIIcon::getSource()` now returns a cached source/prototype for lookup, measurement, and immediate
+single-threaded rendering under the temporary-state restoration contract, while
+`UIIcon::createDrawable()` explicitly creates one private consumer instance. `UIGlyphIcon` and
+`UISVGIcon` cache their lazily materialized sources under the same contract. The complete `clone()`
+call-site audit found no remaining render-loop cloning. The code editor, debugger, linter, LSP
+breadcrumb, and autocomplete draw-only paths borrow sources directly; retained widget and menu
+icons continue to own instances.
 
 Introduce source types and per-consumer instances, remove shared draw-state mutation, replace manual
 ownership with DrawablePtr, remove Unload lifetime callbacks, add RAII change connections, and
@@ -642,6 +729,18 @@ Exit criteria:
 
 ### Stage 5: layered UI resolution
 
+Status: complete, 2026-07-21. `DrawableSearcher` was removed from Graphics. `ResourceScope` now
+provides scoped drawable lookup for textures, atlas regions, nine-patches, and sprites, preserving a
+pure Graphics entry point with no UI dependency. Each `UISceneNode` owns an allocation-free
+`UI::DrawableResolver` that reads the scene's current scope and referer when resolving file, data,
+HTTP, and named drawable references. UI images, sprites, menus, CSS parsing, and tests use the scene
+resolver; callers without a scene explicitly construct one over `defaultResourceScope()`.
+
+CSS icon resolution now uses the requesting node's scene instead of the process-global scene.
+Texture names remain isolated by local/imported catalogs and become visible across scenes only when
+their scopes or catalogs are shared intentionally. Atlas, nine-patch, and sprite manager migration
+to scoped catalogs remains Stage 7 work for those resource families.
+
 Implement UI::DrawableResolver and replace DrawableSearcher. Scene resolvers delegate Graphics work
 to their explicit scope. Keep CSS/icon/glyph interpretation in UI and cookie/navigation concerns in
 Web services.
@@ -654,6 +753,29 @@ Exit criteria:
 - Host/application assets require explicit export/import.
 
 ### Stage 6: WebResourceCache and document leases
+
+Status: complete, 2026-07-21. Each UISceneNode now owns a WebResourceCache document session with
+an explicit cache partition and navigation generation. UIWebView advances that session when the
+replacement document is installed, after the previous document has been detached. Document,
+stylesheet, remote font, image, and CSS background image
+requests share canonical fragment-free keys that include the partition, request method/body and
+headers, resource kind, and image decode options.
+
+Concurrent requests coalesce into one fetch and one image decode/upload. Subscribers retain their
+own document generation, so navigation or destruction removes stale delivery without cancelling a
+request needed by another session. Applications can install one cache and explicit partition into
+multiple WebViews to share eligible public resources; distinct partitions and content-affecting
+headers remain isolated. Scene ResourceScope entries remain an explicit override but fetched Web
+resources are retained only by consumers, document leases, and the cache.
+
+Completed entries use monotonic TTL and LRU timestamps plus a configurable byte budget. Active
+document leases are not evicted; the TTL starts when the final document lease is released, allowing
+Back/Forward navigation to reuse resources regardless of how long the previous document remained
+open. Navigation releases only that session's previous leases, and UIWebView performs throttled
+cache maintenance so expired unleased entries are collected even when no new requests complete. Failed loads
+retry, redirect/final cookies are delivered only to current subscribers, and image upload is
+dispatched through the scene's guarded main-thread resource queue. Common lease lists use inline
+small vectors, and completed entries release starter request bodies, headers, and dispatchers.
 
 Implement cache partitions, canonical keys/origins, per-document sessions and leases, in-flight
 coalescing, per-subscriber generation guards, retries, TTL/LRU, and byte budgets. Integrate WebView
@@ -670,12 +792,44 @@ Exit criteria:
 
 ### Stage 7: remaining resource families
 
-Migrate fonts, font faces/fallback caches, themes, shader programs/shaders, nine-patch catalogs,
-atlas managers, and every remaining raw-owning ResourceManager subclass one family at a time. Their
-self-contained GPU objects retain the established graphics-thread destruction contract unless a
-concrete migration requires otherwise.
+Status: complete, 2026-07-24. Nine-patches and texture atlases are migrated. `NinePatch::New()`,
+`TextureRegion::New()`, and `TextureAtlas::New()` return handles. Atlases retain region and texture
+handles; loaders retain and publish atlas handles; theme-owned catalogs retain their named atlas
+sources; and scene `ResourceScope` imports make those sources visible intentionally.
+`NinePatchManager`, `TextureAtlasManager`, and `GlobalTextureAtlas` were removed. Removing a catalog
+entry releases only catalog ownership and leaves separately retained consumers valid.
 
-Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends on it.
+This is the required pattern for the remaining process-wide singleton resource managers. A
+singleton must not be modernized into another process-global semantic namespace. Each family moves
+to ordinary catalogs owned by its application, scene, theme, document, or other natural lifetime
+boundary. `globalResourceCatalog()` is reserved for resources deliberately published process-wide;
+scene scopes see non-global resources only through their local catalog or explicit imports.
+
+Migrate fonts, font faces/fallback caches, themes/icons, shader programs/shaders, and every remaining
+raw-owning ResourceManager subclass one family at a time. Their self-contained GPU objects retain
+the established graphics-thread destruction contract unless a concrete migration requires
+otherwise.
+
+For fonts, ownership is separate from rendering policy. Font handles and semantic lookup live in
+naturally owned catalogs: application defaults use the default scope, while author `@font-face`
+resources are owned by their document scene. Every `ResourceScope` owns an inline `FontService` for
+its rendering configuration, emoji fonts, configured fallbacks, and system fallback cache. Fonts
+retain only a borrowed service pointer while published in that scope and are detached when removed
+or when the scope is destroyed. Raw `Font*` values in text/layout/style structures remain borrowed
+views whose enclosing application, scene, theme, or fallback service retains the corresponding
+handle. The former process-wide `FontManager` singleton and compatibility namespace were removed.
+Publishing a font with an existing local key replaces that catalog binding; the legacy manager
+behavior that silently suffixed duplicate font names is intentionally not preserved.
+
+Themes, skins, icon themes, and icons now use shared resource handles. Each scene's
+`UIThemeManager` owns its themes and imports their catalogs into that scene's scope; it is not a
+process-wide semantic namespace. Shader and shader-program factories return handles, programs own
+their constituent shaders, and catalogs/scopes can publish shader programs under semantic keys.
+`ShaderProgramRegistry`, `VertexBufferRegistry`, and `FrameBufferRegistry` remain process-wide only
+as non-owning inventories of live OpenGL-context objects used for reload and diagnostics.
+
+The raw-owning `ResourceManager<T>` and `ResourceManagerMulti<T>` templates were removed after their
+last consumers migrated.
 
 ## 11. Required validation matrix
 
@@ -692,7 +846,7 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 ### GPU/thread lifetime
 
 - Final texture release on the graphics thread queues rather than immediately deleting.
-- Wrong-thread final release is detected as a project-contract violation in debug builds.
+- Worker-thread final release safely queues; display performs the destruction with a current context.
 - Display flushes batches before collecting released textures under the current context.
 - Engine shutdown performs a final collection before TextureFactory/Renderer/context destruction.
 - No deletion/callback occurs while registry/cache locks are held.
@@ -740,8 +894,8 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 1 is complete, including removal of the obsolete context-recovery APIs and TextureLoader
-callback registry, weak UITextureViewer observation, and display/shutdown texture collection. The
-next coding deliverable is the complete Stage 2 TexturePtr ownership cut described above: change
-the public APIs and migrate every texture holder while temporary factory retention keeps the
-repository behavior stable.
+The ownership migration is complete through Stage 7. Follow-up work is validation and API polish:
+expand scene-lifetime and repeated-Engine coverage, audit public ownership documentation, add
+debug-only borrowed GPU lifetime checks, audit non-trivial static initialization, and rename
+compatibility-era manager filenames when the public include transition is scheduled. OpenGL
+context-loss recreation is explicitly outside the supported lifecycle contract.

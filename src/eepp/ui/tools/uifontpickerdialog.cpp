@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cctype>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -267,6 +267,7 @@ UIFontPickerDialog::~UIFontPickerDialog() {
 	mColorPicker = nullptr;
 	mColorPickerCloseCb = 0;
 	clearBrowseDialog();
+	clearPreviewFont();
 }
 
 Uint32 UIFontPickerDialog::getType() const {
@@ -281,21 +282,21 @@ void UIFontPickerDialog::setTheme( UITheme* theme ) {
 	UIWindow::setTheme( theme );
 
 	if ( mButtonOK ) {
-		if ( Drawable* icon =
+		if ( DrawablePtr icon =
 				 getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) )
-			mButtonOK->setIcon( icon );
+			mButtonOK->setIcon( std::move( icon ) );
 	}
 
 	if ( mButtonCancel ) {
-		if ( Drawable* icon =
+		if ( DrawablePtr icon =
 				 getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) )
-			mButtonCancel->setIcon( icon );
+			mButtonCancel->setIcon( std::move( icon ) );
 	}
 
 	if ( mButtonBrowse ) {
-		if ( Drawable* icon = getUISceneNode()->findIconDrawable( "document-open",
-																  PixelDensity::dpToPxI( 16 ) ) )
-			mButtonBrowse->setIcon( icon );
+		if ( DrawablePtr icon = getUISceneNode()->findIconDrawable( "document-open",
+																	PixelDensity::dpToPxI( 16 ) ) )
+			mButtonBrowse->setIcon( std::move( icon ) );
 	}
 
 	onThemeLoaded();
@@ -438,7 +439,7 @@ void UIFontPickerDialog::loadFonts() {
 
 void UIFontPickerDialog::setFonts( std::vector<FontDesc> fonts ) {
 	FontDesc selectedFont = mSelection.font;
-	mergeFontManagerFonts( fonts );
+	mergeLoadedFonts( fonts );
 	for ( const auto& font : mFonts ) {
 		if ( std::find_if( fonts.begin(), fonts.end(), [&]( const FontDesc& desc ) {
 				 return desc.sameFile( font );
@@ -471,21 +472,23 @@ void UIFontPickerDialog::sortFonts() {
 	} );
 }
 
-void UIFontPickerDialog::mergeFontManagerFonts( std::vector<FontDesc>& fonts ) {
-	FontManager::instance()->each( [&]( const auto& res ) {
-		if ( res.second == nullptr || res.second->getType() != FontType::TTF )
-			return;
+void UIFontPickerDialog::mergeLoadedFonts( std::vector<FontDesc>& fonts ) {
+	if ( !getUISceneNode() )
+		return;
+	for ( const FontPtr& font : getUISceneNode()->getResourceScope()->getFonts() ) {
+		if ( font == nullptr || font->getType() != FontType::TTF )
+			continue;
 
 		FontDesc desc;
-		if ( !static_cast<FontTrueType*>( res.second )->getFontDesc( desc ) )
-			return;
+		if ( !static_cast<FontTrueType*>( font.get() )->getFontDesc( desc ) )
+			continue;
 
 		mLoadedFontKeys.insert( desc.getFileKey() );
 		if ( std::find_if( fonts.begin(), fonts.end(), [&]( const FontDesc& font ) {
 				 return font.sameFile( desc );
 			 } ) == fonts.end() )
 			fonts.push_back( desc );
-	} );
+	}
 }
 
 void UIFontPickerDialog::updateFontTags() {
@@ -628,10 +631,24 @@ void UIFontPickerDialog::updatePreview() {
 	if ( !mPreviewText )
 		return;
 
-	FontTrueType* font = FontManager::instance()->getOrLoadSystemFallbackFont( mSelection.font );
-	if ( font ) {
-		mPreviewText->setFont( font );
-		mPreviewInput->setFont( font );
+	if ( !mPreviewTextDefaultFont )
+		mPreviewTextDefaultFont = mPreviewText->getFont();
+	if ( !mPreviewInputDefaultFont )
+		mPreviewInputDefaultFont = mPreviewInput->getFont();
+
+	FontDesc previewDesc;
+	const bool previewMatchesSelection = mPreviewFont && mPreviewFont->getFontDesc( previewDesc ) &&
+										 previewDesc.sameFile( mSelection.font );
+	if ( !previewMatchesSelection && !mSelection.font.path.empty() && getUISceneNode() ) {
+		FontTrueTypePtr font =
+			getUISceneNode()->getResourceScope()->getFontService().loadSystemFont(
+				mSelection.font );
+		if ( font ) {
+			mPreviewText->setFont( font.get() );
+			mPreviewInput->setFont( font.get() );
+			clearPreviewFont();
+			mPreviewFont = std::move( font );
+		}
 	}
 
 	mPreviewText->setFontSize( PixelDensity::dpToPxI( mSelection.size * 2 ) );
@@ -655,6 +672,17 @@ void UIFontPickerDialog::updatePreview() {
 							styleLabel( mSelection.font ).c_str(), mSelection.size,
 							mSelection.font.path.c_str(), faceIndexSuffix.c_str() ) );
 	}
+}
+
+void UIFontPickerDialog::clearPreviewFont() {
+	if ( !mPreviewFont )
+		return;
+	if ( mPreviewText && mPreviewTextDefaultFont && mPreviewText->getFont() == mPreviewFont.get() )
+		mPreviewText->setFont( mPreviewTextDefaultFont );
+	if ( mPreviewInput && mPreviewInputDefaultFont &&
+		 mPreviewInput->getFont() == mPreviewFont.get() )
+		mPreviewInput->setFont( mPreviewInputDefaultFont );
+	mPreviewFont.reset();
 }
 
 void UIFontPickerDialog::selectInitialRows() {
@@ -782,18 +810,21 @@ bool UIFontPickerDialog::addExternalFont( const std::string& path, Uint32 faceIn
 
 	const std::string fontName(
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	FontTrueType* font = FontTrueType::New( fontName );
+	if ( !getUISceneNode() )
+		return false;
+	ResourceScope& resourceScope = *getUISceneNode()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( fontName, resourceScope );
 	if ( !font || !font->loadFromFile( path, faceIndex ) ) {
-		eeSAFE_DELETE( font );
+		resourceScope.eraseLocalFont( font.get() );
 		return false;
 	}
 
 	FontDesc desc;
 	if ( !font->getFontDesc( desc ) ) {
-		eeSAFE_DELETE( font );
+		resourceScope.eraseLocalFont( font.get() );
 		return false;
 	}
-	eeSAFE_DELETE( font );
+	resourceScope.eraseLocalFont( font.get() );
 
 	mLoadedFontKeys.insert( desc.getFileKey() );
 	mFonts.push_back( desc );

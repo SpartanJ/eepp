@@ -725,8 +725,8 @@ UINodeDrawable* UINode::setBackgroundFillEnabled( bool enabled ) {
 	return mBackground;
 }
 
-UINode* UINode::setBackgroundDrawable( Drawable* drawable, bool ownIt, int index ) {
-	setBackgroundFillEnabled( true )->setDrawable( index, drawable, ownIt );
+UINode* UINode::setBackgroundDrawable( DrawablePtr drawable, int index ) {
+	setBackgroundFillEnabled( true )->setDrawable( index, std::move( drawable ) );
 	return this;
 }
 
@@ -838,8 +838,8 @@ UINodeDrawable* UINode::setForegroundFillEnabled( bool enabled ) {
 	return mForeground;
 }
 
-UINode* UINode::setForegroundDrawable( Drawable* drawable, bool ownIt, int index ) {
-	setForegroundFillEnabled( true )->setDrawable( index, drawable, ownIt );
+UINode* UINode::setForegroundDrawable( DrawablePtr drawable, int index ) {
+	setForegroundFillEnabled( true )->setDrawable( index, std::move( drawable ) );
 	return this;
 }
 
@@ -1253,12 +1253,7 @@ UINode* UINode::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 
 UINode* UINode::setSkin( const UISkin& Skin ) {
 	removeSkin();
-
-	writeNodeFlag( NODE_FLAG_SKIN_OWNER, 1 );
-
-	UISkin* SkinCopy = const_cast<UISkin*>( &Skin )->clone();
-
-	mSkinState = UISkinState::New( SkinCopy );
+	mSkinState = UISkinState::New( Skin.cloneSkin() );
 
 	onThemeLoaded();
 
@@ -1278,7 +1273,7 @@ UINode* UINode::setSkin( UISkin* skin ) {
 
 		removeSkin();
 
-		mSkinState = UISkinState::New( skin );
+		mSkinState = UISkinState::New( skin->cloneSkin() );
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();
@@ -1302,12 +1297,6 @@ const Color& UINode::getSkinColor() const {
 }
 
 void UINode::removeSkin() {
-	if ( NULL != mSkinState && ( mNodeFlags & NODE_FLAG_SKIN_OWNER ) ) {
-		UISkin* tSkin = mSkinState->getSkin();
-
-		eeSAFE_DELETE( tSkin );
-	}
-
 	eeSAFE_DELETE( mSkinState );
 }
 

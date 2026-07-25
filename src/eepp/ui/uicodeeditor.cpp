@@ -1,10 +1,10 @@
 #include "eepp/ui/uistyle.hpp"
 #include <algorithm>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/actions/sequence.hpp>
@@ -138,7 +138,7 @@ const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UIWidget( elementTag ),
-	mFont( FontManager::instance()->getByName( "monospace" ) ),
+	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
 	mDocView( mDoc, mFontStyleConfig, { .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),
@@ -1151,7 +1151,7 @@ void UICodeEditor::drawLockedIcon( const Vector2f start ) {
 	if ( mFileLockIcon == nullptr )
 		return;
 
-	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
+	Drawable* fileLockIcon = mFileLockIcon->getSource( PixelDensity::dpToPxI( 16 ) ).get();
 	if ( fileLockIcon == nullptr )
 		return;
 
@@ -3533,11 +3533,9 @@ void UICodeEditor::updateGlyphWidth() {
 		invalidateLineWrapMaxWidth( false );
 }
 
-Drawable* UICodeEditor::findIcon( const std::string& name ) {
+DrawablePtr UICodeEditor::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 const bool& UICodeEditor::getColorPreview() const {
@@ -4610,7 +4608,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 
 			if ( mFoldsAlwaysVisible || mFoldsVisible || currentLineHasFold ) {
 				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
-					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
+					Drawable* drawable = ( isFolded ? mFoldedDrawable : mFoldDrawable ).get();
 					GlyphDrawable::DrawMode oldMode;
 
 					if ( drawable->getDrawableType() == Drawable::Type::GLYPH ) {
@@ -5462,20 +5460,20 @@ void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
 	}
 }
 
-Drawable* UICodeEditor::getFoldDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldDrawable() const {
 	return mFoldDrawable;
 }
 
-void UICodeEditor::setFoldDrawable( Drawable* foldDrawable ) {
-	mFoldDrawable = foldDrawable;
+void UICodeEditor::setFoldDrawable( DrawablePtr foldDrawable ) {
+	mFoldDrawable = std::move( foldDrawable );
 }
 
-Drawable* UICodeEditor::getFoldedDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldedDrawable() const {
 	return mFoldedDrawable;
 }
 
-void UICodeEditor::setFoldedDrawable( Drawable* foldedDrawable ) {
-	mFoldedDrawable = foldedDrawable;
+void UICodeEditor::setFoldedDrawable( DrawablePtr foldedDrawable ) {
+	mFoldedDrawable = std::move( foldedDrawable );
 }
 
 bool UICodeEditor::getFoldsAlwaysVisible() const {

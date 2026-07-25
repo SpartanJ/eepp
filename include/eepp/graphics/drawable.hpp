@@ -2,6 +2,7 @@
 #define EE_GRAPHICS_DRAWABLE_HPP
 
 #include <eepp/graphics/blendmode.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/graphics/rendermode.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/color.hpp>
@@ -10,12 +11,17 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class Drawable;
 class StatefulDrawable;
+
+using DrawablePtr = ResourcePtr<Drawable>;
+using DrawableWeakPtr = ResourceWeakPtr<Drawable>;
 
 class EE_API Drawable {
   public:
 	enum Type {
 		TEXTURE,
+		TEXTUREDRAWABLE,
 		TEXTUREREGION,
 		SPRITE,
 		ARC,
@@ -56,6 +62,10 @@ class EE_API Drawable {
 	virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
 
 	virtual bool isStateful() = 0;
+
+	/** Creates an independently mutable instance backed by the same immutable resource data.
+	 * This is an ownership/setup operation; rendering loops must retain and reuse the result. */
+	virtual DrawablePtr clone() const;
 
 	void setAlpha( Uint8 alpha );
 

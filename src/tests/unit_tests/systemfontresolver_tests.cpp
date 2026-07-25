@@ -1,7 +1,7 @@
 #include "utest.hpp"
 
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -548,12 +548,12 @@ UTEST( FontTrueType_faceIndex, loadWithDefaultFaceIndex ) {
 	std::string fontPath = getFontsDir() + "DejaVuSansMono.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-default" );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-default" ).get();
 	bool loaded = font->loadFromFile( fontPath );
 	ASSERT_TRUE( loaded );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }
 
 UTEST( FontTrueType_faceIndex, newWithFaceIndex ) {
@@ -562,11 +562,11 @@ UTEST( FontTrueType_faceIndex, newWithFaceIndex ) {
 	std::string fontPath = getFontsDir() + "DejaVuSansMono.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-explicit", fontPath, 0 );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-explicit", fontPath, 0 ).get();
 	ASSERT_TRUE( font != nullptr );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }
 
 UTEST( FontTrueType_faceIndex, loadFromMemoryFaceIndex ) {
@@ -578,10 +578,10 @@ UTEST( FontTrueType_faceIndex, loadFromMemoryFaceIndex ) {
 	ScopedBuffer buf;
 	FileSystem::fileGet( fontPath, buf );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-memory" );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-memory" ).get();
 	bool loaded = font->loadFromMemory( buf.get(), buf.length(), true, 0 );
 	ASSERT_TRUE( loaded );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }
