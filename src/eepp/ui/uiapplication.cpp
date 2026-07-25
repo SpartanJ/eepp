@@ -94,14 +94,14 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	mUISceneNode->getRoot()->addClass( "appbackground" );
 	mUISceneNode->getUIThemeManager()->setDefaultEffectsEnabled( true )->setDefaultFont( font );
 
-	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", font,
-									appSettings.baseStyleSheetPath ? *appSettings.baseStyleSheetPath
-																   : "assets/ui/breeze.css" );
+	UIThemePtr theme = UITheme::load(
+		"uitheme", "uitheme", "", font,
+		appSettings.baseStyleSheetPath ? *appSettings.baseStyleSheetPath : "assets/ui/breeze.css" );
 
 	mStyleSheetMarker = String::hash( "uitheme" );
 	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 	mUISceneNode->getStyleSheet().setMarker( mStyleSheetMarker );
-	mUISceneNode->getUIThemeManager()->setDefaultTheme( theme )->add( theme );
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( std::move( theme ) );
 }
 
 UIApplication::~UIApplication() {

@@ -5,8 +5,8 @@
 
 namespace EE { namespace UI {
 
-UIIcon* UIIcon::New( const std::string& name ) {
-	return eeNew( UIIcon, ( name ) );
+UIIconPtr UIIcon::New( const std::string& name ) {
+	return UIIconPtr( eeNew( UIIcon, ( name ) ), ResourceDeleter<UIIcon>() );
 }
 
 UIIcon::UIIcon( const std::string& name ) : mName( name ) {}
@@ -43,8 +43,8 @@ void UIIcon::setSource( const int& size, DrawablePtr drawable ) {
 	mSizes[size] = std::move( drawable );
 }
 
-UIIcon* UIGlyphIcon::New( const std::string& name, FontTrueType* font, const Uint32& codePoint ) {
-	return eeNew( UIGlyphIcon, ( name, font, codePoint ) );
+UIIconPtr UIGlyphIcon::New( const std::string& name, FontTrueType* font, const Uint32& codePoint ) {
+	return UIIconPtr( eeNew( UIGlyphIcon, ( name, font, codePoint ) ), ResourceDeleter<UIIcon>() );
 }
 
 const DrawablePtr& UIGlyphIcon::getSource( const int& size ) const {
@@ -78,8 +78,8 @@ UIGlyphIcon::~UIGlyphIcon() {
 	}
 }
 
-UIIcon* UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
-	return eeNew( UISVGIcon, ( name, svgXML ) );
+UIIconPtr UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
+	return UIIconPtr( eeNew( UISVGIcon, ( name, svgXML ) ), ResourceDeleter<UIIcon>() );
 }
 
 UISVGIcon::~UISVGIcon() {}

@@ -322,7 +322,7 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	if ( hostThemeManager ) {
 		mUIThemeManager->setDefaultFont( hostThemeManager->getDefaultFont() );
 		mUIThemeManager->setDefaultFontSize( hostThemeManager->getDefaultFontSize() );
-		mUIThemeManager->setDefaultTheme( hostThemeManager->getDefaultTheme() );
+		mUIThemeManager->setDefaultTheme( hostThemeManager->getDefaultThemeHandle() );
 		mUIThemeManager->setAutoApplyDefaultTheme( hostThemeManager->getAutoApplyDefaultTheme() );
 		mUIThemeManager->setDefaultEffectsEnabled( hostThemeManager->getDefaultEffectsEnabled() );
 		mUIThemeManager->setWidgetsFadeInTime( hostThemeManager->getWidgetsFadeInTime() );

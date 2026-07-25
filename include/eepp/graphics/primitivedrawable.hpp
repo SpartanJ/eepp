@@ -3,10 +3,9 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/primitivetype.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 
 namespace EE { namespace Graphics {
-
-class VertexBuffer;
 
 class EE_API PrimitiveDrawable : public Drawable {
   public:
@@ -47,7 +46,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 	bool mNeedsUpdate;
 	bool mRecreateVertexBuffer;
 	bool mSmooth{ false };
-	VertexBuffer* mVertexBuffer;
+	VertexBufferUniquePtr mVertexBuffer;
 
 	virtual void onAlphaChange();
 

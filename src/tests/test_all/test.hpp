@@ -108,8 +108,8 @@ class EETest : private Thread {
 
 	View Views[2];
 
-	ShaderProgram* mShaderProgram;
-	ShaderProgram* mBlur;
+	ShaderProgramPtr mShaderProgram;
+	ShaderProgramPtr mBlur;
 
 	Float mBlurFactor;
 	bool mUseShaders;
@@ -140,8 +140,8 @@ class EETest : private Thread {
 	TextureAtlasLoader* mTGL;
 	Sprite mMonster;
 
-	FrameBuffer* mFBO;
-	VertexBuffer* mVBO;
+	FrameBufferUniquePtr mFBO;
+	VertexBufferUniquePtr mVBO;
 
 	Clock mFTE;
 	Translator mTranslator;
@@ -228,7 +228,7 @@ class EETest : private Thread {
 	SpritePtr mBoxSprite;
 	SpritePtr mCircleSprite;
 
-	UITheme* mTheme;
+	UIThemePtr mTheme;
 	UISceneNode* mSceneNode;
 
 	bool mTerrainUp;

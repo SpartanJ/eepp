@@ -593,7 +593,7 @@ void App::loadUITheme( std::string themePath ) {
 	std::string name(
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
 
-	UITheme* uitheme =
+	auto uitheme =
 		UITheme::loadFromTextureAtlas( UITheme::New( name, name ), tgl.getTextureAtlas() );
 
 	mUISceneNode->getUIThemeManager()->setDefaultTheme( uitheme )->add( uitheme );
@@ -654,7 +654,7 @@ void App::refreshLayoutList() {
 }
 
 void App::loadProjectNodes( pugi::xml_node node ) {
-	mUISceneNode->getUIThemeManager()->setDefaultTheme( mUseDefaultTheme ? mTheme : NULL );
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( mUseDefaultTheme ? mTheme : UIThemePtr{} );
 
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
 		std::string name = String::toLower( std::string( resources.name() ) );
@@ -876,7 +876,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	mMsgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
-	mMsgBox->setTheme( mTheme );
+	mMsgBox->setTheme( mTheme.get() );
 	mMsgBox->on( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
 	mMsgBox->on( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
@@ -970,7 +970,7 @@ void App::projectOpen( const Event* event ) {
 void App::showFileDialog( const String& title, const std::function<void( const Event* )>& cb,
 						  const std::string& filePattern, const Uint32& dialogFlags ) {
 	UIFileDialog* dialog = UIFileDialog::New( dialogFlags, filePattern );
-	dialog->setTheme( mTheme );
+	dialog->setTheme( mTheme.get() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( title );
 	dialog->on( Event::OpenFile, cb );
@@ -1303,10 +1303,8 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		FontTrueType* noniconsFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
 		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
 
-		UIIconTheme* iconTheme =
-			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
-		UIIconTheme* iconTheme2 =
-			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		auto iconTheme = IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		auto iconTheme2 = IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
 		StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 		mMenuIconSize = fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		mAppUISceneNode->setStyleSheet( mTheme->getStyleSheet() );

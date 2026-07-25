@@ -18,9 +18,7 @@ UIBackgroundDrawable::UIBackgroundDrawable( const UINode* owner ) :
 	mNeedsRadiusUpdate( false ),
 	mColorNeedsUpdate( false ) {}
 
-UIBackgroundDrawable::~UIBackgroundDrawable() {
-	eeSAFE_DELETE( mVertexBuffer );
-}
+UIBackgroundDrawable::~UIBackgroundDrawable() = default;
 
 void UIBackgroundDrawable::draw() {
 	draw( mPosition, mSize );
@@ -178,7 +176,7 @@ void UIBackgroundDrawable::update() {
 			mVertexBuffer =
 				VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
 		}
-		Borders::createBackground( mVertexBuffer, mRadiuses, mPosition, mSize, mColor );
+		Borders::createBackground( mVertexBuffer.get(), mRadiuses, mPosition, mSize, mColor );
 	}
 	mColorNeedsUpdate = false;
 	mNeedsRadiusUpdate = false;

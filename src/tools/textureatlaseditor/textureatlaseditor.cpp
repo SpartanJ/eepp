@@ -116,8 +116,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			/*UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, resPath +
 			 * "assets/ui/uitheme" + pd + ".eta", font, resPath + "assets/ui/uitheme.css" );*/
 
-			UITheme* theme = UITheme::load( "uitheme", "uitheme", "", font.get(),
-											resPath + "assets/ui/breeze.css" );
+			auto theme = UITheme::load( "uitheme", "uitheme", "", font.get(),
+										resPath + "assets/ui/breeze.css" );
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 

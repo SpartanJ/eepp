@@ -50,7 +50,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) : UIWindow( type, S
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) :
 	UIWidget( "window" ),
-	mFrameBuffer( NULL ),
+	mFrameBuffer( nullptr ),
 	mStyleConfig( windowStyleConfig ),
 	mWindowDecoration( NULL ),
 	mBorderLeft( NULL ),
@@ -133,7 +133,7 @@ UIWindow::~UIWindow() {
 
 	sendCommonEvent( Event::OnWindowClose );
 
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 }
 
 void UIWindow::onContainerPositionChange( const Event* ) {
@@ -166,7 +166,7 @@ void UIWindow::updateWinFlags() {
 		if ( NULL == mFrameBuffer )
 			createFrameBuffer();
 	} else {
-		eeSAFE_DELETE( mFrameBuffer );
+		mFrameBuffer.reset();
 	}
 
 	if ( NULL != mContainer && ( mStyleConfig.WinFlags & UI_WIN_DRAGGABLE_CONTAINER ) ) {
@@ -330,7 +330,7 @@ void UIWindow::updateWinFlags() {
 }
 
 void UIWindow::createFrameBuffer() {
-	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer.reset();
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 )
 		fboSize.setWidth( 1 );
@@ -341,8 +341,8 @@ void UIWindow::createFrameBuffer() {
 						  ( mStyleConfig.WinFlags & UI_WIN_COLOR_BUFFER ) ? true : false );
 
 	// Frame buffer failed to create?
-	if ( !mFrameBuffer->created() ) {
-		eeSAFE_DELETE( mFrameBuffer );
+	if ( !mFrameBuffer || !mFrameBuffer->created() ) {
+		mFrameBuffer.reset();
 	}
 }
 
@@ -1309,7 +1309,7 @@ void UIWindow::invalidate( Node* invalidator ) {
 }
 
 FrameBuffer* UIWindow::getFrameBuffer() const {
-	return mFrameBuffer;
+	return mFrameBuffer.get();
 }
 
 bool UIWindow::isDrawInvalidator() const {

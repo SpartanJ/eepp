@@ -1,14 +1,12 @@
 #ifndef EE_SCENENODE_HPP
 #define EE_SCENENODE_HPP
 
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
 #include <unordered_set>
 
-namespace EE { namespace Graphics {
-class FrameBuffer;
-}} // namespace EE::Graphics
 using namespace EE::Graphics;
 
 namespace EE { namespace Window {
@@ -421,7 +419,7 @@ class EE_API SceneNode : public Node {
 
 	EE::Window::Window* mWindow;
 	ActionManager* mActionManager;
-	FrameBuffer* mFrameBuffer;
+	Graphics::FrameBufferUniquePtr mFrameBuffer;
 	EventDispatcher* mEventDispatcher;
 	CloseList mCloseList;
 	Clock mClock;

@@ -11,18 +11,18 @@ namespace Demo_Test {
 
 class UIBlurredWindow : public UIWindow {
   public:
-	static UIBlurredWindow* New( ShaderProgram* blurShader ) {
-		return eeNew( UIBlurredWindow, ( blurShader ) );
+	static UIBlurredWindow* New( ShaderProgramPtr blurShader ) {
+		return eeNew( UIBlurredWindow, ( std::move( blurShader ) ) );
 	}
 
-	explicit UIBlurredWindow( ShaderProgram* blurShader ) :
-		UIWindow(), mBlurShader( blurShader ), mFboBlur( NULL ) {}
+	explicit UIBlurredWindow( ShaderProgramPtr blurShader ) :
+		UIWindow(), mBlurShader( std::move( blurShader ) ) {}
 
-	~UIBlurredWindow() { eeSAFE_DELETE( mFboBlur ); }
+	~UIBlurredWindow() = default;
 
   protected:
-	ShaderProgram* mBlurShader;
-	FrameBuffer* mFboBlur;
+	ShaderProgramPtr mBlurShader;
+	FrameBufferUniquePtr mFboBlur[2];
 
 	void preDraw() {
 		if ( !ownsFrameBuffer() )
@@ -30,47 +30,54 @@ class UIBlurredWindow : public UIWindow {
 
 		FrameBuffer* curFBO = getSceneNode()->getFrameBuffer();
 
-		if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
+		if ( curFBO && curFBO->getTexture() && mBlurShader ) {
 			static int fboDiv = 2;
+			const Sizei blurSize( std::max( 1, static_cast<Int32>( mSize.x / fboDiv ) ),
+								  std::max( 1, static_cast<Int32>( mSize.y / fboDiv ) ) );
 
-			if ( NULL == mFboBlur ) {
-				mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-			} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) ||
-						mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
-				mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
+			for ( auto& fbo : mFboBlur ) {
+				if ( !fbo ) {
+					fbo = FrameBuffer::New( blurSize.x, blurSize.y );
+				} else if ( fbo->getSize() != blurSize ) {
+					fbo->resize( blurSize.x, blurSize.y );
+				}
 			}
+			if ( !mFboBlur[0] || !mFboBlur[1] )
+				return;
 
 			TextureRegion textureRegion( curFBO->getTexture(),
 										 Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.x,
 											   mScreenPos.y + mSize.y ) );
 
 			RGB cc = getSceneNode()->getWindow()->getClearColor();
-			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
-			mFboBlur->bind();
-			mFboBlur->clear();
-			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[0]->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
+			mFboBlur[0]->bind();
+			mFboBlur[0]->clear();
+			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur[0]->getSizef() );
+			mFboBlur[0]->unbind();
 
 			mBlurShader->bind();
+			mBlurShader->setUniform( "textureRes", mFboBlur[0]->getSizef() );
 
+			// Never sample a texture while it is attached to the currently bound draw framebuffer:
+			// that creates an undefined framebuffer feedback loop. Some desktop OpenGL drivers made
+			// the old in-place blur appear to work, but GLES/WebGL commonly produce no useful
+			// output. A separable blur therefore ping-pongs its horizontal and vertical passes
+			// between two FBO textures: read A/write B, then read B/write A.
 			mBlurShader->setUniform( "dir", (Int32)0 );
-			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-			mFboBlur->bind();
-			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[1]->bind();
+			mFboBlur[0]->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur[1]->getSizef() );
+			mFboBlur[1]->unbind();
 
 			mBlurShader->setUniform( "dir", (Int32)1 );
-			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-			mFboBlur->bind();
-			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
-			mFboBlur->unbind();
+			mFboBlur[0]->bind();
+			mFboBlur[1]->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur[0]->getSizef() );
+			mFboBlur[0]->unbind();
 
 			mBlurShader->unbind();
 
-			mFboBlur->getTexture()->draw( Vector2f( mScreenPos.x, mScreenPos.y ),
-										  Sizef( mSize.x, mSize.y ) );
+			mFboBlur[0]->getTexture()->draw( Vector2f( mScreenPos.x, mScreenPos.y ),
+											 Sizef( mSize.x, mSize.y ) );
 		}
 	}
 };
@@ -292,7 +299,7 @@ void EETest::onFontLoaded() {
 void EETest::createShaders() {
 	mUseShaders = mUseShaders && GLi->shadersSupported();
 
-	mShaderProgram = NULL;
+	mShaderProgram.reset();
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
@@ -1930,7 +1937,7 @@ void EETest::input() {
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->isKeyUp( KEY_F1 ) )
-		Graphics::ShaderProgramManager::instance()->reload();
+		Graphics::ShaderProgramRegistry::instance()->reload();
 
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
@@ -2548,8 +2555,8 @@ void EETest::end() {
 
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
-	eeSAFE_DELETE( mFBO );
-	eeSAFE_DELETE( mVBO );
+	mFBO.reset();
+	mVBO.reset();
 	mBoxSprite.reset();
 	mCircleSprite.reset();
 	eeSAFE_DELETE( PakTest );

@@ -109,9 +109,9 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 													  resPath + "assets/fonts/NotoSans-Regular.ttf",
 													  *uiSceneNode->getResourceScope() );
 
-			UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
-											resPath + "assets/ui/uitheme" + pd + ".eta", font.get(),
-											resPath + "assets/ui/uitheme.css" );
+			auto theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
+										resPath + "assets/ui/uitheme" + pd + ".eta", font.get(),
+										resPath + "assets/ui/uitheme.css" );
 
 			/*UITheme* theme =
 				UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );*/

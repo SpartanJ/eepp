@@ -2,15 +2,15 @@
 
 namespace EE { namespace Graphics {
 
-SINGLETON_DECLARE_IMPLEMENTATION( ShaderProgramManager )
+SINGLETON_DECLARE_IMPLEMENTATION( ShaderProgramRegistry )
 
-ShaderProgramManager::ShaderProgramManager() {}
+ShaderProgramRegistry::ShaderProgramRegistry() {}
 
-ShaderProgramManager::~ShaderProgramManager() {}
+ShaderProgramRegistry::~ShaderProgramRegistry() {}
 
-void ShaderProgramManager::reload() {
-	for ( auto& res : mResources )
-		res.second->reload();
+void ShaderProgramRegistry::reload() {
+	for ( auto* program : mResources )
+		program->reload();
 }
 
 }} // namespace EE::Graphics

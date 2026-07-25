@@ -755,7 +755,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<DateTimeController> mDateTimeController;
 	std::unique_ptr<FontPickerController> mFontPickerController;
 	std::string mFileToOpen;
-	UITheme* mTheme{ nullptr };
+	UIThemePtr mTheme;
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
 	UIMessageBox* mCloseMsgBox{ nullptr };

@@ -49,6 +49,9 @@ class EE_API ResourceScope {
 	FontPtr findFont( const std::string& key ) const;
 	FontPtr findFont( const String::HashType& id ) const;
 	std::vector<FontPtr> getFonts() const;
+	ShaderProgramPtr findShaderProgram( const ResourceKey& key ) const;
+	ShaderProgramPtr findShaderProgram( const std::string& key ) const;
+	std::vector<ShaderProgramPtr> getShaderPrograms() const;
 	std::vector<TextureRegionPtr>
 	findTextureRegionsByPattern( const std::string& name, const std::string& extension = "",
 								 TextureAtlas* searchInTextureAtlas = nullptr ) const;
@@ -69,6 +72,8 @@ class EE_API ResourceScope {
 	 */
 	void publishLocalFont( ResourceKey key, FontPtr font );
 	void publishLocalFont( std::string key, FontPtr font );
+	void publishLocalShaderProgram( ResourceKey key, ShaderProgramPtr program );
+	void publishLocalShaderProgram( std::string key, ShaderProgramPtr program );
 	bool eraseLocal( const ResourceKey& key );
 	bool eraseLocal( const std::string& key );
 	bool eraseLocalDrawable( const ResourceKey& key );
@@ -78,6 +83,8 @@ class EE_API ResourceScope {
 	bool eraseLocalFont( const ResourceKey& key );
 	bool eraseLocalFont( const std::string& key );
 	bool eraseLocalFont( Font* font );
+	bool eraseLocalShaderProgram( const ResourceKey& key );
+	bool eraseLocalShaderProgram( const std::string& key );
 	void clearLocal();
 
 	/**

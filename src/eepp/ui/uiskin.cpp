@@ -5,8 +5,8 @@
 
 namespace EE { namespace UI {
 
-UISkin* UISkin::New( const std::string& name ) {
-	return eeNew( UISkin, ( name ) );
+ResourcePtr<UISkin> UISkin::New( const std::string& name ) {
+	return ResourcePtr<UISkin>( eeNew( UISkin, ( name ) ), ResourceDeleter<UISkin>() );
 }
 
 UISkin::UISkin( const std::string& name ) : StateListDrawable( SKIN, name ) {

@@ -8,7 +8,6 @@ UIThemeManager* UIThemeManager::New() {
 }
 
 UIThemeManager::UIThemeManager() :
-	ResourceManager<UITheme>(),
 	mFont( NULL ),
 	mFontSize( PixelDensity::dpToPx( 12 ) ),
 	mThemeDefault( NULL ),
@@ -22,34 +21,53 @@ UIThemeManager::UIThemeManager() :
 
 UIThemeManager::~UIThemeManager() {
 	if ( mResourceScope ) {
-		each( [this]( const auto& resource ) {
-			if ( resource.second )
-				mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
-		} );
+		for ( const auto& resource : mThemes )
+			mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
+		if ( mThemeDefault && mThemes.find( mThemeDefault->getId() ) == mThemes.end() )
+			mResourceScope->removeCatalog( mThemeDefault->getResourceCatalog() );
 	}
 }
 
-UITheme* UIThemeManager::add( UITheme* theme ) {
-	UITheme* added = ResourceManager<UITheme>::add( theme );
-	if ( added && mResourceScope )
+UITheme* UIThemeManager::add( UIThemePtr theme ) {
+	if ( !theme )
+		return nullptr;
+	UITheme* added = theme.get();
+	auto existing = mThemes.find( theme->getId() );
+	const bool replacesDefault =
+		existing != mThemes.end() && existing->second.get() == mThemeDefault.get();
+	if ( existing != mThemes.end() && mResourceScope )
+		mResourceScope->removeCatalog( existing->second->getResourceCatalog() );
+	mThemes[theme->getId()] = std::move( theme );
+	if ( replacesDefault )
+		mThemeDefault = mThemes[added->getId()];
+	if ( mResourceScope )
 		mResourceScope->importCatalog( added->getResourceCatalog() );
 	return added;
 }
 
-bool UIThemeManager::remove( UITheme* theme, bool destroy ) {
-	if ( theme && mResourceScope )
+bool UIThemeManager::remove( UITheme* theme ) {
+	if ( !theme )
+		return false;
+	auto it = mThemes.find( theme->getId() );
+	const bool isManaged = it != mThemes.end() && it->second.get() == theme;
+	const bool isDefault = theme == mThemeDefault.get();
+	if ( !isManaged && !isDefault )
+		return false;
+	if ( mResourceScope )
 		mResourceScope->removeCatalog( theme->getResourceCatalog() );
-	if ( theme == mThemeDefault )
-		mThemeDefault = nullptr;
-	return ResourceManager<UITheme>::remove( theme, destroy );
+	if ( isDefault )
+		mThemeDefault.reset();
+	if ( isManaged )
+		mThemes.erase( it );
+	return true;
 }
 
-bool UIThemeManager::removeById( const String::HashType& id, bool destroy ) {
-	return remove( getById( id ), destroy );
+bool UIThemeManager::removeById( const String::HashType& id ) {
+	return remove( getById( id ) );
 }
 
-bool UIThemeManager::removeByName( const std::string& name, bool destroy ) {
-	return remove( getByName( name ), destroy );
+bool UIThemeManager::removeByName( const std::string& name ) {
+	return remove( getByName( name ) );
 }
 
 UIThemeManager* UIThemeManager::setResourceScope( ResourceScopePtr resourceScope ) {
@@ -57,17 +75,17 @@ UIThemeManager* UIThemeManager::setResourceScope( ResourceScopePtr resourceScope
 		return this;
 
 	if ( mResourceScope ) {
-		each( [this]( const auto& resource ) {
-			if ( resource.second )
-				mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
-		} );
+		for ( const auto& resource : mThemes )
+			mResourceScope->removeCatalog( resource.second->getResourceCatalog() );
+		if ( mThemeDefault && mThemes.find( mThemeDefault->getId() ) == mThemes.end() )
+			mResourceScope->removeCatalog( mThemeDefault->getResourceCatalog() );
 	}
 	mResourceScope = std::move( resourceScope );
 	if ( mResourceScope ) {
-		each( [this]( const auto& resource ) {
-			if ( resource.second )
-				mResourceScope->importCatalog( resource.second->getResourceCatalog() );
-		} );
+		for ( const auto& resource : mThemes )
+			mResourceScope->importCatalog( resource.second->getResourceCatalog() );
+		if ( mThemeDefault && mThemes.find( mThemeDefault->getId() ) == mThemes.end() )
+			mResourceScope->importCatalog( mThemeDefault->getResourceCatalog() );
 	}
 	return this;
 }
@@ -96,13 +114,17 @@ const Float& UIThemeManager::getDefaultFontSize() const {
 }
 
 UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {
-	UITheme* previousTheme = mThemeDefault;
+	UITheme* previousTheme = mThemeDefault.get();
 	if ( previousTheme && previousTheme != Theme && mResourceScope &&
-		 !findIf( [previousTheme]( const auto& resource ) {
-			 return resource.second == previousTheme;
-		 } ) )
+		 mThemes.find( previousTheme->getId() ) == mThemes.end() )
 		mResourceScope->removeCatalog( previousTheme->getResourceCatalog() );
-	mThemeDefault = Theme;
+	if ( Theme ) {
+		auto it = mThemes.find( Theme->getId() );
+		mThemeDefault =
+			it != mThemes.end() && it->second.get() == Theme ? it->second : UIThemePtr{};
+	} else {
+		mThemeDefault.reset();
+	}
 	if ( mThemeDefault && mResourceScope )
 		mResourceScope->importCatalog( mThemeDefault->getResourceCatalog() );
 
@@ -112,18 +134,44 @@ UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {
 	return this;
 }
 
+UIThemeManager* UIThemeManager::setDefaultTheme( UIThemePtr theme ) {
+	UITheme* previousTheme = mThemeDefault.get();
+	if ( previousTheme && previousTheme != theme.get() && mResourceScope &&
+		 mThemes.find( previousTheme->getId() ) == mThemes.end() )
+		mResourceScope->removeCatalog( previousTheme->getResourceCatalog() );
+	mThemeDefault = std::move( theme );
+	if ( mThemeDefault && mResourceScope )
+		mResourceScope->importCatalog( mThemeDefault->getResourceCatalog() );
+	if ( mThemeDefault && !mThemeDefault->getDefaultFont() )
+		mThemeDefault->setDefaultFont( mFont );
+	return this;
+}
+
 UIThemeManager* UIThemeManager::setDefaultTheme( const std::string& Theme ) {
 	setDefaultTheme( getByName( Theme ) );
 	return this;
 }
 
 UITheme* UIThemeManager::getDefaultTheme() const {
+	return mThemeDefault.get();
+}
+
+UIThemePtr UIThemeManager::getDefaultThemeHandle() const {
 	return mThemeDefault;
+}
+
+UITheme* UIThemeManager::getById( const String::HashType& id ) const {
+	auto it = mThemes.find( id );
+	return it != mThemes.end() ? it->second.get() : nullptr;
+}
+
+UITheme* UIThemeManager::getByName( const std::string& name ) const {
+	return getById( String::hash( name ) );
 }
 
 UIThemeManager* UIThemeManager::applyDefaultTheme( UINode* node ) {
 	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != node )
-		node->setTheme( mThemeDefault );
+		node->setTheme( mThemeDefault.get() );
 
 	return this;
 }

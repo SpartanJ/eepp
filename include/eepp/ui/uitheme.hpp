@@ -2,11 +2,11 @@
 #define EE_UICUITHEME_HPP
 
 #include <eepp/graphics/resourcecatalog.hpp>
-#include <eepp/system/resourcemanager.hpp>
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uihelper.hpp>
+#include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiskin.hpp>
 
 namespace EE { namespace Graphics {
@@ -21,35 +21,37 @@ namespace EE { namespace UI {
 class UIIcon;
 class UIIconTheme;
 
-class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
+class UITheme;
+using UIThemePtr = ResourcePtr<UITheme>;
+using UIThemeWeakPtr = ResourceWeakPtr<UITheme>;
+using UISkinPtr = ResourcePtr<UISkin>;
+
+class EE_API UITheme {
   public:
-	using ResourceManagerMulti<UISkin>::getById;
-	using ResourceManagerMulti<UISkin>::getByName;
-	using ResourceManagerMulti<UISkin>::exists;
-	using ResourceManagerMulti<UISkin>::existsId;
+	static UIThemePtr New( const std::string& name, const std::string& abbr,
+						   Graphics::Font* defaultFont = NULL );
 
-	static UITheme* New( const std::string& name, const std::string& abbr,
-						 Graphics::Font* defaultFont = NULL );
+	static UIThemePtr load( const std::string& name, const std::string& abbr,
+							const std::string& textureAtlasPath, Graphics::Font* defaultFont,
+							const std::string& styleSheetPath );
 
-	static UITheme* load( const std::string& name, const std::string& abbr,
-						  const std::string& textureAtlasPath, Graphics::Font* defaultFont,
-						  const std::string& styleSheetPath );
+	static UIThemePtr loadFromString( const std::string& name, const std::string& abbr,
+									  const std::string& textureAtlasPath,
+									  Graphics::Font* defaultFont,
+									  const std::string& styleSheetString );
 
-	static UITheme* loadFromString( const std::string& name, const std::string& abbr,
-									const std::string& textureAtlasPath,
-									Graphics::Font* defaultFont,
-									const std::string& styleSheetString );
+	static UIThemePtr loadFromTextureAtlas( UIThemePtr theme,
+											Graphics::TextureAtlasPtr textureAtlas );
 
-	static UITheme* loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlasPtr textureAtlas );
+	static UIThemePtr loadFromTextureAtlas( Graphics::TextureAtlasPtr textureAtlas,
+											const std::string& Name, const std::string& NameAbbr );
 
-	static UITheme* loadFromTextureAtlas( Graphics::TextureAtlasPtr textureAtlas,
-										  const std::string& Name, const std::string& NameAbbr );
+	static UIThemePtr loadFromDirectory( UIThemePtr theme, const std::string& Path,
+										 const Float& pixelDensity = 1 );
 
-	static UITheme* loadFromDirectory( UITheme* tTheme, const std::string& Path,
-									   const Float& pixelDensity = 1 );
-
-	static UITheme* loadFromDirectory( const std::string& Path, const std::string& Name,
-									   const std::string& NameAbbr, const Float& pixelDensity = 1 );
+	static UIThemePtr loadFromDirectory( const std::string& Path, const std::string& Name,
+										 const std::string& NameAbbr,
+										 const Float& pixelDensity = 1 );
 
 	virtual ~UITheme();
 
@@ -61,7 +63,15 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	const std::string& getAbbr() const;
 
-	virtual UISkin* add( UISkin* Resource );
+	UISkin* add( UISkinPtr skin );
+
+	UISkin* getById( const String::HashType& id ) const;
+
+	UISkin* getByName( const std::string& name ) const;
+
+	bool exists( const std::string& name ) const;
+
+	bool existsId( const String::HashType& id ) const;
 
 	Graphics::TextureAtlas* getTextureAtlas() const;
 
@@ -104,7 +114,8 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	Float mDefaultFontSize;
 	CSS::StyleSheet mStyleSheet;
 	std::string mStyleSheetPath;
-	UIIconTheme* mIconTheme;
+	UIIconThemePtr mIconTheme;
+	UnorderedMap<String::HashType, std::vector<UISkinPtr>> mSkins;
 	Graphics::ResourceCatalogPtr mResourceCatalog;
 
 	void setTextureAtlas( Graphics::TextureAtlasPtr textureAtlas );

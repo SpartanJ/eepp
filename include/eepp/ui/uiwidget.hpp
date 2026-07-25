@@ -130,12 +130,14 @@ class EE_API UIWidget : public UINode {
 	virtual UIWidget* setAnchors( const Uint32& flags );
 
 	/**
-	 * @brief Sets the theme for this widget.
+	 * @brief Sets the borrowed theme used by this widget.
 	 *
-	 * Applies the specified theme to the widget, affecting its visual appearance.
-	 * The theme controls colors, fonts, borders, and other visual properties.
+	 * The widget stores @p Theme as a non-owning pointer and does not increment its reference
+	 * count. The theme must outlive this use; normally it is retained by the containing scene's
+	 * UIThemeManager. This keeps per-widget theme access inexpensive while centralizing ownership
+	 * at the scene boundary.
 	 *
-	 * @param Theme Pointer to the UITheme to apply.
+	 * @param Theme Borrowed theme to apply, or null to use no explicit theme.
 	 */
 	virtual void setTheme( UITheme* Theme );
 

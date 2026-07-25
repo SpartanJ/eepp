@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UISkin : public StateListDrawable {
   public:
-	static UISkin* New( const std::string& name = "" );
+	static ResourcePtr<UISkin> New( const std::string& name = "" );
 
 	virtual ~UISkin();
 

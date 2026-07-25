@@ -104,9 +104,9 @@ Engine::~Engine() {
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
-	Graphics::Private::FrameBufferManager::destroySingleton();
+	Graphics::Private::FrameBufferRegistry::destroySingleton();
 
-	Graphics::Private::VertexBufferManager::destroySingleton();
+	Graphics::Private::VertexBufferRegistry::destroySingleton();
 
 	// Catalogs are the final intentional texture owners. Clear them while the factory and current
 	// graphics context are still available for deferred release collection.
@@ -120,7 +120,7 @@ Engine::~Engine() {
 
 	// Shader and renderer destructors issue GL commands. Programs must go first while GLi and the
 	// current window context are still valid.
-	ShaderProgramManager::destroySingleton();
+	ShaderProgramRegistry::destroySingleton();
 
 	Graphics::Renderer::destroySingleton();
 

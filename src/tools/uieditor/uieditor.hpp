@@ -158,7 +158,7 @@ class App : public UICodeEditorSplitter::Client {
 	EE::Window::Window* mWindow{ nullptr };
 	UIMessageBox* mMsgBox{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
-	UITheme* mTheme{ nullptr };
+	UIThemePtr mTheme;
 	UIWindow* mUIContainer{ nullptr };
 	UIMenuBar* mUIMenuBar{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

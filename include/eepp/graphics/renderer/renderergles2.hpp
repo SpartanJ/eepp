@@ -74,7 +74,7 @@ class EE_API RendererGLES2 : public RendererGLShader {
 	void reloadCurrentShader();
 
   protected:
-	ShaderProgram* mShaders[EEGLES2_SHADERS_COUNT];
+	ShaderProgramPtr mShaders[EEGLES2_SHADERS_COUNT];
 	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];
 	int mAttribsLocStates[EEGL_ARRAY_STATES_COUNT];
 	int mPlanes[EE_MAX_PLANES];

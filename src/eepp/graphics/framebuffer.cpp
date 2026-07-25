@@ -14,14 +14,15 @@ namespace EE { namespace Graphics {
 
 static std::vector<const View*> sFBOActiveViews;
 
-FrameBuffer* FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer,
-							   bool DepthBuffer, bool useColorBuffer, const Uint32& channels,
-							   EE::Window::Window* window ) {
+FrameBufferUniquePtr FrameBuffer::New( const Uint32& Width, const Uint32& Height,
+									   bool StencilBuffer, bool DepthBuffer, bool useColorBuffer,
+									   const Uint32& channels, EE::Window::Window* window ) {
 	if ( FrameBufferFBO::isSupported() )
-		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer,
-										channels, window ) );
+		return FrameBufferUniquePtr(
+			eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer,
+									 channels, window ) ) );
 	Log::warning( "FBO not supported" );
-	return NULL;
+	return {};
 }
 
 FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
@@ -38,11 +39,12 @@ FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	FrameBufferManager::instance()->add( this );
+	FrameBufferRegistry::instance()->add( this );
 }
 
 FrameBuffer::~FrameBuffer() {
-	FrameBufferManager::instance()->remove( this );
+	if ( FrameBufferRegistry::existsSingleton() )
+		FrameBufferRegistry::instance()->remove( this );
 }
 
 const TexturePtr& FrameBuffer::getTexture() const {

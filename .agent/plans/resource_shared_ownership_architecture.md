@@ -1,6 +1,6 @@
 # eepp shared-resource ownership architecture
 
-Status: active implementation baseline; Stage 0 through Stage 6 complete, 2026-07-21.
+Status: implementation complete through Stage 7, 2026-07-24.
 
 This document freezes the contracts that must be true before the public texture API is changed. The
 implementation may refine names and small mechanics, but changing an invariant below requires an
@@ -792,7 +792,7 @@ Exit criteria:
 
 ### Stage 7: remaining resource families
 
-Status: in progress. Nine-patches and texture atlases are migrated. `NinePatch::New()`,
+Status: complete, 2026-07-24. Nine-patches and texture atlases are migrated. `NinePatch::New()`,
 `TextureRegion::New()`, and `TextureAtlas::New()` return handles. Atlases retain region and texture
 handles; loaders retain and publish atlas handles; theme-owned catalogs retain their named atlas
 sources; and scene `ResourceScope` imports make those sources visible intentionally.
@@ -821,7 +821,15 @@ handle. The former process-wide `FontManager` singleton and compatibility namesp
 Publishing a font with an existing local key replaces that catalog binding; the legacy manager
 behavior that silently suffixed duplicate font names is intentionally not preserved.
 
-Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends on it.
+Themes, skins, icon themes, and icons now use shared resource handles. Each scene's
+`UIThemeManager` owns its themes and imports their catalogs into that scene's scope; it is not a
+process-wide semantic namespace. Shader and shader-program factories return handles, programs own
+their constituent shaders, and catalogs/scopes can publish shader programs under semantic keys.
+`ShaderProgramRegistry`, `VertexBufferRegistry`, and `FrameBufferRegistry` remain process-wide only
+as non-owning inventories of live OpenGL-context objects used for reload and diagnostics.
+
+The raw-owning `ResourceManager<T>` and `ResourceManagerMulti<T>` templates were removed after their
+last consumers migrated.
 
 ## 11. Required validation matrix
 
@@ -886,8 +894,8 @@ Remove raw-owning `ResourceManager<T>` only when no subclass or consumer depends
 
 ## 12. Next implementation deliverable
 
-Stage 7 continues with the remaining ResourceManager families one at a time. Fonts and font caches
-now use scope catalogs plus `FontService`; the next families are themes/icons, shaders/programs, and
-any remaining raw-owning manager. Each singleton semantic namespace is replaced by naturally owned
-catalogs plus explicit scope imports. The raw-owning ResourceManager template is removed only after
-its final consumer is migrated.
+The ownership migration is complete through Stage 7. Follow-up work is validation and API polish:
+expand scene-lifetime and repeated-Engine coverage, audit public ownership documentation, add
+debug-only borrowed GPU lifetime checks, audit non-trivial static initialization, and rename
+compatibility-era manager filenames when the public include transition is scheduled. OpenGL
+context-loss recreation is explicitly outside the supported lifecycle contract.

@@ -142,6 +142,31 @@ std::vector<FontPtr> ResourceScope::getFonts() const {
 	return fonts;
 }
 
+ShaderProgramPtr ResourceScope::findShaderProgram( const ResourceKey& key ) const {
+	return findShaderProgram( key.value() );
+}
+
+ShaderProgramPtr ResourceScope::findShaderProgram( const std::string& key ) const {
+	if ( ShaderProgramPtr program = mLocalCatalog->findShaderProgram( key ) )
+		return program;
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		if ( ShaderProgramPtr program = catalog->findShaderProgram( key ) )
+			return program;
+	}
+	return {};
+}
+
+std::vector<ShaderProgramPtr> ResourceScope::getShaderPrograms() const {
+	std::vector<ShaderProgramPtr> programs = mLocalCatalog->getShaderPrograms();
+	Lock lock( mMutex );
+	for ( const ResourceCatalogPtr& catalog : mImports ) {
+		auto imported = catalog->getShaderPrograms();
+		programs.insert( programs.end(), imported.begin(), imported.end() );
+	}
+	return programs;
+}
+
 std::vector<TextureRegionPtr>
 ResourceScope::findTextureRegionsByPattern( const std::string& name, const std::string& extension,
 											TextureAtlas* searchInTextureAtlas ) const {
@@ -311,6 +336,14 @@ void ResourceScope::publishLocalFont( std::string key, FontPtr font ) {
 	mLocalCatalog->publishFont( std::move( key ), std::move( font ) );
 }
 
+void ResourceScope::publishLocalShaderProgram( ResourceKey key, ShaderProgramPtr program ) {
+	publishLocalShaderProgram( key.value(), std::move( program ) );
+}
+
+void ResourceScope::publishLocalShaderProgram( std::string key, ShaderProgramPtr program ) {
+	mLocalCatalog->publishShaderProgram( std::move( key ), std::move( program ) );
+}
+
 bool ResourceScope::eraseLocal( const ResourceKey& key ) {
 	return mLocalCatalog->erase( key );
 }
@@ -357,6 +390,14 @@ bool ResourceScope::eraseLocalFont( Font* font ) {
 		return false;
 	detachFontService( handle );
 	return true;
+}
+
+bool ResourceScope::eraseLocalShaderProgram( const ResourceKey& key ) {
+	return mLocalCatalog->eraseShaderProgram( key );
+}
+
+bool ResourceScope::eraseLocalShaderProgram( const std::string& key ) {
+	return mLocalCatalog->eraseShaderProgram( key );
 }
 
 void ResourceScope::clearLocal() {

@@ -12,9 +12,13 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
+class UIIcon;
+using UIIconPtr = ResourcePtr<UIIcon>;
+using UIIconWeakPtr = ResourceWeakPtr<UIIcon>;
+
 class EE_API UIIcon {
   public:
-	static UIIcon* New( const std::string& name );
+	static UIIconPtr New( const std::string& name );
 
 	virtual ~UIIcon();
 
@@ -41,7 +45,7 @@ class EE_API UIIcon {
 
 class EE_API UIGlyphIcon : public UIIcon {
   public:
-	static UIIcon* New( const std::string& name, FontTrueType* font, const Uint32& codePoint );
+	static UIIconPtr New( const std::string& name, FontTrueType* font, const Uint32& codePoint );
 
 	virtual ~UIGlyphIcon();
 
@@ -57,7 +61,7 @@ class EE_API UIGlyphIcon : public UIIcon {
 
 class EE_API UISVGIcon : public UIIcon {
   public:
-	static UIIcon* New( const std::string& name, const std::string& svgXML );
+	static UIIconPtr New( const std::string& name, const std::string& svgXML );
 
 	virtual ~UISVGIcon();
 

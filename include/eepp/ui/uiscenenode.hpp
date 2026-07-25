@@ -797,11 +797,15 @@ class EE_API UISceneNode : public SceneNode {
 	UISceneNode* setResourceScope( Graphics::ResourceScopePtr resourceScope );
 
 	/**
-	 * @brief Sets the theme for the entire UI scene.
+	 * @brief Applies a borrowed theme to the widgets in this UI scene.
 	 *
-	 * Applies the theme to the root widget and all children.
+	 * Each affected widget stores a non-owning `UITheme*`; this function does not retain @p theme.
+	 * The theme must therefore outlive every widget using it. Normally callers establish that
+	 * lifetime first by adding the corresponding `UIThemePtr` to this scene's UIThemeManager or by
+	 * setting it as the manager's default theme.
 	 *
-	 * @param theme Pointer to the UITheme to set.
+	 * @param theme Borrowed theme to apply recursively. May be null to clear explicit widget
+	 * themes.
 	 */
 	void setTheme( UITheme* theme );
 
@@ -1199,11 +1203,13 @@ class EE_API UISceneNode : public SceneNode {
 	void resetTooltips( Node* node );
 
 	/**
-	 * @brief Applies a theme to a node and its subtree.
+	 * @brief Applies a borrowed theme to the widgets below a node.
 	 *
-	 * Recursively applies the specified UITheme to all widgets in the subtree.
+	 * Each affected widget stores a non-owning pointer. This function does not retain @p theme; an
+	 * owner such as this scene's UIThemeManager must keep it alive for the complete period in which
+	 * the subtree uses it.
 	 *
-	 * @param theme Pointer to the UITheme to apply.
+	 * @param theme Borrowed theme to apply. May be null to clear explicit widget themes.
 	 * @param to The root node of the subtree to theme.
 	 */
 	void setTheme( UITheme* theme, Node* to );

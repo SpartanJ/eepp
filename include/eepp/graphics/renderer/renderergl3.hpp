@@ -68,7 +68,7 @@ class EE_API RendererGL3 : public RendererGLShader {
 	void reloadCurrentShader();
 
   protected:
-	ShaderProgram* mShaders[EEGL3_SHADERS_COUNT];
+	ShaderProgramPtr mShaders[EEGL3_SHADERS_COUNT];
 	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];
 	int mAttribsLocStates[EEGL_ARRAY_STATES_COUNT];
 	int mPlanes[EE_MAX_PLANES];

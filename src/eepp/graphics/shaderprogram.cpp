@@ -7,48 +7,58 @@
 
 namespace EE { namespace Graphics {
 
-ShaderProgram* ShaderProgram::New( const std::string& name ) {
-	return eeNew( ShaderProgram, ( name ) );
+ShaderProgramPtr ShaderProgram::New( const std::string& name ) {
+	return ShaderProgramPtr( eeNew( ShaderProgram, ( name ) ), ResourceDeleter<ShaderProgram>() );
 }
 
-ShaderProgram* ShaderProgram::New( const std::vector<Shader*>& Shaders, const std::string& name ) {
-	return eeNew( ShaderProgram, ( Shaders, name ) );
+ShaderProgramPtr ShaderProgram::New( const std::vector<ShaderPtr>& shaders,
+									 const std::string& name ) {
+	return ShaderProgramPtr( eeNew( ShaderProgram, ( shaders, name ) ),
+							 ResourceDeleter<ShaderProgram>() );
 }
 
-ShaderProgram* ShaderProgram::New( const std::string& VertexShaderFile,
-								   const std::string& FragmentShaderFile,
-								   const std::string& name ) {
-	return eeNew( ShaderProgram, ( VertexShaderFile, FragmentShaderFile, name ) );
+ShaderProgramPtr ShaderProgram::New( const std::string& VertexShaderFile,
+									 const std::string& FragmentShaderFile,
+									 const std::string& name ) {
+	return ShaderProgramPtr( eeNew( ShaderProgram, ( VertexShaderFile, FragmentShaderFile, name ) ),
+							 ResourceDeleter<ShaderProgram>() );
 }
 
-ShaderProgram* ShaderProgram::New( const char* VertexShaderData, const Uint32& VertexShaderDataSize,
-								   const char* FragmentShaderData,
-								   const Uint32& FragmentShaderDataSize, const std::string& name ) {
-	return eeNew( ShaderProgram, ( VertexShaderData, VertexShaderDataSize, FragmentShaderData,
-								   FragmentShaderDataSize, name ) );
+ShaderProgramPtr ShaderProgram::New( const char* VertexShaderData,
+									 const Uint32& VertexShaderDataSize,
+									 const char* FragmentShaderData,
+									 const Uint32& FragmentShaderDataSize,
+									 const std::string& name ) {
+	return ShaderProgramPtr(
+		eeNew( ShaderProgram, ( VertexShaderData, VertexShaderDataSize, FragmentShaderData,
+								FragmentShaderDataSize, name ) ),
+		ResourceDeleter<ShaderProgram>() );
 }
 
-ShaderProgram* ShaderProgram::New( Pack* Pack, const std::string& VertexShaderPath,
-								   const std::string& FragmentShaderPath,
-								   const std::string& name ) {
-	return eeNew( ShaderProgram, ( Pack, VertexShaderPath, FragmentShaderPath, name ) );
+ShaderProgramPtr ShaderProgram::New( Pack* Pack, const std::string& VertexShaderPath,
+									 const std::string& FragmentShaderPath,
+									 const std::string& name ) {
+	return ShaderProgramPtr(
+		eeNew( ShaderProgram, ( Pack, VertexShaderPath, FragmentShaderPath, name ) ),
+		ResourceDeleter<ShaderProgram>() );
 }
 
-ShaderProgram* ShaderProgram::New( const char** VertexShaderData, const Uint32& NumLinesVS,
-								   const char** FragmentShaderData, const Uint32& NumLinesFS,
-								   const std::string& name ) {
-	return eeNew( ShaderProgram,
-				  ( VertexShaderData, NumLinesVS, FragmentShaderData, NumLinesFS, name ) );
+ShaderProgramPtr ShaderProgram::New( const char** VertexShaderData, const Uint32& NumLinesVS,
+									 const char** FragmentShaderData, const Uint32& NumLinesFS,
+									 const std::string& name ) {
+	return ShaderProgramPtr( eeNew( ShaderProgram, ( VertexShaderData, NumLinesVS,
+													 FragmentShaderData, NumLinesFS, name ) ),
+							 ResourceDeleter<ShaderProgram>() );
 }
 
 ShaderProgram::ShaderProgram( const std::string& name ) : mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 }
 
-ShaderProgram::ShaderProgram( const std::vector<Shader*>& Shaders, const std::string& name ) :
+ShaderProgram::ShaderProgram( const std::vector<ShaderPtr>& Shaders, const std::string& name ) :
 	mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 
 	addShaders( Shaders );
@@ -59,15 +69,13 @@ ShaderProgram::ShaderProgram( const std::vector<Shader*>& Shaders, const std::st
 ShaderProgram::ShaderProgram( const std::string& VertexShaderFile,
 							  const std::string& FragmentShaderFile, const std::string& name ) :
 	mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 
-	VertexShader* vs = eeNew( VertexShader, ( VertexShaderFile ) );
-	FragmentShader* fs = eeNew( FragmentShader, ( FragmentShaderFile ) );
+	ShaderPtr vs( eeNew( VertexShader, ( VertexShaderFile ) ), ResourceDeleter<Shader>() );
+	ShaderPtr fs( eeNew( FragmentShader, ( FragmentShaderFile ) ), ResourceDeleter<Shader>() );
 
 	if ( !vs->isValid() || !fs->isValid() ) {
-		eeSAFE_DELETE( vs );
-		eeSAFE_DELETE( fs );
 		return;
 	}
 
@@ -80,17 +88,17 @@ ShaderProgram::ShaderProgram( const std::string& VertexShaderFile,
 ShaderProgram::ShaderProgram( Pack* Pack, const std::string& VertexShaderPath,
 							  const std::string& FragmentShaderPath, const std::string& name ) :
 	mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( VertexShaderPath ) &&
 		 -1 != Pack->exists( FragmentShaderPath ) ) {
-		VertexShader* vs = eeNew( VertexShader, ( Pack, VertexShaderPath ) );
-		FragmentShader* fs = eeNew( FragmentShader, ( Pack, FragmentShaderPath ) );
+		ShaderPtr vs( eeNew( VertexShader, ( Pack, VertexShaderPath ) ),
+					  ResourceDeleter<Shader>() );
+		ShaderPtr fs( eeNew( FragmentShader, ( Pack, FragmentShaderPath ) ),
+					  ResourceDeleter<Shader>() );
 
 		if ( !vs->isValid() || !fs->isValid() ) {
-			eeSAFE_DELETE( vs );
-			eeSAFE_DELETE( fs );
 			return;
 		}
 
@@ -105,15 +113,15 @@ ShaderProgram::ShaderProgram( const char* VertexShaderData, const Uint32& Vertex
 							  const char* FragmentShaderData, const Uint32& FragmentShaderDataSize,
 							  const std::string& name ) :
 	mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 
-	VertexShader* vs = eeNew( VertexShader, ( VertexShaderData, VertexShaderDataSize ) );
-	FragmentShader* fs = eeNew( FragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
+	ShaderPtr vs( eeNew( VertexShader, ( VertexShaderData, VertexShaderDataSize ) ),
+				  ResourceDeleter<Shader>() );
+	ShaderPtr fs( eeNew( FragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) ),
+				  ResourceDeleter<Shader>() );
 
 	if ( !vs->isValid() || !fs->isValid() ) {
-		eeSAFE_DELETE( vs );
-		eeSAFE_DELETE( fs );
 		return;
 	}
 
@@ -127,15 +135,15 @@ ShaderProgram::ShaderProgram( const char** VertexShaderData, const Uint32& NumLi
 							  const char** FragmentShaderData, const Uint32& NumLinesFS,
 							  const std::string& name ) :
 	mHandler( 0 ), mId( 0 ) {
-	addToManager( name );
+	addToRegistry( name );
 	init();
 
-	VertexShader* vs = eeNew( VertexShader, ( VertexShaderData, NumLinesVS ) );
-	FragmentShader* fs = eeNew( FragmentShader, ( FragmentShaderData, NumLinesFS ) );
+	ShaderPtr vs( eeNew( VertexShader, ( VertexShaderData, NumLinesVS ) ),
+				  ResourceDeleter<Shader>() );
+	ShaderPtr fs( eeNew( FragmentShader, ( FragmentShaderData, NumLinesFS ) ),
+				  ResourceDeleter<Shader>() );
 
 	if ( !vs->isValid() || !fs->isValid() ) {
-		eeSAFE_DELETE( vs );
-		eeSAFE_DELETE( fs );
 		return;
 	}
 
@@ -155,22 +163,18 @@ ShaderProgram::~ShaderProgram() {
 	mUniformLocations.clear();
 	mAttributeLocations.clear();
 
-	for ( unsigned int i = 0; i < mShaders.size(); i++ )
-		eeSAFE_DELETE( mShaders[i] );
-
-	if ( !ShaderProgramManager::instance()->isDestroying() ) {
-		removeFromManager();
-	}
+	removeFromRegistry();
 }
 
-void ShaderProgram::addToManager( const std::string& name ) {
+void ShaderProgram::addToRegistry( const std::string& name ) {
 	setName( name );
 
-	ShaderProgramManager::instance()->add( this );
+	ShaderProgramRegistry::instance()->add( this );
 }
 
-void ShaderProgram::removeFromManager() {
-	ShaderProgramManager::instance()->remove( this, false );
+void ShaderProgram::removeFromRegistry() {
+	if ( ShaderProgramRegistry::existsSingleton() )
+		ShaderProgramRegistry::instance()->remove( this );
 }
 
 void ShaderProgram::init() {
@@ -191,7 +195,7 @@ void ShaderProgram::reload() {
 
 	init();
 
-	std::vector<Shader*> tmpShader = mShaders;
+	std::vector<ShaderPtr> tmpShader = mShaders;
 
 	mShaders.clear();
 
@@ -207,24 +211,24 @@ void ShaderProgram::reload() {
 	}
 }
 
-void ShaderProgram::addShader( Shader* Shader ) {
-	if ( !Shader->isValid() ) {
+void ShaderProgram::addShader( ShaderPtr shader ) {
+	if ( !shader || !shader->isValid() ) {
 		Log::error( "ShaderProgram::addShader() %s: Cannot add invalid shader", mName.c_str() );
 		return;
 	}
 
 	if ( 0 != getHandler() ) {
 #ifdef EE_SHADERS_SUPPORTED
-		GLi->attachShader( getHandler(), Shader->getId() );
+		GLi->attachShader( getHandler(), shader->getId() );
 #endif
 
-		mShaders.push_back( Shader );
+		mShaders.emplace_back( std::move( shader ) );
 	}
 }
 
-void ShaderProgram::addShaders( const std::vector<Shader*>& Shaders ) {
-	for ( Uint32 i = 0; i < Shaders.size(); i++ )
-		addShader( Shaders[i] );
+void ShaderProgram::addShaders( const std::vector<ShaderPtr>& shaders ) {
+	for ( const auto& shader : shaders )
+		addShader( shader );
 }
 
 bool ShaderProgram::link() {
@@ -411,12 +415,6 @@ const std::string& ShaderProgram::getName() const {
 void ShaderProgram::setName( const std::string& name ) {
 	mName = name;
 	mId = String::hash( mName );
-
-	Uint32 NameCount = ShaderProgramManager::instance()->exists( mName );
-
-	if ( 0 != NameCount || 0 == name.size() ) {
-		setName( name + String::toString( NameCount + 1 ) );
-	}
 }
 
 void ShaderProgram::setReloadCb( ShaderProgramReloadCb Cb ) {

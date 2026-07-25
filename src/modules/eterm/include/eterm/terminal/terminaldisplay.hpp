@@ -5,6 +5,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -316,10 +317,10 @@ class TerminalDisplay : public ITerminalDisplay {
 	Uint32 mColumns{ 0 };
 	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
-	FrameBuffer* mFrameBuffer{ nullptr };
-	VertexBuffer* mVBBackground{ nullptr };
-	VertexBuffer* mVBForeground{ nullptr };
-	std::vector<VertexBuffer*> mVBStyles;
+	FrameBufferUniquePtr mFrameBuffer;
+	VertexBufferUniquePtr mVBBackground;
+	VertexBufferUniquePtr mVBForeground;
+	std::vector<VertexBufferUniquePtr> mVBStyles;
 	TerminalColorScheme mColorScheme;
 	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
@@ -355,9 +356,9 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void drawFrameBuffer();
 
-	void createVBO( VertexBuffer** vbo, bool usesTexCoords );
+	void createVBO( VertexBufferUniquePtr& vbo, bool usesTexCoords );
 
-	VertexBuffer* createRowVBO( bool usesTexCoords );
+	VertexBufferUniquePtr createRowVBO( bool usesTexCoords );
 
 	void initVBOs();
 

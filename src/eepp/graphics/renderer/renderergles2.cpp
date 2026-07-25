@@ -155,12 +155,12 @@ void RendererGLES2::reloadShader( ShaderProgram* Shader ) {
 }
 
 void RendererGLES2::setShader( const EEGLES2_SHADERS& Shader ) {
-	setShader( mShaders[Shader] );
+	setShader( mShaders[Shader].get() );
 }
 
 void RendererGLES2::checkLocalShader() {
 	for ( Uint32 i = 0; i < EEGLES2_SHADERS_COUNT; i++ ) {
-		if ( mShaders[i] == mCurShader ) {
+		if ( mShaders[i].get() == mCurShader ) {
 			mCurShaderLocal = true;
 			return;
 		}
@@ -171,7 +171,7 @@ void RendererGLES2::checkLocalShader() {
 
 void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[EEGLES2_SHADER_BASE];
+		Shader = mShaders[EEGLES2_SHADER_BASE].get();
 	}
 
 	if ( mCurShader == Shader ) {
@@ -432,7 +432,7 @@ void RendererGLES2::texCoordPointer( int size, unsigned int type, int stride, co
 									 unsigned int /*allocate*/ ) {
 	if ( mCurShaderLocal ) {
 		if ( 1 == mTexActive ) {
-			if ( mCurShader == mShaders[EEGLES2_SHADER_PRIMITIVE] ) {
+			if ( mCurShader == mShaders[EEGLES2_SHADER_PRIMITIVE].get() ) {
 				if ( mClippingEnabled ) {
 					setShader( EEGLES2_SHADER_CLIPPED );
 				} else if ( mPointSpriteEnabled ) {

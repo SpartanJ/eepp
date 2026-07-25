@@ -127,6 +127,31 @@ void ResourceCatalog::publishFont( std::string key, FontPtr font ) {
 	previous.reset();
 }
 
+void ResourceCatalog::publishShaderProgram( ResourceKey key, ShaderProgramPtr program ) {
+	publishShaderProgram( key.value(), std::move( program ) );
+}
+
+void ResourceCatalog::publishShaderProgram( std::string key, ShaderProgramPtr program ) {
+	if ( key.empty() )
+		return;
+	if ( !program ) {
+		eraseShaderProgram( key );
+		return;
+	}
+	ShaderProgramPtr previous;
+	{
+		Lock lock( mMutex );
+		auto it = mShaderPrograms.find( key );
+		if ( it == mShaderPrograms.end() ) {
+			mShaderPrograms.emplace( std::move( key ), std::move( program ) );
+			return;
+		}
+		previous = std::move( it->second );
+		it->second = std::move( program );
+	}
+	previous.reset();
+}
+
 TexturePtr ResourceCatalog::findTexture( const ResourceKey& key ) const {
 	return findTexture( key.value() );
 }
@@ -195,6 +220,25 @@ std::vector<FontPtr> ResourceCatalog::getFonts() const {
 	for ( const auto& font : mFonts )
 		fonts.emplace_back( font.second );
 	return fonts;
+}
+
+ShaderProgramPtr ResourceCatalog::findShaderProgram( const ResourceKey& key ) const {
+	return findShaderProgram( key.value() );
+}
+
+ShaderProgramPtr ResourceCatalog::findShaderProgram( const std::string& key ) const {
+	Lock lock( mMutex );
+	auto it = mShaderPrograms.find( key );
+	return it != mShaderPrograms.end() ? it->second : ShaderProgramPtr{};
+}
+
+std::vector<ShaderProgramPtr> ResourceCatalog::getShaderPrograms() const {
+	std::vector<ShaderProgramPtr> programs;
+	Lock lock( mMutex );
+	programs.reserve( mShaderPrograms.size() );
+	for ( const auto& program : mShaderPrograms )
+		programs.emplace_back( program.second );
+	return programs;
 }
 
 bool ResourceCatalog::erase( const ResourceKey& key ) {
@@ -298,6 +342,24 @@ bool ResourceCatalog::eraseFont( Font* font ) {
 	return true;
 }
 
+bool ResourceCatalog::eraseShaderProgram( const ResourceKey& key ) {
+	return eraseShaderProgram( key.value() );
+}
+
+bool ResourceCatalog::eraseShaderProgram( const std::string& key ) {
+	ShaderProgramPtr program;
+	{
+		Lock lock( mMutex );
+		auto it = mShaderPrograms.find( key );
+		if ( it == mShaderPrograms.end() )
+			return false;
+		program = std::move( it->second );
+		mShaderPrograms.erase( it );
+	}
+	program.reset();
+	return true;
+}
+
 void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TexturePtr> textures;
 	UnorderedMap<std::string, DrawablePtr> drawables;
@@ -305,6 +367,7 @@ void ResourceCatalog::clear() {
 	UnorderedMap<std::string, TextureAtlasPtr> atlases;
 	UnorderedMap<std::string, FontPtr> fonts;
 	UnorderedMap<String::HashType, FontWeakPtr> fontsById;
+	UnorderedMap<std::string, ShaderProgramPtr> shaderPrograms;
 	{
 		Lock lock( mMutex );
 		textures = std::move( mTextures );
@@ -313,6 +376,7 @@ void ResourceCatalog::clear() {
 		atlases = std::move( mAtlases );
 		fonts = std::move( mFonts );
 		fontsById = std::move( mFontsById );
+		shaderPrograms = std::move( mShaderPrograms );
 	}
 
 	textures.clear();
@@ -321,11 +385,13 @@ void ResourceCatalog::clear() {
 	atlases.clear();
 	fonts.clear();
 	fontsById.clear();
+	shaderPrograms.clear();
 }
 
 std::size_t ResourceCatalog::size() const {
 	Lock lock( mMutex );
-	return mTextures.size() + mDrawables.size() + mAtlases.size() + mFonts.size();
+	return mTextures.size() + mDrawables.size() + mAtlases.size() + mFonts.size() +
+		   mShaderPrograms.size();
 }
 
 }} // namespace EE::Graphics

@@ -122,12 +122,12 @@ void RendererGL3::reloadShader( ShaderProgram* Shader ) {
 }
 
 void RendererGL3::setShader( const EEGL3_SHADERS& Shader ) {
-	setShader( mShaders[Shader] );
+	setShader( mShaders[Shader].get() );
 }
 
 void RendererGL3::setShader( ShaderProgram* Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[EEGL3_SHADER_BASE];
+		Shader = mShaders[EEGL3_SHADER_BASE].get();
 	}
 
 	if ( mCurShader == Shader ) {

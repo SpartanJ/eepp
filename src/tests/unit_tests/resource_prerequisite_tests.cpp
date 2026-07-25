@@ -327,6 +327,26 @@ UTEST( ResourcePrerequisites, resourceScopeResolvesPublishedAtlasRegionPatterns 
 	EXPECT_EQ( sprite->getNumFrames(), 2u );
 }
 
+UTEST( ResourcePrerequisites, resourceScopeOwnsShaderProgramsWhileRegistryOnlyObservesThem ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Shader program scope ownership test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	ShaderProgramPtr program = ShaderProgram::New( "scoped-program" );
+	ShaderProgramWeakPtr weakProgram = program;
+	scope->publishLocalShaderProgram( "scoped-program", program );
+	program.reset();
+
+	ASSERT_FALSE( weakProgram.expired() );
+	EXPECT_EQ( scope->findShaderProgram( "scoped-program" ).get(), weakProgram.lock().get() );
+	EXPECT_TRUE( ShaderProgramRegistry::existsSingleton() != nullptr );
+
+	EXPECT_TRUE( scope->eraseLocalShaderProgram( "scoped-program" ) );
+	EXPECT_TRUE( weakProgram.expired() );
+
+	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
 UTEST( ResourcePrerequisites, textureRegistryTracksStableIdentityAndMemoryWithoutOwning ) {
 	createLifecycleTestWindow( "Texture registry identity test" );
 	TextureFactory* factory = TextureFactory::instance();
@@ -648,7 +668,7 @@ UTEST( ResourcePrerequisites, uiThemeCatalogIsImportedOnlyByItsOwningScene ) {
 	TexturePtr texture = TextureFactory::instance()->createEmptyTexture( 4, 4 );
 	ASSERT_TRUE( texture != nullptr );
 
-	UITheme* theme = UITheme::New( "catalog-theme", "catalog-theme" );
+	UIThemePtr theme = UITheme::New( "catalog-theme", "catalog-theme" );
 	NinePatchPtr ninePatch = NinePatch::New( texture, 1, 1, 1, 1, 1, "theme-nine-patch" );
 	theme->getResourceCatalog()->publishDrawable( "theme-nine-patch", ninePatch );
 	firstScene->getUIThemeManager()->add( theme );
@@ -658,21 +678,31 @@ UTEST( ResourcePrerequisites, uiThemeCatalogIsImportedOnlyByItsOwningScene ) {
 	EXPECT_EQ( firstResolved->getDrawableType(), Drawable::NINEPATCH );
 	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
 
-	EXPECT_TRUE( firstScene->getUIThemeManager()->remove( theme, false ) );
+	EXPECT_TRUE( firstScene->getUIThemeManager()->remove( theme.get() ) );
 	EXPECT_TRUE( firstScene->getResourceScope()->findDrawable( "theme-nine-patch" ) == nullptr );
 
-	UITheme* defaultOnlyTheme = UITheme::New( "default-only-theme", "default-only-theme" );
+	UIThemePtr defaultOnlyTheme = UITheme::New( "default-only-theme", "default-only-theme" );
 	defaultOnlyTheme->getResourceCatalog()->publishDrawable( "default-nine-patch", ninePatch );
 	secondScene->getUIThemeManager()->setDefaultTheme( defaultOnlyTheme );
 	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) != nullptr );
 	secondScene->getUIThemeManager()->setDefaultTheme( static_cast<UITheme*>( nullptr ) );
 	EXPECT_TRUE( secondScene->getResourceScope()->findDrawable( "default-nine-patch" ) == nullptr );
 
+	UIThemePtr original = UITheme::New( "replace-theme", "replace-theme" );
+	UIThemeWeakPtr originalWeak = original;
+	firstScene->getUIThemeManager()->add( original );
+	firstScene->getUIThemeManager()->setDefaultTheme( original.get() );
+	original.reset();
+	UIThemePtr replacement = UITheme::New( "replace-theme", "replace-theme" );
+	firstScene->getUIThemeManager()->add( replacement );
+	EXPECT_TRUE( originalWeak.expired() );
+	EXPECT_EQ( firstScene->getUIThemeManager()->getDefaultTheme(), replacement.get() );
+
 	firstResolved.reset();
 	ninePatch.reset();
 	texture.reset();
-	eeDelete( defaultOnlyTheme );
-	eeDelete( theme );
+	defaultOnlyTheme.reset();
+	theme.reset();
 	eeDelete( secondScene );
 	eeDelete( firstScene );
 	window->display( false );
@@ -846,7 +876,7 @@ UTEST( ResourcePrerequisites, textureCreatesIndependentDrawableInstances ) {
 UTEST( ResourcePrerequisites, uiIconSeparatesSourceLookupFromInstanceCreation ) {
 	auto instanceCount = std::make_shared<int>( 0 );
 	DrawablePtr source = makeResource<CountingDrawable>( instanceCount );
-	UIIcon* icon = UIIcon::New( "counting-icon" );
+	UIIconPtr icon = UIIcon::New( "counting-icon" );
 	icon->setSource( 16, source );
 
 	const DrawablePtr& exactSource = icon->getSource( 16 );
@@ -867,7 +897,7 @@ UTEST( ResourcePrerequisites, uiIconSeparatesSourceLookupFromInstanceCreation ) 
 	EXPECT_TRUE( source->getColor() == Color::White );
 	EXPECT_TRUE( second->getColor() == Color::White );
 
-	eeDelete( icon );
+	icon.reset();
 }
 
 UTEST( ResourcePrerequisites, stateListsCloneStateAndChildrenIndependently ) {
@@ -1185,9 +1215,9 @@ UTEST( ResourcePrerequisites, engineTeardownReleasesGraphicsBeforeContextsAcross
 		EXPECT_TRUE( SceneManager::existsSingleton() == nullptr );
 		EXPECT_TRUE( GlobalBatchRenderer::existsSingleton() == nullptr );
 		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
-		EXPECT_TRUE( ShaderProgramManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( Graphics::Private::FrameBufferManager::existsSingleton() == nullptr );
-		EXPECT_TRUE( Graphics::Private::VertexBufferManager::existsSingleton() == nullptr );
+		EXPECT_TRUE( ShaderProgramRegistry::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::FrameBufferRegistry::existsSingleton() == nullptr );
+		EXPECT_TRUE( Graphics::Private::VertexBufferRegistry::existsSingleton() == nullptr );
 		EXPECT_TRUE( Renderer::existsSingleton() == nullptr );
 	}
 }

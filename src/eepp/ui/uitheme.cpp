@@ -31,14 +31,14 @@ static std::string elemNameFromSkin( const std::vector<std::string>& nameParts )
 	return str;
 }
 
-UITheme* UITheme::New( const std::string& name, const std::string& abbr, Font* defaultFont ) {
-	return eeNew( UITheme, ( name, abbr, defaultFont ) );
+UIThemePtr UITheme::New( const std::string& name, const std::string& abbr, Font* defaultFont ) {
+	return UIThemePtr( eeNew( UITheme, ( name, abbr, defaultFont ) ), ResourceDeleter<UITheme>() );
 }
 
-UITheme* UITheme::load( const std::string& name, const std::string& abbr,
-						const std::string& textureAtlasPath, Font* defaultFont,
-						const std::string& styleSheetPath ) {
-	UITheme* theme = UITheme::New( name, abbr, defaultFont );
+UIThemePtr UITheme::load( const std::string& name, const std::string& abbr,
+						  const std::string& textureAtlasPath, Font* defaultFont,
+						  const std::string& styleSheetPath ) {
+	UIThemePtr theme = UITheme::New( name, abbr, defaultFont );
 
 	CSS::StyleSheetParser styleSheetParser;
 
@@ -59,10 +59,10 @@ UITheme* UITheme::load( const std::string& name, const std::string& abbr,
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
-UITheme* UITheme::loadFromString( const std::string& name, const std::string& abbr,
-								  const std::string& textureAtlasPath, Font* defaultFont,
-								  const std::string& styleSheetString ) {
-	UITheme* theme = UITheme::New( name, abbr, defaultFont );
+UIThemePtr UITheme::loadFromString( const std::string& name, const std::string& abbr,
+									const std::string& textureAtlasPath, Font* defaultFont,
+									const std::string& styleSheetString ) {
+	UIThemePtr theme = UITheme::New( name, abbr, defaultFont );
 
 	CSS::StyleSheetParser styleSheetParser;
 
@@ -82,7 +82,7 @@ UITheme* UITheme::loadFromString( const std::string& name, const std::string& ab
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
-UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, TextureAtlasPtr textureAtlas ) {
+UIThemePtr UITheme::loadFromTextureAtlas( UIThemePtr tTheme, TextureAtlasPtr textureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != textureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
@@ -105,7 +105,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, TextureAtlasPtr texture
 		std::string name( textureRegion->getName() );
 
 		if ( String::startsWith( name, sAbbrIcon ) ) {
-			auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
+			auto icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
 			icon->setSource( textureRegion->getPixelsSize().getWidth(), textureRegion->clone() );
 			tTheme->getIconTheme()->add( icon );
 		} else if ( String::startsWith( name, sAbbr ) ) {
@@ -174,8 +174,8 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, TextureAtlasPtr texture
 	return tTheme;
 }
 
-UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
-									 const Float& pixelDensity ) {
+UIThemePtr UITheme::loadFromDirectory( UIThemePtr tTheme, const std::string& Path,
+									   const Float& pixelDensity ) {
 	Clock TE;
 
 	std::string RPath( Path );
@@ -204,7 +204,7 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 				auto drawable =
 					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name );
 				tSG->add( drawable );
-				auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
+				auto icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
 				icon->setSource( drawable->getPixelsSize().getWidth(), drawable->clone() );
 				tTheme->getIconTheme()->add( icon );
 			} else if ( String::startsWith( name, sAbbr ) ) {
@@ -285,18 +285,17 @@ UITheme* UITheme::loadFromDirectory( UITheme* tTheme, const std::string& Path,
 	return tTheme;
 }
 
-UITheme* UITheme::loadFromDirectory( const std::string& Path, const std::string& Name,
-									 const std::string& NameAbbr, const Float& pixelDensity ) {
+UIThemePtr UITheme::loadFromDirectory( const std::string& Path, const std::string& Name,
+									   const std::string& NameAbbr, const Float& pixelDensity ) {
 	return loadFromDirectory( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
-UITheme* UITheme::loadFromTextureAtlas( TextureAtlasPtr textureAtlas, const std::string& Name,
-										const std::string& NameAbbr ) {
+UIThemePtr UITheme::loadFromTextureAtlas( TextureAtlasPtr textureAtlas, const std::string& Name,
+										  const std::string& NameAbbr ) {
 	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), std::move( textureAtlas ) );
 }
 
 UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Font* defaultFont ) :
-	ResourceManagerMulti<UISkin>(),
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
@@ -306,9 +305,7 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mIconTheme( UIIconTheme::New( name ) ),
 	mResourceCatalog( ResourceCatalog::New() ) {}
 
-UITheme::~UITheme() {
-	eeSAFE_DELETE( mIconTheme );
-}
+UITheme::~UITheme() = default;
 
 const std::string& UITheme::getName() const {
 	return mName;
@@ -327,8 +324,29 @@ const std::string& UITheme::getAbbr() const {
 	return mAbbr;
 }
 
-UISkin* UITheme::add( UISkin* Resource ) {
-	return ResourceManagerMulti<UISkin>::add( Resource );
+UISkin* UITheme::add( UISkinPtr skin ) {
+	if ( !skin )
+		return nullptr;
+	UISkin* result = skin.get();
+	mSkins[skin->getId()].emplace_back( std::move( skin ) );
+	return result;
+}
+
+UISkin* UITheme::getById( const String::HashType& id ) const {
+	auto it = mSkins.find( id );
+	return it != mSkins.end() && !it->second.empty() ? it->second.front().get() : nullptr;
+}
+
+UISkin* UITheme::getByName( const std::string& name ) const {
+	return getById( String::hash( name ) );
+}
+
+bool UITheme::exists( const std::string& name ) const {
+	return existsId( String::hash( name ) );
+}
+
+bool UITheme::existsId( const String::HashType& id ) const {
+	return mSkins.find( id ) != mSkins.end();
 }
 
 Graphics::TextureAtlas* UITheme::getTextureAtlas() const {
@@ -377,7 +395,7 @@ void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
 }
 
 UIIconTheme* UITheme::getIconTheme() const {
-	return mIconTheme;
+	return mIconTheme.get();
 }
 
 const ResourceCatalogPtr& UITheme::getResourceCatalog() const {

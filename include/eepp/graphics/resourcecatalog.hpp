@@ -5,6 +5,7 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/resource.hpp>
+#include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/system/mutex.hpp>
@@ -66,6 +67,11 @@ class EE_API ResourceCatalog {
 	/** @copydoc publishFont(ResourceKey,FontPtr) */
 	void publishFont( std::string key, FontPtr font );
 
+	/** @brief Publishes or replaces a shader-program binding. A null program erases @p key. */
+	void publishShaderProgram( ResourceKey key, ShaderProgramPtr program );
+	/** @copydoc publishShaderProgram(ResourceKey,ShaderProgramPtr) */
+	void publishShaderProgram( std::string key, ShaderProgramPtr program );
+
 	/** @return The texture bound to @p key, or an empty handle when it is not present. */
 	TexturePtr findTexture( const ResourceKey& key ) const;
 	/** @copydoc findTexture(const ResourceKey&)const */
@@ -101,6 +107,13 @@ class EE_API ResourceCatalog {
 	/** @return An owning snapshot of all fonts currently published in this catalog. */
 	std::vector<FontPtr> getFonts() const;
 
+	/** @return The shader program bound to @p key, or an empty handle when absent. */
+	ShaderProgramPtr findShaderProgram( const ResourceKey& key ) const;
+	/** @copydoc findShaderProgram(const ResourceKey&)const */
+	ShaderProgramPtr findShaderProgram( const std::string& key ) const;
+	/** @return An owning snapshot of all shader programs published in this catalog. */
+	std::vector<ShaderProgramPtr> getShaderPrograms() const;
+
 	/** @brief Removes the texture binding for @p key. @return Whether a binding was removed. */
 	bool erase( const ResourceKey& key );
 	/** @copydoc erase(const ResourceKey&) */
@@ -127,10 +140,15 @@ class EE_API ResourceCatalog {
 	 */
 	bool eraseFont( Font* font );
 
+	/** @brief Removes the shader-program binding for @p key. */
+	bool eraseShaderProgram( const ResourceKey& key );
+	/** @copydoc eraseShaderProgram(const ResourceKey&) */
+	bool eraseShaderProgram( const std::string& key );
+
 	/** @brief Removes every binding while allowing previously returned handles to remain valid. */
 	void clear();
 
-	/** @return The total number of texture, drawable, atlas, and font bindings. */
+	/** @return The total number of bindings of every supported resource kind. */
 	std::size_t size() const;
 
   private:
@@ -141,6 +159,7 @@ class EE_API ResourceCatalog {
 	UnorderedMap<std::string, TextureAtlasPtr> mAtlases;
 	UnorderedMap<std::string, FontPtr> mFonts;
 	UnorderedMap<String::HashType, FontWeakPtr> mFontsById;
+	UnorderedMap<std::string, ShaderProgramPtr> mShaderPrograms;
 };
 
 }} // namespace EE::Graphics

@@ -1905,7 +1905,7 @@ const SyntaxColorScheme* App::getCurrentColorScheme() const {
 }
 
 void App::setTheme( const std::string& path ) {
-	UITheme* theme = nullptr;
+	UIThemePtr theme;
 
 	if ( path == "syntax_color_scheme" ) {
 		const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
@@ -1965,12 +1965,12 @@ void App::setTheme( const std::string& path ) {
 		->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) )
 		->add( theme );
 
-	mUISceneNode->setTheme( theme );
+	mUISceneNode->setTheme( theme.get() );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
 
 	if ( mTheme )
-		mUISceneNode->getUIThemeManager()->remove( mTheme );
+		mUISceneNode->getUIThemeManager()->remove( mTheme.get() );
 
 	mTheme = theme;
 
