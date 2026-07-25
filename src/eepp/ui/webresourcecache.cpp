@@ -68,6 +68,10 @@ struct WebResourceCache::Impl {
 
 	struct Entry {
 		WebResourceLoadState state{ WebResourceLoadState::Empty };
+		// A cache key identifies a reusable resource, not one particular asynchronous load. These
+		// values identify the load currently allowed to complete into this entry.
+		Uint64 operationEpoch{ 0 };
+		Uint64 operationId{ 0 };
 		WebResourceRequest request;
 		std::shared_ptr<const std::string> data;
 		TexturePtr texture;
@@ -96,6 +100,10 @@ struct WebResourceCache::Impl {
 	std::size_t byteBudget{ 64 * 1024 * 1024 };
 	std::size_t retainedBytes{ 0 };
 	std::size_t inFlightCount{ 0 };
+	// clear() advances the epoch so every operation started before it becomes stale, even if a
+	// request with the same key immediately recreates an entry.
+	Uint64 cacheEpoch{ 1 };
+	Uint64 nextOperationId{ 1 };
 	Fetcher fetcher;
 
 	Time now() const { return clock.getElapsedTime(); }
@@ -129,17 +137,21 @@ struct WebResourceCache::Impl {
 	}
 
 	UnorderedMap<std::string, Entry>::iterator
-	eraseEntry( UnorderedMap<std::string, Entry>::iterator it ) {
+	eraseEntry( UnorderedMap<std::string, Entry>::iterator it,
+				std::vector<Entry>& releasedEntries ) {
 		retainedBytes -= std::min( retainedBytes, it->second.retainedBytes );
+		// Move owning handles out before erasing. releasedEntries outlives the caller's lock guard,
+		// so final resource destruction cannot run under the cache mutex.
+		releasedEntries.emplace_back( std::move( it->second ) );
 		return entries.erase( it );
 	}
 
-	void pruneLocked() {
+	void pruneLocked( std::vector<Entry>& releasedEntries ) {
 		Time current = now();
 		for ( auto it = entries.begin(); it != entries.end(); ) {
 			if ( it->second.state != WebResourceLoadState::Loading &&
 				 it->second.activeLeases.empty() && it->second.expiresAt <= current ) {
-				it = eraseEntry( it );
+				it = eraseEntry( it, releasedEntries );
 			} else {
 				++it;
 			}
@@ -156,8 +168,13 @@ struct WebResourceCache::Impl {
 			}
 			if ( oldest == entries.end() )
 				break;
-			eraseEntry( oldest );
+			eraseEntry( oldest, releasedEntries );
 		}
+	}
+
+	bool matchesOperation( const Entry& entry, Uint64 operationEpoch, Uint64 operationId ) const {
+		return entry.state == WebResourceLoadState::Loading &&
+			   entry.operationEpoch == operationEpoch && entry.operationId == operationId;
 	}
 };
 
@@ -185,13 +202,16 @@ DocumentSessionId WebResourceCache::createSession( CachePartitionId partition ) 
 }
 
 void WebResourceCache::destroySession( DocumentSessionId session ) {
-	std::lock_guard<std::mutex> lock( mImpl->mutex );
-	auto it = mImpl->sessions.find( session );
-	if ( it == mImpl->sessions.end() )
-		return;
-	mImpl->releaseSessionLeases( session );
-	mImpl->sessions.erase( it );
-	mImpl->pruneLocked();
+	std::vector<Impl::Entry> releasedEntries;
+	{
+		std::lock_guard<std::mutex> lock( mImpl->mutex );
+		auto it = mImpl->sessions.find( session );
+		if ( it == mImpl->sessions.end() )
+			return;
+		mImpl->releaseSessionLeases( session );
+		mImpl->sessions.erase( it );
+		mImpl->pruneLocked( releasedEntries );
+	}
 }
 
 Uint64 WebResourceCache::beginNavigation( DocumentSessionId session, const URI& uri ) {
@@ -222,6 +242,8 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	WebResourceResult immediate;
 	bool hasImmediate = false;
 	bool startRequest = false;
+	Uint64 operationEpoch = 0;
+	Uint64 operationId = 0;
 	Fetcher fetcher;
 	{
 		std::lock_guard<std::mutex> lock( mImpl->mutex );
@@ -243,6 +265,12 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 				entry.subscribers.push_back( { session, generation, std::move( callback ) } );
 			if ( entry.state != WebResourceLoadState::Loading ) {
 				entry.state = WebResourceLoadState::Loading;
+				// Capture both the cache lifetime and this specific fetch. The operation ID also
+				// protects against an entry being erased and recreated without a full cache clear.
+				entry.operationEpoch = mImpl->cacheEpoch;
+				entry.operationId = mImpl->nextOperationId++;
+				operationEpoch = entry.operationEpoch;
+				operationId = entry.operationId;
 				entry.request = request;
 				entry.error.clear();
 				++mImpl->inFlightCount;
@@ -263,70 +291,117 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	if ( !fetcher )
 		redirectCookie = std::make_shared<std::string>();
 	auto weak = weak_from_this();
-	auto process = [weak, key, redirectCookie]( Http::Response& response ) {
+	auto process = [weak, key, operationEpoch, operationId,
+					redirectCookie]( Http::Response& response ) {
 		auto self = weak.lock();
 		if ( !self )
 			return;
-		std::vector<Impl::Subscriber> subscribers;
-		WebResourceResult result;
+
+		WebResourceRequest entryRequest;
+		TexturePtr texture;
 		{
 			std::lock_guard<std::mutex> lock( self->mImpl->mutex );
 			auto entryIt = self->mImpl->entries.find( key );
 			if ( entryIt == self->mImpl->entries.end() ||
-				 entryIt->second.state != WebResourceLoadState::Loading )
+				 !self->mImpl->matchesOperation( entryIt->second, operationEpoch, operationId ) )
+				return;
+			// Copy only the inputs needed to prepare the response. Decoding below must not
+			// serialize unrelated cache operations or execute device work under the cache mutex.
+			entryRequest = entryIt->second.request;
+			texture = entryIt->second.texture;
+		}
+
+		const int status = static_cast<int>( response.getStatus() );
+		std::string setCookie = response.getField( "set-cookie" );
+		if ( setCookie.empty() && redirectCookie )
+			setCookie = *redirectCookie;
+		std::shared_ptr<const std::string> data;
+		std::unique_ptr<Image> image;
+		std::string error;
+		std::size_t retainedBytes = 0;
+		bool success = response.isOK() && !response.getBody().empty();
+
+		if ( success && entryRequest.kind == WebResourceKind::Image ) {
+			image = std::make_unique<Image>(
+				reinterpret_cast<const Uint8*>( response.getBody().data() ),
+				response.getBody().size() );
+			if ( !image->getPixels() || !texture ) {
+				success = false;
+				error = "Invalid image data";
+			}
+		} else if ( success ) {
+			data = std::make_shared<const std::string>( response.getBody() );
+			retainedBytes = data->size();
+		} else {
+			error = response.getStatusDescription();
+		}
+
+		if ( image && success ) {
+			// Decoding may take long enough for clear() or replacement to invalidate this load.
+			// Revalidate before touching the GPU. Texture::replace() remains outside the lock
+			// because it uploads data and can synchronously notify listeners that re-enter cache/UI
+			// code.
+			{
+				std::lock_guard<std::mutex> lock( self->mImpl->mutex );
+				auto entryIt = self->mImpl->entries.find( key );
+				if ( entryIt == self->mImpl->entries.end() ||
+					 !self->mImpl->matchesOperation( entryIt->second, operationEpoch,
+													 operationId ) )
+					return;
+			}
+			texture->replace( image.get() );
+			retainedBytes = static_cast<std::size_t>( texture->getSize().getWidth() *
+													  texture->getSize().getHeight() * 4 );
+		}
+
+		std::vector<Impl::Subscriber> subscribers;
+		std::vector<Impl::Subscriber> discardedSubscribers;
+		std::vector<Impl::Entry> releasedEntries;
+		WebResourceResult result;
+		std::shared_ptr<const std::string> previousData;
+		WebResourceRequest completedRequest;
+		{
+			std::lock_guard<std::mutex> lock( self->mImpl->mutex );
+			auto entryIt = self->mImpl->entries.find( key );
+			// Key and state are insufficient here: clear() may have removed the old entry and a
+			// newer request may already have created another Loading entry for the same key.
+			if ( entryIt == self->mImpl->entries.end() ||
+				 !self->mImpl->matchesOperation( entryIt->second, operationEpoch, operationId ) )
 				return;
 			auto& entry = entryIt->second;
 			self->mImpl->inFlightCount--;
-			entry.status = static_cast<int>( response.getStatus() );
+			entry.status = status;
 			entry.lastUsed = self->mImpl->now();
 			entry.expiresAt = entry.lastUsed + self->mImpl->ttl;
-			std::string setCookie = response.getField( "set-cookie" );
-			if ( setCookie.empty() && redirectCookie )
-				setCookie = *redirectCookie;
-			if ( response.isOK() && !response.getBody().empty() ) {
-				if ( entry.request.kind == WebResourceKind::Image ) {
-					Image image( reinterpret_cast<const Uint8*>( response.getBody().data() ),
-								 response.getBody().size() );
-					if ( image.getPixels() && entry.texture ) {
-						entry.texture->replace( &image );
-						entry.retainedBytes =
-							static_cast<std::size_t>( entry.texture->getSize().getWidth() *
-													  entry.texture->getSize().getHeight() * 4 );
-					} else {
-						entry.state = WebResourceLoadState::Failed;
-						entry.error = "Invalid image data";
-					}
-				} else {
-					entry.data = std::make_shared<const std::string>( response.getBody() );
-					entry.retainedBytes = entry.data->size();
-				}
-				if ( entry.state != WebResourceLoadState::Failed ) {
-					entry.state = WebResourceLoadState::Ready;
-					self->mImpl->retainedBytes += entry.retainedBytes;
-					result = { true,	   entry.state,	 entry.status, {}, std::move( setCookie ),
-							   entry.data, entry.texture };
-				} else {
-					result = {
-						false, entry.state,	 entry.status, entry.error, std::move( setCookie ),
-						{},	   entry.texture };
-				}
+			previousData = std::move( entry.data );
+			entry.retainedBytes = retainedBytes;
+			if ( success ) {
+				entry.state = WebResourceLoadState::Ready;
+				entry.data = std::move( data );
+				entry.error.clear();
+				self->mImpl->retainedBytes += entry.retainedBytes;
+				result = { true,	   entry.state,	 entry.status, {}, std::move( setCookie ),
+						   entry.data, entry.texture };
 			} else {
 				entry.state = WebResourceLoadState::Failed;
-				entry.error = response.getStatusDescription();
+				entry.error = std::move( error );
 				result = { false, entry.state,	entry.status, entry.error, std::move( setCookie ),
 						   {},	  entry.texture };
 			}
 			if ( entry.state == WebResourceLoadState::Failed )
 				entry.retryAt = entry.lastUsed + self->mImpl->retryDelay;
-			entry.request = {};
-			subscribers.swap( entry.subscribers );
-			self->mImpl->pruneLocked();
-			for ( auto it = subscribers.begin(); it != subscribers.end(); ) {
-				if ( !self->mImpl->isCurrent( *it ) )
-					it = subscribers.erase( it );
+			completedRequest = std::move( entry.request );
+			entry.operationEpoch = 0;
+			entry.operationId = 0;
+			std::vector<Impl::Subscriber> pendingSubscribers;
+			pendingSubscribers.swap( entry.subscribers );
+			for ( auto& subscriber : pendingSubscribers ) {
+				if ( self->mImpl->isCurrent( subscriber ) )
+					subscribers.emplace_back( std::move( subscriber ) );
 				else
-					++it;
+					discardedSubscribers.emplace_back( std::move( subscriber ) );
 			}
+			self->mImpl->pruneLocked( releasedEntries );
 		}
 		for ( auto& subscriber : subscribers ) {
 			if ( subscriber.callback )
@@ -387,15 +462,23 @@ TexturePtr WebResourceCache::requestTexture( DocumentSessionId session, Uint64 g
 			1, 1, 4, Color::Transparent, false,
 			request.clampToEdge ? Texture::ClampMode::ClampToEdge : Texture::ClampMode::ClampRepeat,
 			request.mipmaps, request.compressTexture, canonicalURI( request.uri ) );
-		std::lock_guard<std::mutex> lock( mImpl->mutex );
-		auto sessionIt = mImpl->sessions.find( session );
-		if ( sessionIt == mImpl->sessions.end() || sessionIt->second.generation != generation )
-			return {};
-		auto entry = mImpl->entries.try_emplace( key ).first;
-		if ( !entry->second.texture )
-			entry->second.texture = texture;
-		else
-			texture = entry->second.texture;
+		TexturePtr discardedTexture;
+		{
+			std::lock_guard<std::mutex> lock( mImpl->mutex );
+			auto sessionIt = mImpl->sessions.find( session );
+			if ( sessionIt == mImpl->sessions.end() || sessionIt->second.generation != generation )
+				return {};
+			auto entry = mImpl->entries.try_emplace( key ).first;
+			if ( !entry->second.texture ) {
+				entry->second.texture = texture;
+			} else {
+				// A concurrent request won publication. Keep the discarded texture alive until
+				// after unlocking so its final GPU resource release cannot run under the cache
+				// mutex.
+				discardedTexture = std::move( texture );
+				texture = entry->second.texture;
+			}
+		}
 	}
 	requestData( session, generation, std::move( request ), std::move( callback ) );
 	return texture;
@@ -427,9 +510,12 @@ Time WebResourceCache::getRetryDelay() const {
 }
 
 void WebResourceCache::setByteBudget( std::size_t bytes ) {
-	std::lock_guard<std::mutex> lock( mImpl->mutex );
-	mImpl->byteBudget = bytes;
-	mImpl->pruneLocked();
+	std::vector<Impl::Entry> releasedEntries;
+	{
+		std::lock_guard<std::mutex> lock( mImpl->mutex );
+		mImpl->byteBudget = bytes;
+		mImpl->pruneLocked( releasedEntries );
+	}
 }
 
 std::size_t WebResourceCache::getByteBudget() const {
@@ -453,24 +539,40 @@ std::size_t WebResourceCache::getInFlightCount() const {
 }
 
 void WebResourceCache::prune() {
-	std::lock_guard<std::mutex> lock( mImpl->mutex );
-	mImpl->pruneLocked();
+	std::vector<Impl::Entry> releasedEntries;
+	{
+		std::lock_guard<std::mutex> lock( mImpl->mutex );
+		mImpl->pruneLocked( releasedEntries );
+	}
 }
 
 void WebResourceCache::clear() {
-	std::lock_guard<std::mutex> lock( mImpl->mutex );
-	for ( auto& entry : mImpl->entries ) {
-		entry.second.state = WebResourceLoadState::Cancelled;
-		entry.second.subscribers.clear();
+	std::vector<Impl::Entry> releasedEntries;
+	{
+		std::lock_guard<std::mutex> lock( mImpl->mutex );
+		// The underlying HTTP operations cannot necessarily be cancelled. Advancing the epoch makes
+		// their eventual completions harmless before the entries and accounting are reset below.
+		++mImpl->cacheEpoch;
+		releasedEntries.reserve( mImpl->entries.size() );
+		for ( auto& entry : mImpl->entries ) {
+			entry.second.state = WebResourceLoadState::Cancelled;
+			releasedEntries.emplace_back( std::move( entry.second ) );
+		}
+		// Values are moved out first so clearing the container cannot release resource handles
+		// while the cache mutex is held.
+		mImpl->entries.clear();
+		mImpl->retainedBytes = 0;
+		mImpl->inFlightCount = 0;
 	}
-	mImpl->entries.clear();
-	mImpl->retainedBytes = 0;
-	mImpl->inFlightCount = 0;
 }
 
 void WebResourceCache::setFetcher( Fetcher fetcher ) {
-	std::lock_guard<std::mutex> lock( mImpl->mutex );
-	mImpl->fetcher = std::move( fetcher );
+	Fetcher previousFetcher;
+	{
+		std::lock_guard<std::mutex> lock( mImpl->mutex );
+		previousFetcher = std::move( mImpl->fetcher );
+		mImpl->fetcher = std::move( fetcher );
+	}
 }
 
 }} // namespace EE::UI

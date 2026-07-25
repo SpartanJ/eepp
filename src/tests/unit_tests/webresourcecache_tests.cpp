@@ -89,6 +89,51 @@ UTEST( WebResourceCache, staleDocumentSubscriberDoesNotBlockCurrentDocument ) {
 	EXPECT_EQ( 1, currentDeliveries );
 }
 
+UTEST( WebResourceCache, clearRejectsStaleCompletionForReplacementEntry ) {
+	auto cache = WebResourceCache::New();
+	std::vector<WebResourceCache::FetchCompletion> completions;
+	cache->setFetcher(
+		[&completions]( const WebResourceRequest&, WebResourceCache::FetchCompletion completion ) {
+			completions.emplace_back( std::move( completion ) );
+		} );
+	auto session = cache->createSession( 12 );
+	auto generation = cache->beginNavigation( session, URI( "https://example.com/" ) );
+	auto request = requestFor( "https://example.com/shared.css" );
+	int staleDeliveries = 0;
+	std::string deliveredBody;
+
+	cache->requestData( session, generation, request,
+						[&staleDeliveries]( const WebResourceResult& ) { ++staleDeliveries; } );
+	cache->clear();
+	cache->requestData( session, generation, request,
+						[&deliveredBody]( const WebResourceResult& result ) {
+							if ( result.data )
+								deliveredBody = *result.data;
+						} );
+
+	ASSERT_EQ( 2u, completions.size() );
+	EXPECT_EQ( 1u, cache->getEntryCount() );
+	EXPECT_EQ( 1u, cache->getInFlightCount() );
+	auto ok = Http::Response::Status::Ok;
+	completions[0]( response( ok, "stale" ) );
+	EXPECT_EQ( 0, staleDeliveries );
+	EXPECT_TRUE( deliveredBody.empty() );
+	EXPECT_EQ( 1u, cache->getInFlightCount() );
+
+	completions[1]( response( ok, "fresh" ) );
+	EXPECT_TRUE( deliveredBody == "fresh" );
+	EXPECT_EQ( 0u, cache->getInFlightCount() );
+
+	int fetches = static_cast<int>( completions.size() );
+	cache->requestData( session, generation, request,
+						[&deliveredBody]( const WebResourceResult& result ) {
+							if ( result.data )
+								deliveredBody = *result.data;
+						} );
+	EXPECT_EQ( fetches, static_cast<int>( completions.size() ) );
+	EXPECT_TRUE( deliveredBody == "fresh" );
+}
+
 UTEST( WebResourceCache, partitionsDoNotShareEntries ) {
 	auto cache = WebResourceCache::New();
 	int fetches = 0;

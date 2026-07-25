@@ -264,7 +264,10 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	std::size_t getRetainedBytes() const;
 	/** @return Number of cache entries in all states and partitions. */
 	std::size_t getEntryCount() const;
-	/** @return Number of HTTP requests currently owned by the cache. */
+	/** @return Number of HTTP requests belonging to the cache's current epoch.
+	 *
+	 * `clear()` resets this count even though invalidated underlying operations may still finish;
+	 * those stale completions are ignored and do not alter the count. */
 	std::size_t getInFlightCount() const;
 
 	/** Removes expired entries and enforces the byte budget.
@@ -276,7 +279,8 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	/** Removes every entry immediately and suppresses delivery from outstanding fetches.
 	 *
 	 * Sessions remain valid but no longer lease entries. This does not cancel the underlying HTTP
-	 * operation; a late completion is ignored because its entry no longer exists. */
+	 * operation. A late completion is ignored using its operation identity, including when a new
+	 * request has already recreated an entry with the same cache key. */
 	void clear();
 
 	/** Completion supplied to a custom Fetcher. */
