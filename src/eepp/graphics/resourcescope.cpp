@@ -24,6 +24,10 @@ ResourceScope::~ResourceScope() {
 }
 
 void ResourceScope::attachFontService( const FontPtr& font ) {
+	// FontTrueType currently carries one borrowed service pointer. Catalog imports deliberately do
+	// not call this function; sharing must preserve the service of the font's owning local scope.
+	// Moving fallback resolution out of FontTrueType would allow true multi-scope local
+	// publication.
 	if ( font && font->getType() == FontType::TTF )
 		static_cast<FontTrueType*>( font.get() )->setFontService( &mFontService );
 }

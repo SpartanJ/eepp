@@ -70,6 +70,9 @@ class EE_API ResourceScope {
 	 * @brief Publishes a font under @p key, replacing any existing local binding for that key.
 	 *
 	 * The requested semantic key is preserved. Fonts are never renamed to avoid a collision.
+	 * A FontTrueType instance can belong locally to only one ResourceScope because it has one
+	 * FontService association. To expose the same font to another scope, import this scope's local
+	 * catalog instead of publishing the same handle locally again.
 	 */
 	void publishLocalFont( ResourceKey key, FontPtr font );
 	void publishLocalFont( std::string key, FontPtr font );

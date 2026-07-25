@@ -24,6 +24,10 @@ struct FontDesc;
  *
  * Rendering policy changes are applied to TrueType fonts associated with this service. Imported
  * fonts remain associated with the service of their owning scope and are therefore not mutated.
+ * A FontTrueType stores one borrowed FontService pointer, so the same FontTrueType instance must
+ * not be published locally into multiple scopes: the latest publication would replace its service
+ * association. Share such a font by importing its owning catalog instead. A future design may move
+ * fallback resolution entirely out of the shared font object and remove this restriction.
  *
  * System fonts can be loaded with two different lifetime contracts:
  * - loadSystemFont() returns an independently owned, uncached font.
