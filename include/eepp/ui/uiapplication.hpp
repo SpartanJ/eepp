@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIAPPLICATION
 #define EE_UI_UIAPPLICATION
 
+#include <eepp/graphics/font.hpp>
 #include <eepp/window/window.hpp>
 
 #include <optional>
@@ -45,6 +46,10 @@ class EE_API UIApplication {
 		//! The default fallback font for the UI. If not provided it will load Droid Sans Fallback
 		//! Full ( it will look at "assets/fonts/DroidSansFallbackFull.ttf" )
 		Font* fallbackFont{ nullptr };
+		//! The hinting policy applied to fonts owned by the default and UI resource scopes.
+		FontHinting fontHinting{ FontHinting::Full };
+		//! The antialiasing policy applied to fonts owned by the default and UI resource scopes.
+		FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),
@@ -70,6 +75,7 @@ class EE_API UIApplication {
 	bool showMemoryManagerResult() const;
 
 	String::HashType getStyleSheetDefaultMarker() const { return mStyleSheetMarker; }
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	EE::Window::Window* mWindow{ nullptr };

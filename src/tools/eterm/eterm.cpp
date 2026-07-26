@@ -2,6 +2,7 @@
 #include <eepp/ee.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 #include <iostream>
+#include <unordered_map>
 
 EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;
@@ -176,6 +177,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> fallbackFontPathF( parser, "fallback-fontpath",
 													"Fallback Font path", { "fallback-font" } );
 	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { "fontsize" }, 11 );
+	const std::unordered_map<std::string, FontHinting> fontHintingMap{
+		{ "none", FontHinting::None },
+		{ "slight", FontHinting::Slight },
+		{ "full", FontHinting::Full },
+	};
+	args::MapFlag<std::string, FontHinting> fontHinting(
+		parser, "font-hinting", "Font hinting mode (accepted values: none, slight, full)",
+		{ "font-hinting" }, fontHintingMap, FontHinting::Full );
+	const std::unordered_map<std::string, FontAntialiasing> fontAntialiasingMap{
+		{ "none", FontAntialiasing::None },
+		{ "grayscale", FontAntialiasing::Grayscale },
+		{ "subpixel", FontAntialiasing::Subpixel },
+	};
+	args::MapFlag<std::string, FontAntialiasing> fontAntialiasing(
+		parser, "font-antialiasing",
+		"Font antialiasing mode (accepted values: none, grayscale, subpixel)",
+		{ "font-antialiasing" }, fontAntialiasingMap, FontAntialiasing::Grayscale );
 	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
 	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
 								   720 );
@@ -258,6 +276,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
+	defaultResourceScope().getFontService().setHinting( fontHinting.Get() );
+	defaultResourceScope().getFontService().setAntialiasing( fontAntialiasing.Get() );
 
 	Sizei winSize( width.Get(), height.Get() );
 	win = Engine::instance()->createWindow(
@@ -326,6 +346,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			MemoryManager::showResults();
 			return EXIT_FAILURE;
 		}
+		terminal->setFontHinting( fontHinting.Get() );
+		terminal->setFontAntialiasing( fontAntialiasing.Get() );
 
 		terminal->getTerminal()->setAllowMemoryTrimnming( true );
 		terminal->setCursorMode( cursorStyle.Get() );

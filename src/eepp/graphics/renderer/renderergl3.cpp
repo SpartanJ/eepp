@@ -115,6 +115,21 @@ void RendererGL3::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+ShaderProgramPtr RendererGL3::createSubpixelDualSourceShader() {
+	std::string vertexShader = mBaseVertexShader;
+	String::replaceAll( vertexShader, "#version 120", "#version 130" );
+	return RendererGLShader::createSubpixelDualSourceShader(
+		vertexShader, subpixelDualSourceFragmentShaderGLSL130(), true );
+}
+
+bool RendererGL3::canUseSubpixelDualSourceShader() const {
+	for ( Int32 state : mPlanesStates ) {
+		if ( state != 0 )
+			return false;
+	}
+	return true;
+}
+
 void RendererGL3::reloadShader( ShaderProgram* Shader ) {
 	mCurShader = NULL;
 
@@ -148,6 +163,8 @@ void RendererGL3::setShader( ShaderProgram* Shader ) {
 	mProjectionMatrix_id = mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id = mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
 	mTextureMatrix_id = mCurShader->getUniformLocation( "dgl_TextureMatrix" );
+	mTextureColorMode_id = mCurShader->getUniformLocation( "dgl_TextureColorMode" );
+	mTextureColorChannel_id = mCurShader->getUniformLocation( "dgl_TextureColorChannel" );
 	mTexActiveLoc = mCurShader->getUniformLocation( "dgl_TexActive" );
 	mPointSpriteLoc = mCurShader->getUniformLocation( "dgl_PointSpriteActive" );
 	mClippingEnabledLoc = mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
@@ -168,6 +185,11 @@ void RendererGL3::setShader( ShaderProgram* Shader ) {
 	}
 
 	useProgram( mCurShader->getHandler() );
+	if ( mTextureColorMode_id != -1 )
+		mCurShader->setUniform( mTextureColorMode_id, mTextureColorMode );
+	if ( mTextureColorChannel_id != -1 && mTextureColorMode != 0 ) {
+		mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mTextureColorMode ) );
+	}
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
 		enableClientState( GL_VERTEX_ARRAY );

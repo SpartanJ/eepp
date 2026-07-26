@@ -56,6 +56,9 @@ class EE_API ShaderProgram {
 	/** Add a vector of shaders */
 	void addShaders( const std::vector<ShaderPtr>& shaders );
 
+	/** Bind a fragment output to a color number and source index before linking. */
+	bool bindFragDataLocationIndexed( Uint32 colorNumber, Uint32 index, const char* name );
+
 	virtual bool link();
 
 	/** @return If the shader program is valid */
@@ -160,6 +163,12 @@ class EE_API ShaderProgram {
 	std::vector<ShaderPtr> mShaders;
 	std::map<std::string, Int32> mUniformLocations;
 	std::map<std::string, Int32> mAttributeLocations;
+	struct FragmentOutputBinding {
+		Uint32 colorNumber;
+		Uint32 index;
+		std::string name;
+	};
+	std::vector<FragmentOutputBinding> mFragmentOutputBindings;
 
 	ShaderProgramReloadCb mReloadCb;
 

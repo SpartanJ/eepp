@@ -3164,6 +3164,7 @@ UIMenu* SettingsMenu::createFontHintMenu() {
 			auto hint = id.substr( 5 ).toUtf8();
 			mApp->getConfig().ui.fontHinting = FontTrueType::fontHintingFromString( hint );
 			defaultResourceScope().getFontService().setHinting( mApp->getConfig().ui.fontHinting );
+			forEachTerminal( []( UITerminal* term ) { term->syncFontRenderingConfig(); } );
 		}
 	} );
 
@@ -3189,7 +3190,7 @@ UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
 			mFontAntiAliasingMenu->addRadioButton( i18n( "none", "None" ) )->setId( "aa_none" );
 			mFontAntiAliasingMenu->addRadioButton( i18n( "grayscale", "Grayscale" ) )
 				->setId( "aa_grayscale" );
-			mFontAntiAliasingMenu->addRadioButton( i18n( "subpixel", "SubPixel (not working)" ) )
+			mFontAntiAliasingMenu->addRadioButton( i18n( "subpixel", "SubPixel" ) )
 				->setId( "aa_subpixel" );
 		}
 
@@ -3206,6 +3207,7 @@ UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
 				FontTrueType::fontAntialiasingFromString( hint );
 			defaultResourceScope().getFontService().setAntialiasing(
 				mApp->getConfig().ui.fontAntialiasing );
+			forEachTerminal( []( UITerminal* term ) { term->syncFontRenderingConfig(); } );
 		}
 	} );
 

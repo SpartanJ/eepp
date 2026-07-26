@@ -21,7 +21,8 @@ struct EE_API Glyph {
 	Sizef size;		   ///< The glyph bitmap size on screen
 	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
-	Font* font{ nullptr }; ///< The glyph font
+	GlyphRenderMode renderMode{ GlyphRenderMode::Mask }; ///< Atlas texel compositing mode
+	Font* font{ nullptr };								 ///< The glyph font
 };
 
 enum class FontType { TTF, BMF, Sprite };
@@ -47,7 +48,7 @@ enum class FontAntialiasing { None, Grayscale, Subpixel };
 /** @brief Font interface class. */
 class EE_API Font {
   public:
-	enum Event { Load, Unload };
+	enum Event { Load, Unload, CacheClear };
 
 	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 

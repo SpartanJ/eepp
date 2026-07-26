@@ -1,3 +1,4 @@
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -82,6 +83,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
 		return;
+	syncFontRenderingConfig();
 	registerNewTerminal();
 	mVScroll->setParent( this );
 	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
@@ -183,7 +185,9 @@ int UITerminal::getVisibleArea() const {
 void UITerminal::updateScrollPosition() {
 	if ( mTerm && mTerm->getTerminal() ) {
 		int historySize = mTerm->getTerminal()->getHistorySize();
-		Float val = historySize > 0 ? ( 1.f - mTerm->getTerminal()->scrollPos() / (Float)historySize ) : 1.f;
+		Float val = historySize > 0
+						? ( 1.f - mTerm->getTerminal()->scrollPos() / (Float)historySize )
+						: 1.f;
 		mVScroll->setValue( val, false );
 	}
 }
@@ -366,6 +370,19 @@ Font* UITerminal::getFont() const {
 
 void UITerminal::setFont( Font* font ) {
 	mTerm->setFont( font );
+	syncFontRenderingConfig();
+}
+
+void UITerminal::syncFontRenderingConfig() {
+	if ( !mTerm || !getUISceneNode() || !getUISceneNode()->getResourceScope() )
+		return;
+	const FontService* fontService = nullptr;
+	if ( mTerm->getFont() && mTerm->getFont()->getType() == FontType::TTF )
+		fontService = static_cast<FontTrueType*>( mTerm->getFont() )->getFontService();
+	if ( !fontService )
+		fontService = &getUISceneNode()->getResourceScope()->getFontService();
+	mTerm->setFontHinting( fontService->getHinting() );
+	mTerm->setFontAntialiasing( fontService->getAntialiasing() );
 }
 
 void UITerminal::setKeyBindings( const KeyBindings& keyBindings ) {
@@ -615,6 +632,7 @@ void UITerminal::restart() {
 									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
 									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
 									 mTerm->getKeepAlive(), mTerm->getEnv() );
+	syncFontRenderingConfig();
 }
 
 }} // namespace eterm::UI

@@ -231,8 +231,19 @@ void ShaderProgram::addShaders( const std::vector<ShaderPtr>& shaders ) {
 		addShader( shader );
 }
 
+bool ShaderProgram::bindFragDataLocationIndexed( Uint32 colorNumber, Uint32 index,
+												 const char* name ) {
+	if ( !GLi->bindFragDataLocationIndexed( getHandler(), colorNumber, index, name ) )
+		return false;
+	mFragmentOutputBindings.push_back( { colorNumber, index, name } );
+	return true;
+}
+
 bool ShaderProgram::link() {
 #ifdef EE_SHADERS_SUPPORTED
+	for ( const auto& binding : mFragmentOutputBindings )
+		GLi->bindFragDataLocationIndexed( getHandler(), binding.colorNumber, binding.index,
+										  binding.name.c_str() );
 	GLi->linkProgram( getHandler() );
 
 	Int32 linked;

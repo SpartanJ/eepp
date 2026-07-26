@@ -44,6 +44,8 @@ typedef void( APIENTRY* pglBlendFuncSeparate )( GLenum sfactorRGB, GLenum dfacto
 typedef void( APIENTRY* pglDiscardFramebufferEXT )( GLenum target, GLsizei numAttachments,
 													const GLenum* attachments );
 typedef void( APIENTRY* pglBlendEquationSeparate )( GLenum modeRGB, GLenum modeAlpha );
+typedef void( APIENTRY* pglBindFragDataLocationIndexed )( GLuint program, GLuint colorNumber,
+														  GLuint index, const GLchar* name );
 typedef void( APIENTRY* pglBlitFramebufferEXT )( GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
 												 GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
 												 GLbitfield mask, GLenum filter );

@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -54,7 +55,14 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		FileSystem::changeWorkingDirectory( path );
 	}
 
+	FontService& defaultFontService = defaultResourceScope().getFontService();
+	defaultFontService.setHinting( appSettings.fontHinting );
+	defaultFontService.setAntialiasing( appSettings.fontAntialiasing );
+
 	mUISceneNode = UISceneNode::New();
+	FontService& uiFontService = mUISceneNode->getResourceScope()->getFontService();
+	uiFontService.setHinting( appSettings.fontHinting );
+	uiFontService.setAntialiasing( appSettings.fontAntialiasing );
 	SceneManager::instance()->add( mUISceneNode );
 
 	if ( !appSettings.loadBaseResources )

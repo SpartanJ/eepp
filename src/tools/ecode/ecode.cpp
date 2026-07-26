@@ -843,6 +843,8 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
 				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
+	defaultResourceScope().getFontService().setHinting( mConfig.ui.fontHinting );
+	defaultResourceScope().getFontService().setAntialiasing( mConfig.ui.fontAntialiasing );
 
 	return firstRun;
 }

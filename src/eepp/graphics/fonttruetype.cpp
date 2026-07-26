@@ -1,6 +1,7 @@
 #include <eepp/core/retainsymbol.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
@@ -931,6 +932,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( isItalic );
+		region->setGlyphRenderMode( glyph.renderMode );
 
 		drawables[key] = region;
 		return region;
@@ -960,6 +962,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( italic );
+		region->setGlyphRenderMode( glyph.renderMode );
 
 		drawables[key] = region;
 		return region;
@@ -1453,6 +1456,14 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	}
 
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
+	if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
+		const bool programmableRenderer =
+			GLi &&
+			( ( GLi->version() == GLv_2 && GLi->shadersSupported() ) || GLi->version() == GLv_3 ||
+			  GLi->version() == GLv_3CP || GLi->version() == GLv_ES2 );
+		glyph.renderMode = programmableRenderer ? GlyphRenderMode::Subpixel : GlyphRenderMode::Mask;
+	} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA )
+		glyph.renderMode = GlyphRenderMode::Color;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
 	if ( !outline ) {
@@ -1549,6 +1560,14 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		glyph.bounds.Bottom =
 			static_cast<Float>( slot->metrics.height ) / static_cast<Float>( 1 << 6 ) +
 			outlineThickness * 2;
+		if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
+			const FT_BitmapGlyph bitmapGlyph = reinterpret_cast<FT_BitmapGlyph>( glyphDesc );
+			// LCD filtering may shift the bitmap beyond the outline bearing. Keep the logical
+			// dimensions expected by retained Text, but position the filtered ink from its actual
+			// bitmap origin.
+			glyph.bounds.Left = bitmapGlyph->left + outlineThickness;
+			glyph.bounds.Top = -bitmapGlyph->top + outlineThickness;
+		}
 
 		// Resize the pixel buffer to the new size and fill it with transparent white pixels
 		const Uint32 bufferSize = width * height * 4;
@@ -1602,17 +1621,50 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 				destHeight = dest.getHeight() + 2 * padding;
 			}
 		} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
-			for ( int y = padding; y < height - padding; ++y ) {
-				for ( int x = padding; x < width - padding; ++x ) {
-					const std::size_t index = ( x + y * width ) * 4;
-					const Uint8* px = &pixels[( x - padding ) * 3];
-					mPixelBuffer[index + 0] = px[0];
-					mPixelBuffer[index + 1] = px[1];
-					mPixelBuffer[index + 2] = px[2];
-					mPixelBuffer[index + 3] =
-						(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+			if ( scale < 1.f ) {
+				for ( int y = 0; y < height; ++y ) {
+					for ( int x = 0; x < width; ++x ) {
+						const std::size_t index = ( x + y * width ) * 4;
+						const Uint8* px = &pixels[x * 3];
+						mPixelBuffer[index + 0] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[0] : 255;
+						mPixelBuffer[index + 1] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[1] : 255;
+						mPixelBuffer[index + 2] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[2] : 255;
+						mPixelBuffer[index + 3] =
+							(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+					}
+					pixels += bitmap.pitch;
 				}
-				pixels += bitmap.pitch;
+
+				Image dest( &mPixelBuffer[0], width, height, 4 );
+				dest.avoidFreeImage( true );
+				dest.scale( scale );
+				dest.avoidFreeImage( true );
+				pixelPtr = dest.getPixels();
+				glyph.bounds.Left *= scale;
+				glyph.bounds.Right *= scale;
+				glyph.bounds.Top *= scale;
+				glyph.bounds.Bottom *= scale;
+				destWidth = dest.getWidth() + 2 * padding;
+				destHeight = dest.getHeight() + 2 * padding;
+			} else {
+				for ( int y = padding; y < height - padding; ++y ) {
+					for ( int x = padding; x < width - padding; ++x ) {
+						const std::size_t index = ( x + y * width ) * 4;
+						const Uint8* px = &pixels[( x - padding ) * 3];
+						mPixelBuffer[index + 0] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[0] : 255;
+						mPixelBuffer[index + 1] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[1] : 255;
+						mPixelBuffer[index + 2] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[2] : 255;
+						mPixelBuffer[index + 3] =
+							(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+					}
+					pixels += bitmap.pitch;
+				}
 			}
 		} else {
 			if ( scale < 1.f ) {
@@ -2042,6 +2094,7 @@ FontTrueType::Page::~Page() {
 }
 
 void FontTrueType::clearCache() {
+	sendEvent( Event::CacheClear );
 	mPages.clear();
 	mClosestCharacterSize.clear();
 	mCodePointIndexCache.clear();

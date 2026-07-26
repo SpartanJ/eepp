@@ -231,6 +231,7 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 
 static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector2f& position,
 							  const Color& color, bool isItalic ) {
+	BR->setSubpixelText( gd->getGlyphRenderMode() == GlyphRenderMode::Subpixel );
 	BR->quadsSetColor( color );
 	BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
 						  gd->getSrcRect().Left + gd->getSrcRect().Right,
@@ -253,6 +254,7 @@ static inline void _drawUnderline( Font* font, Float fontSize, const Color& font
 								   Float outlineThickness, const Vector2f& pos, Float width,
 								   const Color& shadowColor, const Vector2f& shadowOffset,
 								   const Color& outlineColor ) {
+	BR->setSubpixelText( false );
 	Float underlineOffset = font->getUnderlinePosition( fontSize );
 	Float underlineThickness = font->getUnderlineThickness( fontSize );
 	Float top =
@@ -294,6 +296,7 @@ static inline void _drawStrikeThrough( Font* font, Float fontSize, const Color& 
 									   Float outlineThickness, const Vector2f& pos, Float width,
 									   const Color& shadowColor, const Vector2f& shadowOffset,
 									   const Color& outlineColor ) {
+	BR->setSubpixelText( false );
 	Rectf xBounds =
 		font->getGlyph( L'x', fontSize, style & Text::Bold, style & Text::Italic ).bounds;
 	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
@@ -1683,6 +1686,36 @@ Float Text::getLineSpacing() const {
 			   : 0;
 }
 
+static void drawTextVertexRanges( const std::vector<GlyphRenderMode>& renderModes,
+								  unsigned int numVertices, bool allowSubpixel ) {
+	const unsigned int verticesPerQuad = GLi->quadVertex();
+	const unsigned int primitive = GLi->quadsSupported() ? GL_QUADS : GL_TRIANGLES;
+	if ( renderModes.empty() || renderModes.size() * verticesPerQuad != numVertices ) {
+		GLi->drawArrays( primitive, 0, numVertices );
+		return;
+	}
+
+	size_t rangeStart = 0;
+	while ( rangeStart < renderModes.size() ) {
+		size_t rangeEnd = rangeStart + 1;
+		while ( rangeEnd < renderModes.size() && renderModes[rangeEnd] == renderModes[rangeStart] )
+			++rangeEnd;
+
+		const int first = rangeStart * verticesPerQuad;
+		const int count = ( rangeEnd - rangeStart ) * verticesPerQuad;
+		bool drawn = false;
+		if ( renderModes[rangeStart] == GlyphRenderMode::Subpixel ) {
+			if ( allowSubpixel )
+				drawn = GLi->drawSubpixelArrays( primitive, first, count );
+			if ( !drawn )
+				drawn = GLi->drawSubpixelFallbackArrays( primitive, first, count );
+		}
+		if ( !drawn )
+			GLi->drawArrays( primitive, first, count );
+		rangeStart = rangeEnd;
+	}
+}
+
 Uint32 Text::getTextHints() const {
 	return mTextHints;
 }
@@ -1699,6 +1732,9 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 
 	unsigned int numvert = mVertices.size();
+	const bool containsSubpixel = !mRenderModes.empty();
+	const Float drawX = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( X ) : X;
+	const Float drawY = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( Y ) : Y;
 
 	GlobalBatchRenderer::instance()->draw();
 
@@ -1729,7 +1765,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
 	} else {
-		GLi->translatef( X, Y, 0 );
+		GLi->translatef( drawX, drawY, 0 );
 	}
 
 	if ( backgroundColor != Color::Transparent ) {
@@ -1759,7 +1795,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		if ( rotation != 0.0f || scale != 1.0f ) {
 			GLi->popMatrix();
 		} else {
-			GLi->translatef( -X, -Y, 0 );
+			GLi->translatef( -drawX, -drawY, 0 );
 		}
 		return;
 	}
@@ -1772,43 +1808,36 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 	texture->bind();
 	BlendMode::setMode( effect );
+	const bool allowSubpixel = effect == BlendMode::Alpha() && rotation == 0.f && scale == 1.f;
 
 	Uint32 alloc = numvert * sizeof( VertexCoords );
-	Uint32 allocC = numvert * GLi->quadVertex();
 
 	if ( 0 != mFontStyleConfig.OutlineThickness ) {
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
-						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
+						   reinterpret_cast<const char*>( outlineColors.data() ),
+						   outlineColors.size() * sizeof( Color ) );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
 							reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2,
 							alloc );
 
-		if ( GLi->quadsSupported() ) {
-			GLi->drawArrays( GL_QUADS, 0, numvert );
-		} else {
-			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-		}
+		drawTextVertexRanges( mOutlineRenderModes, numvert, allowSubpixel );
 	}
 
 	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
-					   allocC );
+					   colors.size() * sizeof( Color ) );
 	GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 						  reinterpret_cast<char*>( &mVertices[0] ), alloc );
 	GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
 						reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
 
-	if ( GLi->quadsSupported() ) {
-		GLi->drawArrays( GL_QUADS, 0, numvert );
-	} else {
-		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-	}
+	drawTextVertexRanges( mRenderModes, numvert, allowSubpixel );
 
 	if ( rotation != 0.0f || scale != 1.0f ) {
 		GLi->popMatrix();
 	} else {
-		GLi->translatef( -X, -Y, 0 );
+		GLi->translatef( -drawX, -drawY, 0 );
 	}
 }
 
@@ -1860,7 +1889,9 @@ void Text::ensureGeometryUpdate() {
 
 	// Clear the previous geometry
 	mVertices.clear();
+	mRenderModes.clear();
 	mOutlineVertices.clear();
+	mOutlineRenderModes.clear();
 
 	if ( mCachedWidthNeedUpdate )
 		mLinesWidth.clear();
@@ -2650,6 +2681,9 @@ void Text::setFillColor( const std::vector<Color>& colors ) {
 // Add an underline or strikethrough line to the vertex array
 void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
 					Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX ) {
+	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
+	if ( !renderModes.empty() )
+		renderModes.push_back( GlyphRenderMode::Mask );
 	Float top = std::floor( lineTop + offset - ( thickness / 2 ) + 0.5f );
 	Float bottom = top + std::floor( thickness + 0.5f );
 	Float u1 = 0;
@@ -2725,10 +2759,23 @@ void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float
 void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 						 const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
 						 Int32 centerDiffX ) {
+	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
+	if ( glyph.renderMode == GlyphRenderMode::Subpixel ) {
+		if ( renderModes.empty() )
+			renderModes.resize( vertices.size() / GLi->quadVertex(), GlyphRenderMode::Mask );
+		renderModes.push_back( GlyphRenderMode::Subpixel );
+	} else if ( !renderModes.empty() ) {
+		renderModes.push_back( GlyphRenderMode::Mask );
+	}
+	if ( glyph.renderMode == GlyphRenderMode::Subpixel )
+		position = position.trunc();
 	Float padding = 1.0;
 	Float left = glyph.bounds.Left - padding;
 	Float top = glyph.bounds.Top - padding;
-	Float right = glyph.bounds.Left + glyph.bounds.Right + padding;
+	Float right = glyph.bounds.Left +
+				  ( glyph.renderMode == GlyphRenderMode::Subpixel ? glyph.size.getWidth()
+																  : glyph.bounds.Right ) +
+				  padding;
 	Float bottom = glyph.bounds.Top + glyph.bounds.Bottom + padding;
 
 	Float u1 = static_cast<Float>( glyph.textureRect.Left - padding );

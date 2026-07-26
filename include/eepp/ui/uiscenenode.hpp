@@ -161,9 +161,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * @brief Binds an embedded scene to host-scene services without copying document state.
 	 *
 	 * Copies only shared platform/configuration services: dispatcher, DPI/window pointer,
-	 * thread pool, color/contrast preferences, and default font/theme pointers. Stylesheets,
-	 * URI, referer, cookies, navigation callbacks, actions, roots, resource scope, and dirty queues
-	 * remain owned by this scene.
+	 * thread pool, color/contrast and font-rendering preferences, and default font/theme pointers.
+	 * Stylesheets, URI, referer, cookies, navigation callbacks, actions, roots, resource scope, and
+	 * dirty queues remain owned by this scene.
 	 */
 	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 

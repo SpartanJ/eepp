@@ -87,6 +87,8 @@ class EE_API RendererGL3 : public RendererGLShader {
 	void planeStateCheck( bool tryEnable );
 
 	void reloadShader( ShaderProgram* Shader );
+	ShaderProgramPtr createSubpixelDualSourceShader();
+	bool canUseSubpixelDualSourceShader() const;
 };
 
 }} // namespace EE::Graphics

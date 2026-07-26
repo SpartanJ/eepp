@@ -36,6 +36,7 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 	BR->setTexture( mTexture, mTexture->getCoordinateType() );
 	BR->setBlendMode( BlendMode::Alpha() );
+	BR->setSubpixelText( mGlyphRenderMode == GlyphRenderMode::Subpixel );
 	BR->quadsBegin();
 	BR->quadsSetColor( mColor );
 	BR->quadsSetTexCoord( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
@@ -87,6 +88,7 @@ DrawablePtr GlyphDrawable::clone() const {
 	instance->setDrawMode( mDrawMode );
 	instance->setIsItalic( mIsItalic );
 	instance->setAdvance( mAdvance );
+	instance->setGlyphRenderMode( mGlyphRenderMode );
 	instance->setColor( mColor );
 	instance->setPosition( mPosition );
 	return instance;
@@ -150,6 +152,14 @@ const Float& GlyphDrawable::getAdvance() const {
 
 void GlyphDrawable::setAdvance( Float advance ) {
 	mAdvance = advance;
+}
+
+GlyphRenderMode GlyphDrawable::getGlyphRenderMode() const {
+	return mGlyphRenderMode;
+}
+
+void GlyphDrawable::setGlyphRenderMode( GlyphRenderMode renderMode ) {
+	mGlyphRenderMode = renderMode;
 }
 
 }} // namespace EE::Graphics

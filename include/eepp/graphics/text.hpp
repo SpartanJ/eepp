@@ -410,7 +410,7 @@ class EE_API Text {
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
-	Uint32 mInvalidationId{ 0 };
+	Uint32 mInvalidationId{ GlobalInvalidationId };
 	Uint32 mTextHints{ 0 };
 	Float mMaxWrapWidth{ 0 };
 	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
@@ -422,8 +422,10 @@ class EE_API Text {
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;
+	std::vector<GlyphRenderMode> mRenderModes;
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
+	std::vector<GlyphRenderMode> mOutlineRenderModes;
 
 	void ensureGeometryUpdate();
 
@@ -432,12 +434,12 @@ class EE_API Text {
 	/** Force to cache the width of the current text */
 	void cacheWidth();
 
-	static void addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
-						 Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX );
+	void addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
+				  Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX );
 
-	static void addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
-							  const EE::Graphics::Glyph& glyph, Float italic,
-							  Float outlineThickness, Int32 centerDiffX );
+	void addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
+					   const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
+					   Int32 centerDiffX );
 
 	Uint32 getTotalVertices();
 
