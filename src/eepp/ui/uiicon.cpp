@@ -65,7 +65,9 @@ UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uin
 	UIIcon( name ), mFont( font ), mCodePoint( codePoint ) {
 	eeASSERT( mFont );
 	mCloseCb = mFont->pushFontEventCallback( [this]( Uint32, Font::Event event, Font* ) {
-		if ( event == Font::Event::Unload )
+		if ( event == Font::Event::CacheClear )
+			mSizes.clear();
+		else if ( event == Font::Event::Unload )
 			mFont = nullptr;
 	} );
 }

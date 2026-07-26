@@ -2064,6 +2064,7 @@ FontTrueType::Page::~Page() {
 }
 
 void FontTrueType::clearCache() {
+	sendEvent( Event::CacheClear );
 	mPages.clear();
 	mClosestCharacterSize.clear();
 	mCodePointIndexCache.clear();

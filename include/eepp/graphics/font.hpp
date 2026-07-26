@@ -48,7 +48,7 @@ enum class FontAntialiasing { None, Grayscale, Subpixel };
 /** @brief Font interface class. */
 class EE_API Font {
   public:
-	enum Event { Load, Unload };
+	enum Event { Load, Unload, CacheClear };
 
 	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 

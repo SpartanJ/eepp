@@ -410,7 +410,7 @@ class EE_API Text {
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
-	Uint32 mInvalidationId{ 0 };
+	Uint32 mInvalidationId{ GlobalInvalidationId };
 	Uint32 mTextHints{ 0 };
 	Float mMaxWrapWidth{ 0 };
 	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };

@@ -23,6 +23,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextview.hpp>
@@ -87,10 +88,20 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 	const Float grayscaleLAdvance = font->getGlyphAdvance( 'l', 28 );
 	const Float grayscaleDAdvance = font->getGlyphAdvance( 'd', 28 );
 	const Float grayscaleKerning = font->getKerning( 'i', 'd', 28, false, false );
+	UIIconPtr icon = UIGlyphIcon::New( "glyph-cache-test", font.get(), 'S' );
+	const DrawablePtr grayscaleIcon = icon->getSource( 28 );
+	ASSERT_TRUE( grayscaleIcon );
+	ASSERT_EQ( GlyphRenderMode::Mask,
+			   static_cast<GlyphDrawable*>( grayscaleIcon.get() )->getGlyphRenderMode() );
 	font->setAntialiasing( FontAntialiasing::Subpixel );
 	EXPECT_EQ( grayscaleLAdvance, font->getGlyphAdvance( 'l', 28 ) );
 	EXPECT_EQ( grayscaleDAdvance, font->getGlyphAdvance( 'd', 28 ) );
 	EXPECT_EQ( grayscaleKerning, font->getKerning( 'i', 'd', 28, false, false ) );
+	const DrawablePtr subpixelIcon = icon->getSource( 28 );
+	ASSERT_TRUE( subpixelIcon );
+	EXPECT_NE( grayscaleIcon.get(), subpixelIcon.get() );
+	EXPECT_EQ( GlyphRenderMode::Subpixel,
+			   static_cast<GlyphDrawable*>( subpixelIcon.get() )->getGlyphRenderMode() );
 
 	GlyphDrawable* drawable = font->getGlyphDrawable( 'S', 28 );
 	ASSERT_TRUE( drawable );
