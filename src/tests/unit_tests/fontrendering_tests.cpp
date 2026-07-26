@@ -165,6 +165,36 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 					 "Subpixel text did not update a transparent target's alpha" );
 }
 
+UTEST( FontRendering, scaledSubpixelGlyphAtlas ) {
+	UIApplication app(
+		WindowSettings( 256, 64, "eepp - Scaled Subpixel Glyph Atlas", VisualTestWindowStyle,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "ScaledSubpixelNonicons", scope );
+	ASSERT_TRUE( font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/nonicons.ttf" ) );
+	font->setAntialiasing( FontAntialiasing::Subpixel );
+	font->setIsEmojiFont( true );
+
+	EE::Window::Window* window = app.getWindow();
+	window->setClearColor( Color( 40, 44, 52 ) );
+	window->clear();
+	const std::array<Uint32, 8> codePoints = { 61718, 61719, 61720, 61743,
+											   61752, 61775, 61789, 61799 };
+	Float x = 8.f;
+	for ( Uint32 codePoint : codePoints ) {
+		GlyphDrawable* glyph = font->getGlyphDrawable( codePoint, 18 );
+		ASSERT_TRUE( glyph );
+		ASSERT_EQ( GlyphRenderMode::Subpixel, glyph->getGlyphRenderMode() );
+		const Sizef size = glyph->getPixelsSize();
+		glyph->setColor( Color::White );
+		glyph->draw( { std::trunc( x + ( 24.f - size.getWidth() ) * 0.5f ),
+					   std::trunc( ( 64.f - size.getHeight() ) * 0.5f ) } );
+		x += 30.f;
+	}
+	compareImages( utest_state, utest_result, window, "eepp-scaled-subpixel-glyph-atlas" );
+}
+
 UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - Font Family Metrics Test", WindowStyle::Default,

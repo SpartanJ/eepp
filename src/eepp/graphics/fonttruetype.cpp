@@ -1621,20 +1621,50 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 				destHeight = dest.getHeight() + 2 * padding;
 			}
 		} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
-			for ( int y = padding; y < height - padding; ++y ) {
-				for ( int x = padding; x < width - padding; ++x ) {
-					const std::size_t index = ( x + y * width ) * 4;
-					const Uint8* px = &pixels[( x - padding ) * 3];
-					mPixelBuffer[index + 0] =
-						glyph.renderMode == GlyphRenderMode::Subpixel ? px[0] : 255;
-					mPixelBuffer[index + 1] =
-						glyph.renderMode == GlyphRenderMode::Subpixel ? px[1] : 255;
-					mPixelBuffer[index + 2] =
-						glyph.renderMode == GlyphRenderMode::Subpixel ? px[2] : 255;
-					mPixelBuffer[index + 3] =
-						(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+			if ( scale < 1.f ) {
+				for ( int y = 0; y < height; ++y ) {
+					for ( int x = 0; x < width; ++x ) {
+						const std::size_t index = ( x + y * width ) * 4;
+						const Uint8* px = &pixels[x * 3];
+						mPixelBuffer[index + 0] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[0] : 255;
+						mPixelBuffer[index + 1] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[1] : 255;
+						mPixelBuffer[index + 2] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[2] : 255;
+						mPixelBuffer[index + 3] =
+							(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+					}
+					pixels += bitmap.pitch;
 				}
-				pixels += bitmap.pitch;
+
+				Image dest( &mPixelBuffer[0], width, height, 4 );
+				dest.avoidFreeImage( true );
+				dest.scale( scale );
+				dest.avoidFreeImage( true );
+				pixelPtr = dest.getPixels();
+				glyph.bounds.Left *= scale;
+				glyph.bounds.Right *= scale;
+				glyph.bounds.Top *= scale;
+				glyph.bounds.Bottom *= scale;
+				destWidth = dest.getWidth() + 2 * padding;
+				destHeight = dest.getHeight() + 2 * padding;
+			} else {
+				for ( int y = padding; y < height - padding; ++y ) {
+					for ( int x = padding; x < width - padding; ++x ) {
+						const std::size_t index = ( x + y * width ) * 4;
+						const Uint8* px = &pixels[( x - padding ) * 3];
+						mPixelBuffer[index + 0] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[0] : 255;
+						mPixelBuffer[index + 1] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[1] : 255;
+						mPixelBuffer[index + 2] =
+							glyph.renderMode == GlyphRenderMode::Subpixel ? px[2] : 255;
+						mPixelBuffer[index + 3] =
+							(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+					}
+					pixels += bitmap.pitch;
+				}
 			}
 		} else {
 			if ( scale < 1.f ) {
