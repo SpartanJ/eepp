@@ -260,6 +260,8 @@ void Renderer::init() {
 		writeExtension( EEGL_EXT_blend_func_separate, GLEW_EXT_blend_func_separate );
 		writeExtension( EEGL_EXT_blend_minmax, GLEW_EXT_blend_minmax );
 		writeExtension( EEGL_EXT_blend_subtract, GLEW_EXT_blend_subtract );
+		writeExtension( EEGL_ARB_blend_func_extended,
+						GLEW_ARB_blend_func_extended || GLEW_VERSION_3_3 );
 	} else
 #endif
 	{
@@ -296,6 +298,9 @@ void Renderer::init() {
 						glVersion >= 140 || isExtension( "GL_EXT_blend_minmax" ) );
 		writeExtension( EEGL_EXT_blend_subtract,
 						glVersion >= 140 || isExtension( "GL_EXT_blend_subtract" ) );
+		writeExtension( EEGL_ARB_blend_func_extended,
+						!is_es &&
+							( glVersion >= 330 || isExtension( "GL_ARB_blend_func_extended" ) ) );
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
@@ -477,6 +482,9 @@ void Renderer::drawArrays( unsigned int mode, int first, int count ) {
 }
 
 bool Renderer::drawSubpixelArrays( unsigned int mode, int first, int count ) {
+	if ( drawSubpixelDualSourceArrays( mode, first, count ) )
+		return true;
+
 	if ( !setTextureColorMode( 1 ) )
 		return false;
 
@@ -495,6 +503,10 @@ bool Renderer::drawSubpixelArrays( unsigned int mode, int first, int count ) {
 	colorMask( previousColorMask[0], previousColorMask[1], previousColorMask[2],
 			   previousColorMask[3] );
 	return true;
+}
+
+bool Renderer::drawSubpixelDualSourceArrays( unsigned int, int, int ) {
+	return false;
 }
 
 bool Renderer::drawSubpixelFallbackArrays( unsigned int mode, int first, int count ) {
@@ -561,6 +573,21 @@ void Renderer::blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlp
 
 	if ( NULL != eeglBlendEquationSeparate )
 		eeglBlendEquationSeparate( modeRGB, modeAlpha );
+}
+
+bool Renderer::bindFragDataLocationIndexed( unsigned int program, unsigned int colorNumber,
+											unsigned int index, const char* name ) {
+#ifndef EE_GLES
+	static pglBindFragDataLocationIndexed bindFragDataLocationIndexed = NULL;
+	if ( NULL == bindFragDataLocationIndexed )
+		bindFragDataLocationIndexed =
+			(pglBindFragDataLocationIndexed)getProcAddress( "glBindFragDataLocationIndexed" );
+	if ( NULL != bindFragDataLocationIndexed ) {
+		bindFragDataLocationIndexed( program, colorNumber, index, name );
+		return true;
+	}
+#endif
+	return false;
 }
 
 void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,

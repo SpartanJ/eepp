@@ -111,6 +111,9 @@ class EE_API Renderer {
 
 	void blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha );
 
+	bool bindFragDataLocationIndexed( unsigned int program, unsigned int colorNumber,
+									  unsigned int index, const char* name );
+
 	void blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
 						  int dstX1, int dstY1, unsigned int mask, unsigned int filter );
 
@@ -362,6 +365,8 @@ class EE_API Renderer {
 	void waitForIdle();
 
   protected:
+	virtual bool drawSubpixelDualSourceArrays( unsigned int mode, int first, int count );
+
 	static const Vector3ff& textureColorChannel( Int32 mode );
 
 	static Renderer* sSingleton;

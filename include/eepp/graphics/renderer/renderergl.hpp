@@ -89,12 +89,16 @@ class EE_API RendererGL : public Renderer {
 
   protected:
 	bool ensureSubpixelShader();
+	bool ensureSubpixelDualSourceShader();
+	bool drawSubpixelDualSourceArrays( unsigned int mode, int first, int count );
 
 	ShaderProgramPtr mSubpixelShader;
+	ShaderProgramPtr mSubpixelDualSourceShader;
 	ShaderProgram* mPreviousShader{ nullptr };
 	Int32 mSubpixelChannelLoc{ -1 };
 	bool mUsingSubpixelShader{ false };
 	bool mSubpixelShaderInitializationAttempted{ false };
+	bool mSubpixelDualSourceShaderInitializationAttempted{ false };
 };
 
 #endif

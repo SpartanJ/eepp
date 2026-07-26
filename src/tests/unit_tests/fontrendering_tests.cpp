@@ -130,8 +130,10 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 		for ( Uint32 y = top; y < bottom; ++y ) {
 			for ( Uint32 x = 0; x < image.getWidth(); ++x ) {
 				Color pixel = image.getPixel( x, y );
-				if ( eeabs( static_cast<Int32>( pixel.r ) - static_cast<Int32>( pixel.g ) ) > 3 ||
-					 eeabs( static_cast<Int32>( pixel.g ) - static_cast<Int32>( pixel.b ) ) > 3 )
+				const Int32 redGreenDelta = static_cast<Int32>( pixel.r ) - pixel.g;
+				const Int32 greenBlueDelta = static_cast<Int32>( pixel.g ) - pixel.b;
+				if ( ( redGreenDelta < 0 ? -redGreenDelta : redGreenDelta ) > 3 ||
+					 ( greenBlueDelta < 0 ? -greenBlueDelta : greenBlueDelta ) > 3 )
 					return true;
 			}
 		}

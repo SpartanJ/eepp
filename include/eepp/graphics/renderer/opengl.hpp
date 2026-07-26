@@ -148,6 +148,18 @@ typedef char GLchar;
 #ifndef GL_NUM_EXTENSIONS
 #define GL_NUM_EXTENSIONS 0x821D
 #endif
+#ifndef GL_SRC1_COLOR
+#define GL_SRC1_COLOR 0x88F9
+#endif
+#ifndef GL_ONE_MINUS_SRC1_COLOR
+#define GL_ONE_MINUS_SRC1_COLOR 0x88FA
+#endif
+#ifndef GL_ONE
+#define GL_ONE 1
+#endif
+#ifndef GL_ONE_MINUS_SRC_ALPHA
+#define GL_ONE_MINUS_SRC_ALPHA 0x0303
+#endif
 
 #else
 //! Mobile platform ( Android / iPhone / Maemo )
