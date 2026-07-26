@@ -317,6 +317,10 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	mThreadPool = hostScene->getThreadPool();
 	mColorSchemePreference = hostScene->getColorSchemePreference();
 	mContrastPreference = hostScene->getContrastPreference();
+	const FontService& hostFontService = hostScene->getResourceScope()->getFontService();
+	FontService& fontService = mResourceScope->getFontService();
+	fontService.setHinting( hostFontService.getHinting() );
+	fontService.setAntialiasing( hostFontService.getAntialiasing() );
 
 	UIThemeManager* hostThemeManager = hostScene->getUIThemeManager();
 	if ( hostThemeManager ) {

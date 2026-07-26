@@ -58,6 +58,30 @@ static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nu
 	return true;
 }
 
+UTEST( UIWebView, DocumentSceneInheritsHostFontRenderingPolicy ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 320, 240, "UIWebView Font Policy Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( win != nullptr );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	FontService& hostFontService = sceneNode->getResourceScope()->getFontService();
+	hostFontService.setHinting( FontHinting::Slight );
+	hostFontService.setAntialiasing( FontAntialiasing::Subpixel );
+	SceneManager::instance()->add( sceneNode );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	const FontService& documentFontService = documentScene->getResourceScope()->getFontService();
+	EXPECT_EQ( FontHinting::Slight, documentFontService.getHinting() );
+	EXPECT_EQ( FontAntialiasing::Subpixel, documentFontService.getAntialiasing() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 640, 480, "UIWebView Document Scene Test", WindowStyle::Default,

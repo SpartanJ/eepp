@@ -2,6 +2,7 @@
 
 #include <args/args.hxx>
 #include <iostream>
+#include <unordered_map>
 
 EE_MAIN_FUNC int main( int argc, char** argv ) {
 	std::shared_ptr<ThreadPool> threadPool(
@@ -25,6 +26,23 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
+	const std::unordered_map<std::string, FontHinting> fontHintingMap{
+		{ "none", FontHinting::None },
+		{ "slight", FontHinting::Slight },
+		{ "full", FontHinting::Full },
+	};
+	args::MapFlag<std::string, FontHinting> fontHinting(
+		parser, "font-hinting", "Font hinting mode (accepted values: none, slight, full)",
+		{ "font-hinting" }, fontHintingMap, FontHinting::Full );
+	const std::unordered_map<std::string, FontAntialiasing> fontAntialiasingMap{
+		{ "none", FontAntialiasing::None },
+		{ "grayscale", FontAntialiasing::Grayscale },
+		{ "subpixel", FontAntialiasing::Subpixel },
+	};
+	args::MapFlag<std::string, FontAntialiasing> fontAntialiasing(
+		parser, "font-antialiasing",
+		"Font antialiasing mode (accepted values: none, grayscale, subpixel)",
+		{ "font-antialiasing" }, fontAntialiasingMap, FontAntialiasing::Grayscale );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -41,10 +59,14 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		return EXIT_FAILURE;
 	}
 
+	UIApplication::Settings appSettings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f );
+	appSettings.fontHinting = fontHinting.Get();
+	appSettings.fontAntialiasing = fontAntialiasing.Get();
+
 	UIApplication app(
 		WindowSettings{ 1280, 720, "eepp - UI HTML Example", WindowStyle::Default,
 						WindowBackend::Default, 32, Sys::getProcessPath() + "assets/icon/ee.png" },
-		UIApplication::Settings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f ),
+		appSettings,
 		ContextSettings( false,
 						 benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate,
 						 4 ) );
