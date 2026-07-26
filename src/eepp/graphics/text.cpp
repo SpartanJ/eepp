@@ -1811,11 +1811,11 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	const bool allowSubpixel = effect == BlendMode::Alpha() && rotation == 0.f && scale == 1.f;
 
 	Uint32 alloc = numvert * sizeof( VertexCoords );
-	Uint32 allocC = numvert * GLi->quadVertex();
 
 	if ( 0 != mFontStyleConfig.OutlineThickness ) {
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
-						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
+						   reinterpret_cast<const char*>( outlineColors.data() ),
+						   outlineColors.size() * sizeof( Color ) );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
@@ -1826,7 +1826,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	}
 
 	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
-					   allocC );
+					   colors.size() * sizeof( Color ) );
 	GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 						  reinterpret_cast<char*>( &mVertices[0] ), alloc );
 	GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),

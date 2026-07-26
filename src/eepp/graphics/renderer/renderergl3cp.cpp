@@ -147,6 +147,32 @@ void RendererGL3CP::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+ShaderProgramPtr RendererGL3CP::createSubpixelDualSourceShader() {
+	static const char fragmentShader[] = R"(#version 330
+uniform sampler2D textureUnit0;
+in vec4 dgl_Color;
+in vec4 dgl_TexCoord[1];
+out vec4 dgl_FragColor;
+out vec4 dgl_FragCoverage;
+void main() {
+	vec3 coverage = texture( textureUnit0, dgl_TexCoord[0].xy ).rgb;
+	float meanCoverage = dot( coverage, vec3( 1.0 / 3.0 ) );
+	dgl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * meanCoverage );
+	dgl_FragCoverage = vec4( dgl_Color.a * coverage, 0.0 );
+}
+)";
+	return RendererGLShader::createSubpixelDualSourceShader( mBaseVertexShader, fragmentShader,
+															 true );
+}
+
+bool RendererGL3CP::canUseSubpixelDualSourceShader() const {
+	for ( Int32 state : mPlanesStates ) {
+		if ( state != 0 )
+			return false;
+	}
+	return true;
+}
+
 void RendererGL3CP::reloadShader( ShaderProgram* Shader ) {
 	mCurShader = NULL;
 

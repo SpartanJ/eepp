@@ -115,6 +115,21 @@ void RendererGL3::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+ShaderProgramPtr RendererGL3::createSubpixelDualSourceShader() {
+	std::string vertexShader = mBaseVertexShader;
+	String::replaceAll( vertexShader, "#version 120", "#version 130" );
+	return RendererGLShader::createSubpixelDualSourceShader(
+		vertexShader, subpixelDualSourceFragmentShaderGLSL130(), true );
+}
+
+bool RendererGL3::canUseSubpixelDualSourceShader() const {
+	for ( Int32 state : mPlanesStates ) {
+		if ( state != 0 )
+			return false;
+	}
+	return true;
+}
+
 void RendererGL3::reloadShader( ShaderProgram* Shader ) {
 	mCurShader = NULL;
 

@@ -148,6 +148,35 @@ void RendererGLES2::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+ShaderProgramPtr RendererGLES2::createSubpixelDualSourceShader() {
+#ifdef EE_GLES2
+	static const char fragmentShader[] = R"(#extension GL_EXT_blend_func_extended : require
+precision mediump float;
+precision lowp int;
+uniform sampler2D textureUnit0;
+varying vec4 dgl_Color;
+varying mediump vec4 dgl_TexCoord[1];
+void main() {
+	vec3 coverage = texture2D( textureUnit0, dgl_TexCoord[0].xy ).rgb;
+	float meanCoverage = dot( coverage, vec3( 1.0 / 3.0 ) );
+	gl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * meanCoverage );
+	gl_SecondaryFragColorEXT = vec4( dgl_Color.a * coverage, 0.0 );
+}
+)";
+	return RendererGLShader::createSubpixelDualSourceShader( mBaseVertexShader, fragmentShader,
+															 false );
+#else
+	std::string vertexShader = mBaseVertexShader;
+	String::replaceAll( vertexShader, "#version 120", "#version 130" );
+	return RendererGLShader::createSubpixelDualSourceShader(
+		vertexShader, subpixelDualSourceFragmentShaderGLSL130(), true );
+#endif
+}
+
+bool RendererGLES2::canUseSubpixelDualSourceShader() const {
+	return !mClippingEnabled && !mPointSpriteEnabled;
+}
+
 void RendererGLES2::reloadShader( ShaderProgram* Shader ) {
 	mCurShader = NULL;
 

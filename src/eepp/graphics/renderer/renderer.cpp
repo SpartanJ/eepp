@@ -262,6 +262,7 @@ void Renderer::init() {
 		writeExtension( EEGL_EXT_blend_subtract, GLEW_EXT_blend_subtract );
 		writeExtension( EEGL_ARB_blend_func_extended,
 						GLEW_ARB_blend_func_extended || GLEW_VERSION_3_3 );
+		writeExtension( EEGL_EXT_blend_func_extended, GLEW_EXT_blend_func_extended );
 	} else
 #endif
 	{
@@ -301,6 +302,10 @@ void Renderer::init() {
 		writeExtension( EEGL_ARB_blend_func_extended,
 						!is_es &&
 							( glVersion >= 330 || isExtension( "GL_ARB_blend_func_extended" ) ) );
+		writeExtension( EEGL_EXT_blend_func_extended,
+						is_es && ( isExtension( "GL_EXT_blend_func_extended" ) ||
+								   isExtension( "GL_WEBGL_blend_func_extended" ) ||
+								   isExtension( "WEBGL_blend_func_extended" ) ) );
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
@@ -587,6 +592,14 @@ bool Renderer::bindFragDataLocationIndexed( unsigned int program, unsigned int c
 		return true;
 	}
 #endif
+	static pglBindFragDataLocationIndexed bindFragDataLocationIndexedEXT = NULL;
+	if ( NULL == bindFragDataLocationIndexedEXT )
+		bindFragDataLocationIndexedEXT =
+			(pglBindFragDataLocationIndexed)getProcAddress( "glBindFragDataLocationIndexedEXT" );
+	if ( NULL != bindFragDataLocationIndexedEXT ) {
+		bindFragDataLocationIndexedEXT( program, colorNumber, index, name );
+		return true;
+	}
 	return false;
 }
 

@@ -34,6 +34,7 @@ enum GraphicsLibraryExtension {
 	EEGL_EXT_blend_subtract,
 	EEGL_ARB_ES3_compatibility,
 	EEGL_ARB_blend_func_extended,
+	EEGL_EXT_blend_func_extended,
 };
 
 /// Graphics Library Renderer version available.

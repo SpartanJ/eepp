@@ -57,6 +57,14 @@ class EE_API RendererGLShader : public Renderer {
 	bool setTextureColorMode( Int32 mode );
 
   protected:
+	bool drawSubpixelDualSourceArrays( unsigned int mode, int first, int count );
+	ShaderProgramPtr createSubpixelDualSourceShader( const std::string& vertexShader,
+													 const std::string& fragmentShader,
+													 bool bindFragmentOutputs );
+	static const char* subpixelDualSourceFragmentShaderGLSL130();
+	virtual ShaderProgramPtr createSubpixelDualSourceShader() = 0;
+	virtual bool canUseSubpixelDualSourceShader() const = 0;
+
 	Private::MatrixStack* mStack;
 	int mProjectionMatrix_id; // cpu-side hook to shader uniform
 	int mModelViewMatrix_id;  // cpu-side hook to shader uniform
@@ -67,6 +75,8 @@ class EE_API RendererGLShader : public Renderer {
 	unsigned int mCurrentMode;
 	ShaderProgram* mCurShader;
 	ShaderProgram* mShaderPrev;
+	ShaderProgramPtr mSubpixelDualSourceShader;
+	bool mSubpixelDualSourceShaderInitializationAttempted{ false };
 
 	void updateMatrix();
 };

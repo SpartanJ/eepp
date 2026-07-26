@@ -167,6 +167,59 @@ UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 					 "Subpixel text did not update a transparent target's alpha" );
 }
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+UTEST( FontRendering, subpixelCoverageAllRenderers ) {
+	struct RendererCase {
+		GraphicsLibraryVersion version;
+		const char* name;
+	};
+	static constexpr RendererCase renderers[] = { { GLv_2, "OpenGL 2" },
+												  { GLv_3, "OpenGL 3" },
+												  { GLv_3CP, "OpenGL 3 Core" },
+												  { GLv_ES2, "OpenGL ES 2" } };
+
+	for ( const RendererCase& renderer : renderers ) {
+		UIApplication app(
+			WindowSettings( 320, 96, renderer.name, WindowStyle::Default, WindowBackend::Default,
+							32 ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ),
+			ContextSettings( false, 0, 0, renderer.version ) );
+		ASSERT_TRUE_MSG( app.getWindow() && app.getWindow()->isOpen(), renderer.name );
+		ResourceScope& scope = *app.getUI()->getResourceScope();
+		FontTrueTypePtr font = FontTrueType::New( renderer.name, scope );
+		ASSERT_TRUE_MSG(
+			font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ),
+			renderer.name );
+		font->setAntialiasing( FontAntialiasing::Subpixel );
+
+		EE::Window::Window* window = app.getWindow();
+		window->setClearColor( Color::White );
+		window->clear();
+		Text::draw( String( "Direct LCD" ), { 8.f, 4.f }, font.get(), 24, Color::Black );
+		Text retained( "Retained LCD", font.get(), 24 );
+		retained.setFillColor( Color::Black );
+		retained.draw( 8.f, 44.f );
+
+		Image image = window->getFrontBufferImage();
+		auto hasColoredCoverage = [&image]( Uint32 top, Uint32 bottom ) {
+			for ( Uint32 y = top; y < bottom; ++y ) {
+				for ( Uint32 x = 0; x < image.getWidth(); ++x ) {
+					const Color pixel = image.getPixel( x, y );
+					const Int32 redGreenDelta = static_cast<Int32>( pixel.r ) - pixel.g;
+					const Int32 greenBlueDelta = static_cast<Int32>( pixel.g ) - pixel.b;
+					if ( ( redGreenDelta < 0 ? -redGreenDelta : redGreenDelta ) > 3 ||
+						 ( greenBlueDelta < 0 ? -greenBlueDelta : greenBlueDelta ) > 3 )
+						return true;
+				}
+			}
+			return false;
+		};
+		EXPECT_TRUE_MSG( hasColoredCoverage( 0, 40 ), renderer.name );
+		EXPECT_TRUE_MSG( hasColoredCoverage( 40, image.getHeight() ), renderer.name );
+	}
+}
+#endif
+
 UTEST( FontRendering, scaledSubpixelGlyphAtlas ) {
 	UIApplication app(
 		WindowSettings( 256, 64, "eepp - Scaled Subpixel Glyph Atlas", VisualTestWindowStyle,

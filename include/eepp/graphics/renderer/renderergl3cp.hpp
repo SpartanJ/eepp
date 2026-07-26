@@ -96,6 +96,8 @@ class EE_API RendererGL3CP : public RendererGLShader {
 	void reloadShader( ShaderProgram* Shader );
 
 	void allocateBuffers( const Uint32& size );
+	ShaderProgramPtr createSubpixelDualSourceShader();
+	bool canUseSubpixelDualSourceShader() const;
 };
 
 }} // namespace EE::Graphics

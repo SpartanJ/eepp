@@ -98,6 +98,8 @@ class EE_API RendererGLES2 : public RendererGLShader {
 	void reloadShader( ShaderProgram* Shader );
 
 	void checkLocalShader();
+	ShaderProgramPtr createSubpixelDualSourceShader();
+	bool canUseSubpixelDualSourceShader() const;
 };
 
 }} // namespace EE::Graphics
