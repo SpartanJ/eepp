@@ -1,10 +1,6 @@
 
 # TODO
 
-## Graphics Module
-
-* Implement shared pointers for resource management in eepp
-
 ## UI Module
 
 * Implement TableView and TreeView properties.
@@ -14,9 +10,3 @@
 * Implement support for very simple state-changes from the XML file (ex: onclick="toggleclass(x)").
 
 * Implement smooth-scrolling for macOS
-
-* Implement UITabWidgetSplitter
-
-### CSS
-
-* Add support for [calc](https://developer.mozilla.org/en-US/docs/Web/CSS/calc).
