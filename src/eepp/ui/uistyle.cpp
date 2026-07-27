@@ -74,6 +74,12 @@ void UIStyle::setStyleSheetVariable( const StyleSheetVariable& variable ) {
 
 void UIStyle::resetGlobalDefinition( bool force ) {
 	const auto& stylesheet = mWidget->getUISceneNode()->getStyleSheet();
+	if ( mWidget->getFlags() & UI_IGNORE_GLOBAL_CSS ) {
+		mGlobalDefinition = nullptr;
+		mLoadedStyleSheet = &stylesheet;
+		mLoadedVersion = stylesheet.getVersion();
+		return;
+	}
 
 	if ( !force && &stylesheet == mLoadedStyleSheet && stylesheet.getVersion() == mLoadedVersion )
 		return;

@@ -25,6 +25,65 @@ static bool htmlBoolAttributeIsTrue( const StyleSheetProperty& property ) {
 	return property.asBool();
 }
 
+static std::string normalizeInputType( std::string type ) {
+	type = String::toLower( String::trim( type ) );
+	if ( type == "button" || type == "checkbox" || type == "color" || type == "date" ||
+		 type == "datetime-local" || type == "email" || type == "file" || type == "hidden" ||
+		 type == "image" || type == "month" || type == "number" || type == "password" ||
+		 type == "radio" || type == "range" || type == "reset" || type == "search" ||
+		 type == "submit" || type == "tel" || type == "text" || type == "time" || type == "url" ||
+		 type == "week" )
+		return type;
+	return "text";
+}
+
+static bool isImplementationProperty( PropertyId id ) {
+	switch ( id ) {
+		case PropertyId::Size:
+		case PropertyId::MaxLength:
+		case PropertyId::AllowEditing:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::InputMode:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::HintDisplay:
+		case PropertyId::MinValue:
+		case PropertyId::MaxValue:
+		case PropertyId::ClickStep:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool implementationPropertyAffectsIntrinsicSize( PropertyId id ) {
+	switch ( id ) {
+		case PropertyId::Size:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::FontWeight:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static void markAnonymousControlTree( Node* node ) {
+	if ( node->isWidget() )
+		node->asType<UIWidget>()->setFlags( UI_IGNORE_GLOBAL_CSS );
+	for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() )
+		markAnonymousControlTree( child );
+}
+
 } // namespace
 
 UIHTMLInput* UIHTMLInput::New() {
@@ -57,13 +116,14 @@ bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Checked:
 		case PropertyId::Selected:
 			mChecked = htmlBoolAttributeIsTrue( attribute );
-			mProperties[id] = attribute;
 			syncCheckedState();
 			return UIHTMLWidget::applyProperty( attribute );
 		case PropertyId::Value:
 		case PropertyId::Text:
 			mValue = attribute.value();
-			break;
+			if ( mChildWidget && !( mInputType == "checkbox" || mInputType == "radio" ) )
+				mChildWidget->applyProperty( attribute );
+			return UIHTMLWidget::applyProperty( attribute );
 		case PropertyId::Type:
 			setInputType( attribute.value() );
 			return true;
@@ -71,13 +131,10 @@ bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 	}
 
-	if ( id != PropertyId::Id && id != PropertyId::Class && id != PropertyId::Type &&
-		 id != PropertyId::Display ) {
-		mProperties[id] = attribute;
-		if ( mChildWidget && !( id == PropertyId::Value &&
-								( mInputType == "checkbox" || mInputType == "radio" ) ) ) {
-			mChildWidget->applyProperty( attribute );
-		}
+	if ( isImplementationProperty( id ) || attribute.getPropertyDefinition()->isInherited() ) {
+		mImplementationProperties[id] = attribute;
+		if ( mChildWidget )
+			applyImplementationProperty( attribute );
 	}
 
 	return UIHTMLWidget::applyProperty( attribute );
@@ -125,13 +182,26 @@ Float UIHTMLInput::getMaxIntrinsicWidth() const {
 	return mChildWidget ? mChildWidget->getMaxIntrinsicWidth() : 0;
 }
 
+void UIHTMLInput::updateLayout() {
+	// An input is a replaced element. Its anonymous native control must not be processed as a DOM
+	// child by BlockLayouter, which would restore the control's intrinsic size after flex/grid had
+	// assigned the host's final used size.
+	positionOutOfFlowChildren();
+	if ( isOutOfFlow() )
+		updateOutOfFlowPosition();
+	mDirtyLayout = false;
+	updateChildGeometry();
+}
+
 const std::string& UIHTMLInput::getInputType() const {
 	return mInputType;
 }
 
 void UIHTMLInput::setInputType( const std::string& type ) {
-	if ( mInputType != type ) {
-		mInputType = type;
+	const std::string normalizedType = normalizeInputType( type );
+	if ( mInputType != normalizedType ) {
+		syncStateFromImplementation();
+		mInputType = normalizedType;
 		createChildWidget();
 	}
 }
@@ -151,9 +221,14 @@ void UIHTMLInput::createChildWidget() {
 	} else if ( mInputType == "checkbox" ) {
 		mChildWidget = UICheckBox::New();
 	} else if ( mInputType == "hidden" ) {
+		if ( !mHiddenByType ) {
+			mVisibleBeforeHidden = isVisible();
+			mEnabledBeforeHidden = isEnabled();
+			mDisplayBeforeHidden = mDisplay;
+		}
+		mHiddenByType = true;
 		setVisible( false );
 		setEnabled( false );
-		mVisible = false;
 		mDisplay = CSSDisplay::None;
 	} else if ( mInputType == "number" ) {
 		mChildWidget = UISpinBox::New();
@@ -168,27 +243,120 @@ void UIHTMLInput::createChildWidget() {
 	if ( mChildWidget == nullptr )
 		return;
 
-	mChildWidget->setFlags( UI_HTML_ELEMENT );
+	if ( mHiddenByType ) {
+		mHiddenByType = false;
+		mDisplay = mDisplayBeforeHidden;
+		setEnabled( mEnabledBeforeHidden );
+		setVisible( mVisibleBeforeHidden );
+	}
 
-	if ( mChildWidget ) {
-		mChildWidget->setParent( this );
+	configureChildWidget();
+	syncImplementationState();
+}
+
+void UIHTMLInput::configureChildWidget() {
+	mChildWidget->setParent( this );
+	markAnonymousControlTree( mChildWidget );
+	mChildWidget->setLayoutWidthPolicy( SizePolicy::WrapContent );
+	mChildWidget->setLayoutHeightPolicy( SizePolicy::WrapContent );
+
+	// The child is anonymous control content, not a second HTML/CSS box. The host owns author
+	// backgrounds, borders and padding; native subparts (check marks, spin buttons, etc.) remain.
+	mChildWidget->removeSkin();
+	mChildWidget->setBackgroundFillEnabled( false );
+	mChildWidget->setBorderEnabled( false );
+	mChildWidget->unsetFlags( UI_AUTO_PADDING );
+	mChildWidget->setPadding( Rectf() );
+
+	mChildWidget->on( Event::OnSizeChange, [this]( auto ) {
+		if ( !mChildWidget || mSyncingGeometry )
+			return;
+		invalidateIntrinsicSize();
+		updateHostGeometry();
+		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
+	} );
+}
+
+void UIHTMLInput::applyImplementationProperty( const StyleSheetProperty& property ) {
+	if ( !mChildWidget )
+		return;
+
+	const bool remeasure = implementationPropertyAffectsIntrinsicSize(
+		property.getPropertyDefinition()->getPropertyId() );
+	if ( remeasure ) {
 		mChildWidget->setLayoutWidthPolicy( SizePolicy::WrapContent );
 		mChildWidget->setLayoutHeightPolicy( SizePolicy::WrapContent );
-		mChildWidget->on( Event::OnSizeChange, [this]( auto ) {
-			if ( mChildWidget )
-				setPixelsSize( mChildWidget->getPixelsSize() );
-		} );
-
-		for ( const auto& propIt : mProperties ) {
-			if ( propIt.first == PropertyId::Checked || propIt.first == PropertyId::Selected )
-				continue;
-			if ( propIt.first == PropertyId::Value &&
-				 ( mInputType == "checkbox" || mInputType == "radio" ) )
-				continue;
-			mChildWidget->applyProperty( propIt.second );
-		}
-		syncCheckedState();
 	}
+	mChildWidget->applyProperty( property );
+	if ( remeasure ) {
+		updateHostGeometry();
+		mChildWidget->setLayoutWidthPolicy( SizePolicy::Fixed );
+		mChildWidget->setLayoutHeightPolicy( SizePolicy::Fixed );
+		updateChildGeometry();
+	}
+}
+
+void UIHTMLInput::syncImplementationState() {
+	if ( !mChildWidget )
+		return;
+
+	for ( const auto& prop : mImplementationProperties )
+		mChildWidget->applyProperty( prop.second );
+
+	if ( !( mInputType == "checkbox" || mInputType == "radio" ) )
+		mChildWidget->applyProperty( StyleSheetProperty( "value", mValue ) );
+	syncCheckedState();
+	updateHostGeometry();
+	mChildWidget->setLayoutWidthPolicy( SizePolicy::Fixed );
+	mChildWidget->setLayoutHeightPolicy( SizePolicy::Fixed );
+	updateChildGeometry();
+}
+
+void UIHTMLInput::syncStateFromImplementation() {
+	if ( !mChildWidget )
+		return;
+
+	if ( mInputType == "checkbox" ) {
+		mChecked = static_cast<UICheckBox*>( mChildWidget )->isChecked();
+	} else if ( mInputType == "radio" ) {
+		mChecked = static_cast<UIRadioButton*>( mChildWidget )->isActive();
+	} else {
+		mValue = getFormValue();
+	}
+}
+
+void UIHTMLInput::updateHostGeometry() {
+	if ( !mChildWidget || mSyncingGeometry )
+		return;
+
+	const Rectf contentOffset = getPixelsContentOffset();
+	Sizef size = getPixelsSize();
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )
+		size.setWidth( mChildWidget->getPixelsSize().getWidth() + contentOffset.Left +
+					   contentOffset.Right );
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent )
+		size.setHeight( mChildWidget->getPixelsSize().getHeight() + contentOffset.Top +
+						contentOffset.Bottom );
+
+	mSyncingGeometry = true;
+	setPixelsSize( size );
+	mSyncingGeometry = false;
+	updateChildGeometry();
+}
+
+void UIHTMLInput::updateChildGeometry() {
+	if ( !mChildWidget || mSyncingGeometry )
+		return;
+
+	const Rectf contentOffset = getPixelsContentOffset();
+	const Sizef contentSize(
+		eemax( 0.f, getPixelsSize().getWidth() - contentOffset.Left - contentOffset.Right ),
+		eemax( 0.f, getPixelsSize().getHeight() - contentOffset.Top - contentOffset.Bottom ) );
+	mSyncingGeometry = true;
+	mChildWidget->setPixelsPosition( contentOffset.Left, contentOffset.Top );
+	if ( contentSize.getWidth() > 0 && contentSize.getHeight() > 0 )
+		mChildWidget->setPixelsSize( contentSize );
+	mSyncingGeometry = false;
 }
 
 void UIHTMLInput::syncCheckedState() {
@@ -227,6 +395,12 @@ String UIHTMLInput::getFormValue() const {
 
 void UIHTMLInput::onSizeChange() {
 	UIHTMLWidget::onSizeChange();
+	updateChildGeometry();
+}
+
+void UIHTMLInput::onPaddingChange() {
+	UIHTMLWidget::onPaddingChange();
+	updateHostGeometry();
 }
 
 }} // namespace EE::UI

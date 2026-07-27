@@ -44,8 +44,9 @@ enum UIFlag : Int64 {
 	UI_HIGHLIGHT = ( 1 << 28 ),
 	UI_PARENT_ATTRIBUTE_CHANGED = ( 1 << 29 ),
 	UI_LOADS_ITS_CHILDREN = ( 1 << 30 ),
-	UI_HTML_ELEMENT = ( 1 << 31 ),
+	UI_HTML_ELEMENT = ( 1ULL << 31 ),
 	UI_CREATING_NODE = ( 1ULL << 32 ),
+	UI_IGNORE_GLOBAL_CSS = ( 1ULL << 33 ),
 };
 
 enum UINodeType {

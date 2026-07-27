@@ -27,6 +27,8 @@ class EE_API UIHTMLInput : public UIHTMLWidget {
 
 	virtual Float getMaxIntrinsicWidth() const;
 
+	virtual void updateLayout();
+
 	const std::string& getInputType() const;
 
 	void setInputType( const std::string& type );
@@ -38,14 +40,26 @@ class EE_API UIHTMLInput : public UIHTMLWidget {
   protected:
 	std::string mInputType{ "text" };
 	UIWidget* mChildWidget{ nullptr };
-	std::map<PropertyId, StyleSheetProperty> mProperties;
+	std::map<PropertyId, StyleSheetProperty> mImplementationProperties;
 	String mValue;
 	bool mChecked{ false };
+	bool mSyncingGeometry{ false };
+	bool mHiddenByType{ false };
+	bool mVisibleBeforeHidden{ true };
+	bool mEnabledBeforeHidden{ true };
+	CSSDisplay mDisplayBeforeHidden{ CSSDisplay::InlineBlock };
 
 	void createChildWidget();
+	void configureChildWidget();
+	void applyImplementationProperty( const StyleSheetProperty& property );
+	void syncImplementationState();
+	void syncStateFromImplementation();
+	void updateHostGeometry();
+	void updateChildGeometry();
 	void syncCheckedState();
 
 	virtual void onSizeChange();
+	virtual void onPaddingChange();
 };
 
 }} // namespace EE::UI

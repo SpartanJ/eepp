@@ -1467,6 +1467,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 UTEST( UIHTMLInput, sizeAttribute ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->combineStyleSheet( "* { background-color: #fedcba; border-width: 2px; }" );
 	sceneNode->loadLayoutFromString( R"html(
 		<vbox layout_width="wrap_content" layout_height="wrap_content">
 			<input id="i1" size="10" />
@@ -1965,6 +1966,77 @@ UTEST( UIHTML, FormControlsDefaultInlineBlock ) {
 	EXPECT_LT( i1->getPixelsPosition().x, i2->getPixelsPosition().x );
 	EXPECT_EQ( t1->getPixelsPosition().y, t2->getPixelsPosition().y );
 	EXPECT_LT( t1->getPixelsPosition().x, t2->getPixelsPosition().x );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLInput, hostOwnsCSSBox ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<vbox layout_width="wrap_content" layout_height="wrap_content">
+			<input id="styled_input" type="text"
+				style="background-color: #123456; border: 3px solid #abcdef; padding: 5px;" />
+		</vbox>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* input = sceneNode->getRoot()->find( "styled_input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( input != nullptr );
+	auto* implementation = input->getChildWidget();
+	ASSERT_TRUE( implementation != nullptr );
+
+	EXPECT_TRUE( input->hasBackground() );
+	EXPECT_TRUE( input->hasBorder() );
+	EXPECT_FALSE( implementation->hasBackground() );
+	EXPECT_FALSE( implementation->hasBorder() );
+	EXPECT_TRUE( 0 == ( implementation->getFlags() & UI_HTML_ELEMENT ) );
+	EXPECT_NEAR( input->getPixelsPadding().Left, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Top, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Right, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Bottom, 5.f, 0.01f );
+	EXPECT_TRUE( implementation->getPadding() == Rectf() );
+	EXPECT_NEAR( implementation->getPixelsPosition().x, 8.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsPosition().y, 8.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsSize().getWidth(),
+				 input->getPixelsSize().getWidth() - 16.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsSize().getHeight(),
+				 input->getPixelsSize().getHeight() - 16.f, 0.01f );
+
+	input->setInputType( "email" );
+	EXPECT_STDSTREQ( input->getInputType(), "email" );
+	EXPECT_TRUE( input->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLInput, dynamicTypeKeepsHostAndState ) {
+	init_ui_test();
+	auto* input = UIHTMLInput::New();
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	static_cast<UITextInput*>( input->getChildWidget() )->setText( "edited value" );
+
+	UIHTMLInput* originalHost = input;
+	input->setInputType( "checkbox" );
+	EXPECT_EQ( input, originalHost );
+	EXPECT_TRUE( input->getChildWidget()->isType( UI_TYPE_CHECKBOX ) );
+
+	input->setInputType( "hidden" );
+	EXPECT_FALSE( input->isVisible() );
+	EXPECT_FALSE( input->isEnabled() );
+	EXPECT_EQ( input->getDisplay(), CSSDisplay::None );
+
+	input->setInputType( "text" );
+	EXPECT_EQ( input, originalHost );
+	EXPECT_TRUE( input->isVisible() );
+	EXPECT_TRUE( input->isEnabled() );
+	EXPECT_EQ( input->getDisplay(), CSSDisplay::InlineBlock );
+	ASSERT_TRUE( input->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
+	EXPECT_TRUE( static_cast<UITextInput*>( input->getChildWidget() )->getText() ==
+				 "edited value" );
+
+	input->setInputType( "unsupported-type" );
+	EXPECT_STDSTREQ( input->getInputType(), "text" );
 
 	Engine::destroySingleton();
 }
@@ -4885,6 +4957,26 @@ UTEST( UIHTML, FlexMediaQueriesLayout ) {
 	// essay-nav should have visible size
 	EXPECT_GT( essayNavWidget->getPixelsSize().getHeight(), 10.f );
 	EXPECT_GT( essayNavWidget->getPixelsSize().getWidth(), 10.f );
+
+	// Valid input types that use the text implementation must retain their state for attribute
+	// selectors. Collapsing "email" to "text" loses this rule and exposes the white UA default.
+	auto* newsletter = bodyWidget->findByClass( "newsletter-form" );
+	ASSERT_TRUE( newsletter != nullptr );
+	auto* emailInput = newsletter->findByTag( "input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( emailInput != nullptr );
+	EXPECT_STDSTREQ( emailInput->getInputType(), "email" );
+	EXPECT_TRUE( emailInput->getBackgroundColor() == Color( "#1C1917" ) );
+	auto* emailImplementation = emailInput->getChildWidget();
+	ASSERT_TRUE( emailImplementation != nullptr );
+	const Rectf emailContentOffset = emailInput->getPixelsContentOffset();
+	EXPECT_NEAR( emailImplementation->getPixelsSize().getWidth(),
+				 emailInput->getPixelsSize().getWidth() - emailContentOffset.Left -
+					 emailContentOffset.Right,
+				 0.01f );
+	EXPECT_NEAR( emailImplementation->getPixelsSize().getHeight(),
+				 emailInput->getPixelsSize().getHeight() - emailContentOffset.Top -
+					 emailContentOffset.Bottom,
+				 0.01f );
 
 	// The essay-nav link contains two spans: label and title
 	// They should stack vertically (flex-direction: column on the <a>)
