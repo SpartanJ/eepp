@@ -8,7 +8,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -837,9 +837,9 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	bool fileExists = FileSystem::fileExists( path );
 
-	if ( !fileExists && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !fileExists && PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
-		Pack* pack = PackManager::instance()->exists( pathFix );
+		Pack* pack = PackRegistry::instance()->exists( pathFix );
 		if ( NULL != pack ) {
 			changeFilePath( pathFix, false );
 			return loadFromPack( pack, pathFix );

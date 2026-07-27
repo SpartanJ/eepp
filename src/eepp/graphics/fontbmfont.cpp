@@ -7,7 +7,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -57,9 +57,9 @@ bool FontBMFont::loadFromFile( const std::string& filename ) {
 		mFilePath = FileSystem::fileRemoveFileName( filename );
 		IOStreamFile stream( filename );
 		return loadFromStream( stream );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			Log::info( "Loading font from pack: %s", path.c_str() );

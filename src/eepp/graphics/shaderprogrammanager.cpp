@@ -1,4 +1,4 @@
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 
 namespace EE { namespace Graphics {
 

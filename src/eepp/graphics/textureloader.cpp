@@ -9,7 +9,7 @@
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/window/engine.hpp>
 using namespace EE::Window;
@@ -169,8 +169,8 @@ void TextureLoader::loadFromFile() {
 			mImgHeight = image.getHeight();
 			mChannels = image.getChannels();
 		}
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
-		mPack = PackManager::instance()->exists( mFilepath );
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
+		mPack = PackRegistry::instance()->exists( mFilepath );
 
 		if ( NULL != mPack ) {
 			mLoadType = TEX_LT_PACK;

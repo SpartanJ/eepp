@@ -8,7 +8,7 @@
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
@@ -16,7 +16,7 @@
 #include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/graphics/textlayout.hpp>
@@ -24,7 +24,7 @@
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/sys.hpp>

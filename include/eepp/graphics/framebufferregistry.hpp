@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICSCFRAMEBUFFERMANAGER_HPP
-#define EE_GRAPHICSCFRAMEBUFFERMANAGER_HPP
+#ifndef EE_GRAPHICSCFRAMEBUFFERREGISTRY_HPP
+#define EE_GRAPHICSCFRAMEBUFFERREGISTRY_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/framebuffer.hpp>

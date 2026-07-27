@@ -4251,8 +4251,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	if ( fontPath.empty() ||
-		 ( !FileSystem::fileExists( fontPath ) && !PackManager::instance()->exists( fontPath ) ) ) {
+	if ( fontPath.empty() || ( !FileSystem::fileExists( fontPath ) &&
+							   !PackRegistry::instance()->exists( fontPath ) ) ) {
 #else
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
 #endif

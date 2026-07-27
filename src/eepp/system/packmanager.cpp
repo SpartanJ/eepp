@@ -1,16 +1,16 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace System {
 
-SINGLETON_DECLARE_IMPLEMENTATION( PackManager )
+SINGLETON_DECLARE_IMPLEMENTATION( PackRegistry )
 
-PackManager::PackManager() : mFallback( true ) {}
+PackRegistry::PackRegistry() : mFallback( true ) {}
 
-PackManager::~PackManager() {}
+PackRegistry::~PackRegistry() {}
 
-Pack* PackManager::exists( std::string& path ) {
+Pack* PackRegistry::exists( std::string& path ) {
 	std::string tpath( path );
 
 	FileSystem::filePathRemoveProcessPath( tpath );
@@ -28,7 +28,7 @@ Pack* PackManager::exists( std::string& path ) {
 	return NULL;
 }
 
-Pack* PackManager::getPackByPath( std::string path ) {
+Pack* PackRegistry::getPackByPath( std::string path ) {
 	for ( auto& pack : mResources ) {
 		if ( path == pack->getPackPath() ) {
 			return pack;
@@ -38,11 +38,11 @@ Pack* PackManager::getPackByPath( std::string path ) {
 	return NULL;
 }
 
-const bool& PackManager::isFallbackToPacksActive() const {
+const bool& PackRegistry::isFallbackToPacksActive() const {
 	return mFallback;
 }
 
-void PackManager::setFallbackToPacks( const bool& fallback ) {
+void PackRegistry::setFallbackToPacks( const bool& fallback ) {
 	mFallback = fallback;
 }
 

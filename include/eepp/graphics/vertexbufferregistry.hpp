@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICSCVERTEXBUFFERMANAGER_HPP
-#define EE_GRAPHICSCVERTEXBUFFERMANAGER_HPP
+#ifndef EE_GRAPHICSCVERTEXBUFFERREGISTRY_HPP
+#define EE_GRAPHICSCVERTEXBUFFERREGISTRY_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>

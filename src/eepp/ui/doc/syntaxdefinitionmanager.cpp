@@ -4,7 +4,7 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
 #include <eepp/ui/doc/languages/cpp.hpp>
@@ -1150,10 +1150,10 @@ bool SyntaxDefinitionManager::loadFromFile( const std::string& fpath ) {
 		IOStreamFile IOS( fpath );
 
 		return loadFromStream( IOS );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tgPath( fpath );
 
-		Pack* tPack = PackManager::instance()->exists( tgPath );
+		Pack* tPack = PackRegistry::instance()->exists( tgPath );
 
 		if ( NULL != tPack ) {
 			return loadFromPack( tPack, tgPath );

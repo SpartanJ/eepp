@@ -4,7 +4,7 @@
 
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>

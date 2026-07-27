@@ -1,4 +1,4 @@
-#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 

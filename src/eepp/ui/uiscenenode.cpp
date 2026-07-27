@@ -10,7 +10,7 @@
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
@@ -892,9 +892,9 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 			FileSystem::fileGet( layoutPath, data );
 			Log::error( "Error context: %s", getErrorContext( result.offset, data ) );
 		}
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( layoutPath );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			return loadLayoutFromPack( pack, path, parent );

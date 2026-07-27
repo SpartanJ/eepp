@@ -4,7 +4,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>
 
 namespace eterm { namespace Terminal {
@@ -45,9 +45,9 @@ std::vector<TerminalColorScheme> TerminalColorScheme::loadFromStream( IOStream& 
 }
 
 std::vector<TerminalColorScheme> TerminalColorScheme::loadFromFile( const std::string& path ) {
-	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !FileSystem::fileExists( path ) && PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
-		Pack* pack = PackManager::instance()->exists( pathFix );
+		Pack* pack = PackRegistry::instance()->exists( pathFix );
 		if ( NULL != pack ) {
 			return loadFromPack( pack, pathFix );
 		}

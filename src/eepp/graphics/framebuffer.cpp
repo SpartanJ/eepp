@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/framebufferfbo.hpp>
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>

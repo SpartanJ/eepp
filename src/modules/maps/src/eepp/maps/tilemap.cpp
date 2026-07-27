@@ -16,7 +16,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 using namespace EE::Graphics;
 
@@ -1092,9 +1092,9 @@ bool TileMap::loadFromFile( const std::string& path ) {
 		IOStreamFile IOS( mPath );
 
 		return loadFromStream( IOS );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( path );
-		Pack* tPack = PackManager::instance()->exists( tPath );
+		Pack* tPack = PackRegistry::instance()->exists( tPath );
 
 		if ( NULL != tPack ) {
 			return loadFromPack( tPack, tPath );

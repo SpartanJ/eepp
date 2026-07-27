@@ -11,7 +11,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/window/engine.hpp>
 using namespace EE::Window;
 
@@ -374,9 +374,9 @@ static bool checkHasColrTable( const FT_Face& face ) {
 
 bool FontTrueType::loadFromFile( const std::string& filename, Uint32 faceIndex ) {
 	if ( !FileSystem::fileExists( filename ) &&
-		 PackManager::instance()->isFallbackToPacksActive() ) {
+		 PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			Log::info( "Loading font from pack: %s", path.c_str() );

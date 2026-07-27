@@ -2,7 +2,7 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/system/log.hpp>
 
 namespace EE { namespace Graphics {

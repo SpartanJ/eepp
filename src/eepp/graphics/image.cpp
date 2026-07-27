@@ -8,7 +8,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -532,9 +532,9 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 		*height = info->height;
 		*channels = info->channels;
 		res = true;
-	} else if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( !res && PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string npath( path );
-		Pack* tPack = PackManager::instance()->exists( npath );
+		Pack* tPack = PackRegistry::instance()->exists( npath );
 
 		if ( NULL != tPack ) {
 			ScopedBuffer buffer;
@@ -744,8 +744,8 @@ Image::Image( std::string Path, const unsigned int& forceChannels,
 		ScopedBuffer buf;
 		FileSystem::fileGet( Path, buf );
 		webpLoad( buf.get(), buf.size() );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() &&
-				NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() &&
+				NULL != ( tPack = PackRegistry::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
 	} else {
 		Log::error( "Failed to load image %s. Reason: %s", Path.c_str(), stbi_failure_reason() );

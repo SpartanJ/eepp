@@ -28,7 +28,7 @@
 #include <eepp/system/md5.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/pak.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/patternmatcher.hpp>

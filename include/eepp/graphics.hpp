@@ -18,7 +18,7 @@
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/framebuffer.hpp>
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/image.hpp>
@@ -50,7 +50,7 @@
 #include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/graphics/shader.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/shapedglyph.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statefuldrawable.hpp>
@@ -72,8 +72,8 @@
 #include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/graphics/vertexbufferhelper.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/graphics/vertexbufferogl.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 #include <eepp/graphics/vertexbuffervbo.hpp>
 #include <eepp/graphics/view.hpp>
 

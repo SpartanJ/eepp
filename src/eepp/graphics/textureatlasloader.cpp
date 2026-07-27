@@ -8,7 +8,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/window/engine.hpp>
 #include <iterator>
 
@@ -208,10 +208,10 @@ void TextureAtlasLoader::loadFromFile( const std::string& TextureAtlasPath ) {
 		IOStreamFile IOS( mTextureAtlasPath );
 
 		loadFromStream( IOS );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tgPath( mTextureAtlasPath );
 
-		Pack* tPack = PackManager::instance()->exists( tgPath );
+		Pack* tPack = PackRegistry::instance()->exists( tgPath );
 
 		if ( NULL != tPack ) {
 			loadFromPack( tPack, tgPath );

@@ -1,7 +1,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/graphics/vertexbufferogl.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 #include <eepp/graphics/vertexbuffervbo.hpp>
 using namespace EE::Graphics::Private;
 

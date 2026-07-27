@@ -8,7 +8,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -44,9 +44,9 @@ bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
 	if ( !FileSystem::fileExists( filename ) &&
-		 PackManager::instance()->isFallbackToPacksActive() ) {
+		 PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			return loadFromPack( pack, path );
@@ -275,8 +275,8 @@ std::string StyleSheetParser::importCSS( std::string path,
 		importedList.push_back( path );
 		return std::string( reinterpret_cast<const char*>( buffer.get() ) );
 	} else {
-		if ( PackManager::instance()->isFallbackToPacksActive() ) {
-			Pack* pack = PackManager::instance()->exists( path );
+		if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
+			Pack* pack = PackRegistry::instance()->exists( path );
 
 			if ( std::find( importedList.begin(), importedList.end(), path ) ==
 				 importedList.end() ) {

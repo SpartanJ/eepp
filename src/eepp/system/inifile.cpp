@@ -6,7 +6,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 #define MAX_KEYNAME 128
 #define MAX_VALUENAME 128
@@ -72,10 +72,10 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 	if ( FileSystem::fileExists( iniPath ) ) {
 		IOStreamFile f( mPath );
 		return loadFromStream( f );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( iniPath );
 
-		Pack* tPack = PackManager::instance()->exists( tPath );
+		Pack* tPack = PackRegistry::instance()->exists( tPath );
 
 		if ( NULL != tPack ) {
 			return loadFromPack( tPack, tPath );

@@ -7,14 +7,14 @@
 
 namespace EE { namespace System {
 
-/** @brief The Pack Manager keep track of the instantiated Packs.
+/** @brief The Pack Registry keep track of the instantiated Packs.
 	It's used to find files from any open pack.
 */
-class EE_API PackManager : protected Container<Pack> {
-	SINGLETON_DECLARE_HEADERS( PackManager )
+class EE_API PackRegistry : protected Container<Pack> {
+	SINGLETON_DECLARE_HEADERS( PackRegistry )
 
   public:
-	virtual ~PackManager();
+	virtual ~PackRegistry();
 
 	/** @brief Searches for the filepath in the packs, if the file is found it will return the pack
 	 *that belongs to. *	@return The pack where the file exists. If the file is not found,
@@ -45,7 +45,7 @@ class EE_API PackManager : protected Container<Pack> {
 
 	bool mFallback;
 
-	PackManager();
+	PackRegistry();
 };
 
 }} // namespace EE::System

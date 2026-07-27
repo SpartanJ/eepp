@@ -7,7 +7,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 
@@ -228,9 +228,9 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 }
 
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromFile( const std::string& path ) {
-	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !FileSystem::fileExists( path ) && PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
-		Pack* pack = PackManager::instance()->exists( pathFix );
+		Pack* pack = PackRegistry::instance()->exists( pathFix );
 		if ( NULL != pack ) {
 			return loadFromPack( pack, pathFix );
 		}

@@ -1,19 +1,19 @@
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
@@ -124,7 +124,7 @@ Engine::~Engine() {
 
 	Graphics::Renderer::destroySingleton();
 
-	PackManager::destroySingleton();
+	PackRegistry::destroySingleton();
 
 #ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();

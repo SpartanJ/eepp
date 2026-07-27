@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICSSHADERPROGRAMANAGER_HPP
-#define EE_GRAPHICSSHADERPROGRAMANAGER_HPP
+#ifndef EE_GRAPHICSSHADERPROGRAREGISTRY_HPP
+#define EE_GRAPHICSSHADERPROGRAREGISTRY_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>

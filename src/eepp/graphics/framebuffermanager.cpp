@@ -1,4 +1,4 @@
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
