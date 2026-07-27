@@ -36,3 +36,17 @@ Run the following command, replacing `<os_name>` with the correct environment:
 *   Linux: `make -C make/linux -j$(nproc)`
 *   macOS: `make -C make/macosx -j$(sysctl -n hw.ncpu)`
 *   Windows: `make -C make/windows -j%NUMBER_OF_PROCESSORS%`
+
+## Running GUI Examples Under Xvfb
+
+Xvfb does not support the multisampled OpenGL contexts requested by some eepp examples. In
+particular, `src/examples/ui_html/ui_html.cpp` normally requests 4x MSAA. Launching that binary
+through `xvfb-run` or `projects/scripts/xvfb-run-eepp` can therefore fail immediately with
+`Could not create window, exiting`, even though the application works on a real display.
+
+*   Do not treat this window-creation failure as evidence of a bug in the feature being tested.
+*   Unit tests normally request a non-multisampled context and are unaffected.
+*   For a temporary headless diagnostic of an example, make the diagnostic-only execution path
+    request 0 MSAA, run it through `projects/scripts/xvfb-run-eepp`, and revert the temporary
+    example instrumentation afterward.
+*   Never weaken the example's normal graphics configuration merely to accommodate Xvfb.

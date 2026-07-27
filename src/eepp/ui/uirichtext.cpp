@@ -171,6 +171,18 @@ bool UIHTMLHtml::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Width:
 		case PropertyId::Height:
 			return false; // Ignore width and height set from CSS
+		case PropertyId::MinHeight: {
+			Float containingBlockHeight =
+				getUISceneNode() ? getUISceneNode()->getLayoutViewportPixelsSize().getHeight() : 0;
+			if ( containingBlockHeight <= 0 && getParent() )
+				containingBlockHeight =
+					getParent()->isUINode()
+						? getParent()->asType<UINode>()->getPixelsSize().getHeight()
+						: getParent()->getSize().getHeight();
+			setMinHeight(
+				convertLengthAsDp( attribute.asStyleSheetLength(), containingBlockHeight ) );
+			return true;
+		}
 		default:
 			break;
 	}
@@ -274,23 +286,27 @@ void UIHTMLBody::updateLayout() {
 }
 
 void UIHTMLBody::setDocumentViewportMinHeight( const Float& height ) {
-	if ( mDocumentViewportMinHeight == height )
-		return;
 	mDocumentViewportMinHeight = height;
+	// The local min-height can be percentage-based and therefore change when the html
+	// containing block is resized even if the viewport minimum itself did not change.
 	updateDocumentMinHeight();
-}
-
-void UIHTMLBody::setDocumentCanvasMinHeight( const Float& height ) {
-	setDocumentContentMinHeight( height );
 }
 
 Float UIHTMLBody::getLocalMinHeight() const {
 	if ( !getParent() )
 		return 0;
 
-	Float parentHeight = getParent()->isUINode()
-							 ? getParent()->asType<UINode>()->getPixelsSize().getHeight()
-							 : getParent()->getSize().getHeight();
+	Float parentHeight;
+	if ( getParent()->isType( UI_TYPE_HTML_HTML ) && getUISceneNode() &&
+		 getUISceneNode()->getLayoutViewportPixelsSize().getHeight() > 0 ) {
+		// The root body's containing block is the initial containing block (the viewport),
+		// not an html box that may already include scrollable overflow.
+		parentHeight = getUISceneNode()->getLayoutViewportPixelsSize().getHeight();
+	} else {
+		parentHeight = getParent()->isUINode()
+						   ? getParent()->asType<UINode>()->getPixelsSize().getHeight()
+						   : getParent()->getSize().getHeight();
+	}
 
 	return convertLengthAsDp( mMinHeightLocal, parentHeight );
 }

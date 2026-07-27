@@ -1,6 +1,23 @@
 require "premake.export-compile-commands.export-compile-commands"
 require "premake.premake-cmake.cmake"
-require "premake.premake-ninja.ninja"
+
+local function premake_is_previous_to_beta8()
+	if _PREMAKE_VERSION:match("^5%.0%.0[%.%-]alpha%d+$") then
+		return true
+	end
+
+	local beta = _PREMAKE_VERSION:match("^5%.0%.0[%.%-]beta(%d+)$")
+	if beta then
+		return tonumber(beta) < 8
+	end
+
+	return false
+end
+
+-- We will disable this later, since config names are different (local ninja use old naming convention with config=debug or config=release while the new one uses the premake5 convention config=debug_x86_64 and config=release_x86_64)
+if true or premake_is_previous_to_beta8() then
+	require "premake.premake-ninja.ninja"
+end
 
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }

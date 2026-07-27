@@ -1,3 +1,4 @@
+#include <cctype>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
@@ -1168,7 +1169,31 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		for ( size_t layerIdx = 0; layerIdx < layers.size(); ++layerIdx ) {
 			std::string layerVal = String::trim( layers[layerIdx] );
 
-			std::vector<std::string> tokens = String::split( layerVal, " ", "", "(" );
+			// Whitespace around the background position/size slash is optional. Tokenize it
+			// without splitting slashes inside functional notation such as url() or var().
+			std::vector<std::string> tokens;
+			std::string token;
+			int parenthesisDepth = 0;
+			for ( const char ch : layerVal ) {
+				if ( ch == '(' )
+					++parenthesisDepth;
+				else if ( ch == ')' && parenthesisDepth > 0 )
+					--parenthesisDepth;
+
+				if ( parenthesisDepth == 0 &&
+					 ( std::isspace( static_cast<unsigned char>( ch ) ) || ch == '/' ) ) {
+					if ( !token.empty() ) {
+						tokens.emplace_back( std::move( token ) );
+						token.clear();
+					}
+					if ( ch == '/' )
+						tokens.emplace_back( "/" );
+				} else {
+					token += ch;
+				}
+			}
+			if ( !token.empty() )
+				tokens.emplace_back( std::move( token ) );
 			std::string positionStr;
 			std::string sizeStr;
 			bool hasSlash{ false };
@@ -1196,6 +1221,11 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 						secondBox = tok;
 				} else if ( tok == "/" ) {
 					hasSlash = true;
+				} else if ( hasSlash && String::startsWith( tok, "var(" ) && !sizeStr.empty() ) {
+					// eepp resolves custom properties after expanding shorthands. Saved browser
+					// pages commonly put an image var after an explicit size, for example
+					// `center / 100% var(--image)`.
+					imageValues.push_back( tok );
 				} else if ( hasSlash && !tok.empty() && tok != "/" ) {
 					sizeStr += tok + " ";
 				} else if ( isPositionKeyword( tok ) || String::isNumber( tok[0] ) ||

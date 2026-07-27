@@ -78,45 +78,11 @@ static void expandWidgetContentExtent( UIWidget* widget, const Vector2f& offset,
 }
 
 static bool syncWidgetDocumentPixelsSize( UIWidget* widget, const Sizef& size ) {
-	if ( !widget || widget->isClosing() )
+	if ( !widget || widget->isClosing() || size == widget->getPixelsSize() )
 		return false;
 
-	Sizef next( size.getWidth(), size.getHeight() );
-	if ( next == widget->getPixelsSize() )
-		return false;
-
-	widget->setPixelsSize( next );
+	widget->setPixelsSize( size );
 	return true;
-}
-
-static Float getDocumentBodyPixelsHeight( UIWidget* body, const Sizef& extent ) {
-	return extent.getHeight();
-}
-
-static void syncDocumentBoxesPixelsSize( UIWidget* container, const Sizef& extent ) {
-	if ( !container || extent == Sizef::Zero )
-		return;
-
-	UIWidget* html = nullptr;
-	UIWidget* body = nullptr;
-	if ( auto htmlNode = container->findByType( UI_TYPE_HTML_HTML ) ) {
-		if ( htmlNode->isWidget() )
-			html = htmlNode->asType<UIWidget>();
-	}
-	if ( auto bodyNode = container->findByType( UI_TYPE_HTML_BODY ) ) {
-		if ( bodyNode->isWidget() )
-			body = bodyNode->asType<UIWidget>();
-	}
-
-	syncWidgetDocumentPixelsSize( container, extent );
-	syncWidgetDocumentPixelsSize( html, extent );
-	if ( body ) {
-		if ( body->isType( UI_TYPE_HTML_BODY ) )
-			body->asType<UIHTMLBody>()->setDocumentCanvasMinHeight(
-				PixelDensity::pxToDp( extent.getHeight() ) );
-		syncWidgetDocumentPixelsSize(
-			body, { extent.getWidth(), getDocumentBodyPixelsHeight( body, extent ) } );
-	}
 }
 
 static Sizef computeDocumentContentExtent( UIWidget* container, const Sizef& viewport ) {
@@ -250,9 +216,9 @@ void UIWebView::updateHTMLMinHeight( UIHTMLHtml* html, UIHTMLBody* body ) {
 	const Rectf bodyMargin = body->getLayoutPixelsMargin();
 	const Float bodyMarginHeight = PixelDensity::pxToDp( bodyMargin.Top + bodyMargin.Bottom );
 	html->setMinHeight( h );
-	html->setPixelsSize( viewport );
 	body->setPixelsSize( { viewport.getWidth(), body->getPixelsSize().getHeight() } );
 	body->setDocumentViewportMinHeight( eemax( 0.f, h - bodyMarginHeight ) );
+	html->setPixelsSize( viewport );
 }
 
 void UIWebView::onSceneChange() {
@@ -608,7 +574,7 @@ void UIWebView::updateDocumentMetricsIfNeeded() {
 			containerUpdate();
 			updateScroll();
 		}
-		syncDocumentBoxesPixelsSize( mDocContainer, extent );
+		syncWidgetDocumentPixelsSize( mDocContainer, extent );
 		return extentChanged;
 	};
 

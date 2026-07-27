@@ -2659,6 +2659,62 @@ UTEST( UIHTML, BodyViewportMinimumHeightUsesSceneViewport ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, DuckDuckGoHomepageAbsoluteContentDoesNotGrowBody ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "DuckDuckGo homepage body height", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	auto* vbox = sceneNode->loadLayoutFromString( R"xml(
+		<vbox layout_width="match_parent" layout_height="match_parent">
+			<hbox layout_width="match_parent" layout_height="wrap_content">
+				<PushButton lw="26dp" id="backbtn" text="Back" />
+				<PushButton lw="26dp" id="fwdbtn" text="Forward" />
+				<PushButton lw="26dp" id="refreshbtn" text="Refresh" />
+				<TextInput id="url_bar" layout_width="0" layout_weight="1" />
+			</hbox>
+			<WebView id="webview" layout_width="match_parent" layout_height="0"
+				layout_weight="1" />
+		</vbox>
+	)xml" );
+	ASSERT_TRUE( vbox != nullptr );
+	auto* webView = vbox->find( "webview" )->asType<UIWebView>();
+	ASSERT_TRUE( webView != nullptr );
+
+	auto* documentScene = webView->getDocumentSceneNode();
+	bool navigationCompleted = false;
+	webView->onNavigationCompleted(
+		[&navigationCompleted]( const URI& ) { navigationCompleted = true; } );
+	webView->loadURI( URI( "assets/html/ddg_html.html" ) );
+
+	for ( int i = 0; i < 300; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_TRUE( navigationCompleted );
+
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* content =
+		documentScene->getRoot()->find( "content_wrapper_homepage" )->asType<UIWidget>();
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( content != nullptr );
+	EXPECT_NEAR( body->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 2.f );
+	EXPECT_NEAR( webView->getDocumentContainer()->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 2.f );
+	EXPECT_NEAR( content->getPixelsPosition().y,
+				 documentScene->getLayoutViewportPixelsSize().getHeight() * 0.24f, 2.f );
+	EXPECT_LT( content->getPixelsPosition().y, body->getPixelsSize().getHeight() );
+	EXPECT_LT( content->getPixelsPosition().y + content->getPixelsSize().getHeight(),
+			   body->getPixelsSize().getHeight() );
+	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
+	EXPECT_FALSE( webView->getVerticalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, InlineBlock ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Inline Block Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -3666,6 +3722,28 @@ UTEST( UIHTML, ContactFormLayout ) {
 	EXPECT_GT( bodyWidget->getPixelsSize().getHeight(), 0 );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UIBackground, shorthandImageVariableAfterSize ) {
+	auto* specification = StyleSheetSpecification::instance();
+	const auto* shorthand = specification->getShorthand( "background" );
+	ASSERT_TRUE( shorthand != nullptr );
+
+	auto properties = shorthand->parse(
+		"no-repeat center/100% var(--sf-img-1), linear-gradient(transparent, transparent)" );
+	auto valueOf = [&properties]( const std::string& name ) -> std::string {
+		for ( const auto& property : properties ) {
+			if ( property.getName() == name )
+				return property.getValue();
+		}
+		return {};
+	};
+
+	EXPECT_STDSTREQ( valueOf( "background-image" ),
+					 "var(--sf-img-1),linear-gradient(transparent, transparent)" );
+	EXPECT_STDSTREQ( valueOf( "background-size" ), "100%,auto" );
+	EXPECT_STDSTREQ( valueOf( "background-position-x" ), "center,0%" );
+	EXPECT_STDSTREQ( valueOf( "background-position-y" ), "center,0%" );
 }
 
 UTEST( UIBackground, imageAtlasPositioning ) {

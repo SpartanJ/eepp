@@ -6,6 +6,7 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uilayoutermanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -1127,12 +1128,32 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	bool useBottom = mBottomEq != "auto";
 	bool useLeft = mLeftEq != "auto";
 	bool useRight = mRightEq != "auto";
+	auto resetAutoMarginUnlessBothInsetsApply = [this]( Float& marginValue, PropertyId property,
+														bool bothInsetsApply ) {
+		if ( bothInsetsApply || !getUIStyle() )
+			return;
+		const auto* marginProperty = getUIStyle()->getProperty( property );
+		if ( marginProperty && marginProperty->value() == "auto" )
+			marginValue = 0;
+	};
+	// CSS Positioned Layout: an auto margin on an axis only absorbs free space when both
+	// opposing insets participate in that axis's constraint equation. Otherwise it is zero.
+	resetAutoMarginUnlessBothInsetsApply( margin.Top, PropertyId::MarginTop, useTop && useBottom );
+	resetAutoMarginUnlessBothInsetsApply( margin.Bottom, PropertyId::MarginBottom,
+										  useTop && useBottom );
+	resetAutoMarginUnlessBothInsetsApply( margin.Left, PropertyId::MarginLeft,
+										  useLeft && useRight );
+	resetAutoMarginUnlessBothInsetsApply( margin.Right, PropertyId::MarginRight,
+										  useLeft && useRight );
 
 	// Per CSS §10.1: for absolutely positioned elements, percentage top/bottom
 	// resolves against the containing block's height. If the containing block
 	// does not have a definite height, the percentage computes to auto to
 	// prevent circular dependencies.
 	auto cbHasDefiniteHeight = [&]() {
+		if ( cb->isType( UI_TYPE_HTML_HTML ) && cb->getUISceneNode() &&
+			 cb->getUISceneNode()->getLayoutViewportPixelsSize().getHeight() > 0 )
+			return true;
 		if ( !cb->isLayout() )
 			return true;
 		auto* cbLayout = cb->asType<UILayout>();
