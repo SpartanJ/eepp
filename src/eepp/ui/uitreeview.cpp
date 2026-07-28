@@ -2,6 +2,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -288,9 +289,10 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			Float minIndent = 0;
 			if ( !mExpandersAsIcons && mExpandIcon && mContractIcon ) {
 				minIndent =
-					eemax(
-						mExpandIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth(),
-						mContractIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth() ) +
+					eemax( mExpandIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth(),
+						   mContractIcon->getSource( mExpanderIconSize )
+							   ->getPixelsSize()
+							   .getWidth() ) +
 					image->getLayoutPixelsMargin().Right;
 			}
 
@@ -300,7 +302,8 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				DrawablePtr drawable = icon ? icon->createDrawable( mExpanderIconSize ) : DrawablePtr{};
+				DrawablePtr drawable =
+					icon ? icon->createDrawable( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );
@@ -1001,6 +1004,53 @@ UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )
 
 UIWidget* UITreeViewCell::getExtraInnerWidget() const {
 	return mImage;
+}
+
+bool UITreeView::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::IndentWidth:
+			setIndentWidth( lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		case PropertyId::ExpanderIconSize:
+			setExpanderIconSize(
+				(size_t)lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		default:
+			return UIAbstractTableView::applyProperty( attribute );
+	}
+
+	return true;
+}
+
+std::string UITreeView::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::IndentWidth:
+			return String::fromFloat( getIndentWidth(), "px" );
+		case PropertyId::ExpanderIconSize:
+			return String::fromFloat( (Float)getExpanderIconSize(), "px" );
+		default:
+			return UIAbstractTableView::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UITreeView::getPropertiesImplemented() const {
+	auto props = UIAbstractTableView::getPropertiesImplemented();
+	props.insert( props.end(), { PropertyId::IndentWidth, PropertyId::ExpanderIconSize } );
+	return props;
+}
+
+void UITreeView::setTableFlags( Uint32 flags ) {
+	UIAbstractTableView::setTableFlags( flags );
+	setExpandersAsIcons( flags & TableFlagExpandersAsIcons );
+	setFocusOnSelection( flags & TableFlagFocusOnSelection );
+	setDisableCellClipping( flags & TableFlagDisableClipping );
 }
 
 }} // namespace EE::UI

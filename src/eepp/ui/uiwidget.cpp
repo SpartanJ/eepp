@@ -2302,14 +2302,14 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::LayoutWidth: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "match_parent" ) || String::iequals( val, "match-parent" ) ||
+				 String::iequals( val, "mp" ) ) {
 				setLayoutWidthPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+			} else if ( String::iequals( val, "wrap_content" ) ||
+						String::iequals( val, "wrap-content" ) || String::iequals( val, "wc" ) ) {
 				setLayoutWidthPolicy( SizePolicy::WrapContent );
-			} else if ( "fixed" == val ) {
+			} else if ( String::iequals( val, "fixed" ) ) {
 				setLayoutWidthPolicy( SizePolicy::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
@@ -2325,14 +2325,14 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::LayoutHeight: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "match_parent" ) || String::iequals( val, "match-parent" ) ||
+				 String::iequals( val, "mp" ) ) {
 				setLayoutHeightPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+			} else if ( String::iequals( val, "wrap_content" ) ||
+						String::iequals( val, "wrap-content" ) || String::iequals( val, "wc" ) ) {
 				setLayoutHeightPolicy( SizePolicy::WrapContent );
-			} else if ( "fixed" == val ) {
+			} else if ( String::iequals( val, "fixed" ) ) {
 				setLayoutHeightPolicy( SizePolicy::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
@@ -2374,9 +2374,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setClipType( UIClip::fromString( attribute.asString() ) );
 			break;
 		case PropertyId::Overflow: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-			if ( val == "hidden" || val == "auto" || val == "scroll" )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "hidden" ) || String::iequals( val, "auto" ) ||
+				 String::iequals( val, "scroll" ) )
 				setClipType( ClipType::ContentBox );
 			else
 				setClipType( ClipType::None );

@@ -700,7 +700,7 @@ TabWidget::container > ImageViewer > TextView {
 		<statusbar lw="mp" lh="wc" id="status_bar">
 			<PushButton class="status_but" id="status_locate_bar" text="@string(locate, Locate)" icon="icon(search-fuzzy, 11dp)" />
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 11dp)" />
-			<PushButton class="status_but" id="status_terminal_panel" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
+			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 11dp)"  />
 			<PushButton class="status_but" id="status_app_output" text="@string(app_output, App Output)" icon="icon(output, 11dp)"  />
 			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />

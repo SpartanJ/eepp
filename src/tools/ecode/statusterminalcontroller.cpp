@@ -51,7 +51,7 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 	if ( mContainer )
 		return mContainer;
 	static const auto XML = R"xml(
-		<hboxce id="terminal_panel" class="tab_widget_cont" lw="mp" lh="mp">
+		<hboxce id="terminal" class="tab_widget_cont" lw="mp" lh="mp">
 			<TabWidget id="terminal_panel_tab_widget" lw="0dp" lh="mp" lw8="1"
 					tabbar-hide-on-single-tab="true"
 					tabbar-allow-rearrange="true"

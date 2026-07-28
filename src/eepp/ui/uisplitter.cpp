@@ -123,18 +123,15 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::SplitterPartition:
 			setSplitPartition( StyleSheetLength( attribute.value() ) );
+			break;
 		case PropertyId::SplitterAlwaysShow:
 			setAlwaysShowSplitter( attribute.asBool() );
-		case PropertyId::Orientation: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UIOrientation::Horizontal );
-			else if ( "vertical" == val )
-				setOrientation( UIOrientation::Vertical );
 			break;
-		}
+		case PropertyId::Orientation:
+			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
+								? UIOrientation::Horizontal
+								: UIOrientation::Vertical );
+			break;
 		default:
 			return UILayout::applyProperty( attribute );
 	}

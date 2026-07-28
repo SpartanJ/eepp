@@ -1,5 +1,6 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -812,6 +813,14 @@ void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
 	buildRowHeader();
 }
 
+bool UIAbstractTableView::isRowHeaderVisible() const {
+	return mRowHeaderWidth > 0;
+}
+
+void UIAbstractTableView::setRowHeaderVisible( bool rowHeaderVisible ) {
+	setRowHeaderWidth( rowHeaderVisible ? PixelDensity::dpToPx( 30 ) : 0.f );
+}
+
 bool UIAbstractTableView::hasOnUpdateCellCb() const {
 	return mOnUpdateCellCb != nullptr;
 }
@@ -991,6 +1000,47 @@ bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::RowHeight:
 			setRowHeight( lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
 			break;
+		case PropertyId::IconSize:
+			setIconSize(
+				(size_t)lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		case PropertyId::SortIconSize:
+			setSortIconSize(
+				(size_t)lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		case PropertyId::MainColumn:
+			setMainColumn( attribute.asInt() );
+			break;
+		case PropertyId::RowHeaderWidth:
+			setRowHeaderWidth(
+				lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		case PropertyId::TableFlags: {
+			Uint32 flags = 0;
+			String::splitCb(
+				[&flags]( std::string_view token ) {
+					if ( String::iequals( token, "default" ) )
+						flags |= UITABLE_DEFAULT_FLAGS;
+					else if ( String::iequals( token, "headers" ) )
+						flags |= TableFlagHeaders;
+					else if ( String::iequals( token, "auto-expand" ) )
+						flags |= TableFlagAutoExpand;
+					else if ( String::iequals( token, "auto-columns" ) )
+						flags |= TableFlagAutoColumns;
+					else if ( String::iequals( token, "fit-columns" ) )
+						flags |= TableFlagFitColumns;
+					else if ( String::iequals( token, "single-click" ) )
+						flags |= TableFlagSingleClick;
+					else if ( String::iequals( token, "row-search" ) )
+						flags |= TableFlagRowSearch;
+					else if ( String::iequals( token, "row-header" ) )
+						flags |= TableFlagRowHeader;
+					return true;
+				},
+				attribute.getValue(), "|" );
+			setTableFlags( flags );
+			break;
+		}
 		default:
 			return UIAbstractView::applyProperty( attribute );
 	}
@@ -1006,6 +1056,41 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::RowHeight:
 			return String::fromFloat( getRowHeight(), "px" );
+		case PropertyId::IconSize:
+			return String::fromFloat( (Float)getIconSize(), "px" );
+		case PropertyId::SortIconSize:
+			return String::fromFloat( (Float)getSortIconSize(), "px" );
+		case PropertyId::MainColumn:
+			return String::toString( (Int64)getMainColumn() );
+		case PropertyId::RowHeaderWidth:
+			return String::fromFloat( getRowHeaderWidth(), "px" );
+		case PropertyId::TableFlags: {
+			Uint32 flags = mTableFlags;
+			std::string val;
+			if ( flags & TableFlagHeaders )
+				val += "headers|";
+			if ( flags & TableFlagAutoExpand )
+				val += "auto-expand|";
+			if ( flags & TableFlagAutoColumns )
+				val += "auto-columns|";
+			if ( flags & TableFlagFitColumns )
+				val += "fit-columns|";
+			if ( flags & TableFlagSingleClick )
+				val += "single-click|";
+			if ( flags & TableFlagRowSearch )
+				val += "row-search|";
+			if ( flags & TableFlagRowHeader )
+				val += "row-header|";
+			if ( flags & TableFlagExpandersAsIcons )
+				val += "expanders-as-icons|";
+			if ( flags & TableFlagFocusOnSelection )
+				val += "focus-on-selection|";
+			if ( flags & TableFlagDisableClipping )
+				val += "disable-clipping|";
+			if ( !val.empty() )
+				val.pop_back();
+			return val;
+		}
 		default:
 			return UIAbstractView::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -1013,7 +1098,9 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 
 std::vector<PropertyId> UIAbstractTableView::getPropertiesImplemented() const {
 	auto props = UIAbstractView::getPropertiesImplemented();
-	props.push_back( PropertyId::RowHeight );
+	props.insert( props.end(),
+				  { PropertyId::RowHeight, PropertyId::IconSize, PropertyId::SortIconSize,
+					PropertyId::MainColumn, PropertyId::RowHeaderWidth, PropertyId::TableFlags } );
 	return props;
 }
 
@@ -1073,6 +1160,21 @@ void UIAbstractTableView::setFitAllColumnsToWidget( bool fitAllColumnsToWidget )
 
 void UIAbstractTableView::recalculateColumnsWidth() {
 	createOrUpdateColumns( false );
+}
+
+Uint32 UIAbstractTableView::getTableFlags() const {
+	return mTableFlags;
+}
+
+void UIAbstractTableView::setTableFlags( Uint32 flags ) {
+	mTableFlags = flags;
+	setHeadersVisible( flags & TableFlagHeaders );
+	setAutoExpandOnSingleColumn( flags & TableFlagAutoExpand );
+	setAutoColumnsWidth( flags & TableFlagAutoColumns );
+	setFitAllColumnsToWidget( flags & TableFlagFitColumns );
+	setSingleClickNavigation( flags & TableFlagSingleClick );
+	setRowSearchByName( flags & TableFlagRowSearch );
+	setRowHeaderVisible( flags & TableFlagRowHeader );
 }
 
 UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) const {

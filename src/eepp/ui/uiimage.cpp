@@ -534,7 +534,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::Icon: {
-			std::string val = attribute.asString();
+			const std::string& val = attribute.getValue();
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
 			if ( iconF ) {
 				setDrawable(
@@ -547,15 +547,14 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::ScaleType: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-			if ( "expand" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "expand" ) )
 				setScaleType( UIScaleType::Expand );
-			} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
+			else if ( String::iequals( val, "fit-inside" ) ||
+					  String::iequals( val, "fit_inside" ) || String::iequals( val, "fitinside" ) )
 				setScaleType( UIScaleType::FitInside );
-			} else if ( "none" == val ) {
+			else if ( String::iequals( val, "none" ) )
 				setScaleType( UIScaleType::None );
-			}
 			break;
 		}
 		case PropertyId::Tint:

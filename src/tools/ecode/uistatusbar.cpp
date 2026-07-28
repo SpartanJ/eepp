@@ -136,7 +136,7 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 	} else if ( widget->getId() == "status_global_search_bar" ) {
 		mContext->getGlobalSearchController()->toggleGlobalSearchBar();
 		ret = 1;
-	} else if ( widget->getId() == "status_terminal_panel" ) {
+	} else if ( widget->getId() == "status_terminal" ) {
 		mContext->getStatusTerminalController()->toggle();
 		ret = 1;
 	} else if ( widget->getId() == "status_build_output" ) {

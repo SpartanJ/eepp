@@ -268,6 +268,17 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "selected-text", "" );
 	registerProperty( "scrollbar-style", "" );
 	registerProperty( "row-height", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "editable", "" ).setType( PropertyType::Bool );
+	registerProperty( "selection-type", "row" ).setType( PropertyType::String );
+	registerProperty( "selection-kind", "single" ).setType( PropertyType::String );
+	registerProperty( "icon-size", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "sort-icon-size", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "main-column", "0" ).setType( PropertyType::NumberInt );
+	registerProperty( "row-header-width", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "table-flags", "" ).addAlias( "tableflags" ).setType( PropertyType::String );
+	registerProperty( "table-model", "" ).setType( PropertyType::String );
+	registerProperty( "indent-width", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "expander-icon-size", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "vscroll-mode", "" );
 	registerProperty( "hscroll-mode", "" );
 

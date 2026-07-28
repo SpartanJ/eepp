@@ -20,6 +20,23 @@ namespace EE { namespace UI { namespace Abstract {
 
 class EE_API UIAbstractTableView : public UIAbstractView {
   public:
+	enum TableFlags : Uint32 {
+		TableFlagNone = 0,
+		TableFlagHeaders = ( 1 << 0 ),
+		TableFlagAutoExpand = ( 1 << 1 ),
+		TableFlagAutoColumns = ( 1 << 2 ),
+		TableFlagFitColumns = ( 1 << 3 ),
+		TableFlagSingleClick = ( 1 << 4 ),
+		TableFlagRowSearch = ( 1 << 5 ),
+		TableFlagRowHeader = ( 1 << 6 ),
+		TableFlagExpandersAsIcons = ( 1 << 7 ),
+		TableFlagFocusOnSelection = ( 1 << 8 ),
+		TableFlagDisableClipping = ( 1 << 9 ),
+	};
+
+	static const Uint32 UITABLE_DEFAULT_FLAGS =
+		TableFlagHeaders | TableFlagRowSearch | TableFlagFocusOnSelection;
+
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;
@@ -123,6 +140,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** Tries to make all columns visible in the widget content. */
 	void setFitAllColumnsToWidget( bool fitAllColumnsToWidget );
 
+	Uint32 getTableFlags() const;
+
+	virtual void setTableFlags( Uint32 flags );
+
 	void recalculateColumnsWidth();
 
 	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
@@ -188,6 +209,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::function<void( UITableCell*, Model* )> mOnUpdateCellCb;
 	std::function<void( UITableCell* )> mSetupCellCb;
 	Float mRowHeaderWidth{ 0 };
+	Uint32 mTableFlags{ UITABLE_DEFAULT_FLAGS };
 
 	virtual ~UIAbstractTableView();
 

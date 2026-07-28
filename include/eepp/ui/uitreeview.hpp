@@ -116,6 +116,15 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void clearViewMetadata();
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	virtual void setTableFlags( Uint32 flags );
+
   protected:
 	enum class IterationDecision {
 		Continue,

@@ -80,17 +80,16 @@ bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
 				tryUpdateLayout();
 			}
 			return true;
-		case PropertyId::TableLayout: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
+		case PropertyId::TableLayout:
 			if ( getLayouter() && mDisplay == CSSDisplay::Table ) {
 				static_cast<TableLayouter*>( getLayouter() )
-					->setTableLayout( val == "fixed" ? TableLayout::Fixed : TableLayout::Auto );
+					->setTableLayout( String::iequals( attribute.getValue(), "fixed" )
+										  ? TableLayout::Fixed
+										  : TableLayout::Auto );
 				invalidateIntrinsicSize();
 				tryUpdateLayout();
 			}
 			return true;
-		}
 		default:
 			break;
 	}

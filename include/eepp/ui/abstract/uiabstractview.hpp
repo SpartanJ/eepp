@@ -123,6 +123,13 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setSelectionKind( SelectionKind selectionKind );
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
   protected:
 	friend class EE::UI::Models::Model;
 

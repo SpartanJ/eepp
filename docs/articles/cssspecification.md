@@ -606,6 +606,16 @@ an element that accepts a drop of the dragged element.
 
 ---
 
+### editable
+
+Enable or disable editing on table and tree view cells.
+
+* Applicable to: EE::UI::UIAbstractView (TableView, TreeView)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### enabled
 
 Sets if the element is enabled
@@ -997,6 +1007,26 @@ Sets an icon to an element that support icons.
 
 ---
 
+### icon-size
+
+Sets the cell icon size in table and tree views.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: [length](#length-data-type)
+* Default value: `12dp`
+
+---
+
+### indent-width
+
+Sets the indentation width for each nesting level in a tree view.
+
+* Applicable to: EE::UI::UITreeView (TreeView)
+* Data Type: [length](#length-data-type)
+* Default value: `6dp`
+
+---
+
 ### indeterminate
 
 Enables/disables indeterminate mode for a loader. Indeterminate mode is used when the progress of
@@ -1221,6 +1251,16 @@ Enable or disable editing on code editor elements.
 * Applicable to: EE::UI::UICodeEditor (TextEdit)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
+
+---
+
+### main-column
+
+Sets the column index that should be prioritized to occupy as much space as possible when auto-columns or auto-expand is enabled.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: integer
+* Default value: `0`
 
 ---
 
@@ -1616,6 +1656,16 @@ will require the value only if [row-mode](#row-mode) is `size`.
 
 ---
 
+### row-header-width
+
+Sets the width of the row header (line number column) in table and tree views. When set to `0` the row header is hidden.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: [length](#length-data-type)
+* Default value: `0dp`
+
+---
+
 ### row-mode
 
 Sets the row mode of a grid layout.
@@ -1822,6 +1872,42 @@ Enables the selection state toggle on element click.
 
 ---
 
+### selection-kind
+
+Sets the selection kind for table and tree views.
+
+* Applicable to: EE::UI::UIAbstractView (TableView, TreeView)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `single`: Only one item can be selected at a time.
+  * `multiple`: Multiple items can be selected.
+* Default value: `single`
+
+---
+
+### selection-type
+
+Sets the selection type for table and tree views.
+
+* Applicable to: EE::UI::UIAbstractView (TableView, TreeView)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `row`: Selects entire rows.
+  * `cell`: Selects individual cells.
+* Default value: `row`
+
+---
+
+### sort-icon-size
+
+Sets the sort arrow icon size in table view column headers.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: [length](#length-data-type)
+* Default value: `20dp`
+
+---
+
 ### skin
 
 Sets the skin (a.k.a. decoration) to an element. Element skins are automatically applied if there's a specific skin for the element
@@ -1956,6 +2042,50 @@ Sets the tabs separation/distance between each other. Negative values are accept
 * Applicable to: EE::UI::UITabWidget (TabWidget)
 * Data Type: [length](#length-data-type)
 * Default value: `0dp`
+
+---
+
+### table-model
+
+Sets a predefined model for table and tree views. The value is the model name optionally followed by parameters in parentheses.
+
+* Applicable to: EE::UI::UIAbstractView (TableView, TreeView)
+* Data Type: [string](#string-data-type)
+* Value List:
+  * `filesystem(rootPath)`: Creates a file system model with the given root path. If no path is provided, the current working directory is used.
+  * `widgettree`: Creates a widget tree model of the current scene node.
+  * `diskdrives`: Creates a disk drives model listing available system drives.
+  * `cssproperties`: Creates a CSS properties model for the widget.
+* Default value: _No value_
+* Examples:
+  ```CSS
+  table-model: "filesystem(/home/user)";
+  table-model: "widgettree";
+  table-model: "diskdrives";
+  table-model: "cssproperties";
+  ```
+
+---
+
+### table-flags
+
+Sets boolean flags for table and tree views. Multiple flags can be set, separated by `|`.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView), EE::UI::UITreeView (TreeView)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `default`: Same as `headers|row-search|focus-on-selection`
+  * `headers`: Show column headers.
+  * `auto-expand`: Auto-expand single column to fill the widget width.
+  * `auto-columns`: Auto-size columns to content width.
+  * `fit-columns`: Fits all columns visible in the widget.
+  * `single-click`: Navigate on single click instead of double-click.
+  * `row-search`: Enables keyboard search by typing.
+  * `row-header`: Show row header (line numbers) column.
+  * `expanders-as-icons`: Use tree expander icons as the cell icon.
+  * `focus-on-selection`: Auto-focus the cell on selection.
+  * `disable-clipping`: Disable cell content clipping in tree views.
+* Default value: `default`
 
 ---
 

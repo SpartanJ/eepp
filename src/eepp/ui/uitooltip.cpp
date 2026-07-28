@@ -576,6 +576,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextTransform:
 			if ( !mUsingCustomStyling )
 				setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			break;
 		case PropertyId::Color:
 			if ( !mUsingCustomStyling )
 				setFontColor( attribute.asColor() );

@@ -606,16 +606,11 @@ bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Orientation: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UIOrientation::Horizontal );
-			else if ( "vertical" == val )
-				setOrientation( UIOrientation::Vertical );
+		case PropertyId::Orientation:
+			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
+								? UIOrientation::Horizontal
+								: UIOrientation::Vertical );
 			break;
-		}
 		case PropertyId::MinValue:
 			setMinValue( attribute.asFloat() );
 			break;

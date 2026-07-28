@@ -1075,22 +1075,22 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::VScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "auto" ) )
 				setVerticalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
+			else if ( String::iequals( val, "on" ) )
 				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
+			else if ( String::iequals( val, "off" ) )
 				setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::HScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "auto" ) )
 				setHorizontalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
+			else if ( String::iequals( val, "on" ) )
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
+			else if ( String::iequals( val, "off" ) )
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}

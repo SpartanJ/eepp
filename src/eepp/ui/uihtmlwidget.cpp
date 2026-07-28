@@ -860,12 +860,10 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setVisibility( CSSVisibilityHelper::fromString( attribute.asString() ) );
 			return true;
 		}
-		case PropertyId::Overflow: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-			mOverflowCreatesBlockFormattingContext = val != "visible";
+		case PropertyId::Overflow:
+			mOverflowCreatesBlockFormattingContext =
+				!String::iequals( attribute.getValue(), "visible" );
 			return UILayout::applyProperty( attribute );
-		}
 		case PropertyId::Width:
 		case PropertyId::Height:
 		case PropertyId::PaddingLeft:
