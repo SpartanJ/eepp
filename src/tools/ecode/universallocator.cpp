@@ -431,6 +431,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 }
 
 void UniversalLocator::hideLocateBar() {
+	++mLocatorModelGeneration;
 	mLocateBarLayout->setVisible( false );
 	mLocateTable->setVisible( false );
 	mApp->getStatusBar()->updateState();
@@ -535,6 +536,7 @@ void UniversalLocator::goToLine() {
 }
 
 bool UniversalLocator::isCommand( const std::string& filename ) {
+	Lock lock( mLocatorProvidersMutex );
 	const auto isLocator = [this]( const std::string& filename ) {
 		return std::find_if( mLocatorProviders.begin(), mLocatorProviders.end(),
 							 [&filename]( const LocatorProvider& provider ) {
@@ -546,6 +548,7 @@ bool UniversalLocator::isCommand( const std::string& filename ) {
 }
 
 std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( const String& txt ) {
+	Lock lock( mLocatorProvidersMutex );
 	for ( const auto& locator : mLocatorProviders )
 		if ( locator.matches( txt ) )
 			return locator;
@@ -554,6 +557,7 @@ std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( c
 
 bool UniversalLocator::isLocator( const String& txt ) {
 	if ( !txt.empty() ) {
+		Lock lock( mLocatorProvidersMutex );
 		for ( const auto& locator : mLocatorProviders )
 			if ( locator.matches( txt ) )
 				return true;
@@ -564,8 +568,26 @@ bool UniversalLocator::isLocator( const String& txt ) {
 bool UniversalLocator::tryLocator( const String& txt ) {
 	if ( txt.empty() )
 		return false;
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.switchFn( txt ) )
+	auto locator = getLocator( txt );
+	if ( locator ) {
+		if ( locator->modelFn ) {
+			String query( txt.substr( locator->triggerSize( txt ) ) );
+			query.trim();
+			const Uint64 generation = ++mLocatorModelGeneration;
+			locator->modelFn( query, [this, generation]( std::shared_ptr<Model> model ) {
+				mUISceneNode->runOnMainThread( [this, generation, model = std::move( model )] {
+					if ( generation != mLocatorModelGeneration || !mLocateBarLayout->isVisible() )
+						return;
+					mLocateTable->setModel( model );
+					if ( model && model->hasChildren() )
+						mLocateTable->getSelection().set( model->index( 0 ) );
+					mLocateTable->scrollToTop();
+					updateLocateBarSync();
+				} );
+			} );
+			return true;
+		}
+		if ( locator->switchFn && locator->switchFn( txt ) )
 			return true;
 	}
 	return false;
@@ -573,21 +595,47 @@ bool UniversalLocator::tryLocator( const String& txt ) {
 
 bool UniversalLocator::openLocator( const String& txt, const Variant& vName,
 									const ModelEvent* modelEvent ) {
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.openFn ) {
-			locator.openFn( vName, modelEvent );
-			return true;
-		}
+	auto locator = getLocator( txt );
+	if ( locator && locator->openFn ) {
+		locator->openFn( vName, modelEvent );
+		return true;
 	}
 	return false;
 }
 
 bool UniversalLocator::pressEnterLocator( const String& txt ) {
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.pressEnterFn && locator.pressEnterFn( txt ) )
-			return true;
-	}
+	auto locator = getLocator( txt );
+	if ( locator && locator->pressEnterFn && locator->pressEnterFn( txt ) )
+		return true;
 	return false;
+}
+
+Uint64 UniversalLocator::registerLocatorProvider( LocatorProvider provider ) {
+	if ( provider.symbol.empty() || ( !provider.switchFn && !provider.modelFn ) )
+		return 0;
+	Lock lock( mLocatorProvidersMutex );
+	if ( std::find_if( mLocatorProviders.begin(), mLocatorProviders.end(),
+					   [&provider]( const LocatorProvider& current ) {
+						   return current.symbol == provider.symbol;
+					   } ) != mLocatorProviders.end() )
+		return 0;
+	provider.id = ++mLastLocatorProviderId;
+	mLocatorProviders.emplace_back( std::move( provider ) );
+	return mLastLocatorProviderId;
+}
+
+bool UniversalLocator::unregisterLocatorProvider( Uint64 providerId ) {
+	if ( providerId == 0 )
+		return false;
+	Lock lock( mLocatorProvidersMutex );
+	auto provider = std::find_if(
+		mLocatorProviders.begin(), mLocatorProviders.end(),
+		[providerId]( const LocatorProvider& current ) { return current.id == providerId; } );
+	if ( provider == mLocatorProviders.end() )
+		return false;
+	mLocatorProviders.erase( provider );
+	++mLocatorModelGeneration;
+	return true;
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
@@ -1287,6 +1335,7 @@ std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorComma
 	std::vector<ProjectDirectoryTree::CommandInfo> vec;
 	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
 	bool isOpenFolder = !mApp->getCurrentProject().empty();
+	Lock lock( mLocatorProvidersMutex );
 	for ( const auto& locator : mLocatorProviders ) {
 		if ( !isOpenFolder && locator.projectNeeded )
 			continue;

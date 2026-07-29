@@ -24,6 +24,8 @@ struct UserSnippetDefinition {
 	std::string body;
 	std::string description;
 	SmallVector<std::string, 2> scopes;
+	SmallVector<std::string, 2> includePatterns;
+	SmallVector<std::string, 2> excludePatterns;
 	std::string sourcePath;
 	UserSnippetSource source{ UserSnippetSource::User };
 };
@@ -58,7 +60,11 @@ class UserSnippetStore {
 	void clear();
 
 	std::vector<UserSnippetMatch> find( std::string_view language, std::string_view pattern,
-										size_t maxResults ) const;
+										size_t maxResults, std::string_view filePath = {} ) const;
+
+	std::vector<UserSnippetMatch> findForLocator( std::string_view language,
+												  std::string_view pattern, size_t maxResults,
+												  std::string_view filePath = {} ) const;
 
 	size_t size() const;
 

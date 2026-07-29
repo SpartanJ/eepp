@@ -1,6 +1,7 @@
 #include "snippetparser.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <eepp/core/string.hpp>
 #include <eepp/system/regex.hpp>
 #include <limits>
@@ -203,6 +204,43 @@ class Parser {
 		return result;
 	}
 
+	static std::vector<std::string> caseWords( std::string_view value ) {
+		std::vector<std::string> words;
+		size_t start = 0;
+		for ( size_t pos = 0; pos <= value.size(); ++pos ) {
+			const bool atEnd = pos == value.size();
+			const Uint8 current = atEnd ? 0 : static_cast<Uint8>( value[pos] );
+			const bool separator = !atEnd && current < 0x80 && !std::isalnum( current );
+			const bool caseBoundary = !atEnd && pos > start && current < 0x80 &&
+									  std::isupper( current ) &&
+									  static_cast<Uint8>( value[pos - 1] ) < 0x80 &&
+									  std::islower( static_cast<Uint8>( value[pos - 1] ) );
+			if ( atEnd || separator || caseBoundary ) {
+				if ( pos > start )
+					words.emplace_back(
+						String::toLower( std::string{ value.substr( start, pos - start ) } ) );
+				start = separator ? pos + 1 : pos;
+			}
+		}
+		return words;
+	}
+
+	static std::string transformCase( std::string_view value, std::string_view modifier ) {
+		auto words = caseWords( value );
+		std::string output;
+		for ( size_t index = 0; index < words.size(); ++index ) {
+			if ( modifier == "/snakecase" && index > 0 )
+				output += '_';
+			else if ( modifier == "/kebabcase" && index > 0 )
+				output += '-';
+			if ( modifier == "/pascalcase" || ( modifier == "/camelcase" && index > 0 ) )
+				output += String::capitalize( words[index] );
+			else
+				output += words[index];
+		}
+		return output;
+	}
+
 	static std::string transformFormat( std::string_view format, std::string_view value,
 										const std::vector<PatternMatcher::Range>& matches ) {
 		std::string output;
@@ -258,6 +296,9 @@ class Parser {
 				output += String::toLower( group );
 			else if ( body == "/capitalize" )
 				output += String::capitalize( group );
+			else if ( body == "/camelcase" || body == "/pascalcase" || body == "/snakecase" ||
+					  body == "/kebabcase" )
+				output += transformCase( group, body );
 			else if ( String::startsWith( body, "+" ) )
 				output += !group.empty() ? unescapeFormatText( body.substr( 1 ) ) : "";
 			else if ( String::startsWith( body, "?" ) ) {

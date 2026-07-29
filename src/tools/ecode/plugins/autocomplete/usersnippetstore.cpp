@@ -61,6 +61,11 @@ static bool parseStringList( const json& value, SmallVector<std::string, 2>& str
 	return !strings.empty() || !rejectEmpty;
 }
 
+static void normalizeFilePatterns( SmallVector<std::string, 2>& patterns ) {
+	for ( auto& pattern : patterns )
+		String::replaceAll( pattern, "\\", "/" );
+}
+
 static bool parseBody( const json& value, std::string& body ) {
 	if ( value.is_string() ) {
 		body = value.get<std::string>();
@@ -90,6 +95,24 @@ static int sourcePriority( UserSnippetSource source ) {
 		default:
 			return 0;
 	}
+}
+
+static bool matchesFile( const UserSnippetDefinition& snippet, std::string_view filePath ) {
+	if ( !snippet.includePatterns.empty() ) {
+		bool included = false;
+		for ( const auto& pattern : snippet.includePatterns ) {
+			if ( String::globMatch( filePath, pattern ) ) {
+				included = true;
+				break;
+			}
+		}
+		if ( !included )
+			return false;
+	}
+	for ( const auto& pattern : snippet.excludePatterns )
+		if ( String::globMatch( filePath, pattern ) )
+			return false;
+	return true;
 }
 
 } // namespace
@@ -138,6 +161,20 @@ UserSnippetParseResult UserSnippetStore::parseFile( std::string_view contents,
 			continue;
 		}
 		snippet.scopes = parseScopes( value, defaultScope );
+		if ( value.contains( "include" ) &&
+			 !parseStringList( value["include"], snippet.includePatterns, true ) ) {
+			result.diagnostics.emplace_back( sourcePath + ": snippet '" + name +
+											 "' has an invalid include pattern" );
+			continue;
+		}
+		if ( value.contains( "exclude" ) &&
+			 !parseStringList( value["exclude"], snippet.excludePatterns, true ) ) {
+			result.diagnostics.emplace_back( sourcePath + ": snippet '" + name +
+											 "' has an invalid exclude pattern" );
+			continue;
+		}
+		normalizeFilePatterns( snippet.includePatterns );
+		normalizeFilePatterns( snippet.excludePatterns );
 		result.snippets.emplace_back( std::move( snippet ) );
 	}
 	return result;
@@ -220,8 +257,8 @@ void UserSnippetStore::rebuildSnapshot() {
 }
 
 std::vector<UserSnippetMatch> UserSnippetStore::find( std::string_view language,
-													  std::string_view pattern,
-													  size_t maxResults ) const {
+													  std::string_view pattern, size_t maxResults,
+													  std::string_view filePath ) const {
 	if ( maxResults == 0 )
 		return {};
 	std::shared_ptr<const Snapshot> snapshot;
@@ -230,6 +267,8 @@ std::vector<UserSnippetMatch> UserSnippetStore::find( std::string_view language,
 		snapshot = mSnapshot;
 	}
 	std::string normalizedLanguage( language );
+	std::string normalizedPath( filePath );
+	String::replaceAll( normalizedPath, "\\", "/" );
 	String::toLowerInPlace( normalizedLanguage );
 	std::vector<size_t> candidates;
 	candidates.reserve( snapshot->global.size() + 32 );
@@ -263,6 +302,8 @@ std::vector<UserSnippetMatch> UserSnippetStore::find( std::string_view language,
 	matchedCandidates.reserve( eemin( maxResults, candidates.size() ) );
 	for ( size_t index : candidates ) {
 		const auto& snippet = snapshot->snippets[index];
+		if ( !matchesFile( snippet, normalizedPath ) )
+			continue;
 		int bestScore = std::numeric_limits<int>::min();
 		size_t bestPrefix = NO_INPUT;
 		size_t bestInput = NO_INPUT;
@@ -318,6 +359,76 @@ std::vector<UserSnippetMatch> UserSnippetStore::find( std::string_view language,
 			  candidate.score } );
 	}
 	return matches;
+}
+
+std::vector<UserSnippetMatch> UserSnippetStore::findForLocator( std::string_view language,
+																std::string_view pattern,
+																size_t maxResults,
+																std::string_view filePath ) const {
+	if ( maxResults == 0 )
+		return {};
+	std::shared_ptr<const Snapshot> snapshot;
+	{
+		Lock lock( mMutex );
+		snapshot = mSnapshot;
+	}
+	std::string normalizedLanguage( language );
+	const std::string query( pattern );
+	std::string normalizedPath( filePath );
+	String::replaceAll( normalizedPath, "\\", "/" );
+	String::toLowerInPlace( normalizedLanguage );
+	std::vector<size_t> candidates;
+	candidates.reserve( snapshot->global.size() + 32 );
+	candidates.insert( candidates.end(), snapshot->global.begin(), snapshot->global.end() );
+	auto languageIt = snapshot->byLanguage.find( normalizedLanguage );
+	if ( languageIt != snapshot->byLanguage.end() )
+		candidates.insert( candidates.end(), languageIt->second.begin(), languageIt->second.end() );
+
+	struct Candidate {
+		size_t snippetIndex;
+		int score;
+	};
+	std::vector<Candidate> matches;
+	matches.reserve( eemin( maxResults, candidates.size() ) );
+	const auto matchScore = [&query]( const std::string& value ) {
+		const int score = String::fuzzyMatchSimple( query, value, false, true );
+		return score > 0 ? score : String::icontains( value, query ) ? 1 : 0;
+	};
+	for ( size_t index : candidates ) {
+		const auto& snippet = snapshot->snippets[index];
+		if ( !matchesFile( snippet, normalizedPath ) )
+			continue;
+		int score = query.empty() ? 0 : matchScore( snippet.name );
+		if ( !pattern.empty() ) {
+			for ( const auto& prefix : snippet.prefixes )
+				score = eemax( score, matchScore( prefix ) );
+			if ( !snippet.description.empty() )
+				score = eemax( score, matchScore( snippet.description ) );
+		}
+		if ( pattern.empty() || score > 0 )
+			matches.push_back( { index, score } );
+	}
+	std::sort( matches.begin(), matches.end(),
+			   [&]( const Candidate& left, const Candidate& right ) {
+				   if ( left.score != right.score )
+					   return left.score > right.score;
+				   const auto& leftSnippet = snapshot->snippets[left.snippetIndex];
+				   const auto& rightSnippet = snapshot->snippets[right.snippetIndex];
+				   const int leftPriority = sourcePriority( leftSnippet.source );
+				   const int rightPriority = sourcePriority( rightSnippet.source );
+				   if ( leftPriority != rightPriority )
+					   return leftPriority > rightPriority;
+				   return leftSnippet.name < rightSnippet.name;
+			   } );
+	if ( matches.size() > maxResults )
+		matches.resize( maxResults );
+	std::vector<UserSnippetMatch> results;
+	results.reserve( matches.size() );
+	for ( const auto& match : matches ) {
+		const auto& snippet = snapshot->snippets[match.snippetIndex];
+		results.push_back( { snippet, snippet.prefixes.front(), {}, match.score } );
+	}
+	return results;
 }
 
 size_t UserSnippetStore::size() const {

@@ -113,9 +113,24 @@ UTEST( SnippetParser, variableTransforms ) {
 	auto zeroWidth = SnippetParser::parse( R"(${TM_CURRENT_WORD/(?=.)/_/g})", variables );
 	EXPECT_STDSTREQ( "_o_n_e_-_t_w_o", zeroWidth.text );
 	variables["TM_CURRENT_WORD"] = "éx";
-	auto unicodeZeroWidth =
-		SnippetParser::parse( R"(${TM_CURRENT_WORD/(?=.)/_/g})", variables );
+	auto unicodeZeroWidth = SnippetParser::parse( R"(${TM_CURRENT_WORD/(?=.)/_/g})", variables );
 	EXPECT_STDSTREQ( "_é_x", unicodeZeroWidth.text );
+}
+
+UTEST( SnippetParser, variableTransformCaseModifiers ) {
+	SnippetParser::VariableMap variables{ { "TM_CURRENT_WORD", "hello-world value" } };
+	EXPECT_STDSTREQ(
+		"helloWorldValue",
+		SnippetParser::parse( R"(${TM_CURRENT_WORD/(.*)/${1:/camelcase}/})", variables ).text );
+	EXPECT_STDSTREQ(
+		"HelloWorldValue",
+		SnippetParser::parse( R"(${TM_CURRENT_WORD/(.*)/${1:/pascalcase}/})", variables ).text );
+	EXPECT_STDSTREQ(
+		"hello_world_value",
+		SnippetParser::parse( R"(${TM_CURRENT_WORD/(.*)/${1:/snakecase}/})", variables ).text );
+	EXPECT_STDSTREQ(
+		"hello-world-value",
+		SnippetParser::parse( R"(${TM_CURRENT_WORD/(.*)/${1:/kebabcase}/})", variables ).text );
 }
 
 UTEST( SnippetParser, malformedPlaceholderRemainsLiteral ) {

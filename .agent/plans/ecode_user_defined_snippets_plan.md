@@ -1,6 +1,6 @@
 # ecode User-Defined Snippets Implementation Plan
 
-Status: **Phase 1 implemented and manually validated. Phase 2 not started. Phase 3 optional.**
+Status: **Phase 1 and Phase 2 implemented and validated. Phase 3 optional.**
 
 Last status review: 2026-07-29.
 
@@ -43,14 +43,15 @@ Phase 1 hardening that remains useful but is not blocking current use:
 - keep the new user-facing `docs/snippets.md` guide current as Phase 2 capabilities are added;
 - run the full manual matrix from Section 17.4 against more real-world snippet collections.
 
-Everything in Phase 2 is now a product choice rather than a prerequisite for useful snippet
-support. The most independently useful candidates are:
+The Phase 2 product scope has now been selected:
 
-1. an **Insert Snippet** searchable command;
-2. a **Configure Snippets** command that creates/opens the current language file;
-3. optional exact-prefix Tab expansion when no popup or active snippet session exists;
-4. `include` / `exclude` file-pattern scopes;
-5. additional workspace, clipboard, cursor, date/time, random, UUID, and comment variables.
+1. add an **Insert Snippet** Universal Locator provider and the plugin-facing provider lifecycle
+   APIs it requires;
+2. add `include` / `exclude` file-pattern scopes;
+3. add the complete pending VS Code variable set and casing modifiers listed in Section 13;
+4. defer **Configure Snippets** until the feature has broader real-world use;
+5. do not add exact-prefix Tab expansion because accidental activation is not worth the marginal
+   convenience over autocomplete and the locator.
 
 Phase 3 remains explicitly optional and should be driven only by observed compatibility needs.
 
@@ -532,7 +533,7 @@ Phase 1 must preserve the currently supported variables:
 - `TM_DIRECTORY`
 - `TM_FILEPATH`
 
-Phase 2 should add the high-value, straightforward variables:
+Phase 2 will add the remaining documented VS Code variables:
 
 - `RELATIVE_FILEPATH`
 - `WORKSPACE_NAME`
@@ -540,13 +541,33 @@ Phase 2 should add the high-value, straightforward variables:
 - `CLIPBOARD`
 - `CURSOR_INDEX`
 - `CURSOR_NUMBER`
-- current date/time variables;
-- `RANDOM`, `RANDOM_HEX`, and `UUID` if suitable engine utilities already exist;
-- `LINE_COMMENT`, `BLOCK_COMMENT_START`, and `BLOCK_COMMENT_END` when syntax definitions expose
-  reliable comment delimiters.
+- `CURRENT_YEAR`
+- `CURRENT_YEAR_SHORT`
+- `CURRENT_MONTH`
+- `CURRENT_MONTH_NAME`
+- `CURRENT_MONTH_NAME_SHORT`
+- `CURRENT_DATE`
+- `CURRENT_DAY_NAME`
+- `CURRENT_DAY_NAME_SHORT`
+- `CURRENT_HOUR`
+- `CURRENT_MINUTE`
+- `CURRENT_SECOND`
+- `CURRENT_MILLISECOND`
+- `CURRENT_SECONDS_UNIX`
+- `CURRENT_MILLISECONDS_UNIX`
+- `CURRENT_TIMEZONE_OFFSET`
+- `CURRENT_TIMEZONE_NAME`
+- `RANDOM`
+- `RANDOM_HEX`
+- `UUID`
+- `LINE_COMMENT`
+- `BLOCK_COMMENT_START`
+- `BLOCK_COMMENT_END`
 
-Do not create new time, random, UUID, clipboard, or syntax-comment infrastructure solely for
-snippets. Use existing services or defer the variable.
+Use existing ecode/eepp workspace, clipboard, time, random, UUID, and syntax-definition services.
+Keep all variable construction in the shared provider so LSP and user snippets behave identically.
+Phase 2 also includes the `camelcase`, `pascalcase`, `snakecase`, and `kebabcase` transform format
+modifiers.
 
 ## 14. Phase 1 - Core user-defined snippets
 
@@ -616,13 +637,24 @@ follow-ups, not blockers for the currently working feature.
 Phase 2 is part of the intended feature, but should be implemented after Phase 1 is usable and has
 been tested with real snippet collections.
 
-**Phase status: not started and no longer required for the initial release.** Each subsection can
-be accepted or rejected independently based on whether the workflow is valuable to ecode users.
+**Phase status: implemented and validated.** Insert Snippet, file-pattern scopes, and the complete
+pending variable/modifier set are available. Configure Snippets is deferred and exact-prefix Tab
+expansion is rejected.
 
 ### 15.1 Dedicated Insert Snippet command
 
-Add an `insert-snippet` editor/application command that opens a searchable list of snippets valid
-for the current language and file.
+Implement snippet browsing as a new Universal Locator provider containing snippets valid for the
+current language and file. Do not create another popup or a parallel searchable-list UI.
+
+Required locator infrastructure:
+
+- expose the Universal Locator from `PluginContext`;
+- add public APIs to register and unregister locator providers at runtime;
+- make registration ownership/lifetime explicit so plugins can unregister safely during disable,
+  reload, and destruction;
+- ensure provider removal cannot leave stale locator entries or callbacks;
+- have `AutoCompletePlugin` register its snippet provider when enabled and unregister it on every
+  shutdown/reload path.
 
 The list should show:
 
@@ -631,37 +663,23 @@ The list should show:
 - description;
 - source when needed to disambiguate duplicates.
 
-Picking an entry inserts it without requiring a typed prefix. Reuse existing list/model helpers or
-the Universal Locator where that produces a natural ecode interaction. Do not build a second
-autocomplete popup implementation.
+Picking an entry inserts it without requiring a typed prefix and without deleting prefix text.
+Reuse the existing snippet insertion path, including variables, indentation, multiple cursors,
+choices, and tab-stop sessions.
 
 Add a configurable keybinding entry, but no default binding is required if the command is readily
 available from the command palette.
 
-### 15.2 Optional exact-prefix Tab completion
+### 15.2 Exact-prefix Tab completion - rejected
 
-Add an autocomplete setting such as:
-
-```json
-"snippets": {
-  "enabled": true,
-  "tab_completion": false
-}
-```
-
-When enabled, key handling order must be:
-
-1. active snippet session: navigate to the next tab stop;
-2. visible completion popup: accept the selected suggestion;
-3. no popup and exact snippet prefix before the cursor: expand it;
-4. otherwise: allow the editor's normal Tab command.
-
-If multiple definitions have the same exact prefix, open a choice list instead of selecting one
-arbitrarily. Shift+Tab must never start a new snippet expansion.
-
-Use command/keybinding resolution rather than hard-coded key codes.
+Do not expand a snippet merely because Tab is pressed after an exact prefix. This can trigger
+accidentally and provides little value once snippets are available through normal autocomplete and
+the Universal Locator. Tab remains responsible for accepting a visible completion, navigating an
+active snippet session, or performing its normal editor action.
 
 ### 15.3 Configure Snippets command
+
+**Decision: deferred until user adoption justifies it.**
 
 Add a command that opens or creates the appropriate user snippet file for the current language.
 Creation should use a small commented starter document valid as JSONC. Do not overwrite an existing
@@ -671,6 +689,8 @@ Project snippet creation can be a separate command or later follow-up; user-lang
 is the priority.
 
 ### 15.4 File pattern scopes
+
+**Decision: accepted for Phase 2.**
 
 Implement `include` and `exclude` using the engine's existing glob/path matching facilities.
 
@@ -685,19 +705,23 @@ keystroke.
 
 ### 15.5 Common variables and modifiers
 
+**Decision: accepted for Phase 2, including the complete list in Section 13.**
+
 - Add variables listed in Section 13 when supported by existing ecode/eepp services.
 - Add `camelcase`, `pascalcase`, `snakecase`, and `kebabcase` transform format modifiers.
 - Add tests for Unicode behavior where the chosen string helpers define it clearly.
 
 ### 15.6 Phase 2 acceptance criteria
 
-- Users can browse and insert snippets without typing a prefix.
-- Optional Tab completion does not break indentation or active snippet navigation.
-- Duplicate exact prefixes prompt for a choice.
-- `include` and `exclude` filter snippets predictably.
-- Common workspace, clipboard, cursor, time, and casing transformations behave as documented where
-  supported.
-- Users can locate/create their language snippet file from ecode without learning platform paths.
+- Plugins can dynamically register and unregister Universal Locator providers through
+  `PluginContext` without stale callbacks during disable/reload.
+- Users can browse and insert applicable snippets without typing or remembering a prefix.
+- Duplicate names/prefixes remain distinguishable by label, description, and source.
+- `include` and `exclude` filter snippets predictably using existing glob support.
+- All variables listed in Section 13 behave consistently for LSP and user snippets, including
+  independent cursor values during multi-cursor insertion.
+- `camelcase`, `pascalcase`, `snakecase`, and `kebabcase` modifiers behave as documented.
+- User documentation and the VS Code comparison are updated with the new behavior.
 
 ## 16. Phase 3 - Optional compatibility work
 
@@ -835,10 +859,10 @@ suggestions. Avoid per-frame or draw-time snippet work entirely.
 
 ## 20. Documentation
 
-**Status: complete for Phase 1.** The ecode documentation repository contains `docs/snippets.md`,
-linked from `docs/autocomplete.md`, with locations, examples, supported syntax and variables,
-runtime behavior, troubleshooting, and a detailed VS Code compatibility comparison. Update that
-document alongside each Phase 2 compatibility change.
+**Status: complete for Phase 1 and Phase 2.** The ecode documentation repository contains
+`docs/snippets.md`, linked from `docs/autocomplete.md`, with locations, examples, supported syntax
+and variables, runtime behavior, troubleshooting, the Insert Snippet locator, file-pattern scopes,
+and a detailed VS Code compatibility comparison.
 
 Ship a concise user-facing document or configuration section containing:
 
@@ -869,14 +893,16 @@ Implement in this order to keep each change reviewable and testable:
 8. Add user/project discovery and initial asynchronous loading.
 9. Add workspace changes, filesystem reload, last-known-good behavior, and stale-job protection.
 10. Complete Phase 1 acceptance testing and release it for real-world snippet-pack testing.
-11. Add the Insert Snippet and Configure Snippets commands.
-12. Add optional exact-prefix Tab completion.
-13. Add file-pattern filters and high-value variables/modifiers.
-14. Reassess optional Phase 3 only from observed incompatibilities.
+11. Expose the Universal Locator through `PluginContext` and add dynamic provider
+    registration/unregistration APIs with lifecycle tests.
+12. Add the AutoCompletePlugin snippet locator provider and reuse the existing insertion path.
+13. Add `include` / `exclude` file-pattern filters using existing glob support.
+14. Add the complete pending variable set and casing modifiers from Section 13.
+15. Update user documentation and complete Phase 2 acceptance testing.
+16. Reassess Configure Snippets and optional Phase 3 only from observed user demand.
 
-Items 1-10 are complete for the current Phase 1 implementation, subject to the hardening notes in
-Section 0. Items 11-13 are uncommitted product choices from Phase 2. Item 14 remains optional.
+Items 1-15 are complete for the current Phase 1 and Phase 2 implementation, subject to the
+hardening notes in Section 0. Exact-prefix Tab completion is explicitly excluded; Configure
+Snippets and item 16 remain deferred or optional.
 
-The implementation can stop here if the current autocomplete-driven workflow is sufficient. Phase
-2 should be selected feature-by-feature from actual feedback. Phase 3 is not part of the completion
-definition for issue #111.
+Phase 3 is not part of the completion definition for issue #111.

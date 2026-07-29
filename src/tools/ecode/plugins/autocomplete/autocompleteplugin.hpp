@@ -240,6 +240,7 @@ class AutoCompletePlugin : public Plugin {
 	std::string mSnippetEventPathBuffer;
 	std::atomic<Uint64> mSnippetWorkspaceGeneration{ 0 };
 	std::atomic<Uint32> mSnippetJobs{ 0 };
+	Uint64 mSnippetLocatorProviderId{ 0 };
 
 	explicit AutoCompletePlugin( PluginManager* pluginManager, bool sync );
 
@@ -272,6 +273,16 @@ class AutoCompletePlugin : public Plugin {
 
 	void scheduleSnippetFileUpdate( std::string path, UserSnippetSource source, bool languageFiles,
 									bool remove );
+
+	void registerSnippetLocatorProvider();
+
+	void unregisterSnippetLocatorProvider();
+
+	void insertSnippet( UICodeEditor* editor, std::string_view body,
+						const Suggestion* suggestion = nullptr );
+
+	SnippetParser::VariableMap snippetVariables( TextDocument& doc, const TextRange& selection,
+												 size_t cursorIndex ) const;
 
 	void updateLangCache( const std::string& langName );
 

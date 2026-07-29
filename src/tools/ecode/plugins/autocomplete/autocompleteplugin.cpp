@@ -1,17 +1,22 @@
 #include "autocompleteplugin.hpp"
+#include "../../universallocator.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/math/math.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/system/uuid.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
-#include <eepp/ui/uiplacementutils.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
 #include <algorithm>
+#include <array>
+#include <chrono>
+#include <ctime>
 #include <nlohmann/json.hpp>
 #include <string_view>
 using namespace EE::Graphics;
@@ -20,6 +25,69 @@ using json = nlohmann::json;
 using namespace std::literals;
 
 namespace ecode {
+
+class SnippetLocatorModel : public Model {
+  public:
+	struct Row {
+		std::string name;
+		std::string prefixes;
+		std::string detail;
+		std::string body;
+	};
+
+	explicit SnippetLocatorModel( std::vector<UserSnippetMatch> matches ) {
+		mRows.reserve( matches.size() );
+		for ( auto& match : matches ) {
+			std::string prefixes;
+			for ( const auto& prefix : match.snippet.prefixes ) {
+				if ( !prefixes.empty() )
+					prefixes += ", ";
+				prefixes += prefix;
+			}
+			const char* source = match.snippet.source == UserSnippetSource::EcodeProject ? ".ecode"
+								 : match.snippet.source == UserSnippetSource::VSCodeProject
+									 ? ".vscode"
+									 : "user";
+			std::string detail( std::move( match.snippet.description ) );
+			if ( !detail.empty() )
+				detail += " — ";
+			detail += source;
+			mRows.push_back( { std::move( match.snippet.name ), std::move( prefixes ),
+							   std::move( detail ), std::move( match.snippet.body ) } );
+		}
+	}
+
+	size_t rowCount( const ModelIndex& ) const override { return mRows.size(); }
+
+	size_t columnCount( const ModelIndex& ) const override { return 3; }
+
+	std::string columnName( const size_t& column ) const override {
+		static constexpr std::array<std::string_view, 3> names{ "Name", "Prefixes", "Description" };
+		return std::string{ names[column] };
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override {
+		if ( !index.isValid() || index.row() >= static_cast<Int64>( mRows.size() ) )
+			return {};
+		const auto& row = mRows[index.row()];
+		if ( role == ModelRole::Custom )
+			return Variant{ row.body };
+		if ( role != ModelRole::Display )
+			return {};
+		switch ( index.column() ) {
+			case 0:
+				return Variant{ row.name };
+			case 1:
+				return Variant{ row.prefixes };
+			case 2:
+				return Variant{ row.detail };
+		}
+		return {};
+	}
+
+  private:
+	std::vector<Row> mRows;
+};
 
 static bool pathStartsWith( std::string_view path, std::string_view prefix ) {
 	return !prefix.empty() && path.size() >= prefix.size() &&
@@ -199,6 +267,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
+	unregisterSnippetLocatorProvider();
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
 	while ( mSnippetJobs > 0 )
@@ -484,6 +553,67 @@ void AutoCompletePlugin::onLoadProject( const std::string& projectFolder,
 	setSnippetWorkspaceFolder( projectFolder );
 }
 
+void AutoCompletePlugin::registerSnippetLocatorProvider() {
+	if ( mSnippetLocatorProviderId != 0 || !getPluginContext() ||
+		 !getPluginContext()->getUniversalLocator() )
+		return;
+	auto* locator = getPluginContext()->getUniversalLocator();
+	mSnippetLocatorProviderId = locator->registerLocatorProvider(
+		{ "sn", i18n( "insert_snippet", "Insert Snippet" ), nullptr,
+		  [this, locator]( const Variant&, const ModelEvent* event ) {
+			  if ( !event || !event->getModel() || !getPluginContext() )
+				  return;
+			  auto* editor = getPluginContext()->getSplitter()->getCurEditor();
+			  if ( !editor )
+				  return;
+			  const auto body = event->getModel()->data(
+				  event->getModel()->index( event->getModelIndex().row(), 0 ), ModelRole::Custom );
+			  if ( !body.isValid() )
+				  return;
+			  mReplacing = true;
+			  insertSnippet( editor, body.toString() );
+			  mReplacing = false;
+			  resetSuggestions( editor );
+			  locator->hideLocateBar();
+			  editor->setFocus();
+		  },
+		  nullptr, false, false,
+		  [this]( const String& query, UniversalLocator::LocatorProvider::ModelReadyFn ready ) {
+			  if ( !getPluginContext() || !getPluginContext()->getSplitter() ) {
+				  ready( std::make_shared<SnippetLocatorModel>( std::vector<UserSnippetMatch>{} ) );
+				  return;
+			  }
+			  auto* editor = getPluginContext()->getSplitter()->getCurEditor();
+			  if ( !editor ) {
+				  ready( std::make_shared<SnippetLocatorModel>( std::vector<UserSnippetMatch>{} ) );
+				  return;
+			  }
+			  std::string language = editor->getDocument().getSyntaxDefinition().getLSPName();
+			  std::string filePath = editor->getDocument().getFilePath();
+			  FileSystem::filePathRemoveBasePath( getPluginContext()->getCurrentProject(), filePath );
+			  std::string pattern = query.toUtf8();
+			  ++mSnippetJobs;
+			  mThreadPool->run( [this, language = std::move( language ),
+								 filePath = std::move( filePath ), pattern = std::move( pattern ),
+								 ready = std::move( ready )] {
+				  ScopedOp job( [] {}, [this] { --mSnippetJobs; } );
+				  if ( mShuttingDown )
+					  return;
+				  ready( std::make_shared<SnippetLocatorModel>(
+					  mUserSnippetStore.findForLocator( language, pattern, 100, filePath ) ) );
+			  } );
+		  } } );
+}
+
+void AutoCompletePlugin::unregisterSnippetLocatorProvider() {
+	if ( mSnippetLocatorProviderId == 0 || !getPluginContext() ||
+		 !getPluginContext()->getUniversalLocator() )
+		return;
+	getPluginContext()->getUniversalLocator()->unregisterLocatorProvider(
+		mSnippetLocatorProviderId );
+	mSnippetLocatorProviderId = 0;
+}
+
 void AutoCompletePlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	Plugin::onFileSystemEvent( ev, file );
 	if ( mShuttingDown || isLoading() )
@@ -536,6 +666,7 @@ void AutoCompletePlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo&
 }
 
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
+	registerSnippetLocatorProvider();
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
 	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
@@ -965,22 +1096,83 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 				clock.getElapsedTime().asMilliseconds() );
 }
 
-static SnippetParser::VariableMap snippetVariables( TextDocument& doc,
-													const TextRange& selection ) {
+static std::string formatSnippetTime( const std::tm& time, const char* format ) {
+	char buffer[128];
+	return std::strftime( buffer, sizeof( buffer ), format, &time ) > 0 ? buffer : "";
+}
+
+SnippetParser::VariableMap AutoCompletePlugin::snippetVariables( TextDocument& doc,
+																 const TextRange& selection,
+																 size_t cursorIndex ) const {
 	const TextPosition position = selection.normalized().start();
 	std::string filePath = doc.getFilePath();
 	if ( filePath.empty() )
 		filePath = doc.getLoadingFilePath();
 	const std::string filename = FileSystem::fileNameFromPath( filePath );
-	return { { "TM_SELECTED_TEXT", doc.getText( selection ).toUtf8() },
-			 { "TM_CURRENT_LINE", doc.getLineTextWithoutNewLine( position.line() ).toUtf8() },
-			 { "TM_CURRENT_WORD", doc.getWordInPosition( position ).toUtf8() },
-			 { "TM_LINE_INDEX", String::toString( position.line() ) },
-			 { "TM_LINE_NUMBER", String::toString( position.line() + 1 ) },
-			 { "TM_FILENAME", filename },
-			 { "TM_FILENAME_BASE", FileSystem::fileRemoveExtension( filename ) },
-			 { "TM_DIRECTORY", FileSystem::fileRemoveFileName( filePath ) },
-			 { "TM_FILEPATH", filePath } };
+	std::string workspaceFolder = getPluginContext() ? getPluginContext()->getCurrentProject() : "";
+	std::string relativeFilePath( filePath );
+	if ( !workspaceFolder.empty() )
+		FileSystem::filePathRemoveBasePath( workspaceFolder, relativeFilePath );
+	FileSystem::dirRemoveSlashAtEnd( workspaceFolder );
+	std::string workspaceName( FileSystem::fileNameFromPath( workspaceFolder ) );
+
+	const auto now = std::chrono::system_clock::now();
+	const auto nowTime = std::chrono::system_clock::to_time_t( now );
+	const std::tm* localTimePtr = std::localtime( &nowTime );
+	const std::tm localTime = localTimePtr ? *localTimePtr : std::tm{};
+	const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch() );
+	std::string timezoneOffset = formatSnippetTime( localTime, "%z" );
+	if ( timezoneOffset.size() == 5 )
+		timezoneOffset.insert( 3, ":" );
+
+	const auto& syntax = doc.getSyntaxDefinition();
+	const auto& blockComment = syntax.getBlockComment();
+	SnippetParser::VariableMap variables{
+		{ "TM_SELECTED_TEXT", doc.getText( selection ).toUtf8() },
+		{ "TM_CURRENT_LINE", doc.getLineTextWithoutNewLine( position.line() ).toUtf8() },
+		{ "TM_CURRENT_WORD", doc.getWordInPosition( position ).toUtf8() },
+		{ "TM_LINE_INDEX", String::toString( position.line() ) },
+		{ "TM_LINE_NUMBER", String::toString( position.line() + 1 ) },
+		{ "TM_FILENAME", filename },
+		{ "TM_FILENAME_BASE", FileSystem::fileRemoveExtension( filename ) },
+		{ "TM_DIRECTORY", FileSystem::fileRemoveFileName( filePath ) },
+		{ "TM_FILEPATH", filePath },
+		{ "RELATIVE_FILEPATH", relativeFilePath },
+		{ "WORKSPACE_NAME", workspaceName },
+		{ "WORKSPACE_FOLDER", workspaceFolder },
+		{ "CLIPBOARD", getUISceneNode() && getUISceneNode()->getWindow()
+						   ? getUISceneNode()->getWindow()->getClipboard()->getText()
+						   : "" },
+		{ "CURSOR_INDEX", String::toString( static_cast<Uint64>( cursorIndex ) ) },
+		{ "CURSOR_NUMBER", String::toString( static_cast<Uint64>( cursorIndex + 1 ) ) },
+		{ "CURRENT_YEAR", formatSnippetTime( localTime, "%Y" ) },
+		{ "CURRENT_YEAR_SHORT", formatSnippetTime( localTime, "%y" ) },
+		{ "CURRENT_MONTH", formatSnippetTime( localTime, "%m" ) },
+		{ "CURRENT_MONTH_NAME", formatSnippetTime( localTime, "%B" ) },
+		{ "CURRENT_MONTH_NAME_SHORT", formatSnippetTime( localTime, "%b" ) },
+		{ "CURRENT_DATE", formatSnippetTime( localTime, "%d" ) },
+		{ "CURRENT_DAY_NAME", formatSnippetTime( localTime, "%A" ) },
+		{ "CURRENT_DAY_NAME_SHORT", formatSnippetTime( localTime, "%a" ) },
+		{ "CURRENT_HOUR", formatSnippetTime( localTime, "%H" ) },
+		{ "CURRENT_MINUTE", formatSnippetTime( localTime, "%M" ) },
+		{ "CURRENT_SECOND", formatSnippetTime( localTime, "%S" ) },
+		{ "CURRENT_MILLISECOND",
+		  String::format( "%03d", static_cast<int>( milliseconds.count() % 1000 ) ) },
+		{ "CURRENT_SECONDS_UNIX",
+		  String::toString( static_cast<Int64>( milliseconds.count() / 1000 ) ) },
+		{ "CURRENT_MILLISECONDS_UNIX",
+		  String::toString( static_cast<Int64>( milliseconds.count() ) ) },
+		{ "CURRENT_TIMEZONE_OFFSET", timezoneOffset },
+		{ "CURRENT_TIMEZONE_NAME", formatSnippetTime( localTime, "%Z" ) },
+		{ "RANDOM", String::format( "%06d", Math::randi( 0, 999999 ) ) },
+		{ "RANDOM_HEX", String::format( "%06x", Math::randi( 0, 0xFFFFFF ) ) },
+		{ "UUID", UUID().toString() },
+		{ "LINE_COMMENT", syntax.getComment() },
+		{ "BLOCK_COMMENT_START", blockComment.open },
+		{ "BLOCK_COMMENT_END", blockComment.close },
+	};
+	return variables;
 }
 
 static std::string prepareSnippetText( TextDocument& doc, const TextRange& selection,
@@ -1034,6 +1226,47 @@ static TextRange userSnippetActivationRange( TextDocument& doc, const TextRange&
 	return selection;
 }
 
+void AutoCompletePlugin::insertSnippet( UICodeEditor* editor, std::string_view body,
+										const Suggestion* suggestion ) {
+	auto doc = editor->getDocumentRef();
+	auto prevSels = doc->getSelections();
+	std::vector<SnippetInsertion> insertions;
+	insertions.reserve( prevSels.size() );
+	for ( size_t index = 0; index < prevSels.size(); ++index ) {
+		const auto& selection = prevSels[index];
+		const std::string prepared = prepareSnippetText( *doc, selection, body );
+		insertions.push_back(
+			{ SnippetParser::parse( prepared, snippetVariables( *doc, selection, index ) ), {} } );
+	}
+
+	if ( suggestion && suggestion->source == Suggestion::Source::UserSnippet ) {
+		const std::string symbol( getPartialSymbol( doc.get() ) );
+		for ( size_t index = 0; index < prevSels.size(); ++index )
+			doc->setSelection( index,
+							   userSnippetActivationRange( *doc, prevSels[index],
+														   suggestion->matchedPrefix, symbol ) );
+	} else if ( suggestion && prevSels.size() == 1 && suggestion->range.isValid() &&
+				doc->isValidRange( suggestion->range ) ) {
+		doc->setSelection( suggestion->range );
+	} else if ( suggestion ) {
+		const std::string symbol( getPartialSymbol( doc.get() ) );
+		if ( !symbol.empty() )
+			doc->execute( "delete-to-previous-word" );
+	}
+	if ( insertions.size() > doc->getSelections().size() )
+		insertions.resize( doc->getSelections().size() );
+
+	for ( size_t index = 0; index < insertions.size(); ++index ) {
+		if ( doc->getSelectionIndex( index ).hasSelection() )
+			doc->deleteTo( index, 0 );
+		insertions[index].start = doc->getSelectionIndex( index ).start();
+		TextPosition end = doc->insert( index, insertions[index].start,
+										String::fromUtf8( insertions[index].snippet.text ) );
+		doc->setSelection( index, end );
+	}
+	tryStartSnippetNav( insertions, editor );
+}
+
 void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	if ( mSnippetChoiceSuggestions )
 		return pickSnippetChoice( editor );
@@ -1057,37 +1290,7 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 			doc->textInput( rawInsertText );
 		}
 	} else {
-		std::vector<SnippetInsertion> insertions;
-		insertions.reserve( prevSels.size() );
-		for ( const auto& selection : prevSels ) {
-			const std::string prepared = prepareSnippetText( *doc, selection, rawInsertText );
-			insertions.push_back(
-				{ SnippetParser::parse( prepared, snippetVariables( *doc, selection ) ), {} } );
-		}
-
-		if ( suggestion.source == Suggestion::Source::UserSnippet ) {
-			for ( size_t index = 0; index < prevSels.size(); ++index )
-				doc->setSelection( index,
-								   userSnippetActivationRange( *doc, prevSels[index],
-															   suggestion.matchedPrefix, symbol ) );
-		} else if ( prevSels.size() == 1 && suggestion.range.isValid() &&
-					doc->isValidRange( suggestion.range ) ) {
-			doc->setSelection( suggestion.range );
-		} else if ( !symbol.empty() ) {
-			doc->execute( "delete-to-previous-word" );
-		}
-		if ( insertions.size() > doc->getSelections().size() )
-			insertions.resize( doc->getSelections().size() );
-
-		for ( size_t index = 0; index < insertions.size(); ++index ) {
-			if ( doc->getSelectionIndex( index ).hasSelection() )
-				doc->deleteTo( index, 0 );
-			insertions[index].start = doc->getSelectionIndex( index ).start();
-			TextPosition end = doc->insert( index, insertions[index].start,
-											String::fromUtf8( insertions[index].snippet.text ) );
-			doc->setSelection( index, end );
-		}
-		tryStartSnippetNav( insertions, editor );
+		insertSnippet( editor, rawInsertText, &suggestion );
 	}
 
 	mReplacing = false;
@@ -2381,7 +2584,11 @@ AutoCompletePlugin::getUserSnippetSuggestions( UICodeEditor* editor, const std::
 	std::string snippetInput = getUserSnippetInput( editor );
 	if ( snippetInput.empty() )
 		snippetInput = symbol;
-	auto matches = mUserSnippetStore.find( language, snippetInput, maxResults );
+	std::string filePath = editor->getDocument().getFilePath();
+	if ( getPluginContext() )
+		FileSystem::filePathRemoveBasePath( getPluginContext()->getCurrentProject(), filePath );
+	auto matches = mUserSnippetStore.find( language, snippetInput, maxResults,
+										   filePath );
 	suggestions.reserve( matches.size() );
 	for ( auto& match : matches ) {
 		Suggestion suggestion( LSPCompletionItemKind::Snippet, std::move( match.matchedPrefix ),

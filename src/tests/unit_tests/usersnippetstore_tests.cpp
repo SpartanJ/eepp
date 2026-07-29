@@ -122,3 +122,56 @@ UTEST( UserSnippetStore, keepsLastGoodFileAndRemovesSources ) {
 	EXPECT_TRUE( store.removeFile( "user.json" ) );
 	EXPECT_EQ( 0u, store.size() );
 }
+
+UTEST( UserSnippetStore, filtersByIncludedAndExcludedFilePatterns ) {
+	UserSnippetStore store;
+	ASSERT_TRUE( store.updateFile(
+		R"json({
+			"Tests": {
+				"prefix": "testcase",
+				"body": "test",
+				"include": ["*_test.cpp", "tests/**/*.cpp"]
+			},
+			"Sources": {
+				"prefix": "source",
+				"body": "source",
+				"exclude": ["generated/**", "*_test.cpp"]
+			}
+		})json",
+		"cpp.code-snippets", UserSnippetSource::User ) );
+
+	auto testFile = store.find( "cpp", "", 10, "unit/example_test.cpp" );
+	ASSERT_EQ( 1u, testFile.size() );
+	EXPECT_STDSTREQ( "Tests", testFile[0].snippet.name );
+
+	auto nestedTest =
+		store.findForLocator( "cpp", "test", 10, "tests\\unit\\example.cpp" );
+	ASSERT_EQ( 1u, nestedTest.size() );
+	EXPECT_STDSTREQ( "Tests", nestedTest[0].snippet.name );
+
+	auto sourceFile = store.find( "cpp", "", 10, "src/example.cpp" );
+	ASSERT_EQ( 1u, sourceFile.size() );
+	EXPECT_STDSTREQ( "Sources", sourceFile[0].snippet.name );
+	EXPECT_TRUE( store.find( "cpp", "", 10, "generated/example.cpp" ).empty() );
+	auto nestedVendorTest = store.find( "cpp", "", 10, "vendor/tests/unit/example.cpp" );
+	ASSERT_EQ( 1u, nestedVendorTest.size() );
+	EXPECT_STDSTREQ( "Sources", nestedVendorTest[0].snippet.name );
+}
+
+UTEST( UserSnippetStore, locatorSearchesNamesPrefixesAndDescriptions ) {
+	UserSnippetStore store;
+	ASSERT_TRUE( store.updateFile(
+		R"json({
+			"Indexed Loop": {
+				"prefix": ["fori", "for-index"],
+				"body": "loop",
+				"description": "Iterate over values"
+			}
+		})json",
+		"cpp.json", UserSnippetSource::User, "cpp" ) );
+
+	EXPECT_EQ( 1u, store.findForLocator( "cpp", "Indexed", 10 ).size() );
+	EXPECT_EQ( 1u, store.findForLocator( "cpp", "fori", 10 ).size() );
+	EXPECT_EQ( 1u, store.findForLocator( "cpp", "values", 10 ).size() );
+	EXPECT_TRUE( store.findForLocator( "rust", "Indexed", 10 ).empty() );
+}
