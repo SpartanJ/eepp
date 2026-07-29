@@ -1,0 +1,57 @@
+{
+	"Main Function": {
+		"scope": "c,cpp",
+		"prefix": ["main", "mainfn"],
+		"body": [
+			"int main(int argc, char** argv) {",
+			"\t${1:(void)argc;}",
+			"\t${2:(void)argv;}",
+			"\t$0",
+			"\treturn 0;",
+			"}"
+		],
+		"description": "Program entry point"
+	},
+	"Indexed For Loop": {
+		"scope": "c,cpp",
+		"prefix": ["fori", "for-index"],
+		"body": [
+			"for (${1:size_t} ${2:i} = 0; $2 < ${3:count}; ++$2) {",
+			"\t$0",
+			"}"
+		],
+		"description": "Indexed loop with linked iterator placeholders"
+	},
+	"Include Header": {
+		"scope": "c,cpp",
+		"prefix": "inc",
+		"body": "#include ${1|<stdio.h>,<stdlib.h>,<string.h>,\"header.h\"|}$0",
+		"description": "Include a common system header or a local header"
+	},
+	"Guard Clause": {
+		"scope": "c,cpp",
+		"prefix": "guard",
+		"body": [
+			"if (${1:condition}) {",
+			"\t${2:return;}",
+			"}",
+			"$0"
+		],
+		"description": "Early-return guard clause"
+	},
+	"C++ Class": {
+		"scope": "cpp",
+		"prefix": "class",
+		"body": [
+			"class ${1:${TM_FILENAME_BASE}} {",
+			"  public:",
+			"\t$1(${2});",
+			"\t~$1();",
+			"",
+			"  private:",
+			"\t$0",
+			"};"
+		],
+		"description": "Class named after the current file with linked placeholders"
+	}
+}

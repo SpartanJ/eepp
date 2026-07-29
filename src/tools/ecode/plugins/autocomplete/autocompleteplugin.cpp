@@ -13,12 +13,47 @@
 
 #include <algorithm>
 #include <nlohmann/json.hpp>
+#include <string_view>
 using namespace EE::Graphics;
 using namespace EE::System;
 using json = nlohmann::json;
 using namespace std::literals;
 
 namespace ecode {
+
+static bool pathStartsWith( std::string_view path, std::string_view prefix ) {
+	return !prefix.empty() && path.size() >= prefix.size() &&
+		   path.compare( 0, prefix.size(), prefix ) == 0;
+}
+
+static bool pathEndsWith( std::string_view path, std::string_view suffix ) {
+	return path.size() >= suffix.size() &&
+		   path.compare( path.size() - suffix.size(), suffix.size(), suffix ) == 0;
+}
+
+static bool getSnippetPathSource( std::string_view path, std::string_view userPath,
+								  std::string_view vscodePath, std::string_view ecodePath,
+								  UserSnippetSource& source, bool& languageFiles ) {
+	if ( pathStartsWith( path, userPath ) &&
+		 ( pathEndsWith( path, ".json" ) || pathEndsWith( path, ".code-snippets" ) ) ) {
+		source = UserSnippetSource::User;
+		languageFiles = true;
+		return true;
+	}
+	if ( pathEndsWith( path, ".code-snippets" ) ) {
+		if ( pathStartsWith( path, vscodePath ) ) {
+			source = UserSnippetSource::VSCodeProject;
+			languageFiles = false;
+			return true;
+		}
+		if ( pathStartsWith( path, ecodePath ) ) {
+			source = UserSnippetSource::EcodeProject;
+			languageFiles = false;
+			return true;
+		}
+	}
+	return false;
+}
 
 class AutoCompletePlugin::SnippetDocumentClient : public TextDocument::Client {
   public:
@@ -96,32 +131,44 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 				   const std::string& pattern, const size_t& max ) {
 	AutoCompletePlugin::SymbolsList matches;
 	matches.reserve( max );
-	int score = 0;
 	for ( const auto& symbols : symbolsVec ) {
+		size_t sourceMatches = 0;
 		for ( const auto& symbol : *symbols ) {
-			if ( symbol.kind == LSPCompletionItemKind::Snippet ||
-				 ( score = String::fuzzyMatchSimple(
-					   pattern, symbol.text, false, symbol.kind != LSPCompletionItemKind::Text ) ) >
-					 0 ) {
+			const bool serverFilteredSnippet =
+				symbol.source == AutoCompletePlugin::Suggestion::Source::LSP &&
+				symbol.kind == LSPCompletionItemKind::Snippet;
+			const int score =
+				serverFilteredSnippet
+					? 0
+					: String::fuzzyMatchSimple( pattern, symbol.text, false,
+												symbol.kind != LSPCompletionItemKind::Text );
+			if ( serverFilteredSnippet || score > 0 ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
 					symbol.setScore( score +
 									 ( symbol.kind != LSPCompletionItemKind::Text ? score : 0 ) );
 					matches.push_back( symbol );
+					++sourceMatches;
 
-					if ( matches.size() >= max )
+					if ( sourceMatches >= max )
 						break;
 				}
 			}
 		}
-
-		if ( matches.size() >= max )
-			break;
 	}
 
-	std::sort(
-		matches.begin(), matches.end(),
-		[]( const AutoCompletePlugin::Suggestion& left,
-			const AutoCompletePlugin::Suggestion& right ) { return left.score > right.score; } );
+	std::sort( matches.begin(), matches.end(),
+			   []( const AutoCompletePlugin::Suggestion& left,
+				   const AutoCompletePlugin::Suggestion& right ) {
+				   if ( left.score != right.score )
+					   return left.score > right.score;
+				   if ( left.source == AutoCompletePlugin::Suggestion::Source::UserSnippet &&
+						right.source == AutoCompletePlugin::Suggestion::Source::UserSnippet &&
+						left.sourcePriority != right.sourcePriority )
+					   return left.sourcePriority > right.sourcePriority;
+				   return left.text < right.text;
+			   } );
+	if ( matches.size() > max )
+		matches.erase( matches.begin() + max, matches.end() );
 
 	return matches;
 }
@@ -154,6 +201,8 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
+	while ( mSnippetJobs > 0 )
+		Sys::sleep( Milliseconds( 1 ) );
 	for ( auto& client : mSnippetClients )
 		client.second->detach();
 	mSnippetClients.clear();
@@ -329,10 +378,161 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		updateShortcuts();
 	}
 
+	mUserSnippetsPath = pluginManager->getConfigPath() + "snippets" + FileSystem::getOSSlash();
+	++mSnippetJobs;
+	mThreadPool->run( [this, path = mUserSnippetsPath] {
+		ScopedOp job( [] {}, [this] { --mSnippetJobs; } );
+		Lock lock( mSnippetLoadMutex );
+		if ( mShuttingDown )
+			return;
+		FileSystem::makeDir( path, true );
+		loadSnippetDirectory( path, UserSnippetSource::User, true );
+	} );
+	setSnippetWorkspaceFolder( pluginManager->getWorkspaceFolder() );
+
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
+}
+
+void AutoCompletePlugin::loadSnippetDirectory( const std::string& path, UserSnippetSource source,
+											   bool languageFiles ) {
+	if ( path.empty() || !FileSystem::isDirectory( path ) )
+		return;
+	for ( const auto& name : FileSystem::filesGetInPath( path, true, false, true ) ) {
+		if ( mShuttingDown )
+			return;
+		const std::string filePath = path + name;
+		if ( !FileSystem::isDirectory( filePath ) )
+			loadSnippetFile( filePath, source, languageFiles );
+	}
+}
+
+void AutoCompletePlugin::loadSnippetFile( const std::string& path, UserSnippetSource source,
+										  bool languageFiles ) {
+	const std::string extension = FileSystem::fileExtension( path );
+	if ( extension != "code-snippets" && ( !languageFiles || extension != "json" ) )
+		return;
+	std::string contents;
+	if ( !FileSystem::fileGet( path, contents ) )
+		return;
+	std::string defaultScope;
+	if ( extension == "json" )
+		defaultScope = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) );
+	std::vector<std::string> diagnostics;
+	if ( !mUserSnippetStore.updateFile( contents, path, source, std::move( defaultScope ),
+										&diagnostics ) ) {
+		Log::warning( "AutoCompletePlugin: keeping the last valid snippets for invalid file %s",
+					  path.c_str() );
+	}
+	for ( const auto& diagnostic : diagnostics )
+		Log::warning( "AutoCompletePlugin: %s", diagnostic.c_str() );
+}
+
+void AutoCompletePlugin::setSnippetWorkspaceFolder( std::string workspaceFolder ) {
+	if ( !workspaceFolder.empty() )
+		FileSystem::dirAddSlashAtEnd( workspaceFolder );
+	Uint64 generation;
+	{
+		Lock lock( mSnippetLoadMutex );
+		if ( mSnippetWorkspaceFolder == workspaceFolder )
+			return;
+		mSnippetWorkspaceFolder = workspaceFolder;
+		mVSCodeSnippetsPath =
+			workspaceFolder.empty() ? "" : workspaceFolder + ".vscode" + FileSystem::getOSSlash();
+		mEcodeSnippetsPath =
+			workspaceFolder.empty() ? "" : workspaceFolder + ".ecode" + FileSystem::getOSSlash();
+		generation = ++mSnippetWorkspaceGeneration;
+	}
+	++mSnippetJobs;
+	mThreadPool->run( [this, workspaceFolder = std::move( workspaceFolder ), generation] {
+		ScopedOp job( [] {}, [this] { --mSnippetJobs; } );
+		Lock lock( mSnippetLoadMutex );
+		if ( mShuttingDown || generation != mSnippetWorkspaceGeneration )
+			return;
+		mUserSnippetStore.removeSource( UserSnippetSource::VSCodeProject );
+		mUserSnippetStore.removeSource( UserSnippetSource::EcodeProject );
+		if ( workspaceFolder.empty() )
+			return;
+		loadSnippetDirectory( workspaceFolder + ".vscode" + FileSystem::getOSSlash(),
+							  UserSnippetSource::VSCodeProject, false );
+		loadSnippetDirectory( workspaceFolder + ".ecode" + FileSystem::getOSSlash(),
+							  UserSnippetSource::EcodeProject, false );
+	} );
+}
+
+void AutoCompletePlugin::scheduleSnippetFileUpdate( std::string path, UserSnippetSource source,
+													bool languageFiles, bool remove ) {
+	const Uint64 generation = mSnippetWorkspaceGeneration;
+	++mSnippetJobs;
+	mThreadPool->run( [this, path = std::move( path ), source, languageFiles, remove, generation] {
+		ScopedOp job( [] {}, [this] { --mSnippetJobs; } );
+		Lock lock( mSnippetLoadMutex );
+		if ( mShuttingDown ||
+			 ( source != UserSnippetSource::User && generation != mSnippetWorkspaceGeneration ) )
+			return;
+		if ( remove )
+			mUserSnippetStore.removeFile( path );
+		else
+			loadSnippetFile( path, source, languageFiles );
+	} );
+}
+
+void AutoCompletePlugin::onLoadProject( const std::string& projectFolder,
+										const std::string& /*projectStatePath*/ ) {
+	setSnippetWorkspaceFolder( projectFolder );
+}
+
+void AutoCompletePlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
+	Plugin::onFileSystemEvent( ev, file );
+	if ( mShuttingDown || isLoading() )
+		return;
+
+	std::string_view path = file.getFilepath();
+	UserSnippetSource source;
+	bool languageFiles = false;
+	bool isSnippetPath;
+	const bool updatesSnippet =
+		ev.type == FileSystemEventType::Delete || ev.type == FileSystemEventType::Add ||
+		ev.type == FileSystemEventType::Modified || ev.type == FileSystemEventType::Moved;
+	std::string scheduledPath;
+	{
+		Lock lock( mSnippetLoadMutex );
+		if ( path.empty() ) {
+			mSnippetEventPathBuffer.clear();
+			mSnippetEventPathBuffer.reserve( ev.directory.size() + ev.filename.size() );
+			mSnippetEventPathBuffer.append( ev.directory ).append( ev.filename );
+			path = mSnippetEventPathBuffer;
+		}
+		isSnippetPath = getSnippetPathSource( path, mUserSnippetsPath, mVSCodeSnippetsPath,
+											  mEcodeSnippetsPath, source, languageFiles );
+		if ( isSnippetPath && updatesSnippet )
+			scheduledPath = path;
+	}
+	if ( isSnippetPath && updatesSnippet ) {
+		if ( ev.type == FileSystemEventType::Delete )
+			scheduleSnippetFileUpdate( std::move( scheduledPath ), source, languageFiles, true );
+		else if ( ev.type == FileSystemEventType::Add || ev.type == FileSystemEventType::Modified ||
+				  ev.type == FileSystemEventType::Moved )
+			scheduleSnippetFileUpdate( std::move( scheduledPath ), source, languageFiles, false );
+	}
+
+	if ( ev.type == FileSystemEventType::Moved && !ev.oldFilename.empty() ) {
+		std::string oldPath = ev.oldFilename;
+		if ( FileSystem::isRelativePath( oldPath ) ) {
+			std::string directory = ev.directory;
+			FileSystem::dirAddSlashAtEnd( directory );
+			oldPath = directory + oldPath;
+		}
+		{
+			Lock lock( mSnippetLoadMutex );
+			isSnippetPath = getSnippetPathSource( oldPath, mUserSnippetsPath, mVSCodeSnippetsPath,
+												  mEcodeSnippetsPath, source, languageFiles );
+		}
+		if ( isSnippetPath )
+			scheduleSnippetFileUpdate( oldPath, source, languageFiles, true );
+	}
 }
 
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
@@ -659,6 +859,8 @@ void AutoCompletePlugin::requestCodeCompletion( UICodeEditor* editor ) {
 
 bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent& event ) {
 	std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
+	const bool hasSnippetInput =
+		mUserSnippetStore.size() > 0 && !getUserSnippetInput( editor ).empty();
 
 	auto lang = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
 	auto cap = mCapabilities.find( lang );
@@ -682,7 +884,7 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 
 		if ( cap->second.completionProvider.provider ) {
 			const auto& triggerCharacters = cap->second.completionProvider.triggerCharacters;
-			if ( partialSymbol.size() >= 1 ||
+			if ( partialSymbol.size() >= 1 || hasSnippetInput ||
 				 std::find( triggerCharacters.begin(), triggerCharacters.end(), event.getChar() ) !=
 					 triggerCharacters.end() ) {
 				updateSuggestions( partialSymbol, editor );
@@ -693,7 +895,7 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 		return false;
 	}
 
-	if ( partialSymbol.size() >= 3 ) {
+	if ( partialSymbol.size() >= 3 || hasSnippetInput ) {
 		updateSuggestions( partialSymbol, editor );
 	} else {
 		resetSuggestions( editor );
@@ -781,6 +983,57 @@ static SnippetParser::VariableMap snippetVariables( TextDocument& doc,
 			 { "TM_FILEPATH", filePath } };
 }
 
+static std::string prepareSnippetText( TextDocument& doc, const TextRange& selection,
+									   std::string_view snippet ) {
+	if ( snippet.find( '\n' ) == std::string_view::npos &&
+		 snippet.find( '\t' ) == std::string_view::npos )
+		return std::string( snippet );
+	const TextPosition position = selection.normalized().start();
+	const TextPosition contentStart = doc.startOfContent( position );
+	std::string baseIndent;
+	if ( contentStart.column() > 0 )
+		baseIndent =
+			doc.line( position.line() ).getText().substr( 0, contentStart.column() ).toUtf8();
+	const std::string indent = doc.getIndentString().toUtf8();
+	std::string prepared;
+	prepared.reserve( snippet.size() + baseIndent.size() * 2 );
+	bool lineStart = true;
+	for ( const char ch : snippet ) {
+		if ( lineStart && ch == '\t' ) {
+			prepared += indent;
+			continue;
+		}
+		prepared.push_back( ch );
+		lineStart = ch == '\n';
+		if ( lineStart )
+			prepared += baseIndent;
+	}
+	return prepared;
+}
+
+static TextRange userSnippetActivationRange( TextDocument& doc, const TextRange& selection,
+											 std::string_view prefix,
+											 std::string_view partialSymbol ) {
+	if ( selection.hasSelection() )
+		return selection;
+	const TextPosition end = selection.start();
+	const auto rangeFor = [&]( std::string_view text ) {
+		return TextRange(
+			doc.positionOffset( end, -static_cast<int>( String::utf8Length( text ) ) ), end );
+	};
+	if ( !prefix.empty() ) {
+		const TextRange prefixRange = rangeFor( prefix );
+		if ( doc.getText( prefixRange ).toUtf8() == prefix )
+			return prefixRange;
+	}
+	if ( !partialSymbol.empty() ) {
+		const TextRange symbolRange = rangeFor( partialSymbol );
+		if ( doc.getText( symbolRange ).toUtf8() == partialSymbol )
+			return symbolRange;
+	}
+	return selection;
+}
+
 void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	if ( mSnippetChoiceSuggestions )
 		return pickSnippetChoice( editor );
@@ -806,13 +1059,19 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	} else {
 		std::vector<SnippetInsertion> insertions;
 		insertions.reserve( prevSels.size() );
-		for ( const auto& selection : prevSels )
+		for ( const auto& selection : prevSels ) {
+			const std::string prepared = prepareSnippetText( *doc, selection, rawInsertText );
 			insertions.push_back(
-				{ SnippetParser::parse( rawInsertText, snippetVariables( *doc, selection ) ),
-				  {} } );
+				{ SnippetParser::parse( prepared, snippetVariables( *doc, selection ) ), {} } );
+		}
 
-		if ( prevSels.size() == 1 && suggestion.range.isValid() &&
-			 doc->isValidRange( suggestion.range ) ) {
+		if ( suggestion.source == Suggestion::Source::UserSnippet ) {
+			for ( size_t index = 0; index < prevSels.size(); ++index )
+				doc->setSelection( index,
+								   userSnippetActivationRange( *doc, prevSels[index],
+															   suggestion.matchedPrefix, symbol ) );
+		} else if ( prevSels.size() == 1 && suggestion.range.isValid() &&
+					doc->isValidRange( suggestion.range ) ) {
 			doc->setSelection( suggestion.range );
 		} else if ( !symbol.empty() ) {
 			doc->execute( "delete-to-previous-word" );
@@ -1202,7 +1461,7 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 									 item.insertTextFormat } );
 		}
 	}
-	if ( suggestions.empty() || !mSuggestionsEditor )
+	if ( !mSuggestionsEditor )
 		return {};
 	UICodeEditor* editor = nullptr;
 	{
@@ -1212,6 +1471,8 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 	if ( !editor )
 		return {};
 	std::string symbol( getPartialSymbol( editor->getDocumentRef().get() ) );
+	SymbolsList userSnippets =
+		getUserSnippetSuggestions( editor, symbol, eemax<size_t>( 100UL, suggestions.size() ) );
 	const std::string& lang = editor->getDocument().getSyntaxDefinition().getLanguageName();
 	bool hasLangSuggestions = false;
 	{
@@ -1219,15 +1480,20 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 		auto langSuggestions = mLangCache.find( lang );
 		hasLangSuggestions = langSuggestions != mLangCache.end();
 	}
-	if ( symbol.empty() || !hasLangSuggestions ) {
+	if ( symbol.empty() ) {
+		suggestions.insert( suggestions.end(), std::make_move_iterator( userSnippets.begin() ),
+							std::make_move_iterator( userSnippets.end() ) );
 		Lock l( mSuggestionsMutex );
-		mSuggestions = suggestions;
+		mSuggestions = std::move( suggestions );
 	} else {
 		SymbolsList fuzzySuggestions;
-		{
+		if ( hasLangSuggestions ) {
 			Lock l2( mLangSymbolsMutex );
 			auto& symbols = mLangCache[lang];
-			fuzzySuggestions = fuzzyMatchSymbols( { &suggestions, &symbols }, symbol,
+			fuzzySuggestions = fuzzyMatchSymbols( { &suggestions, &symbols, &userSnippets }, symbol,
+												  eemax<size_t>( 100UL, suggestions.size() ) );
+		} else {
+			fuzzySuggestions = fuzzyMatchSymbols( { &suggestions, &userSnippets }, symbol,
 												  eemax<size_t>( 100UL, suggestions.size() ) );
 		}
 
@@ -1395,6 +1661,8 @@ void AutoCompletePlugin::updateShortcuts() {
 PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {
 	if ( msg.type == PluginMessageType::UIReady ) {
 		updateShortcuts();
+	} else if ( msg.type == PluginMessageType::WorkspaceFolderChanged ) {
+		setSnippetWorkspaceFolder( msg.asJSON().value( "folder", "" ) );
 	} else if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
 		if ( msg.responseID ) {
 			Lock l( mHandlesMutex );
@@ -1448,6 +1716,22 @@ std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
 	TextPosition end = doc->getSelection().end();
 	TextPosition start = doc->startOfWord( end );
 	return doc->getText( { start, end } ).toUtf8();
+}
+
+std::string AutoCompletePlugin::getUserSnippetInput( UICodeEditor* editor ) const {
+	if ( !editor || editor->getDocument().getSelection().hasSelection() )
+		return {};
+	TextDocument& doc = editor->getDocument();
+	const TextPosition end = doc.getSelection().end();
+	static constexpr size_t MAX_SNIPPET_INPUT_LENGTH = 128;
+	const TextPosition start(
+		end.line(),
+		eemax<Int64>( 0, end.column() - static_cast<Int64>( MAX_SNIPPET_INPUT_LENGTH ) ) );
+	std::string input = doc.getText( { start, end } ).toUtf8();
+	const size_t whitespace = input.find_last_of( " \t" );
+	if ( whitespace != std::string::npos )
+		input.erase( 0, whitespace + 1 );
+	return input;
 }
 
 void AutoCompletePlugin::update( UICodeEditor* editor ) {
@@ -2030,12 +2314,19 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 		}
 		if ( tryRequestCapabilities( editor ) )
 			requestCodeCompletion( editor );
-		if ( symbol.empty() || symbols.empty() )
-			return;
+		SymbolsList userSnippets =
+			getUserSnippetSuggestions( editor, symbol, mSuggestionsMaxVisible );
 
-		Lock l( fromDocCache ? mDocMutex : mLangSymbolsMutex );
+		SymbolsList matches;
+		if ( symbol.empty() ) {
+			matches = std::move( userSnippets );
+		} else {
+			Lock l( fromDocCache ? mDocMutex : mLangSymbolsMutex );
+			matches =
+				fuzzyMatchSymbols( { &symbols, &userSnippets }, symbol, mSuggestionsMaxVisible );
+		}
 		Lock l2( mSuggestionsMutex );
-		mSuggestions = fuzzyMatchSymbols( { &symbols }, symbol, mSuggestionsMaxVisible );
+		mSuggestions = std::move( matches );
 	}
 	editor->runOnMainThread( [editor] { editor->invalidateDraw(); } );
 }
@@ -2049,30 +2340,67 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 		usesOwnSymbols = mDocUsesOwnSymbols[&doc];
 	}
 
+	bool scheduled = false;
 	if ( usesOwnSymbols ) {
 		Lock l( mDocMutex );
 		auto docCache = mDocCache.find( &doc );
-		if ( docCache == mDocCache.end() || mShuttingDown )
-			return;
-		const auto& symbols = docCache->second.symbols;
-		{
+		if ( docCache != mDocCache.end() && !mShuttingDown ) {
+			const auto& symbols = docCache->second.symbols;
 			mThreadPool->run( [this, symbol, &symbols, editor] {
 				runUpdateSuggestions( symbol, symbols, editor, true );
 			} );
+			scheduled = true;
 		}
 	}
 
-	const std::string& lang = doc.getSyntaxDefinition().getLanguageName();
-	Lock l( mLangSymbolsMutex );
-	auto langSuggestions = mLangCache.find( lang );
-	if ( langSuggestions == mLangCache.end() )
-		return;
-	const auto& symbols = langSuggestions->second;
 	{
-		mThreadPool->run( [this, symbol, &symbols, editor] {
-			runUpdateSuggestions( symbol, symbols, editor, false );
-		} );
+		const std::string& lang = doc.getSyntaxDefinition().getLanguageName();
+		Lock l( mLangSymbolsMutex );
+		auto langSuggestions = mLangCache.find( lang );
+		if ( langSuggestions != mLangCache.end() ) {
+			const auto& symbols = langSuggestions->second;
+			mThreadPool->run( [this, symbol, &symbols, editor] {
+				runUpdateSuggestions( symbol, symbols, editor, false );
+			} );
+			scheduled = true;
+		}
 	}
+	if ( !scheduled )
+		mThreadPool->run( [this, symbol, editor] {
+			runUpdateSuggestions( symbol, SymbolsList{}, editor, false );
+		} );
+}
+
+AutoCompletePlugin::SymbolsList
+AutoCompletePlugin::getUserSnippetSuggestions( UICodeEditor* editor, const std::string& symbol,
+											   size_t maxResults ) const {
+	SymbolsList suggestions;
+	if ( !editor )
+		return suggestions;
+	const auto& language = editor->getDocument().getSyntaxDefinition().getLSPName();
+	std::string snippetInput = getUserSnippetInput( editor );
+	if ( snippetInput.empty() )
+		snippetInput = symbol;
+	auto matches = mUserSnippetStore.find( language, snippetInput, maxResults );
+	suggestions.reserve( matches.size() );
+	for ( auto& match : matches ) {
+		Suggestion suggestion( LSPCompletionItemKind::Snippet, std::move( match.matchedPrefix ),
+							   match.snippet.description.empty()
+								   ? std::move( match.snippet.name )
+								   : match.snippet.name + " - " + match.snippet.description,
+							   {}, {}, std::move( match.snippet.body ), {},
+							   LSPInsertTextFormat::Snippet );
+		suggestion.source = Suggestion::Source::UserSnippet;
+		suggestion.matchedPrefix = std::move( match.matchedInput );
+		suggestion.identityHash = hashCombine( String::hash( match.snippet.sourcePath ),
+											   String::hash( match.snippet.name ) );
+		suggestion.score = match.score;
+		suggestion.sourcePriority = match.snippet.source == UserSnippetSource::EcodeProject	   ? 2
+									: match.snippet.source == UserSnippetSource::VSCodeProject ? 1
+																							   : 0;
+		suggestions.emplace_back( std::move( suggestion ) );
+	}
+	return suggestions;
 }
 
 bool AutoCompletePlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,

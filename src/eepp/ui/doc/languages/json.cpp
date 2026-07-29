@@ -10,8 +10,9 @@ void addJSON() {
 		{ "JSON",
 		  {
 			  "%.json$",
-			  "%.cson$"
+			  "%.cson$",
 			  "%.jsonc$",
+			  "%.code%-snippets$",
 			  "%.ipynb$",
 			  "%.webmanifest$",
 			  "%.cps$",

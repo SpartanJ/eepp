@@ -107,6 +107,10 @@ const std::string& PluginManager::getPluginsPath() const {
 	return mPluginsPath;
 }
 
+const std::string& PluginManager::getConfigPath() const {
+	return mConfigPath;
+}
+
 const std::map<std::string, bool>& PluginManager::getPluginsEnabled() const {
 	return mPluginsEnabled;
 }

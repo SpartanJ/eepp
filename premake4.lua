@@ -1935,7 +1935,9 @@ solution "eepp"
 		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
-				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
+				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
+				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 

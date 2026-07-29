@@ -298,6 +298,8 @@ class PluginManager {
 
 	const std::string& getPluginsPath() const;
 
+	const std::string& getConfigPath() const;
+
 	const std::map<std::string, bool>& getPluginsEnabled() const;
 
 	void onNewEditor( UICodeEditor* editor );
