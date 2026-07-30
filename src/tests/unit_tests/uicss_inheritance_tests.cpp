@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -28,6 +29,37 @@ using namespace EE::UI;
 using namespace EE::UI::CSS;
 using namespace EE::Scene;
 using namespace EE::Graphics;
+
+UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
+	StyleSheetPropertiesParser parser( R"css(
+		color /* before colon */ : red;
+		margin: 1px /* between values */ 2px;
+		font-family: "A/* literal */B";
+		/* between declarations */ width: 140px;
+		line-height: 40px !important /* final declaration without semicolon */
+	)css" );
+	const auto& properties = parser.getProperties();
+
+	auto lineHeight = properties.find( static_cast<Uint32>( PropertyId::LineHeight ) );
+	auto color = properties.find( static_cast<Uint32>( PropertyId::Color ) );
+	auto marginTop = properties.find( static_cast<Uint32>( PropertyId::MarginTop ) );
+	auto marginRight = properties.find( static_cast<Uint32>( PropertyId::MarginRight ) );
+	auto fontFamily = properties.find( static_cast<Uint32>( PropertyId::FontFamily ) );
+	auto width = properties.find( static_cast<Uint32>( PropertyId::Width ) );
+
+	ASSERT_TRUE( lineHeight != properties.end() );
+	ASSERT_TRUE( color != properties.end() );
+	ASSERT_TRUE( marginTop != properties.end() );
+	ASSERT_TRUE( marginRight != properties.end() );
+	ASSERT_TRUE( fontFamily != properties.end() );
+	ASSERT_TRUE( width != properties.end() );
+	EXPECT_TRUE( lineHeight->second.getValue() == "40px" );
+	EXPECT_TRUE( color->second.getValue() == "red" );
+	EXPECT_TRUE( marginTop->second.getValue() == "1px" );
+	EXPECT_TRUE( marginRight->second.getValue() == "2px" );
+	EXPECT_TRUE( fontFamily->second.getValue().find( "/* literal */" ) != std::string::npos );
+	EXPECT_TRUE( width->second.getValue() == "140px" );
+}
 
 UTEST( CSSInheritance, HtmlXmlLoadingInheritance ) {
 	UIApplication app(

@@ -6,6 +6,21 @@ using namespace EE::UI;
 
 namespace EE { namespace UI { namespace CSS {
 
+static std::size_t skipComment( std::string_view str, std::size_t pos ) {
+	pos += 2;
+	while ( pos + 1 < str.size() ) {
+		if ( str[pos] == '*' && str[pos + 1] == '/' )
+			return pos + 2;
+		pos++;
+	}
+	return str.size();
+}
+
+static void appendCommentWhitespace( std::string& buffer ) {
+	if ( !buffer.empty() && buffer.back() != ' ' )
+		buffer += ' ';
+}
+
 StyleSheetPropertiesParser::StyleSheetPropertiesParser( std::string_view propsstr ) {
 	parse( propsstr );
 }
@@ -22,7 +37,6 @@ void StyleSheetPropertiesParser::parse( std::string_view propsstr ) {
 	mProperties.clear();
 	mVariables.clear();
 	ReadState rs = ReadingPropertyName;
-	mPrevRs = rs;
 	std::size_t pos = 0;
 	std::string buffer;
 
@@ -36,9 +50,6 @@ void StyleSheetPropertiesParser::parse( std::string_view propsstr ) {
 				pos = readPropertyValue( rs, pos, buffer, propsstr );
 				break;
 			}
-			case ReadingComment: {
-				pos = readComment( rs, pos, buffer, propsstr );
-			}
 			default:
 				break;
 		}
@@ -48,13 +59,13 @@ void StyleSheetPropertiesParser::parse( std::string_view propsstr ) {
 int StyleSheetPropertiesParser::readPropertyName( StyleSheetPropertiesParser::ReadState& rs,
 												  std::size_t pos, std::string& buffer,
 												  std::string_view str ) {
-	mPrevRs = rs;
 	buffer.clear();
 
 	while ( pos < str.size() ) {
 		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' ) {
-			rs = ReadingComment;
-			return pos;
+			appendCommentWhitespace( buffer );
+			pos = skipComment( str, pos );
+			continue;
 		}
 
 		if ( str[pos] == ':' ) {
@@ -78,8 +89,6 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 	buffer.clear();
 
-	mPrevRs = rs;
-
 	bool inDoubleQuote = false;
 	bool inSingleQuote = false;
 	int nestedParenthesis = 0;
@@ -89,8 +98,9 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 		// Ensure we aren't parsing comments inside strings
 		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' && !inDoubleQuote &&
 			 !inSingleQuote ) {
-			rs = ReadingComment;
-			return pos;
+			appendCommentWhitespace( buffer );
+			pos = skipComment( str, pos );
+			continue;
 		}
 
 		// Only terminate property parsing on ';' if we are outside of quotes and parentheses
@@ -118,36 +128,11 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 		pos++;
 
-		if ( pos == str.size() ) {
-			rs = ReadingPropertyName;
-
-			addProperty( propName, buffer );
-
-			return pos + 1;
-		}
-
 		prevChar = str[pos - 1];
 	}
 
-	return pos;
-}
-
-int StyleSheetPropertiesParser::readComment( StyleSheetPropertiesParser::ReadState& rs,
-											 std::size_t pos, std::string& buffer,
-											 std::string_view str ) {
-	buffer.clear();
-
-	while ( pos < str.size() ) {
-		if ( str[pos] == '*' && str.size() > pos + 1 && str[pos + 1] == '/' ) {
-			rs = mPrevRs;
-			return pos + 2;
-		}
-
-		buffer += str[pos];
-
-		pos++;
-	}
-
+	rs = ReadingPropertyName;
+	addProperty( propName, buffer );
 	return pos;
 }
 
