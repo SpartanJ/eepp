@@ -19,6 +19,7 @@
 #include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
@@ -660,6 +661,30 @@ UTEST( ResourcePrerequisites, distinctFallbackResourcesRemainInFallbackChain ) {
 	cjkFallback.reset();
 	userFallback.reset();
 	scope.reset();
+	window->display( false );
+	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, systemFallbackDoesNotReplaceMatchingFamilyBinding ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "System fallback ownership test" );
+	ResourceScopePtr scope = ResourceScope::New();
+	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoNaskhArabic-Regular.ttf";
+	FontTrueTypePtr familyFont = FontTrueType::New( "Noto Naskh Arabic", fontPath, *scope );
+	ASSERT_TRUE( familyFont && familyFont->loaded() );
+	FontTrueTypeWeakPtr familyFontWeak = familyFont;
+
+	FontDesc desc;
+	desc.family = "Noto Naskh Arabic";
+	desc.path = fontPath;
+	FontTrueType* fallback = scope->getFontService().getOrLoadSystemFallbackFont( desc );
+	ASSERT_TRUE( fallback != nullptr );
+	EXPECT_NE( familyFont.get(), fallback );
+	EXPECT_EQ( familyFont.get(), scope->findFont( desc.family ).get() );
+
+	familyFont.reset();
+	EXPECT_FALSE( familyFontWeak.expired() );
+	scope.reset();
+	EXPECT_TRUE( familyFontWeak.expired() );
 	window->display( false );
 	Engine::destroySingleton();
 }

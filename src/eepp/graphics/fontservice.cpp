@@ -147,8 +147,13 @@ FontTrueType* FontService::getOrLoadSystemFallbackFont( const FontDesc& desc ) {
 			return ttf;
 	}
 
+	// System fallbacks are implementation resources, not family-name bindings. Publishing one
+	// under desc.family could replace the font whose getGlyph() call requested the fallback and
+	// destroy that font while it is still executing.
+	std::string resourceName =
+		"@system-fallback/" + desc.path + "#" + std::to_string( desc.faceIndex );
 	FontTrueTypePtr ttf =
-		FontTrueType::New( desc.family, desc.path, desc.faceIndex, mResourceScope );
+		FontTrueType::New( resourceName, desc.path, desc.faceIndex, mResourceScope );
 	if ( !ttf || !ttf->loaded() ) {
 		if ( ttf )
 			mResourceScope.eraseLocalFont( ttf.get() );

@@ -113,9 +113,10 @@ class EE_API FontService {
 	/**
 	 * Finds or loads a system fallback font described by @p desc.
 	 *
-	 * Successfully loaded fonts are published into the associated scope and strongly retained by
-	 * the service for future glyph fallback requests. The returned pointer is borrowed and remains
-	 * valid until the font is removed from the scope or the service is destroyed.
+	 * Successfully loaded fonts are published under an internal, path-specific resource name in the
+	 * associated scope and strongly retained by the service for future glyph fallback requests.
+	 * This leaves semantic family-name bindings untouched. The returned pointer is borrowed and
+	 * remains valid until the font is removed from the scope or the service is destroyed.
 	 *
 	 * @return A borrowed pointer to the cached font, or nullptr when loading fails.
 	 */
