@@ -238,6 +238,40 @@ UTEST( UISvg, svgInsideBlockElement ) {
 	destroyScene( sceneNode );
 }
 
+UTEST( UISvg, percentageHeightResolvesAfterContainingBlockLayout ) {
+	auto sceneNode = createScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	std::string html = R"html(<!doctype html>
+<html>
+<body>
+<button id="button" style="height:34.5px;padding:2px 6px 3px">
+  <svg id="icon" viewBox="0 0 26 26" style="width:100%;height:100%">
+    <path d="M11 2a9 9 0 105.641 16.01l3.652 3.697 1.414-1.414-3.697-3.653A9 9 0 0011 2z"/>
+  </svg>
+</button>
+</body>
+</html>)html";
+
+	auto rootWidget = sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	ASSERT_TRUE( rootWidget != nullptr );
+	sceneNode->updateDirtyLayouts();
+
+	auto* button = rootWidget->querySelector( "#button" );
+	auto* svgWidget = rootWidget->querySelector( "#icon" )->asType<UISvg>();
+	ASSERT_TRUE( button != nullptr );
+	ASSERT_TRUE( svgWidget != nullptr );
+	EXPECT_EQ( svgWidget->getLayoutHeightPolicy(), SizePolicy::Fixed );
+	EXPECT_GT( svgWidget->getPixelsSize().getHeight(), 0.f );
+	EXPECT_NEAR( svgWidget->getPixelsSize().getHeight(), 34.5f, 1.f );
+
+	button->setStyleSheetProperty( StyleSheetProperty( "height", "50px" ) );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_NEAR( svgWidget->getPixelsSize().getHeight(), 50.f, 1.f );
+
+	destroyScene( sceneNode );
+}
+
 UTEST( UISvg, svgWithMemoryAsset ) {
 	auto sceneNode = createScene();
 	ASSERT_TRUE( sceneNode != nullptr );

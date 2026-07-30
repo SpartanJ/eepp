@@ -41,6 +41,23 @@ static bool isAtomicInlineAutoDisplay( CSSDisplay display ) {
 		   display == CSSDisplay::InlineGrid;
 }
 
+static UIWidget* getHTMLContainingBlockParent( const UIWidget* widget ) {
+	Node* parent = widget->getParent();
+	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+			static_cast<UIHTMLWidget*>( parent )->isInline() )
+		parent = parent->getParent();
+	return parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+}
+
+static bool hasDefiniteCSSHeight( UIWidget* widget ) {
+	if ( !widget || widget->getLayoutHeightPolicy() != SizePolicy::Fixed )
+		return false;
+
+	auto* style = widget->getUIStyle();
+	const auto* height = style ? style->getProperty( PropertyId::Height ) : nullptr;
+	return !( height && StyleSheetLength::isPercentage( height->value() ) );
+}
+
 static CSSBaselineAlignValue parseBaselineAlign( UIHTMLWidget* widget,
 												 const StyleSheetProperty& property ) {
 	std::string_view val = property.value();
@@ -74,6 +91,72 @@ static CSSBaselineAlignValue parseBaselineAlign( UIHTMLWidget* widget,
 
 UIHTMLWidget* UIHTMLWidget::New() {
 	return eeNew( UIHTMLWidget, () );
+}
+
+bool UIHTMLWidget::resolvePercentageSize( UIWidget* widget ) {
+	if ( widget == nullptr || !( widget->getFlags() & UI_HTML_ELEMENT ) ||
+		 widget->getUIStyle() == nullptr )
+		return false;
+
+	const auto* width = widget->getUIStyle()->getProperty( PropertyId::Width );
+	const auto* height = widget->getUIStyle()->getProperty( PropertyId::Height );
+	const bool percentageWidth = width && StyleSheetLength::isPercentage( width->value() );
+	const bool percentageHeight = height && StyleSheetLength::isPercentage( height->value() );
+	if ( !percentageWidth && !percentageHeight )
+		return false;
+
+	UIWidget* containingBlock = getHTMLContainingBlockParent( widget );
+	if ( containingBlock == nullptr )
+		return false;
+
+	const Rectf contentOffset = containingBlock->getPixelsContentOffset();
+	const Sizef containingSize = containingBlock->getPixelsSize();
+	const Float contentWidth =
+		eemax( 0.f, containingSize.getWidth() - contentOffset.Left - contentOffset.Right );
+	const Float contentHeight =
+		eemax( 0.f, containingSize.getHeight() - contentOffset.Top - contentOffset.Bottom );
+	Sizef size = widget->getPixelsSize();
+	bool changed = false;
+
+	if ( percentageWidth ) {
+		if ( widget->getLayoutWidthPolicy() != SizePolicy::Fixed ) {
+			widget->setLayoutWidthPolicy( SizePolicy::Fixed );
+			changed = true;
+		}
+		Float resolved = widget->cssResolvedLengthToBorderBoxWidth(
+			widget->convertLength( width->asStyleSheetLength(), contentWidth ) );
+		if ( size.getWidth() != resolved ) {
+			size.setWidth( resolved );
+			changed = true;
+		}
+	}
+
+	if ( percentageHeight ) {
+		if ( hasDefiniteCSSHeight( containingBlock ) ) {
+			if ( widget->getLayoutHeightPolicy() != SizePolicy::Fixed ) {
+				widget->setLayoutHeightPolicy( SizePolicy::Fixed );
+				changed = true;
+			}
+			Float resolved = widget->cssResolvedLengthToBorderBoxHeight(
+				widget->convertLength( height->asStyleSheetLength(), contentHeight ) );
+			if ( size.getHeight() != resolved ) {
+				size.setHeight( resolved );
+				changed = true;
+			}
+		} else if ( widget->getLayoutHeightPolicy() != SizePolicy::WrapContent ) {
+			widget->setLayoutHeightPolicy( SizePolicy::WrapContent );
+			changed = true;
+		}
+	}
+
+	if ( size != widget->getPixelsSize() ) {
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) )
+			widget->asType<UIHTMLWidget>()->setInternalPixelsSize( size );
+		else
+			widget->setPixelsSize( size );
+	}
+
+	return changed;
 }
 
 UIHTMLWidget::UIHTMLWidget( const std::string& tag ) : UILayout( tag ) {
@@ -167,34 +250,24 @@ Float UIHTMLWidget::getBaseline() const {
 }
 
 Float UIHTMLWidget::getContainingBlockContentWidth() const {
-	Node* parent = getParent();
-	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
-			static_cast<UIHTMLWidget*>( parent )->isInline() )
-		parent = parent->getParent();
+	UIWidget* parent = getHTMLContainingBlockParent( this );
 	if ( !parent )
 		return 0.f;
 
 	Float width = parent->getPixelsSize().getWidth();
-	if ( parent->isWidget() ) {
-		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
-		width -= contentOffset.Left + contentOffset.Right;
-	}
+	Rectf contentOffset = parent->getPixelsContentOffset();
+	width -= contentOffset.Left + contentOffset.Right;
 	return eemax( 0.f, width );
 }
 
 Float UIHTMLWidget::getContainingBlockContentHeight() const {
-	Node* parent = getParent();
-	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
-			static_cast<UIHTMLWidget*>( parent )->isInline() )
-		parent = parent->getParent();
+	UIWidget* parent = getHTMLContainingBlockParent( this );
 	if ( !parent )
 		return 0.f;
 
 	Float height = parent->getPixelsSize().getHeight();
-	if ( parent->isWidget() ) {
-		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
-		height -= contentOffset.Top + contentOffset.Bottom;
-	}
+	Rectf contentOffset = parent->getPixelsContentOffset();
+	height -= contentOffset.Top + contentOffset.Bottom;
 	return eemax( 0.f, height );
 }
 

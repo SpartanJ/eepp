@@ -1132,6 +1132,7 @@ void GridLayouter::collectGridItems() {
 
 		GridItem item;
 		item.widget = widget;
+		UIHTMLWidget::resolvePercentageSize( widget );
 
 		if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 			UIHTMLWidget* htmlChild = widget->asType<UIHTMLWidget>();

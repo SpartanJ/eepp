@@ -68,7 +68,7 @@ void UISvg::scheduleRasterize() {
 		return;
 
 	if ( !getUISceneNode()->hasThreadPool() ) {
-		rasterizeSvg( mSvgXml );
+		rasterizeSvg( mSvgXml, size );
 		return;
 	}
 
@@ -76,12 +76,32 @@ void UISvg::scheduleRasterize() {
 
 	std::string svgXml( mSvgXml );
 	mTaskId = getUISceneNode()->getThreadPool()->run(
-		[this, svgXml = std::move( svgXml )] { rasterizeSvg( svgXml ); }, {}, (Uint64)this );
+		[this, svgXml = std::move( svgXml ), size] { rasterizeSvg( svgXml, size ); }, {},
+		(Uint64)this );
 }
 
-void UISvg::rasterizeSvg( const std::string& svgXml ) {
+void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
+	pugi::xml_document document;
+	std::string rasterXml;
+	if ( document.load_buffer( svgXml.data(), svgXml.size() ) ) {
+		pugi::xml_node root = document.document_element();
+		auto setRasterDimension = [&]( const char* name, Float value ) {
+			pugi::xml_attribute attribute = root.attribute( name );
+			if ( !attribute )
+				attribute = root.append_attribute( name );
+			if ( attribute.as_string()[0] == '\0' ||
+				 std::string_view( attribute.as_string() ).find( '%' ) != std::string_view::npos )
+				attribute.set_value( value );
+		};
+		setRasterDimension( "width", targetSize.getWidth() );
+		setRasterDimension( "height", targetSize.getHeight() );
+		XmlStringWriter writer;
+		document.print( writer );
+		rasterXml = std::move( writer.result );
+	}
+	const std::string& source = rasterXml.empty() ? svgXml : rasterXml;
 	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
-		(const unsigned char*)svgXml.data(), svgXml.size() );
+		(const unsigned char*)source.data(), source.size() );
 
 	if ( !texture )
 		return;

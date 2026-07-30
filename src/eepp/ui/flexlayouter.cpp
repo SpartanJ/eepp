@@ -63,6 +63,7 @@ void FlexLayouter::collectFlexItems( SmallVector<FlexItem, 16>& items ) {
 
 		FlexItem item;
 		item.widget = widget;
+		UIHTMLWidget::resolvePercentageSize( widget );
 		item.collapsed = isCollapsed;
 		readItemStyle( widget, item );
 

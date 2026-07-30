@@ -8,6 +8,7 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -611,6 +612,32 @@ UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
 	EXPECT_GE( os2->getPixelsPosition().x,
 			   about->getPixelsPosition().x + about->getPixelsSize().getWidth() - 1.f );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, ss64BlockAnchorsFillButtons ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	std::string html;
+	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto buttons = sceneNode->getRoot()->querySelectorAll( ".tbtn" );
+	auto anchors = sceneNode->getRoot()->querySelectorAll( ".tbtn a" );
+	ASSERT_EQ( buttons.size(), (size_t)8 );
+	ASSERT_EQ( anchors.size(), buttons.size() );
+	for ( size_t i = 0; i < buttons.size(); ++i ) {
+		auto* anchor = anchors[i]->asType<UIRichText>();
+		EXPECT_NEAR( anchor->getLineHeightPx(), 40.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight(), 40.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight() + 2.f,
+					 buttons[i]->getPixelsSize().getHeight(), 1.f );
+	}
+	auto* svg = sceneNode->getRoot()->querySelector( "#sherlock svg" )->asType<UISvg>();
+	ASSERT_TRUE( svg != nullptr );
+	EXPECT_EQ( svg->getLayoutHeightPolicy(), SizePolicy::Fixed );
+	EXPECT_GT( svg->getPixelsSize().getHeight(), 0.f );
 	Engine::destroySingleton();
 }
 

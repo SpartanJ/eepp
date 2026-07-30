@@ -1919,6 +1919,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			return;
 
 		UIWidget* widget = node->asType<UIWidget>();
+		UIHTMLWidget::resolvePercentageSize( widget );
 
 		// Skip <head> - it must not participate in layout
 		if ( widget->isType( UI_TYPE_HTML_HEAD ) )
@@ -2069,7 +2070,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						 widget->getUIStyle() ) {
 						const StyleSheetProperty* wprop =
 							widget->getUIStyle()->getProperty( PropertyId::Width );
-						if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) ) {
+						if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) &&
+							 !( widget->getFlags() & UI_HTML_ELEMENT ) ) {
 							Float width = widget->cssWidthPropertyToBorderBoxWidth( *wprop );
 							widget->setPixelsSize( { width, widget->getPixelsSize().getHeight() } );
 						}
@@ -2078,7 +2080,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						 widget->getUIStyle() ) {
 						const StyleSheetProperty* hprop =
 							widget->getUIStyle()->getProperty( PropertyId::Height );
-						if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) ) {
+						if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) &&
+							 !( widget->getFlags() & UI_HTML_ELEMENT ) ) {
 							Float height = widget->cssHeightPropertyToBorderBoxHeight( *hprop );
 							widget->setPixelsSize( { widget->getPixelsSize().getWidth(), height } );
 						}

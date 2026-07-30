@@ -29,7 +29,7 @@ class EE_API UISvg : public UIImage {
 
 	void loadSvgXml( const pugi::xml_node& node );
 	void scheduleRasterize();
-	void rasterizeSvg( const std::string& svgXml );
+	void rasterizeSvg( const std::string& svgXml, const Sizef& targetSize );
 	void clearThreadTag();
 };
 

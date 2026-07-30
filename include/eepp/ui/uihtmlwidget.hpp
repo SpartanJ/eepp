@@ -49,6 +49,11 @@ class EE_API UIHTMLWidget : public UILayout {
   public:
 	static UIHTMLWidget* New();
 
+	/** Re-resolves percentage width/height for an HTML element once its containing block has a
+	 * used size. This also supports HTML-backed widgets such as UISvg that do not derive from
+	 * UIHTMLWidget. Returns true when the used size or size policy changed. */
+	static bool resolvePercentageSize( UIWidget* widget );
+
 	UIHTMLWidget( const std::string& tag = "htmlwidget" );
 
 	virtual ~UIHTMLWidget();
