@@ -509,10 +509,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 		}
 	}
 
-	Uint32 result = UINode::onMouseOver( position, flags );
-	if ( mSceneNode )
-		mSceneNode->setCursor( getCursor() );
-	return result;
+	return UINode::onMouseOver( position, flags );
 }
 
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
@@ -522,9 +519,6 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 		 NULL != mTooltip && !mTooltip->dontAutoHideOnMouseMove() ) {
 		mTooltip->hide();
 	}
-	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == nullptr && mSceneNode )
-		mSceneNode->setCursor( Cursor::Arrow );
-
 	return UINode::onMouseLeave( Pos, Flags );
 }
 

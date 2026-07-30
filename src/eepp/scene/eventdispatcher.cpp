@@ -99,6 +99,8 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( oldOverNode, NodeMessage::MouseLeave );
 		}
 
+		onMouseOverNodeChange( mOverNode );
+
 		if ( NULL != mOverNode ) {
 			mOverNode->onMouseOver( mMousePosi, 0 );
 			sendMsg( mOverNode, NodeMessage::MouseOver );
@@ -217,6 +219,8 @@ void EventDispatcher::update( const Time& time ) {
 		mInput->captureMouse( false );
 	}
 }
+
+void EventDispatcher::onMouseOverNodeChange( Node* ) {}
 
 Input* EventDispatcher::getInput() const {
 	return mInput;

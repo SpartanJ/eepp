@@ -121,6 +121,8 @@ class EE_API EventDispatcher {
 	bool isFirstPress() const;
 
   protected:
+	virtual void onMouseOverNodeChange( Node* node );
+
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;

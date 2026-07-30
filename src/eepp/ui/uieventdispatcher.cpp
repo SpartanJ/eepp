@@ -17,6 +17,15 @@ bool UIEventDispatcher::justGainedFocus() const {
 	return mJustGainedFocus;
 }
 
+void UIEventDispatcher::onMouseOverNodeChange( Node* node ) {
+	Cursor::Type cursor = Cursor::Arrow;
+	while ( node && !node->isWidget() )
+		node = node->getParent();
+	if ( node )
+		cursor = node->asType<UIWidget>()->getCursor();
+	mSceneNode->setCursor( cursor );
+}
+
 void UIEventDispatcher::inputCallback( InputEvent* event ) {
 	if ( event->Type != InputEvent::TextEditing )
 		EventDispatcher::inputCallback( event );
