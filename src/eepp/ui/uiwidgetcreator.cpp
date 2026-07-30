@@ -124,6 +124,7 @@ input[type="submit"],
 input[type="button"],
 input[type="reset"] {
 	display: inline-block;
+	box-sizing: border-box;
 	border-width: 1dp;
 	border-color: #767676;
 	background-color: #f0f0f0;

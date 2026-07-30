@@ -615,8 +615,9 @@ UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
 	Engine::destroySingleton();
 }
 
-UTEST( UIHTMLFloat, ss64BlockAnchorsFillButtons ) {
+UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
 	init_float_test();
+	PixelDensity::setPixelDensity( 2.f );
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
 	std::string html;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
@@ -629,16 +630,34 @@ UTEST( UIHTMLFloat, ss64BlockAnchorsFillButtons ) {
 	ASSERT_EQ( anchors.size(), buttons.size() );
 	for ( size_t i = 0; i < buttons.size(); ++i ) {
 		auto* anchor = anchors[i]->asType<UIRichText>();
-		EXPECT_NEAR( anchor->getLineHeightPx(), 40.f, 1.f );
-		EXPECT_NEAR( anchor->getPixelsSize().getHeight(), 40.f, 1.f );
-		EXPECT_NEAR( anchor->getPixelsSize().getHeight() + 2.f,
+		EXPECT_NEAR( anchor->getLineHeightPx(), 80.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight(), 80.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight() + 4.f,
 					 buttons[i]->getPixelsSize().getHeight(), 1.f );
 	}
 	auto* svg = sceneNode->getRoot()->querySelector( "#sherlock svg" )->asType<UISvg>();
+	auto* input = sceneNode->getRoot()->querySelector( "#qu" );
+	auto* searchButton = sceneNode->getRoot()->querySelector( "#sherlock" );
+	ASSERT_TRUE( input != nullptr );
+	ASSERT_TRUE( searchButton != nullptr );
 	ASSERT_TRUE( svg != nullptr );
+	EXPECT_NEAR( input->getPixelsSize().getHeight(), 74.5f, 1.f );
+	EXPECT_NEAR( searchButton->getPixelsSize().getHeight(), 69.f, 1.f );
+	EXPECT_LE( searchButton->getPixelsPosition().y + searchButton->getPixelsSize().getHeight(),
+			   input->getPixelsPosition().y + input->getPixelsSize().getHeight() );
 	EXPECT_EQ( svg->getLayoutHeightPolicy(), SizePolicy::Fixed );
-	EXPECT_GT( svg->getPixelsSize().getHeight(), 0.f );
+	EXPECT_NEAR( svg->getPixelsSize().getHeight(), 59.f, 1.f );
+	for ( int i = 0; i < 500 && svg->getDrawable() == nullptr; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_TRUE( svg->getDrawable() != nullptr );
+	EXPECT_NEAR( svg->getDrawable()->getPixelsSize().getWidth(), svg->getPixelsSize().getWidth(),
+				 1.f );
+	EXPECT_NEAR( svg->getDrawable()->getPixelsSize().getHeight(), svg->getPixelsSize().getHeight(),
+				 1.f );
 	Engine::destroySingleton();
+	PixelDensity::setPixelDensity( 1.f );
 }
 
 UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {

@@ -107,7 +107,9 @@ void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
 		return;
 
 	SpritePtr sprite = Sprite::New();
-	sprite->createStatic( std::move( texture ) );
+	// TextureRegion destination sizes are density-independent and get converted back to pixels by
+	// the drawable. The SVG texture is already rasterized at the widget's physical pixel size.
+	sprite->createStatic( std::move( texture ), PixelDensity::pxToDp( targetSize ) );
 
 	runOnMainThread( [this, sprite = std::move( sprite )]() mutable {
 		if ( sprite )
