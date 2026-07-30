@@ -1223,8 +1223,8 @@ void FlexLayouter::updateLayout() {
 		return;
 
 	RichText* richText = widget->isType( UI_TYPE_RICHTEXT )
-									   ? widget->asType<UIRichText>()->getRichTextPtr()
-									   : nullptr;
+							 ? widget->asType<UIRichText>()->getRichTextPtr()
+							 : nullptr;
 	bool preserveFloatConstrainedBFCWidth =
 		widget->establishesBlockFormattingContext() &&
 		widget->getLayoutWidthPolicy() == SizePolicy::MatchParent && richText != nullptr &&
@@ -1387,6 +1387,7 @@ void FlexLayouter::updateLayout() {
 	bool indefiniteMainSize = ( mainAxis.horizontal && widthPolicy == SizePolicy::WrapContent ) ||
 							  ( !mainAxis.horizontal && heightPolicy == SizePolicy::WrapContent );
 
+	mMeasuringItems = true;
 	measureFlexItems( mainAxis, crossAxis, containerCrossSize, containerWidth, containerHeight,
 					  containerPadding, indefiniteMainSize, indefiniteCrossSize );
 
@@ -1410,6 +1411,7 @@ void FlexLayouter::updateLayout() {
 		alignMainAxis( line, containerMainSize, mColumnGap );
 		resolveCrossSizes( line, crossAxis, mainAxis );
 	}
+	mMeasuringItems = false;
 
 	alignCrossAxis( lines, containerCrossSize, mRowGap, crossAxis );
 

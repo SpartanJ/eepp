@@ -1,6 +1,7 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/graphics/richtext.hpp>
 #include <eepp/ui/blocklayouter.hpp>
+#include <eepp/ui/flexlayouter.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
@@ -10,12 +11,20 @@
 
 namespace EE { namespace UI {
 
-static bool isStretchedFlexItem( UIHTMLWidget* widget ) {
+static bool isStretchedFlexItemInAxis( UIHTMLWidget* widget, bool horizontalAxis ) {
 	Node* parent = widget->getParent();
 	if ( !parent || !parent->isWidget() || !parent->isType( UI_TYPE_HTML_WIDGET ) )
 		return false;
 	UIHTMLWidget* parentHtml = parent->asType<UIHTMLWidget>();
 	if ( !parentHtml->isFlex() )
+		return false;
+	if ( static_cast<FlexLayouter*>( parentHtml->getLayouter() )->isMeasuringItems() )
+		return false;
+
+	CSSFlexDirection direction = parentHtml->getFlexDirection();
+	bool crossAxisIsHorizontal =
+		direction == CSSFlexDirection::Column || direction == CSSFlexDirection::ColumnReverse;
+	if ( horizontalAxis != crossAxisIsHorizontal )
 		return false;
 
 	CSSAlignSelf alignSelf = widget->getAlignSelf();
@@ -179,9 +188,11 @@ void BlockLayouter::updateLayout() {
 		}
 	}
 
-	if ( totW != mContainer->getPixelsSize().getWidth() ||
-		 ( mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-		   !isStretchedFlexItem( widget ) ) )
+	bool preserveStretchedWidth = mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+								  isStretchedFlexItemInAxis( widget, true );
+	if ( !preserveStretchedWidth &&
+		 ( totW != mContainer->getPixelsSize().getWidth() ||
+		   mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent ) )
 		mContainer->setInternalPixelsWidth( totW );
 
 	Float totH = mContainer->getPixelsSize().getHeight();
@@ -207,9 +218,11 @@ void BlockLayouter::updateLayout() {
 		}
 	}
 
-	if ( totH != mContainer->getPixelsSize().getHeight() ||
-		 ( mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent &&
-		   !isStretchedFlexItem( widget ) ) )
+	bool preserveStretchedHeight = mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent &&
+								   isStretchedFlexItemInAxis( widget, false );
+	if ( !preserveStretchedHeight &&
+		 ( totH != mContainer->getPixelsSize().getHeight() ||
+		   mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent ) )
 		mContainer->setInternalPixelsHeight( totH );
 
 	mContainer->endAttributesTransaction();

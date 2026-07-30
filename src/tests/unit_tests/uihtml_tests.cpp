@@ -5136,6 +5136,47 @@ UTEST( UIHTML, FlexLiItemsWrapContentWidth ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FlexStretchPreservesAutoCrossSizeAfterChildLayout ) {
+	Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "Flex Stretch Auto Cross Size Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			.container { display: flex; width: 600px; }
+			.short { width: 200px; padding: 10px; }
+			.tall { width: 200px; height: 300px; }
+		</style></head><body>
+			<div class="container">
+				<aside class="short"><p>Short content</p></aside>
+				<main class="tall"></main>
+			</div>
+		</body></html>
+	)html" ) );
+
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* containerNode = sceneNode->getRoot()->findByClass( "container" );
+	auto* shortItemNode = sceneNode->getRoot()->findByClass( "short" );
+	auto* tallItemNode = sceneNode->getRoot()->findByClass( "tall" );
+	ASSERT_TRUE( containerNode != nullptr );
+	ASSERT_TRUE( shortItemNode != nullptr );
+	ASSERT_TRUE( tallItemNode != nullptr );
+	auto* container = containerNode->asType<UIWidget>();
+	auto* shortItem = shortItemNode->asType<UIWidget>();
+	auto* tallItem = tallItemNode->asType<UIWidget>();
+
+	EXPECT_NEAR( container->getPixelsSize().getHeight(), tallItem->getPixelsSize().getHeight(),
+				 1.f );
+	EXPECT_NEAR( shortItem->getPixelsSize().getHeight(), tallItem->getPixelsSize().getHeight(),
+				 1.f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, ImagePercentageWidthRespectsParentMaxWidth ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 768, "img pct width respects parent max-width", WindowStyle::Default,
