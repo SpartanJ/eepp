@@ -35,6 +35,63 @@ static void init_flex_test() {
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );
 }
 
+UTEST( FlexContainer, vendorPrefixedDisplayValues ) {
+	EXPECT_EQ( CSSDisplayHelper::fromString( "-webkit-flex" ), CSSDisplay::Flex );
+	EXPECT_EQ( CSSDisplayHelper::fromString( "-webkit-inline-flex" ), CSSDisplay::InlineFlex );
+	EXPECT_EQ( CSSDisplayHelper::fromString( "-moz-flex" ), CSSDisplay::Flex );
+	EXPECT_EQ( CSSDisplayHelper::fromString( "-ms-inline-grid" ), CSSDisplay::InlineGrid );
+}
+
+UTEST( FlexContainer, webkitFlexFooterKeepsColumnsAndVerticalLists ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "WebKit Flex Footer Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	init_flex_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			.footer { display: flex; display: -webkit-flex; width: 600px; }
+			.footer .col {
+				display: inline-block; flex: 0 0 25%; padding: 0 15px;
+				box-sizing: border-box;
+			}
+			.footer ul { display: block; }
+			.footer li { display: list-item; }
+		</style></head><body>
+			<div id="footer" class="footer">
+				<div class="col"><ul><li>about</li><li>blog</li><li>careers</li></ul></div>
+				<div class="col"><ul><li>help</li><li>rules</li><li>contact</li></ul></div>
+				<div class="col"><ul><li>apps</li><li>iPhone</li><li>Android</li></ul></div>
+				<div class="col"><ul><li>premium</li><li>buy</li></ul></div>
+			</div>
+		</body></html>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* footer = sceneNode->getRoot()->find( "footer" )->asType<UIHTMLWidget>();
+	ASSERT_TRUE( footer != nullptr );
+	EXPECT_EQ( footer->getDisplay(), CSSDisplay::Flex );
+	auto columns = footer->findAllByClass( "col" );
+	ASSERT_EQ( columns.size(), (size_t)4 );
+	Float previousColumnRight = 0.f;
+	for ( auto* column : columns ) {
+		EXPECT_GE( column->getPixelsPosition().x, previousColumnRight );
+		previousColumnRight = column->getPixelsPosition().x + column->getPixelsSize().getWidth();
+
+		auto items = column->findAllByTag( "li" );
+		ASSERT_FALSE( items.empty() );
+		Float previousItemBottom = 0.f;
+		for ( auto* item : items ) {
+			EXPECT_GE( item->getPixelsPosition().y, previousItemBottom );
+			previousItemBottom = item->getPixelsPosition().y + item->getPixelsSize().getHeight();
+		}
+	}
+
+	Engine::destroySingleton();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 1: Item Collection
 // ─────────────────────────────────────────────────────────────────────────────

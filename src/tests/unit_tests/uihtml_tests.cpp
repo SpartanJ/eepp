@@ -314,6 +314,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto flairCheckbox = documentRoot->find( "flair_enabled" );
 	auto commentButtons =
 		documentRoot->querySelector( "#thing_t1_on791mh > .entry > .flat-list.buttons" );
+	auto redditFooter = documentRoot->querySelector( ".footer-parent > .footer" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -345,6 +346,18 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( commentContentPolicy != nullptr );
 	ASSERT_TRUE( flairCheckbox != nullptr );
 	ASSERT_TRUE( commentButtons != nullptr );
+	ASSERT_TRUE( redditFooter != nullptr );
+	EXPECT_EQ( redditFooter->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::Flex );
+	Float footerColumnRight = 0.f;
+	for ( auto* col : redditFooter->findAllByClass( "col" ) ) {
+		EXPECT_GE( col->getPixelsPosition().x, footerColumnRight );
+		footerColumnRight = col->getPixelsPosition().x + col->getPixelsSize().getWidth();
+		Float footerItemBottom = 0.f;
+		for ( auto* li : col->querySelectorAll( "li" ) ) {
+			EXPECT_GE( li->getPixelsPosition().y, footerItemBottom );
+			footerItemBottom = li->getPixelsPosition().y + li->getPixelsSize().getHeight();
+		}
+	}
 	Float commentButtonRight = 0.f;
 	for ( auto* li : commentButtons->findAllByTag( "li" ) ) {
 		ASSERT_TRUE( li->findByTag( "a" ) != nullptr );
