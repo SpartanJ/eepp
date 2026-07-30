@@ -618,14 +618,21 @@ UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
 UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
 	init_float_test();
 	PixelDensity::setPixelDensity( 2.f );
+	Engine::instance()->getCurrentWindow()->setSize( 475, 900 );
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
 	std::string html;
 	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
 	sceneNode->updateDirtyLayouts();
+	SceneManager::instance()->update();
 
 	auto buttons = sceneNode->getRoot()->querySelectorAll( ".tbtn" );
 	auto anchors = sceneNode->getRoot()->querySelectorAll( ".tbtn a" );
+	auto worldRect = []( UIWidget* widget ) {
+		Vector2f position = widget->getPixelsPosition();
+		widget->nodeToWorldTranslation( position );
+		return Rectf( position, widget->getPixelsSize() );
+	};
 	ASSERT_EQ( buttons.size(), (size_t)8 );
 	ASSERT_EQ( anchors.size(), buttons.size() );
 	for ( size_t i = 0; i < buttons.size(); ++i ) {
@@ -634,6 +641,8 @@ UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
 		EXPECT_NEAR( anchor->getPixelsSize().getHeight(), 80.f, 1.f );
 		EXPECT_NEAR( anchor->getPixelsSize().getHeight() + 4.f,
 					 buttons[i]->getPixelsSize().getHeight(), 1.f );
+		for ( size_t j = 0; j < i; ++j )
+			EXPECT_FALSE( worldRect( buttons[i] ).intersect( worldRect( buttons[j] ) ) );
 	}
 	auto* svg = sceneNode->getRoot()->querySelector( "#sherlock svg" )->asType<UISvg>();
 	auto* input = sceneNode->getRoot()->querySelector( "#qu" );
@@ -656,8 +665,40 @@ UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
 				 1.f );
 	EXPECT_NEAR( svg->getDrawable()->getPixelsSize().getHeight(), svg->getPixelsSize().getHeight(),
 				 1.f );
+	auto* footer = sceneNode->getRoot()->querySelector( ".footer" )->asType<UIRichText>();
+	ASSERT_TRUE( footer != nullptr );
+	for ( auto* button : buttons ) {
+		EXPECT_FALSE( worldRect( footer ).intersect( worldRect( button ) ) );
+	}
 	Engine::destroySingleton();
 	PixelDensity::setPixelDensity( 1.f );
+}
+
+UTEST( UIHTMLFloat, ss64NarrowViewportFloatsDoNotOverlapAtPixelDensity1 ) {
+	init_float_test();
+	auto* window = Engine::instance()->getCurrentWindow();
+	ASSERT_TRUE( window != nullptr );
+	window->setSize( 400, 600 );
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	std::string html;
+	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->updateDirtyLayouts();
+	SceneManager::instance()->update();
+
+	auto buttons = sceneNode->getRoot()->querySelectorAll( ".tbtn" );
+	ASSERT_EQ( buttons.size(), (size_t)8 );
+	auto worldRect = []( UIWidget* widget ) {
+		Vector2f position = widget->getPixelsPosition();
+		widget->nodeToWorldTranslation( position );
+		return Rectf( position, widget->getPixelsSize() );
+	};
+	for ( size_t i = 0; i < buttons.size(); ++i ) {
+		for ( size_t j = 0; j < i; ++j )
+			EXPECT_FALSE( worldRect( buttons[i] ).intersect( worldRect( buttons[j] ) ) );
+	}
+
+	Engine::destroySingleton();
 }
 
 UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {

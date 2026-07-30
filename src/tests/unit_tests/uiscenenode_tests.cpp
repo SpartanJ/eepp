@@ -10,6 +10,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/window/cursor.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
@@ -18,6 +19,11 @@ using namespace EE::Graphics;
 using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
+
+UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
+	EXPECT_EQ( Cursor::fromName( "pointer" ), Cursor::Hand );
+	EXPECT_EQ( Cursor::fromName( "POINTER" ), Cursor::Hand );
+}
 
 static UISceneNode* init_test_scene_node() {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );

@@ -63,7 +63,7 @@ Cursor::Type Cursor::fromName( std::string name ) {
 	String::toLowerInPlace( name );
 	if ( "arrow" == name )
 		return Arrow;
-	if ( "hand" == name )
+	if ( "hand" == name || "pointer" == name )
 		return Hand;
 	if ( "ibream" == name )
 		return IBeam;

@@ -2116,7 +2116,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				bool isFloating = floatType != CSSFloat::None;
 				bool isNormalFlowBlock = isBlock && !isFloating;
 				bool isBlockFormattingContext =
-					isNormalFlowBlock && widget->isType( UI_TYPE_HTML_WIDGET ) &&
+					!isFloating && widget->isType( UI_TYPE_HTML_WIDGET ) &&
 					widget->asType<UIHTMLWidget>()->establishesBlockFormattingContext();
 				bool shrinkToFitFloat =
 					isFloating && widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
@@ -2145,11 +2145,30 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 				Sizef customSize( w + margin.Left + margin.Right,
 								  size.getHeight() + margin.Top + margin.Bottom );
-				richText.addCustomSize(
-					customSize, toRichTextFloat( floatType ), toRichTextClear( clearType ),
-					getAtomicInlineBoxBaseline( widget, size, margin ),
-					toRichTextBaselineAlign( getWidgetBaselineAlign( widget ) ),
-					toRichTextWidgetSource( widget ), isNormalFlowBlock, isBlockFormattingContext );
+				std::shared_ptr<std::vector<RichText::FloatExclusion>> propagatedFloats;
+				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+					auto* htmlWidget = widget->asType<UIHTMLWidget>();
+					if ( !htmlWidget->establishesBlockFormattingContext() &&
+						 htmlWidget->getRichTextPtr() ) {
+						const auto& localFloats =
+							htmlWidget->getRichTextPtr()->getLocalFloatExclusions();
+						if ( !localFloats.empty() ) {
+							propagatedFloats =
+								std::make_shared<std::vector<RichText::FloatExclusion>>(
+									localFloats );
+							const Rectf contentOffset = widget->getPixelsContentOffset();
+							for ( auto& exclusion : *propagatedFloats )
+								exclusion.rect.move( { margin.Left + contentOffset.Left,
+													   margin.Top + contentOffset.Top } );
+						}
+					}
+				}
+				richText.addCustomSize( customSize, toRichTextFloat( floatType ),
+										toRichTextClear( clearType ),
+										getAtomicInlineBoxBaseline( widget, size, margin ),
+										toRichTextBaselineAlign( getWidgetBaselineAlign( widget ) ),
+										toRichTextWidgetSource( widget ), isNormalFlowBlock,
+										isBlockFormattingContext, std::move( propagatedFloats ) );
 
 				if ( widget->isType( UI_TYPE_TEXTSPAN ) &&
 					 widget->asType<UITextSpan>()->isInlineBlock() &&

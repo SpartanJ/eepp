@@ -169,6 +169,8 @@ class EE_API RichText : public Drawable {
 		return mExternalFloatExclusions;
 	}
 
+	const std::vector<FloatExclusion>& getLocalFloatExclusions();
+
 	/** @return The minimum intrinsic width of the text block. */
 	Float getMinIntrinsicWidth();
 
@@ -188,7 +190,8 @@ class EE_API RichText : public Drawable {
 	void addCustomSize( const Sizef& size, InlineFloat floatType = InlineFloat::None,
 						InlineClear clearType = InlineClear::None, Float baseline = -1.f,
 						const BaselineAlignValue& baselineAlign = {}, InlineSource source = {},
-						bool isBlock = false, bool isBlockFormattingContext = false );
+						bool isBlock = false, bool isBlockFormattingContext = false,
+						std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats = {} );
 
 	/** @brief Adds a virtual line break that is not associated with a DOM text character. */
 	void addLineBreak();
@@ -233,6 +236,7 @@ class EE_API RichText : public Drawable {
 		bool isLineBreak{ false };
 		bool isBlock{ false };
 		bool isBlockFormattingContext{ false };
+		std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
 		InlinePath inlinePath;
 		Vector2f position; // Local position relative to RichText origin
 		Sizef size;
@@ -349,6 +353,7 @@ class EE_API RichText : public Drawable {
 			bool isLineBreak{ false };
 			bool isBlock{ false };
 			bool isBlockFormattingContext{ false };
+			std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
 			BaselineAlignValue baselineAlign;
 		};
 
@@ -454,6 +459,7 @@ class EE_API RichText : public Drawable {
 	RenderSpan::InlinePath mInlinePath; // Path into the inline tree for the stack-based builder
 	std::vector<InlineFragment> mInlineFragments;
 	std::vector<FloatExclusion> mExternalFloatExclusions;
+	std::vector<FloatExclusion> mLocalFloatExclusions;
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	TextSelectionRange mSelection{ 0, 0 };

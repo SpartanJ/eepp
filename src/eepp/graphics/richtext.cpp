@@ -737,7 +737,7 @@ class RichTextInlineLayouter {
 		for ( const auto& run : buildLayoutRuns( inlineItems ) ) {
 			const auto& payload = run.payload;
 			if ( payload.type != RichText::RenderSpan::Type::Text ) {
-				if ( payload.floatType != RichText::InlineFloat::None ||
+				if ( payload.floatType != RichText::InlineFloat::None || payload.propagatedFloats ||
 					 payload.clearType != RichText::InlineClear::None )
 					return true;
 			}
@@ -1053,6 +1053,7 @@ class RichTextInlineLayouter {
 					  Float textIndent, Uint32 align, Float forcedLineHeight,
 					  const FontStyleConfig& defaultStyle,
 					  const std::vector<RichText::FloatExclusion>& externalFloatExclusions,
+					  std::vector<RichText::FloatExclusion>& localFloatExclusions,
 					  bool lineWrap, RichText::WhiteSpaceWrapMode whiteSpaceWrapMode ) {
 		LayoutResult result;
 		result.lines.push_back( RichText::RenderParagraph() );
@@ -1134,6 +1135,27 @@ class RichTextInlineLayouter {
 			return advanced;
 		};
 
+		size_t finalizedLineCount = 0;
+		Float finalizedLinesBottom = 0.f;
+		// Propagated float groups need final line metrics before translating their exclusions.
+		// Keep a monotonic cursor so each preceding line is finalized at most once here.
+		auto finalizeLinesThrough = [&]( size_t end ) {
+			for ( ; finalizedLineCount < end; ++finalizedLineCount ) {
+				auto& line = result.lines[finalizedLineCount];
+				alignLineSpans( line, 0.f, defaultStyle, forcedLineHeight, true, inlineItems );
+				finalizedLinesBottom =
+					eemax( finalizedLinesBottom, line.y + line.height );
+			}
+		};
+
+		auto advanceInFlowLine = [&]() {
+			finalizeLinesThrough( result.lines.size() );
+			curY = eemax( curY, finalizedLinesBottom );
+			result.lines.push_back( RichText::RenderParagraph() );
+			result.lines.back().y = curY;
+			curX = 0;
+		};
+
 		for ( const auto& run : runs ) {
 			const auto& payload = run.payload;
 			if ( payload.type == RichText::RenderSpan::Type::Text ) {
@@ -1189,8 +1211,7 @@ class RichTextInlineLayouter {
 													   inlineEndSpacing( payload, inlineItems ) );
 						if ( lineWrap && effW > 0 && effW < 1e9f && curX > effW ) {
 							maxWidth = std::max( maxWidth, curX );
-							result.lines.push_back( RichText::RenderParagraph() );
-							curX = 0;
+							advanceInFlowLine();
 							continue;
 						}
 					}
@@ -1209,8 +1230,7 @@ class RichTextInlineLayouter {
 						}
 						if ( !trailingNewlineAlreadyAdvanced ) {
 							maxWidth = std::max( maxWidth, curX );
-							result.lines.push_back( RichText::RenderParagraph() );
-							curX = 0;
+							advanceInFlowLine();
 						}
 					}
 				}
@@ -1313,7 +1333,8 @@ class RichTextInlineLayouter {
 						Float re = floatRightEdge( curY );
 						Float availableWidth = re - le;
 						if ( availableWidth > 0 && availableWidth < 1e9f ) {
-							if ( metrics.size.getWidth() > availableWidth + 0.01f )
+							if ( metrics.isBlock &&
+								 metrics.size.getWidth() > availableWidth + 0.01f )
 								metrics.size.setWidth( availableWidth );
 							curX = le;
 							effW = availableWidth;
@@ -1322,16 +1343,24 @@ class RichTextInlineLayouter {
 
 					if ( lineWrap && !metrics.isBlock && effW > 0 && effW < 1e9f &&
 						 metrics.size.getWidth() > effW + 0.01f ) {
-						Float maxBottom = activeFloatBottom( curY );
-						if ( maxBottom > curY ) {
+						Float placedY = curY;
+						Float placedWidth = effW;
+						while ( metrics.size.getWidth() > placedWidth + 0.01f ) {
+							Float nextY = activeFloatBottom( placedY );
+							if ( nextY <= placedY )
+								break;
+							placedY = nextY;
+							placedWidth = effectiveMaxWidthAt( placedY );
+						}
+						if ( placedY > curY ) {
 							maxWidth = std::max( maxWidth, curX );
 							if ( !result.lines.back().spans.empty() )
 								result.lines.push_back( RichText::RenderParagraph() );
 							curX = 0;
-							curY = maxBottom;
+							curY = placedY;
 							result.lines.back().y = curY;
 							le = floatLeftEdge( curY );
-							effW = effectiveMaxWidthAt( curY );
+							effW = placedWidth;
 						}
 					}
 
@@ -1339,20 +1368,60 @@ class RichTextInlineLayouter {
 						 ( curX + metrics.size.getWidth() >= effW || curX >= effW ) && curX > 0 &&
 						 hadLineContentBeforeSpacing ) {
 						maxWidth = std::max( maxWidth, curX );
-						result.lines.push_back( RichText::RenderParagraph() );
-						curX = 0;
+						advanceInFlowLine();
 						if ( hadLineContentBeforeSpacing )
 							addInlineSpacingToCurrentLine( result, curX, startSpacing );
 					}
 
+					if ( payload.propagatedFloats ) {
+						finalizeLinesThrough( result.lines.size() - 1 );
+						if ( finalizedLinesBottom > curY ) {
+							curY = finalizedLinesBottom;
+							result.lines.back().y = curY;
+						}
+						Float placedY = curY;
+						bool moved;
+						do {
+							moved = false;
+							for ( const auto& propagated : *payload.propagatedFloats ) {
+								Rectf rect = propagated.rect;
+								rect.move( { curX, placedY } );
+								auto avoidActiveFloat = [&]( const Rectf& active ) {
+									if ( rect.intersect( active ) && active.Bottom > placedY ) {
+										placedY += active.Bottom - rect.Top;
+										moved = true;
+									}
+								};
+								for ( const auto& active : leftFloats )
+									avoidActiveFloat( active );
+								for ( const auto& active : rightFloats )
+									avoidActiveFloat( active );
+							}
+						} while ( moved );
+						if ( placedY > curY ) {
+							curY = placedY;
+							result.lines.back().y = curY;
+						}
+					}
+
 					appendAtomicRenderSpan( result.lines.back(), payload, metrics, curX,
 											curCharIdx );
+					if ( payload.propagatedFloats ) {
+						const Vector2f atomicPosition = result.lines.back().spans.back().position;
+						for ( const auto& propagated : *payload.propagatedFloats ) {
+							Rectf rect = propagated.rect;
+							rect.move( { atomicPosition.x, curY } );
+							if ( propagated.type == RichText::InlineFloat::Left )
+								leftFloats.push_back( rect );
+							else if ( propagated.type == RichText::InlineFloat::Right )
+								rightFloats.push_back( rect );
+						}
+					}
 					addInlineSpacingToCurrentLine( result, curX, endSpacing );
 
 					if ( lineWrap && effW > 0 && effW < 1e9f && curX >= effW ) {
 						maxWidth = std::max( maxWidth, curX );
-						result.lines.push_back( RichText::RenderParagraph() );
-						curX = 0;
+						advanceInFlowLine();
 					}
 				}
 			}
@@ -1386,6 +1455,16 @@ class RichTextInlineLayouter {
 			floatBoundsBottom = std::max( floatBoundsBottom, rightFloats[i].Bottom );
 			floatBoundsRight = std::max( floatBoundsRight, rightFloats[i].Right );
 		}
+		// This is persistent RichText storage: clear without discarding capacity so repeated
+		// viewport-driven layouts do not allocate a fresh exclusion vector every time.
+		localFloatExclusions.clear();
+		localFloatExclusions.reserve( leftFloats.size() + rightFloats.size() -
+									  externalLeftFloatCount - externalRightFloatCount );
+		for ( size_t i = externalLeftFloatCount; i < leftFloats.size(); ++i )
+			localFloatExclusions.push_back( { leftFloats[i], RichText::InlineFloat::Left } );
+		for ( size_t i = externalRightFloatCount; i < rightFloats.size(); ++i )
+			localFloatExclusions.push_back(
+				{ rightFloats[i], RichText::InlineFloat::Right } );
 
 		result.size =
 			Sizef( std::max( maxWidth, floatBoundsRight ), std::max( accumY, floatBoundsBottom ) );
@@ -1638,6 +1717,7 @@ class RichTextInlineLayouter {
 		run.payload.isLineBreak = box.isLineBreak;
 		run.payload.isBlock = box.isBlock;
 		run.payload.isBlockFormattingContext = box.isBlockFormattingContext;
+		run.payload.propagatedFloats = box.propagatedFloats;
 		run.payload.baselineAlign = box.baselineAlign;
 		run.payload.inlinePath = path;
 		run.payload._leafIndex = nextLeafIndex++;
@@ -2116,9 +2196,11 @@ void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	invalidateLayout();
 }
 
-void RichText::addCustomSize( const Sizef& size, InlineFloat floatType, InlineClear clearType,
-							  Float baseline, const BaselineAlignValue& baselineAlign,
-							  InlineSource source, bool isBlock, bool isBlockFormattingContext ) {
+void RichText::addCustomSize(
+	const Sizef& size, InlineFloat floatType, InlineClear clearType, Float baseline,
+	const BaselineAlignValue& baselineAlign, InlineSource source, bool isBlock,
+	bool isBlockFormattingContext,
+	std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats ) {
 	Float usedBaseline = baseline >= 0.f ? baseline : size.getHeight();
 
 	InlineItem item;
@@ -2130,6 +2212,7 @@ void RichText::addCustomSize( const Sizef& size, InlineFloat floatType, InlineCl
 	box.clearType = clearType;
 	box.isBlock = isBlock;
 	box.isBlockFormattingContext = isBlockFormattingContext;
+	box.propagatedFloats = std::move( propagatedFloats );
 	box.baselineAlign = baselineAlign;
 	item.data = std::move( box );
 	resolveInlinePath( mInlineItems, mInlinePath )->push_back( std::move( item ) );
@@ -2359,6 +2442,7 @@ void RichText::updateLayout() {
 															  mAlign, mLineHeight, mDefaultStyle,
 															  mLineWrap, mWhiteSpaceWrapMode );
 		mLines = std::move( result.lines );
+		mLocalFloatExclusions.clear();
 		mSize = result.size;
 		mTotalCharacterCount = result.totalCharacterCount;
 		rebuildInlineFragments();
@@ -2368,12 +2452,17 @@ void RichText::updateLayout() {
 
 	auto result = RichTextInlineLayouter::layoutWithFloats(
 		mInlineItems, mMaxWidth, mTextIndent, mAlign, mLineHeight, mDefaultStyle,
-		mExternalFloatExclusions, mLineWrap, mWhiteSpaceWrapMode );
+		mExternalFloatExclusions, mLocalFloatExclusions, mLineWrap, mWhiteSpaceWrapMode );
 	mLines = std::move( result.lines );
 	mSize = result.size;
 	mTotalCharacterCount = result.totalCharacterCount;
 	rebuildInlineFragments();
 	mNeedsLayoutUpdate = false;
+}
+
+const std::vector<RichText::FloatExclusion>& RichText::getLocalFloatExclusions() {
+	updateLayout();
+	return mLocalFloatExclusions;
 }
 
 Sizef RichText::getSize() {
