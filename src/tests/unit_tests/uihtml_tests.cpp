@@ -300,6 +300,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto selftextMd = documentRoot->querySelector( ".link .usertext-body .md" );
 	auto selftextFirstP = documentRoot->querySelector( ".link .usertext-body .md p" );
 	auto postTitle = documentRoot->querySelector( ".link .top-matter > p.title" );
+	auto postTitleAnchor = documentRoot->querySelector( ".link .top-matter > p.title > a.title" );
+	auto postDomain = documentRoot->querySelector( ".link .top-matter > p.title > .domain" );
 	auto postTagline = documentRoot->querySelector( ".link .top-matter > p.tagline" );
 	auto postExpando = documentRoot->querySelector( ".link .expando" );
 	auto postUsertext = documentRoot->querySelector( ".link .expando > form.usertext" );
@@ -310,6 +312,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto commentHelpToggle = documentRoot->querySelector( ".commentarea .help-toggle" );
 	auto commentContentPolicy = documentRoot->querySelector( ".commentarea a.reddiquette" );
 	auto flairCheckbox = documentRoot->find( "flair_enabled" );
+	auto commentButtons =
+		documentRoot->querySelector( "#thing_t1_on791mh > .entry > .flat-list.buttons" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -328,6 +332,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( selftextMd != nullptr );
 	ASSERT_TRUE( selftextFirstP != nullptr );
 	ASSERT_TRUE( postTitle != nullptr );
+	ASSERT_TRUE( postTitleAnchor != nullptr );
+	ASSERT_TRUE( postDomain != nullptr );
 	ASSERT_TRUE( postTagline != nullptr );
 	ASSERT_TRUE( postExpando != nullptr );
 	ASSERT_TRUE( postUsertext != nullptr );
@@ -338,6 +344,15 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( commentHelpToggle != nullptr );
 	ASSERT_TRUE( commentContentPolicy != nullptr );
 	ASSERT_TRUE( flairCheckbox != nullptr );
+	ASSERT_TRUE( commentButtons != nullptr );
+	Float commentButtonRight = 0.f;
+	for ( auto* li : commentButtons->findAllByTag( "li" ) ) {
+		ASSERT_TRUE( li->findByTag( "a" ) != nullptr );
+		EXPECT_GE( li->getPixelsPosition().x, commentButtonRight );
+		commentButtonRight = li->getPixelsPosition().x + li->getPixelsSize().getWidth();
+	}
+	EXPECT_GE( postDomain->getPixelsPosition().x, postTitleAnchor->getPixelsPosition().x +
+													  postTitleAnchor->getPixelsSize().getWidth() );
 
 	UIWidget* content =
 		siteTable->getParent()->isWidget() ? siteTable->getParent()->asType<UIWidget>() : nullptr;
@@ -2842,6 +2857,61 @@ ul > li {
 	if ( lis.size() >= 2 ) {
 		EXPECT_EQ( lis[0]->getPixelsPosition().y, lis[1]->getPixelsPosition().y );
 		EXPECT_LT( lis[0]->getPixelsPosition().x, lis[1]->getPixelsPosition().x );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, InlineAnchorsInsideInlineBlockSiblingsKeepDocumentOrder ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head>
+			<link rel="stylesheet" href="reddit_inline_order_deferred.css" defer="25" />
+		</head><body>
+			<div class="entry">
+				<p id="title"><a id="post-title">Low-level coding dataset</a>
+					<span id="domain">(<a>self.cpp</a>)</span></p>
+				<ul class="buttons" id="comment-buttons">
+					<span class="float-marker"></span>
+					<li><a>permalink</a></li><li><a>embed</a></li><li><a>save</a></li>
+					<li><a>report</a></li><li><a>reply</a></li>
+				</ul>
+			</div>
+		</body></html>
+	)html" ) );
+
+	UIWidget* buttons = nullptr;
+	for ( int i = 0; i < 200; ++i ) {
+		SceneManager::instance()->update();
+		buttons = sceneNode->getRoot()->find( "comment-buttons" )->asType<UIWidget>();
+		if ( buttons ) {
+			auto items = buttons->findAllByTag( "li" );
+			if ( !items.empty() &&
+				 items.front()->asType<UIHTMLWidget>()->getDisplay() == CSSDisplay::InlineBlock )
+				break;
+		}
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	auto* postTitle = sceneNode->getRoot()->find( "post-title" )->asType<UIWidget>();
+	auto* domain = sceneNode->getRoot()->find( "domain" )->asType<UIWidget>();
+	ASSERT_TRUE( postTitle != nullptr );
+	ASSERT_TRUE( domain != nullptr );
+	ASSERT_TRUE( buttons != nullptr );
+	EXPECT_GE( domain->getPixelsPosition().x,
+			   postTitle->getPixelsPosition().x + postTitle->getPixelsSize().getWidth() );
+
+	auto listItems = buttons->findAllByTag( "li" );
+	ASSERT_EQ( listItems.size(), (size_t)5 );
+	Float previousRight = listItems.front()->getPixelsPosition().x;
+	for ( auto* listItem : listItems ) {
+		EXPECT_GE( listItem->getPixelsPosition().x, previousRight );
+		EXPECT_GT( listItem->getPixelsSize().getWidth(), 0.f );
+		previousRight = listItem->getPixelsPosition().x + listItem->getPixelsSize().getWidth();
 	}
 
 	Engine::destroySingleton();

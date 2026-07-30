@@ -1328,13 +1328,12 @@ class RichTextInlineLayouter {
 					addInlineSpacingToCurrentLine( result, curX, startSpacing );
 
 					Float effW = metrics.isBlock ? maxLayoutWidth : effectiveMaxWidthAt( curY );
-					if ( metrics.isBlockFormattingContext ) {
+					if ( metrics.isBlockFormattingContext && metrics.isBlock ) {
 						le = floatLeftEdge( curY );
 						Float re = floatRightEdge( curY );
 						Float availableWidth = re - le;
 						if ( availableWidth > 0 && availableWidth < 1e9f ) {
-							if ( metrics.isBlock &&
-								 metrics.size.getWidth() > availableWidth + 0.01f )
+							if ( metrics.size.getWidth() > availableWidth + 0.01f )
 								metrics.size.setWidth( availableWidth );
 							curX = le;
 							effW = availableWidth;
