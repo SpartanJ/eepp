@@ -650,6 +650,8 @@ UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
 	ASSERT_TRUE( input != nullptr );
 	ASSERT_TRUE( searchButton != nullptr );
 	ASSERT_TRUE( svg != nullptr );
+	EXPECT_EQ( searchButton->getCursor(), Cursor::Hand );
+	EXPECT_EQ( svg->getCursor(), Cursor::Hand );
 	EXPECT_NEAR( input->getPixelsSize().getHeight(), 74.5f, 1.f );
 	EXPECT_NEAR( searchButton->getPixelsSize().getHeight(), 69.f, 1.f );
 	EXPECT_LE( searchButton->getPixelsPosition().y + searchButton->getPixelsSize().getHeight(),

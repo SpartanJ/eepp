@@ -212,7 +212,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "opacity", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "cursor", "arrow" );
+	registerProperty( "cursor", "arrow", true );
 	registerProperty( "text", "" ).setType( PropertyType::String );
 	registerProperty( "text-transform", "", true ).setType( PropertyType::String );
 	registerProperty( "color", "", true )

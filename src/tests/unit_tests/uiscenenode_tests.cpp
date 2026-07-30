@@ -23,6 +23,8 @@ using namespace EE::UI;
 UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_EQ( Cursor::fromName( "pointer" ), Cursor::Hand );
 	EXPECT_EQ( Cursor::fromName( "POINTER" ), Cursor::Hand );
+	EXPECT_STREQ( Cursor::toName( Cursor::Hand ), "hand" );
+	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
 }
 
 static UISceneNode* init_test_scene_node() {

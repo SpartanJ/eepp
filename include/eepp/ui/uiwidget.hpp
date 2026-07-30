@@ -625,6 +625,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	/** @return The cursor resolved from this widget's current style. */
+	Cursor::Type getCursor() const;
+
 	void propagateInheritedProperty( const CSS::StyleSheetProperty& property );
 
 	/**
@@ -1518,6 +1521,7 @@ class EE_API UIWidget : public UINode {
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
 	mutable bool mIntrinsicWidthsDirty{ true };
+	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
 	Uint8 mMarginAuto{ 0 };
 
 	void calculateAutoMargin();

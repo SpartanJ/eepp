@@ -36,6 +36,8 @@ class EE_API Cursor {
 
 	static Cursor::Type fromName( std::string name );
 
+	static const char* toName( Cursor::Type cursor );
+
 	/** @enum SysType list the system cursors that can be used */
 	enum SysType {
 		SysArrow = 0, /**< Arrow */

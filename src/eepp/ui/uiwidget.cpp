@@ -509,7 +509,10 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 		}
 	}
 
-	return UINode::onMouseOver( position, flags );
+	Uint32 result = UINode::onMouseOver( position, flags );
+	if ( mSceneNode )
+		mSceneNode->setCursor( getCursor() );
+	return result;
 }
 
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
@@ -519,6 +522,8 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 		 NULL != mTooltip && !mTooltip->dontAutoHideOnMouseMove() ) {
 		mTooltip->hide();
 	}
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == nullptr && mSceneNode )
+		mSceneNode->setCursor( Cursor::Arrow );
 
 	return UINode::onMouseLeave( Pos, Flags );
 }
@@ -1691,6 +1696,10 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector )
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 
+Cursor::Type UIWidget::getCursor() const {
+	return static_cast<Cursor::Type>( mCursor );
+}
+
 std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 	return { PropertyId::X,
 			 PropertyId::Y,
@@ -1832,7 +1841,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Opacity:
 			return String::fromFloat( getAlpha() / 255.f );
 		case PropertyId::Cursor:
-			return "arrow";
+			return Cursor::toName( getCursor() );
 		case PropertyId::Visible:
 			return isVisible() ? "true" : "false";
 		case PropertyId::Enabled:
@@ -2410,7 +2419,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::Cursor:
-			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
+			mCursor = static_cast<Uint8>( Cursor::fromName( attribute.getValue() ) );
+			if ( mSceneNode && getEventDispatcher() &&
+				 getEventDispatcher()->getMouseOverNode() == this )
+				mSceneNode->setCursor( getCursor() );
 			break;
 		case PropertyId::BackgroundPositionX:
 			setBackgroundPositionX( attribute.value(), attribute.getIndex() );
