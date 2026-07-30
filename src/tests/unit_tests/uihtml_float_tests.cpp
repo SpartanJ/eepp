@@ -61,6 +61,24 @@ UTEST( UIHTMLFloat, structure_FloatAndClearEnums ) {
 	EXPECT_EQ( (int)CSSClear::None, (int)CSSClearHelper::fromString( "garbage" ) );
 }
 
+UTEST( UIHTMLFloat, propagatedFloatTouchingActiveFloatMakesForwardProgress ) {
+	RichText richText;
+	richText.setMaxWidth( 200.f );
+	richText.setExternalFloatExclusions(
+		{ { Rectf( 0.f, 0.f, 100.f, 20.f ), RichText::InlineFloat::Left } } );
+
+	auto propagated = std::make_shared<std::vector<RichText::FloatExclusion>>();
+	propagated->push_back( { Rectf( -100.f, 20.f, 10.f, 30.f ), RichText::InlineFloat::Left } );
+	richText.addCustomSize( { 20.f, 10.f }, RichText::InlineFloat::None,
+							RichText::InlineClear::None, -1.f, {}, {}, false, false, propagated );
+
+	const Sizef size = richText.getSize();
+	EXPECT_TRUE( std::isfinite( size.getWidth() ) );
+	EXPECT_TRUE( std::isfinite( size.getHeight() ) );
+	EXPECT_GT( size.getWidth(), 0.f );
+	EXPECT_GT( size.getHeight(), 0.f );
+}
+
 UTEST( UIHTMLFloat, property_DefaultsAreNone ) {
 	UIHTMLWidget* w = UIHTMLWidget::New();
 	EXPECT_EQ( CSSFloat::None, w->getCSSFloat() );

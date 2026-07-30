@@ -1379,24 +1379,25 @@ class RichTextInlineLayouter {
 							result.lines.back().y = curY;
 						}
 						Float placedY = curY;
-						bool moved;
-						do {
-							moved = false;
+						while ( true ) {
+							Float nextPlacedY = placedY;
 							for ( const auto& propagated : *payload.propagatedFloats ) {
 								Rectf rect = propagated.rect;
 								rect.move( { curX, placedY } );
 								auto avoidActiveFloat = [&]( const Rectf& active ) {
-									if ( rect.intersect( active ) && active.Bottom > placedY ) {
-										placedY += active.Bottom - rect.Top;
-										moved = true;
-									}
+									if ( rect.intersect( active ) )
+										nextPlacedY = std::max(
+											nextPlacedY, placedY + active.Bottom - rect.Top );
 								};
 								for ( const auto& active : leftFloats )
 									avoidActiveFloat( active );
 								for ( const auto& active : rightFloats )
 									avoidActiveFloat( active );
 							}
-						} while ( moved );
+							if ( nextPlacedY <= placedY + 0.01f )
+								break;
+							placedY = nextPlacedY;
+						}
 						if ( placedY > curY ) {
 							curY = placedY;
 							result.lines.back().y = curY;
