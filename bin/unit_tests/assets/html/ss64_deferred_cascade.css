@@ -6,6 +6,17 @@ li a[href="../bash/"] {
   background-color: #F8F9FA;
 }
 
+.tbtn {
+  height: 40px;
+  line-height: 40px;
+  width: 140px;
+}
+
+.tbtn a {
+  background-color: #F8F9FA;
+  display: block;
+}
+
 #external-css-loaded {
   height: 37px;
 }

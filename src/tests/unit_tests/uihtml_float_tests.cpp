@@ -8,10 +8,12 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 
@@ -743,6 +745,102 @@ UTEST( UIHTMLFloat, ss64DeferredStyleSheetPreservesDocumentSourceOrder ) {
 	ASSERT_NEAR( loaded->getPixelsSize().getHeight(), 37.f, 1.f );
 	EXPECT_EQ( heading->getFontSize(), inlineHeadingFontSize );
 	EXPECT_TRUE( linux->getBackgroundColor() == inlineLinuxBackground );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, ss64DeferredStyleSheetRelayoutsFooter ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 1280, 650 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	documentScene->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+		<head>
+			<link rel="stylesheet" href="ss64_deferred_cascade.css" defer="250" />
+			<style>
+				body { margin: 15px; }
+				h1 { clear: both; font-size: 1rem; }
+				.tnav { height: 42px; max-width: 700px; }
+				.tnav > ul { list-style: none; margin: 0; padding: 0; }
+				.tnav > ul > li {
+					display: block; float: left; margin: 0 0.15em 15px; text-align: center;
+				}
+				.footer { display: inline-block; font-size: 75%; }
+				#first, #second { margin-left: 6.5%; }
+				li a[href="../bash/"] { background-color: #FFCC33; }
+			</style>
+		</head>
+		<body>
+			<div id="external-css-loaded"></div>
+			<h1 id="heading">Command line reference.</h1>
+			<div class="tnav" id="first"><ul>
+				<li class="tbtn"><a href="../bash/">Linux</a></li>
+				<li class="tbtn"><a href="../mac/">macOS</a></li>
+				<li class="tbtn"><a href="../nt/">CMD</a></li>
+				<li class="tbtn"><a href="../ps/">PowerShell</a></li>
+			</ul></div><br />
+			<div class="tnav" id="second"><ul>
+				<li class="tbtn"><a href="../ascii.html">ASCII</a></li>
+				<li class="tbtn"><a href="../vb/">VBScript</a></li>
+				<li class="tbtn"><a href="../tools/">Tools</a></li>
+				<li class="tbtn"><a href="../pass/">Passwords</a></li>
+			</ul></div><br />
+			<p class="footer" id="footer">About/contact - Last update<br />Copyright</p>
+		</body>
+		</html>
+	)html" ),
+										 webView->getDocumentContainer(),
+										 String::hash( "ss64-deferred-footer" ) );
+	webView->refreshDocumentLayout();
+
+	auto* loaded = documentScene->getRoot()->find( "external-css-loaded" )->asType<UIWidget>();
+	auto* heading = documentScene->getRoot()->find( "heading" )->asType<UIWidget>();
+	auto* footer = documentScene->getRoot()->find( "footer" )->asType<UIWidget>();
+	ASSERT_TRUE( loaded != nullptr );
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( footer != nullptr );
+
+	for ( int i = 0; i < 500 && loaded->getPixelsSize().getHeight() < 36.f; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_NEAR( loaded->getPixelsSize().getHeight(), 37.f, 1.f );
+	EXPECT_NEAR( footer->getPixelsPosition().x, heading->getPixelsPosition().x, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, percentageMarginReResolvesWhenContainingBlockGetsWidth ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body><div id="target" style="margin-left: 6.5%;"></div></body></html>
+	)html" ) );
+
+	auto* body = sceneNode->getRoot()->querySelector( "body" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	const StyleSheetProperty* marginLeft =
+		target->getUIStyle()->getProperty( PropertyId::MarginLeft );
+	ASSERT_TRUE( marginLeft != nullptr );
+
+	body->setPixelsSize( 0.f, body->getPixelsSize().getHeight() );
+	target->applyProperty( *marginLeft );
+	EXPECT_NEAR( target->getLayoutPixelsMargin().Left, 0.f, 0.01f );
+
+	body->setPixelsSize( 1000.f, body->getPixelsSize().getHeight() );
+	EXPECT_NEAR( target->getLayoutPixelsMargin().Left, 65.f, 0.01f );
 
 	Engine::destroySingleton();
 }

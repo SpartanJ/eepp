@@ -310,6 +310,8 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual void onParentChange();
 
+	virtual void onParentSizeChange( const Vector2f& sizeChange );
+
 	virtual void onPositionChange();
 
 	UIWidget* getContainingBlock();
@@ -368,6 +370,7 @@ class EE_API UIHTMLWidget : public UILayout {
 	bool mOverflowCreatesBlockFormattingContext{ false };
 	bool mNeedsOrderSort{ false };
 	bool mNeedsZIndexSort{ false };
+	Uint8 mPercentageMargins{ 0 };
 	UILayouter* mLayouter{ nullptr };
 	UIHTMLWidgetFlexState* mFlexState{ nullptr };
 	UIHTMLWidgetGridState* mGridState{ nullptr };

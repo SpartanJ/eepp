@@ -937,6 +937,33 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			mOverflowCreatesBlockFormattingContext =
 				!String::iequals( attribute.getValue(), "visible" );
 			return UILayout::applyProperty( attribute );
+		case PropertyId::MarginTop:
+		case PropertyId::MarginRight:
+		case PropertyId::MarginBottom:
+		case PropertyId::MarginLeft: {
+			Uint8 marginBit = 0;
+			switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+				case PropertyId::MarginTop:
+					marginBit = 1 << 0;
+					break;
+				case PropertyId::MarginRight:
+					marginBit = 1 << 1;
+					break;
+				case PropertyId::MarginBottom:
+					marginBit = 1 << 2;
+					break;
+				case PropertyId::MarginLeft:
+					marginBit = 1 << 3;
+					break;
+				default:
+					break;
+			}
+			if ( StyleSheetLength::isPercentage( attribute.value() ) )
+				mPercentageMargins |= marginBit;
+			else
+				mPercentageMargins &= ~marginBit;
+			return UILayout::applyProperty( attribute );
+		}
 		case PropertyId::Width:
 		case PropertyId::Height:
 		case PropertyId::PaddingLeft:
@@ -1393,6 +1420,28 @@ void UIHTMLWidget::updateScrollListeners() {
 void UIHTMLWidget::onParentChange() {
 	UILayout::onParentChange();
 	updateScrollListeners();
+}
+
+void UIHTMLWidget::onParentSizeChange( const Vector2f& sizeChange ) {
+	UILayout::onParentSizeChange( sizeChange );
+
+	if ( mPercentageMargins == 0 || !getUIStyle() )
+		return;
+
+	static constexpr PropertyId MarginProperties[] = {
+		PropertyId::MarginTop,
+		PropertyId::MarginRight,
+		PropertyId::MarginBottom,
+		PropertyId::MarginLeft,
+	};
+	for ( Uint32 i = 0; i < 4; ++i ) {
+		if ( !( mPercentageMargins & ( 1 << i ) ) )
+			continue;
+		PropertyId propertyId = MarginProperties[i];
+		const StyleSheetProperty* property = getUIStyle()->getProperty( propertyId );
+		if ( property )
+			applyProperty( *property );
+	}
 }
 
 void UIHTMLWidget::onPositionChange() {
