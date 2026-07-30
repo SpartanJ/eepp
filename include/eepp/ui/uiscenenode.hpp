@@ -407,9 +407,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param forceReloadStyle If true, forces immediate style reload (default: true).
 	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
 	 * relative paths in CSS
+	 * @param sourceOrder Reserved document order for a stylesheet loaded asynchronously.
 	 */
 	void combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle = true,
-							URI baseURI = {} );
+							URI baseURI = {},
+							std::optional<CSS::StyleSheet::SourceOrder> sourceOrder = {} );
 
 	/**
 	 * @brief Combines an inline stylesheet with the existing one.
@@ -421,9 +423,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param marker Marker to associate with the new styles.
 	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
 	 * relative paths in CSS
+	 * @param sourceOrder Reserved document order for a stylesheet loaded asynchronously.
 	 */
 	void combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle = true,
-							const Uint32& marker = 0, URI baseURI = {} );
+							const Uint32& marker = 0, URI baseURI = {},
+							std::optional<CSS::StyleSheet::SourceOrder> sourceOrder = {} );
 
 	/**
 	 * @brief Gets the reference to the current stylesheet.
@@ -1161,8 +1165,9 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param uri URI to load
 	 * @param defer Defer some specific time the CSS load (0 to just load it asynchronously)
+	 * @param sourceOrder Document order reserved when the stylesheet link was encountered.
 	 */
-	void loadCSS( URI uri, std::optional<Time> defer = {} );
+	void loadCSS( URI uri, std::optional<Time> defer, CSS::StyleSheet::SourceOrder sourceOrder );
 
 	/**
 	 * @brief Loads glyph icons from @glyph-icon rules.

@@ -703,6 +703,50 @@ UTEST( UIHTMLFloat, ss64NarrowViewportFloatsDoNotOverlapAtPixelDensity1 ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, ss64DeferredStyleSheetPreservesDocumentSourceOrder ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+		<head>
+			<link rel="stylesheet" href="ss64_deferred_cascade.css" defer="25" />
+			<style>
+				h1 { font-size: 1rem; }
+				li a[href="../bash/"] { background-color: #FFCC33; }
+			</style>
+		</head>
+		<body>
+			<div id="external-css-loaded"></div>
+			<h1 id="heading">Command line reference.</h1>
+			<ul><li><a id="linux" href="../bash/">Linux</a></li></ul>
+		</body>
+		</html>
+	)html" ) );
+
+	auto* heading = sceneNode->getRoot()->find( "heading" )->asType<UIRichText>();
+	auto* linux = sceneNode->getRoot()->find( "linux" )->asType<UIRichText>();
+	auto* loaded = sceneNode->getRoot()->find( "external-css-loaded" )->asType<UIWidget>();
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( linux != nullptr );
+	ASSERT_TRUE( loaded != nullptr );
+	const Uint32 inlineHeadingFontSize = heading->getFontSize();
+	const Color inlineLinuxBackground = linux->getBackgroundColor();
+
+	for ( int i = 0; i < 500 && loaded->getPixelsSize().getHeight() < 36.f; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_NEAR( loaded->getPixelsSize().getHeight(), 37.f, 1.f );
+	EXPECT_EQ( heading->getFontSize(), inlineHeadingFontSize );
+	EXPECT_TRUE( linux->getBackgroundColor() == inlineLinuxBackground );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

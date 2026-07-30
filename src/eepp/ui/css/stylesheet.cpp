@@ -120,21 +120,25 @@ void StyleSheet::setSelectorSpecificity( const Int64& specificity ) {
 
 StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
 	StyleSheet style;
-	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
 	for ( auto node : mNodes ) {
-		if ( node->getMarker() == marker )
-			style.addStyle( node );
+		if ( node->getMarker() == marker ) {
+			const SourcePosition& position = mStyleSourceOrder.at( node.get() );
+			style.addStyle( node, position.styleSheet, position.rule );
+		}
 	}
+	style.mNextStyleSourceOrder = mNextStyleSourceOrder;
 	return style;
 }
 
 StyleSheet StyleSheet::getAllWithMarkers() const {
 	StyleSheet style;
-	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
 	for ( auto node : mNodes ) {
-		if ( node->getMarker() != 0 )
-			style.addStyle( node );
+		if ( node->getMarker() != 0 ) {
+			const SourcePosition& position = mStyleSourceOrder.at( node.get() );
+			style.addStyle( node, position.styleSheet, position.rule );
+		}
 	}
+	style.mNextStyleSourceOrder = mNextStyleSourceOrder;
 	return style;
 }
 
@@ -225,12 +229,21 @@ bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 }
 
 void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
+	addStyle( std::move( node ), reserveSourceOrder(), 0 );
+}
+
+void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node, SourceOrder sourceOrder,
+						   Uint32 ruleOrder ) {
 	if ( addStyleToNodeIndex( node.get() ) ) {
-		mStyleSourceOrder[node.get()] = mNextStyleSourceOrder++;
+		mStyleSourceOrder[node.get()] = { sourceOrder, ruleOrder };
 		mNodes.push_back( node );
 	}
 	addMediaQueryList( node->getMediaQueryList() );
 	mVersion++;
+}
+
+StyleSheet::SourceOrder StyleSheet::reserveSourceOrder() {
+	return mNextStyleSourceOrder++;
 }
 
 bool StyleSheet::isEmpty() const {
@@ -259,9 +272,13 @@ std::string StyleSheet::print() {
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
-	for ( auto& style : styleSheet.getStyles() ) {
-		addStyle( style );
-	}
+	combineStyleSheet( styleSheet, reserveSourceOrder() );
+}
+
+void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet, SourceOrder sourceOrder ) {
+	Uint32 ruleOrder = 0;
+	for ( auto& style : styleSheet.getStyles() )
+		addStyle( style, sourceOrder, ruleOrder++ );
 
 	addKeyframes( styleSheet.getKeyframes() );
 }

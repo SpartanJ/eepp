@@ -552,7 +552,8 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 			if ( !href.empty() &&
 				 ( String::iequals( type.value(), "text/css" ) ||
 				   String::icontains( std::string_view{ rel.value() }, "stylesheet" ) ) ) {
-				loadCSS( href.as_string(), Milliseconds( defer.as_int() ) );
+				loadCSS( href.as_string(), Milliseconds( defer.as_int() ),
+						 mStyleSheet.reserveSourceOrder() );
 			}
 			continue;
 		} else if ( String::iequals( widget.name(), "meta" ) ) {
@@ -703,8 +704,10 @@ void UISceneNode::updateStyleSheet( bool forceReloadStyle ) {
 }
 
 void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
-									 URI baseURI ) {
-	mStyleSheet.combineStyleSheet( styleSheet );
+									 URI baseURI,
+									 std::optional<CSS::StyleSheet::SourceOrder> sourceOrder ) {
+	mStyleSheet.combineStyleSheet( styleSheet,
+								   sourceOrder ? *sourceOrder : mStyleSheet.reserveSourceOrder() );
 
 	processStyleSheetAtRules( styleSheet, baseURI );
 
@@ -719,14 +722,15 @@ void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool for
 }
 
 void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle,
-									 const Uint32& marker, URI baseURI ) {
+									 const Uint32& marker, URI baseURI,
+									 std::optional<CSS::StyleSheet::SourceOrder> sourceOrder ) {
 	CSS::StyleSheetParser parser;
 	parser.setBaseURI( baseURI );
 
 	if ( parser.loadFromString( inlineStyleSheet ) ) {
 		parser.getStyleSheet().setMarker( marker );
 		resolveStyleSheetRelativeURLs( parser.getStyleSheet(), baseURI.empty() ? mURI : baseURI );
-		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle, baseURI );
+		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle, baseURI, sourceOrder );
 	}
 }
 
@@ -1857,7 +1861,8 @@ URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
 	return base;
 }
 
-void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
+void UISceneNode::loadCSS( URI uri, std::optional<Time> defer,
+						   CSS::StyleSheet::SourceOrder sourceOrder ) {
 	uri = solveRelativePath( uri );
 	std::string url = uri.toString();
 	Log::debug( "UISceneNode::loadCSS: %s", url );
@@ -1869,7 +1874,7 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 			Uint64 resourceGeneration =
 				resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 			URI baseURL = getURIFromURL( url );
-			mThreadPool->run( [resourceState, resourceGeneration, uri, url, defer,
+			mThreadPool->run( [resourceState, resourceGeneration, uri, url, defer, sourceOrder,
 							   baseURL = std::move( baseURL )] {
 				Clock c;
 				std::string filePath( uri.getFSPath() );
@@ -1883,9 +1888,10 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 							delay = Time::Zero;
 						UISceneNode::runAsyncResourceOnMainThread(
 							resourceState, resourceGeneration,
-							[url, baseURL,
+							[url, baseURL, sourceOrder,
 							 parser = std::move( parser )]( UISceneNode* scene ) mutable {
-								scene->combineStyleSheet( parser.getStyleSheet(), true, baseURL );
+								scene->combineStyleSheet( parser.getStyleSheet(), true, baseURL,
+														  sourceOrder );
 								Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 							},
 							delay );
@@ -1896,7 +1902,8 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 			std::string filePath( uri.getFSPath() );
 			std::string css;
 			if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
-				combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
+				combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ),
+								   sourceOrder );
 				Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 			}
 		}
@@ -1910,7 +1917,7 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 		request.kind = WebResourceKind::StyleSheet;
 		request.timeout = Seconds( 5 );
 		requestWebResource( std::move( request ), [resourceState, resourceGeneration, url,
-												   baseURL = std::move( baseURL )](
+												   sourceOrder, baseURL = std::move( baseURL )](
 													  const WebResourceResult& result ) {
 			if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 				return;
@@ -1918,8 +1925,10 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 				std::string css( *result.data );
 				UISceneNode::runAsyncResourceOnMainThread(
 					resourceState, resourceGeneration,
-					[css = std::move( css ), url, baseURL]( UISceneNode* scene ) mutable {
-						scene->combineStyleSheet( css, true, String::hash( url ), baseURL );
+					[css = std::move( css ), url, baseURL,
+					 sourceOrder]( UISceneNode* scene ) mutable {
+						scene->combineStyleSheet( css, true, String::hash( url ), baseURL,
+												  sourceOrder );
 						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
 			} else {
@@ -1931,7 +1940,7 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer ) {
 		CSS::StyleSheetParser parser;
 		if ( parser.loadFromStream( *stream ) ) {
 			parser.getStyleSheet().setMarker( String::hash( url ) );
-			combineStyleSheet( parser.getStyleSheet() );
+			combineStyleSheet( parser.getStyleSheet(), true, {}, sourceOrder );
 			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 		}
 	} else {

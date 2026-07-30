@@ -1,0 +1,11 @@
+h1 {
+  font-size: 1.5rem;
+}
+
+li a[href="../bash/"] {
+  background-color: #F8F9FA;
+}
+
+#external-css-loaded {
+  height: 37px;
+}
