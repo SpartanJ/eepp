@@ -3,6 +3,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -68,7 +69,9 @@ UIImageViewer::UIImageViewer() : UIWidget( "imageviewer" ) {
 	mImage->setVisible( false );
 	mImage->setDragEnabled( true );
 	mImage->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	mImage->setScaleType( UIScaleType::FitInside );
+	// UIImageViewer calculates an aspect-preserving destination size. Expand makes UIImage render
+	// into that exact box, including the optional density-aware upscale.
+	mImage->setScaleType( UIScaleType::Expand );
 	mLoader = UILoader::New();
 	mLoader->setParent( this );
 	mLoader->setIndeterminate( true );
@@ -152,59 +155,109 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 										   path.size() )
 					   : Image::getFormat( path );
 
-		if ( format == Image::Format::Unknown )
+		if ( format == Image::Format::Unknown ) {
+			Log::error( "UIImageViewer: unsupported or invalid image: %s",
+						isContents ? "<memory>" : path.c_str() );
+			runOnMainThread( [this] { mLoader->setVisible( false ); } );
 			return;
-
-		DrawablePtr image;
-
-		if ( mClosing )
-			return;
-
-		if ( format != Image::Format::GIF ) {
-			auto tex = isContents ? TextureFactory::instance()->loadFromMemory(
-										reinterpret_cast<const unsigned char*>( path.c_str() ),
-										path.size() )
-								  : TextureFactory::instance()->loadFromFile( path );
-			SpritePtr sprite = Sprite::New();
-			sprite->createStatic( tex );
-			image = std::move( sprite );
-		} else {
-			IOStream* stream = isContents
-								   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
-								   : (IOStream*)new IOStreamFile( path );
-			SpritePtr sprite = Sprite::fromGif( *stream );
-			sprite->setAutoAnimate( false );
-			image = std::move( sprite );
-			delete stream;
 		}
 
 		if ( mClosing )
 			return;
 
-		if ( image ) {
-			mCurFileSize = isContents ? path.size() : FileSystem::fileSize( path );
-			mCurFileType = format;
+		auto decodedImages = std::make_shared<std::vector<Image>>();
+		int gifDelay = 0;
+		if ( format == Image::Format::GIF ) {
+			if ( isContents ) {
+				IOStreamMemory stream( path.c_str(), path.size() );
+				auto gif = Image::loadGif( stream );
+				*decodedImages = std::move( gif.first );
+				gifDelay = gif.second;
+			} else {
+				IOStreamFile stream( path );
+				auto gif = Image::loadGif( stream );
+				*decodedImages = std::move( gif.first );
+				gifDelay = gif.second;
+			}
+		} else {
+			Image decoded =
+				isContents ? Image( reinterpret_cast<const Uint8*>( path.data() ), path.size() )
+						   : Image( path );
+			if ( decoded.getPixelsPtr() )
+				decodedImages->emplace_back( std::move( decoded ) );
+		}
+		if ( decodedImages->empty() )
+			Log::error( "UIImageViewer: failed to decode image: %s",
+						isContents ? "<memory>" : path.c_str() );
 
-			runOnMainThread( [this, image] {
+		const Int64 fileSize = isContents ? path.size() : FileSystem::fileSize( path );
+		std::string filePath( isContents ? std::string{} : path );
+
+		SpritePtr sprite = Sprite::New();
+		for ( const Image& decoded : *decodedImages ) {
+			auto texture = TextureFactory::instance()->loadFromPixels(
+				decoded.getPixelsPtr(), decoded.getWidth(), decoded.getHeight(),
+				decoded.getChannels(), false, Texture::ClampMode::ClampToEdge, false, false,
+				filePath );
+			if ( texture )
+				sprite->addFrame( std::move( texture ) );
+			else
+				Log::error( "UIImageViewer: texture upload failed for a %ux%u image",
+							decoded.getWidth(), decoded.getHeight() );
+		}
+
+		runOnMainThread( [this, decodedImages, format, fileSize, gifDelay,
+						  filePath = std::move( filePath ), sprite = std::move( sprite )] {
+			DrawablePtr image;
+			if ( sprite->getNumFrames() ) {
+				const size_t frameCount = sprite->getNumFrames();
+				if ( format == Image::Format::GIF ) {
+					sprite->setAnimationSpeed( 1000.f / static_cast<Float>( gifDelay ) );
+					sprite->setAutoAnimate( false );
+				}
+				image = std::move( sprite );
+				mCurFileSize = fileSize;
+				mCurFileType = format;
 				mImage->setDrawable( image );
 				updateTextDisplay();
 				auto s( image->getPixelsSize() );
-				auto scale( s.x > mSize.x || s.y > mSize.y
-								? eemin( mSize.x / s.getWidth(), mSize.y / s.getHeight() )
-								: 1.f );
-				mImage->setPixelsSize( eefloor( image->getPixelsSize().x * scale ),
-									   eefloor( image->getPixelsSize().y * scale ) );
-				resetImageView();
+				updateImageLayout();
+				if ( !mPreserveImageView )
+					resetImageView();
+				else
+					mImage->setVisible( true );
+				Log::info( "UIImageViewer: loaded %s (%dx%d, %d frame%s)",
+						   Image::formatToString( format ).c_str(), (int)s.x, (int)s.y,
+						   (int)frameCount, frameCount == 1 ? "" : "s" );
 				sendCommonEvent( Event::OnResourceLoaded );
-			} );
-		}
-
-		runOnMainThread( [this] { mLoader->setVisible( false ); } );
+			}
+			mLoader->setVisible( false );
+		} );
 	} );
 }
 
 void UIImageViewer::onSizeChange() {
 	mLoader->center();
+	if ( mAutoFitOnSizeChange ) {
+		mImage->setScale( 1.f );
+		updateImageLayout();
+	}
+}
+
+void UIImageViewer::updateImageLayout() {
+	if ( !mImage || !mImage->getDrawable() )
+		return;
+
+	Sizef imageSize( mImage->getDrawable()->getPixelsSize() );
+	if ( mUseNativeImageSize )
+		imageSize /= PixelDensity::getPixelDensity();
+
+	const Float scale =
+		imageSize.x > mSize.x || imageSize.y > mSize.y
+			? eemin( mSize.x / imageSize.getWidth(), mSize.y / imageSize.getHeight() )
+			: 1.f;
+	mImage->setPixelsSize( eefloor( imageSize.x * scale ), eefloor( imageSize.y * scale ) );
+	mImage->center();
 }
 
 void UIImageViewer::reset() {

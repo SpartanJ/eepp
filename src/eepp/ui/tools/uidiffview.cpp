@@ -456,6 +456,7 @@ void UIDiffView::createImageViewers() {
 		iv->setVisible( false );
 		iv->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		iv->setDisplayOptions( UIImageViewer::DisplayDimensions );
+		iv->setUseNativeImageSize( true );
 		return iv;
 	};
 	mLeftImageViewer = initImageView();

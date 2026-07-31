@@ -2543,6 +2543,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forc
 		}
 	} else {
 		UIImageViewer* imageView = UIImageViewer::New();
+		imageView->setUseNativeImageSize( true );
 		auto [tab, iv] =
 			mSplitter->createWidget( imageView, i18n( "image_viewer", "Image Viewer" ) );
 

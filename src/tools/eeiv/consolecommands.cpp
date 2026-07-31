@@ -1,5 +1,5 @@
 #include "consolecommands.hpp"
-#include "app.hpp"
+#include "eeiv.hpp"
 
 static std::string createSavePath( const std::string& oriPath, Uint32 width, Uint32 height,
 								   Image::SaveType saveType ) {
@@ -507,7 +507,7 @@ void ConsoleCommands::cmdBatchImgChangeFormat( const std::vector<String>& params
 }
 
 void ConsoleCommands::cmdMoveTo( const std::vector<String>& params ) {
-	if ( params.size() >= 2 && mApp->getFiles().size() > 0 ) {
+	if ( params.size() >= 2 && mApp->getFileCount() > 0 ) {
 		Int32 tInt = 0;
 
 		bool Res = String::fromString( tInt, params[1] );
@@ -515,12 +515,12 @@ void ConsoleCommands::cmdMoveTo( const std::vector<String>& params ) {
 		if ( tInt )
 			tInt--;
 
-		if ( Res && tInt >= 0 && tInt < (Int32)mApp->getFiles().size() ) {
+		if ( Res && tInt >= 0 && tInt < (Int32)mApp->getFileCount() ) {
 			Con->pushText( "moveto: moving to image number " + String::toString( tInt + 1 ) );
 			mApp->fastLoadImage( tInt );
 		} else if ( params[1] == "last" ) {
 			Con->pushText( "moveto: moving to last" );
-			mApp->fastLoadImage( mApp->getFiles().size() - 1 );
+			mApp->fastLoadImage( mApp->getFileCount() - 1 );
 		} else if ( params[1] == "first" ) {
 			Con->pushText( "moveto: moving to first" );
 			mApp->fastLoadImage( 0 );
@@ -578,18 +578,30 @@ void ConsoleCommands::cmdSetImgFade( const std::vector<String>& params ) {
 }
 
 void ConsoleCommands::cmdSetBackColor( const std::vector<String>& params ) {
-	String Error(
+	const String error(
 		"Usage example: setbackcolor 255 255 255 (RGB Color, numbers between 0 and 255)" );
 
-	if ( params.size() >= 2 ) {
-		if ( params.size() >= 2 ) {
-			mApp->getWindow()->setClearColor( Color::fromString( params[1].toUtf8() ).toRGB() );
+	if ( params.size() == 2 ) {
+		mApp->setBackgroundColor( Color::fromString( params[1].toUtf8() ) );
+		Con->pushText( "setbackcolor applied" );
+		return;
+	}
+
+	if ( params.size() >= 4 ) {
+		Int32 red;
+		Int32 green;
+		Int32 blue;
+		if ( String::fromString( red, params[1] ) && String::fromString( green, params[2] ) &&
+			 String::fromString( blue, params[3] ) && red >= 0 && red <= 255 && green >= 0 &&
+			 green <= 255 && blue >= 0 && blue <= 255 ) {
+			mApp->setBackgroundColor( Color( static_cast<Uint8>( red ), static_cast<Uint8>( green ),
+											 static_cast<Uint8>( blue ) ) );
 			Con->pushText( "setbackcolor applied" );
 			return;
 		}
-
-		Con->pushText( Error );
 	}
+
+	Con->pushText( error );
 }
 
 void ConsoleCommands::cmdLoadImg( const std::vector<String>& params ) {
