@@ -1700,6 +1700,9 @@ UTEST( UIWebView, DeferredLocalCSSIgnoredAfterNavigation ) {
 	ASSERT_TRUE( probeNode != nullptr && probeNode->isWidget() );
 	EXPECT_NEAR( probeNode->asType<UIWidget>()->getPixelsSize().getWidth(), 120.f, 0.5f );
 
+	// Drop the external ownership before Engine teardown. The scenes keep the pool alive until
+	// their destruction, which joins its workers before the CSS specification is destroyed.
+	cssThreadPool.reset();
 	Engine::destroySingleton();
 }
 
