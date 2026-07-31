@@ -1904,6 +1904,12 @@ solution "eepp"
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
 
+	project "eeiv"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/tools/eeiv/*.cpp" }
+		build_link_configuration( "eeiv", true )
+
 	-- Tests
 	project "eepp-test"
 		set_kind()
