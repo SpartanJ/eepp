@@ -1707,6 +1707,9 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	Float maxWidth = 0;
 	bool isInlineBlockTextSpan =
 		container->isType( UI_TYPE_TEXTSPAN ) && container->asType<UITextSpan>()->isInlineBlock();
+	bool isShrinkToFitFloat = container->isType( UI_TYPE_HTML_WIDGET ) &&
+							  container->asType<UIHTMLWidget>()->getCSSFloat() != CSSFloat::None &&
+							  container->getLayoutWidthPolicy() == SizePolicy::WrapContent;
 	Node* parentNode = container->getParent();
 	bool parentIsFlexOrGrid = parentNode && parentNode->isType( UI_TYPE_HTML_WIDGET ) &&
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
@@ -1717,7 +1720,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
-	} else if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) && mode == IntrinsicMode::None &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&

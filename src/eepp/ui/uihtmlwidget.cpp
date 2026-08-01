@@ -376,6 +376,22 @@ void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 void UIHTMLWidget::setCSSFloat( CSSFloat cssFloat ) {
 	if ( mFloat != cssFloat ) {
 		mFloat = cssFloat;
+		// A width:auto block normally fills its containing block, while a float uses the CSS
+		// shrink-to-fit width. Represent that used-width distinction with WrapContent so the
+		// floated box's own layouter cannot stretch it back after its parent measured it.
+		if ( mFloat != CSSFloat::None && getLayoutWidthPolicy() == SizePolicy::MatchParent )
+			setLayoutWidthPolicy( SizePolicy::WrapContent );
+		else if ( mFloat == CSSFloat::None && getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+				  ( mDisplay == CSSDisplay::Block || mDisplay == CSSDisplay::ListItem ) &&
+				  ( getUIStyle() == nullptr ||
+					getUIStyle()->getProperty( PropertyId::Width ) == nullptr ) &&
+				  mPosition != CSSPosition::Absolute && mPosition != CSSPosition::Fixed )
+			setLayoutWidthPolicy( SizePolicy::MatchParent );
+
+		// Float changes the used display type (CSS 2.1 section 9.7), so an inline element must
+		// exchange InlineLayouter for BlockLayouter and vice versa when float is toggled.
+		eeSAFE_DELETE( mLayouter );
+		getLayouter();
 		notifyLayoutAttrChange(
 			toLayoutInvalidationFlags( LayoutInvalidationReason::Style ) |
 			toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) |

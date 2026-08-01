@@ -36,6 +36,18 @@ UILayouter* UILayouterManager::create( CSSDisplay display, UIWidget* container )
 		return eeNew( BlockLayouter, ( container ) );
 	}
 
+	// CSS 2.1 section 9.7 blockifies floated boxes. Keep flex/grid containers using their
+	// respective formatting contexts, but an ordinary floated inline (for example a <span>)
+	// needs an independent block formatting context instead of InlineLayouter.
+	if ( container->isType( UI_TYPE_HTML_WIDGET ) &&
+		 container->asType<UIHTMLWidget>()->getCSSFloat() != CSSFloat::None ) {
+		if ( display == CSSDisplay::Flex || display == CSSDisplay::InlineFlex )
+			return eeNew( FlexLayouter, ( container ) );
+		if ( display == CSSDisplay::Grid || display == CSSDisplay::InlineGrid )
+			return eeNew( GridLayouter, ( container ) );
+		return eeNew( BlockLayouter, ( container ) );
+	}
+
 	switch ( display ) {
 		case CSSDisplay::Block:
 		case CSSDisplay::TableCell:

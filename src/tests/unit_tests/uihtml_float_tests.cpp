@@ -891,6 +891,92 @@ UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, autoWidthFloatsShrinkToFitRedditVoteColumn ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<body style="margin:0">
+			<div id="link" style="width:800px">
+				<p></p>
+				<span id="rank" style="float:left;margin-top:15px;overflow:hidden;
+					font:16px arial;text-align:right">25</span>
+				<div id="midcol" style="float:left;margin:0 7px;overflow:hidden;
+					font-size:13px;font-weight:bold">
+					<div id="up" style="display:block;width:15px;height:14px;
+						margin:2px auto 0"></div>
+					<div style="text-align:center">&#8226;</div>
+					<div id="down" style="display:block;width:15px;height:14px;
+						margin:2px auto 0"></div>
+				</div>
+			</div>
+			<span id="flair" style="display:inline-block;height:16px;line-height:16px;
+				overflow:hidden;padding:0 4px">
+				<span>Humor </span><span id="emoji" style="display:inline-block;width:15px;
+					height:15px;vertical-align:middle"></span>
+			</span>
+		</body>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* link = sceneNode->find<UIWidget>( "link" );
+	auto* rank = sceneNode->find<UIWidget>( "rank" );
+	auto* midcol = sceneNode->find<UIWidget>( "midcol" );
+	auto* up = sceneNode->find<UIWidget>( "up" );
+	auto* down = sceneNode->find<UIWidget>( "down" );
+	auto* flair = sceneNode->find<UIWidget>( "flair" );
+	auto* emoji = sceneNode->find<UIWidget>( "emoji" );
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_TRUE( rank != nullptr );
+	ASSERT_TRUE( midcol != nullptr );
+	ASSERT_TRUE( up != nullptr );
+	ASSERT_TRUE( down != nullptr );
+	ASSERT_TRUE( flair != nullptr );
+	ASSERT_TRUE( emoji != nullptr );
+
+	const Vector2f linkPos = link->convertToWorldSpace( { 0, 0 } );
+	const Vector2f rankPos = rank->convertToWorldSpace( { 0, 0 } );
+	const Vector2f midcolPos = midcol->convertToWorldSpace( { 0, 0 } );
+	const Vector2f upPos = up->convertToWorldSpace( { 0, 0 } );
+	const Vector2f downPos = down->convertToWorldSpace( { 0, 0 } );
+
+	EXPECT_GT( rank->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( rank->asType<UIRichText>()->getRichTextPtr()->getSize().getWidth(), 0.f );
+	EXPECT_FALSE( rank->asType<UIRichText>()->getRichText().getLines().empty() );
+	EXPECT_LT( rank->getPixelsSize().getWidth(), 40.f );
+	EXPECT_LT( midcol->getPixelsSize().getWidth(), 40.f );
+	EXPECT_NEAR( rankPos.x, linkPos.x, 1.f );
+	EXPECT_NEAR( midcolPos.x, rankPos.x + rank->getPixelsSize().getWidth() + 7.f, 1.f );
+	EXPECT_NEAR( upPos.x + up->getPixelsSize().getWidth() / 2.f,
+				 midcolPos.x + midcol->getPixelsSize().getWidth() / 2.f, 1.f );
+	EXPECT_NEAR( downPos.x, upPos.x, 1.f );
+	const Vector2f flairPos = flair->convertToWorldSpace( { 0, 0 } );
+	const Vector2f emojiPos = emoji->convertToWorldSpace( { 0, 0 } );
+	EXPECT_GE( emojiPos.y, flairPos.y - 0.01f );
+	EXPECT_LE( emojiPos.y + emoji->getPixelsSize().getHeight(),
+			   flairPos.y + flair->getPixelsSize().getHeight() + 0.01f );
+
+	auto* window = Engine::instance()->getCurrentWindow();
+	window->setClearColor( Color::White );
+	window->clear();
+	SceneManager::instance()->draw();
+	window->display();
+	Image framebuffer = window->getFrontBufferImage();
+	bool rankPainted = false;
+	for ( int y = (int)rankPos.y; y < (int)( rankPos.y + rank->getPixelsSize().getHeight() );
+		  ++y ) {
+		for ( int x = (int)rankPos.x; x < (int)( rankPos.x + rank->getPixelsSize().getWidth() );
+			  ++x ) {
+			Color pixel = framebuffer.getPixel( x, y );
+			if ( pixel.r < 245 || pixel.g < 245 || pixel.b < 245 )
+				rankPainted = true;
+		}
+	}
+	EXPECT_TRUE( rankPainted );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, rightFloatConstrainsTextInsideFollowingNormalBlock ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

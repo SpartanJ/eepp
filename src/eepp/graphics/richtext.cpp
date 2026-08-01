@@ -870,8 +870,11 @@ class RichTextInlineLayouter {
 				Float baseline = span.baseline;
 				RichText::BaselineAlignValue baselineAlign = effectiveInlineBaselineAlign(
 					inlineItems, span.inlinePath, span.baselineAlign );
+				// Empty atomic boxes use their bottom edge as the fallback baseline. Include that
+				// exact edge in the middle-alignment path or fixed-height inline parents can clip
+				// the box after it is displaced by a second baseline formula.
 				Float offsetY = baselineAlign.type == RichText::BaselineAlignment::Middle &&
-										baseline > 0.f && baseline < span.size.getHeight()
+										baseline > 0.f && baseline <= span.size.getHeight()
 									? line.maxAscent - baseline
 									: getBaselineAlignedOffset( line, span.size, baseline,
 																span.size.getHeight(),
@@ -1053,8 +1056,8 @@ class RichTextInlineLayouter {
 					  Float textIndent, Uint32 align, Float forcedLineHeight,
 					  const FontStyleConfig& defaultStyle,
 					  const std::vector<RichText::FloatExclusion>& externalFloatExclusions,
-					  std::vector<RichText::FloatExclusion>& localFloatExclusions,
-					  bool lineWrap, RichText::WhiteSpaceWrapMode whiteSpaceWrapMode ) {
+					  std::vector<RichText::FloatExclusion>& localFloatExclusions, bool lineWrap,
+					  RichText::WhiteSpaceWrapMode whiteSpaceWrapMode ) {
 		LayoutResult result;
 		result.lines.push_back( RichText::RenderParagraph() );
 
@@ -1143,8 +1146,7 @@ class RichTextInlineLayouter {
 			for ( ; finalizedLineCount < end; ++finalizedLineCount ) {
 				auto& line = result.lines[finalizedLineCount];
 				alignLineSpans( line, 0.f, defaultStyle, forcedLineHeight, true, inlineItems );
-				finalizedLinesBottom =
-					eemax( finalizedLinesBottom, line.y + line.height );
+				finalizedLinesBottom = eemax( finalizedLinesBottom, line.y + line.height );
 			}
 		};
 
@@ -1463,8 +1465,7 @@ class RichTextInlineLayouter {
 		for ( size_t i = externalLeftFloatCount; i < leftFloats.size(); ++i )
 			localFloatExclusions.push_back( { leftFloats[i], RichText::InlineFloat::Left } );
 		for ( size_t i = externalRightFloatCount; i < rightFloats.size(); ++i )
-			localFloatExclusions.push_back(
-				{ rightFloats[i], RichText::InlineFloat::Right } );
+			localFloatExclusions.push_back( { rightFloats[i], RichText::InlineFloat::Right } );
 
 		result.size =
 			Sizef( std::max( maxWidth, floatBoundsRight ), std::max( accumY, floatBoundsBottom ) );
