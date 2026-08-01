@@ -280,6 +280,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	defaultResourceScope().getFontService().setAntialiasing( fontAntialiasing.Get() );
 
 	Sizei winSize( width.Get(), height.Get() );
+
+	if ( winSize.getWidth() >= currentDisplay->getBounds().getWidth() )
+		winSize.setWidth( static_cast<int>( currentDisplay->getBounds().getWidth() * 0.8 ) );
+
+	if ( winSize.getHeight() >= currentDisplay->getBounds().getHeight() )
+		winSize.setHeight( static_cast<int>( currentDisplay->getBounds().getHeight() * 0.75 ) );
+
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
 						WindowBackend::Default, 32, resPath + "icon/eterm.png",

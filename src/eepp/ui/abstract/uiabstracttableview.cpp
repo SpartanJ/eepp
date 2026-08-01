@@ -540,7 +540,8 @@ UITableRow* UIAbstractTableView::createRow() {
 		}
 	} );
 	rowWidget->on( Event::MouseClick, [this]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK ) ) || !isRowSelection() )
+		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() ||
+			 mSingleClickNavigation )
 			return;
 
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();

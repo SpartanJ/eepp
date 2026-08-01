@@ -1,6 +1,8 @@
 #include "eeiv.hpp"
 
 #include <eepp/network/http.hpp>
+#include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 using namespace EE::Network;
 using namespace EE::Window;
@@ -20,6 +22,7 @@ bool App::isHttpUrl( const std::string& path ) {
 App::App( int argc, char* argv[] ) :
 	mStorePath( Sys::getConfigPath( "eeiv" ) + FileSystem::getOSSlash() ),
 	mTmpPath( mStorePath + "tmp" + FileSystem::getOSSlash() ) {
+	Log::instance()->setKeepLog( true );
 	if ( argc > 1 ) {
 		mInitialPath = argv[1];
 		if ( FileSystem::isRelativePath( mInitialPath ) && !isHttpUrl( mInitialPath ) ) {
@@ -40,6 +43,78 @@ App::~App() {
 
 EE::Window::Window* App::getWindow() const {
 	return mUIApplication ? mUIApplication->getWindow() : nullptr;
+}
+
+void App::showWelcomeScreen() {
+	if ( !mWelcomeScreen )
+		return;
+	mWelcomeScreen->setVisible( true );
+	mWelcomeScreen->toFront();
+	mWelcomeScreen->setFocus();
+}
+
+void App::hideWelcomeScreen() {
+	if ( mWelcomeScreen )
+		mWelcomeScreen->setVisible( false );
+}
+
+void App::openFileDialog() {
+	const auto& extensions = Image::getImageExtensionsSupported();
+	std::string fileTypes;
+	fileTypes.reserve( extensions.size() * 6 );
+	for ( const auto& ext : extensions ) {
+		if ( !fileTypes.empty() )
+			fileTypes += ";";
+		fileTypes += "*." + ext;
+	}
+
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags, fileTypes,
+		mFilePath.empty() ? FileSystem::getCurrentWorkingDirectory() : mFilePath );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Open Image" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->on( Event::OpenFile, [this]( const Event* event ) {
+		const std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+		if ( isImage( path ) || isHttpUrl( path ) || FileSystem::isDirectory( path ) )
+			loadDir( path );
+	} );
+	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+		if ( mWelcomeScreen && mWelcomeScreen->isVisible() )
+			mWelcomeScreen->setFocus();
+	} );
+	dialog->center();
+	dialog->show();
+}
+
+void App::openFolderDialog() {
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
+			UIFileDialog::ShowOnlyFolders,
+		"*", mFilePath.empty() ? FileSystem::getCurrentWorkingDirectory() : mFilePath );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Open Folder" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->on( Event::OpenFile, [this]( const Event* event ) {
+		const std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+		if ( FileSystem::isDirectory( path ) )
+			loadDir( path );
+	} );
+	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+		if ( mWelcomeScreen && mWelcomeScreen->isVisible() )
+			mWelcomeScreen->setFocus();
+	} );
+	dialog->center();
+	dialog->show();
+}
+
+void App::processDroppedFiles() {
+	if ( mPathsToLoad.empty() )
+		return;
+	std::string path( std::move( mPathsToLoad.back() ) );
+	mPathsToLoad.clear();
+	if ( isImage( path ) || isHttpUrl( path ) || FileSystem::isDirectory( path ) )
+		loadDir( path );
 }
 
 void App::setBackgroundColor( const Color& color ) {
@@ -120,6 +195,16 @@ bool App::init() {
 		return false;
 	setBackgroundColor( Color::Black );
 
+	ResourceScope& resourceScope = *mUIApplication->getUI()->getResourceScope();
+	FontTrueTypePtr remixIconFont =
+		FontTrueType::New( "icon", "assets/fonts/remixicon.ttf", resourceScope );
+	FontTrueTypePtr noniconsFont =
+		FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf", resourceScope );
+	FontTrueTypePtr codIconFont =
+		FontTrueType::New( "codicon", "assets/fonts/codicon.ttf", resourceScope );
+	mUIApplication->getUI()->getUIIconThemeManager()->setCurrentTheme(
+		IconManager::init( "icons", remixIconFont.get(), noniconsFont.get(), codIconFont.get() ) );
+
 	mThreadPool = ThreadPool::createShared( 2 );
 	mUIApplication->getUI()->setThreadPool( mThreadPool );
 	Http::setThreadPool( mThreadPool );
@@ -195,14 +280,40 @@ bool App::init() {
 	mConsole->setVisible( false );
 	mConsole->setMaxLogLines( 1024000 );
 	mConsole->setFontSize( mConfig.ConsoleFontSize );
+	mConsole->on( Event::KeyDown, [this]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+			mUIApplication->getWindow()->close();
+	} );
 	mConsoleCommands = std::make_unique<ConsoleCommands>( this, mConsole );
 	registerConsoleCommands();
 	registerKeyBindings();
 
+	mWelcomeScreen = UIWelcomeScreen::New( this );
+	mWelcomeScreen->setParent( mMainLayout );
+	mWelcomeScreen->setVisible( false );
+
+	mUIApplication->getWindow()->getInput()->pushCallback( [this]( InputEvent* event ) {
+		switch ( event->Type ) {
+			case InputEvent::FileDropped: {
+				mPathsToLoad.emplace_back( event->file.file );
+				break;
+			}
+			case InputEvent::EventsSent: {
+				processDroppedFiles();
+				break;
+			}
+			default:
+				break;
+		}
+	} );
+
 	if ( !mInitialPath.empty() )
 		loadDir( mInitialPath, true );
+
 	if ( mFiles.empty() )
-		mConsole->toggle();
+		showWelcomeScreen();
+
+	Log::instance()->setKeepLog( false );
 	return true;
 }
 
@@ -448,6 +559,7 @@ void App::syncLoadedImage() {
 	const std::string path( mImageViewer->getImagePath() );
 	if ( path.empty() )
 		return;
+	hideWelcomeScreen();
 	mFilePath = FileSystem::fileRemoveFileName( path );
 	FileSystem::dirAddSlashAtEnd( mFilePath );
 	mFile = FileSystem::fileNameFromPath( path );

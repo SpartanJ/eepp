@@ -3,6 +3,7 @@
 #include <eepp/ee.hpp>
 
 #include "consolecommands.hpp"
+#include "uiwelcomescreen.hpp"
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -49,6 +50,11 @@ class App {
 	EE::Window::Window* getWindow() const;
 	Config& getConfig() { return mConfig; }
 
+	void showWelcomeScreen();
+	void hideWelcomeScreen();
+	void openFileDialog();
+	void openFolderDialog();
+
   private:
 	bool init();
 	void loadConfig();
@@ -64,6 +70,7 @@ class App {
 	void toggleHelp();
 	void fitImage();
 	Sprite* getImageSprite() const;
+	void processDroppedFiles();
 
 	std::string mInitialPath;
 	Config mConfig;
@@ -73,6 +80,7 @@ class App {
 	std::string mFilePath;
 	std::string mFile;
 	std::vector<std::string> mFiles;
+	std::vector<std::string> mPathsToLoad;
 	Int32 mCurImg{ 0 };
 	bool mSlideShow{ false };
 	Uint32 mSlideTime{ 4000 };
@@ -83,6 +91,7 @@ class App {
 	UIImageViewer* mImageViewer{ nullptr };
 	UITextView* mHelp{ nullptr };
 	UIConsole* mConsole{ nullptr };
+	UIWelcomeScreen* mWelcomeScreen{ nullptr };
 	bool mCursorVisible{ true };
 	Texture::Filter mTextureFilter{ Texture::Filter::Linear };
 	std::unique_ptr<ConsoleCommands> mConsoleCommands;
