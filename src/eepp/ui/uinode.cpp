@@ -1113,7 +1113,7 @@ void UINode::nodeDraw() {
 
 		smartClipStart( ClipType::BorderBox, needsClipPlanes );
 
-		bool intersected = mWorldBounds.intersect( mSceneNode->getWorldBounds() );
+		bool intersected = mWorldBounds.intersect( mUISceneNode->getVisibleWorldBounds() );
 
 		if ( intersected ) {
 			smartClipStart( ClipType::ContentBox, needsClipPlanes );

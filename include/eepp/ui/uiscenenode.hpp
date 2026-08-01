@@ -134,6 +134,19 @@ class EE_API UISceneNode : public SceneNode {
 	const Sizef& getViewportPixelsSize() const;
 
 	/**
+	 * @brief Sets the node whose world bounds delimit the visible portion of this scene.
+	 *
+	 * Embedded scenes can have an extent larger than their host viewport. Binding the visible
+	 * bounds to the host's clipping node lets render culling use that viewport while preserving the
+	 * full scene extent for layout and scrolling. The node must outlive this scene or clear the
+	 * binding before it is destroyed.
+	 */
+	void setVisibleBoundsNode( Node* node );
+
+	/** @return The visible world bounds used for render culling. */
+	const Rectf& getVisibleWorldBounds();
+
+	/**
 	 * @brief Sets the layout viewport size used by the scene root as the initial containing block.
 	 *
 	 * Embedded document scenes can have a scroll extent larger than the CSS/layout viewport. This
@@ -975,6 +988,7 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurrentMarker{ 0 };
 	Sizef mViewportPixelsSize;
 	bool mHasViewportPixelsSize{ false };
+	Node* mVisibleBoundsNode{ nullptr };
 	Sizef mLayoutViewportPixelsSize;
 	bool mHasLayoutViewportPixelsSize{ false };
 	bool mFollowParentSize{ true };

@@ -168,6 +168,7 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 
 	mDocumentScene = UISceneNode::New();
 	mDocumentScene->setFollowParentSize( false );
+	mDocumentScene->setVisibleBoundsNode( mContainer );
 	mDocumentScene->setParent( mDocumentLayout );
 
 	mDocContainer = UIWebViewDocumentContainer::New();

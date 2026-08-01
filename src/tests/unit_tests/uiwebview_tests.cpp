@@ -43,6 +43,15 @@ using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
 
+class CountingDrawWidget : public UIWidget {
+  public:
+	static CountingDrawWidget* New() { return eeNew( CountingDrawWidget, () ); }
+
+	void draw() override { drawCount++; }
+
+	int drawCount{ 0 };
+};
+
 static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nullptr ) {
 	std::string request;
 	char buffer[1024];
@@ -144,6 +153,20 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	EXPECT_NEAR( documentScene->getViewportPixelsSize().getHeight(), 300.f, 1.f );
 	EXPECT_GT( documentScene->getPixelsSize().getHeight(), 1000.f );
 	EXPECT_TRUE( webView->getVerticalScrollBar()->isVisible() );
+	EXPECT_TRUE( documentScene->getVisibleWorldBounds() ==
+				 webView->getContainer()->getWorldBounds() );
+	EXPECT_LT( documentScene->getVisibleWorldBounds().getHeight(),
+			   documentScene->getWorldBounds().getHeight() );
+
+	auto* drawProbe = CountingDrawWidget::New();
+	drawProbe->setPixelsSize( 20.f, 20.f );
+	drawProbe->setPixelsPosition( 10.f, 700.f );
+	drawProbe->setParent( documentScene->getRoot() );
+	drawProbe->nodeDraw();
+	EXPECT_EQ( drawProbe->drawCount, 0 );
+	drawProbe->setPixelsPosition( 10.f, 10.f );
+	drawProbe->nodeDraw();
+	EXPECT_EQ( drawProbe->drawCount, 1 );
 
 	ASSERT_TRUE( documentScene->getParent() != nullptr && documentScene->getParent()->isUINode() );
 	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();

@@ -1075,6 +1075,14 @@ const Sizef& UISceneNode::getViewportPixelsSize() const {
 	return mHasViewportPixelsSize ? mViewportPixelsSize : getPixelsSize();
 }
 
+void UISceneNode::setVisibleBoundsNode( Node* node ) {
+	mVisibleBoundsNode = node;
+}
+
+const Rectf& UISceneNode::getVisibleWorldBounds() {
+	return mVisibleBoundsNode ? mVisibleBoundsNode->getWorldBounds() : getWorldBounds();
+}
+
 void UISceneNode::setLayoutViewportPixelsSize( const Sizef& size ) {
 	if ( mHasLayoutViewportPixelsSize && mLayoutViewportPixelsSize == size )
 		return;
