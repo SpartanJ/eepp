@@ -199,6 +199,7 @@ class AutoCompletePlugin : public Plugin {
 	bool mSignatureHelpMultiLine{ true };
 	bool mSuggestionDocumentation{ true };
 	bool mSignatureHelpDocumentation{ true };
+	bool mLoadVSCodeSnippets{ true };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;

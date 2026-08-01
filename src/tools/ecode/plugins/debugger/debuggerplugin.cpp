@@ -476,6 +476,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			mSilence = config.value( "silent", true );
 		else if ( updateConfigFile )
 			config["silent"] = mSilence;
+
+		if ( config.contains( "load_vscode_launch_config" ) )
+			mLoadVSCodeLaunchConfig = config.value( "load_vscode_launch_config", true );
+		else if ( updateConfigFile )
+			config["load_vscode_launch_config"] = mLoadVSCodeLaunchConfig;
 	}
 
 	if ( j.contains( "dap" ) ) {
@@ -689,9 +694,12 @@ void DebuggerPlugin::loadProjectConfigurations() {
 	}
 
 	mThreadPool->run( [this] {
-		std::string config = mProjectPath + ".vscode/launch.json";
-		if ( FileSystem::fileExists( config ) )
-			loadProjectConfiguration( config );
+		std::string config;
+		if ( mLoadVSCodeLaunchConfig ) {
+			config = mProjectPath + ".vscode/launch.json";
+			if ( FileSystem::fileExists( config ) )
+				loadProjectConfiguration( config );
+		}
 		config = mProjectPath + ".ecode/launch.json";
 		if ( FileSystem::fileExists( config ) )
 			loadProjectConfiguration( config );

@@ -384,6 +384,13 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			config["suggestion_documentation"] = mSignatureHelpDocumentation;
 			updateConfigFile = true;
 		}
+
+		if ( config.contains( "load_vscode_snippets" ) )
+			mLoadVSCodeSnippets = config.value( "load_vscode_snippets", true );
+		else {
+			config["load_vscode_snippets"] = mLoadVSCodeSnippets;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -508,8 +515,9 @@ void AutoCompletePlugin::setSnippetWorkspaceFolder( std::string workspaceFolder 
 		if ( mSnippetWorkspaceFolder == workspaceFolder )
 			return;
 		mSnippetWorkspaceFolder = workspaceFolder;
-		mVSCodeSnippetsPath =
-			workspaceFolder.empty() ? "" : workspaceFolder + ".vscode" + FileSystem::getOSSlash();
+		mVSCodeSnippetsPath = workspaceFolder.empty() || !mLoadVSCodeSnippets
+								  ? ""
+								  : workspaceFolder + ".vscode" + FileSystem::getOSSlash();
 		mEcodeSnippetsPath =
 			workspaceFolder.empty() ? "" : workspaceFolder + ".ecode" + FileSystem::getOSSlash();
 		generation = ++mSnippetWorkspaceGeneration;
@@ -524,8 +532,9 @@ void AutoCompletePlugin::setSnippetWorkspaceFolder( std::string workspaceFolder 
 		mUserSnippetStore.removeSource( UserSnippetSource::EcodeProject );
 		if ( workspaceFolder.empty() )
 			return;
-		loadSnippetDirectory( workspaceFolder + ".vscode" + FileSystem::getOSSlash(),
-							  UserSnippetSource::VSCodeProject, false );
+		if ( mLoadVSCodeSnippets )
+			loadSnippetDirectory( workspaceFolder + ".vscode" + FileSystem::getOSSlash(),
+								  UserSnippetSource::VSCodeProject, false );
 		loadSnippetDirectory( workspaceFolder + ".ecode" + FileSystem::getOSSlash(),
 							  UserSnippetSource::EcodeProject, false );
 	} );
@@ -590,7 +599,8 @@ void AutoCompletePlugin::registerSnippetLocatorProvider() {
 			  }
 			  std::string language = editor->getDocument().getSyntaxDefinition().getLSPName();
 			  std::string filePath = editor->getDocument().getFilePath();
-			  FileSystem::filePathRemoveBasePath( getPluginContext()->getCurrentProject(), filePath );
+			  FileSystem::filePathRemoveBasePath( getPluginContext()->getCurrentProject(),
+												  filePath );
 			  std::string pattern = query.toUtf8();
 			  ++mSnippetJobs;
 			  mThreadPool->run( [this, language = std::move( language ),
@@ -2587,8 +2597,7 @@ AutoCompletePlugin::getUserSnippetSuggestions( UICodeEditor* editor, const std::
 	std::string filePath = editor->getDocument().getFilePath();
 	if ( getPluginContext() )
 		FileSystem::filePathRemoveBasePath( getPluginContext()->getCurrentProject(), filePath );
-	auto matches = mUserSnippetStore.find( language, snippetInput, maxResults,
-										   filePath );
+	auto matches = mUserSnippetStore.find( language, snippetInput, maxResults, filePath );
 	suggestions.reserve( matches.size() );
 	for ( auto& match : matches ) {
 		Suggestion suggestion( LSPCompletionItemKind::Snippet, std::move( match.matchedPrefix ),

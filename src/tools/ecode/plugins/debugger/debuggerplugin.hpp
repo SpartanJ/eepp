@@ -90,6 +90,7 @@ class DebuggerPlugin : public PluginBase {
 	bool mFetchGlobals{ false };
 	bool mChangingBreakpoint{ false };
 	bool mSilence{ true };
+	bool mLoadVSCodeLaunchConfig{ true };
 	bool mBrokenUserConfigFile{ false };
 	std::string mProjectPath;
 	std::string mConfigFileError;
