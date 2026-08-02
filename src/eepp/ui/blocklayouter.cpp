@@ -619,12 +619,7 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 				curCharIdx += 1;
 				Rectf atomicBounds( maxF, maxF, lowF, lowF );
 				if ( getAtomicWidgetFragmentBounds( widget, atomicBounds ) ) {
-					if ( widget->hasLayoutMarginAuto() )
-						widget->updateLayoutMarginAuto();
-					Rectf margin =
-						widget->isType( UI_TYPE_HTML_WIDGET )
-							? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
-							: widget->getLayoutPixelsMargin();
+					Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
 					Vector2f targetPos( atomicBounds.Left + margin.Left,
 										atomicBounds.Top + margin.Top );
 
@@ -660,12 +655,7 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 
 					size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
 					Float lineY = lines[lineIdx].y;
-					if ( widget->hasLayoutMarginAuto() )
-						widget->updateLayoutMarginAuto();
-					Rectf margin =
-						widget->isType( UI_TYPE_HTML_WIDGET )
-							? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
-							: widget->getLayoutPixelsMargin();
+					Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
 
 					Vector2f targetPos( contentOffset.Left + span->position.x + margin.Left,
 										contentOffset.Top + lineY + span->position.y + margin.Top );

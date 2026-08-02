@@ -4903,11 +4903,60 @@ UTEST( UIHTML, BlockSizeInfDoesNotHang ) {
 	sceneNode->update( Seconds( 1 ) );
 	sceneNode->updateDirtyLayouts();
 
-	// If we got here without hanging, the test passes.
 	auto body = sceneNode->getRoot()->findByTag( "body" );
 	ASSERT_TRUE( body != nullptr );
 	auto bodyWidget = body->asType<UIWidget>();
 	EXPECT_GT( bodyWidget->getPixelsSize().getHeight(), 0.f );
+
+	auto* logoNode = sceneNode->getRoot()->findByClass( "logo" );
+	ASSERT_TRUE( logoNode != nullptr );
+	auto* logo = logoNode->asType<UIWidget>();
+	auto* logoLink = logo->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( logoLink != nullptr );
+	EXPECT_GT( logoLink->getPixelsSize().getWidth(), 0.f );
+	EXPECT_NEAR( logoLink->getPixelsSize().getWidth(), logo->getPixelsSize().getWidth(), 1.f );
+	EXPECT_LT( logoLink->getPixelsSize().getWidth(), 1024.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, WebViewAsyncInlineImageAutoMarginsResolveToZero ) {
+	Engine::instance()->createWindow( WindowSettings( 2048, 1152, "Image Anchor Bounds Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setThreadPool( ThreadPool::createShared( 4 ) );
+	auto* host = sceneNode->loadLayoutFromString( R"xml(
+		<vbox layout_width="match_parent" layout_height="match_parent">
+			<hbox layout_width="match_parent" layout_height="wrap_content">
+				<TextInput layout_width="0" layout_weight="1" />
+			</hbox>
+			<WebView id="webview" layout_width="match_parent" layout_height="0" layout_weight="1" />
+		</vbox>
+	)xml" );
+	auto* webView = host->find( "webview" )->asType<UIWebView>();
+	webView->loadURI( URI( "./assets/html/block_size_inf.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	UIWidget* logo = nullptr;
+	for ( int i = 0; i < 200; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Milliseconds( 16 ) );
+		logo = documentScene->getRoot()->findByClass( "logo" );
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( logo != nullptr );
+	auto* logoLink = logo->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( logoLink != nullptr );
+	EXPECT_GT( logoLink->getPixelsSize().getWidth(), 0.f );
+	EXPECT_NEAR( logoLink->getPixelsSize().getWidth(), logo->getPixelsSize().getWidth(), 1.f );
+	EXPECT_LT( logoLink->getPixelsSize().getWidth(), webView->getPixelsSize().getWidth() );
 
 	Engine::destroySingleton();
 }

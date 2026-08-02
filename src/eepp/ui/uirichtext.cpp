@@ -2028,12 +2028,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 					"\n", widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
 				lastSpanEndsWithSpace = false;
 			} else {
-				if ( widget->hasLayoutMarginAuto() )
-					widget->updateLayoutMarginAuto();
-				Rectf margin =
-					widget->isType( UI_TYPE_HTML_WIDGET )
-						? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
-						: widget->getLayoutPixelsMargin();
+				Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
 				bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
 				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 					CSSDisplay display = widget->asType<UIHTMLWidget>()->getDisplay();

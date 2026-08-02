@@ -100,6 +100,11 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	Rectf getNormalFlowLayoutPixelsMargin() const;
 
+	/** Returns the used CSS margin for a child participating in a block formatting context.
+	 * Horizontal auto margins are resolved only for normal-flow block-level boxes. For
+	 * inline-level, floated, and out-of-flow boxes every auto margin has a used value of zero. */
+	static Rectf getFormattingContextLayoutPixelsMargin( UIWidget* widget );
+
 	const CSSBaselineAlignValue& getBaselineAlign() const { return mBaselineAlign; }
 
 	void setBaselineAlign( const CSSBaselineAlignValue& baselineAlign );

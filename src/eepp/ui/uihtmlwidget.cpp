@@ -420,6 +420,34 @@ Rectf UIHTMLWidget::getNormalFlowLayoutPixelsMargin() const {
 	return margin;
 }
 
+Rectf UIHTMLWidget::getFormattingContextLayoutPixelsMargin( UIWidget* widget ) {
+	bool resolveHorizontalAutoMargins = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
+	if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+		auto* htmlWidget = widget->asType<UIHTMLWidget>();
+		resolveHorizontalAutoMargins = !htmlWidget->isOutOfFlow() &&
+									   htmlWidget->getCSSFloat() == CSSFloat::None &&
+									   !widget->isInlineDisplay();
+	}
+
+	if ( resolveHorizontalAutoMargins && widget->hasLayoutMarginAuto() )
+		widget->updateLayoutMarginAuto();
+
+	Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
+					   ? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
+					   : widget->getLayoutPixelsMargin();
+	if ( !resolveHorizontalAutoMargins ) {
+		if ( widget->hasLayoutMarginLeftAuto() )
+			margin.Left = 0.f;
+		if ( widget->hasLayoutMarginRightAuto() )
+			margin.Right = 0.f;
+		if ( widget->hasLayoutMarginTopAuto() )
+			margin.Top = 0.f;
+		if ( widget->hasLayoutMarginBottomAuto() )
+			margin.Bottom = 0.f;
+	}
+	return margin;
+}
+
 void UIHTMLWidget::setBaselineAlign( const CSSBaselineAlignValue& baselineAlign ) {
 	if ( mBaselineAlign != baselineAlign ) {
 		mBaselineAlign = baselineAlign;
