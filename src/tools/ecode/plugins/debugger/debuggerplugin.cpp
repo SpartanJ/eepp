@@ -2185,11 +2185,14 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 						  DapRunConfig&& runConfig, int randPort, bool forceUseProgram,
 						  bool usesPorts, bool unstableFrameId ) {
 	std::optional<Command> cmdOpt = debuggerBinaryExists( debugger, runConfig );
+	auto mode = protocolSettings.launchArgs.value( "mode", "" );
+	if ( mode.empty() )
+		mode = "local";
+	const bool needsProcess =
+		protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
+		( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH && mode == "local" );
 
-	if ( !cmdOpt && ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
-					  ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH &&
-						protocolSettings.launchArgs.value( "mode", "" ) == "local" &&
-						protocolSettings.launchArgs.contains( "program" ) ) ) ) {
+	if ( !cmdOpt && needsProcess ) {
 		auto msg =
 			String::format( i18n( "debugger_binary_not_found",
 								  "Debugger binary not found. Binary \"%s\" must be installed." )
@@ -2200,7 +2203,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 		return;
 	}
 
-	Command cmd = std::move( *cmdOpt );
+	Command cmd = cmdOpt ? std::move( *cmdOpt ) : Command{};
 	bool isRemote = false;
 	bool runsDapServer = false;
 
@@ -2233,14 +2236,10 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 		}
 	} else if ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH ) {
-		auto mode = protocolSettings.launchArgs.value( "mode", "" );
-		if ( mode.empty() )
-			mode = "local";
-
-		bool useSocket = !con.host.empty() && con.port != 0;
-		if ( ( protocolSettings.launchArgs.contains( "host" ) ||
-			   protocolSettings.launchArgs.contains( "port" ) ) &&
-			 !useSocket ) {
+		const bool socketRequested = protocolSettings.launchArgs.contains( "host" ) ||
+									 protocolSettings.launchArgs.contains( "port" );
+		bool useSocket = runsDapServer || ( socketRequested && con.isValid() );
+		if ( socketRequested && !useSocket ) {
 			getManager()->getPluginContext()->getNotificationCenter()->addNotification(
 				i18n( "host_port_required", "No host or port has been specified." ) );
 			return;
