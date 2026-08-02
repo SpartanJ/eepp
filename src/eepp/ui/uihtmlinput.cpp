@@ -113,6 +113,10 @@ bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 	PropertyId id = attribute.getPropertyDefinition()->getPropertyId();
 
 	switch ( id ) {
+		case PropertyId::Height:
+			mHasSpecifiedHeight = !attribute.value().empty() &&
+								  !String::iequals( String::trim( attribute.value() ), "auto" );
+			break;
 		case PropertyId::Checked:
 		case PropertyId::Selected:
 			mChecked = htmlBoolAttributeIsTrue( attribute );
@@ -186,6 +190,8 @@ void UIHTMLInput::updateLayout() {
 	// An input is a replaced element. Its anonymous native control must not be processed as a DOM
 	// child by BlockLayouter, which would restore the control's intrinsic size after flex/grid had
 	// assigned the host's final used size.
+	if ( !mHasSpecifiedHeight )
+		updateHostGeometry();
 	positionOutOfFlowChildren();
 	if ( isOutOfFlow() )
 		updateOutOfFlowPosition();
@@ -334,14 +340,24 @@ void UIHTMLInput::updateHostGeometry() {
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )
 		size.setWidth( mChildWidget->getPixelsSize().getWidth() + contentOffset.Left +
 					   contentOffset.Right );
-	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent )
-		size.setHeight( mChildWidget->getPixelsSize().getHeight() + contentOffset.Top +
-						contentOffset.Bottom );
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent || !mHasSpecifiedHeight ) {
+		Float contentHeight = mChildWidget->getPixelsSize().getHeight();
+		if ( mChildWidget->isType( UI_TYPE_HTML_TEXTINPUT ) )
+			contentHeight = mChildWidget->asType<UIHTMLTextInput>()->getIntrinsicContentHeight();
+		size.setHeight( contentHeight + contentOffset.Top + contentOffset.Bottom );
+	}
 
 	mSyncingGeometry = true;
 	setPixelsSize( size );
 	mSyncingGeometry = false;
 	updateChildGeometry();
+}
+
+Float UIHTMLInput::getReplacedElementBaseline() const {
+	if ( mChildWidget && mChildWidget->isType( UI_TYPE_HTML_TEXTINPUT ) )
+		return getPixelsContentOffset().Top +
+			   mChildWidget->asType<UIHTMLTextInput>()->getTextBaseline();
+	return getPixelsSize().getHeight();
 }
 
 void UIHTMLInput::updateChildGeometry() {

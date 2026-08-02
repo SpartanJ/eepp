@@ -28,6 +28,10 @@ class EE_API UIHTMLTextInput : public UITextInput {
 
 	virtual void onAutoSize();
 
+	Float getIntrinsicContentHeight() const;
+
+	Float getTextBaseline() const;
+
 	Uint32 getHtmlSize() const;
 
 	void setHtmlSize( Uint32 size );

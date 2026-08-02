@@ -81,7 +81,7 @@ h6 { font-size: 0.67em; font-weight: bold; margin: 2.33em 0; }
 p { margin: 1em 0; }
 pre { margin: 1em 0; white-space: pre; }
 blockquote { margin: 1em 0; }
-hr { display: block; border-width: 1px; border-color: gray; margin: 0.5em 0; min-height: 2px; }
+hr { display: block; border-width: 1px; border-style: solid; border-color: gray; margin: 0.5em 0; min-height: 2px; }
 ul, ol, dl { margin: 1em 0; }
 
 b, strong { font-weight: bold; }
@@ -103,12 +103,13 @@ dd { margin-left: 40dp; }
 
 summary { cursor: pointer; padding-left: 20dp; list-style-type: disclosure-closed; }
 
-textarea { border-width: 1dp; border-color: #767676; background-color: white; color: black; padding: 2dp; selection-back-color: lightgray; }
+textarea { border-width: 1dp; border-style: solid; border-color: #767676; background-color: white; color: black; padding: 2dp; selection-back-color: lightgray; }
 
 input[type="text"],
 input[type="password"],
 input[type="number"] {
 	border-width: 1dp;
+	border-style: solid;
 	border-color: #767676;
 	background-color: white;
 	color: black;
@@ -126,6 +127,7 @@ input[type="reset"] {
 	display: inline-block;
 	box-sizing: border-box;
 	border-width: 1dp;
+	border-style: solid;
 	border-color: #767676;
 	background-color: #f0f0f0;
 	color: black;

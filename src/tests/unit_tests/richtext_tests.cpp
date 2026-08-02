@@ -284,7 +284,11 @@ UTEST( RichText, VerticalAlignAtomicBoxes ) {
 							RichText::InlineClear::None, 10.f, middleAlign );
 	middleRt.getSize();
 	ASSERT_EQ( middleRt.getLines().front().spans.size(), (size_t)2 );
-	EXPECT_NEAR( middleRt.getLines().front().spans[1].position.y, baselineY, 0.001f );
+	Float parentXHeight = -font->getGlyph( 'x', 20, false, false ).bounds.Top;
+	const auto& middleLine = middleRt.getLines().front();
+	Float expectedMiddleY =
+		middleLine.maxAscent - parentXHeight * 0.5f - middleLine.spans[1].size.getHeight() * 0.5f;
+	EXPECT_NEAR( middleLine.spans[1].position.y, expectedMiddleY, 0.001f );
 
 	RichText mixedRt;
 	mixedRt.getFontStyleConfig().Font = font;
@@ -295,7 +299,8 @@ UTEST( RichText, VerticalAlignAtomicBoxes ) {
 	mixedRt.getSize();
 	ASSERT_EQ( mixedRt.getLines().front().spans.size(), (size_t)2 );
 	const auto& mixedLine = mixedRt.getLines().front();
-	Float expectedMiddleY = mixedLine.maxAscent - 5.f;
+	expectedMiddleY =
+		mixedLine.maxAscent - parentXHeight * 0.5f - mixedLine.spans[1].size.getHeight() * 0.5f;
 	EXPECT_NEAR( mixedLine.spans[1].position.y, expectedMiddleY, 0.001f );
 
 	RichText nestedRt;
@@ -318,7 +323,11 @@ UTEST( RichText, VerticalAlignAtomicBoxes ) {
 	ASSERT_TRUE( nestedOpenParen.text != nullptr );
 	EXPECT_STRINGEQ( nestedOpenParen.text->getString(), "(" );
 	EXPECT_EQ( nestedAtomic.type, RichText::RenderSpan::Type::AtomicBox );
-	EXPECT_NEAR( nestedAtomic.position.y, nestedOpenParen.position.y, 0.5f );
+	Float nestedParentXHeight = -font->getGlyph( 'x', 16, false, false ).bounds.Top;
+	Float expectedNestedY = nestedRt.getLines().front().maxAscent - nestedParentXHeight * 0.5f -
+							nestedAtomic.size.getHeight() * 0.5f;
+	EXPECT_NEAR( nestedAtomic.position.y, expectedNestedY, 0.001f );
+	EXPECT_NEAR( nestedAtomic.position.y, nestedOpenParen.position.y, 1.f );
 
 	RichText::BaselineAlignValue lengthAlign;
 	lengthAlign.type = RichText::BaselineAlignment::Length;
@@ -2060,14 +2069,14 @@ UTEST( UIRichText, MarginsTest ) {
 	// d1 footprint height: 10 + 50 + 30 = 90.
 	// d2 x = d1 left margin = 5 (its own left margin).
 	EXPECT_EQ( 5.f, pos2.x );
-	// d2 y = d1 footprint height (90) + d2 margin top (5) = 95.
-	EXPECT_EQ( 95.f, pos2.y );
+	// The adjacent 30px and 5px vertical margins collapse to 30px, so d2 starts at 90px.
+	EXPECT_EQ( 90.f, pos2.y );
 
 	// Check UIRichText bounds
 	// Width = max(d1 footprint: 110, d2 footprint: 60) = 110.
-	// Height = sum of line heights: d1 line 90 + d2 line 60 = 150.
+	// Height = 10 + 50 + collapsed 30 + 50 + trailing 5 = 145.
 	EXPECT_EQ( 110.f, rt->getPixelsSize().getWidth() );
-	EXPECT_EQ( 150.f, rt->getPixelsSize().getHeight() );
+	EXPECT_EQ( 145.f, rt->getPixelsSize().getHeight() );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -2085,7 +2094,7 @@ UTEST( UIRichText, ForcedLineBreak ) {
 	sceneNode->update( Time::Zero );
 
 	const auto& richText = rt->getRichText();
-	EXPECT_EQ( richText.getLines().size(), (size_t)3 );
+	EXPECT_EQ( richText.getLines().size(), (size_t)2 );
 
 	destroyRichTextScene( sceneNode );
 }
@@ -2104,11 +2113,10 @@ UTEST( UIRichText, CustomBRHeight ) {
 
 	const auto& richText = rt->getRichText();
 	const auto& lines = richText.getLines();
-	EXPECT_EQ( lines.size(), (size_t)3 );
-
+	EXPECT_EQ( lines.size(), (size_t)2 );
 	if ( lines.size() >= 2 ) {
 		EXPECT_GT( lines[0].height, lines[1].height );
-		EXPECT_GT( lines[2].height, 0.f );
+		EXPECT_GT( lines[1].height, 0.f );
 	}
 
 	destroyRichTextScene( sceneNode );

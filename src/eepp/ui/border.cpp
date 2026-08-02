@@ -116,6 +116,34 @@ BorderType Borders::toBorderType( const std::string& borderType ) {
 	return BorderType::Inside;
 }
 
+std::string Borders::fromBorderStyle( BorderStyle borderStyle ) {
+	switch ( borderStyle ) {
+		case BorderStyle::None:
+			return "none";
+		case BorderStyle::Hidden:
+			return "hidden";
+		case BorderStyle::Dotted:
+			return "dotted";
+		case BorderStyle::Dashed:
+			return "dashed";
+		case BorderStyle::Solid:
+		default:
+			return "solid";
+	}
+}
+
+BorderStyle Borders::toBorderStyle( const std::string& borderStyle ) {
+	if ( borderStyle == "none" )
+		return BorderStyle::None;
+	if ( borderStyle == "hidden" )
+		return BorderStyle::Hidden;
+	if ( borderStyle == "dotted" )
+		return BorderStyle::Dotted;
+	if ( borderStyle == "dashed" )
+		return BorderStyle::Dashed;
+	return BorderStyle::Solid;
+}
+
 Sizef Borders::radiusFromString( const UINode* node, const std::string& val ) {
 	auto split = String::split( val, ' ' );
 	Sizef size;

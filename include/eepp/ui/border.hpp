@@ -17,10 +17,13 @@ class UINode;
 
 enum class BorderType : Uint32 { Inside, Outside, Outline };
 
+enum class BorderStyle : Uint32 { None, Hidden, Dotted, Dashed, Solid };
+
 struct EE_API Border {
 	int width = 0;
 	Color color;
 	Color realColor;
+	BorderStyle style{ BorderStyle::Solid };
 };
 
 struct EE_API BorderRadiuses {
@@ -40,6 +43,10 @@ struct EE_API Borders {
 	static std::string fromBorderType( const BorderType& borderType );
 
 	static BorderType toBorderType( const std::string& borderType );
+
+	static std::string fromBorderStyle( BorderStyle borderStyle );
+
+	static BorderStyle toBorderStyle( const std::string& borderStyle );
 
 	static Sizef radiusFromString( const UINode* node, const std::string& val );
 

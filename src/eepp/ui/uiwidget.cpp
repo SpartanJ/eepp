@@ -1754,6 +1754,10 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BorderTopWidth,
 			 PropertyId::BorderRightWidth,
 			 PropertyId::BorderBottomWidth,
+			 PropertyId::BorderLeftStyle,
+			 PropertyId::BorderTopStyle,
+			 PropertyId::BorderRightStyle,
+			 PropertyId::BorderBottomStyle,
 			 PropertyId::BorderTopLeftRadius,
 			 PropertyId::BorderTopRightRadius,
 			 PropertyId::BorderBottomLeftRadius,
@@ -1910,6 +1914,14 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( setBorderEnabled( true )->getBorders().top.width, "px" );
 		case PropertyId::BorderBottomWidth:
 			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
+		case PropertyId::BorderLeftStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().left.style );
+		case PropertyId::BorderRightStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().right.style );
+		case PropertyId::BorderTopStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().top.style );
+		case PropertyId::BorderBottomStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().bottom.style );
 		case PropertyId::BorderTopLeftRadius:
 			return String::format(
 				"%s %s",
@@ -2484,6 +2496,22 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::BorderBottomWidth:
 			setBorderEnabled( true )->setBottomWidth( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderLeftStyle:
+			setBorderEnabled( true )->setLeftStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderRightStyle:
+			setBorderEnabled( true )->setRightStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderTopStyle:
+			setBorderEnabled( true )->setTopStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderBottomStyle:
+			setBorderEnabled( true )->setBottomStyle( attribute.value() );
 			invalidateDraw();
 			break;
 		case PropertyId::BorderTopLeftRadius:

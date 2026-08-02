@@ -113,6 +113,19 @@ void UITextSpan::draw() {
 	}
 }
 
+void UITextSpan::drawBackground() {
+	// Inline backgrounds are fragmented and painted by the owning RichText. Painting the node's
+	// background as well happens after its parent's text and covers the inline foreground.
+	if ( !isInline() )
+		UIRichText::drawBackground();
+}
+
+void UITextSpan::drawBorder() {
+	// Inline borders follow the same single-paint-owner rule as inline backgrounds.
+	if ( !isInline() )
+		UIRichText::drawBorder();
+}
+
 bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

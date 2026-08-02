@@ -191,10 +191,11 @@ class EE_API RichText : public Drawable {
 						InlineClear clearType = InlineClear::None, Float baseline = -1.f,
 						const BaselineAlignValue& baselineAlign = {}, InlineSource source = {},
 						bool isBlock = false, bool isBlockFormattingContext = false,
-						std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats = {} );
+						std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats = {},
+						const Rectf& margin = Rectf::Zero );
 
 	/** @brief Adds a virtual line break that is not associated with a DOM text character. */
-	void addLineBreak();
+	void addLineBreak( bool forceEmptyLine = false, Float lineHeight = 0.f );
 
 	virtual void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
 					   const Float& rotation = 0, BlendMode effect = BlendMode::Alpha(),
@@ -227,6 +228,7 @@ class EE_API RichText : public Drawable {
 		std::shared_ptr<Drawable> drawable;
 		Rectf margin;
 		Rectf padding;
+		Rectf formattingMargin;
 		Float lineHeight{ 0 };
 		BaselineAlignValue baselineAlign;
 		bool suppressBackground{ false };
@@ -234,6 +236,7 @@ class EE_API RichText : public Drawable {
 		InlineFloat floatType{ InlineFloat::None };
 		InlineClear clearType{ InlineClear::None };
 		bool isLineBreak{ false };
+		bool forceEmptyLine{ false };
 		bool isBlock{ false };
 		bool isBlockFormattingContext{ false };
 		std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
@@ -248,6 +251,7 @@ class EE_API RichText : public Drawable {
 	/** @brief Structure representing a rendered paragraph (line). */
 	struct RenderParagraph {
 		std::vector<RenderSpan> spans;
+		bool forcedEmptyLine{ false };
 		Float y{ 0 };
 		Float height{ 0 };
 		Float maxAscent{ 0 };
@@ -347,10 +351,12 @@ class EE_API RichText : public Drawable {
 			InlineSource source;
 			std::shared_ptr<Drawable> drawable;
 			Sizef size;
+			Rectf formattingMargin;
 			Float baseline{ 0 };
 			InlineFloat floatType{ InlineFloat::None };
 			InlineClear clearType{ InlineClear::None };
 			bool isLineBreak{ false };
+			bool forceEmptyLine{ false };
 			bool isBlock{ false };
 			bool isBlockFormattingContext{ false };
 			std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
@@ -388,6 +394,7 @@ class EE_API RichText : public Drawable {
 		size_t lineIndex{ 0 };
 		Rectf bounds;
 		Rectf paintBounds;
+		Rectf formattingMargin;
 		Int64 startCharIndex{ 0 };
 		Int64 endCharIndex{ 0 };
 		std::shared_ptr<Text> text;

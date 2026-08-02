@@ -70,6 +70,14 @@ class EE_API UIBorderDrawable : public Drawable {
 
 	void setBottomWidth( const std::string& bottomWidth );
 
+	void setLeftStyle( const std::string& style );
+
+	void setRightStyle( const std::string& style );
+
+	void setTopStyle( const std::string& style );
+
+	void setBottomStyle( const std::string& style );
+
 	void setTopLeftRadius( const std::string& radius );
 
 	void setTopRightRadius( const std::string& radius );

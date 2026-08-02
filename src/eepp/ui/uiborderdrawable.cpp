@@ -1,4 +1,5 @@
 #include <eepp/core.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
@@ -57,6 +58,50 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 
 		if ( mSmooth && !isPolySmooth )
 			GLi->polygonSmooth( isPolySmooth );
+
+		// Patterned sides currently use axis-aligned primitives and therefore only render correctly
+		// when all border radii are zero. Rounded dotted/dashed borders need path-aware segments.
+		// CSS leaves the exact dash/gap algorithm to the user agent. Use one-border-width dot
+		// segments or three-width dashes with an equal-sized gap, centered along each side so any
+		// remainder is shared by both ends. Rectangular dot segments intentionally match browser
+		// rasterization for thin borders, where a nominal round dot resolves to a square pixel.
+		// TODO: Build and retain the segment geometry during update() instead of regenerating it
+		// on every draw. A separate cached triangle-list buffer avoids joining disjoint segments
+		// into the solid border's triangle strip.
+		auto drawPatternedSide = [&]( const Border& border, bool horizontal, Float fixed,
+									  Float start, Float length ) {
+			if ( border.width <= 0 ||
+				 ( border.style != BorderStyle::Dotted && border.style != BorderStyle::Dashed ) )
+				return;
+			const Float segment =
+				border.style == BorderStyle::Dotted ? border.width : border.width * 3.f;
+			const Float step = segment * 2.f;
+			if ( segment <= 0.f || length <= 0.f )
+				return;
+			const Uint32 count =
+				eemax<Uint32>( 1, static_cast<Uint32>( std::ceil( length / step ) ) );
+			const Float used = ( count - 1 ) * step + segment;
+			Float cursor = start + eemax( 0.f, ( length - used ) * 0.5f );
+			Primitives primitive;
+			primitive.setColor( border.color );
+			for ( Uint32 i = 0; i < count && cursor < start + length; ++i, cursor += step ) {
+				const Float end = eemin( cursor + segment, start + length );
+				if ( horizontal ) {
+					primitive.drawRectangle( Rectf( cursor, fixed, end, fixed + border.width ) );
+				} else {
+					primitive.drawRectangle( Rectf( fixed, cursor, fixed + border.width, end ) );
+				}
+			}
+		};
+
+		const Float left = mPosition.x;
+		const Float top = mPosition.y;
+		drawPatternedSide( mBorders.top, true, top, left, mSize.getWidth() );
+		drawPatternedSide( mBorders.bottom, true, top + mSize.getHeight() - mBorders.bottom.width,
+						   left, mSize.getWidth() );
+		drawPatternedSide( mBorders.left, false, left, top, mSize.getHeight() );
+		drawPatternedSide( mBorders.right, false, left + mSize.getWidth() - mBorders.right.width,
+						   top, mSize.getHeight() );
 	}
 }
 
@@ -69,6 +114,12 @@ void UIBorderDrawable::setLineWidth( const Float& width ) {
 		 mBorders.right.width != width || mBorders.bottom.width != width ) {
 		mBorders.top.width = mBorders.left.width = mBorders.right.width = mBorders.bottom.width =
 			width;
+		// setLineWidth() is the legacy programmatic convenience API and historically creates a
+		// visible solid border. CSS longhand widths use the per-side setters and therefore preserve
+		// the CSS initial border-style of none until an explicit style is applied.
+		if ( width > 0 )
+			mBorders.top.style = mBorders.left.style = mBorders.right.style =
+				mBorders.bottom.style = BorderStyle::Solid;
 		mNeedsUpdate = true;
 	}
 }
@@ -194,6 +245,38 @@ void UIBorderDrawable::setBottomWidth( const std::string& bottomWidth ) {
 	}
 }
 
+void UIBorderDrawable::setLeftStyle( const std::string& style ) {
+	BorderStyle value = Borders::toBorderStyle( style );
+	if ( mBorders.left.style != value ) {
+		mBorders.left.style = value;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBorderDrawable::setRightStyle( const std::string& style ) {
+	BorderStyle value = Borders::toBorderStyle( style );
+	if ( mBorders.right.style != value ) {
+		mBorders.right.style = value;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBorderDrawable::setTopStyle( const std::string& style ) {
+	BorderStyle value = Borders::toBorderStyle( style );
+	if ( mBorders.top.style != value ) {
+		mBorders.top.style = value;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBorderDrawable::setBottomStyle( const std::string& style ) {
+	BorderStyle value = Borders::toBorderStyle( style );
+	if ( mBorders.bottom.style != value ) {
+		mBorders.bottom.style = value;
+		mNeedsUpdate = true;
+	}
+}
+
 void UIBorderDrawable::setTopLeftRadius( const std::string& radius ) {
 	if ( mBorderStr.radius.topLeft != radius ) {
 		mBorderStr.radius.topLeft = radius;
@@ -285,6 +368,15 @@ void UIBorderDrawable::setSmooth( bool smooth ) {
 
 void UIBorderDrawable::update() {
 	updateBorders();
+	Borders solidBorders = mBorders;
+	auto hidePatterned = []( Border& border ) {
+		if ( border.style != BorderStyle::Solid )
+			border.width = 0;
+	};
+	hidePatterned( solidBorders.top );
+	hidePatterned( solidBorders.right );
+	hidePatterned( solidBorders.bottom );
+	hidePatterned( solidBorders.left );
 
 	switch ( mBorderType ) {
 		case BorderType::Outside: {
@@ -307,12 +399,12 @@ void UIBorderDrawable::update() {
 				size.y += mBorders.bottom.width * 2;
 			}
 
-			Borders::createBorders( mVertexBuffer.get(), mBorders, pos, size );
+			Borders::createBorders( mVertexBuffer.get(), solidBorders, pos, size );
 
 			break;
 		}
 		case BorderType::Inside: {
-			Borders::createBorders( mVertexBuffer.get(), mBorders, Vector2f::Zero, mSize );
+			Borders::createBorders( mVertexBuffer.get(), solidBorders, Vector2f::Zero, mSize );
 			break;
 		}
 		case BorderType::Outline: {
@@ -335,7 +427,7 @@ void UIBorderDrawable::update() {
 				size.y += mBorders.bottom.width;
 			}
 
-			Borders::createBorders( mVertexBuffer.get(), mBorders, pos, size );
+			Borders::createBorders( mVertexBuffer.get(), solidBorders, pos, size );
 
 			break;
 		}
@@ -380,8 +472,12 @@ void UIBorderDrawable::updateBorders() const {
 		mBorders.radius.bottomRight =
 			Borders::radiusFromString( mOwner, mBorderStr.radius.bottomRight );
 
-	mHasBorder = mBorders.top.width > 0 || mBorders.right.width > 0 || mBorders.bottom.width > 0 ||
-				 mBorders.left.width > 0;
+	auto visible = []( const Border& border ) {
+		return border.width > 0 && border.style != BorderStyle::None &&
+			   border.style != BorderStyle::Hidden;
+	};
+	mHasBorder = visible( mBorders.top ) || visible( mBorders.right ) ||
+				 visible( mBorders.bottom ) || visible( mBorders.left );
 }
 
 }} // namespace EE::UI

@@ -29,6 +29,8 @@ class EE_API UIHTMLInput : public UIHTMLWidget {
 
 	virtual void updateLayout();
 
+	Float getReplacedElementBaseline() const;
+
 	const std::string& getInputType() const;
 
 	void setInputType( const std::string& type );
@@ -44,6 +46,7 @@ class EE_API UIHTMLInput : public UIHTMLWidget {
 	String mValue;
 	bool mChecked{ false };
 	bool mSyncingGeometry{ false };
+	bool mHasSpecifiedHeight{ false };
 	bool mHiddenByType{ false };
 	bool mVisibleBeforeHidden{ true };
 	bool mEnabledBeforeHidden{ true };

@@ -9,6 +9,7 @@
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
@@ -1529,6 +1530,8 @@ static Float getAtomicInlineBoxBaseline( UIWidget* widget, const Sizef& widgetSi
 	Float fallbackBaseline = widgetSize.getHeight() + margin.Top + margin.Bottom;
 	if ( !widget->isType( UI_TYPE_HTML_WIDGET ) )
 		return fallbackBaseline;
+	if ( widget->isType( UI_TYPE_HTML_INPUT ) )
+		return margin.Top + widget->asType<UIHTMLInput>()->getReplacedElementBaseline();
 
 	auto* htmlWidget = widget->asType<UIHTMLWidget>();
 	auto* rt = htmlWidget->getRichTextPtr();
@@ -1799,6 +1802,15 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	}
 
 	int inlineBoxDepth = 0;
+	bool hasPreviousNormalFlowBlock = false;
+	Float previousBlockBottomMargin = 0.f;
+	auto collapseMargins = []( Float first, Float second ) {
+		if ( first >= 0.f && second >= 0.f )
+			return eemax( first, second );
+		if ( first <= 0.f && second <= 0.f )
+			return eemin( first, second );
+		return first + second;
+	};
 	auto processNode = [&]( Node* node, auto& processNodeRef ) -> void {
 		// Helper: walk up through inline ancestors to find the logical prev/next widget
 		auto findLogicalPrev = []( Node* n ) -> Node* {
@@ -1886,6 +1898,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				textNode->setLayoutCharCount( 0 );
 				return;
 			}
+			hasPreviousNormalFlowBlock = false;
 
 			textNode->setLayoutCharCount( text.length() );
 
@@ -2024,8 +2037,11 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 		if ( !handled ) {
 			if ( widget->isType( UI_TYPE_BR ) ) {
-				richText.addSpan(
-					"\n", widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
+				const FontStyleConfig& style =
+					widget->asType<UILineBreak>()->getRichText().getFontStyleConfig();
+				Float breakLineHeight =
+					style.Font ? style.Font->getFontHeight( style.CharacterSize ) : 0.f;
+				richText.addLineBreak( true, breakLineHeight );
 				lastSpanEndsWithSpace = false;
 			} else {
 				Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
@@ -2141,8 +2157,14 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 					w = shrinkWidth;
 				}
 
-				Sizef customSize( w + margin.Left + margin.Right,
-								  size.getHeight() + margin.Top + margin.Bottom );
+				Rectf formattingMargin = margin;
+				if ( isNormalFlowBlock && hasPreviousNormalFlowBlock ) {
+					Float collapsed = collapseMargins( previousBlockBottomMargin, margin.Top );
+					formattingMargin.Top = collapsed - previousBlockBottomMargin;
+				}
+				Sizef customSize( w + formattingMargin.Left + formattingMargin.Right,
+								  size.getHeight() + formattingMargin.Top +
+									  formattingMargin.Bottom );
 				std::shared_ptr<std::vector<RichText::FloatExclusion>> propagatedFloats;
 				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 					auto* htmlWidget = widget->asType<UIHTMLWidget>();
@@ -2161,12 +2183,19 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						}
 					}
 				}
-				richText.addCustomSize( customSize, toRichTextFloat( floatType ),
-										toRichTextClear( clearType ),
-										getAtomicInlineBoxBaseline( widget, size, margin ),
-										toRichTextBaselineAlign( getWidgetBaselineAlign( widget ) ),
-										toRichTextWidgetSource( widget ), isNormalFlowBlock,
-										isBlockFormattingContext, std::move( propagatedFloats ) );
+				richText.addCustomSize(
+					customSize, toRichTextFloat( floatType ), toRichTextClear( clearType ),
+					getAtomicInlineBoxBaseline( widget, size, margin ),
+					toRichTextBaselineAlign( getWidgetBaselineAlign( widget ) ),
+					toRichTextWidgetSource( widget ), isNormalFlowBlock, isBlockFormattingContext,
+					std::move( propagatedFloats ), formattingMargin );
+
+				if ( isNormalFlowBlock ) {
+					hasPreviousNormalFlowBlock = true;
+					previousBlockBottomMargin = margin.Bottom;
+				} else if ( !isFloating ) {
+					hasPreviousNormalFlowBlock = false;
+				}
 
 				if ( widget->isType( UI_TYPE_TEXTSPAN ) &&
 					 widget->asType<UITextSpan>()->isInlineBlock() &&

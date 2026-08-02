@@ -408,6 +408,8 @@ void App::registerKeyBindings() {
 					if ( texture )
 						texture->setFilter( mTextureFilter );
 				}
+
+				mImageViewer->invalidateDraw();
 			}
 		} else if ( key == KEY_L ) {
 			mImageViewer->setPreserveImageView( !mImageViewer->getPreserveImageView() );

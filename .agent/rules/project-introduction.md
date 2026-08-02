@@ -16,3 +16,10 @@ When working on this project, rely on the following resources to understand exis
 *   **Basic Documentation:** Found in `docs/articles/`.
 *   **Implementation Examples:** A wide variety of examples showing how to use the library are located in `src/examples/`.
 *   **General Context:** The `README.md` at the root directory contains deeper project details.
+
+## C++ Virtual Method Style
+Follow the convention already used by the class being edited. In particular, when a class declares
+virtual methods without the `override` specifier, do not introduce `override` on new methods in that
+class. Mixing the styles can enable Clang's inconsistent-missing-override warnings for the existing
+declarations. A class-wide conversion is a separate change and must update all applicable methods
+together.

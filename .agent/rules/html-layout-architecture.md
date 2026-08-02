@@ -6,7 +6,50 @@ The goal is browser-compatible behavior where implemented, not a parallel eepp-s
 
 ## Spec-First Requirement
 
-Agents must implement HTML/CSS features by following the official specifications first. Do not add element-specific hacks just to match one fixture if the behavior belongs to a generic CSS concept.
+HTML/CSS compatibility work is **specification implementation**, even when the request begins with a
+visual difference in one website fixture. A screenshot identifies a symptom; it does not define the
+layout rule. Agents must not patch toward fixture pixels until they can name the generic HTML/CSS
+mechanism that produces those pixels.
+
+### Mandatory Decision Process
+
+Before editing layout or rendering code, write down in the working notes or plan:
+
+1. The generic concept involved, such as inline baseline calculation, margin collapsing, intrinsic
+   sizing, replaced elements, float exclusion, or border painting.
+2. The specification section or browser-defined user-agent behavior that governs it.
+3. The engine abstraction that owns the behavior. Prefer parsers, computed style, formatting
+   contexts, line layout, or generic painting over element classes and fixture code.
+4. A fixture-independent invariant that a focused test can assert.
+
+If those four points cannot be identified, continue investigating before implementing a fix.
+
+### Prohibited Fix Patterns
+
+Do not put website names, fixture IDs/classes, DOM ancestry from one page, or special coordinates
+from a screenshot into generic layout/rendering code. Do not change an HTML element default when the
+problem belongs to a CSS formatting rule. Do not introduce unexplained pixel offsets, font-size
+multipliers, or thresholds chosen only because they improve a golden image.
+
+Element-specific behavior is allowed only when HTML or a user-agent stylesheet actually defines
+behavior for that element, such as replaced form controls or `summary { display: list-item; }`. In
+that case, document the HTML/UA rule being implemented; the triggering website is still not the
+justification.
+
+### Required Evidence Before Completion
+
+- Add a focused regression test that does not depend on the original website and expresses the
+  generic invariant. Keep the real fixture or golden test as integration coverage, not as the only
+  proof.
+- Explain every new layout constant from a specification, font metric, existing engine convention,
+  or documented user-agent choice. If it has no principled source, do not add it.
+- Search the generic implementation diff for fixture names, selectors, and unexplained constants.
+- In the final handoff, state the governing concept, the abstraction where it was fixed, and why the
+  solution applies beyond the original fixture.
+
+A visually improved fixture is not sufficient evidence of correctness. If the focused generic test
+and the fixture disagree, investigate the model or document an intentional unsupported subset rather
+than adding a second compensating adjustment.
 
 Primary references:
 

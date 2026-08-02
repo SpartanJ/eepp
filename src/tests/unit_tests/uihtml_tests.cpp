@@ -20,6 +20,7 @@
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uihtmldetails.hpp>
@@ -236,11 +237,8 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 }
 
 UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
-	if ( std::getenv( "EEPP_REDDIT_OLD_THREAD_VISUAL" ) == nullptr )
-		UTEST_SKIP( "set EEPP_REDDIT_OLD_THREAD_VISUAL=1 to render the old Reddit fixture" );
-
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1024, 1000, "Old Reddit Thread Test", WindowStyle::Default,
+		WindowSettings( 1024, 1400, "Old Reddit Thread Test", VisualTestWindowStyle,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -315,6 +313,12 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto commentButtons =
 		documentRoot->querySelector( "#thing_t1_on791mh > .entry > .flat-list.buttons" );
 	auto redditFooter = documentRoot->querySelector( ".footer-parent > .footer" );
+	auto fancyToggle = documentRoot->querySelector( ".titlebox .fancy-toggle-button" );
+	auto leaveButton =
+		documentRoot->querySelector( ".titlebox .fancy-toggle-button .option.active.remove" );
+	auto searchText = documentRoot->querySelector( "#search input[type=text]" );
+	auto searchSubmit = documentRoot->querySelector( "#search input[type=submit]" );
+	auto shortlinkText = documentRoot->find( "shortlink-text" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -347,6 +351,25 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( flairCheckbox != nullptr );
 	ASSERT_TRUE( commentButtons != nullptr );
 	ASSERT_TRUE( redditFooter != nullptr );
+	ASSERT_TRUE( fancyToggle != nullptr );
+	ASSERT_TRUE( leaveButton != nullptr );
+	ASSERT_TRUE( searchText != nullptr );
+	ASSERT_TRUE( searchSubmit != nullptr );
+	ASSERT_TRUE( shortlinkText != nullptr );
+	EXPECT_LT( shortlinkText->asType<UIWidget>()->getPixelsSize().getHeight(), 30.f );
+	EXPECT_EQ( searchText->asType<UIHTMLWidget>()->getBaselineAlign().type,
+			   CSSBaselineAlignment::Middle );
+	EXPECT_EQ( searchSubmit->asType<UIHTMLWidget>()->getBaselineAlign().type,
+			   CSSBaselineAlignment::Middle );
+	EXPECT_STRINGEQ( leaveButton->asType<UITextSpan>()->getText(), "leave" );
+	EXPECT_GT( fancyToggle->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( fancyToggle->getPixelsSize().getHeight(), 0.f );
+	const Vector2f searchTextWorld =
+		searchText->asType<UIWidget>()->convertToWorldSpace( Vector2f::Zero );
+	const Vector2f searchSubmitWorld =
+		searchSubmit->asType<UIWidget>()->convertToWorldSpace( Vector2f::Zero );
+	EXPECT_NEAR( searchTextWorld.y + searchText->getPixelsSize().getHeight() * 0.5f,
+				 searchSubmitWorld.y + searchSubmit->getPixelsSize().getHeight() * 0.5f, 1.f );
 	EXPECT_EQ( redditFooter->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::Flex );
 	Float footerColumnRight = 0.f;
 	for ( auto* col : redditFooter->findAllByClass( "col" ) ) {
@@ -556,10 +579,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	EXPECT_NEAR( arrowBackgroundLayer->getOffset().x, -42.f, 0.1f );
 	EXPECT_NEAR( arrowBackgroundLayer->getOffset().y, -1678.f, 0.1f );
 
-	if ( !FileSystem::fileExists( "output" ) )
-		FileSystem::makeDir( "output" );
-	win->getFrontBufferImage().saveToFile( "output/eepp-reddit-old-thread-current.webp",
-										   Image::SaveType::WEBP );
+	compareImages( utest_state, utest_result, win, "eepp-ui-reddit-old-thread", "html" );
 
 	Engine::destroySingleton();
 }
@@ -1560,6 +1580,41 @@ UTEST( UIHTMLInput, sizeAttribute ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, adjacentBlockMarginsCollapse ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html><body>
+			<div id="container" style="width: 300px; height: wrap-content; padding: 0;">
+				<p id="p1" style="font-size: 10px; line-height: 20px; margin: 6px 0;">one</p>
+				<p id="p2" style="font-size: 10px; line-height: 20px; margin: 6px 0;">two</p>
+				<p id="p3" style="font-size: 10px; line-height: 20px; margin: 6px 0;">three</p>
+			</div>
+		</body></html>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* container = sceneNode->getRoot()->find( "container" )->asType<UIWidget>();
+	auto* p1 = sceneNode->getRoot()->find( "p1" )->asType<UIWidget>();
+	auto* p2 = sceneNode->getRoot()->find( "p2" )->asType<UIWidget>();
+	auto* p3 = sceneNode->getRoot()->find( "p3" )->asType<UIWidget>();
+	ASSERT_TRUE( container != nullptr );
+	ASSERT_TRUE( p1 != nullptr );
+	ASSERT_TRUE( p2 != nullptr );
+	ASSERT_TRUE( p3 != nullptr );
+
+	EXPECT_NEAR( p1->getPixelsPosition().y, 6.f, 0.5f );
+	EXPECT_NEAR( p2->getPixelsPosition().y -
+					 ( p1->getPixelsPosition().y + p1->getPixelsSize().getHeight() ),
+				 6.f, 0.5f );
+	EXPECT_NEAR( p3->getPixelsPosition().y -
+					 ( p2->getPixelsPosition().y + p2->getPixelsSize().getHeight() ),
+				 6.f, 0.5f );
+	EXPECT_NEAR( p3->getPixelsPosition().y + p3->getPixelsSize().getHeight(), 78.f, 0.5f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, DataProperties ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
@@ -2034,6 +2089,48 @@ UTEST( UIHTMLInput, hostOwnsCSSBox ) {
 	input->setInputType( "email" );
 	EXPECT_STDSTREQ( input->getInputType(), "email" );
 	EXPECT_TRUE( input->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLInput, inlineTextUsesReplacedControlBaselineAndFontMetrics ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<div id="line" style="font-size: 14px; line-height: 20px;">
+			<span id="label">label</span><input id="input" type="text"
+				style="font-size: 14px; border: 1px solid gray; padding: 3px 2px;" />
+		</div>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* line = sceneNode->getRoot()->find( "line" )->asType<UIHTMLWidget>();
+	auto* label = sceneNode->getRoot()->find( "label" )->asType<UITextSpan>();
+	auto* input = sceneNode->getRoot()->find( "input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( line != nullptr );
+	ASSERT_TRUE( label != nullptr );
+	ASSERT_TRUE( input != nullptr );
+	ASSERT_TRUE( input->getChildWidget()->isType( UI_TYPE_HTML_TEXTINPUT ) );
+	auto* textInput = input->getChildWidget()->asType<UIHTMLTextInput>();
+	ASSERT_TRUE( textInput->getFont() != nullptr );
+
+	const Float expectedContentHeight =
+		std::ceil( textInput->getFont()->getAscent( textInput->getFontSize() ) +
+				   textInput->getFont()->getDescent( textInput->getFontSize() ) );
+	EXPECT_NEAR( textInput->getPixelsSize().getHeight(), expectedContentHeight, 0.01f );
+	EXPECT_NEAR( input->getPixelsSize().getHeight(),
+				 expectedContentHeight + input->getPixelsContentOffset().Top +
+					 input->getPixelsContentOffset().Bottom,
+				 0.01f );
+
+	const auto& lines = line->getRichTextPtr()->getLines();
+	ASSERT_EQ( lines.size(), (size_t)1 );
+	const Float lineBaseline = line->convertToWorldSpace( Vector2f::Zero ).y +
+							   line->getPixelsContentOffset().Top + lines.front().y +
+							   lines.front().maxAscent;
+	const Float inputBaseline =
+		input->convertToWorldSpace( Vector2f::Zero ).y + input->getReplacedElementBaseline();
+	EXPECT_NEAR( inputBaseline, lineBaseline, 0.5f );
 
 	Engine::destroySingleton();
 }
@@ -2671,6 +2768,40 @@ UTEST( UIBorder, renderingVariations ) {
 	win->display();
 
 	compareImages( utest_state, utest_result, win, "eepp-ui-border-rendering", "html", 12 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIBorder, cssSideStyles ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html><body>
+			<div id="styled" style="width: 100px; height: 40px;
+				border-top: 1px dotted gray; border-right: 2px dashed red;
+				border-bottom: 3px solid blue; border-left: none;"></div>
+			<div id="initial" style="width: 100px; height: 40px; border-top-width: 5px;"></div>
+		</body></html>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* styled = sceneNode->getRoot()->find( "styled" )->asType<UIWidget>();
+	ASSERT_TRUE( styled != nullptr );
+	const Borders& borders = styled->getBorder()->getBorders();
+	EXPECT_EQ( borders.top.style, BorderStyle::Dotted );
+	EXPECT_EQ( borders.right.style, BorderStyle::Dashed );
+	EXPECT_EQ( borders.bottom.style, BorderStyle::Solid );
+	EXPECT_EQ( borders.left.style, BorderStyle::None );
+	EXPECT_EQ( borders.top.width, 1 );
+	EXPECT_EQ( borders.right.width, 2 );
+	EXPECT_EQ( borders.bottom.width, 3 );
+	EXPECT_EQ( borders.left.width, 0 );
+
+	auto* initial = sceneNode->getRoot()->find( "initial" )->asType<UIWidget>();
+	ASSERT_TRUE( initial != nullptr );
+	const Borders& initialBorders = initial->getBorder()->getBorders();
+	EXPECT_EQ( initialBorders.top.style, BorderStyle::None );
+	EXPECT_EQ( initialBorders.top.width, 5 );
 
 	Engine::destroySingleton();
 }

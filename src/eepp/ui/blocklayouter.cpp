@@ -436,14 +436,18 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 		return valid;
 	};
 
-	auto getAtomicWidgetFragmentBounds = [&]( UIWidget* widget, Rectf& outBounds ) {
+	auto getAtomicWidgetFragmentBounds = [&]( UIWidget* widget, Rectf& outBounds,
+											  Rectf* formattingMargin ) {
 		auto it = mWidgetFragments.find( widget );
 		if ( it == mWidgetFragments.end() )
 			return false;
 
 		bool valid = false;
-		for ( const auto* fragment : it->second.atomicBoxes )
+		for ( const auto* fragment : it->second.atomicBoxes ) {
 			expandBounds( outBounds, valid, toContainerBounds( fragment->bounds ) );
+			if ( formattingMargin )
+				*formattingMargin = fragment->formattingMargin;
+		}
 		return valid;
 	};
 
@@ -618,10 +622,11 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 			} else {
 				curCharIdx += 1;
 				Rectf atomicBounds( maxF, maxF, lowF, lowF );
-				if ( getAtomicWidgetFragmentBounds( widget, atomicBounds ) ) {
+				Rectf formattingMargin;
+				if ( getAtomicWidgetFragmentBounds( widget, atomicBounds, &formattingMargin ) ) {
 					Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
 					Vector2f targetPos( atomicBounds.Left + margin.Left,
-										atomicBounds.Top + margin.Top );
+										atomicBounds.Top + formattingMargin.Top );
 
 					widget->setPixelsPosition( targetPos - offset );
 					if ( establishesBlockFormattingContext( widget ) &&

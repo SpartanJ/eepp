@@ -78,7 +78,7 @@ static Float getBaselineAlignedOffset( const RichText::RenderParagraph& line, co
 		case RichText::BaselineAlignment::TextBottom:
 			return baseline + getParentDescent( parentFontStyle ) - size.getHeight();
 		case RichText::BaselineAlignment::Middle:
-			return baseline + getFontXHeight( parentFontStyle ) * 0.5f - size.getHeight() * 0.5f;
+			return baseline - getFontXHeight( parentFontStyle ) * 0.5f - size.getHeight() * 0.5f;
 		case RichText::BaselineAlignment::Top:
 			return 0.f;
 		case RichText::BaselineAlignment::Bottom:
@@ -848,7 +848,8 @@ class RichTextInlineLayouter {
 								const FontStyleConfig& defaultStyle, Float forcedLineHeight,
 								bool preserveFloatPositions,
 								const std::vector<RichText::InlineItem>& inlineItems ) {
-		recomputeLineMetrics( line, forcedLineHeight, preserveFloatPositions, inlineItems );
+		recomputeLineMetrics( line, forcedLineHeight, preserveFloatPositions, inlineItems,
+							  defaultStyle );
 
 		Float maxLineHeight = 0;
 		Float minLineTop = 0;
@@ -870,15 +871,8 @@ class RichTextInlineLayouter {
 				Float baseline = span.baseline;
 				RichText::BaselineAlignValue baselineAlign = effectiveInlineBaselineAlign(
 					inlineItems, span.inlinePath, span.baselineAlign );
-				// Empty atomic boxes use their bottom edge as the fallback baseline. Include that
-				// exact edge in the middle-alignment path or fixed-height inline parents can clip
-				// the box after it is displaced by a second baseline formula.
-				Float offsetY = baselineAlign.type == RichText::BaselineAlignment::Middle &&
-										baseline > 0.f && baseline <= span.size.getHeight()
-									? line.maxAscent - baseline
-									: getBaselineAlignedOffset( line, span.size, baseline,
-																span.size.getHeight(),
-																baselineAlign, defaultStyle );
+				Float offsetY = getBaselineAlignedOffset(
+					line, span.size, baseline, span.size.getHeight(), baselineAlign, defaultStyle );
 				if ( preserveFloatPositions && isFloat ) {
 					span.position.y = 0;
 					continue;
@@ -902,6 +896,8 @@ class RichTextInlineLayouter {
 		line.height = std::max( line.height, maxLineHeight );
 		if ( forcedLineHeight > 0 )
 			line.height = std::max( line.height, forcedLineHeight );
+		if ( line.forcedEmptyLine && line.height <= 0.f && defaultStyle.Font )
+			line.height = defaultStyle.Font->getFontHeight( defaultStyle.CharacterSize );
 	}
 
 	static LayoutResult layoutNoFloats( const std::vector<RichText::InlineItem>& inlineItems,
@@ -995,8 +991,13 @@ class RichTextInlineLayouter {
 
 				if ( metrics.isLineBreak ) {
 					maxWidth = std::max( maxWidth, curX );
-					if ( !result.lines.back().spans.empty() )
+					result.lines.back().height =
+						std::max( result.lines.back().height, metrics.size.getHeight() );
+					if ( !result.lines.back().spans.empty() || metrics.forceEmptyLine ) {
+						if ( result.lines.back().spans.empty() )
+							result.lines.back().forcedEmptyLine = true;
 						result.lines.push_back( RichText::RenderParagraph() );
+					}
 					curX = 0;
 					continue;
 				}
@@ -1034,7 +1035,7 @@ class RichTextInlineLayouter {
 		maxWidth = std::max( maxWidth, curX );
 
 		if ( !result.lines.empty() && result.lines.back().spans.empty() &&
-			 result.lines.size() > 1 ) {
+			 !result.lines.back().forcedEmptyLine && result.lines.size() > 1 ) {
 			result.lines.pop_back();
 		}
 
@@ -1241,8 +1242,15 @@ class RichTextInlineLayouter {
 
 				if ( metrics.isLineBreak ) {
 					maxWidth = std::max( maxWidth, curX );
-					if ( !result.lines.back().spans.empty() &&
-						 lineHasInFlowContent( result.lines.back() ) ) {
+					result.lines.back().height =
+						std::max( result.lines.back().height, metrics.size.getHeight() );
+					if ( metrics.forceEmptyLine && result.lines.back().spans.empty() )
+						result.lines.back().forcedEmptyLine = true;
+					if ( ( !result.lines.back().spans.empty() &&
+						   lineHasInFlowContent( result.lines.back() ) ) ||
+						 metrics.forceEmptyLine ) {
+						alignLineSpans( result.lines.back(), 0.f, defaultStyle, forcedLineHeight,
+										true, inlineItems );
 						curY += result.lines.back().height;
 						result.lines.push_back( RichText::RenderParagraph() );
 						result.lines.back().y = curY;
@@ -1432,7 +1440,7 @@ class RichTextInlineLayouter {
 		maxWidth = std::max( maxWidth, curX );
 
 		if ( !result.lines.empty() && result.lines.back().spans.empty() &&
-			 result.lines.size() > 1 ) {
+			 !result.lines.back().forcedEmptyLine && result.lines.size() > 1 ) {
 			result.lines.pop_back();
 		}
 
@@ -1616,6 +1624,7 @@ class RichTextInlineLayouter {
 					fragment.itemPath = leaf->path;
 					fragment.lineIndex = lineIndex;
 					fragment.bounds = bounds;
+					fragment.formattingMargin = span.formattingMargin;
 					fragment.startCharIndex = span.startCharIndex;
 					fragment.endCharIndex = span.endCharIndex;
 					fragment.baselineAlign = effectiveInlineBaselineAlign(
@@ -1642,6 +1651,7 @@ class RichTextInlineLayouter {
 		Sizef size;
 		Float baseline{ 0.f };
 		bool isLineBreak{ false };
+		bool forceEmptyLine{ false };
 		bool isBlock{ false };
 		bool isBlockFormattingContext{ false };
 		RichText::InlineFloat floatType{ RichText::InlineFloat::None };
@@ -1712,10 +1722,12 @@ class RichTextInlineLayouter {
 										: RichText::RenderSpan::Type::AtomicBox;
 		run.payload.drawable = box.drawable;
 		run.payload.size = box.drawable ? box.drawable->getPixelsSize() : box.size;
+		run.payload.formattingMargin = box.formattingMargin;
 		run.payload.baseline = box.drawable ? run.payload.size.getHeight() : box.baseline;
 		run.payload.floatType = box.floatType;
 		run.payload.clearType = box.clearType;
 		run.payload.isLineBreak = box.isLineBreak;
+		run.payload.forceEmptyLine = box.forceEmptyLine;
 		run.payload.isBlock = box.isBlock;
 		run.payload.isBlockFormattingContext = box.isBlockFormattingContext;
 		run.payload.propagatedFloats = box.propagatedFloats;
@@ -1862,12 +1874,20 @@ class RichTextInlineLayouter {
 
 	static void recomputeLineMetrics( RichText::RenderParagraph& line, Float forcedLineHeight,
 									  bool preserveFloatPositions,
-									  const std::vector<RichText::InlineItem>& inlineItems ) {
+									  const std::vector<RichText::InlineItem>& inlineItems,
+									  const FontStyleConfig& defaultStyle ) {
 		Float maxAscent = 0.f;
 		Float maxDescent = 0.f;
 		bool hasParticipatingLineHeight = forcedLineHeight > 0.f;
+		bool hasMiddleAlignedSpan = false;
 
 		for ( const auto& span : line.spans ) {
+			RichText::BaselineAlignValue baselineAlign =
+				effectiveInlineBaselineAlign( inlineItems, span.inlinePath, span.baselineAlign );
+			if ( baselineAlign.type == RichText::BaselineAlignment::Middle ) {
+				hasMiddleAlignedSpan = true;
+				continue;
+			}
 			if ( span.type == RichText::RenderSpan::Type::Text ) {
 				InlineVerticalEdges edges = inlineAncestorLineHeightEdges(
 					inlineItems, span.inlinePath, span.size.getHeight() );
@@ -1894,6 +1914,18 @@ class RichTextInlineLayouter {
 				maxDescent =
 					std::max( maxDescent, span.size.getHeight() - baseline + edges.bottom );
 			}
+		}
+
+		// Every inline formatting context contains the parent element's zero-width strut.
+		// A middle-aligned box is positioned relative to that strut's baseline and x-height;
+		// it does not first establish the baseline from its own fallback bottom edge.
+		if ( hasMiddleAlignedSpan && defaultStyle.Font ) {
+			Float fontLineHeight = defaultStyle.Font->getLineSpacing( defaultStyle.CharacterSize );
+			Float usedLineHeight = std::max( fontLineHeight, forcedLineHeight );
+			Float halfLeading = std::max( 0.f, usedLineHeight - fontLineHeight ) * 0.5f;
+			maxAscent = std::max( maxAscent, getParentAscent( defaultStyle ) + halfLeading );
+			maxDescent = std::max( maxDescent, getParentDescent( defaultStyle ) + halfLeading );
+			hasParticipatingLineHeight = true;
 		}
 
 		if ( !hasParticipatingLineHeight )
@@ -1954,6 +1986,7 @@ class RichTextInlineLayouter {
 			metrics.size = payload.size;
 			metrics.baseline = payload.baseline;
 			metrics.isLineBreak = payload.isLineBreak;
+			metrics.forceEmptyLine = payload.forceEmptyLine;
 			metrics.isBlock = payload.isBlock;
 			metrics.isBlockFormattingContext = payload.isBlockFormattingContext;
 			metrics.floatType = payload.floatType;
@@ -2197,17 +2230,18 @@ void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	invalidateLayout();
 }
 
-void RichText::addCustomSize(
-	const Sizef& size, InlineFloat floatType, InlineClear clearType, Float baseline,
-	const BaselineAlignValue& baselineAlign, InlineSource source, bool isBlock,
-	bool isBlockFormattingContext,
-	std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats ) {
+void RichText::addCustomSize( const Sizef& size, InlineFloat floatType, InlineClear clearType,
+							  Float baseline, const BaselineAlignValue& baselineAlign,
+							  InlineSource source, bool isBlock, bool isBlockFormattingContext,
+							  std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats,
+							  const Rectf& margin ) {
 	Float usedBaseline = baseline >= 0.f ? baseline : size.getHeight();
 
 	InlineItem item;
 	InlineItem::AtomicBox box;
 	box.source = source;
 	box.size = size;
+	box.formattingMargin = margin;
 	box.baseline = usedBaseline;
 	box.floatType = floatType;
 	box.clearType = clearType;
@@ -2221,10 +2255,12 @@ void RichText::addCustomSize(
 	invalidateLayout();
 }
 
-void RichText::addLineBreak() {
+void RichText::addLineBreak( bool forceEmptyLine, Float lineHeight ) {
 	InlineItem item;
 	InlineItem::AtomicBox box;
 	box.isLineBreak = true;
+	box.forceEmptyLine = forceEmptyLine;
+	box.size.setHeight( lineHeight );
 	item.data = std::move( box );
 	resolveInlinePath( mInlineItems, mInlinePath )->push_back( std::move( item ) );
 

@@ -1225,6 +1225,14 @@ UIBorderDrawable* UINode::getBorder() const {
 	if ( NULL == mBorder ) {
 		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
+		if ( mFlags & UI_HTML_ELEMENT ) {
+			// CSS border-style has an initial value of none. Non-HTML eepp widgets retain the
+			// framework's legacy solid programmatic-border default.
+			mBorder->setLeftStyle( "none" );
+			mBorder->setRightStyle( "none" );
+			mBorder->setTopStyle( "none" );
+			mBorder->setBottomStyle( "none" );
+		}
 		// mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
 

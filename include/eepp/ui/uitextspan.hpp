@@ -165,6 +165,10 @@ class EE_API UITextSpan : public UIRichText {
 
 	virtual void onFontStyleChanged();
 
+	virtual void drawBackground();
+
+	virtual void drawBorder();
+
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 

@@ -416,6 +416,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "border-bottom-width", "0" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( "border-left-style", "none" ).setType( PropertyType::String );
+	registerProperty( "border-right-style", "none" ).setType( PropertyType::String );
+	registerProperty( "border-top-style", "none" ).setType( PropertyType::String );
+	registerProperty( "border-bottom-style", "none" ).setType( PropertyType::String );
 
 	registerProperty( "border-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
 	registerProperty( "border-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
@@ -573,6 +577,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand(
 		"border-width",
 		{ "border-top-width", "border-right-width", "border-bottom-width", "border-left-width" },
+		"border-box" );
+	registerShorthand(
+		"border-style",
+		{ "border-top-style", "border-right-style", "border-bottom-style", "border-left-style" },
 		"border-box" );
 	registerShorthand( "border-radius",
 					   { "border-top-left-radius", "border-top-right-radius",
@@ -1320,24 +1328,27 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 				 String::valueIndex(
 					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
 
-				// small hack to at least hide none borders until border-style is implemented
-				if ( tok == "none" ) {
-					int pos = getIndexEndingWith( propNames, "-width" );
-					if ( pos != -1 ) {
-						const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
-						if ( NULL != shorthand ) {
-							auto bbVec = mShorthandParsers["border-box"]( shorthand, "0" );
-							for ( auto& bb : bbVec )
-								properties.emplace_back( bb );
+				int pos = getIndexEndingWith( propNames, "-style" );
+				if ( pos != -1 ) {
+					const ShorthandDefinition* styleShorthand = getShorthand( propNames[pos] );
+					if ( styleShorthand ) {
+						auto styleVec = mShorthandParsers["border-box"]( styleShorthand, tok );
+						for ( auto& styleProp : styleVec )
+							properties.emplace_back( styleProp );
+					}
+				}
+				if ( tok == "none" || tok == "hidden" ) {
+					int widthPos = getIndexEndingWith( propNames, "-width" );
+					if ( widthPos != -1 ) {
+						const ShorthandDefinition* widthShorthand =
+							getShorthand( propNames[widthPos] );
+						if ( widthShorthand ) {
+							auto widthVec = mShorthandParsers["border-box"]( widthShorthand, "0" );
+							for ( auto& widthProp : widthVec )
+								properties.emplace_back( widthProp );
 						}
 					}
-					continue;
 				}
-
-				int pos = getIndexEndingWith( propNames, "-style" );
-				// boder-style is not implemented yet
-				if ( pos != -1 )
-					continue;
 
 			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
 				int pos = getIndexEndingWith( propNames, "-color" );
@@ -1380,17 +1391,14 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 				 String::valueIndex(
 					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
 
-				// At least reset the border width if "none" was used
-				if ( "none" == tok ) {
-					int pos = getIndexEndingWith( propNames, "-width" );
-					if ( pos != -1 )
-						properties.emplace_back( StyleSheetProperty( propNames[pos], "0" ) );
-				}
-
-				// boder-style is not implemented yet
 				int pos = getIndexEndingWith( propNames, "-style" );
 				if ( pos != -1 )
-					continue;
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
+				if ( tok == "none" || tok == "hidden" ) {
+					int widthPos = getIndexEndingWith( propNames, "-width" );
+					if ( widthPos != -1 )
+						properties.emplace_back( StyleSheetProperty( propNames[widthPos], "0" ) );
+				}
 			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 )
