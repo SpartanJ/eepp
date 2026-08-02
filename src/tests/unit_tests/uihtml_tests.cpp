@@ -3003,6 +3003,36 @@ UTEST( UIHTML, MarkdownViewLoadsBodyChildrenIntoNativeTree ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, ScriptNestedInUnknownElementIsNotRendered ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body><react-app id="app">
+			<script type="application/json">{"payload":"must-not-render"}</script>
+			<span id="visible">Visible</span>
+		</react-app></body></html>
+	)html" ) );
+
+	auto* app = sceneNode->getRoot()->find( "app" );
+	ASSERT_TRUE( app != nullptr );
+	EXPECT_TRUE( app->asType<UIWidget>()->findByTag( "script" ) == nullptr );
+	EXPECT_TRUE( app->find( "visible" ) != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, UnsupportedBlockAtRulesDoNotLeakNestedRules ) {
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{
+		"@layer framework { .layered { color: red; } @supports (display: grid) { .nested { "
+		"display: grid; } } } .visible { color: blue; }" } ) );
+
+	EXPECT_TRUE( parser.getStyleSheet().findStyleFromSelectorName( ".layered" ).empty() );
+	EXPECT_TRUE( parser.getStyleSheet().findStyleFromSelectorName( ".nested" ).empty() );
+	EXPECT_EQ( 1u, parser.getStyleSheet().findStyleFromSelectorName( ".visible" ).size() );
+}
+
 UTEST( UIHTML, StyleSheetSiblingCombinators ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "CSS Sibling Test",
 													  WindowStyle::Default, WindowBackend::Default,

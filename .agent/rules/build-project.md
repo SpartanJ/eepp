@@ -1,4 +1,23 @@
-# Build Instructions (Debug Mode)
+# Build Instructions
+
+The build configurations in `.ecode/project_build.json` are the source of truth for the
+developer's local build workflows. Check that file before selecting a generator, backend, or
+build flags. In particular, do not use an AddressSanitizer build to evaluate runtime performance.
+
+## Release Performance Builds (Linux)
+
+For performance investigations, use the `eepp-linux-ninja` configuration from
+`.ecode/project_build.json`. At the time of writing, its commands are:
+
+`premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 ninja`
+
+`ninja -C make/linux release`
+
+This produces an optimized release build with debug symbols and without AddressSanitizer. Run the
+release executable (for example, `bin/eepp-ui-html`) when measuring performance. Recheck
+`.ecode/project_build.json` before use because the local configuration may change.
+
+## Debug and Unit-Test Builds
 
 All build commands must be executed from the **root project directory**. Follow these steps to build the project:
 

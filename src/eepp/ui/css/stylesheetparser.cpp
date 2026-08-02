@@ -135,6 +135,17 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 					} else if ( String::startsWith( trimBuf, "@keyframes" ) ||
 								String::startsWith( trimBuf, "@-webkit-keyframes" ) ) {
 						keyframesParse( css, rs, pos, buffer );
+					} else if ( !String::startsWith( trimBuf, "@font-face" ) &&
+								!String::startsWith( trimBuf, "@glyph-icon" ) ) {
+						// Unsupported block at-rules must not leak their nested contents into the
+						// top-level rule stream. We cannot preserve their conditional or cascade
+						// semantics, so skip the complete balanced block.
+						std::size_t closePos = String::findCloseBracket( css, pos - 1, '{', '}' );
+						if ( closePos != std::string::npos ) {
+							rs = ReadingSelector;
+							pos = closePos + 1;
+							buffer.clear();
+						}
 					}
 				}
 

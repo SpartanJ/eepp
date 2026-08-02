@@ -797,6 +797,8 @@ UISceneNode* UISceneNode::setWebResourceCache( WebResourceCachePtr cache,
 }
 
 Uint64 UISceneNode::beginDocumentNavigation( const URI& uri ) {
+	mPendingHTTPStyleSheetLoads = 0;
+	mHTTPStyleSheetChanged = false;
 	return mWebResourceCache && mDocumentSessionId
 			   ? mWebResourceCache->beginNavigation( mDocumentSessionId, uri )
 			   : 0;
@@ -1916,6 +1918,7 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer,
 			}
 		}
 	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
+		mPendingHTTPStyleSheetLoads++;
 		auto resourceState = mAsyncResourceLoadState;
 		Uint64 resourceGeneration =
 			resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
@@ -1935,12 +1938,14 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer,
 					resourceState, resourceGeneration,
 					[css = std::move( css ), url, baseURL,
 					 sourceOrder]( UISceneNode* scene ) mutable {
-						scene->combineStyleSheet( css, true, String::hash( url ), baseURL,
-												  sourceOrder );
+						scene->combineHTTPStyleSheet( css, url, baseURL, sourceOrder );
 						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
 			} else {
 				Log::debug( "UISceneNode::loadCSS: Failed to load %s - %s", url, result.error );
+				UISceneNode::runAsyncResourceOnMainThread(
+					resourceState, resourceGeneration,
+					[]( UISceneNode* scene ) { scene->finishHTTPStyleSheetLoad(); } );
 			}
 		} );
 	} else if ( VFS::instance()->fileExists( uri.getPath() ) ) {
@@ -1953,6 +1958,30 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer,
 		}
 	} else {
 		Log::debug( "UISceneNode::loadCSS: Failed to load %s - Unknown scheme", url );
+	}
+}
+
+void UISceneNode::combineHTTPStyleSheet( const std::string& css, const std::string& url,
+										 URI baseURI, CSS::StyleSheet::SourceOrder sourceOrder ) {
+	CSS::StyleSheetParser parser;
+	parser.setBaseURI( baseURI );
+	if ( parser.loadFromString( css ) ) {
+		parser.getStyleSheet().setMarker( String::hash( url ) );
+		resolveStyleSheetRelativeURLs( parser.getStyleSheet(), baseURI.empty() ? mURI : baseURI );
+		mStyleSheet.combineStyleSheet( parser.getStyleSheet(), sourceOrder );
+		processStyleSheetAtRules( parser.getStyleSheet(), baseURI );
+		mHTTPStyleSheetChanged = true;
+	}
+	finishHTTPStyleSheetLoad();
+}
+
+void UISceneNode::finishHTTPStyleSheetLoad() {
+	if ( mPendingHTTPStyleSheetLoads > 0 )
+		mPendingHTTPStyleSheetLoads--;
+	if ( mPendingHTTPStyleSheetLoads == 0 && mHTTPStyleSheetChanged ) {
+		mHTTPStyleSheetChanged = false;
+		updateStyleSheet( true );
+		refreshWebViewDocumentLayoutAfterStyleChange( mRoot );
 	}
 }
 

@@ -958,6 +958,8 @@ class EE_API UISceneNode : public SceneNode {
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
 	bool mStyleDuringLoad{ false };
+	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
+	bool mHTTPStyleSheetChanged{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Graphics::FontPtr> mFontFaces;
@@ -1182,6 +1184,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param sourceOrder Document order reserved when the stylesheet link was encountered.
 	 */
 	void loadCSS( URI uri, std::optional<Time> defer, CSS::StyleSheet::SourceOrder sourceOrder );
+
+	void combineHTTPStyleSheet( const std::string& css, const std::string& url, URI baseURI,
+								CSS::StyleSheet::SourceOrder sourceOrder );
+
+	void finishHTTPStyleSheetLoad();
 
 	/**
 	 * @brief Loads glyph icons from @glyph-icon rules.

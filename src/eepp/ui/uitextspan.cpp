@@ -523,6 +523,12 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	if ( hasElements ) {
 		for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 			if ( child.type() == pugi::node_element ) {
+				// Unknown HTML elements are represented by UITextSpan. Keep script elements and
+				// their potentially very large data payloads out of the render tree even when
+				// they are nested below one of those custom elements.
+				if ( String::iequals( child.name(), "script" ) )
+					continue;
+
 				UIWidget* widget = UIWidgetCreator::createFromName( child.name() );
 
 				if ( widget == nullptr )
