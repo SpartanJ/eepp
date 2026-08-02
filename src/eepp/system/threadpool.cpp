@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/core/memorymanager.hpp>
 #include <eepp/system/threadpool.hpp>
 
 namespace EE { namespace System {

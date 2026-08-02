@@ -2,6 +2,8 @@
 #define EE_GRAPHICS_SYSTEMFONTRESOLVER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singleton.hpp>

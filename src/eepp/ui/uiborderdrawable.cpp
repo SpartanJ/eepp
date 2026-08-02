@@ -73,23 +73,34 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 			if ( border.width <= 0 ||
 				 ( border.style != BorderStyle::Dotted && border.style != BorderStyle::Dashed ) )
 				return;
+			// These are axis-aligned physical-pixel primitives. A centered odd-width pattern on an
+			// even-length side otherwise starts at a half pixel, whose coverage is
+			// driver-dependent. Snap the side bounds and choose the lower integer for an
+			// unavoidable asymmetric remainder so every backend rasterizes the same pixels.
+			const Float snappedStart = std::round( start );
+			const Float snappedLimit = std::round( start + length );
+			const Float snappedFixed = std::round( fixed );
+			const Float snappedLength = snappedLimit - snappedStart;
 			const Float segment =
 				border.style == BorderStyle::Dotted ? border.width : border.width * 3.f;
 			const Float step = segment * 2.f;
-			if ( segment <= 0.f || length <= 0.f )
+			if ( segment <= 0.f || snappedLength <= 0.f )
 				return;
 			const Uint32 count =
-				eemax<Uint32>( 1, static_cast<Uint32>( std::ceil( length / step ) ) );
+				eemax<Uint32>( 1, static_cast<Uint32>( std::ceil( snappedLength / step ) ) );
 			const Float used = ( count - 1 ) * step + segment;
-			Float cursor = start + eemax( 0.f, ( length - used ) * 0.5f );
+			Float cursor =
+				std::floor( snappedStart + eemax( 0.f, ( snappedLength - used ) * 0.5f ) );
 			Primitives primitive;
 			primitive.setColor( border.color );
-			for ( Uint32 i = 0; i < count && cursor < start + length; ++i, cursor += step ) {
-				const Float end = eemin( cursor + segment, start + length );
+			for ( Uint32 i = 0; i < count && cursor < snappedLimit; ++i, cursor += step ) {
+				const Float end = eemin( cursor + segment, snappedLimit );
 				if ( horizontal ) {
-					primitive.drawRectangle( Rectf( cursor, fixed, end, fixed + border.width ) );
+					primitive.drawRectangle(
+						Rectf( cursor, snappedFixed, end, snappedFixed + border.width ) );
 				} else {
-					primitive.drawRectangle( Rectf( fixed, cursor, fixed + border.width, end ) );
+					primitive.drawRectangle(
+						Rectf( snappedFixed, cursor, snappedFixed + border.width, end ) );
 				}
 			}
 		};

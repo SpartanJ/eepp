@@ -1,8 +1,9 @@
 #ifndef EE_NETWORKCSOCKETSELECTOR_HPP
 #define EE_NETWORKCSOCKETSELECTOR_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
+#include <vector>
 using namespace EE::System;
 
 namespace EE { namespace Network {
@@ -149,9 +150,8 @@ while (running) {
 			 }
 		 } else {
 			 // The listener socket is not ready, test all other sockets (the clients)
-			 for (std::vector<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it) {
-				 TcpSocket& client = **it;
-				 if (selector.isReady(client)) {
+			 for (std::vector<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it)
+{ TcpSocket& client = **it; if (selector.isReady(client)) {
 					 // The client has sent some data, we can receive it
 					 Packet packet;
 					 if (client.Receive(packet) == Socket::Done) {

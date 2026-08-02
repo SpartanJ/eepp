@@ -1,7 +1,11 @@
 #ifndef EE_SYSTEM_STRINGLOCALERESOURCE_HPP
 #define EE_SYSTEM_STRINGLOCALERESOURCE_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
+
+#include <functional>
+#include <unordered_map>
 
 namespace pugi {
 class xml_node;

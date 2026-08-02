@@ -5,6 +5,7 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/scopedbuffer.hpp>
 #include <map>
+#include <vector>
 
 namespace EE { namespace System {
 

@@ -2,11 +2,13 @@
 #define EE_UI_DOC_DEFINITION_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/debug.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/foldrangetype.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
+#include <map>
 #include <string>
 #include <type_traits>
 #include <vector>

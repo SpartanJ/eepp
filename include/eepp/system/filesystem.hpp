@@ -1,9 +1,11 @@
 #ifndef EE_SYSTEM_FILESYSTEM_HPP
 #define EE_SYSTEM_FILESYSTEM_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/scopedbuffer.hpp>
+#include <functional>
 #include <string>
 #include <vector>
 

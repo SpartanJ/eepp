@@ -1,3 +1,4 @@
+#include <eepp/core/debug.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 
 namespace EE { namespace Graphics { namespace Private {

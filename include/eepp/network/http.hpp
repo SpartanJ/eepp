@@ -2,8 +2,10 @@
 #define EE_NETWORKCHTTP_HPP
 
 #include <condition_variable>
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/network/uri.hpp>
@@ -186,7 +188,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					 ///< resource. It can be used to open a tunnel.
+					///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */

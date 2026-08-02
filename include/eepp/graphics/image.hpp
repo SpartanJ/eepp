@@ -1,7 +1,8 @@
 #ifndef EE_GRAPHICSCIMAGE_HPP
 #define EE_GRAPHICSCIMAGE_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/memorymanager.hpp>
 
 #include <eepp/math/rect.hpp>
 #include <eepp/math/size.hpp>
@@ -315,11 +316,11 @@ class EE_API Image {
 	/** Overload the assignment operator to ensure the image copy */
 	Image& operator=( const Image& right );
 
-    /** @brief Move constructor */
-    Image( Image&& other ) noexcept;
+	/** @brief Move constructor */
+	Image( Image&& other ) noexcept;
 
-    /** @brief Move assignment operator */
-    Image& operator=( Image&& other ) noexcept;
+	/** @brief Move assignment operator */
+	Image& operator=( Image&& other ) noexcept;
 
 	virtual ~Image();
 

@@ -1,9 +1,11 @@
 #ifndef EE_GRAPHICS_DRAWABLERESOURCE_HPP
 #define EE_GRAPHICS_DRAWABLERESOURCE_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/core/small_vector.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <functional>
 #include <memory>
 
 namespace EE { namespace Graphics {

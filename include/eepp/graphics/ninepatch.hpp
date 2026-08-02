@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_NINEPATCH_HPP
 #define EE_GRAPHICS_NINEPATCH_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/textureregion.hpp>
 

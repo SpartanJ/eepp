@@ -1,7 +1,11 @@
 #ifndef EE_NETWORK_URI_HPP
 #define EE_NETWORK_URI_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
+#include <eepp/core/string.hpp>
+#include <functional>
+#include <string>
 #include <vector>
 
 namespace EE { namespace Network {

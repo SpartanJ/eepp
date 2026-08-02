@@ -1,7 +1,8 @@
 #ifndef EE_WINDOWCCURSOR_HPP
 #define EE_WINDOWCCURSOR_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/windowhandle.hpp>
 using namespace EE::Math;

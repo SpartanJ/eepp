@@ -5,6 +5,8 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packregistry.hpp>
+#include <eepp/system/singleton.hpp>
+#include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
 #include <eepp/ui/doc/languages/cpp.hpp>

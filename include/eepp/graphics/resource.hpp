@@ -7,7 +7,9 @@
 #include <string_view>
 #include <utility>
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/thirdparty/unordered_dense.h>
 
 namespace EE { namespace Graphics {
 

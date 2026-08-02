@@ -1,3 +1,4 @@
+#include <eepp/core/debug.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/system/lock.hpp>
 

@@ -2,13 +2,20 @@
 #define EE_UI_DOC_SYNTAXSTYLEMANAGER_HPP
 
 #include <eepp/config.hpp>
-#include <eepp/system/iostream.hpp>
-#include <eepp/system/pack.hpp>
-#include <eepp/system/singleton.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/singletondeclarations.hpp>
 #include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <optional>
 #include <vector>
+
+namespace EE { namespace System {
+
+class IOStream;
+class Pack;
+
+}} // namespace EE::System
 
 using namespace EE::System;
 

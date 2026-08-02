@@ -1,6 +1,7 @@
 #ifndef EE_GRAPHICSCSHADERPROGRAM_H
 #define EE_GRAPHICSCSHADERPROGRAM_H
 
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/shader.hpp>
 

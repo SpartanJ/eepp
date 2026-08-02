@@ -2,9 +2,14 @@
 #define EE_UI_DOC_SYNTAXCOLORSCHEME_HPP
 
 #include <eepp/system/color.hpp>
-#include <eepp/system/iostream.hpp>
-#include <eepp/system/pack.hpp>
 #include <vector>
+
+namespace EE { namespace System {
+
+class IOStream;
+class Pack;
+
+}} // namespace EE::System
 
 using namespace EE::System;
 

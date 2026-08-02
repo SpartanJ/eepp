@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWCPLATFORMIMPL_HPP
 #define EE_WINDOWCPLATFORMIMPL_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 
 #include <eepp/math/vector2.hpp>
 using namespace EE::Math;

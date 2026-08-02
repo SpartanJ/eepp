@@ -1,8 +1,9 @@
 #ifndef EE_GRAPHICSCTEXTURE_H
 #define EE_GRAPHICSCTEXTURE_H
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/drawableresource.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/resource.hpp>

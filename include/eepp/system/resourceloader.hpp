@@ -2,8 +2,9 @@
 #define EE_SYSTEMCRESOURCELOADER
 
 #include <atomic>
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/system/thread.hpp>
+#include <functional>
 #include <mutex>
 #include <vector>
 

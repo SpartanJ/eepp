@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCMUTEX_H
 #define EE_SYSTEMCMUTEX_H
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <mutex>
 
