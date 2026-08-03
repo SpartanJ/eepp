@@ -1,6 +1,17 @@
 #include <eepp/system/clock.hpp>
 
+#include <chrono>
+
 namespace EE { namespace System {
+
+using ClockImpl = std::conditional_t<std::chrono::high_resolution_clock::is_steady,
+									 std::chrono::high_resolution_clock, std::chrono::steady_clock>;
+
+static Int64 nowMicroseconds() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(
+			   ClockImpl::now().time_since_epoch() )
+		.count();
+}
 
 Clock::Clock() {
 	restart();
@@ -9,13 +20,11 @@ Clock::Clock() {
 Clock::~Clock() {}
 
 void Clock::restart() {
-	mRefPoint = ClockImpl::now();
+	mRefPoint = nowMicroseconds();
 }
 
 Time Clock::getElapsedTime() const {
-	return Microseconds(
-		std::chrono::duration_cast<std::chrono::microseconds>( ClockImpl::now() - mRefPoint )
-			.count() );
+	return Microseconds( nowMicroseconds() - mRefPoint );
 }
 
 Time Clock::getElapsedTimeAndReset() {

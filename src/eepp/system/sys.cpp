@@ -701,25 +701,35 @@ std::string Sys::getProcessPath() {
 	return path;
 }
 
-double Sys::getSystemTime() {
+Int64 Sys::getSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static LARGE_INTEGER Frequency;
-	static BOOL UseHighPerformanceTimer = QueryPerformanceFrequency( &Frequency );
+	using GetSystemTimePreciseAsFileTimeType = VOID( WINAPI* )( LPFILETIME );
+	static const auto getSystemTimePreciseAsFileTime =
+		reinterpret_cast<GetSystemTimePreciseAsFileTimeType>(
+			GetProcAddress( GetModuleHandleA( "kernel32.dll" ),
+							"GetSystemTimePreciseAsFileTime" ) );
 
-	if ( UseHighPerformanceTimer ) {
-		// High performance counter available : use it
-		LARGE_INTEGER CurrentTime;
-		QueryPerformanceCounter( &CurrentTime );
-		return static_cast<double>( CurrentTime.QuadPart ) / Frequency.QuadPart;
-	} else
-		// High performance counter not available : use GetTickCount (less accurate)
-		return GetTickCount() * 0.001;
+	FILETIME fileTime;
+	if ( getSystemTimePreciseAsFileTime )
+		getSystemTimePreciseAsFileTime( &fileTime );
+	else
+		GetSystemTimeAsFileTime( &fileTime );
+
+	ULARGE_INTEGER ticks;
+	ticks.LowPart = fileTime.dwLowDateTime;
+	ticks.HighPart = fileTime.dwHighDateTime;
+	constexpr Int64 WINDOWS_TO_UNIX_EPOCH = 116444736000000000LL;
+	return ( static_cast<Int64>( ticks.QuadPart ) - WINDOWS_TO_UNIX_EPOCH ) / 10000;
 #else
 	timeval Time = { 0, 0 };
 	gettimeofday( &Time, NULL );
 
-	return Time.tv_sec + Time.tv_usec / 1000000.;
+	return static_cast<Int64>( Time.tv_sec ) * 1000 + Time.tv_usec / 1000;
 #endif
+}
+
+Int64 Sys::getUnixTimestamp() {
+	return getSystemTime() / 1000;
 }
 
 ProcessID Sys::getProcessID() {

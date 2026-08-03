@@ -15,7 +15,6 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <ctime>
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -1126,12 +1125,10 @@ SnippetParser::VariableMap AutoCompletePlugin::snippetVariables( TextDocument& d
 	FileSystem::dirRemoveSlashAtEnd( workspaceFolder );
 	std::string workspaceName( FileSystem::fileNameFromPath( workspaceFolder ) );
 
-	const auto now = std::chrono::system_clock::now();
-	const auto nowTime = std::chrono::system_clock::to_time_t( now );
+	const auto milliseconds = Sys::getSystemTime();
+	const auto nowTime = static_cast<std::time_t>( Sys::getUnixTimestamp() );
 	const std::tm* localTimePtr = std::localtime( &nowTime );
 	const std::tm localTime = localTimePtr ? *localTimePtr : std::tm{};
-	const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch() );
 	std::string timezoneOffset = formatSnippetTime( localTime, "%z" );
 	if ( timezoneOffset.size() == 5 )
 		timezoneOffset.insert( 3, ":" );
@@ -1168,11 +1165,11 @@ SnippetParser::VariableMap AutoCompletePlugin::snippetVariables( TextDocument& d
 		{ "CURRENT_MINUTE", formatSnippetTime( localTime, "%M" ) },
 		{ "CURRENT_SECOND", formatSnippetTime( localTime, "%S" ) },
 		{ "CURRENT_MILLISECOND",
-		  String::format( "%03d", static_cast<int>( milliseconds.count() % 1000 ) ) },
+		  String::format( "%03d", static_cast<int>( milliseconds % 1000 ) ) },
 		{ "CURRENT_SECONDS_UNIX",
-		  String::toString( static_cast<Int64>( milliseconds.count() / 1000 ) ) },
+		  String::toString( static_cast<Int64>( milliseconds / 1000 ) ) },
 		{ "CURRENT_MILLISECONDS_UNIX",
-		  String::toString( static_cast<Int64>( milliseconds.count() ) ) },
+		  String::toString( static_cast<Int64>( milliseconds ) ) },
 		{ "CURRENT_TIMEZONE_OFFSET", timezoneOffset },
 		{ "CURRENT_TIMEZONE_NAME", formatSnippetTime( localTime, "%Z" ) },
 		{ "RANDOM", String::format( "%06d", Math::randi( 0, 999999 ) ) },

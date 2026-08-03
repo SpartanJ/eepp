@@ -1815,7 +1815,7 @@ static constexpr const char* LINE_END = "\r\n";
 
 Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder() :
 	MultipartEntitiesBuilder( "eepp-client-boundary-" +
-							  String::toString( (Uint64)Sys::getSystemTime() ) ) {}
+							  String::toString( Sys::getUnixTimestamp() ) ) {}
 
 Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder( const std::string& boundary ) :
 	mBoundary( boundary ) {}

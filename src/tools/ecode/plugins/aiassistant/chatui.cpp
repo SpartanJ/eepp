@@ -28,7 +28,6 @@
 #include <eepp/window/window.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
-#include <chrono>
 #include <nlohmann/json.hpp>
 
 using namespace EE::System;
@@ -2326,7 +2325,7 @@ nlohmann::json LLMChatUI::serializeChat( const LLMModel& model, bool forRequest 
 }
 
 nlohmann::json LLMChatUI::serialize() {
-	mTimestamp = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+	mTimestamp = Sys::getUnixTimestamp();
 	nlohmann::json j;
 	j["uuid"] = mUUID.toString();
 	if ( !mIsAgentMode ) {
@@ -3179,7 +3178,7 @@ void LLMChatUI::deleteOldConversations( int days ) {
 	std::string conversationsPath = plugin->getConversationsPath();
 	auto history = ChatHistory::getHistory( conversationsPath );
 
-	Int64 olderThanTime = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() ) -
+	Int64 olderThanTime = Sys::getUnixTimestamp() -
 						  ( 60 * 60 * 24 * days );
 
 	for ( const auto& chat : history )

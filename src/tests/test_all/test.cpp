@@ -165,7 +165,7 @@ void EETest::init() {
 		Scenes[4] = [this] { screen4(); };
 		Scenes[5] = [this] { screen5(); };
 
-		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
+		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() ) );
 
 		loadTextures();
 

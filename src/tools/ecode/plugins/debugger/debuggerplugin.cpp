@@ -1218,8 +1218,7 @@ bool DebuggerPlugin::replaceInVal( std::string& val,
 	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_UUID, UUID().toString() );
 	String::replaceAll( val, KEY_TIMESTAMP,
-						std::to_string( std::chrono::system_clock::to_time_t(
-							std::chrono::system_clock::now() ) ) );
+						std::to_string( Sys::getUnixTimestamp() ) );
 
 	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
 	if ( getPluginContext()->getSplitter()->getCurEditor() ) {

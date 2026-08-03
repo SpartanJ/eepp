@@ -57,8 +57,11 @@ class EE_API Sys {
 	/** @return The process path ( the executable file path ) */
 	static std::string getProcessFilePath();
 
-	/** @return The System Time */
-	static double getSystemTime();
+	/** @return The Unix epoch time in milliseconds. */
+	static Int64 getSystemTime();
+
+	/** @return The Unix epoch time in seconds. */
+	static Int64 getUnixTimestamp();
 
 	/** @return The OS Name
 	 *  @param showReleaseName Instead of returning only the OS Name, it will append the release
