@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -89,6 +90,12 @@ UTEST( UIHTMLWidget, positionOutOfFlow_AbsoluteRelToRelative ) {
 	absoluteChild->setOffsets( Rectf( 25, 15, 0, 0 ) ); // L, T, R, B
 	absoluteChild->setPixelsSize( 50, 50 );
 
+	UIHTMLImage* absoluteImage = UIHTMLImage::New();
+	absoluteImage->setParent( staticChild );
+	absoluteImage->setCSSPosition( CSSPosition::Absolute );
+	absoluteImage->setOffsets( Rectf( 25, 15, 0, 0 ) );
+	absoluteImage->setPixelsSize( 40, 40 );
+
 	sceneNode->updateDirtyLayouts();
 
 	UIWidget* cb = absoluteChild->getContainingBlock();
@@ -96,13 +103,56 @@ UTEST( UIHTMLWidget, positionOutOfFlow_AbsoluteRelToRelative ) {
 
 	Vector2f worldPos = absoluteChild->convertToWorldSpace( { 0, 0 } );
 	// rootContainer world pos is 100, 100
-	// cb padding left = 10, top = 20
+	// The containing block is the relative ancestor's padding box. left/top start at its padding
+	// edge (inside any border), not at its content edge, so the ancestor's padding is not added.
 	// absoluteChild offset left = 25, top = 15
-	// worldPos should be 100 + 10 + 25 = 135
-	// worldPos y should be 100 + 20 + 15 = 135
-	EXPECT_NEAR( 135.f, worldPos.x, 1.f );
-	EXPECT_NEAR( 135.f, worldPos.y, 1.f );
+	EXPECT_NEAR( 125.f, worldPos.x, 1.f );
+	EXPECT_NEAR( 115.f, worldPos.y, 1.f );
 
+	EXPECT_EQ( absoluteImage->getContainingBlock(), rootContainer );
+	Vector2f imageWorldPos = absoluteImage->convertToWorldSpace( { 0, 0 } );
+	EXPECT_NEAR( 125.f, imageWorldPos.x, 1.f );
+	EXPECT_NEAR( 115.f, imageWorldPos.y, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLWidget, positionOutOfFlow_DefiniteInsetsDistributeAutoMargins ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* containingBlock = UIHTMLWidget::New();
+	containingBlock->setParent( sceneNode->getRoot() );
+	containingBlock->setCSSPosition( CSSPosition::Relative );
+	containingBlock->setPixelsSize( 400.f, 200.f );
+	containingBlock->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto configure = [containingBlock]( UIHTMLWidget* child ) {
+		child->setParent( containingBlock );
+		child->applyProperty( StyleSheetProperty( "position", "absolute" ) );
+		child->applyProperty( StyleSheetProperty( "left", "20px" ) );
+		child->applyProperty( StyleSheetProperty( "right", "20px" ) );
+		child->applyProperty( StyleSheetProperty( "top", "10px" ) );
+		child->applyProperty( StyleSheetProperty( "bottom", "10px" ) );
+		child->applyProperty( StyleSheetProperty( "width", "100px" ) );
+		child->applyProperty( StyleSheetProperty( "height", "40px" ) );
+		child->applyProperty( StyleSheetProperty( "margin-left", "auto" ) );
+		child->applyProperty( StyleSheetProperty( "margin-right", "auto" ) );
+		child->applyProperty( StyleSheetProperty( "margin-top", "auto" ) );
+		child->applyProperty( StyleSheetProperty( "margin-bottom", "auto" ) );
+	};
+	auto* box = UIHTMLWidget::New();
+	configure( box );
+	auto* image = UIHTMLImage::New();
+	configure( image );
+
+	sceneNode->updateDirtyLayouts();
+	containingBlock->positionOutOfFlowChildren();
+	EXPECT_NEAR( box->getPixelsPosition().x, 150.f, 0.5f );
+	EXPECT_NEAR( box->getPixelsPosition().y, 80.f, 0.5f );
+	EXPECT_NEAR( image->getPixelsPosition().x, 150.f, 0.5f );
+	EXPECT_NEAR( image->getPixelsPosition().y, 80.f, 0.5f );
+	EXPECT_TRUE( box->getLayoutPixelsMargin() == Rectf::Zero );
+	EXPECT_TRUE( image->getLayoutPixelsMargin() == Rectf::Zero );
 	Engine::destroySingleton();
 }
 

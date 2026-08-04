@@ -1943,7 +1943,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 		bool handled = false;
 
-		if ( widget->isType( UI_TYPE_HTML_WIDGET ) && widget->asType<UIHTMLWidget>()->isInline() &&
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) && widget->asType<UITextSpan>()->isInline() &&
 			 widget->asType<UIHTMLWidget>()->getCSSFloat() == CSSFloat::None &&
 			 !widget->asType<UIHTMLWidget>()->isOutOfFlow() ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
@@ -2044,7 +2044,9 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				richText.addLineBreak( true, breakLineHeight );
 				lastSpanEndsWithSpace = false;
 			} else {
-				Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
+				Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
+								   ? widget->asType<UIHTMLWidget>()->resolveUsedMargins().value
+								   : widget->getLayoutPixelsMargin();
 				bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
 				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 					CSSDisplay display = widget->asType<UIHTMLWidget>()->getDisplay();

@@ -23,6 +23,7 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -1941,7 +1942,7 @@ UTEST( UIWebView, RemoteImageIgnoredAfterNavigation ) {
 	EXPECT_TRUE( documentScene->getRoot()->find( "new-doc" ) != nullptr );
 	Node* probeNode = documentScene->getRoot()->find( "probe" );
 	ASSERT_TRUE( probeNode != nullptr && probeNode->isType( UI_TYPE_HTML_IMAGE ) );
-	EXPECT_TRUE( probeNode->asType<UIImage>()->getDrawable() != nullptr );
+	EXPECT_TRUE( probeNode->asType<UIHTMLImage>()->getDrawable() != nullptr );
 
 	Engine::destroySingleton();
 }

@@ -411,41 +411,73 @@ void UIHTMLWidget::setCSSClear( CSSClear cssClear ) {
 	}
 }
 
-Rectf UIHTMLWidget::getNormalFlowLayoutPixelsMargin() const {
-	Rectf margin = getLayoutPixelsMargin();
-	if ( hasLayoutMarginTopAuto() )
-		margin.Top = 0.f;
-	if ( hasLayoutMarginBottomAuto() )
-		margin.Bottom = 0.f;
-	return margin;
+CSSFormattingRole UIHTMLWidget::getFormattingRole() const {
+	if ( mPosition == CSSPosition::Absolute )
+		return CSSFormattingRole::Absolute;
+	if ( mPosition == CSSPosition::Fixed )
+		return CSSFormattingRole::Fixed;
+	Node* parent = getParent();
+	if ( parent && parent->isType( UI_TYPE_HTML_WIDGET ) ) {
+		auto* htmlParent = parent->asType<UIHTMLWidget>();
+		if ( htmlParent->isFlex() )
+			return CSSFormattingRole::FlexItem;
+		if ( htmlParent->isGrid() )
+			return CSSFormattingRole::GridItem;
+	}
+	if ( mFloat != CSSFloat::None )
+		return CSSFormattingRole::Float;
+	if ( mDisplay == CSSDisplay::Inline )
+		return CSSFormattingRole::Inline;
+	if ( mDisplay == CSSDisplay::InlineBlock || mDisplay == CSSDisplay::InlineFlex ||
+		 mDisplay == CSSDisplay::InlineGrid )
+		return CSSFormattingRole::InlineBlock;
+	if ( mDisplay == CSSDisplay::Table )
+		return CSSFormattingRole::Table;
+	return CSSFormattingRole::NormalFlowBlock;
 }
 
-Rectf UIHTMLWidget::getFormattingContextLayoutPixelsMargin( UIWidget* widget ) {
-	bool resolveHorizontalAutoMargins = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
-	if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
-		auto* htmlWidget = widget->asType<UIHTMLWidget>();
-		resolveHorizontalAutoMargins = !htmlWidget->isOutOfFlow() &&
-									   htmlWidget->getCSSFloat() == CSSFloat::None &&
-									   !widget->isInlineDisplay();
-	}
+CSSUsedMargins UIHTMLWidget::resolveUsedMargins() const {
+	CSSUsedMargins used{ getLayoutPixelsMargin(), 0 };
+	if ( hasLayoutMarginLeftAuto() )
+		used.autoSides |= MarginAuto::Left;
+	if ( hasLayoutMarginRightAuto() )
+		used.autoSides |= MarginAuto::Right;
+	if ( hasLayoutMarginTopAuto() )
+		used.autoSides |= MarginAuto::Top;
+	if ( hasLayoutMarginBottomAuto() )
+		used.autoSides |= MarginAuto::Bottom;
 
-	if ( resolveHorizontalAutoMargins && widget->hasLayoutMarginAuto() )
-		widget->updateLayoutMarginAuto();
+	if ( used.autoSides & MarginAuto::Left )
+		used.value.Left = 0.f;
+	if ( used.autoSides & MarginAuto::Right )
+		used.value.Right = 0.f;
+	if ( used.autoSides & MarginAuto::Top )
+		used.value.Top = 0.f;
+	if ( used.autoSides & MarginAuto::Bottom )
+		used.value.Bottom = 0.f;
 
-	Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
-					   ? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
-					   : widget->getLayoutPixelsMargin();
-	if ( !resolveHorizontalAutoMargins ) {
-		if ( widget->hasLayoutMarginLeftAuto() )
-			margin.Left = 0.f;
-		if ( widget->hasLayoutMarginRightAuto() )
-			margin.Right = 0.f;
-		if ( widget->hasLayoutMarginTopAuto() )
-			margin.Top = 0.f;
-		if ( widget->hasLayoutMarginBottomAuto() )
-			margin.Bottom = 0.f;
+	if ( getFormattingRole() != CSSFormattingRole::NormalFlowBlock ||
+		 !( used.autoSides & ( MarginAuto::Left | MarginAuto::Right ) ) )
+		return used;
+
+	Node* parent = getParent();
+	if ( !parent || !parent->isWidget() )
+		return used;
+	const UIWidget* containingBlock = parent->asType<UIWidget>();
+	const Rectf contentOffset = containingBlock->getPixelsContentOffset();
+	const Float available =
+		eemax( 0.f, containingBlock->getPixelsSize().getWidth() - contentOffset.Left -
+						contentOffset.Right - getPixelsSize().getWidth() - used.value.Left -
+						used.value.Right );
+	if ( ( used.autoSides & MarginAuto::Left ) && ( used.autoSides & MarginAuto::Right ) ) {
+		used.value.Left = available * 0.5f;
+		used.value.Right = available - used.value.Left;
+	} else if ( used.autoSides & MarginAuto::Left ) {
+		used.value.Left = available;
+	} else {
+		used.value.Right = available;
 	}
-	return margin;
+	return used;
 }
 
 void UIHTMLWidget::setBaselineAlign( const CSSBaselineAlignValue& baselineAlign ) {
@@ -1251,11 +1283,19 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	if ( !cb )
 		return;
 
-	Rectf cbContentOffset = cb->getPixelsContentOffset();
+	// CSS Positioned Layout: a non-inline positioned ancestor establishes the containing block
+	// from its padding box. Insets therefore start at the padding edge, not the content edge.
+	// getPixelsContentOffset() includes both border and padding, so subtract padding to recover the
+	// padding-box origin and exclude only borders from its dimensions.
+	const Rectf cbContentOffset = cb->getPixelsContentOffset();
+	const Rectf cbPadding = cb->getPixelsPadding();
+	const Rectf cbPaddingBoxOffset{
+		cbContentOffset.Left - cbPadding.Left, cbContentOffset.Top - cbPadding.Top,
+		cbContentOffset.Right - cbPadding.Right, cbContentOffset.Bottom - cbPadding.Bottom };
 	Float cbContentWidth =
-		cb->getPixelsSize().getWidth() - cbContentOffset.Left - cbContentOffset.Right;
+		cb->getPixelsSize().getWidth() - cbPaddingBoxOffset.Left - cbPaddingBoxOffset.Right;
 	Float cbContentHeight =
-		cb->getPixelsSize().getHeight() - cbContentOffset.Top - cbContentOffset.Bottom;
+		cb->getPixelsSize().getHeight() - cbPaddingBoxOffset.Top - cbPaddingBoxOffset.Bottom;
 
 	Rectf margin = getLayoutPixelsMargin();
 	Float childWidth = getPixelsSize().getWidth();
@@ -1325,6 +1365,38 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 		bottom =
 			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
 
+	// CSS 2.2 §10.3.7/§10.6.4: when both insets and the size are definite, auto margins
+	// absorb the remaining space in the positioned constraint equation. Keep this pass-local;
+	// the same box may later participate under different insets or a different containing block.
+	auto solvePositionedAutoMargins = []( Float containingSize, Float startInset, Float endInset,
+										  Float boxSize, Float& startMargin, Float& endMargin,
+										  bool startAuto, bool endAuto ) {
+		if ( !startAuto && !endAuto )
+			return;
+		if ( startAuto )
+			startMargin = 0.f;
+		if ( endAuto )
+			endMargin = 0.f;
+		Float free = eemax( 0.f, containingSize - startInset - endInset - boxSize - startMargin -
+									 endMargin );
+		if ( startAuto && endAuto ) {
+			startMargin = free * 0.5f;
+			endMargin = free - startMargin;
+		} else if ( startAuto ) {
+			startMargin = free;
+		} else {
+			endMargin = free;
+		}
+	};
+	if ( useLeft && useRight && getLayoutWidthPolicy() == SizePolicy::Fixed )
+		solvePositionedAutoMargins( cbContentWidth, left, right, childWidth, margin.Left,
+									margin.Right, hasLayoutMarginLeftAuto(),
+									hasLayoutMarginRightAuto() );
+	if ( useTop && useBottom && getLayoutHeightPolicy() == SizePolicy::Fixed )
+		solvePositionedAutoMargins( cbContentHeight, top, bottom, childHeight, margin.Top,
+									margin.Bottom, hasLayoutMarginTopAuto(),
+									hasLayoutMarginBottomAuto() );
+
 	Float finalWidth = childWidth;
 	Float finalHeight = childHeight;
 
@@ -1355,7 +1427,7 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	top += margin.Top;
 	left += margin.Left;
 
-	Vector2f cbPos( cbContentOffset.Left, cbContentOffset.Top );
+	Vector2f cbPos( cbPaddingBoxOffset.Left, cbPaddingBoxOffset.Top );
 	cbPos.x += left;
 	cbPos.y += top;
 

@@ -5092,6 +5092,56 @@ UTEST( UIHTML, WebViewAsyncInlineImageAutoMarginsResolveToZero ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FormattingRoleUsedMarginsAreNonMutating ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "CSS used margin roles", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	parent->setPixelsSize( 400.f, 200.f );
+	parent->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	auto* image = UIHTMLImage::New();
+	image->setParent( parent );
+	image->setPixelsSize( 100.f, 40.f );
+	image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	image->setLayoutPixelsMargin( { 23.f, 17.f, 29.f, 19.f } );
+	image->setLayoutMarginAuto( true, true, true, true );
+
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Inline );
+	auto used = image->resolveUsedMargins();
+	EXPECT_TRUE( used.value == Rectf::Zero );
+	EXPECT_TRUE( image->getLayoutPixelsMargin() == Rectf( 23.f, 17.f, 29.f, 19.f ) );
+
+	image->setDisplay( CSSDisplay::Block );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::NormalFlowBlock );
+	used = image->resolveUsedMargins();
+	EXPECT_NEAR( used.value.Left, 150.f, 0.01f );
+	EXPECT_NEAR( used.value.Right, 150.f, 0.01f );
+	EXPECT_EQ( used.value.Top, 0.f );
+	EXPECT_EQ( used.value.Bottom, 0.f );
+
+	image->setCSSFloat( CSSFloat::Left );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Float );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	image->setCSSFloat( CSSFloat::None );
+	image->setCSSPosition( CSSPosition::Absolute );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Absolute );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	image->setCSSPosition( CSSPosition::Static );
+
+	parent->setDisplay( CSSDisplay::Flex );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::FlexItem );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	parent->setDisplay( CSSDisplay::Grid );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::GridItem );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+
+	(void)win;
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, KittyHomeSmallDoesNotHang ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Kitty Home Small Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -5898,7 +5948,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 
 	auto allImagesLoaded = [&images] {
 		for ( auto* image : images ) {
-			auto* uiImage = image ? image->asType<UIImage>() : nullptr;
+			auto* uiImage = image ? image->asType<UIHTMLImage>() : nullptr;
 			if ( uiImage == nullptr || uiImage->getDrawable() == nullptr )
 				return false;
 		}
@@ -5912,6 +5962,24 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 
 	for ( int i = 0; i < 30; ++i )
 		pump();
+
+	ASSERT_GT( images.size(), 1u );
+	UIWidget* champion = images[1];
+	UIWidget* championParagraph = champion->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( championParagraph != nullptr );
+	EXPECT_NEAR( champion->getPixelsSize().getWidth(),
+				 championParagraph->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( champion->getPixelsSize().getHeight(), 500.f );
+	EXPECT_GE( championParagraph->getPixelsSize().getHeight(),
+			   champion->getPixelsSize().getHeight() );
+	Node* following = championParagraph->getNextNode();
+	while ( following &&
+			( !following->isWidget() || following->asType<UIWidget>()->getElementTag() != "p" ) )
+		following = following->getNextNode();
+	ASSERT_TRUE( following != nullptr );
+	EXPECT_GE( following->asType<UIWidget>()->getPixelsPosition().y + 1.f,
+			   championParagraph->getPixelsPosition().y +
+				   championParagraph->getPixelsSize().getHeight() );
 
 	const Float bodyHeightAfterAsyncLoad = body->getPixelsSize().getHeight();
 	const Float docHeightAfterAsyncLoad =

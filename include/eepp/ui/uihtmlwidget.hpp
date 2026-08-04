@@ -13,6 +13,23 @@ namespace EE { namespace UI {
 
 class UILayouter;
 
+enum class CSSFormattingRole : Uint8 {
+	Inline,
+	InlineBlock,
+	NormalFlowBlock,
+	Float,
+	Absolute,
+	Fixed,
+	FlexItem,
+	GridItem,
+	Table
+};
+
+struct CSSUsedMargins {
+	Rectf value;
+	Uint8 autoSides{ 0 };
+};
+
 struct UIHTMLWidgetFlexState {
 	CSSFlexDirection direction{ CSSFlexDirection::Row };
 	CSSFlexWrap wrap{ CSSFlexWrap::NoWrap };
@@ -98,12 +115,13 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void setBoxSizing( CSSBoxSizing boxSizing );
 
-	Rectf getNormalFlowLayoutPixelsMargin() const;
+	CSSFormattingRole getFormattingRole() const;
 
-	/** Returns the used CSS margin for a child participating in a block formatting context.
-	 * Horizontal auto margins are resolved only for normal-flow block-level boxes. For
-	 * inline-level, floated, and out-of-flow boxes every auto margin has a used value of zero. */
-	static Rectf getFormattingContextLayoutPixelsMargin( UIWidget* widget );
+	/** Returns stack-local used margins for the current formatting role. This never mutates the
+	 * computed/resolved margins stored by UIWidget. Flex, grid, and positioned layout retain their
+	 * module-specific auto-margin distribution; callers in those contexts receive zero for auto
+	 * sides until the owning layouter solves them. */
+	CSSUsedMargins resolveUsedMargins() const;
 
 	const CSSBaselineAlignValue& getBaselineAlign() const { return mBaselineAlign; }
 

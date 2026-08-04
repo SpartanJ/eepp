@@ -1996,3 +1996,29 @@ UTEST( GridContainer, gradientFixtureAutoFitItemsStayInsideOnResize ) {
 	Engine::destroySingleton();
 	PixelDensity::setPixelDensity( 1.f );
 }
+
+UTEST( GridContainer, autoMarginsAbsorbGridAreaFreeSpace ) {
+	Engine::instance()->createWindow( WindowSettings( 640, 480, "Grid Auto Margins",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	init_grid_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body>
+			<div id="grid" style="display:grid; width:300px; height:200px;
+				grid-template-columns:300px; grid-template-rows:200px">
+				<div id="item" style="width:100px; height:40px; margin:auto"></div>
+			</div>
+		</body></html>
+	)html" ) );
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+	auto* item = sceneNode->getRoot()->find( "item" )->asType<UIWidget>();
+	ASSERT_TRUE( item != nullptr );
+	EXPECT_NEAR( item->getPixelsPosition().x, 100.f, 0.5f );
+	EXPECT_NEAR( item->getPixelsPosition().y, 80.f, 0.5f );
+	EXPECT_NEAR( item->getPixelsSize().x, 100.f, 0.5f );
+	EXPECT_NEAR( item->getPixelsSize().y, 40.f, 0.5f );
+	Engine::destroySingleton();
+}

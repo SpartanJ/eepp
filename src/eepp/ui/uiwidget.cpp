@@ -623,6 +623,11 @@ UITooltip* UIWidget::getTooltip() {
 void UIWidget::calculateAutoMargin() {
 	if ( !mMarginAuto || !getParent() || !getParent()->isWidget() )
 		return;
+	// HTML auto margins are computed used values owned by the active formatting context. Mutating
+	// the stored resolved margin here leaks block-layout results into inline, flex, positioned, or
+	// asynchronously restyled passes. This native solver remains for eepp layout widgets only.
+	if ( mFlags & UI_HTML_ELEMENT )
+		return;
 
 	UIWidget* parent = getParent()->asType<UIWidget>();
 	Sizef parentSize = parent->getPixelsSize();

@@ -151,7 +151,7 @@ void BlockLayouter::updateLayout() {
 				auto* childWidget = child->asType<UIHTMLWidget>();
 				if ( childWidget->isVisible() && !childWidget->isOutOfFlow() &&
 					 childWidget->getCSSFloat() != CSSFloat::None ) {
-					const Rectf margin = childWidget->getNormalFlowLayoutPixelsMargin();
+					const Rectf margin = childWidget->resolveUsedMargins().value;
 					const Vector2f pos = childWidget->getPixelsPosition();
 					const Sizef size = childWidget->getPixelsSize();
 					contentSize.setWidth(
@@ -526,7 +526,7 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 
 		bool handled = false;
 
-		if ( widget->isType( UI_TYPE_HTML_WIDGET ) && widget->asType<UIHTMLWidget>()->isInline() ) {
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) && widget->asType<UITextSpan>()->isInline() ) {
 			UITextSpan* textSpan = widget->asType<UITextSpan>();
 			Int64 startChar = curCharIdx;
 			Int64 endChar = curCharIdx;
@@ -624,7 +624,9 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 				Rectf atomicBounds( maxF, maxF, lowF, lowF );
 				Rectf formattingMargin;
 				if ( getAtomicWidgetFragmentBounds( widget, atomicBounds, &formattingMargin ) ) {
-					Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
+					Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
+									   ? widget->asType<UIHTMLWidget>()->resolveUsedMargins().value
+									   : widget->getLayoutPixelsMargin();
 					Vector2f targetPos( atomicBounds.Left + margin.Left,
 										atomicBounds.Top + formattingMargin.Top );
 
@@ -660,7 +662,9 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 
 					size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
 					Float lineY = lines[lineIdx].y;
-					Rectf margin = UIHTMLWidget::getFormattingContextLayoutPixelsMargin( widget );
+					Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
+									   ? widget->asType<UIHTMLWidget>()->resolveUsedMargins().value
+									   : widget->getLayoutPixelsMargin();
 
 					Vector2f targetPos( contentOffset.Left + span->position.x + margin.Left,
 										contentOffset.Top + lineY + span->position.y + margin.Top );

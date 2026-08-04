@@ -35,7 +35,6 @@ App::App( int argc, char* argv[] ) :
 
 App::~App() {
 	if ( mUIApplication ) {
-		saveConfig();
 		Http::Pool::getGlobal().clear();
 		Http::setThreadPool( nullptr );
 	}
@@ -193,6 +192,7 @@ bool App::init() {
 													  contextSettings );
 	if ( !getWindow() || !getWindow()->isOpen() )
 		return false;
+
 	setBackgroundColor( Color::Black );
 
 	ResourceScope& resourceScope = *mUIApplication->getUI()->getResourceScope();

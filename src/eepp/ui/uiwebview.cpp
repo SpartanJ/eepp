@@ -125,7 +125,7 @@ static void resetViewportDependentDocumentWidths( UIWidget* container ) {
 		if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 			auto* htmlWidget = widget->asType<UIHTMLWidget>();
 			normalFlow = !htmlWidget->isOutOfFlow();
-			margin = htmlWidget->getNormalFlowLayoutPixelsMargin();
+			margin = htmlWidget->resolveUsedMargins().value;
 		}
 
 		if ( normalFlow ) {

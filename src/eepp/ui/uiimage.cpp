@@ -138,18 +138,11 @@ void UIImage::onAutoSize() {
 	if ( nullptr == mDrawable )
 		return;
 
-	Sizef drawableSize = mFlags & UI_HTML_ELEMENT
-							 ? mDrawable->getPixelsSize() * PixelDensity::getPixelDensity()
-							 : mDrawable->getPixelsSize();
+	Sizef drawableSize = mDrawable->getPixelsSize();
 	if ( drawableSize.getWidth() <= 0 || drawableSize.getHeight() <= 0 )
 		return;
 
 	Sizef size( getPixelsSize() );
-	if ( mFlags & UI_HTML_ELEMENT ) {
-		size.x = eemax( size.x, getPropertyLength( PropertyId::LayoutWidth ) );
-		size.y = eemax( size.y, getPropertyLength( PropertyId::LayoutHeight ) );
-	}
-
 	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getPixelsSize() )
 		size = drawableSize.asInt().asFloat();
 

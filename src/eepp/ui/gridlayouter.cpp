@@ -939,34 +939,66 @@ void GridLayouter::applyLayout() {
 		if ( as == CSSAlignSelf::Auto )
 			as = CSSAlignSelf::Stretch;
 
-		// Apply alignment
-		Float finalX = cellX, finalY = cellY, finalW = cellW, finalH = cellH;
-		if ( js == CSSJustifySelf::Stretch ) {
-			finalW = cellW;
-			finalX = cellX;
+		// CSS Grid auto margins absorb the grid area's remaining space before self-alignment.
+		// Keep the computed margins immutable; these are used values for this placement only.
+		Rectf margin = item.widget->getLayoutPixelsMargin();
+		const bool autoLeft = item.widget->hasLayoutMarginLeftAuto();
+		const bool autoRight = item.widget->hasLayoutMarginRightAuto();
+		const bool autoTop = item.widget->hasLayoutMarginTopAuto();
+		const bool autoBottom = item.widget->hasLayoutMarginBottomAuto();
+		if ( autoLeft )
+			margin.Left = 0.f;
+		if ( autoRight )
+			margin.Right = 0.f;
+		if ( autoTop )
+			margin.Top = 0.f;
+		if ( autoBottom )
+			margin.Bottom = 0.f;
+
+		Float areaW = eemax( 0.f, cellW - margin.Left - margin.Right );
+		Float areaH = eemax( 0.f, cellH - margin.Top - margin.Bottom );
+		Float finalX = cellX + margin.Left;
+		Float finalY = cellY + margin.Top;
+		Float finalW = areaW;
+		Float finalH = areaH;
+		if ( autoLeft || autoRight ) {
+			finalW = item.widget->getPixelsSize().getWidth();
+			Float free = eemax( 0.f, areaW - finalW );
+			if ( autoLeft && autoRight )
+				finalX += free * 0.5f;
+			else if ( autoLeft )
+				finalX += free;
+		} else if ( js == CSSJustifySelf::Stretch ) {
+			finalW = areaW;
 		} else if ( js == CSSJustifySelf::Center ) {
 			Float iw = item.widget->getPixelsSize().getWidth();
 			finalW = iw;
-			finalX = cellX + ( cellW - iw ) * 0.5f;
+			finalX += ( areaW - iw ) * 0.5f;
 		} else if ( js == CSSJustifySelf::End || js == CSSJustifySelf::FlexEnd ) {
 			Float iw = item.widget->getPixelsSize().getWidth();
 			finalW = iw;
-			finalX = cellX + cellW - iw;
+			finalX += areaW - iw;
 		} else {
 			finalW = item.widget->getPixelsSize().getWidth();
 		}
 
-		if ( as == CSSAlignSelf::Stretch ) {
-			finalH = cellH;
-			finalY = cellY;
+		if ( autoTop || autoBottom ) {
+			finalH = item.widget->getPixelsSize().getHeight();
+			Float free = eemax( 0.f, areaH - finalH );
+			if ( autoTop && autoBottom )
+				finalY += free * 0.5f;
+			else if ( autoTop )
+				finalY += free;
+		} else if ( as == CSSAlignSelf::Stretch ) {
+			finalH = areaH;
 		} else if ( as == CSSAlignSelf::Center ) {
 			Float ih = item.widget->getPixelsSize().getHeight();
 			finalH = ih;
-			finalY = cellY + ( cellH - ih ) * 0.5f;
+			finalY += ( areaH - ih ) * 0.5f;
 		} else if ( as == CSSAlignSelf::FlexEnd ) {
 			Float ih = item.widget->getPixelsSize().getHeight();
 			finalH = ih;
-			finalY = cellY + cellH - ih;
+			finalY += areaH - ih;
 		} else {
 			finalH = item.widget->getPixelsSize().getHeight();
 		}
