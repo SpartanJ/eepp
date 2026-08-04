@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
@@ -59,6 +60,18 @@ UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
 	EXPECT_TRUE( marginRight->second.getValue() == "2px" );
 	EXPECT_TRUE( fontFamily->second.getValue().find( "/* literal */" ) != std::string::npos );
 	EXPECT_TRUE( width->second.getValue() == "140px" );
+}
+
+UTEST( CSSParser, StatementAtRuleDoesNotConsumeFollowingRule ) {
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{ R"css(
+		@charset "UTF-8";
+		:root { --color-bg: #0c0c0c; }
+	)css" } ) );
+
+	auto rootStyle = parser.getStyleSheet().getStyleFromSelector( ":root" );
+	ASSERT_TRUE( rootStyle != nullptr );
+	EXPECT_TRUE( rootStyle->getVariableByName( "--color-bg" ).getValue() == "#0c0c0c" );
 }
 
 UTEST( CSSInheritance, HtmlXmlLoadingInheritance ) {
@@ -1264,6 +1277,32 @@ UTEST( CSSVariables, VarInRgbViaIntermediateVar ) {
 	EXPECT_EQ( 128, result.g );
 	EXPECT_EQ( 255, result.b );
 	EXPECT_EQ( 191, result.a ); // 0.75 * 255 = 191
+}
+
+UTEST( CSSMediaQuery, NegatedFeatureExpression ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - Negated Media Feature Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	MediaFeatures features;
+	features.prefersColorScheme = "dark";
+	features.prefersContrast = "no-preference";
+	auto darkNormal =
+		MediaQuery::parse( "(prefers-color-scheme: dark) and (not (prefers-contrast: more))" );
+	ASSERT_TRUE( darkNormal != nullptr );
+	EXPECT_TRUE( darkNormal->check( features ) );
+
+	features.prefersContrast = "more";
+	EXPECT_FALSE( darkNormal->check( features ) );
+
+	auto lightHigh =
+		MediaQuery::parse( "(not (prefers-color-scheme: dark)) and (prefers-contrast: more)" );
+	ASSERT_TRUE( lightHigh != nullptr );
+	features.prefersColorScheme = "light";
+	EXPECT_TRUE( lightHigh->check( features ) );
+	features.prefersColorScheme = "dark";
+	EXPECT_FALSE( lightHigh->check( features ) );
 }
 
 UTEST( CSSVariables, LightDarkBasic ) {

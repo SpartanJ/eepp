@@ -119,6 +119,7 @@ struct EE_API MediaQueryExpression {
 	float fval{ 0 };
 	float fval2{ 0 };
 	bool checkAsBool{ false };
+	bool negated{ false };
 	std::string valStr;
 
 	MediaQueryExpression();

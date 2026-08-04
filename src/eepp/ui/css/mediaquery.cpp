@@ -1,3 +1,4 @@
+#include <cctype>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/window/displaymanager.hpp>
@@ -50,8 +51,18 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 			if ( tok.at( tok.length() - 1 ) == ')' ) {
 				tok.erase( tok.length() - 1, 1 );
 			}
+			String::trimInPlace( tok );
 
 			MediaQueryExpression expr;
+			if ( String::startsWith( tok, "not" ) &&
+				 ( tok.length() == 3 || std::isspace( static_cast<unsigned char>( tok[3] ) ) ||
+				   tok[3] == '(' ) ) {
+				expr.negated = true;
+				tok.erase( 0, 3 );
+				String::trimInPlace( tok );
+				if ( tok.length() >= 2 && tok.front() == '(' && tok.back() == ')' )
+					tok = tok.substr( 1, tok.length() - 2 );
+			}
 			std::vector<std::string> exprTokens = String::split( tok, ':' );
 			if ( !exprTokens.empty() ) {
 				String::trimInPlace( exprTokens[0] );
@@ -119,7 +130,7 @@ bool MediaQuery::check( const MediaFeatures& features ) const {
 		res = true;
 
 		for ( auto& expr : mExpressions ) {
-			if ( !expr.check( features ) ) {
+			if ( expr.check( features ) == expr.negated ) {
 				res = false;
 				break;
 			}

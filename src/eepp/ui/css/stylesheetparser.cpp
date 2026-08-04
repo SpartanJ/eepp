@@ -186,8 +186,16 @@ int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::
 		if ( css[pos] != '\n' && css[pos] != '\r' && css[pos] != '\t' )
 			buffer += css[pos];
 
-		if ( css[pos] == ';' && String::startsWith( buffer, "@import" ) ) {
-			return initialPos;
+		if ( css[pos] == ';' ) {
+			std::string_view statement = String::trim( std::string_view{ buffer } );
+			if ( String::startsWith( statement, "@import" ) )
+				return initialPos;
+			if ( !statement.empty() && statement.front() == '@' ) {
+				// Statement at-rules (for example @charset) end here. Do not let them become
+				// part of the selector preceding the next block.
+				buffer.clear();
+				initialPos = pos + 1;
+			}
 		}
 
 		pos++;
