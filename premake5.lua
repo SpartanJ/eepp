@@ -409,7 +409,7 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++20", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8", "/Zc:preprocessor" }
 
 	filter "action:not vs*"
 		cppdialect "C++20"
@@ -563,7 +563,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -1077,7 +1077,7 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++20" }

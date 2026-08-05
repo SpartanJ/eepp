@@ -12,6 +12,7 @@ struct AllocationProbe {
 
 } // namespace
 
+#ifdef EE_MEMORY_MANAGER
 UTEST( MemoryManager, tracesPlainNew ) {
 	const size_t before = MemoryManager::getTotalMemoryUsage();
 	auto* value = new Uint64( 42 );
@@ -22,6 +23,7 @@ UTEST( MemoryManager, tracesPlainNew ) {
 	EXPECT_GE( allocated, before + sizeof( Uint64 ) );
 	EXPECT_EQ( after, before );
 }
+#endif
 
 UTEST( MemoryManager, supportsExpressionAndLegacyNewSyntax ) {
 	const size_t before = MemoryManager::getTotalMemoryUsage();

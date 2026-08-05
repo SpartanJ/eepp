@@ -421,7 +421,7 @@ function build_base_cpp_configuration( package_name )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8", "/Zc:preprocessor" }
 	end
 
 	set_ios_config()
@@ -527,7 +527,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -1069,7 +1069,7 @@ function build_eepp( build_name )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then

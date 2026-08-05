@@ -6,9 +6,7 @@
 #include <cstring>
 #include <eepp/config.hpp>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
-#include <utility>
 
 namespace EE {
 
@@ -73,12 +71,9 @@ class EE_API MemoryManager {
 
 	static void freeGlobal( void* ptr ) noexcept;
 
-	template <typename Factory>
-	static auto create( Factory&& factory, const char* file, int line ) -> decltype( factory() ) {
-		auto* pointer = std::forward<Factory>( factory )();
-		using Type = typename std::remove_pointer<decltype( pointer )>::type;
-		return static_cast<Type*>(
-			addPointer( AllocatedPointer( pointer, file, line, sizeof( Type ) ) ) );
+	template <typename T> static T* trackNew( T* pointer, const char* file, int line ) {
+		return static_cast<T*>(
+			addPointer( AllocatedPointer( pointer, file, line, sizeof( T ) ) ) );
 	}
 
 	static size_t getPeakMemoryUsage();
@@ -95,14 +90,17 @@ class EE_API MemoryManager {
 
 #ifdef EE_MEMORY_MANAGER
 #define eeNewExpression( constructor ) \
-	EE::MemoryManager::create( [&]() { return new constructor; }, __FILE__, __LINE__ )
+	EE::MemoryManager::trackNew( new constructor, __FILE__, __LINE__ )
 
 #define eeNewLegacy( classType, constructor ) \
-	EE::MemoryManager::create( [&]() { return new classType constructor; }, __FILE__, __LINE__ )
+	EE::MemoryManager::trackNew( new classType constructor, __FILE__, __LINE__ )
 
 #define eeNewSelect( _1, _2, NAME, ... ) NAME
 
-#define eeNew( ... ) eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ )
+#define eeNewExpand( expression ) expression
+
+#define eeNew( ... ) \
+	eeNewExpand( eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ ) )
 
 #define eeNewTracked( classType, constructor )                       \
 	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
@@ -168,7 +166,10 @@ class EE_API MemoryManager {
 
 #define eeNewSelect( _1, _2, NAME, ... ) NAME
 
-#define eeNew( ... ) eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ )
+#define eeNewExpand( expression ) expression
+
+#define eeNew( ... ) \
+	eeNewExpand( eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ ) )
 
 #define eeNewInPlace( place, classType, constructor ) new place classType constructor
 

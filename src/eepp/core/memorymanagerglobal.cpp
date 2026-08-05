@@ -1,4 +1,6 @@
+#include <cstddef>
 #include <eepp/core/memorymanager.hpp>
+#include <new>
 
 #ifdef EE_MEMORY_MANAGER
 
