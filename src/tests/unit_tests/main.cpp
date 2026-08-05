@@ -5,7 +5,7 @@
 
 UTEST_STATE();
 
-int main( int argc, const char* const argv[] ) {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	EE::System::FileSystem::changeWorkingDirectory( EE::System::Sys::getProcessPath() );
 	return utest_main( argc, argv );
 }
