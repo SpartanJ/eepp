@@ -827,22 +827,21 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 		}
 		const auto command = editor->getKeyBindings().getCommandFromKeyBind( eventShortcut );
 		const bool choiceNavigationShortcut =
-			mSnippetChoiceSuggestions &&
-			( mShortcuts["autocomplete-prev-suggestion"] == eventShortcut ||
-			  mShortcuts["autocomplete-next-suggestion"] == eventShortcut ||
-			  mShortcuts["autocomplete-first-suggestion"] == eventShortcut ||
-			  mShortcuts["autocomplete-last-suggestion"] == eventShortcut ||
-			  mShortcuts["autocomplete-prev-suggestion-page"] == eventShortcut ||
-			  mShortcuts["autocomplete-next-suggestion-page"] == eventShortcut );
+			mSnippetChoiceSuggestions && ( mShortcuts.prevSuggestion == eventShortcut ||
+										   mShortcuts.nextSuggestion == eventShortcut ||
+										   mShortcuts.firstSuggestion == eventShortcut ||
+										   mShortcuts.lastSuggestion == eventShortcut ||
+										   mShortcuts.prevSuggestionPage == eventShortcut ||
+										   mShortcuts.nextSuggestionPage == eventShortcut );
 		if ( !choiceNavigationShortcut && isSnippetNavigationCommand( command ) )
 			cancelSnippetSession( &editor->getDocument(), true );
 	}
 	if ( mSignatureHelpVisible ) {
-		if ( mShortcuts["autocomplete-close-signature-help"] == eventShortcut ) {
+		if ( mShortcuts.closeSignatureHelp == eventShortcut ) {
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-prev-signature-help"] == eventShortcut ) {
+		} else if ( mShortcuts.prevSignatureHelp == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected == -1 ? 0 : mSignatureHelpSelected;
 				++mSignatureHelpSelected;
@@ -853,7 +852,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
-		} else if ( mShortcuts["autocomplete-next-signature-help"] == eventShortcut ) {
+		} else if ( mShortcuts.nextSignatureHelp == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected <= 0
 											 ? mSignatureHelp.signatures.size()
@@ -881,15 +880,14 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 		}
 	}
 
-	if ( !mSnippetChoiceSuggestions &&
-		 mShortcuts["autocomplete-update-suggestions"] == eventShortcut ) {
+	if ( !mSnippetChoiceSuggestions && mShortcuts.updateSuggestions == eventShortcut ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 		updateSuggestions( partialSymbol, editor );
 		return true;
 	}
 
 	if ( !mSuggestions.empty() ) {
-		if ( mShortcuts["autocomplete-next-suggestion"] == eventShortcut ) {
+		if ( mShortcuts.nextSuggestion == eventShortcut ) {
 			if ( mSuggestionIndex + 1 < (int)mSuggestions.size() ) {
 				mSuggestionIndex++;
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -904,7 +902,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-prev-suggestion"] == eventShortcut ) {
+		} else if ( mShortcuts.prevSuggestion == eventShortcut ) {
 			if ( mSuggestionIndex - 1 < 0 ) {
 				mSuggestionIndex = mSuggestions.size() - 1;
 				mSuggestionsStartIndex =
@@ -916,22 +914,22 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				mSuggestionsStartIndex = mSuggestionIndex;
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-close-suggestion"] == eventShortcut ) {
+		} else if ( mShortcuts.closeSuggestion == eventShortcut ) {
 			resetSuggestions( editor );
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-first-suggestion"] == eventShortcut ) {
+		} else if ( mShortcuts.firstSuggestion == eventShortcut ) {
 			mSuggestionIndex = 0;
 			mSuggestionsStartIndex = 0;
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-last-suggestion"] == eventShortcut ) {
+		} else if ( mShortcuts.lastSuggestion == eventShortcut ) {
 			mSuggestionIndex = mSuggestions.size() - 1;
 			mSuggestionsStartIndex = eemax( 0, (int)mSuggestions.size() - mSuggestionsMaxVisible );
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-prev-suggestion-page"] == eventShortcut ) {
+		} else if ( mShortcuts.prevSuggestionPage == eventShortcut ) {
 			if ( mSuggestionIndex - (int)( mSuggestionsMaxVisible - 1 ) >= 0 ) {
 				mSuggestionIndex -= ( mSuggestionsMaxVisible - 1 );
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -942,7 +940,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-next-suggestion-page"] == eventShortcut ) {
+		} else if ( mShortcuts.nextSuggestionPage == eventShortcut ) {
 			if ( mSuggestionIndex + mSuggestionsMaxVisible < (int)mSuggestions.size() ) {
 				mSuggestionIndex += mSuggestionsMaxVisible - 1;
 			} else {
@@ -952,9 +950,9 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				eemax<int>( 0, mSuggestionIndex - ( mSuggestionsMaxVisible - 1 ) );
 			editor->invalidateDraw();
 			return true;
-		} else if ( mShortcuts["autocomplete-pick-suggestion"] == eventShortcut ||
-					mShortcuts["autocomplete-pick-suggestion-alt"] == eventShortcut ||
-					mShortcuts["autocomplete-pick-suggestion-alt-2"] == eventShortcut ) {
+		} else if ( mShortcuts.pickSuggestion == eventShortcut ||
+					mShortcuts.pickSuggestionAlt == eventShortcut ||
+					mShortcuts.pickSuggestionAlt2 == eventShortcut ) {
 			pickSuggestion( editor );
 			return true;
 		}
@@ -1166,10 +1164,8 @@ SnippetParser::VariableMap AutoCompletePlugin::snippetVariables( TextDocument& d
 		{ "CURRENT_SECOND", formatSnippetTime( localTime, "%S" ) },
 		{ "CURRENT_MILLISECOND",
 		  String::format( "%03d", static_cast<int>( milliseconds % 1000 ) ) },
-		{ "CURRENT_SECONDS_UNIX",
-		  String::toString( static_cast<Int64>( milliseconds / 1000 ) ) },
-		{ "CURRENT_MILLISECONDS_UNIX",
-		  String::toString( static_cast<Int64>( milliseconds ) ) },
+		{ "CURRENT_SECONDS_UNIX", String::toString( static_cast<Int64>( milliseconds / 1000 ) ) },
+		{ "CURRENT_MILLISECONDS_UNIX", String::toString( static_cast<Int64>( milliseconds ) ) },
 		{ "CURRENT_TIMEZONE_OFFSET", timezoneOffset },
 		{ "CURRENT_TIMEZONE_NAME", formatSnippetTime( localTime, "%Z" ) },
 		{ "RANDOM", String::format( "%06d", Math::randi( 0, 999999 ) ) },
@@ -1864,8 +1860,21 @@ void AutoCompletePlugin::updateShortcuts() {
 			getManager()->getUISceneNode()->getEventDispatcher()->getInput(), keys );
 	};
 
-	for ( const auto& kb : mKeyBindings )
-		mShortcuts[kb.first] = toShortcut( kb.second );
+	mShortcuts.closeSuggestion = toShortcut( mKeyBindings["autocomplete-close-suggestion"] );
+	mShortcuts.prevSuggestion = toShortcut( mKeyBindings["autocomplete-prev-suggestion"] );
+	mShortcuts.nextSuggestion = toShortcut( mKeyBindings["autocomplete-next-suggestion"] );
+	mShortcuts.firstSuggestion = toShortcut( mKeyBindings["autocomplete-first-suggestion"] );
+	mShortcuts.lastSuggestion = toShortcut( mKeyBindings["autocomplete-last-suggestion"] );
+	mShortcuts.prevSuggestionPage = toShortcut( mKeyBindings["autocomplete-prev-suggestion-page"] );
+	mShortcuts.nextSuggestionPage = toShortcut( mKeyBindings["autocomplete-next-suggestion-page"] );
+	mShortcuts.pickSuggestion = toShortcut( mKeyBindings["autocomplete-pick-suggestion"] );
+	mShortcuts.pickSuggestionAlt = toShortcut( mKeyBindings["autocomplete-pick-suggestion-alt"] );
+	mShortcuts.pickSuggestionAlt2 =
+		toShortcut( mKeyBindings["autocomplete-pick-suggestion-alt-2"] );
+	mShortcuts.updateSuggestions = toShortcut( mKeyBindings["autocomplete-update-suggestions"] );
+	mShortcuts.closeSignatureHelp = toShortcut( mKeyBindings["autocomplete-close-signature-help"] );
+	mShortcuts.prevSignatureHelp = toShortcut( mKeyBindings["autocomplete-prev-signature-help"] );
+	mShortcuts.nextSignatureHelp = toShortcut( mKeyBindings["autocomplete-next-signature-help"] );
 }
 
 PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {

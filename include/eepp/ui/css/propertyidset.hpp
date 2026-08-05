@@ -25,9 +25,9 @@ class EE_API PropertyIdSet {
 
 	size_t size() const { return mIds.size(); }
 
-	bool operator==( const PropertyIdSet& other ) { return mIds == other.mIds; }
+	bool operator==( const PropertyIdSet& other ) const { return mIds == other.mIds; }
 
-	bool operator!=( const PropertyIdSet& other ) { return mIds != other.mIds; }
+	bool operator!=( const PropertyIdSet& other ) const { return mIds != other.mIds; }
 
 	// Union with another set
 	PropertyIdSet& operator|=( const PropertyIdSet& other ) {
@@ -43,7 +43,7 @@ class EE_API PropertyIdSet {
 
 	// Intersection with another set
 	PropertyIdSet& operator&=( const PropertyIdSet& other ) {
-		if ( mIds.size() > 0 && other.mIds.size() > 0 ) {
+		if ( !mIds.empty() && !other.mIds.empty() ) {
 			for ( auto it = mIds.begin(); it != mIds.end(); )
 				if ( other.mIds.count( *it ) == 0 )
 					it = mIds.erase( it );
@@ -57,7 +57,7 @@ class EE_API PropertyIdSet {
 
 	PropertyIdSet operator&( const PropertyIdSet& other ) const {
 		PropertyIdSet result;
-		if ( mIds.size() > 0 && other.mIds.size() > 0 ) {
+		if ( !mIds.empty() && !other.mIds.empty() ) {
 			for ( Uint32 id : mIds )
 				if ( other.mIds.count( id ) == 1 )
 					result.mIds.insert( id );

@@ -459,8 +459,13 @@ function get_architecture()
 end
 
 function build_link_configuration( package_name, use_ee_icon )
+	filter {}
 	incdirs { "include" }
 	local extension = "";
+
+	if package_name ~= "eepp" and package_name ~= "eepp-static" then
+		files { "src/eepp/core/memorymanagerglobal.cpp" }
+	end
 
 	if os.istarget("emscripten") and package_name ~= "eepp" and package_name ~= "eepp-static" then
 		local without_assets = {

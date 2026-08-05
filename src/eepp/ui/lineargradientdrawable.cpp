@@ -80,11 +80,12 @@ void LinearGradientDrawable::draw( const Vector2f& position, const Sizef& size )
 	Float txLen = tMax - tMin;
 
 	// Normalize all stops to [0,1] using the gradient-line pixel length
-	std::vector<ColorStop> stops;
+	SmallVector<ColorStop, 4> stops;
 	stops.reserve( mColorStops.size() );
-	for ( const auto& s : mColorStops )
+	for ( const auto& s : mColorStops ) {
 		stops.push_back(
 			ColorStop( s.getNormalized( txLen ), s.color, CSS::StyleSheetLength::Percentage ) );
+	}
 
 	std::sort( stops.begin(), stops.end(),
 			   []( const ColorStop& a, const ColorStop& b ) { return a.value < b.value; } );
@@ -196,7 +197,7 @@ void LinearGradientDrawable::draw( const Vector2f& position, const Sizef& size )
 			Vector2f a;
 			Vector2f b;
 		};
-		std::vector<PerpSeg> segments;
+		SmallVector<PerpSeg, 4> segments;
 		segments.reserve( stops.size() );
 
 		for ( size_t i = 0; i < stops.size(); i++ ) {

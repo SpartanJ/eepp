@@ -193,7 +193,22 @@ class AutoCompletePlugin : public Plugin {
 	size_t mMaxLabelCharacters{ 100 };
 	String::HashType mConfigHash{ 0 };
 	std::unordered_map<std::string, std::string> mKeyBindings;
-	UnorderedMap<std::string, KeyBindings::Shortcut> mShortcuts;
+	struct Shortcuts {
+		KeyBindings::Shortcut closeSuggestion;
+		KeyBindings::Shortcut prevSuggestion;
+		KeyBindings::Shortcut nextSuggestion;
+		KeyBindings::Shortcut firstSuggestion;
+		KeyBindings::Shortcut lastSuggestion;
+		KeyBindings::Shortcut prevSuggestionPage;
+		KeyBindings::Shortcut nextSuggestionPage;
+		KeyBindings::Shortcut pickSuggestion;
+		KeyBindings::Shortcut pickSuggestionAlt;
+		KeyBindings::Shortcut pickSuggestionAlt2;
+		KeyBindings::Shortcut updateSuggestions;
+		KeyBindings::Shortcut closeSignatureHelp;
+		KeyBindings::Shortcut prevSignatureHelp;
+		KeyBindings::Shortcut nextSignatureHelp;
+	} mShortcuts;
 	std::string mMaxSuggestionDocumentationWidth{ "100%" };
 	std::string mMaxSignatureHelperWidth{ "90%" };
 	bool mSignatureHelpMultiLine{ true };

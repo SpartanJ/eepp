@@ -6,20 +6,23 @@
 #include <cstring>
 #include <eepp/config.hpp>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
+#include <utility>
 
 namespace EE {
 
 class EE_API AllocatedPointer {
   public:
 	AllocatedPointer( void* data, const std::string& File, int Line, size_t memory,
-					  bool track = false );
+					  bool track = false, bool globalAllocation = false );
 
 	std::string mFile;
 	int mLine;
 	size_t mMemory;
 	void* mData;
 	bool mTrack;
+	bool mGlobalAllocation;
 };
 
 typedef std::unordered_map<void*, AllocatedPointer> AllocatedPointerMap;
@@ -39,14 +42,19 @@ class EE_API MemoryManager {
 
 	static bool removePointer( void* data, const char* file, const size_t& line );
 
+	/** Removes a pointer when it is tracked, without diagnosing foreign allocator bookkeeping. */
+	static bool removePointerIfTracked( void* data );
+
 	static void showResults();
 
-	template <class T> static T* deletePtr( T* data ) {
+	template <class T> static T* deletePtr( T* data, const char* file, size_t line ) {
+		removePointer( data, file, line );
 		delete data;
 		return data;
 	}
 
-	template <class T> static T* deleteArrayPtr( T* data ) {
+	template <class T> static T* deleteArrayPtr( T* data, const char* file, size_t line ) {
+		removePointer( data, file, line );
 		delete[] data;
 		return data;
 	}
@@ -60,24 +68,45 @@ class EE_API MemoryManager {
 
 	static void* reallocate( void* ptr, size_t size );
 
+	/** Allocation entry points used by the debug global new/delete overrides. */
+	static void* allocateGlobal( size_t size, size_t alignment );
+
+	static void freeGlobal( void* ptr ) noexcept;
+
+	template <typename Factory>
+	static auto create( Factory&& factory, const char* file, int line ) -> decltype( factory() ) {
+		auto* pointer = std::forward<Factory>( factory )();
+		using Type = typename std::remove_pointer<decltype( pointer )>::type;
+		return static_cast<Type*>(
+			addPointer( AllocatedPointer( pointer, file, line, sizeof( Type ) ) ) );
+	}
+
 	static size_t getPeakMemoryUsage();
 
 	static size_t getTotalMemoryUsage();
 
 	static AllocatedPointer getBiggestAllocation();
+
+	static AllocatedPointer getBiggestNonAnonymousAllocation();
 };
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 #endif
 
 #ifdef EE_MEMORY_MANAGER
+#define eeNewExpression( constructor ) \
+	EE::MemoryManager::create( [&]() { return new constructor; }, __FILE__, __LINE__ )
+
+#define eeNewLegacy( classType, constructor ) \
+	EE::MemoryManager::create( [&]() { return new classType constructor; }, __FILE__, __LINE__ )
+
+#define eeNewSelect( _1, _2, NAME, ... ) NAME
+
+#define eeNew( ... ) eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ )
+
 #define eeNewTracked( classType, constructor )                       \
 	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
 		new classType constructor, __FILE__, __LINE__, sizeof( classType ), true ) )
-
-#define eeNew( classType, constructor )                              \
-	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
-		new classType constructor, __FILE__, __LINE__, sizeof( classType ) ) )
 
 #define eeNewInPlace( place, classType, constructor )                                     \
 	(classType*)EE::MemoryManager::addPointerInPlace(                                     \
@@ -104,12 +133,7 @@ class EE_API MemoryManager {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
 #endif
-#define eeDelete( data )                                                                       \
-	{                                                                                          \
-		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ), __FILE__, \
-											   __LINE__ ) == false )                           \
-			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                             \
-	}
+#define eeDelete( data ) EE::MemoryManager::deletePtr( data, __FILE__, __LINE__ )
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 
@@ -117,12 +141,7 @@ class EE_API MemoryManager {
 #pragma GCC diagnostic ignored "-Wuse-after-free"
 #endif
 
-#define eeDeleteArray( data )                                                             \
-	{                                                                                     \
-		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ), \
-											   __FILE__, __LINE__ ) == false )            \
-			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
-	}
+#define eeDeleteArray( data ) EE::MemoryManager::deleteArrayPtr( data, __FILE__, __LINE__ )
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 
@@ -143,7 +162,13 @@ class EE_API MemoryManager {
 
 #define eeNewTracked( classType, constructor ) new classType constructor
 
-#define eeNew( classType, constructor ) new classType constructor
+#define eeNewExpression( constructor ) new constructor
+
+#define eeNewLegacy( classType, constructor ) new classType constructor
+
+#define eeNewSelect( _1, _2, NAME, ... ) NAME
+
+#define eeNew( ... ) eeNewSelect( __VA_ARGS__, eeNewLegacy, eeNewExpression )( __VA_ARGS__ )
 
 #define eeNewInPlace( place, classType, constructor ) new place classType constructor
 

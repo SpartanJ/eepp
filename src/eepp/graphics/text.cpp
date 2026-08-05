@@ -1856,16 +1856,20 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	ensureColorUpdate();
 
 	if ( mFontStyleConfig.Style & Shadow ) {
-		std::vector<Color> colors;
 		Color shadowColor( getShadowColor() );
 		if ( getFillColor().a != 255 ) {
 			shadowColor.a =
 				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
 		}
-		colors.assign( mColors.size(), shadowColor );
+		if ( mShadowColors.size() != mColors.size() ||
+			 ( !mShadowColors.empty() && mShadowColors.front() != shadowColor ) )
+			mShadowColors.assign( mColors.size(), shadowColor );
+
+		static const std::vector<Color> emptyColors;
+		const std::vector<Color>& shadowOutlineColors =
+			mFontStyleConfig.OutlineThickness > 0 ? mOutlineColors : emptyColors;
 		draw( X + mFontStyleConfig.ShadowOffset.x, Y + mFontStyleConfig.ShadowOffset.y, scale,
-			  rotation, effect, rotationCenter, scaleCenter, colors,
-			  mFontStyleConfig.OutlineThickness > 0 ? mOutlineColors : std::vector<Color>{},
+			  rotation, effect, rotationCenter, scaleCenter, mShadowColors, shadowOutlineColors,
 			  Color::Transparent );
 	}
 

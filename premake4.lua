@@ -509,9 +509,14 @@ function popen( executable_path )
 end
 
 function build_link_configuration( package_name, use_ee_icon )
+	configuration {}
 	includedirs { "include" }
 
 	local extension = "";
+
+	if package_name ~= "eepp" and package_name ~= "eepp-static" then
+		files { "src/eepp/core/memorymanagerglobal.cpp" }
+	end
 
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }

@@ -422,6 +422,7 @@ class EE_API Text {
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;
+	std::vector<Color> mShadowColors;
 	std::vector<GlyphRenderMode> mRenderModes;
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;

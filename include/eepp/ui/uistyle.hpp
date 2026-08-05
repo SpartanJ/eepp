@@ -5,6 +5,7 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/elementdefinition.hpp>
+#include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
@@ -103,6 +104,7 @@ class EE_API UIStyle : public UIState {
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
+	std::optional<CSS::PropertyIdSet> mChangedProperties;
 	Uint32 mStateDepthCounter{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };

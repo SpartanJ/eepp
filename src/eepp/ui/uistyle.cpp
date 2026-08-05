@@ -392,7 +392,10 @@ void UIStyle::onStateChange() {
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
 
 	if ( newDefinition != mDefinition || mForceReapplyProperties ) {
-		PropertyIdSet changedProperties;
+		if ( !mChangedProperties )
+			mChangedProperties.emplace();
+		PropertyIdSet& changedProperties = *mChangedProperties;
+		changedProperties.clear();
 
 		if ( mDefinition )
 			changedProperties = mDefinition->getPropertyIds();
