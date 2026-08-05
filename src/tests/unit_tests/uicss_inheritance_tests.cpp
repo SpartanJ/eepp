@@ -31,6 +31,19 @@ using namespace EE::UI::CSS;
 using namespace EE::Scene;
 using namespace EE::Graphics;
 
+UTEST( CSSParser, UnknownPropertiesKeepDistinctNameHashes ) {
+	StyleSheetProperty first( "data-first", "one" );
+	StyleSheetProperty second( "data-second", "two" );
+
+	EXPECT_TRUE( first.getPropertyDefinition() == nullptr );
+	EXPECT_TRUE( second.getPropertyDefinition() == nullptr );
+	EXPECT_EQ( first.getId(), String::hash( "data-first" ) );
+	EXPECT_EQ( second.getId(), String::hash( "data-second" ) );
+	EXPECT_NE( first.getId(), second.getId() );
+	EXPECT_TRUE( first.getPropertyId() == PropertyId::Invalid );
+	EXPECT_TRUE( first.getShorthandId() == ShorthandId::Invalid );
+}
+
 UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
 	StyleSheetPropertiesParser parser( R"css(
 		color /* before colon */ : red;
@@ -41,12 +54,18 @@ UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
 	)css" );
 	const auto& properties = parser.getProperties();
 
-	auto lineHeight = properties.find( static_cast<Uint32>( PropertyId::LineHeight ) );
-	auto color = properties.find( static_cast<Uint32>( PropertyId::Color ) );
-	auto marginTop = properties.find( static_cast<Uint32>( PropertyId::MarginTop ) );
-	auto marginRight = properties.find( static_cast<Uint32>( PropertyId::MarginRight ) );
-	auto fontFamily = properties.find( static_cast<Uint32>( PropertyId::FontFamily ) );
-	auto width = properties.find( static_cast<Uint32>( PropertyId::Width ) );
+	auto lineHeight = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::LineHeight )->getId() );
+	auto color = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Color )->getId() );
+	auto marginTop = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::MarginTop )->getId() );
+	auto marginRight = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::MarginRight )->getId() );
+	auto fontFamily = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::FontFamily )->getId() );
+	auto width = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Width )->getId() );
 
 	ASSERT_TRUE( lineHeight != properties.end() );
 	ASSERT_TRUE( color != properties.end() );

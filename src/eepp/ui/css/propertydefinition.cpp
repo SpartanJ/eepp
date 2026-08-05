@@ -4,10 +4,11 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-PropertyDefinition::PropertyDefinition( const std::string& name, const std::string& defaultValue,
-										const bool& inherited ) :
+PropertyDefinition::PropertyDefinition( PropertyId propertyId, const std::string& name,
+										const std::string& defaultValue, const bool& inherited ) :
 	mName( name ),
 	mId( String::hash( name ) ),
+	mPropertyId( propertyId ),
 	mDefaultValue( defaultValue ),
 	mInherited( inherited ),
 	mIndexed( false ),
@@ -23,7 +24,7 @@ const String::HashType& PropertyDefinition::getId() const {
 }
 
 PropertyId PropertyDefinition::getPropertyId() const {
-	return static_cast<PropertyId>( mId );
+	return mPropertyId;
 }
 
 const std::string& PropertyDefinition::getDefaultValue() const {
@@ -57,7 +58,7 @@ PropertyDefinition& PropertyDefinition::addAlias( const std::string& alias ) {
 	String::HashType aliasId = String::hash( alias );
 	mAliases.push_back( alias );
 	mAliasesHash.push_back( aliasId );
-	PropertySpecification::instance()->addPropertyAlias( aliasId, this );
+	PropertySpecification::instance()->addPropertyAlias( alias, this );
 	return *this;
 }
 

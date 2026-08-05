@@ -75,7 +75,13 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 
 	virtual void onDisplayChange();
 
+	virtual void onAttributesTransactionEnd();
+
 	void autoSizeImage();
+
+	void reconcileStyleSize();
+
+	bool hasUnresolvedPercentageSize() const;
 
 	void calcDestSize();
 
@@ -95,6 +101,7 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 	DrawableResourceConnection mResourceChangeConnection;
 	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
+	bool mNeedsStyleSizeReconciliation{ false };
 	std::shared_ptr<std::atomic<bool>> mAsyncImageAlive;
 	Uint64 mRemoteImageLoadId{ 0 };
 	std::string mAlt;

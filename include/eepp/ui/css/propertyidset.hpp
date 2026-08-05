@@ -1,37 +1,79 @@
 #ifndef EE_UI_CSS_PROPERTYIDSET_HPP
 #define EE_UI_CSS_PROPERTYIDSET_HPP
 
-#include <eepp/core/containers.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
+#include <bitset>
+#include <eepp/core/debug.hpp>
+#include <eepp/ui/css/propertyids.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
 class PropertyIdSetIterator;
 
+namespace detail {
+inline std::size_t bitsetFindFirst( const std::bitset<512>& bits ) {
+	for ( std::size_t i = 0; i < bits.size(); ++i )
+		if ( bits.test( i ) )
+			return i;
+	return bits.size();
+}
+
+inline std::size_t bitsetFindNext( const std::bitset<512>& bits, std::size_t from ) {
+	for ( std::size_t i = from + 1; i < bits.size(); ++i )
+		if ( bits.test( i ) )
+			return i;
+	return bits.size();
+}
+} // namespace detail
+
+/**
+ * @brief Fixed-capacity set of dense PropertyId values.
+ *
+ * Backed by a 512-bit std::bitset, so construction, clearing, copying, union,
+ * intersection, and iteration perform zero heap allocations. Only successfully
+ * registered property definitions occupy bits; unknown names never enter this
+ * set. Iteration yields present IDs in ascending dense ID order.
+ */
 class EE_API PropertyIdSet {
   private:
-	UnorderedSet<Uint32> mIds;
+	std::bitset<512> mBits;
 
   public:
-	void insert( Uint32 id ) { mIds.insert( id ); }
+	void insert( PropertyId id ) {
+		const auto underlying = static_cast<std::size_t>( id );
+		if ( underlying == 0 )
+			return; // Invalid is a no-op
+		if ( underlying >= mBits.size() ) {
+			eeASSERTM( false, "PropertyId out of PropertyIdSet capacity" );
+			return;
+		}
+		mBits.set( underlying );
+	}
 
-	void clear() { mIds.clear(); }
+	void clear() { mBits.reset(); }
 
-	void erase( Uint32 id ) { mIds.erase( id ); }
+	void erase( PropertyId id ) {
+		const auto underlying = static_cast<std::size_t>( id );
+		if ( underlying == 0 )
+			return; // Invalid is a no-op
+		if ( underlying >= mBits.size() ) {
+			eeASSERTM( false, "PropertyId out of PropertyIdSet capacity" );
+			return;
+		}
+		mBits.reset( underlying );
+	}
 
-	bool empty() const { return mIds.empty(); }
+	bool empty() const { return mBits.none(); }
 
-	bool contains( Uint32 id ) const { return mIds.count( id ) == 1; }
+	bool contains( PropertyId id ) const {
+		const auto underlying = static_cast<std::size_t>( id );
+		return underlying != 0 && underlying < mBits.size() && mBits.test( underlying );
+	}
 
-	size_t size() const { return mIds.size(); }
-
-	bool operator==( const PropertyIdSet& other ) const { return mIds == other.mIds; }
-
-	bool operator!=( const PropertyIdSet& other ) const { return mIds != other.mIds; }
+	size_t size() const { return mBits.count(); }
 
 	// Union with another set
 	PropertyIdSet& operator|=( const PropertyIdSet& other ) {
-		mIds.insert( other.mIds.begin(), other.mIds.end() );
+		mBits |= other.mBits;
 		return *this;
 	}
 
@@ -43,78 +85,80 @@ class EE_API PropertyIdSet {
 
 	// Intersection with another set
 	PropertyIdSet& operator&=( const PropertyIdSet& other ) {
-		if ( !mIds.empty() && !other.mIds.empty() ) {
-			for ( auto it = mIds.begin(); it != mIds.end(); )
-				if ( other.mIds.count( *it ) == 0 )
-					it = mIds.erase( it );
-				else
-					++it;
-		} else {
-			mIds.clear();
-		}
+		mBits &= other.mBits;
 		return *this;
 	}
 
 	PropertyIdSet operator&( const PropertyIdSet& other ) const {
-		PropertyIdSet result;
-		if ( !mIds.empty() && !other.mIds.empty() ) {
-			for ( Uint32 id : mIds )
-				if ( other.mIds.count( id ) == 1 )
-					result.mIds.insert( id );
-		}
+		PropertyIdSet result = *this;
+		result &= other;
 		return result;
 	}
 
+	bool operator==( const PropertyIdSet& other ) const { return mBits == other.mBits; }
+
+	bool operator!=( const PropertyIdSet& other ) const { return mBits != other.mBits; }
+
 	// Iterator support. Iterates through all the PropertyIds that are set (contained).
-	// @note: Modifying the container invalidates the iterators. Only const_iterators are provided.
 	inline PropertyIdSetIterator begin() const;
 	inline PropertyIdSetIterator end() const;
 
 	// Erases the property id represented by a valid iterator. Invalidates any previous iterators.
 	// @return A new valid iterator pointing to the next element or end().
 	inline PropertyIdSetIterator erase( const PropertyIdSetIterator& it );
+
+	friend class PropertyIdSetIterator;
 };
 
 class EE_API PropertyIdSetIterator {
   public:
-	using CustomIdsIt = UnorderedSet<Uint32>::const_iterator;
+	PropertyIdSetIterator() : container( nullptr ), bitIndex( 0 ) {}
 
-	PropertyIdSetIterator() : container( nullptr ), custom_ids_iterator() {}
-	PropertyIdSetIterator( const PropertyIdSet* container, CustomIdsIt custom_ids_iterator ) :
-		container( container ), custom_ids_iterator( custom_ids_iterator ) {}
+	explicit PropertyIdSetIterator( const PropertyIdSet* container, std::size_t bitIndex ) :
+		container( container ), bitIndex( bitIndex ) {}
 
 	PropertyIdSetIterator& operator++() {
-		++custom_ids_iterator;
+		if ( container ) {
+			std::size_t next = detail::bitsetFindNext( container->mBits, bitIndex );
+			bitIndex = ( next == container->mBits.size() ) ? container->mBits.size() : next;
+		}
 		return *this;
 	}
 
 	bool operator==( const PropertyIdSetIterator& other ) const {
-		return container == other.container && custom_ids_iterator == other.custom_ids_iterator;
+		return container == other.container && bitIndex == other.bitIndex;
 	}
 
 	bool operator!=( const PropertyIdSetIterator& other ) const { return !( *this == other ); }
 
-	Uint32 operator*() const { return *custom_ids_iterator; }
+	PropertyId operator*() const { return static_cast<PropertyId>( bitIndex ); }
 
   private:
 	const PropertyIdSet* container;
-	CustomIdsIt custom_ids_iterator;
+	std::size_t bitIndex;
 	friend PropertyIdSetIterator PropertyIdSet::erase( const PropertyIdSetIterator& );
 };
 
 PropertyIdSetIterator PropertyIdSet::begin() const {
-	return PropertyIdSetIterator( this, mIds.begin() );
+	const std::size_t first = detail::bitsetFindFirst( mBits );
+	const std::size_t index = ( first == mBits.size() ) ? mBits.size() : first;
+	return PropertyIdSetIterator( this, index );
 }
 
 PropertyIdSetIterator PropertyIdSet::end() const {
-	return PropertyIdSetIterator( this, mIds.end() );
+	return PropertyIdSetIterator( this, mBits.size() );
 }
 
 PropertyIdSetIterator PropertyIdSet::erase( const PropertyIdSetIterator& it_in ) {
 	PropertyIdSetIterator it = it_in;
-	it.custom_ids_iterator = mIds.erase( it.custom_ids_iterator );
+	if ( it.container == this && it.bitIndex < mBits.size() ) {
+		mBits.reset( it.bitIndex );
+		++it;
+	}
 	return it;
 }
+
+static_assert( sizeof( PropertyIdSet ) == 64, "PropertyIdSet must be a fixed 64-byte bitset" );
 
 }}} // namespace EE::UI::CSS
 

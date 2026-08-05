@@ -3,42 +3,11 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/ui/css/propertyids.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <functional>
 
 namespace EE { namespace UI { namespace CSS {
-
-enum class ShorthandId : Uint32 {
-	Margin = String::hash( "margin" ),
-	Padding = String::hash( "padding" ),
-	Transition = String::hash( "transition" ),
-	Background = String::hash( "background" ),
-	Foreground = String::hash( "foreground" ),
-	BackgroundPosition = String::hash( "background-position" ),
-	ForegroundPosition = String::hash( "foreground-position" ),
-	LayoutMargin = String::hash( "layout-margin" ),
-	LayoutMarginUnderscore = String::hash( "layout_margin" ),
-	RotationOriginPoint = String::hash( "rotation-origin-point" ),
-	ScaleOriginPoint = String::hash( "scale-origin-point" ),
-	BorderColor = String::hash( "border-color" ),
-	BorderWidth = String::hash( "border-width" ),
-	BorderRadius = String::hash( "border-radius" ),
-	MinSize = String::hash( "min-size" ),
-	MaxSize = String::hash( "max-size" ),
-	ListStye = String::hash( "list-style" ),
-	Font = String::hash( "font" ),
-	VerticalAlign = String::hash( "vertical-align" ),
-	BoxMargin = String::hash( "box-margin" ),
-	ForegroundRadius = String::hash( "foreground-radius" ),
-	RotateOriginPoint = String::hash( "rotate-origin-point" ),
-	Border = String::hash( "border" ),
-	TextShadow = String::hash( "text-shadow" ),
-	HintShadow = String::hash( "hint-shadow" ),
-	BorderLeft = String::hash( "border-left" ),
-	BorderRight = String::hash( "border-right" ),
-	BorderTop = String::hash( "border-top" ),
-	BorderBottom = String::hash( "border-bottom" ),
-};
 
 typedef std::function<std::vector<StyleSheetProperty>( const ShorthandDefinition* shorthand,
 													   std::string value )>
@@ -46,17 +15,19 @@ typedef std::function<std::vector<StyleSheetProperty>( const ShorthandDefinition
 
 class EE_API ShorthandDefinition {
   public:
-	static ShorthandDefinition* New( const std::string& name,
+	static ShorthandDefinition* New( ShorthandId shorthandId, const std::string& name,
 									 const std::vector<std::string>& properties,
 									 const std::string& shorthandParserName );
 
-	ShorthandDefinition( const std::string& name, const std::vector<std::string>& properties,
+	ShorthandDefinition( ShorthandId shorthandId, const std::string& name,
+						 const std::vector<std::string>& properties,
 						 const std::string& shorthandFuncName );
 
 	std::vector<StyleSheetProperty> parse( std::string value ) const;
 
 	const std::string& getName() const;
 
+	/** @brief Returns the canonical shorthand-name hash, not the dense ShorthandId. */
 	const String::HashType& getId() const;
 
 	ShorthandDefinition& addAlias( const std::string& alias );
@@ -69,6 +40,7 @@ class EE_API ShorthandDefinition {
 
 	bool isDefinition( const String::HashType& id ) const;
 
+	/** @brief Returns the dense shorthand identity used for lookup and dispatch. */
 	ShorthandId getShorthandId() const;
 
 	const std::vector<std::string>& getProperties() const;
@@ -77,6 +49,7 @@ class EE_API ShorthandDefinition {
 	std::string mName;
 	std::string mFuncName;
 	String::HashType mId;
+	ShorthandId mShorthandId;
 	std::vector<std::string> mAliases;
 	std::vector<String::HashType> mAliasesHash;
 	std::vector<std::string> mProperties;

@@ -1505,10 +1505,18 @@ void UIWidget::beginAttributesTransaction() {
 	mAttributesTransactionCount++;
 }
 
+void UIWidget::onAttributesTransactionEnd() {}
+
 void UIWidget::endAttributesTransaction() {
+	eeASSERT( mAttributesTransactionCount > 0 );
 	mAttributesTransactionCount--;
 
 	if ( 0 == mAttributesTransactionCount ) {
+		// Reconcile interdependent properties against the complete, final style
+		// before emitting the accumulated layout notifications so that any change
+		// triggered by the reconciliation is folded into the same pending flags.
+		onAttributesTransactionEnd();
+
 		if ( mFlags & UI_ATTRIBUTE_CHANGED ) {
 			LayoutInvalidationFlags reasons = mPendingLayoutReasons;
 			mPendingLayoutReasons = 0;
@@ -2372,8 +2380,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::LayoutToRightOf:
 		case PropertyId::LayoutToTopOf: {
 			PositionPolicy rule = PositionPolicy::None;
-			PropertyId layoutId =
-				static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() );
+			PropertyId layoutId = attribute.getPropertyDefinition()->getPropertyId();
 			if ( layoutId == PropertyId::LayoutToLeftOf )
 				rule = PositionPolicy::LeftOf;
 			else if ( layoutId == PropertyId::LayoutToRightOf )

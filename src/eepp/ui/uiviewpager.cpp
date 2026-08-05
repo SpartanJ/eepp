@@ -298,8 +298,6 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 			return String::fromFloat( mChangePagePercent );
 		case PropertyId::MaxEdgeResistance:
 			return String::fromFloat( mMaxEdgeResistance );
-		case PropertyId::PageTransitionDuration:
-			return mPageTransitionDuration.toString();
 		case PropertyId::TimingFunction:
 			return Ease::toString( mTimingFunction );
 		case PropertyId::PageLocked:
@@ -311,13 +309,9 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 
 std::vector<PropertyId> UIViewPager::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Orientation,
-				   PropertyId::DragResistance,
-				   PropertyId::ChangePagePercent,
-				   PropertyId::MaxEdgeResistance,
-				   PropertyId::PageTransitionDuration,
-				   PropertyId::TimingFunction,
-				   PropertyId::PageLocked };
+	auto local = { PropertyId::Orientation,		  PropertyId::DragResistance,
+				   PropertyId::ChangePagePercent, PropertyId::MaxEdgeResistance,
+				   PropertyId::TimingFunction,	  PropertyId::PageLocked };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

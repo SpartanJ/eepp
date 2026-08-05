@@ -393,23 +393,29 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	UIWidget* content =
 		siteTable->getParent()->isWidget() ? siteTable->getParent()->asType<UIWidget>() : nullptr;
 	ASSERT_TRUE( content != nullptr );
-
-	Vector2f sidePos = side->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f contentPos = content->convertToWorldSpace( { 0, 0 } );
 	Vector2f midcolPos = midcol->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f entryPos = entry->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f arrowPos = arrow->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f srHeaderPos = srHeader->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f redesignButtonPos =
-		redesignButton->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f srDropPos = srDrop->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f srListPos = srList->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f srHeaderPos = srHeader->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f srDropPos = srDrop->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f srFlatListPos = srFlatList->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerBottomLeftPos =
 		headerBottomLeft->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerBottomRightPos =
 		headerBottomRight->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerPos = header->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+
+	Vector2f commentHelpTogglePos =
+		commentHelpToggle->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f commentContentPolicyPos =
+		commentContentPolicy->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f commentEditPos = commentEdit->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+
+/*	Vector2f sidePos = side->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f entryPos = entry->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f contentPos = content->convertToWorldSpace( { 0, 0 } );
+	Vector2f redesignButtonPos =
+		redesignButton->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f dropChoicesPos = dropChoices->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f selftextMdPos = selftextMd->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f selftextFirstPPos =
@@ -420,13 +426,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	Vector2f postUsertextPos = postUsertext->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f commentAreaPos = commentArea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f commentFormPos = commentForm->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentEditPos = commentEdit->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f commentTextareaPos =
 		commentTextarea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentHelpTogglePos =
-		commentHelpToggle->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentContentPolicyPos =
-		commentContentPolicy->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 
 	auto fontSizeOf = []( Node* node ) -> Uint32 {
 		return node->isType( UI_TYPE_RICHTEXT ) ? node->asType<UIRichText>()->getFontSize() : 0;
@@ -527,7 +528,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 			  << " " << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
 			  << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getHeight() << ")"
 			  << std::endl;
-
+ */
 	const Float midcolCenter =
 		midcolPos.x + midcol->asType<UIWidget>()->getPixelsSize().getWidth() / 2.f;
 	const Float arrowCenter =
@@ -6446,6 +6447,136 @@ UTEST( UIHTML, ImageMaxWidthConstrainsWebpWithHeightAuto ) {
 	Float actualRatio = imgHeight / imgWidth;
 	EXPECT_GT( actualRatio, expectedRatio * 0.9f );
 	EXPECT_LT( actualRatio, expectedRatio * 1.1f );
+
+	Engine::destroySingleton();
+}
+
+// Applies width/height/max-width to an image inside a single attributes
+// transaction in the given order, then returns the final pixels size. The reset
+// pass restores the image to a known base state (no fixed dimensions and no
+// max-width constraint) before the target order is applied. Returns Sizef::Zero
+// when the fixture image cannot be found.
+static Sizef applyImageSizingOrder( UISceneNode* sceneNode,
+									const std::vector<std::string>& order ) {
+	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	if ( images.size() != 1 )
+		return Sizef::Zero;
+	auto* img = images[0]->asType<UIHTMLImage>();
+	if ( !img )
+		return Sizef::Zero;
+
+	img->beginAttributesTransaction();
+	img->applyProperty( StyleSheetProperty( "width", "auto" ) );
+	img->applyProperty( StyleSheetProperty( "height", "auto" ) );
+	img->applyProperty( StyleSheetProperty( "max-width", "none" ) );
+	img->endAttributesTransaction();
+	img->updateLayout();
+
+	img->beginAttributesTransaction();
+	for ( const auto& name : order ) {
+		if ( name == "width" )
+			img->applyProperty( StyleSheetProperty( "width", "2560px" ) );
+		else if ( name == "height" )
+			img->applyProperty( StyleSheetProperty( "height", "auto" ) );
+		else
+			img->applyProperty( StyleSheetProperty( "max-width", "100%" ) );
+	}
+	img->endAttributesTransaction();
+	img->updateLayout();
+
+	return img->getPixelsSize();
+}
+
+UTEST( UIHTML, ImagePropertyApplicationOrderIndependent ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "img sizing property order", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	const std::string html = R"html(
+		<!doctype html>
+		<html>
+		<head><style>body { margin: 0; } div { width: 800px; }</style></head>
+		<body><div><img src="image_width_3.webp" width="2560" height="1436"></div></body>
+		</html>
+	)html";
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	const Sizef base = applyImageSizingOrder( sceneNode, { "width", "height", "max-width" } );
+	EXPECT_GT( base.getWidth(), 0.f );
+	EXPECT_GT( base.getHeight(), 0.f );
+	// max-width:100% constrains the image to the 800px containing block, and
+	// height:auto keeps the 1436/2560 aspect ratio.
+	EXPECT_LE( base.getWidth(), 800.f );
+	EXPECT_NEAR( base.getHeight() / base.getWidth(), 1436.f / 2560.f, 0.01f );
+
+	const std::vector<std::vector<std::string>> orders = {
+		{ "max-width", "height", "width" },
+		{ "height", "width", "max-width" },
+		{ "max-width", "width", "height" },
+	};
+	for ( const auto& order : orders ) {
+		const Sizef other = applyImageSizingOrder( sceneNode, order );
+		EXPECT_NEAR( other.getWidth(), base.getWidth(), 1.f );
+		EXPECT_NEAR( other.getHeight(), base.getHeight(), 1.f );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ImageHeightAutoMaxWidthStyleStateTransition ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "img style state transition", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	const std::string html = R"html(
+		<!doctype html>
+		<html>
+		<head><style>body { margin: 0; } div { width: 800px; }</style></head>
+		<body><div><img src="image_width_3.webp" width="2560" height="1436"></div></body>
+		</html>
+	)html";
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	ASSERT_EQ( images.size(), (size_t)1 );
+	auto* img = images[0]->asType<UIHTMLImage>();
+	ASSERT_TRUE( img != nullptr );
+
+	// HTML attributes alone keep the fixed 2560x1436 box.
+	EXPECT_NEAR( img->getPixelsSize().getWidth(), 2560.f, 1.f );
+	EXPECT_NEAR( img->getPixelsSize().getHeight(), 1436.f, 1.f );
+
+	const std::string rule = "img { height: auto; max-width: 100%; }";
+
+	// Apply height:auto + max-width:100% through a style state change.
+	sceneNode->setStyleSheet( rule );
+	sceneNode->updateDirtyLayouts();
+	const Float constrainedWidth = img->getPixelsSize().getWidth();
+	const Float constrainedHeight = img->getPixelsSize().getHeight();
+	EXPECT_LE( constrainedWidth, 800.f );
+	EXPECT_NEAR( constrainedHeight / constrainedWidth, 1436.f / 2560.f, 0.01f );
+
+	// Remove the rule, then reapply it: the final geometry must be identical.
+	sceneNode->setStyleSheet( CSS::StyleSheet() );
+	sceneNode->updateDirtyLayouts();
+	sceneNode->setStyleSheet( rule );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_NEAR( img->getPixelsSize().getWidth(), constrainedWidth, 1.f );
+	EXPECT_NEAR( img->getPixelsSize().getHeight(), constrainedHeight, 1.f );
 
 	Engine::destroySingleton();
 }

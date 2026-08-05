@@ -64,7 +64,7 @@ class CSSPropertiesModel final : public Model {
 		mWidget = widget;
 		mData = widget ? widget->getPropertiesImplemented() : std::vector<PropertyId>();
 		for ( const auto& prop : mData ) {
-			const auto* def = StyleSheetSpecification::instance()->getProperty( (Uint32)prop );
+			const auto* def = StyleSheetSpecification::instance()->getProperty( prop );
 			if ( !def )
 				continue;
 			mProps[prop] = def;

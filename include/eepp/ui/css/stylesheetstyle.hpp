@@ -29,11 +29,13 @@ class EE_API StyleSheetStyle {
 
 	const StyleSheetVariables& getVariables() const;
 
+	StyleSheetProperty* getPropertyById( const PropertyId& id );
+
 	const StyleSheetProperty* getPropertyById( const PropertyId& id ) const;
 
 	const StyleSheetProperty* getPropertyByDefinition( const PropertyDefinition* def ) const;
 
-	StyleSheetProperty* getPropertyById( const Uint32& id );
+	StyleSheetProperty* getPropertyByNameHash( const String::HashType& id );
 
 	void setProperty( const StyleSheetProperty& property );
 

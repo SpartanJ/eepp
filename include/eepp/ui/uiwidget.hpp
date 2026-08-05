@@ -1655,6 +1655,21 @@ class EE_API UIWidget : public UINode {
 	virtual void onSizePolicyChange();
 
 	/**
+	 * @brief Called when the outermost attributes transaction ends.
+	 *
+	 * Invoked from endAttributesTransaction() after the transaction count reaches
+	 * zero but before the accumulated layout notifications are emitted. Property
+	 * setters run immediately even inside a transaction, so interdependent
+	 * properties can be observed in a partially applied state mid-loop. This hook
+	 * lets derived widgets perform a final-state reconciliation once the complete
+	 * style is applied, making the resulting geometry independent of the setter
+	 * application order.
+	 */
+	virtual void onAttributesTransactionEnd();
+
+	bool isInAttributesTransaction() const { return mAttributesTransactionCount > 0; }
+
+	/**
 	 * @brief Handles auto-size events.
 	 *
 	 * Called when the widget automatically resizes to fit its content. This can

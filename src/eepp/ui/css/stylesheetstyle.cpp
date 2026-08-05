@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 
 namespace EE { namespace UI { namespace CSS {
@@ -83,15 +84,20 @@ const StyleSheetVariables& StyleSheetStyle::getVariables() const {
 	return mVariables;
 }
 
-const StyleSheetProperty* StyleSheetStyle::getPropertyById( const PropertyId& id ) const {
-	for ( auto& prop : mProperties ) {
-		if ( NULL != prop.second.getPropertyDefinition() &&
-			 prop.second.getPropertyDefinition()->getPropertyId() == id ) {
-			return &prop.second;
-		}
-	}
+StyleSheetProperty* StyleSheetStyle::getPropertyById( const PropertyId& id ) {
+	const auto* def = StyleSheetSpecification::instance()->getProperty( id );
+	if ( nullptr == def )
+		return nullptr;
+	auto it = mProperties.find( def->getId() );
+	return it != mProperties.end() ? &it->second : nullptr;
+}
 
-	return nullptr;
+const StyleSheetProperty* StyleSheetStyle::getPropertyById( const PropertyId& id ) const {
+	const auto* def = StyleSheetSpecification::instance()->getProperty( id );
+	if ( nullptr == def )
+		return nullptr;
+	auto it = mProperties.find( def->getId() );
+	return it != mProperties.end() ? &it->second : nullptr;
 }
 
 const StyleSheetProperty*
@@ -106,7 +112,7 @@ StyleSheetStyle::getPropertyByDefinition( const PropertyDefinition* def ) const 
 	return nullptr;
 }
 
-StyleSheetProperty* StyleSheetStyle::getPropertyById( const Uint32& id ) {
+StyleSheetProperty* StyleSheetStyle::getPropertyByNameHash( const String::HashType& id ) {
 	auto it = mProperties.find( id );
 
 	if ( it != mProperties.end() )
@@ -120,7 +126,7 @@ void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
 		 property.getPropertyDefinition()->isIndexed() ) {
 		// If the property being set is indexed we need to merge any other index set to the new
 		// property set.
-		const StyleSheetProperty* currentProperty = getPropertyById( property.getId() );
+		const StyleSheetProperty* currentProperty = getPropertyById( property.getPropertyId() );
 		std::vector<std::string> values;
 		if ( nullptr == currentProperty ) {
 			if ( property.getIndex() > 0 ) {
@@ -163,10 +169,8 @@ bool StyleSheetStyle::hasProperties() const {
 }
 
 bool StyleSheetStyle::hasProperty( PropertyId id ) const {
-	return std::find_if( mProperties.begin(), mProperties.end(), [&id]( const auto& prop ) {
-			   return prop.second.getPropertyDefinition() &&
-					  prop.second.getPropertyDefinition()->getPropertyId() == id;
-		   } ) != mProperties.end();
+	const auto* def = StyleSheetSpecification::instance()->getProperty( id );
+	return def && mProperties.find( def->getId() ) != mProperties.end();
 }
 
 bool StyleSheetStyle::hasProperty( const std::string& name ) const {

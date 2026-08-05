@@ -1,5 +1,6 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/elementdefinition.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -8,7 +9,15 @@ ElementDefinition::ElementDefinition( const StyleSheetStyleVector& styleSheetSty
 	refresh();
 }
 
-StyleSheetProperty* ElementDefinition::getProperty( const Uint32& id ) {
+StyleSheetProperty* ElementDefinition::getProperty( const PropertyId& id ) {
+	const auto* def = StyleSheetSpecification::instance()->getProperty( id );
+	if ( nullptr == def )
+		return nullptr;
+	auto it = mProperties.find( def->getId() );
+	return it != mProperties.end() ? &it->second : nullptr;
+}
+
+StyleSheetProperty* ElementDefinition::getPropertyByNameHash( const String::HashType& id ) {
 	auto it = mProperties.find( id );
 	return it != mProperties.end() ? &it->second : nullptr;
 }
@@ -73,8 +82,13 @@ void ElementDefinition::refresh() {
 
 	resolveVariables();
 
-	for ( auto& property : mProperties )
-		mPropertyIds.insert( property.first );
+	for ( auto& property : mProperties ) {
+		// Only registered properties participate in the dense ID set. Unknown
+		// and data-* properties stay keyed by their own name hash in
+		// mProperties but never occupy a PropertyIdSet bit.
+		if ( property.second.getPropertyDefinition() )
+			mPropertyIds.insert( property.second.getPropertyDefinition()->getPropertyId() );
+	}
 }
 
 void ElementDefinition::findVariables( const StyleSheetStyle* style ) {

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/core.hpp>
 #include <eepp/system/color.hpp>
+#include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 
@@ -8,18 +9,19 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-ShorthandDefinition* ShorthandDefinition::New( const std::string& name,
+ShorthandDefinition* ShorthandDefinition::New( ShorthandId shorthandId, const std::string& name,
 											   const std::vector<std::string>& properties,
 											   const std::string& shorthandParserName ) {
-	return eeNew( ShorthandDefinition, ( name, properties, shorthandParserName ) );
+	return eeNew( ShorthandDefinition, ( shorthandId, name, properties, shorthandParserName ) );
 }
 
-ShorthandDefinition::ShorthandDefinition( const std::string& name,
+ShorthandDefinition::ShorthandDefinition( ShorthandId shorthandId, const std::string& name,
 										  const std::vector<std::string>& properties,
 										  const std::string& shorthandParserName ) :
 	mName( name ),
 	mFuncName( shorthandParserName ),
 	mId( String::hash( name ) ),
+	mShorthandId( shorthandId ),
 	mProperties( properties ) {
 	for ( auto& sep : { "-", "_" } ) {
 		if ( mName.find( sep ) != std::string::npos ) {
@@ -43,7 +45,7 @@ const String::HashType& ShorthandDefinition::getId() const {
 }
 
 ShorthandId ShorthandDefinition::getShorthandId() const {
-	return static_cast<ShorthandId>( mId );
+	return mShorthandId;
 }
 
 const std::vector<std::string>& ShorthandDefinition::getProperties() const {
@@ -53,6 +55,7 @@ const std::vector<std::string>& ShorthandDefinition::getProperties() const {
 ShorthandDefinition& ShorthandDefinition::addAlias( const std::string& alias ) {
 	mAliases.push_back( alias );
 	mAliasesHash.push_back( String::hash( alias ) );
+	PropertySpecification::instance()->addShorthandAlias( alias, this );
 	return *this;
 }
 

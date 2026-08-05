@@ -186,7 +186,8 @@ const Vector2f& UIHTMLImage::getAlignOffset() const {
 bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 	if ( !checkPropertyDefinition( property ) )
 		return false;
-	switch ( property.getPropertyDefinition()->getPropertyId() ) {
+	const PropertyId propertyId = property.getPropertyDefinition()->getPropertyId();
+	switch ( propertyId ) {
 		case PropertyId::Src: {
 			if ( property.getValue().empty() )
 				return true;
@@ -234,8 +235,32 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 		case PropertyId::Defer:
 			mDeferLoad = property.getValue().empty() || property.asBool();
 			break;
-		default:
+		default: {
+			if ( isInAttributesTransaction() ) {
+				switch ( propertyId ) {
+					case PropertyId::Width:
+					case PropertyId::Height:
+					case PropertyId::MinWidth:
+					case PropertyId::MinHeight:
+					case PropertyId::MaxWidth:
+					case PropertyId::MaxHeight:
+					case PropertyId::PaddingLeft:
+					case PropertyId::PaddingRight:
+					case PropertyId::PaddingTop:
+					case PropertyId::PaddingBottom:
+					case PropertyId::BorderLeftWidth:
+					case PropertyId::BorderRightWidth:
+					case PropertyId::BorderTopWidth:
+					case PropertyId::BorderBottomWidth:
+					case PropertyId::BoxSizing:
+						mNeedsStyleSizeReconciliation = true;
+						break;
+					default:
+						break;
+				}
+			}
 			return UIHTMLWidget::applyProperty( property );
+		}
 	}
 	return true;
 }
@@ -275,6 +300,7 @@ void UIHTMLImage::scheduledUpdate( const Time& time ) {
 }
 
 void UIHTMLImage::updateLayout() {
+	reconcileStyleSize();
 	autoSizeImage();
 	UIHTMLWidget::updateLayout();
 }
@@ -357,6 +383,30 @@ void UIHTMLImage::autoSizeImage() {
 		setInternalPixelsSize( size.floor() );
 }
 
+bool UIHTMLImage::hasUnresolvedPercentageSize() const {
+	const auto* style = getUIStyle();
+	const auto* width = style ? style->getProperty( PropertyId::Width ) : nullptr;
+	const auto* height = style ? style->getProperty( PropertyId::Height ) : nullptr;
+	const bool needsContainingWidth =
+		( width && StyleSheetLength::isPercentage( width->value() ) ) ||
+		StyleSheetLength::isPercentage( mMinWidthEq ) ||
+		StyleSheetLength::isPercentage( mMaxWidthEq );
+	const bool needsContainingHeight =
+		( height && StyleSheetLength::isPercentage( height->value() ) ) ||
+		StyleSheetLength::isPercentage( mMinHeightEq ) ||
+		StyleSheetLength::isPercentage( mMaxHeightEq );
+	return ( needsContainingWidth && getContainingBlockContentWidth() <= 0.f ) ||
+		   ( needsContainingHeight && getContainingBlockContentHeight() <= 0.f );
+}
+
+void UIHTMLImage::reconcileStyleSize() {
+	if ( !mNeedsStyleSizeReconciliation || hasUnresolvedPercentageSize() )
+		return;
+	mNeedsStyleSizeReconciliation = false;
+	updateCSSContentBoxFixedSize();
+	autoSizeImage();
+}
+
 void UIHTMLImage::onSizeChange() {
 	autoSizeImage();
 	calcDestSize();
@@ -375,6 +425,7 @@ void UIHTMLImage::onAlignChange() {
 
 void UIHTMLImage::onParentSizeChange( const Vector2f& change ) {
 	UIHTMLWidget::onParentSizeChange( change );
+	reconcileStyleSize();
 	autoSizeImage();
 }
 
@@ -387,6 +438,14 @@ void UIHTMLImage::onDisplayChange() {
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent &&
 		 ( width == nullptr || width->value() == "auto" ) )
 		setLayoutWidthPolicy( SizePolicy::WrapContent );
+}
+
+void UIHTMLImage::onAttributesTransactionEnd() {
+	UIHTMLWidget::onAttributesTransactionEnd();
+	// Replaced sizing depends on the final width/height policies, min/max
+	// constraints and intrinsic ratio, so reconcile it after the complete style
+	// transaction instead of depending on property traversal order.
+	reconcileStyleSize();
 }
 
 void UIHTMLImage::calcDestSize() {

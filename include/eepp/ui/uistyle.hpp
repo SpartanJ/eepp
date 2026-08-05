@@ -37,7 +37,8 @@ class EE_API UIStyle : public UIState {
 
 	void onStateChange();
 
-	const CSS::StyleSheetProperty* getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
+	const CSS::StyleSheetProperty*
+	getStatelessStyleSheetProperty( const CSS::PropertyId& propertyId ) const;
 
 	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
@@ -75,7 +76,7 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
-	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id );
+	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id ) const;
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
@@ -104,7 +105,6 @@ class EE_API UIStyle : public UIState {
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
-	std::optional<CSS::PropertyIdSet> mChangedProperties;
 	Uint32 mStateDepthCounter{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
@@ -149,10 +149,10 @@ class EE_API UIStyle : public UIState {
 	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
 
-	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+	CSS::StyleSheetProperty* getLocalProperty( CSS::PropertyId propId );
 
 	CSS::StyleSheetProperty*
-	getResolvedLocalProperty( Uint32 propId,
+	getResolvedLocalProperty( CSS::PropertyId propId,
 							  std::optional<CSS::StyleSheetProperty>& resolvedProperty );
 
 	void addStructurallyVolatileWidgetFromParent();

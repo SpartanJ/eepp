@@ -12,7 +12,9 @@ class EE_API ElementDefinition : NonCopyable {
   public:
 	ElementDefinition( const StyleSheetStyleVector& styleSheetStyles );
 
-	StyleSheetProperty* getProperty( const Uint32& id );
+	StyleSheetProperty* getProperty( const PropertyId& id );
+
+	StyleSheetProperty* getPropertyByNameHash( const String::HashType& id );
 
 	const PropertyIdSet& getPropertyIds() const;
 

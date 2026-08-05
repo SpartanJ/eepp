@@ -9,6 +9,7 @@
 #include <eepp/math/rect.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/ui/css/propertyids.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <string>
 
@@ -46,10 +47,23 @@ class EE_API StyleSheetProperty {
 								 const Int64& specificity, bool isVolatile = false,
 								 const Uint32& index = 0 );
 
+	/**
+	 * @brief Returns the stable name hash used as the key in StyleSheetProperties maps.
+	 *
+	 * This is not a dense PropertyId or ShorthandId. Unknown and data-* properties
+	 * also return their own name hash here.
+	 */
 	Uint32 getId() const;
+
+	/** @brief Returns the dense longhand identity, or PropertyId::Invalid. */
+	PropertyId getPropertyId() const;
+
+	/** @brief Returns the dense shorthand identity, or ShorthandId::Invalid. */
+	ShorthandId getShorthandId() const;
 
 	const std::string& getName() const;
 
+	/** @brief Returns the stable hash of getName(); this is not a dense ID. */
 	const String::HashType& getNameHash() const;
 
 	const std::string& getValue() const;
@@ -192,18 +206,18 @@ class EE_API StyleSheetProperty {
 
   protected:
 	std::string mName;
-	String::HashType mNameHash;
+	String::HashType mNameHash{ 0 };
 	std::string mValue;
-	String::HashType mValueHash;
-	Int64 mSpecificity;
-	Uint32 mIndex;
+	String::HashType mValueHash{ 0 };
+	Int64 mSpecificity{ 0 };
+	Uint32 mIndex{ 0 };
 	bool mVolatile : 1 { false };
 	bool mImportant : 1 { false };
 	bool mIsVarValue : 1 { false };
 	bool mIsLightDarkValue : 1 { false };
 	bool mCachedProperty : 1 { false };
-	const PropertyDefinition* mPropertyDefinition;
-	const ShorthandDefinition* mShorthandDefinition;
+	const PropertyDefinition* mPropertyDefinition{ nullptr };
+	const ShorthandDefinition* mShorthandDefinition{ nullptr };
 	std::vector<StyleSheetProperty> mIndexedProperty;
 	std::vector<VariableFunctionCache> mVarCache;
 

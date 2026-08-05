@@ -2,8 +2,12 @@
 #define EE_UI_CSS_PROPERTYSPECIFICATION_HPP
 
 #include <eepp/system/singleton.hpp>
+#include <eepp/ui/css/idnamemap.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
+#include <memory>
+#include <vector>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -12,37 +16,53 @@ class EE_API PropertySpecification {
   public:
 	~PropertySpecification();
 
-	PropertyDefinition& registerProperty( const std::string& propertyVame,
+	PropertyDefinition& registerProperty( PropertyId id, const std::string& propertyName,
+										  const std::string& defaultValue, bool inherited );
+
+	PropertyDefinition* registerProperty( const std::string& propertyName,
 										  const std::string& defaultValue, bool inherited );
 
 	const PropertyDefinition* getProperty( const PropertyId& id ) const;
 
-	const PropertyDefinition* getProperty( const Uint32& id ) const;
+	const PropertyDefinition* getProperty( const char* name ) const;
+
+	const PropertyDefinition* getProperty( std::string_view name ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
 
-	ShorthandDefinition& registerShorthand( const std::string& name,
+	ShorthandDefinition& registerShorthand( ShorthandId id, const std::string& name,
 											const std::vector<std::string>& properties,
 											const std::string& shorthandParserName );
 
-	const ShorthandDefinition* getShorthand( const String::HashType& id ) const;
+	ShorthandDefinition* registerShorthand( const std::string& name,
+											const std::vector<std::string>& properties,
+											const std::string& shorthandParserName );
+
+	const ShorthandDefinition* getShorthand( const ShorthandId& id ) const;
 
 	const ShorthandDefinition* getShorthand( const std::string& name ) const;
 
 	bool isShorthand( const std::string& name ) const;
 
-	bool isShorthand( const Uint32& id ) const;
+	const PropertyIdSet& getInheritableProperties() const;
 
-	const SmallVector<PropertyId>& getInheritableProperties() const;
+	void finalizeBuiltins();
 
   protected:
 	friend class PropertyDefinition;
+	friend class ShorthandDefinition;
 
-	std::unordered_map<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
-	std::unordered_map<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
-	SmallVector<PropertyId> mInheritableProperties;
+	IdNameMap<PropertyId, 512> mPropertyIds;
+	IdNameMap<ShorthandId, 255> mShorthandIds;
+	std::vector<std::shared_ptr<PropertyDefinition>> mPropertiesById;
+	std::vector<std::shared_ptr<ShorthandDefinition>> mShorthandsById;
+	PropertyIdSet mInheritableProperties;
 
-	const PropertyDefinition* addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef );
+	const PropertyDefinition* addPropertyAlias( const std::string& alias,
+												const PropertyDefinition* propDef );
+
+	const ShorthandDefinition* addShorthandAlias( const std::string& alias,
+												  const ShorthandDefinition* shorthandDef );
 };
 
 }}} // namespace EE::UI::CSS

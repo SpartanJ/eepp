@@ -83,9 +83,9 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( false ),
-	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
+	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mName ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
-							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
+							  ? StyleSheetSpecification::instance()->getShorthand( mName )
 							  : NULL ) {
 	cleanValue();
 	checkImportant();
@@ -110,9 +110,9 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mVolatile( isVolatile ),
 	mImportant( false ),
 	mIsVarValue( false ),
-	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
+	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mName ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
-							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
+							  ? StyleSheetSpecification::instance()->getShorthand( mName )
 							  : NULL ) {
 	cleanValue();
 	checkImportant();
@@ -128,7 +128,15 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 Uint32 StyleSheetProperty::getId() const {
 	return NULL != mPropertyDefinition
 			   ? mPropertyDefinition->getId()
-			   : ( NULL != mShorthandDefinition ? mShorthandDefinition->getId() : 0 );
+			   : ( NULL != mShorthandDefinition ? mShorthandDefinition->getId() : mNameHash );
+}
+
+PropertyId StyleSheetProperty::getPropertyId() const {
+	return mPropertyDefinition ? mPropertyDefinition->getPropertyId() : PropertyId::Invalid;
+}
+
+ShorthandId StyleSheetProperty::getShorthandId() const {
+	return mShorthandDefinition ? mShorthandDefinition->getShorthandId() : ShorthandId::Invalid;
 }
 
 const std::string& StyleSheetProperty::getName() const {

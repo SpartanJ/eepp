@@ -14,6 +14,7 @@ StyleSheetSpecification::StyleSheetSpecification() :
 	mPropertySpecification( PropertySpecification::createSingleton() ) {
 	registerDefaultShorthandParsers();
 	registerDefaultProperties();
+	mPropertySpecification->finalizeBuiltins();
 	registerDefaultNodeSelectors();
 }
 
@@ -21,29 +22,47 @@ StyleSheetSpecification::~StyleSheetSpecification() {
 	PropertySpecification::destroySingleton();
 }
 
-PropertyDefinition& StyleSheetSpecification::registerProperty( const std::string& propertyVame,
+PropertyDefinition& StyleSheetSpecification::registerProperty( PropertyId id,
+															   const std::string& propertyName,
 															   const std::string& defaultValue,
 															   bool inherited ) {
-	return mPropertySpecification->registerProperty( propertyVame, defaultValue, inherited );
+	return mPropertySpecification->registerProperty( id, propertyName, defaultValue, inherited );
+}
+
+PropertyDefinition* StyleSheetSpecification::registerProperty( const std::string& propertyName,
+															   const std::string& defaultValue,
+															   bool inherited ) {
+	return mPropertySpecification->registerProperty( propertyName, defaultValue, inherited );
 }
 
 const PropertyDefinition* StyleSheetSpecification::getProperty( const PropertyId& id ) const {
 	return mPropertySpecification->getProperty( id );
 }
 
-const PropertyDefinition* StyleSheetSpecification::getProperty( const Uint32& id ) const {
-	return mPropertySpecification->getProperty( id );
+const PropertyDefinition* StyleSheetSpecification::getProperty( const char* name ) const {
+	return mPropertySpecification->getProperty( name );
+}
+
+const PropertyDefinition* StyleSheetSpecification::getProperty( std::string_view name ) const {
+	return mPropertySpecification->getProperty( name );
 }
 
 const PropertyDefinition* StyleSheetSpecification::getProperty( const std::string& name ) const {
 	return mPropertySpecification->getProperty( name );
 }
 
-const SmallVector<PropertyId>& StyleSheetSpecification::getInheritableProperties() const {
+const PropertyIdSet& StyleSheetSpecification::getInheritableProperties() const {
 	return mPropertySpecification->getInheritableProperties();
 }
 
 ShorthandDefinition&
+StyleSheetSpecification::registerShorthand( ShorthandId id, const std::string& name,
+											const std::vector<std::string>& properties,
+											const std::string& shorthandFuncName ) {
+	return mPropertySpecification->registerShorthand( id, name, properties, shorthandFuncName );
+}
+
+ShorthandDefinition*
 StyleSheetSpecification::registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,
 											const std::string& shorthandFuncName ) {
@@ -72,7 +91,7 @@ DrawableImageParser& StyleSheetSpecification::getDrawableImageParser() {
 	return mDrawableImageParser;
 }
 
-const ShorthandDefinition* StyleSheetSpecification::getShorthand( const Uint32& id ) const {
+const ShorthandDefinition* StyleSheetSpecification::getShorthand( const ShorthandId& id ) const {
 	return mPropertySpecification->getShorthand( id );
 }
 
@@ -80,560 +99,810 @@ const ShorthandDefinition* StyleSheetSpecification::getShorthand( const std::str
 	return mPropertySpecification->getShorthand( name );
 }
 
-bool StyleSheetSpecification::isShorthand( const Uint32& id ) const {
-	return mPropertySpecification->isShorthand( id );
-}
-
 bool StyleSheetSpecification::isShorthand( const std::string& name ) const {
 	return mPropertySpecification->isShorthand( name );
 }
 
 void StyleSheetSpecification::registerDefaultProperties() {
-	registerProperty( "id", "" ).setType( PropertyType::String );
-	registerProperty( "class", "" ).setType( PropertyType::String );
-	registerProperty( "x", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "y", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "width", "" )
+	registerProperty( PropertyId::Id, "id", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Class, "class", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::X, "x", "" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Y, "y", "" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Width, "width", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "height", "" )
+	registerProperty( PropertyId::Height, "height", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "background-color", "" ).setType( PropertyType::Color ).addAlias( "bgcolor" );
-	registerProperty( "background-image", "none" ).setIndexed();
-	registerProperty( "background-tint", "" ).setIndexed().setType( PropertyType::Color );
-	registerProperty( "background-position-x", "center" )
+	registerProperty( PropertyId::BackgroundColor, "background-color", "" )
+		.setType( PropertyType::Color )
+		.addAlias( "bgcolor" );
+	registerProperty( PropertyId::BackgroundImage, "background-image", "none" ).setIndexed();
+	registerProperty( PropertyId::BackgroundTint, "background-tint", "" )
+		.setIndexed()
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::BackgroundPositionX, "background-position-x", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::BackgroundWidth )
 		.setType( PropertyType::NumberLength )
 		.setIndexed();
-	registerProperty( "background-position-y", "center" )
+	registerProperty( PropertyId::BackgroundPositionY, "background-position-y", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::BackgroundHeight )
 		.setType( PropertyType::NumberLength )
 		.setIndexed();
-	registerProperty( "background-repeat", "no-repeat" ).setIndexed();
-	registerProperty( "background-size", "auto" )
+	registerProperty( PropertyId::BackgroundRepeat, "background-repeat", "no-repeat" ).setIndexed();
+	registerProperty( PropertyId::BackgroundSize, "background-size", "auto" )
 		.setType( PropertyType::BackgroundSize )
 		.setIndexed();
-	registerProperty( "background-origin", "padding-box" ).setIndexed();
-	registerProperty( "background-clip", "border-box" ).setIndexed();
-	registerProperty( "background-attachment", "scroll" ).setIndexed();
-	registerProperty( "foreground-color", "" ).setType( PropertyType::Color );
-	registerProperty( "foreground-image", "none" ).setIndexed();
-	registerProperty( "foreground-tint", "" ).setIndexed().setType( PropertyType::Color );
-	registerProperty( "foreground-position-x", "center" )
+	registerProperty( PropertyId::BackgroundOrigin, "background-origin", "padding-box" )
+		.setIndexed();
+	registerProperty( PropertyId::BackgroundClip, "background-clip", "border-box" ).setIndexed();
+	registerProperty( PropertyId::BackgroundAttachment, "background-attachment", "scroll" )
+		.setIndexed();
+	registerProperty( PropertyId::ForegroundColor, "foreground-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::ForegroundImage, "foreground-image", "none" ).setIndexed();
+	registerProperty( PropertyId::ForegroundTint, "foreground-tint", "" )
+		.setIndexed()
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::ForegroundPositionX, "foreground-position-x", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::ForegroundWidth )
 		.setType( PropertyType::NumberLength )
 		.setIndexed();
-	registerProperty( "foreground-position-y", "center" )
+	registerProperty( PropertyId::ForegroundPositionY, "foreground-position-y", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::ForegroundHeight )
 		.setType( PropertyType::NumberLength )
 		.setIndexed();
-	registerProperty( "foreground-repeat", "no-repeat" ).setIndexed();
-	registerProperty( "foreground-size", "auto" )
+	registerProperty( PropertyId::ForegroundRepeat, "foreground-repeat", "no-repeat" ).setIndexed();
+	registerProperty( PropertyId::ForegroundSize, "foreground-size", "auto" )
 		.setType( PropertyType::ForegroundSize )
 		.setIndexed();
-	registerProperty( "visible", "true" ).setType( PropertyType::Bool );
-	registerProperty( "visibility", "visible" ).setType( PropertyType::String );
-	registerProperty( "enabled", "true" ).setType( PropertyType::Bool );
-	registerProperty( "theme", "" );
-	registerProperty( "skin", "" );
-	registerProperty( "skin-color", "" ).setType( PropertyType::Color );
-	registerProperty( "gravity", "" );
-	registerProperty( "flags", "" );
-	registerProperty( "margin-top", "0px" )
+	registerProperty( PropertyId::Visible, "visible", "true" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Visibility, "visibility", "visible" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::Enabled, "enabled", "true" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Theme, "theme", "" );
+	registerProperty( PropertyId::Skin, "skin", "" );
+	registerProperty( PropertyId::SkinColor, "skin-color", "" ).setType( PropertyType::Color );
+	registerProperty( PropertyId::Gravity, "gravity", "" );
+	registerProperty( PropertyId::Flags, "flags", "" );
+	registerProperty( PropertyId::MarginTop, "margin-top", "0px" )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "margin_top" )
 		.addAlias( "layout-margin-top" )
 		.addAlias( "layout_margintop" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "margin-left", "0px" )
+	registerProperty( PropertyId::MarginLeft, "margin-left", "0px" )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "margin_left" )
 		.addAlias( "layout-margin-left" )
 		.addAlias( "layout_marginleft" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "margin-right", "0px" )
+	registerProperty( PropertyId::MarginRight, "margin-right", "0px" )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "margin_right" )
 		.addAlias( "layout-margin-right" )
 		.addAlias( "layout_marginright" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "margin-bottom", "0px" )
+	registerProperty( PropertyId::MarginBottom, "margin-bottom", "0px" )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "margin_bottom" )
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "tooltip", "" ).setType( PropertyType::String ).addAlias( "alt" );
-	registerProperty( "layout-weight", "" )
+	registerProperty( PropertyId::Tooltip, "tooltip", "" )
+		.setType( PropertyType::String )
+		.addAlias( "alt" );
+	registerProperty( PropertyId::LayoutWeight, "layout-weight", "" )
 		.addAlias( "layout_weight" )
 		.addAlias( "lw8" )
 		.setType( PropertyType::NumberFloat );
-	registerProperty( "layout-gravity", "" ).addAlias( "layout_gravity" ).addAlias( "lg" );
-	registerProperty( "layout-width", "" ).addAlias( "layout_width" ).addAlias( "lw" );
-	registerProperty( "layout-height", "" ).addAlias( "layout_height" ).addAlias( "lh" );
-	registerProperty( "layout-to-left-of", "" ).addAlias( "layout_to_left_of" );
-	registerProperty( "layout-to-right-of", "" ).addAlias( "layout_to_right_of" );
-	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
-	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
-	registerProperty( "clip", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::LayoutGravity, "layout-gravity", "" )
+		.addAlias( "layout_gravity" )
+		.addAlias( "lg" );
+	registerProperty( PropertyId::LayoutWidth, "layout-width", "" )
+		.addAlias( "layout_width" )
+		.addAlias( "lw" );
+	registerProperty( PropertyId::LayoutHeight, "layout-height", "" )
+		.addAlias( "layout_height" )
+		.addAlias( "lh" );
+	registerProperty( PropertyId::LayoutToLeftOf, "layout-to-left-of", "" )
+		.addAlias( "layout_to_left_of" );
+	registerProperty( PropertyId::LayoutToRightOf, "layout-to-right-of", "" )
+		.addAlias( "layout_to_right_of" );
+	registerProperty( PropertyId::LayoutToTopOf, "layout-to-top-of", "" )
+		.addAlias( "layout_to_top_of" );
+	registerProperty( PropertyId::LayoutToBottomOf, "layout-to-bottom-of", "" )
+		.addAlias( "layout_to_bottom_of" );
+	registerProperty( PropertyId::Clip, "clip", "" ).setType( PropertyType::String );
 	// TODO: layer implement overflow-x and overflow-y properly
-	registerProperty( "overflow", "visible" )
+	registerProperty( PropertyId::Overflow, "overflow", "visible" )
 		.addAlias( "overflow-x" )
 		.addAlias( "overflow-y" )
 		.setType( PropertyType::String );
-	registerProperty( "rotation", "" ).addAlias( "rotate" ).setType( PropertyType::NumberFloat );
-	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "rotation-origin-point-x", "50%" )
+	registerProperty( PropertyId::Rotation, "rotation", "" )
+		.addAlias( "rotate" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::Scale, "scale", "" ).setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::RotationOriginPointX, "rotation-origin-point-x", "50%" )
 		.addAlias( "rotate-origin-point-x" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth )
 		.setType( PropertyType::NumberLength );
-	registerProperty( "rotation-origin-point-y", "50%" )
+	registerProperty( PropertyId::RotationOriginPointY, "rotation-origin-point-y", "50%" )
 		.addAlias( "rotate-origin-point-y" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockHeight )
 		.setType( PropertyType::NumberLength );
-	registerProperty( "scale-origin-point-x", "50%" )
+	registerProperty( PropertyId::ScaleOriginPointX, "scale-origin-point-x", "50%" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth )
 		.setType( PropertyType::NumberLength );
-	registerProperty( "scale-origin-point-y", "50%" )
+	registerProperty( PropertyId::ScaleOriginPointY, "scale-origin-point-y", "50%" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockHeight )
 		.setType( PropertyType::NumberLength );
-	registerProperty( "blend-mode", "" );
-	registerProperty( "padding-left", "" )
+	registerProperty( PropertyId::BlendMode, "blend-mode", "" );
+	registerProperty( PropertyId::PaddingLeft, "padding-left", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "padding-right", "" )
+	registerProperty( PropertyId::PaddingRight, "padding-right", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "padding-top", "" )
+	registerProperty( PropertyId::PaddingTop, "padding-top", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "padding-bottom", "" )
+	registerProperty( PropertyId::PaddingBottom, "padding-bottom", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "opacity", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "cursor", "arrow", true );
-	registerProperty( "text", "" ).setType( PropertyType::String );
-	registerProperty( "text-transform", "", true ).setType( PropertyType::String );
-	registerProperty( "color", "", true )
+	registerProperty( PropertyId::Opacity, "opacity", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::Cursor, "cursor", "arrow", true );
+	registerProperty( PropertyId::Text, "text", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::TextTransform, "text-transform", "", true )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::Color, "color", "", true )
 		.setType( PropertyType::Color )
 		.addAlias( "text-color" )
 		.addAlias( "textcolor" );
-	registerProperty( "text-shadow-color", "", true ).setType( PropertyType::Color );
-	registerProperty( "text-shadow-offset", "", true ).setType( PropertyType::Vector2 );
-	registerProperty( "selection-color", "" ).setType( PropertyType::Color );
-	registerProperty( "selection-back-color", "" ).setType( PropertyType::Color );
-	registerProperty( "font-family", "", true )
+	registerProperty( PropertyId::TextShadowColor, "text-shadow-color", "", true )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::TextShadowOffset, "text-shadow-offset", "", true )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::SelectionColor, "selection-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::SelectionBackColor, "selection-back-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::FontFamily, "font-family", "", true )
 		.addAlias( "font-name" )
 		.setType( PropertyType::String );
-	registerProperty( "font-size", "", true )
+	registerProperty( PropertyId::FontSize, "font-size", "", true )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
-	registerProperty( "font-style", "", true );
-	registerProperty( "font-weight", "", true );
-	registerProperty( "text-decoration", "", true );
-	registerProperty( "line-spacing", "", true ).setType( PropertyType::NumberLength );
-	registerProperty( "line-height", "", true ).setType( PropertyType::NumberLength );
-	registerProperty( "text-indent", "", true ).setType( PropertyType::NumberLength );
-	registerProperty( "tab-size", "8", true ).setType( PropertyType::String );
-	registerProperty( "text-stroke-width", "", true )
+	registerProperty( PropertyId::FontStyle, "font-style", "", true );
+	registerProperty( PropertyId::FontWeight, "font-weight", "", true );
+	registerProperty( PropertyId::TextDecoration, "text-decoration", "", true );
+	registerProperty( PropertyId::LineSpacing, "line-spacing", "", true )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::LineHeight, "line-height", "", true )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TextIndent, "text-indent", "", true )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TabSize, "tab-size", "8", true ).setType( PropertyType::String );
+	registerProperty( PropertyId::TextStrokeWidth, "text-stroke-width", "", true )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "fontoutlinethickness" );
-	registerProperty( "text-stroke-color", "", true )
+	registerProperty( PropertyId::TextStrokeColor, "text-stroke-color", "", true )
 		.setType( PropertyType::Color )
 		.addAlias( "fontoutlinecolor" );
-	registerProperty( "text-selection", "", true ).setType( PropertyType::Bool );
-	registerProperty( "text-align", "", true ).addAlias( "align" );
-	registerProperty( "icon", "" );
-	registerProperty( "min-icon-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "src", "" ).setType( PropertyType::String );
-	registerProperty( "scale-type", "" );
-	registerProperty( "tint", "" ).setType( PropertyType::Color );
-	registerProperty( "max-text-length", "" ).setType( PropertyType::NumberInt );
-	registerProperty( "min-tab-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "max-tab-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "tab-closable", "" ).setType( PropertyType::Bool );
-	registerProperty( "tab-close-button-visible", "" ).setType( PropertyType::Bool );
-	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
-	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "selected", "" )
+	registerProperty( PropertyId::TextSelection, "text-selection", "", true )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::TextAlign, "text-align", "", true ).addAlias( "align" );
+	registerProperty( PropertyId::Icon, "icon", "" );
+	registerProperty( PropertyId::MinIconSize, "min-icon-size", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::Src, "src", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::ScaleType, "scale-type", "" );
+	registerProperty( PropertyId::Tint, "tint", "" ).setType( PropertyType::Color );
+	registerProperty( PropertyId::MaxTextLength, "max-text-length", "" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::MinTabWidth, "min-tab-width", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::MaxTabWidth, "max-tab-width", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TabClosable, "tab-closable", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::TabCloseButtonVisible, "tab-close-button-visible", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::TabsEdgesDiffSkin, "tabs-edges-diff-skin", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::TabSeparation, "tab-separation", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TabHeight, "tab-height", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Selected, "selected", "" )
 		.setType( PropertyType::Bool )
 		.addAlias( "active" )
 		.addAlias( "checked" );
-	registerProperty( "popup-to-root", "" ).setType( PropertyType::Bool );
-	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberIntFixed );
-	registerProperty( "selected-index", "" );
-	registerProperty( "selected-text", "" );
-	registerProperty( "scrollbar-style", "" );
-	registerProperty( "row-height", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "editable", "" ).setType( PropertyType::Bool );
-	registerProperty( "selection-type", "row" ).setType( PropertyType::String );
-	registerProperty( "selection-kind", "single" ).setType( PropertyType::String );
-	registerProperty( "icon-size", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "sort-icon-size", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "main-column", "0" ).setType( PropertyType::NumberInt );
-	registerProperty( "row-header-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "table-flags", "" ).addAlias( "tableflags" ).setType( PropertyType::String );
-	registerProperty( "table-model", "" ).setType( PropertyType::String );
-	registerProperty( "indent-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "expander-icon-size", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "vscroll-mode", "" );
-	registerProperty( "hscroll-mode", "" );
+	registerProperty( PropertyId::PopUpToRoot, "popup-to-root", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::MaxVisibleItems, "max-visible-items", "" )
+		.setType( PropertyType::NumberIntFixed );
+	registerProperty( PropertyId::SelectedIndex, "selected-index", "" );
+	registerProperty( PropertyId::SelectedText, "selected-text", "" );
+	registerProperty( PropertyId::ScrollBarStyle, "scrollbar-style", "" );
+	registerProperty( PropertyId::RowHeight, "row-height", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Editable, "editable", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::SelectionType, "selection-type", "row" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::SelectionKind, "selection-kind", "single" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::IconSize, "icon-size", "" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::SortIconSize, "sort-icon-size", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::MainColumn, "main-column", "0" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::RowHeaderWidth, "row-header-width", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TableFlags, "table-flags", "" )
+		.addAlias( "tableflags" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::TableModel, "table-model", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::IndentWidth, "indent-width", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::ExpanderIconSize, "expander-icon-size", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::VScrollMode, "vscroll-mode", "" );
+	registerProperty( PropertyId::HScrollMode, "hscroll-mode", "" );
 
-	registerProperty( "column-margin", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "row-margin", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "column-mode", "" );
-	registerProperty( "row-mode", "" );
-	registerProperty( "column-weight", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "column-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "row-weight", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "reverse-draw", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::ColumnMargin, "column-margin", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::RowMargin, "row-margin", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::ColumnMode, "column-mode", "" );
+	registerProperty( PropertyId::RowMode, "row-mode", "" );
+	registerProperty( PropertyId::ColumnWeight, "column-weight", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::ColumnWidth, "column-width", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::RowWeight, "row-weight", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::ReverseDraw, "reverse-draw", "" ).setType( PropertyType::Bool );
 
-	registerProperty( "orientation", "" );
-	registerProperty( "indeterminate", "" ).setType( PropertyType::Bool );
-	registerProperty( "max-progress", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "progress", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "fill-color", "" ).setType( PropertyType::Color );
-	registerProperty( "radius", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "outline-thickness", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "animation-speed", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "arc-start-angle", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::Orientation, "orientation", "" );
+	registerProperty( PropertyId::Indeterminate, "indeterminate", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::MaxProgress, "max-progress", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::Progress, "progress", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::FillColor, "fill-color", "" ).setType( PropertyType::Color );
+	registerProperty( PropertyId::Radius, "radius", "" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::OutlineThickness, "outline-thickness", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::AnimationSpeed, "animation-speed", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::ArcStartAngle, "arc-start-angle", "" )
+		.setType( PropertyType::NumberFloat );
 
-	registerProperty( "min-width", "" )
+	registerProperty( PropertyId::MinWidth, "min-width", "" )
 		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "min-height", "" )
+	registerProperty( PropertyId::MinHeight, "min-height", "" )
 		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "max-width", "" )
+	registerProperty( PropertyId::MaxWidth, "max-width", "" )
 		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "max-height", "" )
+	registerProperty( PropertyId::MaxHeight, "max-height", "" )
 		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 
-	registerProperty( "total-steps", "" ).setType( PropertyType::NumberInt );
-	registerProperty( "vertical-expand", "" ).setType( PropertyType::Bool );
-	registerProperty( "display-percent", "" ).setType( PropertyType::Bool );
-	registerProperty( "movement-speed", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "min-value", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "max-value", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "value", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "click-step", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "page-step", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "background-expand", "" ).setType( PropertyType::Bool );
-	registerProperty( "scrollbar-mode", "" );
-	registerProperty( "half-slider", "" ).setType( PropertyType::Bool );
-	registerProperty( "owns", "" ).setType( PropertyType::String );
-	registerProperty( "allow-editing", "" ).setType( PropertyType::Bool );
-	registerProperty( "locked", "" ).setType( PropertyType::Bool );
-	registerProperty( "max-length", "" ).setType( PropertyType::NumberInt );
-	registerProperty( "numeric", "" ).setType( PropertyType::Bool );
-	registerProperty( "allow-float", "" ).setType( PropertyType::Bool );
-	registerProperty( "touch-drag", "" ).setType( PropertyType::Bool );
-	registerProperty( "touch-drag-deceleration", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::TotalSteps, "total-steps", "" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::VerticalExpand, "vertical-expand", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::DisplayPercent, "display-percent", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::MovementSpeed, "movement-speed", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::MinValue, "min-value", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::MaxValue, "max-value", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::Value, "value", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::ClickStep, "click-step", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::PageStep, "page-step", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::BackgroundExpand, "background-expand", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::ScrollBarMode, "scrollbar-mode", "" );
+	registerProperty( PropertyId::HalfSlider, "half-slider", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Owns, "owns", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::AllowEditing, "allow-editing", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Locked, "locked", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::MaxLength, "max-length", "" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::Numeric, "numeric", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::AllowFloat, "allow-float", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::TouchDrag, "touch-drag", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::TouchDragDeceleration, "touch-drag-deceleration", "" )
+		.setType( PropertyType::NumberFloat );
 
-	registerProperty( "window-title", "" ).setType( PropertyType::String );
-	registerProperty( "window-opacity", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "window-buttons-offset", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "window-flags", "" ).addAlias( "winflags" ).setType( PropertyType::String );
-	registerProperty( "window-titlebar-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "window-border-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "window-min-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "window-buttons-separation", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "window-corner-distance", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "window-decoration-auto-size", "" ).setType( PropertyType::Bool );
-	registerProperty( "window-border-auto-size", "" ).setType( PropertyType::Bool );
-	registerProperty( "window-shadow-color", "" ).setType( PropertyType::Color );
-	registerProperty( "window-shadow-offset", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "window-shadow-size", "" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::WindowTitle, "window-title", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::WindowOpacity, "window-opacity", "" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::WindowButtonsOffset, "window-buttons-offset", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::WindowFlags, "window-flags", "" )
+		.addAlias( "winflags" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::WindowTitlebarSize, "window-titlebar-size", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::WindowBorderSize, "window-border-size", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::WindowMinSize, "window-min-size", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::WindowButtonsSeparation, "window-buttons-separation", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::WindowCornerDistance, "window-corner-distance", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::WindowTitlebarAutoSize, "window-decoration-auto-size", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::WindowBorderAutoSize, "window-border-auto-size", "" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::WindowShadowColor, "window-shadow-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::WindowShadowOffset, "window-shadow-offset", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::WindowShadowSize, "window-shadow-size", "" )
+		.setType( PropertyType::NumberLength );
 
-	registerProperty( "word-wrap", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Wordwrap, "word-wrap", "" ).setType( PropertyType::Bool );
 
-	registerProperty( "white-space", "normal", true ).setType( PropertyType::String );
-	registerProperty( "white-space-collapse", "collapse", true ).setType( PropertyType::String );
-
-	registerProperty( "hint", "" ).setType( PropertyType::String ).addAlias( "placeholder" );
-	registerProperty( "hint-color", "" ).setType( PropertyType::Color );
-	registerProperty( "hint-shadow-color", "" ).setType( PropertyType::Color );
-	registerProperty( "hint-shadow-offset", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "hint-font-size", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "hint-font-style", "" ).setType( PropertyType::String );
-	registerProperty( "hint-stroke-width", "" )
-		.setType( PropertyType::NumberLength )
-		.addAlias( "hintoutlinethickness" );
-	registerProperty( "hint-stroke-color", "" ).setType( PropertyType::Color );
-	registerProperty( "hint-font-family", "" ).addAlias( "hint-font-name" );
-	registerProperty( "hint-display", "" ).setType( PropertyType::String );
-
-	registerProperty( "transition", "" ).setIndexed();
-	registerProperty( "transition-duration", "" );
-	registerProperty( "transition-delay", "0s" ).setType( PropertyType::Time );
-	registerProperty( "transition-timing-function", "linear" );
-	registerProperty( "transition-property", "" );
-
-	registerProperty( "animation", "" ).setIndexed();
-	registerProperty( "animation-delay", "0s" ).setType( PropertyType::Time ).setIndexed();
-	registerProperty( "animation-direction", "normal" )
-		.setType( PropertyType::String )
-		.setIndexed();
-	registerProperty( "animation-duration", "0s" ).setType( PropertyType::Time ).setIndexed();
-	registerProperty( "animation-fill-mode", "none" ).setType( PropertyType::String ).setIndexed();
-	registerProperty( "animation-iteration-count", "1" )
-		.setType( PropertyType::NumberFloat )
-		.setIndexed();
-	registerProperty( "animation-name", "none" ).setType( PropertyType::String ).setIndexed();
-	registerProperty( "animation-play-state", "running" )
-		.setType( PropertyType::String )
-		.setIndexed();
-	registerProperty( "animation-timing-function", "linear" )
-		.setType( PropertyType::String )
-		.setIndexed();
-
-	registerProperty( "drag-resistance", "8dp" ).setType( PropertyType::NumberLength );
-	registerProperty( "change-page-percent", "0.33" ).setType( PropertyType::NumberFloat );
-	registerProperty( "max-edge-resistance", "0" ).setType( PropertyType::NumberFloat );
-	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
-
-	registerProperty( "page-locked", "" ).setType( PropertyType::Bool );
-
-	registerProperty( "border-type", "inside" ).setType( PropertyType::String );
-	registerProperty( "border-left-color", "transparent" ).setType( PropertyType::Color );
-	registerProperty( "border-right-color", "transparent" ).setType( PropertyType::Color );
-	registerProperty( "border-top-color", "transparent" ).setType( PropertyType::Color );
-	registerProperty( "border-bottom-color", "transparent" ).setType( PropertyType::Color );
-	registerProperty( "border-left-width", "0" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
-	registerProperty( "border-right-width", "0" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
-	registerProperty( "border-top-width", "0" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
-	registerProperty( "border-bottom-width", "0" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
-	registerProperty( "border-left-style", "none" ).setType( PropertyType::String );
-	registerProperty( "border-right-style", "none" ).setType( PropertyType::String );
-	registerProperty( "border-top-style", "none" ).setType( PropertyType::String );
-	registerProperty( "border-bottom-style", "none" ).setType( PropertyType::String );
-
-	registerProperty( "border-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "border-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "border-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "border-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
-
-	registerProperty( "border-smooth", "false" ).setType( PropertyType::Bool );
-	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
-	registerProperty( "foreground-smooth", "false" ).setType( PropertyType::Bool );
-
-	registerProperty( "foreground-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "foreground-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "foreground-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
-	registerProperty( "foreground-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
-
-	registerProperty( "tabbar-hide-on-single-tab", "false" );
-	registerProperty( "tabbar-allow-rearrange", "false" );
-	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
-	registerProperty( "tabbar-allow-switch-tabs-in-empty-spaces", "false" );
-
-	registerProperty( "splitter-partition", "50%" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth );
-	registerProperty( "splitter-always-show", "true" ).setType( PropertyType::Bool );
-
-	registerProperty( "droppable-hovering-color", "#FFFFFF20" ).setType( PropertyType::Color );
-
-	registerProperty( "text-as-fallback", "false" ).setType( PropertyType::Bool );
-	registerProperty( "select-on-click", "false" ).setType( PropertyType::Bool );
-	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
-	registerProperty( "href", "" ).setType( PropertyType::String );
-	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
-	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
-	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
-	registerProperty( "table-layout", "auto" ).setType( PropertyType::String );
-	registerProperty( "cellpadding", "0" ).setType( PropertyType::NumberLength );
-	registerProperty( "cellspacing", "0" ).setType( PropertyType::NumberLength );
-	registerProperty( "size", "20" ).setType( PropertyType::NumberInt );
-	registerProperty( "type", "text" ).setType( PropertyType::String );
-	registerProperty( "rows", "2" ).setType( PropertyType::NumberInt );
-	registerProperty( "cols", "20" ).setType( PropertyType::NumberInt );
-	registerProperty( "input-mode", "normal" ).setType( PropertyType::String );
-
-	registerProperty( "hidden", "" ).setType( PropertyType::Bool );
-	registerProperty( "open", "" ).setType( PropertyType::Bool );
-	registerProperty( "display", "inline" ).setType( PropertyType::String );
-	registerProperty( "position", "static" ).setType( PropertyType::String );
-	registerProperty( "float", "none" ).setType( PropertyType::String );
-	registerProperty( "clear", "none" ).setType( PropertyType::String );
-	registerProperty( "list-style-type", "none", true ).setType( PropertyType::String );
-	registerProperty( "list-style-position", "outside", true ).setType( PropertyType::String );
-	registerProperty( "list-style-image", "none" ).setType( PropertyType::String );
-	registerProperty( "box-sizing", "content-box" ).setType( PropertyType::String );
-	registerProperty( "top", "auto" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "right", "auto" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "bottom", "auto" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "left", "auto" )
-		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
-	registerProperty( "z-index", "auto" ).setType( PropertyType::NumberInt );
-
-	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
+	registerProperty( PropertyId::WhiteSpace, "white-space", "normal", true )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::WhiteSpaceCollapse, "white-space-collapse", "collapse", true )
 		.setType( PropertyType::String );
 
-	registerProperty( "glyph", "" ).setType( PropertyType::String );
-	registerProperty( "name", "" ).setType( PropertyType::String );
-	registerProperty( "for", "" ).setType( PropertyType::String );
-	registerProperty( "row-valign", "" )
+	registerProperty( PropertyId::Hint, "hint", "" )
+		.setType( PropertyType::String )
+		.addAlias( "placeholder" );
+	registerProperty( PropertyId::HintColor, "hint-color", "" ).setType( PropertyType::Color );
+	registerProperty( PropertyId::HintShadowColor, "hint-shadow-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::HintShadowOffset, "hint-shadow-offset", "" )
+		.setType( PropertyType::Vector2 );
+	registerProperty( PropertyId::HintFontSize, "hint-font-size", "" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::HintFontStyle, "hint-font-style", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::HintStrokeWidth, "hint-stroke-width", "" )
+		.setType( PropertyType::NumberLength )
+		.addAlias( "hintoutlinethickness" );
+	registerProperty( PropertyId::HintStrokeColor, "hint-stroke-color", "" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::HintFontFamily, "hint-font-family", "" )
+		.addAlias( "hint-font-name" );
+	registerProperty( PropertyId::HintDisplay, "hint-display", "" ).setType( PropertyType::String );
+
+	registerProperty( PropertyId::Transition, "transition", "" ).setIndexed();
+	registerProperty( PropertyId::TransitionDuration, "transition-duration", "" );
+	registerProperty( PropertyId::TransitionDelay, "transition-delay", "0s" )
+		.setType( PropertyType::Time );
+	registerProperty( PropertyId::TransitionTimingFunction, "transition-timing-function",
+					  "linear" );
+	registerProperty( PropertyId::TransitionProperty, "transition-property", "" );
+
+	registerProperty( PropertyId::Animation, "animation", "" ).setIndexed();
+	registerProperty( PropertyId::AnimationDelay, "animation-delay", "0s" )
+		.setType( PropertyType::Time )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationDirection, "animation-direction", "normal" )
+		.setType( PropertyType::String )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationDuration, "animation-duration", "0s" )
+		.setType( PropertyType::Time )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationFillMode, "animation-fill-mode", "none" )
+		.setType( PropertyType::String )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationIterationCount, "animation-iteration-count", "1" )
+		.setType( PropertyType::NumberFloat )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationName, "animation-name", "none" )
+		.setType( PropertyType::String )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationPlayState, "animation-play-state", "running" )
+		.setType( PropertyType::String )
+		.setIndexed();
+	registerProperty( PropertyId::AnimationTimingFunction, "animation-timing-function", "linear" )
+		.setType( PropertyType::String )
+		.setIndexed();
+
+	registerProperty( PropertyId::DragResistance, "drag-resistance", "8dp" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::ChangePagePercent, "change-page-percent", "0.33" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::MaxEdgeResistance, "max-edge-resistance", "0" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::TimingFunction, "timing-function", "linear" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::PageLocked, "page-locked", "" ).setType( PropertyType::Bool );
+
+	registerProperty( PropertyId::BorderType, "border-type", "inside" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::BorderLeftColor, "border-left-color", "transparent" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::BorderRightColor, "border-right-color", "transparent" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::BorderTopColor, "border-top-color", "transparent" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::BorderBottomColor, "border-bottom-color", "transparent" )
+		.setType( PropertyType::Color );
+	registerProperty( PropertyId::BorderLeftWidth, "border-left-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( PropertyId::BorderRightWidth, "border-right-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( PropertyId::BorderTopWidth, "border-top-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( PropertyId::BorderBottomWidth, "border-bottom-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( PropertyId::BorderLeftStyle, "border-left-style", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::BorderRightStyle, "border-right-style", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::BorderTopStyle, "border-top-style", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::BorderBottomStyle, "border-bottom-style", "none" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::BorderTopLeftRadius, "border-top-left-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::BorderTopRightRadius, "border-top-right-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::BorderBottomLeftRadius, "border-bottom-left-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::BorderBottomRightRadius, "border-bottom-right-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+
+	registerProperty( PropertyId::BorderSmooth, "border-smooth", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::BackgroundSmooth, "background-smooth", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::ForegroundSmooth, "foreground-smooth", "false" )
+		.setType( PropertyType::Bool );
+
+	registerProperty( PropertyId::ForegroundTopLeftRadius, "foreground-top-left-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::ForegroundTopRightRadius, "foreground-top-right-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::ForegroundBottomLeftRadius, "foreground-bottom-left-radius", "0" )
+		.setType( PropertyType::RadiusLength );
+	registerProperty( PropertyId::ForegroundBottomRightRadius, "foreground-bottom-right-radius",
+					  "0" )
+		.setType( PropertyType::RadiusLength );
+
+	registerProperty( PropertyId::TabBarHideOnSingleTab, "tabbar-hide-on-single-tab", "false" );
+	registerProperty( PropertyId::TabBarAllowRearrange, "tabbar-allow-rearrange", "false" );
+	registerProperty( PropertyId::TabBarAllowDragAndDrop, "tabbar-allow-drag-and-drop-tabs",
+					  "false" );
+	registerProperty( PropertyId::TabAllowSwitchTabsInEmptySpaces,
+					  "tabbar-allow-switch-tabs-in-empty-spaces", "false" );
+
+	registerProperty( PropertyId::SplitterPartition, "splitter-partition", "50%" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth );
+	registerProperty( PropertyId::SplitterAlwaysShow, "splitter-always-show", "true" )
+		.setType( PropertyType::Bool );
+
+	registerProperty( PropertyId::DroppableHoveringColor, "droppable-hovering-color", "#FFFFFF20" )
+		.setType( PropertyType::Color );
+
+	registerProperty( PropertyId::TextAsFallback, "text-as-fallback", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::SelectOnClick, "select-on-click", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::GravityOwner, "gravity-owner", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::Href, "href", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Focusable, "focusable", "true" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::ExpandText, "expand-text", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::ColSpan, "colspan", "1" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::TableLayout, "table-layout", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::CellPadding, "cellpadding", "0" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::CellSpacing, "cellspacing", "0" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Size, "size", "20" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::Type, "type", "text" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Rows, "rows", "2" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::Cols, "cols", "20" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::InputMode, "input-mode", "normal" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::Hidden, "hidden", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Open, "open", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::Display, "display", "inline" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Position, "position", "static" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Float, "float", "none" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Clear, "clear", "none" ).setType( PropertyType::String );
+	registerProperty( PropertyId::ListStyleType, "list-style-type", "none", true )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::ListStylePosition, "list-style-position", "outside", true )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::ListStyleImage, "list-style-image", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::BoxSizing, "box-sizing", "content-box" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::Top, "top", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( PropertyId::Right, "right", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::Bottom, "bottom", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( PropertyId::Left, "left", "auto" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::ZIndex, "z-index", "auto" ).setType( PropertyType::NumberInt );
+
+	registerProperty( PropertyId::InnerWidgetOrientation, "inner-widget-orientation",
+					  "widgeticontextbox" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::Glyph, "glyph", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Name, "name", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::For, "for", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::RowValign, "row-valign", "" )
 		.addAlias( "row-vertical-align" )
 		.setType( PropertyType::String );
 
-	registerProperty( "text-overflow", "clip" ).setType( PropertyType::String );
-
-	registerProperty( "check-mode", "element" ).setType( PropertyType::String );
-
-	registerProperty( "enable-editor-flags", "" ).setType( PropertyType::String );
-	registerProperty( "disable-editor-flags", "" ).setType( PropertyType::String );
-
-	registerProperty( "line-wrap-mode", "nowrap" ).setType( PropertyType::String );
-	registerProperty( "line-wrap-type", "viewport" ).setType( PropertyType::String );
-
-	registerProperty( "display-options", "" ).setType( PropertyType::String );
-	registerProperty( "menu-width-mode", "" ).setType( PropertyType::String );
-
-	registerProperty( "action", "" ).setType( PropertyType::String );
-	registerProperty( "method", "GET" ).setType( PropertyType::String );
-	registerProperty( "enctype", "application/x-www-form-urlencoded" )
+	registerProperty( PropertyId::TextOverflow, "text-overflow", "clip" )
 		.setType( PropertyType::String );
-	registerProperty( "target", "_self" ).setType( PropertyType::String );
-	registerProperty( "unicode-range", "" ).setType( PropertyType::String );
-	registerProperty( "alignment-baseline", "baseline" ).setType( PropertyType::String );
-	registerProperty( "flex-direction", "row" ).setType( PropertyType::String );
-	registerProperty( "flex-wrap", "nowrap" ).setType( PropertyType::String );
-	registerProperty( "justify-content", "flex-start" ).setType( PropertyType::String );
-	registerProperty( "align-items", "stretch" ).setType( PropertyType::String );
-	registerProperty( "align-content", "stretch" ).setType( PropertyType::String );
-	registerProperty( "align-self", "auto" ).setType( PropertyType::String );
-	registerProperty( "flex-grow", "0" ).setType( PropertyType::NumberFloat );
-	registerProperty( "flex-shrink", "1" ).setType( PropertyType::NumberFloat );
-	registerProperty( "flex-basis", "auto" ).setType( PropertyType::NumberLength );
-	registerProperty( "order", "0" ).setType( PropertyType::NumberInt );
-	registerProperty( "row-gap", "0px" ).setType( PropertyType::NumberLength );
-	registerProperty( "column-gap", "0px" ).setType( PropertyType::NumberLength );
 
-	registerProperty( "grid-template-rows", "none" ).setType( PropertyType::String );
-	registerProperty( "grid-template-columns", "none" ).setType( PropertyType::String );
-	registerProperty( "grid-template-areas", "none" ).setType( PropertyType::String );
-	registerProperty( "grid-auto-rows", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-auto-columns", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-auto-flow", "row" ).setType( PropertyType::String );
-	registerProperty( "grid-row-start", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-row-end", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-column-start", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-column-end", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-row", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-column", "auto" ).setType( PropertyType::String );
-	registerProperty( "grid-area", "auto" ).setType( PropertyType::String );
-	registerProperty( "justify-items", "normal" ).setType( PropertyType::String );
-	registerProperty( "justify-self", "auto" ).setType( PropertyType::String );
-	registerProperty( "defer", "0" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::CheckMode, "check-mode", "element" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::EnableCodeEditorFlags, "enable-editor-flags", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::DisableCodeEditorFlags, "disable-editor-flags", "" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::LineWrapMode, "line-wrap-mode", "nowrap" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::LineWrapType, "line-wrap-type", "viewport" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::DisplayOptions, "display-options", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::MenuWidthMode, "menu-width-mode", "" )
+		.setType( PropertyType::String );
+
+	registerProperty( PropertyId::Action, "action", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Method, "method", "GET" ).setType( PropertyType::String );
+	registerProperty( PropertyId::Enctype, "enctype", "application/x-www-form-urlencoded" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::Target, "target", "_self" ).setType( PropertyType::String );
+	registerProperty( PropertyId::UnicodeRange, "unicode-range", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AlignmentBaseline, "alignment-baseline", "baseline" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::FlexDirection, "flex-direction", "row" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::FlexWrap, "flex-wrap", "nowrap" ).setType( PropertyType::String );
+	registerProperty( PropertyId::JustifyContent, "justify-content", "flex-start" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AlignItems, "align-items", "stretch" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AlignContent, "align-content", "stretch" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AlignSelf, "align-self", "auto" ).setType( PropertyType::String );
+	registerProperty( PropertyId::FlexGrow, "flex-grow", "0" ).setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::FlexShrink, "flex-shrink", "1" )
+		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::FlexBasis, "flex-basis", "auto" )
+		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::Order, "order", "0" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::RowGap, "row-gap", "0px" ).setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::ColumnGap, "column-gap", "0px" )
+		.setType( PropertyType::NumberLength );
+
+	registerProperty( PropertyId::GridTemplateRows, "grid-template-rows", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridTemplateColumns, "grid-template-columns", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridTemplateAreas, "grid-template-areas", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridAutoRows, "grid-auto-rows", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridAutoColumns, "grid-auto-columns", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridAutoFlow, "grid-auto-flow", "row" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridRowStart, "grid-row-start", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridRowEnd, "grid-row-end", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridColumnStart, "grid-column-start", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridColumnEnd, "grid-column-end", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridRow, "grid-row", "auto" ).setType( PropertyType::String );
+	registerProperty( PropertyId::GridColumn, "grid-column", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::GridArea, "grid-area", "auto" ).setType( PropertyType::String );
+	registerProperty( PropertyId::JustifyItems, "justify-items", "normal" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::JustifySelf, "justify-self", "auto" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::Defer, "defer", "0" ).setType( PropertyType::Bool );
 
 	// Shorthands
-	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
+	registerShorthand( ShorthandId::Margin, "margin",
+					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
+	registerShorthand( ShorthandId::LayoutMargin, "layout-margin",
+					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
+	registerShorthand( ShorthandId::LayoutMarginUnderscore, "layout_margin",
+					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
+	registerShorthand( ShorthandId::Padding, "padding",
+					   { "padding-top", "padding-right", "padding-bottom", "padding-left" },
 					   "box" );
-	registerShorthand( "layout-margin",
-					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
-	registerShorthand( "layout_margin",
-					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
-	registerShorthand(
-		"padding", { "padding-top", "padding-right", "padding-bottom", "padding-left" }, "box" );
-	registerShorthand( "background",
+	registerShorthand( ShorthandId::Background, "background",
 					   { "background-color", "background-image", "background-position",
 						 "background-size", "background-repeat", "background-attachment",
 						 "background-origin", "background-clip" },
 					   "background" );
 	registerShorthand(
-		"foreground",
+		ShorthandId::Foreground, "foreground",
 		{ "foreground-color", "foreground-image", "foreground-repeat", "foreground-position" },
 		"background" );
-	registerShorthand( "box-margin", { "column-margin", "row-margin" }, "single-value-vector" );
-	registerShorthand( "background-position", { "background-position-x", "background-position-y" },
+	registerShorthand( ShorthandId::BoxMargin, "box-margin", { "column-margin", "row-margin" },
+					   "single-value-vector" );
+	registerShorthand( ShorthandId::BackgroundPosition, "background-position",
+					   { "background-position-x", "background-position-y" },
 					   "background-position" );
-	registerShorthand( "foreground-position", { "foreground-position-x", "foreground-position-y" },
+	registerShorthand( ShorthandId::ForegroundPosition, "foreground-position",
+					   { "foreground-position-x", "foreground-position-y" },
 					   "background-position" );
 	registerShorthand(
-		"border-color",
+		ShorthandId::BorderColor, "border-color",
 		{ "border-top-color", "border-right-color", "border-bottom-color", "border-left-color" },
 		"border-box" );
 	registerShorthand(
-		"border-width",
+		ShorthandId::BorderWidth, "border-width",
 		{ "border-top-width", "border-right-width", "border-bottom-width", "border-left-width" },
 		"border-box" );
 	registerShorthand(
-		"border-style",
+		ShorthandId::BorderStyle, "border-style",
 		{ "border-top-style", "border-right-style", "border-bottom-style", "border-left-style" },
 		"border-box" );
-	registerShorthand( "border-radius",
+	registerShorthand( ShorthandId::BorderRadius, "border-radius",
 					   { "border-top-left-radius", "border-top-right-radius",
 						 "border-bottom-right-radius", "border-bottom-left-radius" },
 					   "radius" );
-	registerShorthand( "foreground-radius",
+	registerShorthand( ShorthandId::ForegroundRadius, "foreground-radius",
 					   { "foreground-top-left-radius", "foreground-top-right-radius",
 						 "foreground-bottom-right-radius", "foreground-bottom-left-radius" },
 					   "radius" );
-	registerShorthand( "rotation-origin-point",
+	registerShorthand( ShorthandId::RotationOriginPoint, "rotation-origin-point",
 					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
-	registerShorthand( "rotate-origin-point",
+	registerShorthand( ShorthandId::RotateOriginPoint, "rotate-origin-point",
 					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
-	registerShorthand( "scale-origin-point", { "scale-origin-point-x", "scale-origin-point-y" },
-					   "vector2" );
-	registerShorthand( "min-size", { "min-width", "min-height" }, "vector2" );
-	registerShorthand( "max-size", { "max-width", "max-height" }, "vector2" );
-	registerShorthand( "border", { "border-width", "border-style", "border-color" }, "border" );
-	registerShorthand( "text-shadow", { "text-shadow-color", "text-shadow-offset" },
-					   "color-vector2" );
-	registerShorthand( "hint-shadow", { "hint-shadow-color", "hint-shadow-offset" },
-					   "color-vector2" );
-	registerShorthand( "border-left",
+	registerShorthand( ShorthandId::ScaleOriginPoint, "scale-origin-point",
+					   { "scale-origin-point-x", "scale-origin-point-y" }, "vector2" );
+	registerShorthand( ShorthandId::MinSize, "min-size", { "min-width", "min-height" }, "vector2" );
+	registerShorthand( ShorthandId::MaxSize, "max-size", { "max-width", "max-height" }, "vector2" );
+	registerShorthand( ShorthandId::Border, "border",
+					   { "border-width", "border-style", "border-color" }, "border" );
+	registerShorthand( ShorthandId::TextShadow, "text-shadow",
+					   { "text-shadow-color", "text-shadow-offset" }, "color-vector2" );
+	registerShorthand( ShorthandId::HintShadow, "hint-shadow",
+					   { "hint-shadow-color", "hint-shadow-offset" }, "color-vector2" );
+	registerShorthand( ShorthandId::BorderLeft, "border-left",
 					   { "border-left-width", "border-left-style", "border-left-color" },
 					   "border-side" );
-	registerShorthand( "border-right",
+	registerShorthand( ShorthandId::BorderRight, "border-right",
 					   { "border-right-width", "border-right-style", "border-right-color" },
 					   "border-side" );
-	registerShorthand( "border-top", { "border-top-width", "border-top-style", "border-top-color" },
+	registerShorthand( ShorthandId::BorderTop, "border-top",
+					   { "border-top-width", "border-top-style", "border-top-color" },
 					   "border-side" );
-	registerShorthand( "border-bottom",
+	registerShorthand( ShorthandId::BorderBottom, "border-bottom",
 					   { "border-bottom-width", "border-bottom-style", "border-bottom-color" },
 					   "border-side" );
-	registerShorthand( "list-style",
+	registerShorthand( ShorthandId::ListStyle, "list-style",
 					   { "list-style-type", "list-style-position", "list-style-image" },
 					   "list-style" );
-	registerShorthand( "font",
+	registerShorthand( ShorthandId::Font, "font",
 					   { "font-style", "font-weight", "font-size", "line-height", "font-family" },
 					   "font" );
-	registerShorthand( "vertical-align", { "alignment-baseline" }, "vertical-align" );
-	registerShorthand( "flex-flow", { "flex-direction", "flex-wrap" }, "single-value-vector" );
-	registerShorthand( "flex", { "flex-grow", "flex-shrink", "flex-basis" }, "flex" );
-	registerShorthand( "gap", { "row-gap", "column-gap" }, "vector2" );
-	registerShorthand( "grid-template",
+	registerShorthand( ShorthandId::VerticalAlign, "vertical-align", { "alignment-baseline" },
+					   "vertical-align" );
+	registerShorthand( ShorthandId::FlexFlow, "flex-flow", { "flex-direction", "flex-wrap" },
+					   "single-value-vector" );
+	registerShorthand( ShorthandId::Flex, "flex", { "flex-grow", "flex-shrink", "flex-basis" },
+					   "flex" );
+	registerShorthand( ShorthandId::Gap, "gap", { "row-gap", "column-gap" }, "vector2" );
+	registerShorthand( ShorthandId::GridTemplate, "grid-template",
 					   { "grid-template-rows", "grid-template-columns", "grid-template-areas" },
 					   "grid-template" );
-	registerShorthand( "grid",
+	registerShorthand( ShorthandId::Grid, "grid",
 					   { "grid-template-rows", "grid-template-columns", "grid-template-areas",
 						 "grid-auto-rows", "grid-auto-columns", "grid-auto-flow" },
 					   "grid" );
-	registerShorthand( "place-items", { "align-items", "justify-items" }, "vector2" );
-	registerShorthand( "place-self", { "align-self", "justify-self" }, "vector2" );
-	registerShorthand( "place-content", { "align-content", "justify-content" }, "vector2" );
+	registerShorthand( ShorthandId::PlaceItems, "place-items", { "align-items", "justify-items" },
+					   "vector2" );
+	registerShorthand( ShorthandId::PlaceSelf, "place-self", { "align-self", "justify-self" },
+					   "vector2" );
+	registerShorthand( ShorthandId::PlaceContent, "place-content",
+					   { "align-content", "justify-content" }, "vector2" );
+
+	validateBuiltinRegistrations();
+}
+
+void StyleSheetSpecification::validateBuiltinRegistrations() {
+#if EE_DEBUG
+	// Ensure every built-in slot is populated and every dense ID round-trips
+	// through its canonical name. A newly added enum member or registration that
+	// leaves a gap or duplicates a slot would otherwise silently shift custom
+	// IDs or leave an unregistered bit.
+	int propertyCount = 0;
+	for ( Uint16 i = 1; i < static_cast<Uint16>( PropertyId::NumDefinedIds ); ++i ) {
+		const PropertyDefinition* def =
+			mPropertySpecification->getProperty( static_cast<PropertyId>( i ) );
+		if ( nullptr == def ) {
+			Log::error( "PropertySpecification: built-in property slot %d is unregistered.", i );
+			eeASSERT( false );
+			continue;
+		}
+		propertyCount++;
+		if ( def->getPropertyId() != static_cast<PropertyId>( i ) ) {
+			Log::error( "PropertySpecification: property \"%s\" reports dense ID %d, expected %d.",
+						def->getName().c_str(), static_cast<int>( def->getPropertyId() ), i );
+			eeASSERT( false );
+		}
+		const std::string name = def->getName();
+		const PropertyDefinition* byName = mPropertySpecification->getProperty( name );
+		if ( byName != def ) {
+			Log::error( "PropertySpecification: property \"%s\" does not round-trip to slot %d.",
+						name.c_str(), i );
+			eeASSERT( false );
+		}
+	}
+	if ( propertyCount != static_cast<int>( PropertyId::NumDefinedIds ) - 1 ) {
+		Log::error( "PropertySpecification: registered %d built-in properties, expected %d.",
+					propertyCount, static_cast<int>( PropertyId::NumDefinedIds ) - 1 );
+		eeASSERT( false );
+	}
+
+	int shorthandCount = 0;
+	for ( Uint8 i = 1; i < static_cast<Uint8>( ShorthandId::NumDefinedIds ); ++i ) {
+		const ShorthandDefinition* def =
+			mPropertySpecification->getShorthand( static_cast<ShorthandId>( i ) );
+		if ( nullptr == def ) {
+			Log::error( "PropertySpecification: built-in shorthand slot %d is unregistered.", i );
+			eeASSERT( false );
+			continue;
+		}
+		shorthandCount++;
+		if ( def->getShorthandId() != static_cast<ShorthandId>( i ) ) {
+			Log::error( "PropertySpecification: shorthand \"%s\" reports dense ID %d, expected %d.",
+						def->getName().c_str(), static_cast<int>( def->getShorthandId() ), i );
+			eeASSERT( false );
+		}
+		const ShorthandDefinition* byName = mPropertySpecification->getShorthand( def->getName() );
+		if ( byName != def ) {
+			Log::error( "PropertySpecification: shorthand \"%s\" does not round-trip to slot %d.",
+						def->getName().c_str(), i );
+			eeASSERT( false );
+		}
+	}
+	if ( shorthandCount != static_cast<int>( ShorthandId::NumDefinedIds ) - 1 ) {
+		Log::error( "PropertySpecification: registered %d built-in shorthands, expected %d.",
+					shorthandCount, static_cast<int>( ShorthandId::NumDefinedIds ) - 1 );
+		eeASSERT( false );
+	}
+#endif
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,

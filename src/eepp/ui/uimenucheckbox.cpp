@@ -132,7 +132,6 @@ bool UIMenuCheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			setActive( attribute.asBool() );
 			break;
@@ -151,7 +150,6 @@ std::string UIMenuCheckBox::getPropertyString( const PropertyDefinition* propert
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			return isActive() ? "true" : "false";
 		default:

@@ -6,6 +6,7 @@
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <functional>
 
@@ -37,26 +38,33 @@ class EE_API StyleSheetSpecification {
 
 	~StyleSheetSpecification();
 
-	PropertyDefinition& registerProperty( const std::string& propertyVame,
+	PropertyDefinition& registerProperty( PropertyId id, const std::string& propertyName,
+										  const std::string& defaultValue, bool inherited = false );
+
+	PropertyDefinition* registerProperty( const std::string& propertyName,
 										  const std::string& defaultValue, bool inherited = false );
 
 	const PropertyDefinition* getProperty( const PropertyId& id ) const;
 
-	const PropertyDefinition* getProperty( const Uint32& id ) const;
+	const PropertyDefinition* getProperty( const char* name ) const;
+
+	const PropertyDefinition* getProperty( std::string_view name ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
 
-	const SmallVector<CSS::PropertyId>& getInheritableProperties() const;
+	const PropertyIdSet& getInheritableProperties() const;
 
-	ShorthandDefinition& registerShorthand( const std::string& name,
+	ShorthandDefinition& registerShorthand( ShorthandId id, const std::string& name,
 											const std::vector<std::string>& properties,
 											const std::string& shorthandFuncName );
 
-	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
+	ShorthandDefinition* registerShorthand( const std::string& name,
+											const std::vector<std::string>& properties,
+											const std::string& shorthandFuncName );
+
+	const ShorthandDefinition* getShorthand( const ShorthandId& id ) const;
 
 	const ShorthandDefinition* getShorthand( const std::string& name ) const;
-
-	bool isShorthand( const Uint32& id ) const;
 
 	bool isShorthand( const std::string& name ) const;
 
@@ -82,6 +90,8 @@ class EE_API StyleSheetSpecification {
 	void registerDefaultProperties();
 
 	void registerDefaultNodeSelectors();
+
+	void validateBuiltinRegistrations();
 };
 
 }}} // namespace EE::UI::CSS

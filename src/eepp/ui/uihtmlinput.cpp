@@ -117,7 +117,6 @@ bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 			mHasSpecifiedHeight = !attribute.value().empty() &&
 								  !String::iequals( String::trim( attribute.value() ), "auto" );
 			break;
-		case PropertyId::Checked:
 		case PropertyId::Selected:
 			mChecked = htmlBoolAttributeIsTrue( attribute );
 			syncCheckedState();
@@ -152,7 +151,6 @@ std::string UIHTMLInput::getPropertyString( const PropertyDefinition* propertyDe
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Value:
 			return mValue;
-		case PropertyId::Checked:
 		case PropertyId::Selected:
 			return mChecked ? "true" : "false";
 		case PropertyId::Type:

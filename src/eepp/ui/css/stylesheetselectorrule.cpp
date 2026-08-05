@@ -171,7 +171,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 			attr.isDataAttribute = isDataAttributeName( attr.name );
 			if ( !attr.isDataAttribute )
 				attr.propertyDefinition =
-					StyleSheetSpecification::instance()->getProperty( String::hash( attr.name ) );
+					StyleSheetSpecification::instance()->getProperty( attr.name );
 
 			mAttributeSelectors.emplace_back( std::move( attr ) );
 			mSpecificity += SpecificityClass;
