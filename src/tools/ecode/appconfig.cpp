@@ -858,7 +858,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
 		loadDocuments( editorSplitter, j["last"], tabWidget, app, sessionSnapshotFiles );
 
-		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
+		splitter->setSplitPartition( StyleSheetLength( j["split"].get<std::string>() ) );
 	}
 }
 
