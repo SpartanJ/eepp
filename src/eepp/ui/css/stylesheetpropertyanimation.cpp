@@ -11,7 +11,7 @@ using namespace EE::Math::easing;
 namespace EE { namespace UI { namespace CSS {
 
 inline Float easingFn( const Ease::Interpolation& timingFunction,
-					   const std::vector<double>& timingFunctionParameters, const double& t,
+					   const TimingFunction::Parameters& timingFunctionParameters, const double& t,
 					   const double& b, const double& c, const double& d ) {
 	if ( timingFunction != Ease::Interpolation::CubizBezier )
 		return easingCb[timingFunction]( t, b, c, d );
@@ -24,13 +24,12 @@ inline Float easingFn( const Ease::Interpolation& timingFunction,
 	return t;
 }
 
-void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& normalizedProgress,
-												 const PropertyDefinition* property,
-												 const std::string& startValue,
-												 const std::string& endValue,
-												 const Ease::Interpolation& timingFunction,
-												 const std::vector<double> timingFunctionParameters,
-												 const Uint32& propertyIndex, const bool& isDone ) {
+void StyleSheetPropertyAnimation::tweenProperty(
+	UIWidget* widget, const Float& normalizedProgress, const PropertyDefinition* property,
+	const std::string& startValue, const std::string& endValue,
+	const Ease::Interpolation& timingFunction,
+	const TimingFunction::Parameters& timingFunctionParameters, const Uint32& propertyIndex,
+	const bool& isDone ) {
 	switch ( property->getType() ) {
 		case PropertyType::NumberFloat:
 		case PropertyType::NumberInt: {
@@ -220,13 +219,27 @@ StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
 	const Uint32& propertyIndex, const Time& duration, const Time& delay,
 	const Ease::Interpolation& timingFunction, const std::vector<double>& timingFunctionParameters,
 	const AnimationOrigin& animationOrigin ) {
+	TimingFunction::Parameters parameters;
+	parameters.assign( timingFunctionParameters.begin(), timingFunctionParameters.end() );
+	return New( property, startValue, endValue, propertyIndex, duration, delay, timingFunction,
+				parameters, animationOrigin );
+}
+
+StyleSheetPropertyAnimation*
+StyleSheetPropertyAnimation::New( const PropertyDefinition* property, const std::string& startValue,
+								  const std::string& endValue, const Uint32& propertyIndex,
+								  const Time& duration, const Time& delay,
+								  const Ease::Interpolation& timingFunction,
+								  const TimingFunction::Parameters& timingFunctionParameters,
+								  const AnimationOrigin& animationOrigin ) {
 	AnimationDefinition animation;
 	animation.setDelay( delay );
 	animation.setDuration( duration );
 	animation.setTimingFunction( timingFunction );
 	animation.setTimingFunctionParameters( timingFunctionParameters );
-	return New( animation, property, { startValue, endValue }, { 0, 1 }, propertyIndex,
-				animationOrigin );
+	return eeNew( StyleSheetPropertyAnimation,
+				  ( animation, property, SmallVector<std::string, 4>{ startValue, endValue },
+					SmallVector<Float, 4>{ 0, 1 }, propertyIndex, animationOrigin ) );
 }
 
 StyleSheetPropertyAnimation::StyleSheetPropertyAnimation( const AnimationDefinition& animation,
@@ -237,8 +250,26 @@ StyleSheetPropertyAnimation::StyleSheetPropertyAnimation( const AnimationDefinit
 														  const AnimationOrigin& animationOrigin ) :
 	mAnimation( animation ),
 	mPropertyDef( propertyDef ),
-	mStates( states ),
-	mAnimationStepsTime( animationStepsTime ),
+	mStates( std::make_move_iterator( states.begin() ), std::make_move_iterator( states.end() ) ),
+	mAnimationStepsTime( std::make_move_iterator( animationStepsTime.begin() ),
+						 std::make_move_iterator( animationStepsTime.end() ) ),
+	mPendingIterations( animation.getIterations() ),
+	mPropertyIndex( propertyIndex ),
+	mAnimationOrigin( animationOrigin ),
+	mPaused( mAnimation.isPaused() ) {
+	mId = ID;
+}
+
+StyleSheetPropertyAnimation::StyleSheetPropertyAnimation( const AnimationDefinition& animation,
+														  const PropertyDefinition* propertyDef,
+														  SmallVector<std::string, 4> states,
+														  SmallVector<Float, 4> animationStepsTime,
+														  const Uint32& propertyIndex,
+														  const AnimationOrigin& animationOrigin ) :
+	mAnimation( animation ),
+	mPropertyDef( propertyDef ),
+	mStates( std::move( states ) ),
+	mAnimationStepsTime( std::move( animationStepsTime ) ),
 	mPendingIterations( animation.getIterations() ),
 	mPropertyIndex( propertyIndex ),
 	mAnimationOrigin( animationOrigin ),
@@ -321,15 +352,17 @@ Time StyleSheetPropertyAnimation::getTotalTime() {
 }
 
 Action* StyleSheetPropertyAnimation::clone() const {
-	return New( mAnimation, mPropertyDef, mStates, mAnimationStepsTime, mPropertyIndex,
-				mAnimationOrigin );
+	return eeNew( StyleSheetPropertyAnimation,
+				  ( mAnimation, mPropertyDef, mStates, mAnimationStepsTime, mPropertyIndex,
+					mAnimationOrigin ) );
 }
 
 Action* StyleSheetPropertyAnimation::reverse() const {
-	std::vector<std::string> vcopy( mStates );
+	SmallVector<std::string, 4> vcopy( mStates );
 	std::reverse( vcopy.begin(), vcopy.end() );
-	return New( mAnimation, mPropertyDef, vcopy, mAnimationStepsTime, mPropertyIndex,
-				mAnimationOrigin );
+	return eeNew( StyleSheetPropertyAnimation,
+				  ( mAnimation, mPropertyDef, std::move( vcopy ), mAnimationStepsTime,
+					mPropertyIndex, mAnimationOrigin ) );
 }
 
 const Uint32& StyleSheetPropertyAnimation::getPropertyIndex() const {
@@ -371,7 +404,8 @@ void StyleSheetPropertyAnimation::onUpdate( const Time& ) {
 			Float relativeProgress = curTime / relTime;
 			tweenProperty( widget, relativeProgress, mPropertyDef, mStates[curPos - 1],
 						   mStates[curPos], mAnimation.getTimingFunction(),
-						   mAnimation.getTimingFunctionParameters(), mPropertyIndex, isDone() );
+						   mAnimation.getTimingFunctionParametersInline(), mPropertyIndex,
+						   isDone() );
 		}
 	}
 }
@@ -480,16 +514,16 @@ void StyleSheetPropertyAnimation::prepareDirection() {
 }
 
 void StyleSheetPropertyAnimation::reverseAnimation() {
-	std::vector<std::string> reverseCopy( mStates );
+	SmallVector<std::string, 4> reverseCopy( mStates );
 	std::reverse( reverseCopy.begin(), reverseCopy.end() );
-	mStates = reverseCopy;
+	mStates = std::move( reverseCopy );
 
-	std::vector<Float> reverseTimes( mAnimationStepsTime );
+	SmallVector<Float, 4> reverseTimes( mAnimationStepsTime );
 	std::reverse( reverseTimes.begin(), reverseTimes.end() );
 	for ( size_t i = 0; i < reverseTimes.size(); i++ ) {
 		reverseTimes[i] = 1.f - reverseTimes[i];
 	}
-	mAnimationStepsTime = reverseTimes;
+	mAnimationStepsTime = std::move( reverseTimes );
 }
 
 }}} // namespace EE::UI::CSS

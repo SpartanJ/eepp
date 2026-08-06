@@ -1,3 +1,4 @@
+#include <cctype>
 #include <eepp/core/string.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -6,122 +7,247 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+namespace {
+
+template <typename Callback> void forEachCommaItem( std::string_view value, Callback&& callback ) {
+	System::FunctionString::forEachParameter( value, [&]( std::string_view item, bool ) {
+		callback( item );
+		return true;
+	} );
+}
+
+SmallVector<std::string_view, 4> splitTransitionTokens( std::string_view value ) {
+	SmallVector<std::string_view, 4> tokens;
+	std::size_t start = 0;
+	int parenthesisDepth = 0;
+	for ( std::size_t i = 0; i <= value.size(); ++i ) {
+		if ( i < value.size() ) {
+			if ( value[i] == '(' )
+				++parenthesisDepth;
+			else if ( value[i] == ')' && parenthesisDepth > 0 )
+				--parenthesisDepth;
+		}
+		if ( i == value.size() ||
+			 ( std::isspace( static_cast<unsigned char>( value[i] ) ) && parenthesisDepth == 0 ) ) {
+			if ( i > start )
+				tokens.emplace_back( value.substr( start, i - start ) );
+			while ( i + 1 < value.size() &&
+					std::isspace( static_cast<unsigned char>( value[i + 1] ) ) )
+				++i;
+			start = i + 1;
+		}
+	}
+	return tokens;
+}
+
+Time parseTime( std::string_view value ) {
+	value = String::trim( value, " \t\n\r\f\v" );
+	auto lower = []( char character ) {
+		return character >= 'A' && character <= 'Z' ? character + ( 'a' - 'A' ) : character;
+	};
+	bool milliseconds = value.size() >= 2 && lower( value[value.size() - 2] ) == 'm' &&
+						lower( value.back() ) == 's';
+	bool seconds = !milliseconds && !value.empty() && lower( value.back() ) == 's';
+	bool minutes = !milliseconds && !seconds && !value.empty() && lower( value.back() ) == 'm';
+	std::size_t numberLength = value.size() - ( milliseconds ? 2 : ( seconds || minutes ? 1 : 0 ) );
+	double number = 0;
+	const char* numberStart = value.data();
+	if ( numberLength > 0 && *numberStart == '+' ) {
+		++numberStart;
+		--numberLength;
+	}
+	if ( !String::fromString( number, std::string_view{ numberStart, numberLength } ) )
+		return Time::Zero;
+	if ( milliseconds )
+		return Milliseconds( number );
+	if ( minutes )
+		return Minutes( number );
+	return Seconds( number );
+}
+
+String::HashType lowerHash( std::string_view value ) {
+	return String::hashToLower( value.data(), static_cast<Int64>( value.size() ) );
+}
+
+std::string lowerString( std::string_view value ) {
+	std::string result{ value };
+	String::toLowerInPlace( result );
+	return result;
+}
+
+} // namespace
+
 UnorderedMap<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties(
 	const std::vector<const StyleSheetProperty*>& styleSheetProperties ) {
-	std::vector<std::string> properties;
-	std::vector<Time> durations;
-	std::vector<Time> delays;
-	std::vector<Ease::Interpolation> timingFunctions;
-	std::vector<std::vector<double>> timingFunctionParameters;
+	SmallVector<std::string, 4> properties;
+	SmallVector<Time, 4> durations;
+	SmallVector<Time, 4> delays;
+	SmallVector<TimingFunction, 4> timingFunctions;
 	TransitionsMap transitions;
 
-	for ( auto& prop : styleSheetProperties ) {
-		if ( prop->getPropertyDefinition() == NULL )
+	for ( const StyleSheetProperty* property : styleSheetProperties ) {
+		if ( nullptr == property || nullptr == property->getPropertyDefinition() )
 			continue;
 
-		const PropertyDefinition* propDef = prop->getPropertyDefinition();
-
-		if ( propDef->getPropertyId() == PropertyId::Transition ) {
-			String::splitCb(
-				[&transitions, prop]( std::string_view str ) {
-					auto strTransition = String::trim( str );
-					auto splitTransition =
-						String::split( std::string{ strTransition }, " ", "", "()" );
-
-					if ( !splitTransition.empty() ) {
-						TransitionDefinition transitionDef;
-
-						if ( splitTransition.size() >= 2 ) {
-							std::string property = String::trim( splitTransition[0] );
-							String::toLowerInPlace( property );
-
-							Time duration =
-								StyleSheetProperty( prop->getName(),
-													String::toLower( splitTransition[1] ) )
-									.asTime();
-
-							transitionDef.property = property;
-							transitionDef.duration = duration;
-
-							if ( splitTransition.size() >= 3 ) {
-								TimingFunction tf( TimingFunction::parse( splitTransition[2] ) );
-								transitionDef.timingFunction = std::move( tf.interpolation );
-								transitionDef.timingFunctionParameters = std::move( tf.parameters );
-
-								if ( transitionDef.timingFunction == Ease::None &&
-									 splitTransition.size() == 3 ) {
-									transitionDef.delay =
-										StyleSheetProperty( prop->getName(),
-															String::toLower( splitTransition[2] ) )
-											.asTime();
-								} else if ( splitTransition.size() >= 4 ) {
-									transitionDef.delay =
-										StyleSheetProperty( prop->getName(),
-															String::toLower( splitTransition[3] ) )
-											.asTime();
-								}
-							}
-
-							transitions[transitionDef.getProperty()] = transitionDef;
-						}
+		switch ( property->getPropertyDefinition()->getPropertyId() ) {
+			case PropertyId::Transition:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					auto tokens = splitTransitionTokens( item );
+					if ( tokens.size() < 2 )
+						return;
+					TransitionDefinition transition;
+					transition.property = lowerString( tokens[0] );
+					transition.duration = parseTime( tokens[1] );
+					if ( tokens.size() >= 3 ) {
+						TimingFunction timing = TimingFunction::parse( tokens[2] );
+						transition.timingFunction = timing.interpolation;
+						transition.timingFunctionParameters.assign( timing.parameters.begin(),
+																	timing.parameters.end() );
+						if ( transition.timingFunction == Ease::None && tokens.size() == 3 )
+							transition.delay = parseTime( tokens[2] );
+						else if ( tokens.size() >= 4 )
+							transition.delay = parseTime( tokens[3] );
 					}
-					return true;
-				},
-				prop->getValue(), ",", ",", "()" );
-		} else if ( propDef->getPropertyId() == PropertyId::TransitionDuration ) {
-			auto strDurations = String::split( prop->getValue(), ',' );
-
-			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
-				std::string duration( String::trim( *dit ) );
-				String::toLowerInPlace( duration );
-				durations.push_back( StyleSheetProperty( prop->getName(), duration ).asTime() );
-			}
-		} else if ( propDef->getPropertyId() == PropertyId::TransitionDelay ) {
-			auto strDelays = String::split( prop->getValue(), ',' );
-
-			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
-				std::string delay( String::trim( *dit ) );
-				String::toLowerInPlace( delay );
-				delays.push_back( StyleSheetProperty( prop->getName(), delay ).asTime() );
-			}
-		} else if ( propDef->getPropertyId() == PropertyId::TransitionTimingFunction ) {
-			auto strTimingFuncs = String::split( prop->getValue(), ",", "", "()" );
-
-			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
-				TimingFunction tf( TimingFunction::parse( *dit ) );
-				timingFunctions.emplace_back( tf.interpolation );
-				timingFunctionParameters.emplace_back( tf.parameters );
-			}
-		} else if ( propDef->getPropertyId() == PropertyId::TransitionProperty ) {
-			auto strProperties = String::split( prop->getValue(), ',' );
-
-			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
-				std::string property( String::trim( *dit ) );
-				String::toLowerInPlace( property );
-				properties.push_back( property );
-			}
+					transitions[transition.property] = std::move( transition );
+				} );
+				break;
+			case PropertyId::TransitionDuration:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					durations.emplace_back( parseTime( item ) );
+				} );
+				break;
+			case PropertyId::TransitionDelay:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					delays.emplace_back( parseTime( item ) );
+				} );
+				break;
+			case PropertyId::TransitionTimingFunction:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					timingFunctions.emplace_back( TimingFunction::parse( item ) );
+				} );
+				break;
+			case PropertyId::TransitionProperty:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					properties.emplace_back( lowerString( item ) );
+				} );
+				break;
+			default:
+				break;
 		}
 	}
 
-	for ( size_t i = 0; i < properties.size(); i++ ) {
-		const std::string& property = properties.at( i );
-		TransitionDefinition transitionDef;
-
-		transitionDef.property = property;
-
+	for ( std::size_t i = 0; i < properties.size(); ++i ) {
+		TransitionDefinition transition;
+		transition.property = properties[i];
 		if ( !durations.empty() )
-			transitionDef.duration = durations[i % durations.size()];
-
+			transition.duration = durations[i % durations.size()];
 		if ( !delays.empty() )
-			transitionDef.delay = delays[i % delays.size()];
-
+			transition.delay = delays[i % delays.size()];
 		if ( !timingFunctions.empty() ) {
-			size_t idx = !delays.empty() ? i % delays.size() : 0;
-			transitionDef.timingFunction = timingFunctions[idx];
-			transitionDef.timingFunctionParameters = timingFunctionParameters[idx];
+			const TimingFunction& timing = timingFunctions[i % timingFunctions.size()];
+			transition.timingFunction = timing.interpolation;
+			transition.timingFunctionParameters.assign( timing.parameters.begin(),
+														timing.parameters.end() );
 		}
+		transitions[transition.property] = std::move( transition );
+	}
 
-		transitions[property] = transitionDef;
+	return transitions;
+}
+
+void ComputedTransitions::set( const ComputedTransitionDefinition& transition ) {
+	for ( auto& current : mTransitions ) {
+		if ( current.propertyNameHash == transition.propertyNameHash ) {
+			current = transition;
+			return;
+		}
+	}
+	mTransitions.emplace_back( transition );
+}
+
+const ComputedTransitionDefinition*
+ComputedTransitions::get( String::HashType propertyNameHash ) const {
+	const ComputedTransitionDefinition* all = nullptr;
+	for ( const auto& transition : mTransitions ) {
+		if ( transition.propertyNameHash == propertyNameHash )
+			return &transition;
+		if ( transition.propertyNameHash == String::hash( "all" ) )
+			all = &transition;
+	}
+	return all;
+}
+
+ComputedTransitions
+ComputedTransitions::parse( const std::vector<const StyleSheetProperty*>& styleSheetProperties ) {
+	SmallVector<String::HashType, 4> properties;
+	SmallVector<Time, 4> durations;
+	SmallVector<Time, 4> delays;
+	SmallVector<TimingFunction, 4> timingFunctions;
+	ComputedTransitions transitions;
+
+	for ( const StyleSheetProperty* property : styleSheetProperties ) {
+		if ( nullptr == property || nullptr == property->getPropertyDefinition() )
+			continue;
+
+		switch ( property->getPropertyDefinition()->getPropertyId() ) {
+			case PropertyId::Transition:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					auto tokens = splitTransitionTokens( item );
+					if ( tokens.size() < 2 )
+						return;
+					ComputedTransitionDefinition transition;
+					transition.propertyNameHash = lowerHash( tokens[0] );
+					transition.duration = parseTime( tokens[1] );
+					if ( tokens.size() >= 3 ) {
+						TimingFunction timing = TimingFunction::parse( tokens[2] );
+						transition.timingFunction = timing.interpolation;
+						transition.timingFunctionParameters = std::move( timing.parameters );
+						if ( transition.timingFunction == Ease::None && tokens.size() == 3 )
+							transition.delay = parseTime( tokens[2] );
+						else if ( tokens.size() >= 4 )
+							transition.delay = parseTime( tokens[3] );
+					}
+					transitions.set( transition );
+				} );
+				break;
+			case PropertyId::TransitionDuration:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					durations.emplace_back( parseTime( item ) );
+				} );
+				break;
+			case PropertyId::TransitionDelay:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					delays.emplace_back( parseTime( item ) );
+				} );
+				break;
+			case PropertyId::TransitionTimingFunction:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					timingFunctions.emplace_back( TimingFunction::parse( item ) );
+				} );
+				break;
+			case PropertyId::TransitionProperty:
+				forEachCommaItem( property->getValue(), [&]( std::string_view item ) {
+					properties.emplace_back( lowerHash( item ) );
+				} );
+				break;
+			default:
+				break;
+		}
+	}
+
+	for ( std::size_t i = 0; i < properties.size(); ++i ) {
+		ComputedTransitionDefinition transition;
+		transition.propertyNameHash = properties[i];
+		if ( !durations.empty() )
+			transition.duration = durations[i % durations.size()];
+		if ( !delays.empty() )
+			transition.delay = delays[i % delays.size()];
+		if ( !timingFunctions.empty() ) {
+			const TimingFunction& timing = timingFunctions[i % timingFunctions.size()];
+			transition.timingFunction = timing.interpolation;
+			transition.timingFunctionParameters = timing.parameters;
+		}
+		transitions.set( transition );
 	}
 
 	return transitions;

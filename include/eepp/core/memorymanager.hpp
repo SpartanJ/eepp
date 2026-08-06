@@ -12,10 +12,12 @@ namespace EE {
 
 class EE_API AllocatedPointer {
   public:
-	AllocatedPointer( void* data, const std::string& File, int Line, size_t memory,
-					  bool track = false, bool globalAllocation = false );
+	/** file must have static storage duration. All memory-manager entry points pass __FILE__ or a
+	 * string literal, so retaining the pointer avoids allocating bookkeeping strings. */
+	AllocatedPointer( void* data, const char* file, int line, size_t memory, bool track = false,
+					  bool globalAllocation = false );
 
-	std::string mFile;
+	const char* mFile;
 	int mLine;
 	size_t mMemory;
 	void* mData;

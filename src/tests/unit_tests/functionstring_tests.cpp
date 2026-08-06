@@ -60,3 +60,44 @@ UTEST( FunctionString, functionString ) {
 	testCase( R"(test30("str'ing", 'str"ing2'))", "test30", { "str'ing", "str\"ing2" } );
 	testCase( R"(test31('', ''))", "test31", { "", "" } );
 }
+
+UTEST( FunctionString, nonOwningViewParser ) {
+	constexpr std::string_view input =
+		R"(  compose  ( first, nested(1, "two,three"), 'quoted, value', "escaped\"quote", '' ) )";
+	auto function = FunctionString::parseView( input );
+	EXPECT_FALSE( function.isEmpty() );
+	EXPECT_TRUE( "compose"sv == function.getName() );
+
+	SmallVector<std::string_view, 5> parameters;
+	SmallVector<bool, 5> strings;
+	EXPECT_TRUE( function.forEachParameter( [&]( std::string_view parameter, bool wasString ) {
+		parameters.emplace_back( parameter );
+		strings.emplace_back( wasString );
+		return true;
+	} ) );
+
+	EXPECT_EQ( 5u, parameters.size() );
+	EXPECT_TRUE( "first"sv == parameters[0] );
+	EXPECT_TRUE( R"(nested(1, "two,three"))"sv == parameters[1] );
+	EXPECT_TRUE( "quoted, value"sv == parameters[2] );
+	EXPECT_TRUE( R"(escaped\"quote)"sv == parameters[3] );
+	EXPECT_TRUE( ""sv == parameters[4] );
+	EXPECT_FALSE( strings[0] );
+	EXPECT_FALSE( strings[1] );
+	EXPECT_TRUE( strings[2] );
+	EXPECT_TRUE( strings[3] );
+	EXPECT_TRUE( strings[4] );
+}
+
+UTEST( FunctionString, nonOwningViewParserCanStopEarly ) {
+	auto function = FunctionString::parseView( "fn(one, two, three)"sv );
+	int calls = 0;
+	std::string_view firstParameter;
+	EXPECT_FALSE( function.forEachParameter( [&]( std::string_view parameter, bool ) {
+		++calls;
+		firstParameter = parameter;
+		return false;
+	} ) );
+	EXPECT_EQ( 1, calls );
+	EXPECT_TRUE( "one"sv == firstParameter );
+}

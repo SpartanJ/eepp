@@ -1,8 +1,8 @@
 #ifndef EE_MATH_EASE
 #define EE_MATH_EASE
 
-#include <eepp/system/functionstring.hpp>
 #include <string>
+#include <string_view>
 
 namespace EE { namespace Math {
 
@@ -118,7 +118,7 @@ class Ease {
 		return "";
 	}
 
-	static Interpolation fromName( const std::string& name,
+	static Interpolation fromName( std::string_view name,
 								   const Interpolation& defaultInterpolation = Ease::Linear ) {
 		if ( "linear" == name )
 			return Ease::Linear;
@@ -184,12 +184,21 @@ class Ease {
 			return Ease::ElasticInOut;
 		if ( "cubicbezier" == name || "cubic-bezier" == name )
 			return Ease::CubizBezier;
-		// Handle the case that the name is a function
-		if ( name.find_first_of( '(' ) != std::string::npos ) {
-			System::FunctionString func( System::FunctionString::parse( name ) );
-			return fromName( func.getName(), defaultInterpolation );
-		}
+		// Function parameters do not participate in interpolation-name lookup.
+		const auto functionStart = name.find_first_of( '(' );
+		if ( functionStart != std::string_view::npos )
+			return fromName( name.substr( 0, functionStart ), defaultInterpolation );
 		return defaultInterpolation;
+	}
+
+	static Interpolation fromName( const std::string& name,
+								   const Interpolation& defaultInterpolation = Ease::Linear ) {
+		return fromName( std::string_view{ name }, defaultInterpolation );
+	}
+
+	static Interpolation fromName( const char* name,
+								   const Interpolation& defaultInterpolation = Ease::Linear ) {
+		return fromName( std::string_view{ name }, defaultInterpolation );
 	}
 };
 

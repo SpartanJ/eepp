@@ -1346,6 +1346,9 @@ class EE_API Node : public Transformable {
 	 */
 	std::vector<Action*> getActionsByTag( const Action::UniqueID& tag );
 
+	/** Appends matching actions to inline-capable storage without allocating in the common case. */
+	void getActionsByTag( const Action::UniqueID& tag, SmallVector<Action*, 4>& actions );
+
 	/**
 	 * @brief Removes all actions from this node.
 	 *

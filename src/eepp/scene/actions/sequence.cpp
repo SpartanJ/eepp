@@ -7,41 +7,45 @@ Sequence* Sequence::New( const std::vector<Action*> sequence ) {
 }
 
 Sequence* Sequence::New( Action* action, Action* action2 ) {
-	return New( {action, action2} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3 ) {
-	return New( {action, action2, action3} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4 ) {
-	return New( {action, action2, action3, action4} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3, action4 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4,
 						 Action* action5 ) {
-	return New( {action, action2, action3, action4, action5} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3, action4, action5 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4,
 						 Action* action5, Action* action6 ) {
-	return New( {action, action2, action3, action4, action5, action6} );
+	return eeNew( Sequence,
+				  ( ActionContainer{ action, action2, action3, action4, action5, action6 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4,
 						 Action* action5, Action* action6, Action* action7 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											   action7 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4,
 						 Action* action5, Action* action6, Action* action7, Action* action8 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7, action8} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											   action7, action8 } ) );
 }
 
 Sequence* Sequence::New( Action* action, Action* action2, Action* action3, Action* action4,
 						 Action* action5, Action* action6, Action* action7, Action* action8,
 						 Action* action9 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7, action8, action9} );
+	return eeNew( Sequence, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											   action7, action8, action9 } ) );
 }
 
 void Sequence::start() {
@@ -102,17 +106,17 @@ Time Sequence::getTotalTime() {
 }
 
 Action* Sequence::clone() const {
-	return Sequence::New( mSequence );
+	return eeNew( Sequence, ( mSequence ) );
 }
 
 Action* Sequence::reverse() const {
-	std::vector<Action*> reversed;
+	ActionContainer reversed;
 
 	for ( auto it = mSequence.rbegin(); it != mSequence.rend(); ++it ) {
 		reversed.push_back( *it );
 	}
 
-	return Sequence::New( reversed );
+	return eeNew( Sequence, ( std::move( reversed ) ) );
 }
 
 Sequence::~Sequence() {
@@ -122,6 +126,9 @@ Sequence::~Sequence() {
 	}
 }
 
-Sequence::Sequence( const std::vector<Action*> sequence ) : mSequence( sequence ), mCurPos( 0 ) {}
+Sequence::Sequence( const std::vector<Action*> sequence ) :
+	mSequence( sequence.begin(), sequence.end() ), mCurPos( 0 ) {}
+
+Sequence::Sequence( ActionContainer sequence ) : mSequence( std::move( sequence ) ), mCurPos( 0 ) {}
 
 }}} // namespace EE::Scene::Actions

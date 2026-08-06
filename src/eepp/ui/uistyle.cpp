@@ -135,8 +135,8 @@ void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properti
 }
 
 bool UIStyle::hasTransition( const std::string& propertyName ) {
-	return mTransitions.find( propertyName ) != mTransitions.end() ||
-		   mTransitions.find( "all" ) != mTransitions.end();
+	return mDefinition && mDefinition->getTransitions().get( String::hashToLower(
+							  propertyName.c_str(), static_cast<Int64>( propertyName.size() ) ) );
 }
 
 StyleSheetPropertyAnimation* UIStyle::getAnimation( const PropertyDefinition* propertyDef ) {
@@ -160,15 +160,20 @@ bool UIStyle::hasAnimation( const PropertyDefinition* propertyDef ) {
 }
 
 TransitionDefinition UIStyle::getTransition( const std::string& propertyName ) {
-	auto propertyTransitionIt = mTransitions.find( propertyName );
-
-	if ( propertyTransitionIt != mTransitions.end() ) {
-		return propertyTransitionIt->second;
-	} else if ( ( propertyTransitionIt = mTransitions.find( "all" ) ) != mTransitions.end() ) {
-		return propertyTransitionIt->second;
-	}
-
-	return TransitionDefinition();
+	TransitionDefinition transition;
+	if ( !mDefinition )
+		return transition;
+	const auto* computed = mDefinition->getTransitions().get(
+		String::hashToLower( propertyName.c_str(), static_cast<Int64>( propertyName.size() ) ) );
+	if ( !computed )
+		return transition;
+	transition.property = propertyName;
+	transition.timingFunction = computed->timingFunction;
+	transition.timingFunctionParameters.assign( computed->timingFunctionParameters.begin(),
+												computed->timingFunctionParameters.end() );
+	transition.delay = computed->delay;
+	transition.duration = computed->duration;
+	return transition;
 }
 
 const bool& UIStyle::isChangingState() const {
@@ -339,9 +344,9 @@ void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::str
 	for ( int depth = 0; depth < maxDepth; depth++ ) {
 		bool changed = false;
 		if ( !property->getVarCache().empty() ) {
-			auto varCacheCopy = property->getVarCache();
-			for ( auto& var : varCacheCopy ) {
-				for ( auto& val : var.variableList ) {
+			const auto& varCache = property->getVarCache();
+			for ( const auto& var : varCache ) {
+				for ( const auto& val : var.variableList ) {
 					StyleSheetVariable variable( getVariable( val ) );
 					if ( !variable.isEmpty() ) {
 						String::replaceAll( newValue, var.definition, variable.getValue() );
@@ -431,11 +436,6 @@ void UIStyle::onStateChange() {
 		mForceReapplyProperties = false;
 
 		mWidget->beginAttributesTransaction();
-
-		if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
-			mTransitions = TransitionDefinition::parseTransitionProperties(
-				mDefinition->getTransitionProperties() );
-		}
 
 		for ( PropertyId prop : changedProperties ) {
 			std::optional<StyleSheetProperty> resolvedProperty;
@@ -669,11 +669,17 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 				}
 			}
 
-			TransitionDefinition transitionInfo( getTransition( property->getName() ) );
+			const ComputedTransitionDefinition* transitionInfo =
+				mDefinition ? mDefinition->getTransitions().get( propertyDefinition->getId() )
+							: nullptr;
+			if ( nullptr == transitionInfo ) {
+				mWidget->applyProperty( *property );
+				return;
+			}
 
-			std::vector<Action*> previousTransitions =
-				mWidget->getActionsByTag( propertyDefinition->getId() );
-			std::vector<Action*> removeTransitions;
+			SmallVector<Action*, 4> previousTransitions;
+			mWidget->getActionsByTag( propertyDefinition->getId(), previousTransitions );
+			SmallVector<Action*, 4> removeTransitions;
 			StyleSheetPropertyAnimation* prevTransition = NULL;
 
 			if ( !previousTransitions.empty() ) {
@@ -707,9 +713,9 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 					currentProgress = eemin( 1.f, currentProgress );
 					if ( 0.f != currentProgress ) {
 						elapsed = Milliseconds( ( 1.f - currentProgress ) *
-												transitionInfo.getDuration().asMilliseconds() );
+												transitionInfo->duration.asMilliseconds() );
 					} else {
-						elapsed = transitionInfo.getDuration();
+						elapsed = transitionInfo->duration;
 					}
 					startValue = prevTransition->getEndValue();
 				} else if ( startValue == prevTransition->getEndValue() ) {
@@ -723,9 +729,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 
 			StyleSheetPropertyAnimation* newTransition = StyleSheetPropertyAnimation::New(
 				propertyDefinition, startValue, property->getValue(), property->getIndex(),
-				transitionInfo.getDuration(), transitionInfo.getDelay(),
-				transitionInfo.getTimingFunction(), transitionInfo.getTimingFunctionParameters(),
-				AnimationOrigin::Transition );
+				transitionInfo->duration, transitionInfo->delay, transitionInfo->timingFunction,
+				transitionInfo->timingFunctionParameters, AnimationOrigin::Transition );
 			newTransition->setElapsed( elapsed );
 			newTransition->setTag( propertyDefinition->getId() );
 			mWidget->runAction( newTransition );

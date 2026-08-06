@@ -119,7 +119,8 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 						case PropertyId::AnimationTimingFunction: {
 							TimingFunction tf( TimingFunction::parse( val ) );
 							timingFunctions.emplace_back( tf.interpolation );
-							timingFunctionParameters.emplace_back( tf.parameters );
+							timingFunctionParameters.emplace_back( tf.parameters.begin(),
+																   tf.parameters.end() );
 							break;
 						}
 						default:
@@ -256,12 +257,29 @@ const String::HashType& AnimationDefinition::getId() const {
 }
 
 const std::vector<double>& AnimationDefinition::getTimingFunctionParameters() const {
+	if ( !mTimingFunctionParametersVectorValid ) {
+		mTimingFunctionParametersVector.assign( mTimingFunctionParameters.begin(),
+												mTimingFunctionParameters.end() );
+		mTimingFunctionParametersVectorValid = true;
+	}
+	return mTimingFunctionParametersVector;
+}
+
+const TimingFunction::Parameters& AnimationDefinition::getTimingFunctionParametersInline() const {
 	return mTimingFunctionParameters;
 }
 
 void AnimationDefinition::setTimingFunctionParameters(
 	const std::vector<double>& timingFunctionParameters ) {
+	mTimingFunctionParameters.assign( timingFunctionParameters.begin(),
+									  timingFunctionParameters.end() );
+	mTimingFunctionParametersVectorValid = false;
+}
+
+void AnimationDefinition::setTimingFunctionParameters(
+	const TimingFunction::Parameters& timingFunctionParameters ) {
 	mTimingFunctionParameters = timingFunctionParameters;
+	mTimingFunctionParametersVectorValid = false;
 }
 
 const AnimationDefinition::AnimationFillMode& AnimationDefinition::getFillMode() const {

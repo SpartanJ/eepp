@@ -42,10 +42,13 @@ class EE_API Spawn : public Action {
 	virtual ~Spawn();
 
   protected:
-	std::vector<Action*> mSpawn;
+	using ActionContainer = SmallVector<Action*, 4>;
+	ActionContainer mSpawn;
 	bool mAllDone;
 
 	Spawn( const std::vector<Action*> spawn );
+
+	Spawn( ActionContainer spawn );
 };
 
 }}} // namespace EE::Scene::Actions

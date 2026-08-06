@@ -3,128 +3,56 @@
 #include <eepp/system/functionstring.hpp>
 
 #include <string>
-#include <type_traits>
 
 namespace EE { namespace System {
 
-template <typename StringType> FunctionString FunctionString::parse( StringType function ) {
-	using CharType = typename StringType::value_type;
-
-	size_t funcSep = function.find( '(' );
-	if ( funcSep == StringType::npos )
-		return FunctionString( "", {}, {} );
-
-	auto funcName = String::trim( function.substr( 0, funcSep ) );
+FunctionString FunctionString::parseOwned( std::string_view function ) {
+	View view = parseView( function );
+	if ( view.isEmpty() )
+		return {};
 	Parameters funcParameters;
 	TypeStringVector typeStringData;
-
-	auto parametersString = function.substr( funcSep + 1 );
-	size_t paramClose = parametersString.find_last_of( ')' );
-	if ( paramClose == StringType::npos )
-		return FunctionString( "", {}, {} );
-
-	parametersString = parametersString.substr( 0, paramClose );
-
-	bool stateParsingString = false;
-	std::basic_string<CharType> buffer;
-	CharType prevChar = 0;
-	CharType quoteChar = 0;
-
-	bool currentParamIsString = false;
-	int parenDepth = 0;
-
-	auto pushBufferToParams = [&]() {
-		if constexpr ( std::is_same_v<CharType, char> ) {
-			if ( !currentParamIsString )
-				String::trimInPlace( buffer );
-			funcParameters.push_back( buffer );
-		} else {
-			std::string utf8Buffer = String( buffer ).toUtf8();
-			if ( !currentParamIsString )
-				String::trimInPlace( utf8Buffer );
-			funcParameters.push_back( utf8Buffer );
+	view.forEachParameter( [&]( std::string_view parameter, bool wasString ) {
+		std::string owned;
+		owned.reserve( parameter.size() );
+		const char quote = wasString ? function[parameter.data() - function.data() - 1] : 0;
+		for ( std::size_t i = 0; i < parameter.size(); ++i ) {
+			if ( wasString && parameter[i] == '\\' && i + 1 < parameter.size() &&
+				 parameter[i + 1] == quote )
+				continue;
+			owned += parameter[i];
 		}
-		typeStringData.push_back( currentParamIsString );
-		buffer.clear();
-		currentParamIsString = false;
-	};
+		funcParameters.emplace_back( std::move( owned ) );
+		typeStringData.emplace_back( wasString );
+		return true;
+	} );
+	return FunctionString( std::string{ view.getName() }, std::move( funcParameters ),
+						   std::move( typeStringData ) );
+}
 
-	for ( size_t i = 0; i < parametersString.length(); ++i ) {
-
-		CharType c = parametersString[i];
-
-		if ( !stateParsingString ) {
-			if ( c == '(' ) {
-				parenDepth++;
-				buffer += c;
-			} else if ( c == ')' ) {
-				if ( parenDepth == 0 )
-					break;
-				if ( parenDepth > 0 )
-					parenDepth--;
-				buffer += c;
-			} else if ( c == ',' ) {
-				if ( parenDepth == 0 ) {
-					// Add param if we either accumulated characters or actively parsed an empty
-					// string parameter.
-					if ( !buffer.empty() || currentParamIsString ) {
-						pushBufferToParams();
-					}
-				} else {
-					buffer += c;
-				}
-			} else if ( c == '"' || c == '\'' ) {
-				stateParsingString = true;
-				quoteChar = c;
-				if ( parenDepth == 0 && buffer.empty() ) {
-					currentParamIsString = true;
-				} else {
-					buffer += c;
-				}
-			} else if ( c == ' ' ) {
-				if ( buffer.empty() || currentParamIsString )
-					continue;
-				else
-					buffer += c;
-			} else {
-				buffer += c;
-			}
-		} else {
-			if ( c == '\\' && i + 1 < parametersString.length() &&
-				 parametersString[i + 1] == quoteChar ) {
-			} else if ( prevChar != '\\' && c == quoteChar ) {
-				stateParsingString = false;
-				if ( !currentParamIsString ) {
-					buffer += c;
-				}
-			} else {
-				buffer += c;
-			}
-			prevChar = c;
-		}
-	}
-
-	// Add param if we either accumulated characters or actively parsed an empty string parameter.
-	if ( !buffer.empty() || currentParamIsString )
-		pushBufferToParams();
-
-	if constexpr ( std::is_same_v<StringType, std::string> ) {
-		return FunctionString( std::string{ funcName }, funcParameters, typeStringData );
-	} else {
-		return FunctionString( String( funcName ).toUtf8(), funcParameters, typeStringData );
-	}
+FunctionString::View FunctionString::parseView( std::string_view function ) {
+	const std::size_t open = function.find( '(' );
+	if ( open == std::string_view::npos )
+		return {};
+	const std::size_t close = function.rfind( ')' );
+	if ( close == std::string_view::npos || close < open )
+		return {};
+	std::string_view name = String::trim( function.substr( 0, open ), " \t\n\r\f\v" );
+	if ( name.empty() )
+		return {};
+	return View{ name, function.substr( open + 1, close - open - 1 ) };
 }
 
 FunctionString FunctionString::parse( const std::string& function ) {
-	return parse<std::string_view>( std::string_view{ function } );
+	return parseOwned( function );
 }
 
 FunctionString FunctionString::parse( std::string_view function ) {
-	return parse<std::string_view>( function );
+	return parseOwned( function );
 }
 
 FunctionString FunctionString::parse( String::View function ) {
-	return parse<String::View>( function );
+	return parseOwned( String( function ).toUtf8() );
 }
 
 FunctionString::FunctionString( const std::string& name, const Parameters& parameters,

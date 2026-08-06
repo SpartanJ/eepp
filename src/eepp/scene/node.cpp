@@ -1526,6 +1526,10 @@ std::vector<Action*> Node::getActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->getActionsByTagFromTarget( this, tag );
 }
 
+void Node::getActionsByTag( const Action::UniqueID& tag, SmallVector<Action*, 4>& actions ) {
+	getActionManager()->getActionsByTagFromTarget( this, tag, actions );
+}
+
 void Node::clearActions() {
 	getActionManager()->removeAllActionsFromTarget( this );
 }

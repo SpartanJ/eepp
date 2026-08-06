@@ -100,7 +100,6 @@ class EE_API UIStyle : public UIState {
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
 	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
 	std::shared_ptr<CSS::ElementDefinition> mDefinition;
-	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;

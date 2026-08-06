@@ -60,14 +60,7 @@ static bool hasDefiniteCSSHeight( UIWidget* widget ) {
 
 static CSSBaselineAlignValue parseBaselineAlign( UIHTMLWidget* widget,
 												 const StyleSheetProperty& property ) {
-	std::string_view val = property.value();
-	auto isSpace = []( char c ) {
-		return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
-	};
-	while ( !val.empty() && isSpace( val.front() ) )
-		val.remove_prefix( 1 );
-	while ( !val.empty() && isSpace( val.back() ) )
-		val.remove_suffix( 1 );
+	std::string_view val = String::trim( std::string_view{ property.value() }, " \t\n\r\f\v" );
 	if ( val.empty() )
 		return {};
 

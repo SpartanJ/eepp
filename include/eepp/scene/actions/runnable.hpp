@@ -1,15 +1,15 @@
 #ifndef EE_SCENE_ACTION_CALLBACK_HPP
 #define EE_SCENE_ACTION_CALLBACK_HPP
 
+#include <eepp/core/small_function.hpp>
 #include <eepp/scene/actions/delay.hpp>
 #include <eepp/system/mutex.hpp>
-#include <functional>
 
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Runnable : public Delay {
   public:
-	typedef std::function<void()> RunnableFunc;
+	using RunnableFunc = SmallFunction<48>;
 
 	static Runnable* New( RunnableFunc callback, const Time& time = Seconds( 0 ),
 						  bool loop = false );

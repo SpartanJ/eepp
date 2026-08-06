@@ -7,41 +7,45 @@ Spawn* Spawn::New( const std::vector<Action*> spawn ) {
 }
 
 Spawn* Spawn::New( Action* action, Action* action2 ) {
-	return New( {action, action2} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3 ) {
-	return New( {action, action2, action3} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4 ) {
-	return New( {action, action2, action3, action4} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3, action4 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4,
 				   Action* action5 ) {
-	return New( {action, action2, action3, action4, action5} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3, action4, action5 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4,
 				   Action* action5, Action* action6 ) {
-	return New( {action, action2, action3, action4, action5, action6} );
+	return eeNew( Spawn,
+				  ( ActionContainer{ action, action2, action3, action4, action5, action6 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4,
 				   Action* action5, Action* action6, Action* action7 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											action7 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4,
 				   Action* action5, Action* action6, Action* action7, Action* action8 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7, action8} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											action7, action8 } ) );
 }
 
 Spawn* Spawn::New( Action* action, Action* action2, Action* action3, Action* action4,
 				   Action* action5, Action* action6, Action* action7, Action* action8,
 				   Action* action9 ) {
-	return New( {action, action2, action3, action4, action5, action6, action7, action8, action9} );
+	return eeNew( Spawn, ( ActionContainer{ action, action2, action3, action4, action5, action6,
+											action7, action8, action9 } ) );
 }
 
 void Spawn::start() {
@@ -102,17 +106,17 @@ Time Spawn::getTotalTime() {
 }
 
 Action* Spawn::clone() const {
-	return Spawn::New( mSpawn );
+	return eeNew( Spawn, ( mSpawn ) );
 }
 
 Action* Spawn::reverse() const {
-	std::vector<Action*> reversed;
+	ActionContainer reversed;
 
 	for ( auto it = mSpawn.rbegin(); it != mSpawn.rend(); ++it ) {
 		reversed.push_back( *it );
 	}
 
-	return Spawn::New( reversed );
+	return eeNew( Spawn, ( std::move( reversed ) ) );
 }
 
 Spawn::~Spawn() {
@@ -122,6 +126,9 @@ Spawn::~Spawn() {
 	}
 }
 
-Spawn::Spawn( const std::vector<Action*> spawn ) : mSpawn( spawn ), mAllDone( false ) {}
+Spawn::Spawn( const std::vector<Action*> spawn ) :
+	mSpawn( spawn.begin(), spawn.end() ), mAllDone( false ) {}
+
+Spawn::Spawn( ActionContainer spawn ) : mSpawn( std::move( spawn ) ), mAllDone( false ) {}
 
 }}} // namespace EE::Scene::Actions

@@ -43,6 +43,9 @@ class EE_API ActionManager {
 
 	std::vector<Action*> getActionsByTagFromTarget( Node* target, const Action::UniqueID& tag );
 
+	void getActionsByTagFromTarget( Node* target, const Action::UniqueID& tag,
+									SmallVector<Action*, 4>& actions );
+
 	void update( const Time& time );
 
 	std::size_t count() const;

@@ -34,6 +34,10 @@ const std::vector<const StyleSheetProperty*>& ElementDefinition::getTransitionPr
 	return mTransitionProperties;
 }
 
+const ComputedTransitions& ElementDefinition::getTransitions() const {
+	return mTransitions;
+}
+
 const std::vector<const StyleSheetProperty*>& ElementDefinition::getAnimationProperties() const {
 	return mAnimationProperties;
 }
@@ -81,6 +85,7 @@ void ElementDefinition::refresh() {
 	}
 
 	resolveVariables();
+	mTransitions = ComputedTransitions::parse( mTransitionProperties );
 
 	for ( auto& property : mProperties ) {
 		// Only registered properties participate in the dense ID set. Unknown

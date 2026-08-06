@@ -1,3 +1,5 @@
+#include <array>
+#include <cctype>
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawableresource.hpp>
 #include <eepp/graphics/image.hpp>
@@ -18,6 +20,36 @@
 using namespace EE::Math::easing;
 
 namespace EE { namespace UI {
+
+namespace {
+
+struct WhitespaceParts {
+	std::array<std::string_view, 3> values;
+	std::size_t count{ 0 };
+
+	std::size_t size() const { return count; }
+	bool empty() const { return count == 0; }
+	std::string_view operator[]( std::size_t index ) const { return values[index]; }
+};
+
+WhitespaceParts splitWhitespace( std::string_view value ) {
+	WhitespaceParts parts;
+	std::size_t position = 0;
+	while ( position < value.size() && parts.count < parts.values.size() ) {
+		while ( position < value.size() &&
+				std::isspace( static_cast<unsigned char>( value[position] ) ) )
+			++position;
+		const std::size_t start = position;
+		while ( position < value.size() &&
+				!std::isspace( static_cast<unsigned char>( value[position] ) ) )
+			++position;
+		if ( position > start )
+			parts.values[parts.count++] = value.substr( start, position - start );
+	}
+	return parts;
+}
+
+} // namespace
 
 void UINodeDrawable::repeatFromText( const std::string& text, RepeatX& repeatX, RepeatY& repeatY ) {
 	auto parts = String::split( text, ' ' );
@@ -796,11 +828,9 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 		Scale1 = eemax( Scale1, Scale2 );
 		size = Sizef( drawableSize.getWidth() * Scale1, drawableSize.getHeight() * Scale1 );
 	} else {
-		std::vector<std::string> sizePart = String::split( drawableSizeEq, ' ' );
-
-		if ( sizePart.size() == 1 ) {
-			sizePart.push_back( "auto" );
-		}
+		auto sizePart = splitWhitespace( drawableSizeEq );
+		if ( sizePart.size() == 1 )
+			sizePart.values[sizePart.count++] = "auto";
 
 		if ( sizePart.size() == 2 ) {
 			if ( sizePart[0] == "auto" && sizePart[1] == "auto" ) {
@@ -841,24 +871,22 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 	return size;
 }
 
-Vector2f UINodeDrawable::LayerDrawable::calcPosition( std::string positionXEq,
-													  std::string positionYEq ) {
+Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positionXEq,
+													  const std::string& positionYEq ) {
 	Vector2f position( Vector2f::Zero );
 
-	if ( positionXEq.empty() )
-		positionXEq = "center";
-
-	if ( positionYEq.empty() )
-		positionYEq = "center";
-
-	auto posX = String::split( positionXEq, ' ' );
-	auto posY = String::split( positionYEq, ' ' );
+	const std::string_view positionX =
+		positionXEq.empty() ? std::string_view{ "center" } : std::string_view{ positionXEq };
+	const std::string_view positionY =
+		positionYEq.empty() ? std::string_view{ "center" } : std::string_view{ positionYEq };
+	auto posX = splitWhitespace( positionX );
+	auto posY = splitWhitespace( positionY );
 
 	if ( posX.empty() || posY.empty() )
 		return position;
 
-	bool needsRoundingX = positionXEq.back() == '%';
-	bool needsRoundingY = positionYEq.back() == '%';
+	bool needsRoundingX = positionX.back() == '%';
+	bool needsRoundingY = positionY.back() == '%';
 
 	Sizef ownerSize = mContainer->getOwner()->getPixelsSize();
 	Float refWidth = ownerSize.getWidth();

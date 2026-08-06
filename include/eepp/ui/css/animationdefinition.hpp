@@ -4,6 +4,7 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/timingfunction.hpp>
 #include <vector>
 
 using namespace EE::Math;
@@ -56,7 +57,11 @@ class EE_API AnimationDefinition {
 
 	const Ease::Interpolation& getTimingFunction() const;
 
+	/** Kept for source compatibility. Internal animation code uses the inline view below so this
+	 * legacy vector is only materialized when an external caller requests it. */
 	const std::vector<double>& getTimingFunctionParameters() const;
+
+	const TimingFunction::Parameters& getTimingFunctionParametersInline() const;
 
 	const AnimationFillMode& getFillMode() const;
 
@@ -71,6 +76,8 @@ class EE_API AnimationDefinition {
 	void setTimingFunction( const Ease::Interpolation& value );
 
 	void setTimingFunctionParameters( const std::vector<double>& timingFunctionParameters );
+
+	void setTimingFunctionParameters( const TimingFunction::Parameters& timingFunctionParameters );
 
 	void setDirection( const AnimationDirection& value );
 
@@ -87,7 +94,9 @@ class EE_API AnimationDefinition {
 	Time mDuration = Time::Zero;
 	Int32 mIterations = 1; /* -1 == "infinite" */
 	Ease::Interpolation mTimingFunction = Ease::Interpolation::Linear;
-	std::vector<double> mTimingFunctionParameters{};
+	TimingFunction::Parameters mTimingFunctionParameters{};
+	mutable std::vector<double> mTimingFunctionParametersVector;
+	mutable bool mTimingFunctionParametersVectorValid{ false };
 	AnimationDirection mDirection = Normal;
 	AnimationFillMode mFillMode = None;
 	bool mPaused = false;
@@ -98,7 +107,7 @@ inline bool operator==( const AnimationDefinition& a, const AnimationDefinition&
 		   a.getDelay() == b.getDelay() && a.getDirection() == b.getDirection() &&
 		   a.isPaused() == b.isPaused() && a.getIterations() == b.getIterations() &&
 		   a.getName() == b.getName() &&
-		   a.getTimingFunctionParameters() == b.getTimingFunctionParameters();
+		   a.getTimingFunctionParametersInline() == b.getTimingFunctionParametersInline();
 }
 
 inline bool operator!=( const AnimationDefinition& a, const AnimationDefinition& b ) {

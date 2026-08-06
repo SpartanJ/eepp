@@ -106,10 +106,7 @@ static bool tryParseModernRgbRgba( std::string_view paramsStr, Color& outColor )
 }
 
 static bool parseHslHue( Float& out, std::string_view tok ) {
-	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
-		tok.remove_prefix( 1 );
-	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
-		tok.remove_suffix( 1 );
+	tok = String::trim( tok, " \t" );
 	if ( tok.empty() )
 		return false;
 	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||
@@ -133,10 +130,7 @@ static bool parseHslHue( Float& out, std::string_view tok ) {
 }
 
 static bool parseHslPercentOrNumber( Float& out, std::string_view tok ) {
-	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
-		tok.remove_prefix( 1 );
-	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
-		tok.remove_suffix( 1 );
+	tok = String::trim( tok, " \t" );
 	if ( tok.empty() )
 		return false;
 	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||

@@ -4,7 +4,7 @@
 namespace EE { namespace Scene { namespace Actions {
 
 Runnable* Runnable::New( RunnableFunc callback, const Time& time, bool loop ) {
-	return eeNew( Runnable, ( callback, time, loop ) );
+	return eeNew( Runnable, ( std::move( callback ), time, loop ) );
 }
 
 Runnable::Runnable( Runnable::RunnableFunc callback, const Time& time, bool loop ) :

@@ -18,7 +18,7 @@ using namespace EE::Window;
 
 namespace EE {
 
-AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int line, size_t memory,
+AllocatedPointer::AllocatedPointer( void* data, const char* file, int line, size_t memory,
 									bool track, bool globalAllocation ) {
 	mData = data;
 	mFile = file;
@@ -75,7 +75,7 @@ void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAl
 	AllocatedPointerMapIt it = state.pointers.find( place );
 
 	if ( it != state.pointers.end() ) {
-		removePointer( place, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+		removePointer( place, aAllocatedPointer.mFile, aAllocatedPointer.mLine );
 	}
 
 	return addPointer( aAllocatedPointer );
@@ -110,7 +110,7 @@ void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 
 	if ( aAllocatedPointer.mTrack )
 		eePRINTL( "Allocating pointer %p at '%s' %d", aAllocatedPointer.mData,
-				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+				  aAllocatedPointer.mFile, aAllocatedPointer.mLine );
 
 	return aAllocatedPointer.mData;
 }
@@ -123,7 +123,7 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 	AllocatedPointerMapIt it = state.pointers.find( data );
 
 	if ( it != state.pointers.end() && it->second.mTrack )
-		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile.c_str(),
+		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile,
 				  aAllocatedPointer.mLine );
 
 	if ( it == state.pointers.end() )
@@ -131,10 +131,10 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 
 	if ( aAllocatedPointer.mTrack )
 		eePRINTL( "Reallocating pointer %p at '%s' %d", aAllocatedPointer.mData,
-				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+				  aAllocatedPointer.mFile, aAllocatedPointer.mLine );
 
 	if ( it->first != aAllocatedPointer.mData ) {
-		removePointer( data, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+		removePointer( data, aAllocatedPointer.mFile, aAllocatedPointer.mLine );
 		addPointer( aAllocatedPointer );
 	} else {
 		state.totalMemoryUsage -= it->second.mMemory;
@@ -310,7 +310,7 @@ void MemoryManager::showResults() {
 
 			char address[2 + sizeof( void* ) * 2 + 1];
 			snprintf( address, sizeof( address ), "%p", ap.mData );
-			leaks.add_row( { address, ap.mFile, std::to_string( ap.mLine ),
+			leaks.add_row( { address, std::string{ ap.mFile }, std::to_string( ap.mLine ),
 							 FileSystem::sizeToString( static_cast<Int64>( ap.mMemory ) ) } );
 		}
 
@@ -320,7 +320,7 @@ void MemoryManager::showResults() {
 	auto allocationLocation = []( const AllocatedPointer& allocation ) {
 		return allocation.mData == nullptr
 				   ? std::string( "-" )
-				   : allocation.mFile + ":" + std::to_string( allocation.mLine );
+				   : std::string{ allocation.mFile } + ":" + std::to_string( allocation.mLine );
 	};
 
 	tabulate::Table summary;

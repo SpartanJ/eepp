@@ -81,12 +81,21 @@ std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
 	return actions;
 }
 
+void ActionManager::getActionsByTagFromTarget( Node* target, const Action::UniqueID& tag,
+											   SmallVector<Action*, 4>& actions ) {
+	Lock l( mMutex );
+	for ( Action* action : mActions ) {
+		if ( action->getTarget() == target && action->getTag() == tag )
+			actions.emplace_back( action );
+	}
+}
+
 bool ActionManager::removeActionByTag( const Action::UniqueID& tag ) {
 	return removeAction( getActionByTag( tag ) );
 }
 
 bool ActionManager::removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag ) {
-	std::vector<Action*> removeList;
+	ActionList removeList;
 
 	{
 		Lock l( mMutex );
@@ -226,7 +235,7 @@ bool ActionManager::removeActions( const std::vector<Action*>& actions ) {
 }
 
 bool ActionManager::removeAllActionsFromTarget( Node* target ) {
-	std::vector<Action*> removeList;
+	ActionList removeList;
 
 	{
 		Lock l( mMutex );
