@@ -1945,6 +1945,9 @@ solution "eepp"
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",

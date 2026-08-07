@@ -1977,6 +1977,9 @@ workspace "eepp"
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
+		filter {}
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
