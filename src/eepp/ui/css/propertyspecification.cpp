@@ -188,7 +188,7 @@ PropertySpecification::addPropertyAlias( const std::string& alias,
 const ShorthandDefinition*
 PropertySpecification::addShorthandAlias( const std::string& alias,
 										  const ShorthandDefinition* shorthandDef ) {
-	mShorthandIds.addAlias( alias, shorthandDef->getShorthandId() );
+	mShorthandIds.addAlias( alias, shorthandDef->getShorthandId(), true );
 	return shorthandDef;
 }
 

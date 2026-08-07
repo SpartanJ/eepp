@@ -82,7 +82,7 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 	 * Only the reverse entry is added; no ID is occupied and the canonical name
 	 * is never replaced.
 	 */
-	bool addAlias( const std::string& alias, Id target ) {
+	bool addAlias( const std::string& alias, Id target, bool couldBeDuplicate = false ) {
 		if ( !contains( target ) ) {
 			EE::System::Log::error( "IdNameMap: alias \"%s\" targets an unknown ID.",
 									alias.c_str() );
@@ -92,8 +92,10 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 		if ( existing != mIdsByName.end() ) {
 			if ( existing->second == target )
 				return true;
-			EE::System::Log::error( "IdNameMap: alias \"%s\" is already bound to another ID.",
-									alias.c_str() );
+			if ( !couldBeDuplicate ) {
+				EE::System::Log::error( "IdNameMap: alias \"%s\" is already bound to another ID.",
+										alias.c_str() );
+			}
 			return false;
 		}
 		mIdsByName.emplace( alias, target );

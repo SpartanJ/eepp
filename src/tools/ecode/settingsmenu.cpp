@@ -78,52 +78,126 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	mSettingsMenu->addSeparator()->setId( "settings-submenus-sep" );
 
 	mProjectMenu = UIPopUpMenu::New();
+	mDocMenu = UIPopUpMenu::New();
+	const auto buildDocMenu = [this] {
+		if ( mDocMenu->getCount() == 0 ) {
+			createDocumentMenu();
+			mDocMenu->reloadStyle( true, true );
+		}
+	};
+	const auto lazyBuildDocMenu = [this, buildDocMenu]( const Event* ) {
+		buildDocMenu();
+		updateDocumentMenu();
+	};
+	const auto lazyBuildProjectMenu = [this, buildDocMenu]( const Event* ) {
+		if ( mProjectMenu->getCount() == 0 ) {
+			buildDocMenu();
+			createProjectMenu();
+			mProjectMenu->reloadStyle( true, true );
+		}
+		updateProjectSettingsMenu();
+	};
 	auto projectMenuButton = mSettingsMenu
 								 ->addSubMenu( i18n( "folder_settings", "Folder/Project Settings" ),
 											   findIcon( "folder-user" ), mProjectMenu )
 								 ->setId( "project_settings" )
 								 ->asType<UIWidget>();
+	mProjectMenu->on( Event::OnMenuShow, lazyBuildProjectMenu );
+	projectMenuButton->on( Event::OnMenuShow, lazyBuildProjectMenu );
 
 	auto docMenuButton =
-		mSettingsMenu
-			->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
+		mSettingsMenu->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), mDocMenu )
 			->setId( "doc-menu" )
 			->asType<UIWidget>();
+	mDocMenu->on( Event::OnMenuShow, lazyBuildDocMenu );
+	docMenuButton->on( Event::OnMenuShow, lazyBuildDocMenu );
 
-	createProjectMenu();
-
-	auto terminalMenuButton = mSettingsMenu
-								  ->addSubMenu( i18n( "terminal", "Terminal" ),
-												findIcon( "terminal" ), createTerminalMenu() )
-								  ->setId( "term-menu" )
-								  ->asType<UIWidget>();
-
-	auto editMenuButton =
-		mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() )
-			->setId( "edit-menu" )
-			->asType<UIWidget>();
-
-	auto viewMenuButton =
-		mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() )
-			->setId( "view-menu" )
-			->asType<UIWidget>();
-
-	auto toolsMenuButton =
+	mTerminalMenu = UIPopUpMenu::New();
+	const auto lazyBuildTerminalMenu = [this]( const Event* ) {
+		if ( mTerminalMenu->getCount() == 0 ) {
+			createTerminalMenu();
+			mTerminalMenu->reloadStyle( true, true );
+		}
+		updateTerminalMenu();
+	};
+	auto terminalMenuButton =
 		mSettingsMenu
-			->addSubMenu( i18n( "tools", "Tools" ), findIcon( "tools" ), createToolsMenu() )
+			->addSubMenu( i18n( "terminal", "Terminal" ), findIcon( "terminal" ), mTerminalMenu )
+			->setId( "term-menu" )
+			->asType<UIWidget>();
+	mTerminalMenu->on( Event::OnMenuShow, lazyBuildTerminalMenu );
+	terminalMenuButton->on( Event::OnMenuShow, lazyBuildTerminalMenu );
+
+	mEditMenu = UIPopUpMenu::New();
+	const auto lazyBuildEditMenu = [this]( const Event* ) {
+		if ( mEditMenu->getCount() == 0 ) {
+			createEditMenu();
+			mEditMenu->reloadStyle( true, true );
+		}
+		updateEditMenu();
+	};
+	auto editMenuButton = mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, mEditMenu )
+							  ->setId( "edit-menu" )
+							  ->asType<UIWidget>();
+	mEditMenu->on( Event::OnMenuShow, lazyBuildEditMenu );
+	editMenuButton->on( Event::OnMenuShow, lazyBuildEditMenu );
+
+	mViewMenu = UIPopUpMenu::New();
+	const auto lazyBuildViewMenu = [this]( const Event* ) {
+		if ( mViewMenu->getCount() == 0 ) {
+			createViewMenu();
+			mViewMenu->reloadStyle( true, true );
+		}
+		updateViewMenu();
+	};
+	auto viewMenuButton = mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, mViewMenu )
+							  ->setId( "view-menu" )
+							  ->asType<UIWidget>();
+	mViewMenu->on( Event::OnMenuShow, lazyBuildViewMenu );
+	viewMenuButton->on( Event::OnMenuShow, lazyBuildViewMenu );
+
+	mToolsMenu = UIPopUpMenu::New();
+	const auto lazyBuildToolsMenu = [this]( const Event* ) {
+		if ( mToolsMenu->getCount() == 0 ) {
+			createToolsMenu();
+			mToolsMenu->reloadStyle( true, true );
+		}
+	};
+	auto toolsMenuButton =
+		mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), findIcon( "tools" ), mToolsMenu )
 			->setId( "tools-menu" )
 			->asType<UIWidget>();
+	mToolsMenu->on( Event::OnMenuShow, lazyBuildToolsMenu );
+	toolsMenuButton->on( Event::OnMenuShow, lazyBuildToolsMenu );
 
+	mWindowMenu = UIPopUpMenu::New();
+	const auto lazyBuildWindowMenu = [this]( const Event* ) {
+		if ( mWindowMenu->getCount() == 0 ) {
+			createWindowMenu();
+			mWindowMenu->reloadStyle( true, true );
+		}
+	};
 	auto windowMenuButton =
 		mSettingsMenu
-			->addSubMenu( i18n( "window", "Window" ), findIcon( "window-opt" ), createWindowMenu() )
+			->addSubMenu( i18n( "window", "Window" ), findIcon( "window-opt" ), mWindowMenu )
 			->setId( "window-menu" )
 			->asType<UIWidget>();
+	mWindowMenu->on( Event::OnMenuShow, lazyBuildWindowMenu );
+	windowMenuButton->on( Event::OnMenuShow, lazyBuildWindowMenu );
 
+	mHelpMenu = UIPopUpMenu::New();
+	const auto lazyBuildHelpMenu = [this]( const Event* ) {
+		if ( mHelpMenu->getCount() == 0 ) {
+			createHelpMenu();
+			mHelpMenu->reloadStyle( true, true );
+		}
+	};
 	auto helpMenuButton =
-		mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() )
+		mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), mHelpMenu )
 			->setId( "help-menu" )
 			->asType<UIWidget>();
+	mHelpMenu->on( Event::OnMenuShow, lazyBuildHelpMenu );
+	helpMenuButton->on( Event::OnMenuShow, lazyBuildHelpMenu );
 
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
@@ -390,8 +464,6 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		} );
 		return subMenu;
 	};
-
-	mDocMenu = UIPopUpMenu::New();
 
 	// **** CURRENT DOCUMENT ****
 	mDocMenu->add( i18n( "current_document", "Current Document" ) )
@@ -1062,10 +1134,6 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 }
 
 UIMenu* SettingsMenu::createTerminalMenu() {
-	mTerminalMenu = UIPopUpMenu::New();
-
-	mTerminalMenu->on( Event::OnMenuShow, [this]( auto ) { updateTerminalMenu(); } );
-
 	mTerminalMenu->add( i18n( "current_terminal", "Current Terminal" ) )
 		->setTextAlign( UI_HALIGN_CENTER );
 
@@ -1323,7 +1391,6 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 }
 
 UIMenu* SettingsMenu::createEditMenu() {
-	mEditMenu = UIPopUpMenu::New();
 	mEditMenu->setId( "edit_menu" );
 	mEditMenu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )
 		->setId( "undo" );
@@ -1374,7 +1441,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
 
-	UIMenuSeparator* moveSep = mEditMenu->addSeparator();
+	mEditMenu->addSeparator()->setId( "edit-move-sep" );
 
 	mEditMenu
 		->add( i18n( "open_in_new_window", "Open in New Window" ), findIcon( "window" ),
@@ -1386,7 +1453,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   getKeybind( "move-to-new-window" ) )
 		->setId( "move-to-new-window" );
 
-	UIMenuSeparator* fileSep = mEditMenu->addSeparator();
+	mEditMenu->addSeparator()->setId( "edit-file-sep" );
 	mEditMenu
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
@@ -1398,37 +1465,44 @@ UIMenu* SettingsMenu::createEditMenu() {
 		runCommand( event->getNode()->getId() );
 	} );
 
-	mEditMenu->on( Event::OnMenuShow, [this, fileSep, moveSep]( const Event* ) {
-		if ( !mSplitter->curEditorExistsAndFocused() ) {
-			mEditMenu->getItemId( "undo" )->setEnabled( false );
-			mEditMenu->getItemId( "redo" )->setEnabled( false );
-			mEditMenu->getItemId( "copy" )->setEnabled( false );
-			mEditMenu->getItemId( "cut" )->setEnabled( false );
-			mEditMenu->getItemId( "insert_date_menu" )->setEnabled( false );
-			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
-			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
-			moveSep->setEnabled( false )->setVisible( false );
-			mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
-			mEditMenu->getItemId( "move-to-new-window" )->setVisible( false );
-			fileSep->setEnabled( false )->setVisible( false );
-			mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
-			return;
-		}
-		auto doc = mSplitter->getCurEditor()->getDocumentRef();
-		mEditMenu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
-		mEditMenu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
-		mEditMenu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
-		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
-		mEditMenu->getItemId( "insert_date_menu" )->setEnabled( true );
-		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
-		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
-		moveSep->setEnabled( true )->setVisible( true );
-		mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
-		mEditMenu->getItemId( "move-to-new-window" )->setVisible( doc->hasFilepath() );
-		fileSep->setEnabled( doc->hasFilepath() )->setVisible( doc->hasFilepath() );
-		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
-	} );
 	return mEditMenu;
+}
+
+void SettingsMenu::updateEditMenu() {
+	if ( mEditMenu->getCount() == 0 )
+		return;
+
+	UIMenuSeparator* moveSep = mEditMenu->find( "edit-move-sep" )->asType<UIMenuSeparator>();
+	UIMenuSeparator* fileSep = mEditMenu->find( "edit-file-sep" )->asType<UIMenuSeparator>();
+
+	if ( !mSplitter->curEditorExistsAndFocused() ) {
+		mEditMenu->getItemId( "undo" )->setEnabled( false );
+		mEditMenu->getItemId( "redo" )->setEnabled( false );
+		mEditMenu->getItemId( "copy" )->setEnabled( false );
+		mEditMenu->getItemId( "cut" )->setEnabled( false );
+		mEditMenu->getItemId( "insert_date_menu" )->setEnabled( false );
+		mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
+		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
+		moveSep->setEnabled( false )->setVisible( false );
+		mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
+		mEditMenu->getItemId( "move-to-new-window" )->setVisible( false );
+		fileSep->setEnabled( false )->setVisible( false );
+		mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
+		return;
+	}
+	auto doc = mSplitter->getCurEditor()->getDocumentRef();
+	mEditMenu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
+	mEditMenu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
+	mEditMenu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
+	mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
+	mEditMenu->getItemId( "insert_date_menu" )->setEnabled( true );
+	mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
+	mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
+	moveSep->setEnabled( true )->setVisible( true );
+	mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
+	mEditMenu->getItemId( "move-to-new-window" )->setVisible( doc->hasFilepath() );
+	fileSep->setEnabled( doc->hasFilepath() )->setVisible( doc->hasFilepath() );
+	mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
 }
 
 void SettingsMenu::updateDateMenu() {
@@ -1474,7 +1548,6 @@ void SettingsMenu::updateDateMenu() {
 }
 
 UIMenu* SettingsMenu::createWindowMenu() {
-	mWindowMenu = UIPopUpMenu::New();
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
@@ -1806,8 +1879,6 @@ UIMenu* SettingsMenu::createRendererMenu() {
 }
 
 UIMenu* SettingsMenu::createViewMenu() {
-	mViewMenu = UIPopUpMenu::New();
-
 	mLineWrapMenu = UIPopUpMenu::New();
 
 	mViewMenu
@@ -2288,8 +2359,6 @@ UIMenu* SettingsMenu::createViewMenu() {
 }
 
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
-	mToolsMenu = UIPopUpMenu::New();
-
 	mToolsMenu->add( i18n( "plugin_manager", "Plugins Manager" ), findIcon( "extensions" ) )
 		->setId( "plugin-manager-open" );
 
@@ -2358,7 +2427,6 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 }
 
 UIMenu* SettingsMenu::createHelpMenu() {
-	mHelpMenu = UIPopUpMenu::New();
 	mHelpMenu->add( i18n( "ecode_source", "ecode Source Code" ), findIcon( "github" ) )
 		->setId( "ecode-source" );
 	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
@@ -2490,6 +2558,9 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mSettingsMenu->getItemId( "project_settings" )
 		->setEnabled( !mApp->getCurrentProject().empty() );
 
+	if ( !mProjectMenu || mProjectMenu->getCount() == 0 )
+		return;
+
 	auto item = mHExtLanguageTypeMenu->find(
 		HExtLanguageTypeHelper::toString( mApp->getProjectConfig().hExtLanguageType ) );
 	if ( item && item->isType( UI_TYPE_MENURADIOBUTTON ) )
@@ -2580,6 +2651,9 @@ void SettingsMenu::updateTerminalMenu() {
 }
 
 void SettingsMenu::updateDocumentMenu() {
+	if ( !mDocMenu || mDocMenu->getCount() == 0 )
+		return;
+
 	bool enabled =
 		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR );
 
@@ -2649,6 +2723,9 @@ void SettingsMenu::updateDocumentMenu() {
 }
 
 void SettingsMenu::updateViewMenu() {
+	if ( !mViewMenu || mViewMenu->getCount() == 0 )
+		return;
+
 	mViewMenu->getItemId( "fullscreen-toggle" )
 		->asType<UIMenuCheckBox>()
 		->setActive( !mApp->getWindow()->isWindowed() );
@@ -2669,6 +2746,9 @@ void SettingsMenu::updateViewMenu() {
 }
 
 void SettingsMenu::updateGlobalDocumentSettingsMenu() {
+	if ( !mGlobalMenu || mGlobalMenu->getCount() == 0 )
+		return;
+
 	mGlobalMenu->find( "autoreload_on_disk_change" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getConfig().editor.autoReloadOnDiskChange );

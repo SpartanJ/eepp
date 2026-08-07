@@ -50,6 +50,8 @@ class SettingsMenu {
 
 	void updateTerminalMenu();
 
+	void updateEditMenu();
+
 	void updateProjectSettingsMenu();
 
 	void toggleSettingsMenu();
