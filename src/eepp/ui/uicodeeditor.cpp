@@ -4849,9 +4849,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-file-path-and-position", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->copyFilePath( true );
 	} );
-	mDoc->setCommand( "find-replace", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->showFindReplace();
-	} );
+	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->createContextMenu();
 	} );
