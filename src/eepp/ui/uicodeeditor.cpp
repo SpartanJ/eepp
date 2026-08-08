@@ -4761,10 +4761,18 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 }
 
 void UICodeEditor::registerCommands() {
-	mDoc->setCommand( "move-to-previous-line", [this] { moveToPreviousLine(); } );
-	mDoc->setCommand( "move-to-next-line", [this] { moveToNextLine(); } );
-	mDoc->setCommand( "move-to-previous-page", [this] { moveToPreviousPage(); } );
-	mDoc->setCommand( "move-to-next-page", [this] { moveToNextPage(); } );
+	mDoc->setCommand( "move-to-previous-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToPreviousLine();
+	} );
+	mDoc->setCommand( "move-to-next-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToNextLine();
+	} );
+	mDoc->setCommand( "move-to-previous-page", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToPreviousPage();
+	} );
+	mDoc->setCommand( "move-to-next-page", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToNextPage();
+	} );
 	mDoc->setCommand( "move-to-start-of-line", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->moveToStartOfLine();
 	} );
@@ -4789,27 +4797,64 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "select-to-start-of-content", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->selectToStartOfContent();
 	} );
-	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );
-	mDoc->setCommand( "move-scroll-down", [this] { moveScrollDown(); } );
-	mDoc->setCommand( "jump-lines-up", [this] { jumpLinesUp(); } );
-	mDoc->setCommand( "jump-lines-down", [this] { jumpLinesDown(); } );
-	mDoc->setCommand( "indent", [this] { indent(); } );
-	mDoc->setCommand( "unindent", [this] { unindent(); } );
-	mDoc->setCommand( "copy", [this] { copy(); } );
-	mDoc->setCommand( "cut", [this] { cut(); } );
-	mDoc->setCommand( "paste", [this] { paste(); } );
-	mDoc->setCommand( "font-size-grow", [this] { fontSizeGrow(); } );
-	mDoc->setCommand( "font-size-shrink", [this] { fontSizeShrink(); } );
-	mDoc->setCommand( "font-size-reset", [this] { fontSizeReset(); } );
-	mDoc->setCommand( "lock", [this] { setLocked( true ); } );
-	mDoc->setCommand( "unlock", [this] { setLocked( false ); } );
-	mDoc->setCommand( "lock-toggle", [this] { setLocked( !isLocked() ); } );
-	mDoc->setCommand( "open-containing-folder", [this] { openContainingFolder(); } );
-	mDoc->setCommand( "copy-containing-folder-path", [this] { copyContainingFolderPath(); } );
-	mDoc->setCommand( "copy-file-path", [this] { copyFilePath(); } );
-	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
-	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
-	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
+	mDoc->setCommand( "move-scroll-up", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveScrollUp();
+	} );
+	mDoc->setCommand( "move-scroll-down", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveScrollDown();
+	} );
+	mDoc->setCommand( "jump-lines-up", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->jumpLinesUp();
+	} );
+	mDoc->setCommand( "jump-lines-down", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->jumpLinesDown();
+	} );
+	mDoc->setCommand( "indent",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->indent(); } );
+	mDoc->setCommand( "unindent",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unindent(); } );
+	mDoc->setCommand( "copy",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->copy(); } );
+	mDoc->setCommand( "cut",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->cut(); } );
+	mDoc->setCommand( "paste",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->paste(); } );
+	mDoc->setCommand( "font-size-grow", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->fontSizeGrow();
+	} );
+	mDoc->setCommand( "font-size-shrink", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->fontSizeShrink();
+	} );
+	mDoc->setCommand( "font-size-reset", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->fontSizeReset();
+	} );
+	mDoc->setCommand(
+		"lock", []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( true ); } );
+	mDoc->setCommand( "unlock", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->setLocked( false );
+	} );
+	mDoc->setCommand( "lock-toggle", []( Client* client ) {
+		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
+		editor->setLocked( !editor->isLocked() );
+	} );
+	mDoc->setCommand( "open-containing-folder", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->openContainingFolder();
+	} );
+	mDoc->setCommand( "copy-containing-folder-path", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->copyContainingFolderPath();
+	} );
+	mDoc->setCommand( "copy-file-path", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->copyFilePath();
+	} );
+	mDoc->setCommand( "copy-file-path-and-position", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->copyFilePath( true );
+	} );
+	mDoc->setCommand( "find-replace", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->showFindReplace();
+	} );
+	mDoc->setCommand( "open-context-menu", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->createContextMenu();
+	} );
 	mDoc->setCommand( "add-cursor-at-mouse-position", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->addCursorAtMousePosition();
 	} );
