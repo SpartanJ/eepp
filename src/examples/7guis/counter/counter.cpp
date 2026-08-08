@@ -9,10 +9,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		<PushButton id="count_click" layout_width="0" layout_weight="0.5" layout_height="match_parent" text="Count" />
 	</hbox>
 	)xml" );
-	int count = 0;
-	auto view = hbox->find<UITextView>( "count_view" );
-	hbox->find( "count_click" )->onClick( [&count, view]( auto ) {
-		view->setText( String::toString( ++count ) );
-	} );
+	UIProperty<int> count( 0, hbox->find<UITextView>( "count_view" ) );
+	hbox->find( "count_click" )->onClick( [&count]( auto ) { ++count; } );
 	return app.run();
 }

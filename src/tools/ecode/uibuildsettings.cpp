@@ -127,9 +127,9 @@ class UICustomOutputParserWindow : public UIWindow {
 
 		UIDropDownList* cpTypeddl = find<UIDropDownList>( "custom_parser_type" );
 		UIDataBind<ProjectOutputParserTypes>::Converter projectOutputParserTypesConverter(
-			[]( const UIDataBind<ProjectOutputParserTypes>* databind, ProjectOutputParserTypes& val,
+			[]( const PropertyDefinition* property, ProjectOutputParserTypes& val,
 				const std::string& str ) -> bool {
-				auto v = StyleSheetProperty( databind->getPropertyDefinition(), str ).asString();
+				auto v = StyleSheetProperty( property, str ).asString();
 				Uint32 idx;
 				if ( String::fromString( idx, v ) && idx >= 0 && idx <= 2 ) {
 					val = (ProjectOutputParserTypes)idx;
@@ -137,7 +137,7 @@ class UICustomOutputParserWindow : public UIWindow {
 				}
 				return false;
 			},
-			[cpTypeddl]( const UIDataBind<ProjectOutputParserTypes>*, std::string& str,
+			[cpTypeddl]( const PropertyDefinition*, std::string& str,
 						 const ProjectOutputParserTypes& val ) -> bool {
 				str = cpTypeddl->getListBox()->getItem( (Uint32)val )->getText();
 				return true;
@@ -1096,6 +1096,10 @@ void UIBuildSettings::runRemove( bool all, UIDropDownList* runList,
 	if ( runList->getListBox()->isEmpty() )
 		return;
 
+	auto runStep = find<UIWidget>( "run_cont" )->findByClass<UIBuildStep>( String::toString( 0 ) );
+	// UIDataBind does not own its model pointers. Disconnect before erasing the selected step.
+	runStep->clearBindings();
+
 	if ( all ) {
 		runList->getListBox()->clear();
 		if ( panelRunListDDL )
@@ -1109,10 +1113,15 @@ void UIBuildSettings::runRemove( bool all, UIDropDownList* runList,
 			panelRunListDDL->getListBox()->removeListBoxItem( name );
 	}
 
-	runUpdate( false, runList, panelRunListDDL );
+	if ( mBuild.mRun.empty() )
+		runStep->updateStep( 0, nullptr );
 
-	if ( all )
+	if ( all ) {
 		runSelect();
+		runUpdate( true, runList, panelRunListDDL );
+	} else {
+		runUpdate( false, runList, panelRunListDDL );
+	}
 }
 
 void UIBuildSettings::runUpdate( bool recreateList, UIDropDownList* runList,

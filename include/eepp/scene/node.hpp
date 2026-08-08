@@ -3,6 +3,7 @@
 
 #include <eepp/scene/actions/runnable.hpp>
 #include <eepp/scene/event.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
@@ -699,6 +700,22 @@ class EE_API Node : public Transformable {
 	 * @return A unique callback identifier.
 	 */
 	Uint32 on( const Uint32& eventType, const EventCallback& callback );
+
+	/**
+	 * @brief Connects an event listener whose lifetime is controlled by the returned handle.
+	 *
+	 * Destroying or disconnecting the handle removes the listener. If this node is destroyed
+	 * first, the handle safely becomes disconnected. Unlike on() and addEventListener(), this API
+	 * transfers listener ownership to an EventConnection instead of exposing a numeric callback ID.
+	 * Expiry does not notify the observer; connect separately to UIWidget::OnClose when
+	 * widget-close cleanup is required. The connection and event registry must be used on this
+	 * node's owning thread.
+	 *
+	 * @param eventType The event type constant.
+	 * @param callback The function to call when the event occurs.
+	 * @return A move-only connection that owns the registered listener.
+	 */
+	EventConnection connect( const Uint32& eventType, EventCallback callback );
 
 	/**
 	 * @brief Adds a mouse click event listener.
@@ -1935,9 +1952,6 @@ class EE_API Node : public Transformable {
 	void clipSmartDisable();
 
   protected:
-	/** @brief Map of event type to callback ID to callback function. */
-	typedef UnorderedMap<Uint32, std::map<Uint32, EventCallback>> EventsMap;
-
 	/** @brief Forward declaration for EventDispatcher. */
 	friend class EventDispatcher;
 	friend class EE::UI::UISceneNode;
@@ -1959,11 +1973,10 @@ class EE_API Node : public Transformable {
 	BlendMode mBlend{ BlendMode::Alpha() };
 	bool mVisible{ true };
 	bool mEnabled{ true };
-	Uint32 mNumCallBacks{ 0 };
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
 	Vector2f mCenter;
-	EventsMap mEvents;
+	std::shared_ptr<EventConnectionState> mEventConnectionState;
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
 

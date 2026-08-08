@@ -38,7 +38,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	UIWidget* mArrow{ nullptr };
 	Time mMaxTime;
 	Action* mCurWait{ nullptr };
-	Uint32 mSubMenuCloseCb{ 0 };
+	EventConnection mSubMenuCloseConnection;
 
 	UIMenuSubMenu();
 

@@ -3,6 +3,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/eventconnectionstate.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
@@ -29,8 +30,7 @@ Node::Node() :
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
 	mBlend( BlendMode::Alpha() ),
 	mVisible( true ),
-	mEnabled( true ),
-	mNumCallBacks( 0 ) {}
+	mEnabled( true ) {}
 
 Node::~Node() {
 	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {
@@ -1107,13 +1107,20 @@ void Node::updateCenter() {
 }
 
 Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
-	mEvents[eventType][++mNumCallBacks] = callback;
-	return mNumCallBacks;
+	if ( !mEventConnectionState )
+		mEventConnectionState = std::make_shared<EventConnectionState>();
+	return mEventConnectionState->add( eventType, callback );
 }
 
 Uint32 Node::on( const Uint32& eventType, const EventCallback& callback ) {
-	mEvents[eventType][++mNumCallBacks] = callback;
-	return mNumCallBacks;
+	return addEventListener( eventType, callback );
+}
+
+EventConnection Node::connect( const Uint32& eventType, EventCallback callback ) {
+	if ( !mEventConnectionState )
+		mEventConnectionState = std::make_shared<EventConnectionState>();
+	auto callbackId = mEventConnectionState->add( eventType, std::move( callback ) );
+	return EventConnection( mEventConnectionState, eventType, callbackId );
 }
 
 Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
@@ -1135,49 +1142,47 @@ Uint32 Node::onDoubleClick( const std::function<void( const MouseEvent* )>& call
 }
 
 bool Node::hasEventsOfType( const Uint32& eventType ) const {
-	return mEvents.find( eventType ) != mEvents.end();
+	return mEventConnectionState &&
+		   mEventConnectionState->events.find( eventType ) != mEventConnectionState->events.end();
 }
 
 void Node::removeEventsOfType( const Uint32& eventType ) {
-	auto it = mEvents.find( eventType );
-	if ( it != mEvents.end() )
-		mEvents.erase( it );
+	if ( mEventConnectionState )
+		mEventConnectionState->events.erase( eventType );
 }
 
 void Node::removeEventListener( const Uint32& callbackId ) {
-	EventsMap::iterator it;
-	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		auto& event = it->second;
-		if ( event.erase( callbackId ) > 0 )
-			break;
-	}
+	if ( mEventConnectionState )
+		mEventConnectionState->remove( callbackId );
 }
 
 void Node::removeEventListener( const std::vector<Uint32>& callbacksIds ) {
-	for ( auto& event : mEvents ) {
-		auto& events = event.second;
+	if ( !mEventConnectionState )
+		return;
+	for ( auto& event : mEventConnectionState->events ) {
+		auto& listeners = event.second;
 		for ( auto& cbId : callbacksIds ) {
-			auto it = events.find( cbId );
-			if ( it != events.end() ) {
-				events.erase( it );
-			}
+			auto listener =
+				std::lower_bound( listeners.begin(), listeners.end(), cbId,
+								  []( const EventConnectionState::EventListener& listener,
+									  Uint32 id ) { return listener.id < id; } );
+			if ( listener != listeners.end() && listener->id == cbId )
+				listeners.erase( listener );
 		}
 	}
 }
 
 void Node::clearEventListener() {
-	mEvents.clear();
+	if ( mEventConnectionState )
+		mEventConnectionState->events.clear();
 }
 
 void Node::sendEvent( const Event* event ) {
-	if ( 0 != mEvents.count( event->getType() ) ) {
-		auto eventMap = mEvents[event->getType()];
-		if ( eventMap.begin() != eventMap.end() ) {
-			std::map<Uint32, EventCallback>::iterator it;
-			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {
-				const_cast<Event*>( event )->mCallbackId = it->first;
-				it->second( event );
-			}
+	if ( mEventConnectionState && 0 != mEventConnectionState->events.count( event->getType() ) ) {
+		auto listeners = mEventConnectionState->events[event->getType()];
+		for ( const auto& listener : listeners ) {
+			const_cast<Event*>( event )->mCallbackId = listener.id;
+			listener.callback( event );
 		}
 	}
 }

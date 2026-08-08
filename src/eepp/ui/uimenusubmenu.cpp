@@ -27,8 +27,6 @@ UIMenuSubMenu::UIMenuSubMenu() :
 
 UIMenuSubMenu::~UIMenuSubMenu() {
 	if ( mSubMenu ) {
-		if ( mSubMenuCloseCb )
-			mSubMenu->removeEventListener( mSubMenuCloseCb );
 		mSubMenu->setOwnerNode( nullptr );
 	}
 }
@@ -83,14 +81,14 @@ UIWidget* UIMenuSubMenu::getExtraInnerWidget() const {
 void UIMenuSubMenu::setSubMenu( UIMenu* subMenu ) {
 	if ( nullptr != mSubMenu && mSubMenu != subMenu ) {
 		getActionManager()->removeActionsByTagFromTarget( this, String::hash( "subMenu" ) );
-		if ( mSubMenuCloseCb )
-			mSubMenu->removeEventListener( mSubMenuCloseCb );
+		mSubMenuCloseConnection.disconnect();
 		mSubMenu->setOwnerNode( nullptr );
 	}
 	mSubMenu = subMenu;
 	if ( nullptr != mSubMenu ) {
 		mSubMenu->setOwnerNode( this );
-		mSubMenuCloseCb = mSubMenu->on( Event::OnClose, [this]( auto ) { mSubMenu = nullptr; } );
+		mSubMenuCloseConnection =
+			mSubMenu->connect( Event::OnClose, [this]( auto ) { mSubMenu = nullptr; } );
 	}
 }
 
@@ -161,6 +159,7 @@ void UIMenuSubMenu::setMouseOverTimeShowMenu( const Time& maxTime ) {
 void UIMenuSubMenu::onClose() {
 	if ( mSubMenu )
 		mSubMenu->setOwnerNode( nullptr );
+	UIMenuItem::onClose();
 }
 
 }} // namespace EE::UI
