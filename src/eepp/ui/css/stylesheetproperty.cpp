@@ -23,7 +23,6 @@ StyleSheetProperty::StyleSheetProperty() :
 StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 										const std::string& value, const Uint32& index,
 										bool trimValue, bool cachedProperty ) :
-	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( trimValue ? String::trim( value ) : value ),
 	mValueHash( String::hash( mValue ) ),
@@ -40,17 +39,11 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	checkImportant();
 	createIndexed();
 	checkVars();
-
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
-		 !String::startsWith( mName, "-" ) && !isDataPropertyName( mName ) ) {
-		Log::warning( "Property \"%s\" is not defined!", mName );
-	}
 }
 
 StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
 										const std::string& value, const Int64& /*specificity*/,
 										const Uint32& index ) :
-	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( String::trim( value ) ),
 	mValueHash( String::hash( mValue ) ),
@@ -64,11 +57,6 @@ StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinitio
 	cleanValue();
 	checkImportant();
 	checkVars();
-
-	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition &&
-		 !String::startsWith( mName, "-" ) && !isDataPropertyName( mName ) ) {
-		Log::warning( "Property \"%s\" is not defined!", mName );
-	}
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
@@ -140,6 +128,12 @@ ShorthandId StyleSheetProperty::getShorthandId() const {
 }
 
 const std::string& StyleSheetProperty::getName() const {
+	if ( !mName.empty() )
+		return mName;
+	if ( nullptr != mPropertyDefinition )
+		return mPropertyDefinition->getName();
+	if ( nullptr != mShorthandDefinition )
+		return mShorthandDefinition->getName();
 	return mName;
 }
 
@@ -162,7 +156,7 @@ void StyleSheetProperty::setSpecificity( const Int64& specificity ) {
 }
 
 bool StyleSheetProperty::isEmpty() const {
-	return mName.empty();
+	return mName.empty() && nullptr == mPropertyDefinition && nullptr == mShorthandDefinition;
 }
 
 void StyleSheetProperty::setName( const std::string& name ) {
@@ -174,7 +168,6 @@ void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	mValue = value;
 	if ( updateHash )
 		mValueHash = String::hash( value );
-	mVarCache.clear();
 	mIsVarValue = false;
 	mIsLightDarkValue = false;
 	createIndexed();
@@ -195,6 +188,26 @@ bool StyleSheetProperty::operator==( const StyleSheetProperty& property ) const 
 
 bool StyleSheetProperty::operator!=( const StyleSheetProperty& property ) const {
 	return mNameHash != property.mNameHash || mValueHash != property.mValueHash;
+}
+
+bool StyleSheetProperty::hasSameResolutionSource( const StyleSheetProperty& property ) const {
+	if ( mName != property.mName || mNameHash != property.mNameHash || mValue != property.mValue ||
+		 mValueHash != property.mValueHash || mSpecificity != property.mSpecificity ||
+		 mIndex != property.mIndex || mVolatile != property.mVolatile ||
+		 mImportant != property.mImportant || mIsVarValue != property.mIsVarValue ||
+		 mIsLightDarkValue != property.mIsLightDarkValue ||
+		 mCachedProperty != property.mCachedProperty ||
+		 mPropertyDefinition != property.mPropertyDefinition ||
+		 mShorthandDefinition != property.mShorthandDefinition ||
+		 mIndexedProperty.size() != property.mIndexedProperty.size() )
+		return false;
+
+	for ( size_t i = 0; i < mIndexedProperty.size(); ++i ) {
+		if ( !mIndexedProperty[i].hasSameResolutionSource( property.mIndexedProperty[i] ) )
+			return false;
+	}
+
+	return true;
 }
 
 const String::HashType& StyleSheetProperty::getNameHash() const {
@@ -225,52 +238,46 @@ void StyleSheetProperty::createIndexed() {
 }
 
 void StyleSheetProperty::checkVars() {
-	auto varCache( checkVars( mValue ) );
+	mVarCacheSize = 0;
 	mIsVarValue = false;
-	if ( !varCache.empty() ) {
-		mIsVarValue = true;
-		mVarCache = std::move( varCache );
-	}
-
-	mIsLightDarkValue = mValue.find( "light-dark(" ) != std::string::npos;
-}
-
-static void varToVal( VariableFunctionCache& varCache, const std::string& varDef ) {
-	FunctionString functionType = FunctionString::parse( varDef );
-	if ( !functionType.getParameters().empty() ) {
+	auto varToVal = []( auto&& self, VariableFunctionCache& varCache,
+						std::string_view varDef ) -> void {
+		auto function = FunctionString::parseView( varDef );
+		if ( function.isEmpty() )
+			return;
 		bool foundVar = false;
-		for ( auto& val : functionType.getParameters() ) {
+		function.forEachParameter( [&]( std::string_view val, bool ) {
 			if ( String::startsWith( val, "--" ) ) {
-				varCache.variableList.emplace_back( val );
+				varCache.addVariable( val );
 				foundVar = true;
 			} else if ( String::startsWith( val, "var(" ) ) {
-				varToVal( varCache, val );
+				self( self, varCache, val );
 				foundVar = true;
 			} else if ( foundVar ) {
 				// This is a fallback value (comes after the variable name)
-				varCache.variableList.emplace_back( val );
+				varCache.addVariable( val );
 			}
-		}
-	}
-}
+			return true;
+		} );
+	};
 
-std::vector<VariableFunctionCache> StyleSheetProperty::checkVars( const std::string& value ) {
-	std::vector<VariableFunctionCache> vars;
 	std::string::size_type tokenStart = 0;
-	std::string::size_type tokenEnd = 0;
 
 	while ( true ) {
-		tokenStart = value.find( "var(", tokenStart );
+		tokenStart = mValue.find( "var(", tokenStart );
 		if ( tokenStart != std::string::npos ) {
-			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
+			const std::string::size_type tokenEnd =
+				String::findCloseBracket( mValue, tokenStart, '(', ')' );
 			if ( tokenEnd != std::string::npos ) {
 				mIsVarValue = true;
-				VariableFunctionCache variableFuncCache;
-				variableFuncCache.definition =
-					value.substr( tokenStart, tokenEnd + 1 - tokenStart );
-				varToVal( variableFuncCache, variableFuncCache.definition );
+				if ( mVarCacheSize >= mVarCache.size() )
+					mVarCache.emplace_back();
+				VariableFunctionCache& variableFuncCache = mVarCache[mVarCacheSize++];
+				variableFuncCache.clear();
+				variableFuncCache.definition.assign( mValue, tokenStart,
+													 tokenEnd + 1 - tokenStart );
+				varToVal( varToVal, variableFuncCache, variableFuncCache.definition );
 				tokenStart = tokenEnd;
-				vars.emplace_back( std::move( variableFuncCache ) );
 			} else {
 				break;
 			}
@@ -279,7 +286,7 @@ std::vector<VariableFunctionCache> StyleSheetProperty::checkVars( const std::str
 		}
 	};
 
-	return vars;
+	mIsLightDarkValue = mValue.find( "light-dark(" ) != std::string::npos;
 }
 
 std::string StyleSheetProperty::asString( const std::string& defaultValue ) const {
@@ -753,8 +760,8 @@ const String::HashType& StyleSheetProperty::getValueHash() const {
 	return mValueHash;
 }
 
-const std::vector<VariableFunctionCache>& StyleSheetProperty::getVarCache() const {
-	return mVarCache;
+std::span<const VariableFunctionCache> StyleSheetProperty::getVarCache() const {
+	return { mVarCache.data(), mVarCacheSize };
 }
 
 StyleSheetProperty& StyleSheetProperty::setCachedProperty( bool cached ) {

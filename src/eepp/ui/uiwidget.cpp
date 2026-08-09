@@ -18,6 +18,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#include <optional>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -1994,14 +1995,18 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 }
 
 void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
-	CSS::StyleSheetProperty propToPropagate = property;
+	const CSS::StyleSheetProperty* propertyToPropagate = &property;
+	std::optional<CSS::StyleSheetProperty> resolvedProperty;
 
-	if ( propToPropagate.needsValueSubstitution() && NULL != mStyle )
-		mStyle->applyVarValues( &propToPropagate );
+	if ( property.needsValueSubstitution() && NULL != mStyle ) {
+		resolvedProperty.emplace( property );
+		mStyle->applyVarValues( &*resolvedProperty );
+		propertyToPropagate = &*resolvedProperty;
+	}
 
-	if ( propToPropagate.getPropertyDefinition() &&
-		 propToPropagate.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
-		StyleSheetLength length( propToPropagate.value() );
+	if ( propertyToPropagate->getPropertyDefinition() &&
+		 propertyToPropagate->getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( propertyToPropagate->value() );
 		Float pxSize = 0;
 
 		if ( length.getUnit() == StyleSheetLength::Unit::Rem ) {
@@ -2029,14 +2034,23 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			else
 				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
 		} else {
-			pxSize = lengthFromValue( propToPropagate );
+			pxSize = lengthFromValue( *propertyToPropagate );
 		}
 
-		propToPropagate = CSS::StyleSheetProperty(
-			propToPropagate.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
-			propToPropagate.getSpecificity() );
+		const PropertyDefinition* propertyDefinition = propertyToPropagate->getPropertyDefinition();
+		const Uint32 propertyIndex = propertyToPropagate->getIndex();
+		const Int64 specificity = propertyToPropagate->getSpecificity();
+		resolvedProperty.emplace( propertyDefinition,
+								  String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
+								  propertyIndex );
+		resolvedProperty->setSpecificity( specificity );
+		propertyToPropagate = &*resolvedProperty;
 	}
 
+	propagateInheritedPropertyResolved( *propertyToPropagate );
+}
+
+void UIWidget::propagateInheritedPropertyResolved( const CSS::StyleSheetProperty& property ) {
 	Node* child = getFirstChild();
 	while ( child ) {
 		if ( child->isWidget() ) {
@@ -2044,9 +2058,9 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			UIStyle* childStyle = childWidget->getUIStyle();
 			// Only propagate if the child doesn't explicitly override it
 			if ( childStyle && !childStyle->hasLocalProperty(
-								   propToPropagate.getPropertyDefinition()->getPropertyId() ) ) {
-				childWidget->applyProperty( propToPropagate );
-				childWidget->propagateInheritedProperty( propToPropagate );
+								   property.getPropertyDefinition()->getPropertyId() ) ) {
+				childWidget->applyProperty( property );
+				childWidget->propagateInheritedPropertyResolved( property );
 			}
 		}
 		child = child->getNextNode();

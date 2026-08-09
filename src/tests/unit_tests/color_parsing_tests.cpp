@@ -280,3 +280,10 @@ UTEST( ColorParsing, hsvaWithThreeLegacy ) {
 	EXPECT_COLOREQ( Color( 255, 0, 0, 255 ),
 					Color::fromString( "hsva(0, 100%, 100%)" ) );
 }
+
+UTEST( ColorParsing, hexSerialization ) {
+	EXPECT_STDSTREQ( "#01020f", Color( 1, 2, 15 ).toHexString() );
+	EXPECT_STDSTREQ( "01020f", Color( 1, 2, 15 ).toHexString( false ) );
+	EXPECT_STDSTREQ( "#01020f10", Color( 1, 2, 15, 16 ).toHexString() );
+	EXPECT_STDSTREQ( "01020f10", Color( 1, 2, 15, 16 ).toHexString( false ) );
+}

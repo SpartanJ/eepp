@@ -10,7 +10,7 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uistate.hpp>
-#include <optional>
+#include <memory>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -96,6 +96,31 @@ class EE_API UIStyle : public UIState {
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
   protected:
+	class PropertyResolution {
+	  public:
+		PropertyResolution( const PropertyResolution& ) = delete;
+		PropertyResolution& operator=( const PropertyResolution& ) = delete;
+		PropertyResolution( PropertyResolution&& other ) noexcept;
+		PropertyResolution& operator=( PropertyResolution&& ) = delete;
+		~PropertyResolution();
+
+		const CSS::StyleSheetProperty* get() const { return mProperty; }
+
+	  private:
+		friend class UIStyle;
+		static constexpr Uint32 NoSlot = static_cast<Uint32>( -1 );
+
+		PropertyResolution( UIStyle* owner, const CSS::StyleSheetProperty* property,
+							Uint32 slot = NoSlot ) :
+			mOwner( owner ), mProperty( property ), mSlot( slot ) {}
+
+		void release();
+
+		UIStyle* mOwner;
+		const CSS::StyleSheetProperty* mProperty;
+		Uint32 mSlot;
+	};
+
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
 	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
@@ -105,8 +130,12 @@ class EE_API UIStyle : public UIState {
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
 	Uint32 mStateDepthCounter{ 0 };
+	Uint32 mPropertyResolutionDepth{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
+	/** Lazily allocated for styles that use substitutions. The pointed-to properties remain stable
+	 * during nested resolutions and retain their string/vector capacities between state changes. */
+	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 1> mPropertyResolutionSlots;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
@@ -118,7 +147,9 @@ class EE_API UIStyle : public UIState {
 
 	void applyLightDarkValue( std::string& newValue );
 
-	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
+	const CSS::StyleSheetVariable* getVariableRef( const std::string& variable );
+
+	void setVariableFromValue( CSS::StyleSheetProperty* property );
 
 	void updateState();
 
@@ -150,9 +181,9 @@ class EE_API UIStyle : public UIState {
 
 	CSS::StyleSheetProperty* getLocalProperty( CSS::PropertyId propId );
 
-	CSS::StyleSheetProperty*
-	getResolvedLocalProperty( CSS::PropertyId propId,
-							  std::optional<CSS::StyleSheetProperty>& resolvedProperty );
+	PropertyResolution resolveProperty( const CSS::StyleSheetProperty* property );
+
+	PropertyResolution getResolvedLocalProperty( CSS::PropertyId propId );
 
 	void addStructurallyVolatileWidgetFromParent();
 

@@ -31,6 +31,44 @@ using namespace EE::UI::CSS;
 using namespace EE::Scene;
 using namespace EE::Graphics;
 
+namespace {
+
+class ResolutionStorageTestStyle : public UIStyle {
+  public:
+	ResolutionStorageTestStyle() : UIStyle( nullptr ) {}
+
+	struct Probe {
+		const StyleSheetProperty* firstAddress{};
+		const StyleSheetProperty* nestedAddress{};
+		const StyleSheetProperty* reusedAddress{};
+		std::string firstValueBeforeNested;
+		std::string firstValueAfterNested;
+		std::string nestedValue;
+	};
+
+	Probe probe( const StyleSheetProperty& first, const StyleSheetProperty& nested ) {
+		Probe probe;
+		{
+			auto firstResolution = resolveProperty( &first );
+			probe.firstAddress = firstResolution.get();
+			probe.firstValueBeforeNested = firstResolution.get()->getValue();
+			{
+				auto nestedResolution = resolveProperty( &nested );
+				probe.nestedAddress = nestedResolution.get();
+				probe.nestedValue = nestedResolution.get()->getValue();
+			}
+			probe.firstValueAfterNested = firstResolution.get()->getValue();
+		}
+		{
+			auto reusedResolution = resolveProperty( &first );
+			probe.reusedAddress = reusedResolution.get();
+		}
+		return probe;
+	}
+};
+
+} // namespace
+
 UTEST( CSSParser, UnknownPropertiesKeepDistinctNameHashes ) {
 	StyleSheetProperty first( "data-first", "one" );
 	StyleSheetProperty second( "data-second", "two" );
@@ -42,6 +80,17 @@ UTEST( CSSParser, UnknownPropertiesKeepDistinctNameHashes ) {
 	EXPECT_NE( first.getId(), second.getId() );
 	EXPECT_TRUE( first.getPropertyId() == PropertyId::Invalid );
 	EXPECT_TRUE( first.getShorthandId() == ShorthandId::Invalid );
+}
+
+UTEST( CSSParser, DefinitionBackedPropertiesUseCanonicalDefinitionName ) {
+	auto* definition =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::BackgroundColor );
+	ASSERT_TRUE( nullptr != definition );
+	StyleSheetProperty property( definition, "#010203" );
+
+	EXPECT_FALSE( property.isEmpty() );
+	EXPECT_STDSTREQ( definition->getName(), property.getName() );
+	EXPECT_EQ( definition->getId(), property.getNameHash() );
 }
 
 UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
@@ -485,6 +534,40 @@ UTEST( CSSVariables, StyleSheetPropertyNeedsValueSubstitution ) {
 		StyleSheetProperty( "width", "min(100%, max(20dp, 10vw))" ).needsValueSubstitution() );
 	EXPECT_FALSE( StyleSheetProperty( "width", "clamp(10dp, calc(50% - 1dp), 100dp)" )
 					  .needsValueSubstitution() );
+}
+
+UTEST( CSSVariables, ResolutionStorageIsReentrantAndReusable ) {
+	ResolutionStorageTestStyle style;
+	style.setStyleSheetVariable( StyleSheetVariable( "--first", "#123456" ) );
+	style.setStyleSheetVariable( StyleSheetVariable( "--nested", "#ABCDEF" ) );
+
+	const auto probe = style.probe( StyleSheetProperty( "color", "var(--first)" ),
+									StyleSheetProperty( "background-color", "var(--nested)" ) );
+
+	EXPECT_TRUE( nullptr != probe.firstAddress );
+	EXPECT_TRUE( nullptr != probe.nestedAddress );
+	EXPECT_NE( probe.firstAddress, probe.nestedAddress );
+	EXPECT_EQ( probe.firstAddress, probe.reusedAddress );
+	EXPECT_STDSTREQ( "#123456", probe.firstValueBeforeNested );
+	EXPECT_STDSTREQ( "#123456", probe.firstValueAfterNested );
+	EXPECT_STDSTREQ( "#ABCDEF", probe.nestedValue );
+}
+
+UTEST( CSSVariables, StyleSheetPropertyReusesVariableCacheStorage ) {
+	StyleSheetProperty property( "color", "var(--a-variable-name-long-enough-to-allocate)" );
+	auto firstCache = property.getVarCache();
+	ASSERT_EQ( 1u, firstCache.size() );
+	const auto* cacheAddress = &*firstCache.begin();
+	const auto* variableStorage = firstCache.begin()->variableList.data();
+
+	property.setValue( "#123456" );
+	EXPECT_TRUE( property.getVarCache().empty() );
+
+	property.setValue( "var(--a-variable-name-long-enough-to-allocate)" );
+	auto reusedCache = property.getVarCache();
+	ASSERT_EQ( 1u, reusedCache.size() );
+	EXPECT_EQ( cacheAddress, &*reusedCache.begin() );
+	EXPECT_EQ( variableStorage, reusedCache.begin()->variableList.data() );
 }
 
 UTEST( CSSVariables, StyleAttributeVarOnRichTextAndTextSpan ) {

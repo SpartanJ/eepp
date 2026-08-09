@@ -1,26 +1,47 @@
-#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
+#include <eepp/ui/css/declarationparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/timingfunction.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-inline bool isTimingFunction( const std::string& str ) {
-	return Ease::Interpolation::None != Ease::fromName( str, Ease::Interpolation::None );
+namespace {
+
+bool isTime( std::string_view value ) {
+	value = String::trim( value, " \t\n\r\f\v" );
+	if ( value.empty() )
+		return false;
+	auto lower = []( char character ) {
+		return character >= 'A' && character <= 'Z' ? character + ( 'a' - 'A' ) : character;
+	};
+	std::size_t suffixSize = 0;
+	if ( value.size() >= 2 && lower( value[value.size() - 2] ) == 'm' &&
+		 lower( value.back() ) == 's' )
+		suffixSize = 2;
+	else if ( lower( value.back() ) == 's' || lower( value.back() ) == 'm' )
+		suffixSize = 1;
+	if ( 0 == suffixSize || value.size() == suffixSize )
+		return false;
+	double number = 0;
+	std::string_view numberView = value.substr( 0, value.size() - suffixSize );
+	if ( !numberView.empty() && numberView.front() == '+' )
+		numberView.remove_prefix( 1 );
+	return String::fromString( number, numberView );
 }
+
+} // namespace
 
 UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
 	const std::vector<const StyleSheetProperty*>& stylesheetProperties ) {
 	AnimationsMap animations;
-	std::vector<std::string> names;
-	std::vector<Time> durations;
-	std::vector<Time> delays;
-	std::vector<Int32> iterations;
-	std::vector<Ease::Interpolation> timingFunctions;
-	std::vector<std::vector<double>> timingFunctionParameters;
-	std::vector<AnimationDirection> directions;
-	std::vector<AnimationFillMode> fillModes;
-	std::vector<bool> pausedStates;
+	SmallVector<std::string_view, 4> names;
+	SmallVector<Time, 4> durations;
+	SmallVector<Time, 4> delays;
+	SmallVector<Int32, 4> iterations;
+	SmallVector<TimingFunction, 4> timingFunctions;
+	SmallVector<AnimationDirection, 4> directions;
+	SmallVector<AnimationFillMode, 4> fillModes;
+	SmallVector<Uint8, 4> pausedStates;
 
 	for ( auto& prop : stylesheetProperties ) {
 		if ( prop->getPropertyDefinition() == NULL )
@@ -30,52 +51,49 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 
 		switch ( propDef->getPropertyId() ) {
 			case PropertyId::Animation: {
-				bool durationSet = false;
-
 				for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
 					const StyleSheetProperty& iProp = prop->getPropertyIndex( i );
-
-					auto parts = String::split( iProp.getValue(), ' ' );
+					auto parts = DeclarationParser::splitWhitespaceTokens<8>( iProp.getValue() );
 
 					if ( parts.size() >= 2 ) {
 						AnimationDefinition animationDef;
+						bool durationSet = false;
 
-						for ( auto& part : parts ) {
-							std::string val( String::trim( String::toLower( part ) ) );
+						for ( std::string_view part : parts ) {
+							const auto hash = DeclarationParser::lowerHash( part );
 
-							if ( isDirectionString( val ) ) {
-								animationDef.setDirection( directionFromString( val ) );
-							} else if ( isAnimationFillModeString( val ) ) {
-								animationDef.setFillMode( fillModeFromString( val ) );
-							} else if ( "infinite" == val ) {
+							if ( isDirectionStringView( part ) ) {
+								animationDef.setDirection( directionFromStringView( part ) );
+							} else if ( isAnimationFillModeStringView( part ) ) {
+								animationDef.setFillMode( fillModeFromStringView( part ) );
+							} else if ( hash == String::hash( "infinite" ) ) {
 								animationDef.setIterations( -1 );
-							} else if ( "paused" == val ) {
+							} else if ( hash == String::hash( "paused" ) ) {
 								animationDef.setPaused( true );
-							} else if ( "running" == val ) {
+							} else if ( hash == String::hash( "running" ) ) {
 								animationDef.setPaused( false );
-							} else if ( isTimingFunction( val ) ) {
-								TimingFunction tf( TimingFunction::parse( val ) );
+							} else if ( TimingFunction tf = TimingFunction::parse( part );
+										Ease::Interpolation::None != tf.interpolation ) {
 								animationDef.setTimingFunction( tf.interpolation );
 								animationDef.setTimingFunctionParameters( tf.parameters );
-							} else if ( Time::isValid( val ) ) {
+							} else if ( isTime( part ) ) {
 								if ( durationSet ) {
-									animationDef.setDelay( Time::fromString( val ) );
+									animationDef.setDelay( DeclarationParser::parseTime( part ) );
 								} else {
-									animationDef.setDuration( Time::fromString( val ) );
+									animationDef.setDuration(
+										DeclarationParser::parseTime( part ) );
 									durationSet = true;
 								}
-							} else if ( String::isNumber( val, true ) ) {
-								int iterations = 1;
-
-								if ( String::fromString( iterations, val ) ) {
-									animationDef.setIterations( iterations );
-								}
+							} else if ( int iterations = 1;
+										String::fromString( iterations, part ) ) {
+								animationDef.setIterations( iterations );
 							} else {
-								animationDef.setName( part );
+								animationDef.setNameView( part );
 							}
 						}
 
-						animations[animationDef.getName()] = std::move( animationDef );
+						animations.insert_or_assign( animationDef.getName(),
+													 std::move( animationDef ) );
 					}
 				}
 				return animations;
@@ -86,41 +104,44 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 			case PropertyId::AnimationDuration:
 			case PropertyId::AnimationFillMode:
 			case PropertyId::AnimationPlayState:
+			case PropertyId::AnimationDirection:
 			case PropertyId::AnimationIterationCount:
 			case PropertyId::AnimationTimingFunction: {
 				for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
 					const StyleSheetProperty& iProp = prop->getPropertyIndex( i );
-					std::string val( String::trim( String::toLower( iProp.getValue() ) ) );
+					const std::string_view val =
+						String::trim( std::string_view{ iProp.getValue() }, " \t\n\r\f\v" );
+					const auto hash = DeclarationParser::lowerHash( val );
 					switch ( propDef->getPropertyId() ) {
 						case PropertyId::AnimationName:
-							names.push_back( iProp.getValue() );
+							names.emplace_back( iProp.getValue() );
 							break;
 						case PropertyId::AnimationDelay:
-							delays.push_back( Time::fromString( val ) );
+							delays.emplace_back( DeclarationParser::parseTime( val ) );
 							break;
 						case PropertyId::AnimationDuration:
-							durations.push_back( Time::fromString( val ) );
+							durations.emplace_back( DeclarationParser::parseTime( val ) );
 							break;
 						case PropertyId::AnimationFillMode:
-							fillModes.push_back( fillModeFromString( val ) );
+							fillModes.emplace_back( fillModeFromStringView( val ) );
 							break;
 						case PropertyId::AnimationPlayState:
-							pausedStates.push_back( val == "paused" ? true : false );
+							pausedStates.emplace_back( hash == String::hash( "paused" ) );
+							break;
+						case PropertyId::AnimationDirection:
+							directions.emplace_back( directionFromStringView( val ) );
 							break;
 						case PropertyId::AnimationIterationCount: {
 							int iVal;
-							if ( val == "infinite" ) {
-								iterations.push_back( -1 );
+							if ( hash == String::hash( "infinite" ) ) {
+								iterations.emplace_back( -1 );
 							} else if ( String::fromString( iVal, val ) && iVal >= -1 ) {
-								iterations.push_back( iVal );
+								iterations.emplace_back( iVal );
 							}
 							break;
 						}
 						case PropertyId::AnimationTimingFunction: {
-							TimingFunction tf( TimingFunction::parse( val ) );
-							timingFunctions.emplace_back( tf.interpolation );
-							timingFunctionParameters.emplace_back( tf.parameters.begin(),
-																   tf.parameters.end() );
+							timingFunctions.emplace_back( TimingFunction::parse( val ) );
 							break;
 						}
 						default:
@@ -136,7 +157,7 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 
 	for ( size_t i = 0; i < names.size(); i++ ) {
 		AnimationDefinition animationDef;
-		animationDef.setName( names[i] );
+		animationDef.setNameView( names[i] );
 
 		if ( !delays.empty() )
 			animationDef.setDelay( delays[i % delays.size()] );
@@ -147,35 +168,45 @@ UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimati
 		if ( !fillModes.empty() )
 			animationDef.setFillMode( fillModes[i % fillModes.size()] );
 
+		if ( !directions.empty() )
+			animationDef.setDirection( directions[i % directions.size()] );
+
 		if ( !pausedStates.empty() )
 			animationDef.setPaused( pausedStates[i % pausedStates.size()] );
 
 		if ( !iterations.empty() )
 			animationDef.setIterations( iterations[i % iterations.size()] );
 
-		if ( !timingFunctions.empty() )
-			animationDef.setTimingFunction( timingFunctions[i % timingFunctions.size()] );
+		if ( !timingFunctions.empty() ) {
+			const TimingFunction& timing = timingFunctions[i % timingFunctions.size()];
+			animationDef.setTimingFunction( timing.interpolation );
+			animationDef.setTimingFunctionParameters( timing.parameters );
+		}
 
-		if ( !timingFunctionParameters.empty() )
-			animationDef.setTimingFunctionParameters(
-				timingFunctionParameters[i % timingFunctionParameters.size()] );
-
-		animations[animationDef.getName()] = std::move( animationDef );
+		animations.insert_or_assign( animationDef.getName(), std::move( animationDef ) );
 	}
 
 	return animations;
 }
 
 bool AnimationDefinition::isDirectionString( const std::string str ) {
-	String::HashType id = String::hash( str );
+	return isDirectionStringView( str );
+}
+
+bool AnimationDefinition::isDirectionStringView( std::string_view str ) {
+	String::HashType id = DeclarationParser::lowerHash( str );
 	return id == AlternateReverse || id == Alternate || id == Reverse || id == Normal;
 }
 
 AnimationDefinition::AnimationDirection
 AnimationDefinition::directionFromString( std::string str ) {
-	String::trimInPlace( str );
-	String::toLowerInPlace( str );
-	switch ( String::hash( str ) ) {
+	return directionFromStringView( str );
+}
+
+AnimationDefinition::AnimationDirection
+AnimationDefinition::directionFromStringView( std::string_view str ) {
+	str = String::trim( str, " \t\n\r\f\v" );
+	switch ( DeclarationParser::lowerHash( str ) ) {
 		case AlternateReverse:
 			return AlternateReverse;
 		case Alternate:
@@ -189,14 +220,22 @@ AnimationDefinition::directionFromString( std::string str ) {
 }
 
 bool AnimationDefinition::isAnimationFillModeString( const std::string& str ) {
-	Uint32 id = String::hash( str );
+	return isAnimationFillModeStringView( str );
+}
+
+bool AnimationDefinition::isAnimationFillModeStringView( std::string_view str ) {
+	Uint32 id = DeclarationParser::lowerHash( str );
 	return id == None || id == Forwards || id == Backwards || id == Both;
 }
 
 AnimationDefinition::AnimationFillMode AnimationDefinition::fillModeFromString( std::string str ) {
-	String::trimInPlace( str );
-	String::toLowerInPlace( str );
-	switch ( String::hash( str ) ) {
+	return fillModeFromStringView( str );
+}
+
+AnimationDefinition::AnimationFillMode
+AnimationDefinition::fillModeFromStringView( std::string_view str ) {
+	str = String::trim( str, " \t\n\r\f\v" );
+	switch ( DeclarationParser::lowerHash( str ) ) {
 		case None:
 			return None;
 		case Forwards:
@@ -240,7 +279,11 @@ const Ease::Interpolation& AnimationDefinition::getTimingFunction() const {
 }
 
 void AnimationDefinition::setName( const std::string& value ) {
-	mName = value;
+	setNameView( value );
+}
+
+void AnimationDefinition::setNameView( std::string_view value ) {
+	mName.assign( value );
 	mId = String::hash( mName );
 }
 

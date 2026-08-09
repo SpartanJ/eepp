@@ -11,6 +11,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/propertyids.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <span>
 #include <string>
 
 using namespace EE::System;
@@ -19,6 +20,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 class UINode;
+class UIStyle;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace CSS {
@@ -29,9 +31,15 @@ class ShorthandDefinition;
 struct VariableFunctionCache {
 	std::string definition;
 	std::vector<std::string> variableList;
+
+	void clear() { variableList.clear(); }
+
+	void addVariable( std::string_view variable ) { variableList.emplace_back( variable ); }
 };
 
 class EE_API StyleSheetProperty {
+	friend class EE::UI::UIStyle;
+
   public:
 	StyleSheetProperty();
 
@@ -196,7 +204,7 @@ class EE_API StyleSheetProperty {
 
 	const String::HashType& getValueHash() const;
 
-	const std::vector<VariableFunctionCache>& getVarCache() const;
+	std::span<const VariableFunctionCache> getVarCache() const;
 
 	StyleSheetProperty& setCachedProperty( bool cached );
 
@@ -205,6 +213,8 @@ class EE_API StyleSheetProperty {
 	void setImportant( bool important );
 
   protected:
+	bool hasSameResolutionSource( const StyleSheetProperty& property ) const;
+
 	std::string mName;
 	String::HashType mNameHash{ 0 };
 	std::string mValue;
@@ -220,6 +230,7 @@ class EE_API StyleSheetProperty {
 	const ShorthandDefinition* mShorthandDefinition{ nullptr };
 	std::vector<StyleSheetProperty> mIndexedProperty;
 	std::vector<VariableFunctionCache> mVarCache;
+	size_t mVarCacheSize{ 0 };
 
 	explicit StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
 								 const std::string& value, const Int64& specificity = 0,
@@ -229,7 +240,7 @@ class EE_API StyleSheetProperty {
 	void checkImportant();
 	void createIndexed();
 	void checkVars();
-	std::vector<VariableFunctionCache> checkVars( const std::string& value );
+	std::string& mutableValue() { return mValue; }
 };
 
 typedef UnorderedMap<Uint32, StyleSheetProperty> StyleSheetProperties;

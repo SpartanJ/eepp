@@ -1526,6 +1526,7 @@ class EE_API UIWidget : public UINode {
 
 	void calculateAutoMargin();
 	void rebuildClassHashes();
+	void propagateInheritedPropertyResolved( const CSS::StyleSheetProperty& property );
 
 	/**
 	 * @brief Default constructor.

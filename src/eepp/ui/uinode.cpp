@@ -1678,8 +1678,7 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 	return containerLength;
 }
 
-Float UINode::lengthFromValue( const std::string& value,
-							   const PropertyRelativeTarget& relativeTarget,
+Float UINode::lengthFromValue( std::string_view value, const PropertyRelativeTarget& relativeTarget,
 							   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );

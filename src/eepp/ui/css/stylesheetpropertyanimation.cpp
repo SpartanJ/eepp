@@ -73,7 +73,7 @@ void StyleSheetPropertyAnimation::tweenProperty(
 				static_cast<Int32>( startColor.a + ( endColor.a - startColor.a ) * progress ),
 				255 ) );
 			widget->applyProperty(
-				StyleSheetProperty( property, resColor.toHexString(), propertyIndex ) );
+					StyleSheetProperty( property, resColor.toHexString(), propertyIndex ) );
 			break;
 		}
 		case PropertyType::NumberLength: {

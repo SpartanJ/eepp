@@ -145,11 +145,20 @@ BorderStyle Borders::toBorderStyle( const std::string& borderStyle ) {
 }
 
 Sizef Borders::radiusFromString( const UINode* node, const std::string& val ) {
-	auto split = String::split( val, ' ' );
+	std::string_view values = String::trim( std::string_view{ val }, " \t\n\r\f\v" );
+	const auto firstEnd = values.find_first_of( " \t\n\r\f\v" );
+	const std::string_view first = values.substr( 0, firstEnd );
+	std::string_view second = first;
+	if ( firstEnd != std::string_view::npos ) {
+		values.remove_prefix( firstEnd );
+		values = String::trim( values, " \t\n\r\f\v" );
+		const auto secondEnd = values.find_first_of( " \t\n\r\f\v" );
+		if ( !values.empty() )
+			second = values.substr( 0, secondEnd );
+	}
 	Sizef size;
-	size.x = node->lengthFromValue( split[0], CSS::PropertyRelativeTarget::LocalBlockRadiusWidth );
-	size.y = node->lengthFromValue( split[split.size() > 1 ? 1 : 0],
-									CSS::PropertyRelativeTarget::LocalBlockRadiusHeight );
+	size.x = node->lengthFromValue( first, CSS::PropertyRelativeTarget::LocalBlockRadiusWidth );
+	size.y = node->lengthFromValue( second, CSS::PropertyRelativeTarget::LocalBlockRadiusHeight );
 	return size;
 }
 

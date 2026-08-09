@@ -281,8 +281,10 @@ bool App::init() {
 	mConsole->setMaxLogLines( 1024000 );
 	mConsole->setFontSize( mConfig.ConsoleFontSize );
 	mConsole->on( Event::KeyDown, [this]( const Event* event ) {
-		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
+			saveConfig();
 			mUIApplication->getWindow()->close();
+		}
 	} );
 	mConsoleCommands = std::make_unique<ConsoleCommands>( this, mConsole );
 	registerConsoleCommands();
@@ -357,9 +359,10 @@ void App::registerKeyBindings() {
 		}
 		if ( mConsole->isActive() )
 			return;
-		if ( key == KEY_ESCAPE || key == KEY_Q )
+		if ( key == KEY_ESCAPE || key == KEY_Q ) {
+			saveConfig();
 			getWindow()->close();
-		else if ( key == KEY_TAB && keyEvent->getMod() & KEYMOD_ALT )
+		} else if ( key == KEY_TAB && keyEvent->getMod() & KEYMOD_ALT )
 			getWindow()->minimize();
 		else if ( key == KEY_F || ( key == KEY_RETURN && keyEvent->getMod() & KEYMOD_ALT ) )
 			getWindow()->toggleFullscreen();

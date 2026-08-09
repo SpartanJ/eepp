@@ -100,6 +100,12 @@ class EE_API AnimationDefinition {
 	AnimationDirection mDirection = Normal;
 	AnimationFillMode mFillMode = None;
 	bool mPaused = false;
+
+	static bool isDirectionStringView( std::string_view str );
+	static AnimationDirection directionFromStringView( std::string_view str );
+	static bool isAnimationFillModeStringView( std::string_view str );
+	static AnimationFillMode fillModeFromStringView( std::string_view str );
+	void setNameView( std::string_view value );
 };
 
 inline bool operator==( const AnimationDefinition& a, const AnimationDefinition& b ) {

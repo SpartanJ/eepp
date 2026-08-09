@@ -1,6 +1,7 @@
 #include "utest.h"
 #include <eepp/scene/actions/delay.hpp>
 #include <eepp/scene/actions/runnable.hpp>
+#include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 
@@ -122,4 +123,58 @@ UTEST( Transitions, allocationLightParserPreservesAcceptedSpelling ) {
 	EXPECT_TRUE( opacity->timingFunction == Ease::CubizBezier );
 	EXPECT_EQ( opacity->timingFunctionParameters.size(), 4u );
 	EXPECT_TRUE( TimingFunction::parse( "cubic-bezier(" ).interpolation == Ease::None );
+}
+
+UTEST( Animations, allocationLightShorthandPreservesSemantics ) {
+	auto* specification = StyleSheetSpecification::instance();
+	StyleSheetProperty shorthand(
+		specification->getProperty( PropertyId::Animation ),
+		"fade +150MS CUBIC-BEZIER(0.1, 0.2, 0.3, 0.4) +25MS 3 alternate both paused, "
+		"slide 2s linear" );
+	std::vector<const StyleSheetProperty*> properties{ &shorthand };
+
+	AnimationsMap animations = AnimationDefinition::parseAnimationProperties( properties );
+	auto fade = animations.find( "fade" );
+	auto slide = animations.find( "slide" );
+	ASSERT_TRUE( fade != animations.end() );
+	ASSERT_TRUE( slide != animations.end() );
+	EXPECT_EQ( fade->second.getDuration().asMilliseconds(), 150.0 );
+	EXPECT_EQ( fade->second.getDelay().asMilliseconds(), 25.0 );
+	EXPECT_EQ( fade->second.getIterations(), 3 );
+	EXPECT_TRUE( fade->second.getDirection() == AnimationDefinition::Alternate );
+	EXPECT_TRUE( fade->second.getFillMode() == AnimationDefinition::Both );
+	EXPECT_TRUE( fade->second.isPaused() );
+	EXPECT_TRUE( fade->second.getTimingFunction() == Ease::CubizBezier );
+	EXPECT_EQ( fade->second.getTimingFunctionParametersInline().size(), 4u );
+	EXPECT_EQ( slide->second.getDuration().asSeconds(), 2.0 );
+	EXPECT_EQ( slide->second.getDelay().asSeconds(), 0.0 );
+}
+
+UTEST( Animations, allocationLightLonghandListsCycleIndependently ) {
+	auto* specification = StyleSheetSpecification::instance();
+	StyleSheetProperty names( specification->getProperty( PropertyId::AnimationName ),
+							  "first,second,third" );
+	StyleSheetProperty durations( specification->getProperty( PropertyId::AnimationDuration ),
+								  "1s,2s" );
+	StyleSheetProperty delays( specification->getProperty( PropertyId::AnimationDelay ),
+							   "10ms,20ms" );
+	StyleSheetProperty directions( specification->getProperty( PropertyId::AnimationDirection ),
+								   "reverse,alternate" );
+	StyleSheetProperty timing( specification->getProperty( PropertyId::AnimationTimingFunction ),
+							   "linear,cubic-bezier(0.1, 0.2, 0.3, 0.4)" );
+	std::vector<const StyleSheetProperty*> properties{ &names, &durations, &delays, &directions,
+													   &timing };
+
+	AnimationsMap animations = AnimationDefinition::parseAnimationProperties( properties );
+	ASSERT_EQ( animations.size(), 3u );
+	EXPECT_EQ( animations.at( "first" ).getDuration().asSeconds(), 1.0 );
+	EXPECT_EQ( animations.at( "second" ).getDuration().asSeconds(), 2.0 );
+	EXPECT_EQ( animations.at( "third" ).getDuration().asSeconds(), 1.0 );
+	EXPECT_EQ( animations.at( "third" ).getDelay().asMilliseconds(), 10.0 );
+	EXPECT_TRUE( animations.at( "first" ).getDirection() == AnimationDefinition::Reverse );
+	EXPECT_TRUE( animations.at( "second" ).getDirection() == AnimationDefinition::Alternate );
+	EXPECT_TRUE( animations.at( "third" ).getDirection() == AnimationDefinition::Reverse );
+	EXPECT_TRUE( animations.at( "first" ).getTimingFunction() == Ease::Linear );
+	EXPECT_TRUE( animations.at( "second" ).getTimingFunction() == Ease::CubizBezier );
+	EXPECT_EQ( animations.at( "second" ).getTimingFunctionParametersInline().size(), 4u );
 }

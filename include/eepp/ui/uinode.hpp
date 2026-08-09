@@ -1151,6 +1151,13 @@ class EE_API UINode : public Node {
 	Float convertLengthAsDp( const CSS::StyleSheetLength& length,
 							 const Float& containerLength ) const;
 
+	inline Float lengthFromValue( const std::string& value,
+								  const CSS::PropertyRelativeTarget& relativeTarget,
+								  const Float& defaultValue, const Uint32& propertyIndex ) const {
+		return lengthFromValue( std::string_view{ value }, relativeTarget, defaultValue,
+								propertyIndex );
+	}
+
 	/**
 	 * @brief Evaluates a CSS length string to a pixel value.
 	 *
@@ -1163,9 +1170,17 @@ class EE_API UINode : public Node {
 	 * @param propertyIndex The property index for multi-value properties (default: 0).
 	 * @return The computed length in pixels.
 	 */
-	Float lengthFromValue( const std::string& value,
+	Float lengthFromValue( std::string_view value,
 						   const CSS::PropertyRelativeTarget& relativeTarget,
 						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 ) const;
+
+	inline Float lengthFromValue( const char* value,
+								  const CSS::PropertyRelativeTarget& relativeTarget,
+								  const Float& defaultValue = 0,
+								  const Uint32& propertyIndex = 0 ) const {
+		return lengthFromValue( std::string_view{ value }, relativeTarget, defaultValue,
+								propertyIndex );
+	}
 
 	/**
 	 * @brief Evaluates a CSS property to a pixel value.
