@@ -601,10 +601,13 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace,
 		mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( searchReplace );
 		mGlobalSearchBarLayout->find( "buffer_only_mode" )->setVisible( searchReplace );
 		if ( wasReplaceTree ) {
-			updateGlobalSearchBarResults( mGlobalSearchTreeReplace->getSearchStr(),
-										  std::static_pointer_cast<ProjectSearch::ResultModel>(
-											  mGlobalSearchTreeReplace->getModelShared() ),
-										  searchReplace, escapeSequenceChk->isChecked() );
+			// The replace tree has no model until its asynchronous search completes.
+			auto model = std::static_pointer_cast<ProjectSearch::ResultModel>(
+				mGlobalSearchTreeReplace->getModelShared() );
+			if ( model ) {
+				updateGlobalSearchBarResults( mGlobalSearchTreeReplace->getSearchStr(), model,
+											  searchReplace, escapeSequenceChk->isChecked() );
+			}
 		}
 	}
 	if ( mGlobalSearchWhereInput && pathFilters )
@@ -697,6 +700,8 @@ void GlobalSearchController::toggleGlobalSearchBar() {
 void GlobalSearchController::updateGlobalSearchBarResults(
 	const std::string& search, std::shared_ptr<ProjectSearch::ResultModel> model,
 	bool searchReplace, bool isEscaped ) {
+	if ( !model )
+		return;
 	updateGlobalSearchBar();
 	mGlobalSearchTree->hExtLanguageType = mApp->getProjectConfig().hExtLanguageType;
 	mGlobalSearchTree->setSearchStr( search );
