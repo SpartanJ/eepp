@@ -174,6 +174,7 @@
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uivaluebinding.hpp>
 #include <eepp/ui/uivalueconverter.hpp>
+#include <eepp/ui/uivaluevalidation.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>

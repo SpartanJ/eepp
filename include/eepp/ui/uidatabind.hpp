@@ -3,7 +3,6 @@
 
 #include <eepp/core/containers.hpp>
 #include <eepp/core/debug.hpp>
-#include <eepp/system/log.hpp>
 #include <eepp/ui/uivalueconverter.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <memory>
@@ -17,6 +16,10 @@ namespace EE { namespace UI {
  * UIDataBind observes each widget's value event and writes converted values back to the external
  * object supplied at construction. Calling set() updates that object and propagates the converted
  * value to every bound widget.
+ *
+ * The converter maps directly between T and the widget property string. Its toValue() callback
+ * decides whether widget input is acceptable. Values passed to set() are authoritative model state
+ * and are formatted through fromValue().
  *
  * @warning The external object is not owned. It must outlive the UIDataBind, or reset() must be
  * called before that object is destroyed. UIProperty is the owning alternative when the value
@@ -50,7 +53,7 @@ template <typename T> class UIDataBind {
 
 	static std::unique_ptr<UIDataBind<T>>
 	New( T* t, const UnorderedSet<UIWidget*>& widgets,
-		 const Converter& converter = UIDataBind<T>::converterDefault(),
+		 const Converter& converter = Converter::converterDefault(),
 		 const std::string& valueKey = "value",
 		 const Event::EventType& eventType = Event::OnValueChange ) {
 		return std::unique_ptr<UIDataBind<T>>(
@@ -58,7 +61,7 @@ template <typename T> class UIDataBind {
 	}
 
 	static std::unique_ptr<UIDataBind<T>>
-	New( T* t, UIWidget* widget, const Converter& converter = UIDataBind<T>::converterDefault(),
+	New( T* t, UIWidget* widget, const Converter& converter = Converter::converterDefault(),
 		 const std::string& valueKey = "value",
 		 const Event::EventType& eventType = Event::OnValueChange ) {
 		return std::unique_ptr<UIDataBind<T>>(
@@ -72,21 +75,20 @@ template <typename T> class UIDataBind {
 	UIDataBind& operator=( UIDataBind&& ) = delete;
 
 	UIDataBind( T* t, const UnorderedSet<UIWidget*>& widgets,
-				const Converter& converter = UIDataBind<T>::converterDefault(),
+				const Converter& converter = Converter::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) {
 		init( t, widgets, converter, valueKey, eventType );
 	}
 
-	UIDataBind( T* t, UIWidget* widget,
-				const Converter& converter = UIDataBind<T>::converterDefault(),
+	UIDataBind( T* t, UIWidget* widget, const Converter& converter = Converter::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) {
 		init( t, { widget }, converter, valueKey, eventType );
 	}
 
 	void init( T* t, const UnorderedSet<UIWidget*>& widgets,
-			   const Converter& converter = UIDataBind<T>::converterDefault(),
+			   const Converter& converter = Converter::converterDefault(),
 			   const std::string& valueKey = "value",
 			   const Event::EventType& eventType = Event::OnValueChange ) {
 		eeASSERT( t != nullptr );
@@ -104,29 +106,11 @@ template <typename T> class UIDataBind {
 		dataInitialized = true;
 	}
 
-	void set( const T& t ) {
-		eeASSERT( isInitialized() );
-		if ( dataInitialized && t == *data )
-			return;
-		inSetValue = true;
-		*data = t;
-		setValueChange();
-		inSetValue = false;
-		if ( onValueChangeCb )
-			onValueChangeCb( t );
-	}
+	/** Propagates the authoritative model value and reports formatting failures. */
+	UIValueValidationResult set( const T& t ) { return setData( t ); }
 
-	void set( T&& t ) {
-		eeASSERT( isInitialized() );
-		if ( dataInitialized && t == *data )
-			return;
-		inSetValue = true;
-		*data = std::move( t );
-		setValueChange();
-		inSetValue = false;
-		if ( onValueChangeCb )
-			onValueChangeCb( *data );
-	}
+	/** Propagates the authoritative model value and reports formatting failures. */
+	UIValueValidationResult set( T&& t ) { return setData( std::move( t ) ); }
 
 	const T& get() const {
 		eeASSERT( isInitialized() );
@@ -147,6 +131,8 @@ template <typename T> class UIDataBind {
 		connections.clear();
 		widgets.clear();
 		converter = Converter();
+		validation.clear();
+		validationEmitter = nullptr;
 		inSetValue = false;
 		dataInitialized = false;
 		property = nullptr;
@@ -161,9 +147,14 @@ template <typename T> class UIDataBind {
 			return;
 		bindListeners( widget );
 		widgets.insert( widget );
-		inSetValue = true;
-		widget->applyProperty( StyleSheetProperty( property, dataToString() ) );
-		inSetValue = false;
+		std::string string;
+		auto result = dataToString( string );
+		if ( result ) {
+			inSetValue = true;
+			widget->applyProperty( StyleSheetProperty( property, string ) );
+			inSetValue = false;
+		}
+		setValidationResult( std::move( result ) );
 	}
 
 	/** @brief Disconnects and removes @p widget from the synchronized widget set. */
@@ -172,9 +163,18 @@ template <typename T> class UIDataBind {
 			return;
 		connections.erase( widget );
 		widgets.erase( widget );
+		if ( validationEmitter == widget ) {
+			validationEmitter = nullptr;
+			validation.clear();
+		}
 	}
 
-	~UIDataBind() { reset(); }
+	~UIDataBind() {
+		// Do not publish a final "valid" transition while the binding itself is being destroyed.
+		// Validation connections expire safely with validation after widget listeners are removed.
+		connections.clear();
+		widgets.clear();
+	}
 
 	const PropertyDefinition* getPropertyDefinition() const { return property; }
 
@@ -182,7 +182,31 @@ template <typename T> class UIDataBind {
 
 	const UnorderedSet<UIWidget*>& getWidgets() const { return widgets; }
 
+	/** @return Observable converter error state for this binding. */
+	UIValueValidationState& validationState() { return validation; }
+	const UIValueValidationState& validationState() const { return validation; }
+	bool isValid() const { return validation.isValid(); }
+
   protected:
+	template <typename U> UIValueValidationResult setData( U&& t ) {
+		eeASSERT( isInitialized() );
+		if ( dataInitialized && t == *data ) {
+			inSetValue = true;
+			auto result = setValueChange();
+			inSetValue = false;
+			setValidationResult( result );
+			return result;
+		}
+		inSetValue = true;
+		*data = std::forward<U>( t );
+		auto result = setValueChange();
+		inSetValue = false;
+		if ( onValueChangeCb )
+			onValueChangeCb( *data );
+		setValidationResult( result );
+		return result;
+	}
+
 	T* data{ nullptr };
 	UnorderedSet<UIWidget*> widgets;
 	UnorderedMap<UIWidget*, EventConnectionList> connections;
@@ -190,6 +214,8 @@ template <typename T> class UIDataBind {
 	bool dataInitialized{ false };
 	const PropertyDefinition* property{ nullptr };
 	Converter converter;
+	UIValueValidationState validation;
+	UIWidget* validationEmitter{ nullptr };
 	Event::EventType eventType{ Event::OnValueChange };
 
 	void bindListeners( UIWidget* widget ) {
@@ -201,17 +227,25 @@ template <typename T> class UIDataBind {
 			auto widget = event->getNode()->asType<UIWidget>();
 			connections.erase( widget );
 			widgets.erase( widget );
+			if ( validationEmitter == widget ) {
+				validationEmitter = nullptr;
+				validation.clear();
+			}
 		} );
 	}
 
-	std::string dataToString() const {
+	UIValueValidationResult dataToString( std::string& string ) const {
 		eeASSERT( isInitialized() );
-		std::string str;
-		if ( !converter.fromValue( property, str, *data ) ) {
-			Log::error( "UIDataBind::dataToString converter::fromValue: unable to convert value "
-						"to string." );
-		}
-		return str;
+		auto converted = converter.fromValue( property, *data );
+		if ( !converted )
+			return converted.validation;
+		string = std::move( *converted.value );
+		return UIValueValidationResult::success();
+	}
+
+	void setValidationResult( UIValueValidationResult result, UIWidget* emitter = nullptr ) {
+		validationEmitter = result ? nullptr : emitter;
+		validation.set( std::move( result ) );
 	}
 
 	void processValueChange( UIWidget* emitter ) {
@@ -219,28 +253,40 @@ template <typename T> class UIDataBind {
 		eeASSERT( emitter != nullptr );
 		if ( inSetValue )
 			return;
-		bool success = false;
-		T val;
-		success = converter.toValue( property, val, emitter->getPropertyString( property ) );
-
-		if ( success ) {
-			*data = val;
-			StyleSheetProperty prop( property, dataToString(), 0, false );
-			inSetValue = true;
-			for ( auto widget : widgets ) {
-				if ( widget != emitter )
-					widget->applyProperty( prop );
-			}
-			inSetValue = false;
-			if ( onValueChangeCb )
-				onValueChangeCb( val );
+		auto proposed = converter.toValue( property, emitter->getPropertyString( property ) );
+		if ( !proposed ) {
+			setValidationResult( std::move( proposed.validation ), emitter );
+			return;
 		}
+
+		auto canonicalString = converter.fromValue( property, *proposed.value );
+		if ( !canonicalString ) {
+			setValidationResult( std::move( canonicalString.validation ), emitter );
+			return;
+		}
+		*data = std::move( *proposed.value );
+		StyleSheetProperty prop( property, *canonicalString.value, 0, false );
+		inSetValue = true;
+		for ( auto widget : widgets ) {
+			if ( widget != emitter )
+				widget->applyProperty( prop );
+		}
+		inSetValue = false;
+		validationEmitter = nullptr;
+		validation.clear();
+		if ( onValueChangeCb )
+			onValueChangeCb( *data );
 	}
 
-	void setValueChange() {
-		StyleSheetProperty prop( property, dataToString(), 0, false );
+	UIValueValidationResult setValueChange() {
+		std::string string;
+		auto result = dataToString( string );
+		if ( !result )
+			return result;
+		StyleSheetProperty prop( property, string, 0, false );
 		for ( auto widget : widgets )
 			widget->applyProperty( prop );
+		return result;
 	}
 };
 

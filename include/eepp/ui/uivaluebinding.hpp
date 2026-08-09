@@ -2,7 +2,6 @@
 #define EE_UI_UIVALUEBINDING_HPP
 
 #include <eepp/core/observablevalue.hpp>
-#include <eepp/system/log.hpp>
 #include <eepp/ui/uivalueconverter.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -11,10 +10,12 @@ namespace EE { namespace UI {
 /**
  * @brief Move-only two-way binding between an ObservableValue and a UIWidget property.
  *
- * The binding synchronizes the observable's current value into the widget immediately. Later
- * observable changes update the widget, and the selected widget event converts the property back
- * into the observable. Destroying the binding disconnects both directions. Destroying either the
- * observable or widget first is safe and does not keep that endpoint alive.
+ * The converter maps directly between T and the widget property string. Its toValue() callback
+ * decides whether widget input may enter the model. Model-originated values are authoritative and
+ * are formatted through fromValue().
+ *
+ * Destroying the binding disconnects both directions. Destroying either the observable or widget
+ * first is safe and does not keep that endpoint alive.
  *
  * Synchronization is immediate and single-threaded. The observable, widget, and binding must all be
  * used on the widget's owning UI thread.
@@ -50,6 +51,13 @@ template <typename T> class UIValueBinding {
 
 	void disconnect() { mState.reset(); }
 	explicit operator bool() const { return mState && mState->widget && mState->value; }
+	bool isValid() const { return !mState || mState->validation.isValid(); }
+
+	/** @return Observable conversion and input-validation state. */
+	UIValueValidationState* validationState() { return mState ? &mState->validation : nullptr; }
+	const UIValueValidationState* validationState() const {
+		return mState ? &mState->validation : nullptr;
+	}
 
   private:
 	struct State {
@@ -57,6 +65,7 @@ template <typename T> class UIValueBinding {
 		UIWidget* widget{ nullptr };
 		const PropertyDefinition* property{ nullptr };
 		Converter converter;
+		UIValueValidationState validation;
 		bool synchronizing{ false };
 		typename ObservableValue<T>::Connection valueConnection;
 		EventConnectionList widgetConnections;
@@ -64,14 +73,15 @@ template <typename T> class UIValueBinding {
 		bool applyToWidget( const T& newValue ) {
 			if ( !widget )
 				return false;
-			std::string string;
-			if ( !converter.fromValue( property, string, newValue ) ) {
-				Log::error( "UIValueBinding: unable to convert observable value to string." );
+			auto converted = converter.fromValue( property, newValue );
+			if ( !converted ) {
+				validation.set( std::move( converted.validation ) );
 				return false;
 			}
 			synchronizing = true;
-			widget->applyProperty( StyleSheetProperty( property, string ) );
+			widget->applyProperty( StyleSheetProperty( property, *converted.value ) );
 			synchronizing = false;
+			validation.clear();
 			return true;
 		}
 	};
@@ -94,12 +104,15 @@ template <typename T> class UIValueBinding {
 		} );
 		state->widgetConnections += widget->connect( eventType, [weakState]( const Event* event ) {
 			if ( auto state = weakState.lock(); state && !state->synchronizing ) {
-				T newValue;
-				if ( state->converter.toValue(
-						 state->property, newValue,
-						 event->getNode()->asType<UIWidget>()->getPropertyString(
-							 state->property ) ) &&
-					 !state->value.set( std::move( newValue ) ) ) {
+				auto proposed = state->converter.toValue(
+					state->property,
+					event->getNode()->asType<UIWidget>()->getPropertyString( state->property ) );
+				if ( !proposed ) {
+					state->validation.set( std::move( proposed.validation ) );
+					return;
+				}
+				state->validation.clear();
+				if ( !state->value.set( std::move( *proposed.value ) ) ) {
 					state->widget = nullptr;
 					state->widgetConnections.clear();
 				}
@@ -109,6 +122,7 @@ template <typename T> class UIValueBinding {
 			if ( auto state = weakState.lock() ) {
 				state->widget = nullptr;
 				state->valueConnection.disconnect();
+				state->validation.clear();
 				state->widgetConnections.clear();
 			}
 		} );
@@ -121,10 +135,11 @@ template <typename T> class UIValueBinding {
 
 /** @brief Creates a scoped two-way binding between @p value and @p widget. */
 template <typename T>
-UIValueBinding<T> bindValue(
-	ObservableValue<T>& value, UIWidget* widget,
-	const typename UIValueBinding<T>::Converter& converter = UIValueBinding<T>::converterDefault(),
-	const std::string& propertyName = "value", Event::EventType eventType = Event::OnValueChange ) {
+UIValueBinding<T>
+bindValue( ObservableValue<T>& value, UIWidget* widget,
+		   const UIValueConverter<T>& converter = UIValueConverter<T>::converterDefault(),
+		   const std::string& propertyName = "value",
+		   Event::EventType eventType = Event::OnValueChange ) {
 	return UIValueBinding<T>( value, widget, converter, propertyName, eventType );
 }
 

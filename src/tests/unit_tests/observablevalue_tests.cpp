@@ -3,6 +3,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uivaluebinding.hpp>
 
 using namespace EE;
@@ -89,4 +90,80 @@ UTEST( UIValueBinding, synchronizesBothDirectionsAndHandlesEndpointLifetimes ) {
 
 	eeDelete( widget );
 	EXPECT_FALSE( static_cast<bool>( binding ) );
+}
+
+UTEST( UIValueBinding, validatesWidgetProposalsButAcceptsAuthoritativeObservableValues ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIValueBinding Validation Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto widget = UITextInput::New();
+	ObservableValue<std::string> value( "initial" );
+	UIValueConverter<std::string> nonEmpty(
+		[]( const CSS::PropertyDefinition*,
+			const std::string& candidate ) -> UIValueResult<std::string> {
+			return candidate.empty() ? UIValueResult<std::string>::error( 300, "empty value" )
+									 : UIValueResult<std::string>::success( candidate );
+		},
+		UIValueConverter<std::string>::converterString().fromValue );
+	auto binding = bindValue( value, widget, nonEmpty, "text", Event::OnTextChanged );
+
+	widget->setText( "" );
+	EXPECT_TRUE( value.get() == "initial" );
+	EXPECT_FALSE( binding.isValid() );
+	EXPECT_EQ( *binding.validationState()->code(), 300u );
+
+	widget->setText( "valid" );
+	EXPECT_TRUE( value.get() == "valid" );
+	EXPECT_TRUE( binding.isValid() );
+
+	value = "";
+	EXPECT_TRUE( widget->getText().empty() );
+	EXPECT_TRUE( binding.isValid() );
+
+	eeDelete( widget );
+	EXPECT_TRUE( binding.isValid() );
+}
+
+UTEST( UIValueBinding, convertsFormattedModelValues ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIValueBinding Converter Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto widget = UITextInput::New();
+	ObservableValue<double> amount( 10.0 );
+	UIValueConverter<double> euro(
+		[]( const CSS::PropertyDefinition*, const std::string& text ) -> UIValueResult<double> {
+			const std::string prefix( "€" );
+			double value;
+			if ( text.rfind( prefix, 0 ) != 0 ||
+				 !String::fromString( value, text.substr( prefix.size() ) ) )
+				return UIValueResult<double>::error( 400, "expected an EUR amount" );
+			if ( value < 0 )
+				return UIValueResult<double>::error( 401 );
+			return value;
+		},
+		[]( const CSS::PropertyDefinition*, double value ) {
+			return UIValueResult<std::string>( "€" + String::fromDouble( value ) );
+		} );
+	auto binding = bindValue( amount, widget, euro, "text", Event::OnTextChanged );
+
+	EXPECT_TRUE( widget->getText() == "€10" );
+	widget->setText( "€25" );
+	EXPECT_EQ( amount.get(), 25.0 );
+	EXPECT_TRUE( binding.isValid() );
+
+	widget->setText( "USD 30" );
+	EXPECT_EQ( amount.get(), 25.0 );
+	EXPECT_EQ( *binding.validationState()->code(), 400u );
+
+	widget->setText( "€-5" );
+	EXPECT_EQ( amount.get(), 25.0 );
+	EXPECT_EQ( *binding.validationState()->code(), 401u );
+
+	amount = -5;
+	EXPECT_TRUE( widget->getText() == "€-5" );
+	EXPECT_TRUE( binding.isValid() );
+
+	eeDelete( widget );
 }

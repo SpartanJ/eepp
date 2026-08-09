@@ -127,20 +127,18 @@ class UICustomOutputParserWindow : public UIWindow {
 
 		UIDropDownList* cpTypeddl = find<UIDropDownList>( "custom_parser_type" );
 		UIDataBind<ProjectOutputParserTypes>::Converter projectOutputParserTypesConverter(
-			[]( const PropertyDefinition* property, ProjectOutputParserTypes& val,
-				const std::string& str ) -> bool {
+			[]( const PropertyDefinition* property, const std::string& str ) {
 				auto v = StyleSheetProperty( property, str ).asString();
 				Uint32 idx;
-				if ( String::fromString( idx, v ) && idx >= 0 && idx <= 2 ) {
-					val = (ProjectOutputParserTypes)idx;
-					return true;
-				}
-				return false;
+				if ( String::fromString( idx, v ) && idx <= 2 )
+					return UIValueResult<ProjectOutputParserTypes>::success(
+						static_cast<ProjectOutputParserTypes>( idx ) );
+				return UIValueResult<ProjectOutputParserTypes>::error(
+					static_cast<Uint32>( UIValueValidationError::ConversionFailed ) );
 			},
-			[cpTypeddl]( const PropertyDefinition*, std::string& str,
-						 const ProjectOutputParserTypes& val ) -> bool {
-				str = cpTypeddl->getListBox()->getItem( (Uint32)val )->getText();
-				return true;
+			[cpTypeddl]( const PropertyDefinition*, const ProjectOutputParserTypes& val ) {
+				return UIValueResult<std::string>::success(
+					cpTypeddl->getListBox()->getItem( static_cast<Uint32>( val ) )->getText() );
 			} );
 
 		mDataBindHolder += UIDataBind<ProjectOutputParserTypes>::New(

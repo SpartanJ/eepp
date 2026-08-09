@@ -3,9 +3,9 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/uivaluevalidation.hpp>
 #include <functional>
 #include <string>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -20,18 +20,21 @@ namespace EE { namespace UI {
  *
  * @code
  * auto converter = UIValueConverter<MyEnum>(
- *     []( const CSS::PropertyDefinition*, MyEnum& value, const std::string& text ) {
- *         return enumFromString( value, text );
+ *     []( const CSS::PropertyDefinition*, const std::string& text ) {
+ *         MyEnum value;
+ *         return enumFromString( value, text ) ? UIValueResult<MyEnum>::success( value )
+ *                                               : UIValueResult<MyEnum>::error( 1 );
  *     },
- *     []( const CSS::PropertyDefinition*, std::string& text, const MyEnum& value ) {
- *         text = enumToString( value );
- *         return true;
+ *     []( const CSS::PropertyDefinition*, const MyEnum& value ) {
+ *         return UIValueResult<std::string>::success( enumToString( value ) );
  *     } );
  * @endcode
  */
 template <typename T> struct UIValueConverter {
-	using ToValue = std::function<bool( const CSS::PropertyDefinition*, T&, const std::string& )>;
-	using FromValue = std::function<bool( const CSS::PropertyDefinition*, std::string&, const T& )>;
+	using ToValue =
+		std::function<UIValueResult<T>( const CSS::PropertyDefinition*, const std::string& )>;
+	using FromValue =
+		std::function<UIValueResult<std::string>( const CSS::PropertyDefinition*, const T& )>;
 
 	UIValueConverter() = default;
 	UIValueConverter( ToValue toValue, FromValue fromValue ) :
@@ -42,18 +45,22 @@ template <typename T> struct UIValueConverter {
 
 	static UIValueConverter converterDefault() {
 		return UIValueConverter(
-			[]( const CSS::PropertyDefinition* property, T& value, const std::string& string ) {
+			[]( const CSS::PropertyDefinition* property, const std::string& string ) {
 				if constexpr ( std::is_same_v<T, std::string> || std::is_same_v<T, String> ) {
-					value = T( string );
-					return true;
+					return UIValueResult<T>::success( T( string ) );
 				} else if constexpr ( std::is_same_v<T, bool> ) {
-					value = CSS::StyleSheetProperty( property, string ).asBool();
-					return true;
+					return UIValueResult<T>::success(
+						CSS::StyleSheetProperty( property, string ).asBool() );
 				} else {
-					return String::fromString( value, string );
+					T value;
+					return String::fromString( value, string )
+							   ? UIValueResult<T>::success( std::move( value ) )
+							   : UIValueResult<T>::error( static_cast<Uint32>(
+									 UIValueValidationError::ConversionFailed ) );
 				}
 			},
-			[]( const CSS::PropertyDefinition*, std::string& string, const T& value ) {
+			[]( const CSS::PropertyDefinition*, const T& value ) {
+				std::string string;
 				if constexpr ( std::is_same_v<T, std::string> ) {
 					string = value;
 				} else if constexpr ( std::is_same_v<T, String> ) {
@@ -67,34 +74,31 @@ template <typename T> struct UIValueConverter {
 				} else {
 					string = String::toString( value );
 				}
-				return true;
+				return UIValueResult<std::string>::success( std::move( string ) );
 			} );
 	}
 
 	static UIValueConverter converterString() {
 		return UIValueConverter(
-			[]( const CSS::PropertyDefinition*, T& value, const std::string& string ) {
-				value = T( string );
-				return true;
+			[]( const CSS::PropertyDefinition*, const std::string& string ) {
+				return UIValueResult<T>::success( T( string ) );
 			},
-			[]( const CSS::PropertyDefinition*, std::string& string, const T& value ) {
+			[]( const CSS::PropertyDefinition*, const T& value ) {
 				if constexpr ( std::is_same_v<T, String> )
-					string = value.toUtf8();
+					return UIValueResult<std::string>::success( value.toUtf8() );
 				else
-					string = value;
-				return true;
+					return UIValueResult<std::string>::success( value );
 			} );
 	}
 
 	static UIValueConverter converterBool() {
 		return UIValueConverter(
-			[]( const CSS::PropertyDefinition* property, T& value, const std::string& string ) {
-				value = CSS::StyleSheetProperty( property, string ).asBool();
-				return true;
+			[]( const CSS::PropertyDefinition* property, const std::string& string ) {
+				return UIValueResult<T>::success(
+					CSS::StyleSheetProperty( property, string ).asBool() );
 			},
-			[]( const CSS::PropertyDefinition*, std::string& string, const T& value ) {
-				string = value ? "true" : "false";
-				return true;
+			[]( const CSS::PropertyDefinition*, const T& value ) {
+				return UIValueResult<std::string>::success( value ? "true" : "false" );
 			} );
 	}
 };

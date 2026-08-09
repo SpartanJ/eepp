@@ -16,7 +16,7 @@ namespace EE { namespace UI {
  *
  * Use UIProperty for concise UI-local state when the value and its widgets naturally share a
  * lifetime. It avoids the shared state required by ObservableValue and owns its UIDataBind
- * directly.
+ * directly. A custom UIValueConverter can provide presentation-specific parsing and formatting.
  *
  * @code
  * UIProperty<double> celsius( 0.0, celsiusInput );
@@ -143,6 +143,10 @@ template <typename T> class UIProperty {
 	const T& value() const { return mBindedData.get(); }
 
 	const UIDataBind<T>& databind() const { return mBindedData; }
+	UIDataBind<T>& databind() { return mBindedData; }
+
+	/** @return Current converter error state. */
+	const UIValueValidationState& validationState() const { return mBindedData.validationState(); }
 
 	/** @brief Connects another widget to this property's value. */
 	UIProperty& connect( UIWidget* widget ) {
