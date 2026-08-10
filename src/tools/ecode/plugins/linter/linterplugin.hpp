@@ -131,7 +131,7 @@ class LinterPlugin : public Plugin {
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::unordered_set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
-	std::unordered_map<TextDocument*, std::unique_ptr<Clock>> mDirtyDoc;
+	std::unordered_map<TextDocument*, Clock> mDirtyDoc;
 	std::unordered_map<TextDocument*, std::map<Int64, std::vector<LinterMatch>>> mMatches;
 	Time mDelayTime{ Seconds( 0.5f ) };
 	Mutex mDocMutex;

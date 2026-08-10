@@ -965,6 +965,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Mutex mHighlightWordCacheMutex;
 	TextRange mHighlightTextRange;
 	TextRange mPreviewColorRange;
+	String mMouseOverColorBuffer;
 	std::vector<UICodeEditorPlugin*> mPlugins;
 	UILoader* mLoader{ nullptr };
 	Float mGlyphWidth{ 0 };

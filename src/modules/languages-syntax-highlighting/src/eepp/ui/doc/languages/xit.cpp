@@ -54,7 +54,6 @@ SyntaxDefinition& addXit() {
 		  {}
 
 		} );
-	sd.setFoldRangeType( FoldRangeType::Markdown );
 	return sd;
 }
 

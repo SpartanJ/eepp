@@ -746,9 +746,9 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 void LinterPlugin::update( UICodeEditor* editor ) {
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
-	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
+	if ( it != mDirtyDoc.end() && it->second.getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
+		mThreadPool->run( [this, doc = std::move( doc )] { lintDoc( doc ); } );
 	}
 }
 
@@ -1469,10 +1469,12 @@ Linter LinterPlugin::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 }
 
 void LinterPlugin::setDocDirty( TextDocument* doc ) {
-	mDirtyDoc[doc] = std::make_unique<Clock>();
+	auto [it, inserted] = mDirtyDoc.try_emplace( doc );
+	if ( !inserted )
+		it->second.restart();
 }
 void LinterPlugin::setDocDirty( UICodeEditor* editor ) {
-	mDirtyDoc[editor->getDocumentRef().get()] = std::make_unique<Clock>();
+	setDocDirty( editor->getDocumentRef().get() );
 }
 
 void LinterPlugin::invalidateEditors( TextDocument* doc ) {

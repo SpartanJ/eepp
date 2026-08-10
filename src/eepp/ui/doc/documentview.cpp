@@ -418,7 +418,7 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 
 			mVisibleLinesOffset.insert( mVisibleLinesOffset.begin() + i, lb.paddingStart );
 
-			std::vector<TextPosition> newWraps;
+			SmallVector<TextPosition, 4> newWraps;
 			newWraps.reserve( lb.wraps.size() );
 			for ( const auto& col : lb.wraps )
 				newWraps.push_back( { i, col } );

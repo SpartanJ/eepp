@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <deque>
 #include <eepp/core/noncopyable.hpp>
+#include <eepp/core/small_function.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/thread.hpp>
@@ -28,10 +29,9 @@ class EE_API ThreadPool : NonCopyable {
 
 	virtual ~ThreadPool();
 
-	Uint64 run(
-		const std::function<void()>& func,
-		const std::function<void( const Uint64& )>& doneCallback = []( const Uint64& ) {},
-		const Uint64& tag = 0 );
+	Uint64 run( SmallFunction<48> func,
+				const std::function<void( const Uint64& )>& doneCallback = {},
+				const Uint64& tag = 0 );
 
 	Uint32 numThreads() const;
 
@@ -50,7 +50,7 @@ class EE_API ThreadPool : NonCopyable {
   private:
 	struct Work {
 		Uint64 id{ 0 };
-		const std::function<void()> func;
+		const SmallFunction<48> func;
 		const std::function<void( const Uint64& )> callback;
 		Uint64 tag{ 0 };
 	};

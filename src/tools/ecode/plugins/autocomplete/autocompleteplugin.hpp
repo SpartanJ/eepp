@@ -266,9 +266,9 @@ class AutoCompletePlugin : public Plugin {
 
 	void updateSuggestions( const std::string& symbol, UICodeEditor* editor );
 
-	SymbolsList getDocumentSymbols( TextDocument* );
+	SymbolsList getDocumentSymbols( const std::shared_ptr<TextDocument>& doc );
 
-	void updateDocCache( TextDocument* doc );
+	void updateDocCache( std::shared_ptr<TextDocument> doc );
 
 	std::string getPartialSymbol( TextDocument* doc );
 

@@ -6,6 +6,137 @@
 using namespace EE::UI::Doc;
 using namespace EE::System;
 
+UTEST( TextDocument, insertSingleLineAtDifferentPositions ) {
+	TextDocument doc;
+
+	TextPosition cursor = doc.insert( 0, { 0, 0 }, "abcd" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_STRINGEQ( "abcd", doc.getText() );
+	EXPECT_STRINGEQ( "abcd\n", doc.line( 0 ).getText() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+
+	cursor = doc.insert( 0, { 0, 0 }, "start-" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 6, cursor.column() );
+	EXPECT_STRINGEQ( "start-abcd", doc.getText() );
+
+	cursor = doc.insert( 0, { 0, 8 }, "middle-" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 15, cursor.column() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd", doc.getText() );
+
+	cursor = doc.insert( 0, { 0, 17 }, "-end" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 21, cursor.column() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd-end", doc.getText() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd-end\n", doc.line( 0 ).getText() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+}
+
+UTEST( TextDocument, insertNewLinesIntoEmptyDocument ) {
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "alpha\nbeta" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 4, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "alpha\nbeta", doc.getText() );
+		EXPECT_STRINGEQ( "alpha\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "beta\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "\nleading" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 7, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "\nleading", doc.getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "leading\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "trailing\n" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 0, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "trailing\n", doc.getText() );
+		EXPECT_STRINGEQ( "trailing\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "a\n\nb" );
+		EXPECT_EQ( 2, cursor.line() );
+		EXPECT_EQ( 1, cursor.column() );
+		EXPECT_EQ( 3u, doc.linesCount() );
+		EXPECT_STRINGEQ( "a\n\nb", doc.getText() );
+		EXPECT_STRINGEQ( "a\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 1 ).getText() );
+		EXPECT_STRINGEQ( "b\n", doc.line( 2 ).getText() );
+	}
+}
+
+UTEST( TextDocument, insertIntoExistingLines ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "first\nsecond\nthird" );
+
+	TextPosition cursor = doc.insert( 0, { 1, 3 }, "!" );
+	EXPECT_EQ( 1, cursor.line() );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_EQ( 3u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!ond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "sec!ond\n", doc.line( 1 ).getText() );
+
+	cursor = doc.insert( 0, { 1, 4 }, "X\nY" );
+	EXPECT_EQ( 2, cursor.line() );
+	EXPECT_EQ( 1, cursor.column() );
+	EXPECT_EQ( 4u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!X\nYond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "sec!X\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "Yond\n", doc.line( 2 ).getText() );
+
+	cursor = doc.insert( 0, { 2, 0 }, "\n" );
+	EXPECT_EQ( 3, cursor.line() );
+	EXPECT_EQ( 0, cursor.column() );
+	EXPECT_EQ( 5u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!X\n\nYond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "\n", doc.line( 2 ).getText() );
+	EXPECT_STRINGEQ( "Yond\n", doc.line( 3 ).getText() );
+}
+
+UTEST( TextDocument, insertEmptyTextDoesNothing ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "content" );
+
+	TextPosition cursor = doc.insert( 0, { 0, 3 }, "" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 3, cursor.column() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+	EXPECT_STRINGEQ( "content", doc.getText() );
+	EXPECT_STRINGEQ( "content\n", doc.line( 0 ).getText() );
+}
+
+UTEST( TextDocument, getTextToBuffer ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "first line\nsecond line\nthird line" );
+	String buffer( "previous contents that should be replaced" );
+
+	doc.getTextToBuffer( { { 0, 6 }, { 0, 10 } }, buffer );
+	EXPECT_STRINGEQ( "line", buffer );
+
+	doc.getTextToBuffer( { { 2, 5 }, { 0, 6 } }, buffer );
+	EXPECT_STRINGEQ( "line\nsecond line\nthird", buffer );
+	EXPECT_STRINGEQ( doc.getText( { { 0, 6 }, { 2, 5 } } ), buffer );
+
+	doc.getTextToBuffer( { { 1, 3 }, { 1, 3 } }, buffer );
+	EXPECT_TRUE( buffer.empty() );
+}
+
 UTEST( TextDocument, multicursor ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	TextDocument doc;

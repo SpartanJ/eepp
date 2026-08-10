@@ -230,19 +230,21 @@ void SpellCheckerPlugin::onRegisterListeners( UICodeEditor* editor,
 }
 
 void SpellCheckerPlugin::setDocDirty( TextDocument* doc ) {
-	mDirtyDoc[doc] = std::make_unique<Clock>();
+	auto [it, inserted] = mDirtyDoc.try_emplace( doc );
+	if ( !inserted )
+		it->second.restart();
 }
 
 void SpellCheckerPlugin::setDocDirty( UICodeEditor* editor ) {
-	mDirtyDoc[editor->getDocumentRef().get()] = std::make_unique<Clock>();
+	setDocDirty( editor->getDocumentRef().get() );
 }
 
 void SpellCheckerPlugin::update( UICodeEditor* editor ) {
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
-	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
+	if ( it != mDirtyDoc.end() && it->second.getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-		mThreadPool->run( [this, doc] { spellCheckDoc( doc ); } );
+		mThreadPool->run( [this, doc = std::move( doc )] { spellCheckDoc( doc ); } );
 	}
 }
 
@@ -254,11 +256,11 @@ void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	ScopedOp op(
-		[this, doc]() {
+		[this] {
 			std::lock_guard l( mWorkMutex );
 			mWorkersCount++;
 		},
-		[this]() {
+		[this] {
 			{
 				std::lock_guard l( mWorkMutex );
 				mWorkersCount--;

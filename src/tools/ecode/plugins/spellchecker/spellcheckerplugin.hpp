@@ -57,7 +57,7 @@ class SpellCheckerPlugin : public PluginBase {
 
   protected:
 	Time mDelayTime{ Seconds( 0.5f ) };
-	std::unordered_map<TextDocument*, std::unique_ptr<Clock>> mDirtyDoc;
+	std::unordered_map<TextDocument*, Clock> mDirtyDoc;
 	std::unordered_map<TextDocument*, std::map<Int64, std::vector<SpellCheckerMatch>>> mMatches;
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;

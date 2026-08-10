@@ -705,9 +705,8 @@ Int64 Sys::getSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	using GetSystemTimePreciseAsFileTimeType = VOID( WINAPI* )( LPFILETIME );
 	static const auto getSystemTimePreciseAsFileTime =
-		reinterpret_cast<GetSystemTimePreciseAsFileTimeType>(
-			GetProcAddress( GetModuleHandleA( "kernel32.dll" ),
-							"GetSystemTimePreciseAsFileTime" ) );
+		reinterpret_cast<GetSystemTimePreciseAsFileTimeType>( GetProcAddress(
+			GetModuleHandleA( "kernel32.dll" ), "GetSystemTimePreciseAsFileTime" ) );
 
 	FILETIME fileTime;
 	if ( getSystemTimePreciseAsFileTime )
@@ -1145,18 +1144,8 @@ std::string Sys::which( const std::string& exeName,
 		 FileSystem::fileExists( exeName ) )
 		return exeName;
 
-	std::vector<std::string> PATHS = getEnvSplit( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static std::vector<std::string> PATHEXTS = getEnvSplit( "PATHEXT" );
-	std::string exePath;
-#endif
-
-	if ( !customSearchPaths.empty() ) {
-		for ( const auto& searchPath : customSearchPaths )
-			PATHS.emplace_back( searchPath );
-	}
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
 	bool hasExtension = false;
 	for ( const auto& pathExt : PATHEXTS ) {
 		if ( String::endsWith( exeName, pathExt ) ) {
@@ -1166,25 +1155,59 @@ std::string Sys::which( const std::string& exeName,
 	}
 #endif
 
-	for ( const auto& path : PATHS ) {
-		std::string fpath( path );
-		FileSystem::dirAddSlashAtEnd( fpath );
-		fpath += exeName;
+	std::string foundPath;
+	std::string candidate;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( hasExtension ) {
-			if ( FileSystem::fileExists( fpath ) )
-				return fpath;
-		} else {
-			for ( const auto& pathext : PATHEXTS ) {
-				exePath = fpath + pathext;
-				if ( FileSystem::fileExists( exePath ) )
-					return exePath;
-			}
-		}
-#else
-		if ( FileSystem::fileExists( fpath ) )
-			return fpath;
+	std::string candidateWithExtension;
 #endif
+	struct SearchContext {
+		const std::string* exeName;
+		std::string* foundPath;
+		std::string* candidate;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		const std::vector<std::string>* pathExts;
+		std::string* candidateWithExtension;
+		bool hasExtension;
+#endif
+	};
+	SearchContext context{ &exeName, &foundPath, &candidate };
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	context.pathExts = &PATHEXTS;
+	context.candidateWithExtension = &candidateWithExtension;
+	context.hasExtension = hasExtension;
+#endif
+	auto searchPath = [context = &context]( std::string_view path ) {
+		context->candidate->assign( path );
+		FileSystem::dirAddSlashAtEnd( *context->candidate );
+		context->candidate->append( *context->exeName );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( !context->hasExtension ) {
+			for ( const auto& pathExt : *context->pathExts ) {
+				context->candidateWithExtension->assign( *context->candidate );
+				context->candidateWithExtension->append( pathExt );
+				if ( FileSystem::fileExists( *context->candidateWithExtension ) ) {
+					*context->foundPath = std::move( *context->candidateWithExtension );
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
+		if ( FileSystem::fileExists( *context->candidate ) ) {
+			*context->foundPath = std::move( *context->candidate );
+			return false;
+		}
+		return true;
+	};
+
+	const std::string paths = getEnv( "PATH" );
+	String::splitCb( searchPath, paths, std::string( 1, PATH_SEP_CHAR ), "", "" );
+	if ( !foundPath.empty() )
+		return foundPath;
+
+	for ( const auto& path : customSearchPaths ) {
+		if ( !searchPath( path ) )
+			return foundPath;
 	}
 	return "";
 }

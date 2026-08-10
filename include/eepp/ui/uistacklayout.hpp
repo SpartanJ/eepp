@@ -1,6 +1,7 @@
 #ifndef EE_UI_UISTACKLAYOUT_HPP
 #define EE_UI_UISTACKLAYOUT_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
@@ -33,7 +34,14 @@ class EE_API UIStackLayout : public UILayout {
 	void setRowValign( const RowValign& rowValign );
 
   protected:
+	struct NodeLine {
+		SmallVector<UIWidget*, 2> nodes;
+		Float maxY{ 0 };
+		Float width{ 0 };
+	};
+
 	RowValign mRowValign{ RowValign::Bottom };
+	SmallVector<NodeLine, 4> mLines;
 	Node* mParentRef{ nullptr };
 	Uint32 mParentSizeChangeCb{ 0 };
 	Uint32 mParentCloseCb{ 0 };

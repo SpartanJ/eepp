@@ -33,7 +33,7 @@ Interpolation2d::Interpolation2d( std::vector<Point2d> points ) :
 	mElapsed( Time::Zero ),
 	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
-	mPoints( points ),
+	mPoints( points.begin(), points.end() ),
 	mOnPathEndCallback(),
 	mOnStepCallback() {}
 
@@ -346,7 +346,7 @@ const Uint32& Interpolation2d::getCurrentPositionIndex() const {
 	return mCurPoint;
 }
 
-const std::vector<Point2d>& Interpolation2d::getPoints() const {
+const SmallVector<Point2d, 8>& Interpolation2d::getPoints() const {
 	return mPoints;
 }
 

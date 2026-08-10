@@ -566,6 +566,13 @@ class EE_API String {
 
 	template <typename... Args>
 	static std::string format( std::string_view format, Args&&... args ) {
+		std::string result;
+		formatTo( result, format, std::forward<Args>( args )... );
+		return result;
+	}
+
+	template <typename... Args>
+	static void formatTo( std::string& result, std::string_view format, Args&&... args ) {
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
@@ -578,18 +585,22 @@ class EE_API String {
 			std::snprintf( nullptr, 0, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 
-		if ( reqSize < 0 )
-			return "";
+		if ( reqSize < 0 ) {
+			result.clear();
+			return;
+		}
 
 		std::size_t bufSize = static_cast<std::size_t>( reqSize ) + 1;
-		std::string result( bufSize, '\0' );
+		result.resize( bufSize );
 
 		int writtenChars =
 			std::snprintf( &result[0], bufSize, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 
-		if ( writtenChars < 0 )
-			return "";
+		if ( writtenChars < 0 ) {
+			result.clear();
+			return;
+		}
 
 		if ( static_cast<std::size_t>( writtenChars ) < bufSize ) {
 			result.resize( static_cast<std::size_t>( writtenChars ) );
@@ -602,7 +613,6 @@ class EE_API String {
 #elif defined( __GNUC__ )
 #pragma GCC diagnostic pop
 #endif
-		return result;
 	}
 
 	/** Format a char buffer */
@@ -992,6 +1002,9 @@ class EE_API String {
 	String& assign( const String& str, std::size_t pos, std::size_t n );
 
 	String& assign( const char* s );
+
+	/** Assigns UTF-8 text while retaining the current UTF-32 storage capacity. */
+	String& assignUtf8( std::string_view utf8String );
 
 	String& assign( std::size_t n, StringBaseType c );
 

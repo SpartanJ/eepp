@@ -1568,14 +1568,15 @@ void App::updateDocInfo( TextDocument& doc ) {
 		 mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
-		String infoStr( String::format(
-			"%s: %lld / %zu  %s: %lld    %s    %s%s    %s", i18n( "line_abbr", "line" ).toUtf8(),
-			doc.getSelection().start().line() + 1, doc.linesCount(),
-			i18n( "col_abbr", "col" ).toUtf8(), mSplitter->getCurEditor()->getCurrentColumnCount(),
-			doc.getSyntaxDefinition().getLanguageName(),
-			TextFormat::encodingToString( doc.getEncoding() ), doc.isBOM() ? " (with BOM)"sv : ""sv,
-			TextFormat::lineEndingToString( doc.getLineEnding() ) ) );
-		mDocInfo->debounce( [this, infoStr] { mDocInfo->setText( infoStr ); }, Time::Zero,
+		String::formatTo( mDocInfoUtf8Buffer, "%s: %lld / %zu  %s: %lld    %s    %s%s    %s",
+						  mDocInfoLineAbbr, doc.getSelection().start().line() + 1, doc.linesCount(),
+						  mDocInfoColAbbr, mSplitter->getCurEditor()->getCurrentColumnCount(),
+						  doc.getSyntaxDefinition().getLanguageName(),
+						  TextFormat::encodingToString( doc.getEncoding() ),
+						  doc.isBOM() ? " (with BOM)"sv : ""sv,
+						  TextFormat::lineEndingToString( doc.getLineEnding() ) );
+		mDocInfoText.assignUtf8( mDocInfoUtf8Buffer );
+		mDocInfo->debounce( [this] { mDocInfo->setText( mDocInfoText ); }, Time::Zero,
 							String::hash( "ecode::doc_info::update" ) );
 	}
 }
@@ -4872,6 +4873,8 @@ void App::init( InitParameters& params ) {
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
+		mDocInfoLineAbbr = i18n( "line_abbr", "line" ).toUtf8();
+		mDocInfoColAbbr = i18n( "col_abbr", "col" ).toUtf8();
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mUISceneNode->bind( "main_menubar", mMenuBar );

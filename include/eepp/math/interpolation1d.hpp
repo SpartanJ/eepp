@@ -111,7 +111,7 @@ class EE_API Interpolation1d {
 	const Time& getDuration() const;
 
 	/** @return the vector of points */
-	const std::vector<Point1d>& getPoints() const;
+	const SmallVector<Point1d, 8>& getPoints() const;
 
 	/** @return the vector of points reversed */
 	std::vector<Point1d> getReversePoints();
@@ -163,7 +163,7 @@ class EE_API Interpolation1d {
 
 	Float mSpeed;
 
-	std::vector<Point1d> mPoints;
+	SmallVector<Point1d, 8> mPoints;
 
 	Point1d* mActP;
 	Point1d* mNexP;

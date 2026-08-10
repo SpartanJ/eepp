@@ -253,7 +253,7 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 	const auto& line = mDoc->line( mDoc->getSelection().start().line() ).getText();
 	if ( mDoc->getSelection().start().column() >= (Int64)line.size() )
 		return clearMatch();
-	auto def = mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( sel.start() );
+	const auto& def = mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( sel.start() );
 	if ( !def.getAutoCloseXMLTags() ) // getAutoCloseXMLTags means that it supports XML element tags
 		return clearMatch();
 	TextRange range = mDoc->getWordRangeInPosition( sel.start(), false );

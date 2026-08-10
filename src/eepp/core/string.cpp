@@ -2319,6 +2319,16 @@ String& String::assign( const char* s ) {
 	return *this;
 }
 
+String& String::assignUtf8( std::string_view utf8String ) {
+	if ( utf8String.empty() ) {
+		mString.clear();
+		return *this;
+	}
+	mString.resize( utf8Length( utf8String ) );
+	toUtf32( utf8String, mString.data(), mString.size() );
+	return *this;
+}
+
 String& String::assign( size_t n, StringBaseType c ) {
 	mString.assign( n, c );
 

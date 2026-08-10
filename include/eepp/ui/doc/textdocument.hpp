@@ -213,6 +213,8 @@ class EE_API TextDocument {
 
 	String getText( const TextRange& range ) const;
 
+	void getTextToBuffer( const TextRange& range, String& buffer ) const;
+
 	String getText() const;
 
 	String getSelectedText() const;

@@ -112,7 +112,7 @@ class EE_API Interpolation2d {
 	const Uint32& getCurrentPositionIndex() const;
 
 	/** @return the vector of waypoints */
-	const std::vector<Point2d>& getPoints() const;
+	const SmallVector<Point2d, 8>& getPoints() const;
 
 	/** @return the vector of waypoints reversed */
 	std::vector<Point2d> getReversePoints();
@@ -167,7 +167,7 @@ class EE_API Interpolation2d {
 	Point2d* mActP;
 	Point2d* mNexP;
 
-	std::vector<Point2d> mPoints;
+	SmallVector<Point2d, 8> mPoints;
 
 	OnPathEndCallback mOnPathEndCallback;
 

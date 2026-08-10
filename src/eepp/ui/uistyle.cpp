@@ -952,9 +952,17 @@ UIStyle::PropertyResolution UIStyle::resolveProperty( const StyleSheetProperty* 
 		return PropertyResolution{ nullptr, property };
 
 	const Uint32 slotIndex = mPropertyResolutionDepth;
-	if ( slotIndex >= mPropertyResolutionSlots.size() )
-		mPropertyResolutionSlots.emplace_back( std::make_unique<StyleSheetProperty>() );
-	StyleSheetProperty* slot = mPropertyResolutionSlots[slotIndex].get();
+	StyleSheetProperty* slot;
+	if ( 0 == slotIndex ) {
+		if ( !mPropertyResolutionSlot )
+			mPropertyResolutionSlot = std::make_unique<StyleSheetProperty>();
+		slot = mPropertyResolutionSlot.get();
+	} else {
+		const Uint32 nestedSlotIndex = slotIndex - 1;
+		if ( nestedSlotIndex >= mNestedPropertyResolutionSlots.size() )
+			mNestedPropertyResolutionSlots.emplace_back( std::make_unique<StyleSheetProperty>() );
+		slot = mNestedPropertyResolutionSlots[nestedSlotIndex].get();
+	}
 
 	++mPropertyResolutionDepth;
 	PropertyResolution resolution{ this, slot, slotIndex };

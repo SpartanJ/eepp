@@ -1372,12 +1372,19 @@ std::string TextDocument::getHashHexString() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
+	String result;
+	getTextToBuffer( range, result );
+	return result;
+}
+
+void TextDocument::getTextToBuffer( const TextRange& range, String& buffer ) const {
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
 
 	TextRange nrange = sanitizeRange( range.normalized() );
+	buffer.clear();
 	if ( !nrange.hasSelection() )
-		return String();
+		return;
 
 	Int64 startLine = nrange.start().line();
 	Int64 endLine = nrange.end().line();
@@ -1395,24 +1402,21 @@ String TextDocument::getText( const TextRange& range ) const {
 		totalSize += endCol;
 	}
 
-	String result;
-	result.reserve( totalSize );
+	buffer.reserve( totalSize );
 
 	if ( startLine == endLine ) {
-		result.append( mLines[startLine].getText(), startCol, endCol - startCol );
+		buffer.append( mLines[startLine].getText(), startCol, endCol - startCol );
 	} else {
-		result.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
+		buffer.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
 
 		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
-			result.append( mLines[i].getText() );
+			buffer.append( mLines[i].getText() );
 		}
 
 		if ( endCol > 0 ) {
-			result.append( mLines[endLine].getText(), 0, endCol );
+			buffer.append( mLines[endLine].getText(), 0, endCol );
 		}
 	}
-
-	return result;
 }
 
 String TextDocument::getText() const {
@@ -1566,22 +1570,27 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	{
 		Lock l( mLinesMutex );
-		String before = mLines[position.line()].substr( 0, position.column() );
-		String after = mLines[position.line()].substr( position.column() );
-		std::vector<String> lines = text.split( '\n', true );
-		linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
-		for ( auto i = 0; i < linesAdd; i++ )
-			lines[i] = lines[i] + "\n";
-		lines[0] = before + lines[0];
-		lines[lines.size() - 1] = lines[lines.size() - 1] + after;
+		if ( text.find( '\n' ) == String::InvalidPos ) {
+			mLines[position.line()].insert( position.column(), text );
+			notifyLineChanged( position.line() );
+		} else {
+			String before = mLines[position.line()].substr( 0, position.column() );
+			String after = mLines[position.line()].substr( position.column() );
+			std::vector<String> lines = text.split( '\n', true );
+			linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
+			for ( auto i = 0; i < linesAdd; i++ )
+				lines[i] = lines[i] + "\n";
+			lines[0] = before + lines[0];
+			lines[lines.size() - 1] = lines[lines.size() - 1] + after;
 
-		mLines[position.line()] = TextDocumentLine( lines[0], mDocumentMutex );
-		notifyLineChanged( position.line() );
+			mLines[position.line()] = TextDocumentLine( lines[0], mDocumentMutex );
+			notifyLineChanged( position.line() );
 
-		for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
-			mLines.insert( mLines.begin() + position.line() + i,
-						   TextDocumentLine( lines[i], mDocumentMutex ) );
-			notifyLineChanged( position.line() + i );
+			for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
+				mLines.insert( mLines.begin() + position.line() + i,
+							   TextDocumentLine( lines[i], mDocumentMutex ) );
+				notifyLineChanged( position.line() + i );
+			}
 		}
 	}
 

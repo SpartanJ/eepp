@@ -29,6 +29,11 @@ class EE_API UIStyle : public UIState {
   public:
 	static UIStyle* New( UIWidget* widget );
 
+	UIStyle( const UIStyle& ) = delete;
+	UIStyle& operator=( const UIStyle& ) = delete;
+	UIStyle( UIStyle&& ) = delete;
+	UIStyle& operator=( UIStyle&& ) = delete;
+
 	virtual ~UIStyle();
 
 	bool stateExists( const Uint32& state ) const;
@@ -133,9 +138,10 @@ class EE_API UIStyle : public UIState {
 	Uint32 mPropertyResolutionDepth{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
-	/** Lazily allocated for styles that use substitutions. The pointed-to properties remain stable
-	 * during nested resolutions and retain their string/vector capacities between state changes. */
-	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 1> mPropertyResolutionSlots;
+	/** Lazily allocated for styles that use substitutions. The common, non-reentrant resolution
+	 * needs no container allocation; nested slots are retained for later reuse. */
+	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
+	std::vector<std::unique_ptr<CSS::StyleSheetProperty>> mNestedPropertyResolutionSlots;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;

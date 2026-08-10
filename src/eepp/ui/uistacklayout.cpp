@@ -187,16 +187,17 @@ Uint32 UIStackLayout::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-struct NodeLine {
-	std::vector<UIWidget*> nodes;
-	Float maxY{ 0 };
-	Float width{ 0 };
-};
-
 void UIStackLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
+	for ( auto& line : mLines ) {
+		line.nodes.clear();
+		line.maxY = 0;
+		line.width = 0;
+	}
+	if ( mLines.empty() )
+		mLines.emplace_back();
 
 	if ( !mVisible ) {
 		setInternalPixelsSize( Sizef::Zero );
@@ -218,14 +219,14 @@ void UIStackLayout::updateLayout() {
 
 	Float curX = mPaddingPx.Left;
 	Node* child = mChild;
-	std::vector<NodeLine> lines = { {} };
 	Uint32 curLine = 0;
 	bool addedLine = false;
 
 	auto addLine = [&]() {
 		curX = mPaddingPx.Left;
 		++curLine;
-		lines.push_back( { {} } );
+		if ( curLine >= mLines.size() )
+			mLines.emplace_back();
 		addedLine = true;
 	};
 
@@ -235,7 +236,7 @@ void UIStackLayout::updateLayout() {
 			const Rectf& margin = widget->getLayoutPixelsMargin();
 
 			if ( curX + margin.Left + widget->getPixelsSize().getWidth() >= mSize.getWidth() &&
-				 !addedLine && !lines[curLine].nodes.empty() )
+				 !addedLine && !mLines[curLine].nodes.empty() )
 				addLine();
 
 			addedLine = false;
@@ -248,13 +249,13 @@ void UIStackLayout::updateLayout() {
 
 			curX += eeceil( widget->getPixelsSize().getWidth() + margin.Right );
 
-			lines[curLine].nodes.push_back( widget );
-			lines[curLine].width = curX;
+			mLines[curLine].nodes.push_back( widget );
+			mLines[curLine].width = curX;
 			if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent ) {
-				lines[curLine].maxY = eeceil(
-					eemax( lines[curLine].maxY, ( widget->getPixelsSize().getHeight() +
-												  widget->getLayoutPixelsMargin().Top +
-												  widget->getLayoutPixelsMargin().Bottom ) ) );
+				mLines[curLine].maxY = eeceil(
+					eemax( mLines[curLine].maxY, ( widget->getPixelsSize().getHeight() +
+												   widget->getLayoutPixelsMargin().Top +
+												   widget->getLayoutPixelsMargin().Bottom ) ) );
 			}
 
 			if ( curX > mSize.getWidth() )
@@ -267,16 +268,19 @@ void UIStackLayout::updateLayout() {
 	Float maxY = mPaddingPx.Top;
 	Float height = 0.f;
 	Float totHeight = maxY;
-	for ( auto& line : lines ) {
+	const Uint32 lineCount = curLine + 1;
+	for ( Uint32 i = 0; i < lineCount; ++i ) {
+		auto& line = mLines[i];
 		if ( curLine > 0 && line.maxY == 0 )
-			line.maxY = lines[curLine - 1].maxY;
+			line.maxY = mLines[curLine - 1].maxY;
 		height += line.maxY;
 		totHeight += line.maxY;
 	}
 	totHeight += mPaddingPx.Bottom;
 
 	curLine = 0;
-	for ( const auto& line : lines ) {
+	for ( Uint32 i = 0; i < lineCount; ++i ) {
+		const auto& line = mLines[i];
 		Float xDisplacement = 0.f;
 		Float yDisplacement = 0.f;
 
@@ -347,8 +351,8 @@ void UIStackLayout::updateLayout() {
 	}
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && curX < mSize.getWidth() &&
-		 ( ( lines.size() == 1 && !lines[0].nodes.empty() ) ||
-		   ( lines.size() == 2 && lines[1].nodes.empty() ) ) ) {
+		 ( ( lineCount == 1 && !mLines[0].nodes.empty() ) ||
+		   ( lineCount == 2 && mLines[1].nodes.empty() ) ) ) {
 		setInternalPixelsWidth( curX );
 		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 	}

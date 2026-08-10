@@ -1041,22 +1041,19 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 	return false;
 }
 
-void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
-	ScopedOp op(
-		[this, doc] {
-			Lock lu( mDocsUpdatingMutex );
-			mDocsUpdating[doc] = true;
-		},
-		[this, doc] {
-			Lock lu( mDocsUpdatingMutex );
-			mDocsUpdating[doc] = false;
-		} );
+void AutoCompletePlugin::updateDocCache( std::shared_ptr<TextDocument> doc ) {
+	TextDocument* docPtr = doc.get();
+	ScopedOp op( [] {},
+				 [this, docPtr] {
+					 Lock lu( mDocsUpdatingMutex );
+					 mDocsUpdating[docPtr] = false;
+				 } );
 
 	Clock clock;
 	std::unordered_map<TextDocument*, DocCache>::iterator docCache;
 	{
 		Lock l( mDocMutex );
-		docCache = mDocCache.find( doc );
+		docCache = mDocCache.find( docPtr );
 		if ( docCache == mDocCache.end() || mShuttingDown )
 			return;
 	}
@@ -1066,7 +1063,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 
 	{
 		Lock l( mDocMutex );
-		docCache = mDocCache.find( doc );
+		docCache = mDocCache.find( docPtr );
 		if ( docCache == mDocCache.end() || mShuttingDown )
 			return;
 		auto& cache = docCache->second;
@@ -1966,14 +1963,20 @@ void AutoCompletePlugin::update( UICodeEditor* editor ) {
 		Lock l( mDocMutex );
 		for ( auto& doc : mDocs ) {
 			if ( !doc->isLoading() && mDocCache[doc].changeId != doc->getCurrentChangeId() ) {
+				auto docRef = getPluginContext()->getSplitter()->getTextDocumentRef( doc );
+				if ( !docRef )
+					continue;
 				{
 					Lock lu( mDocsUpdatingMutex );
-					auto du = mDocsUpdating.find( doc );
-					// Dont update the document cache if it's still updating the document
-					if ( du != mDocsUpdating.end() && du->second == true )
+					auto& updating = mDocsUpdating[doc];
+					// Don't queue another cache update while one is queued or running.
+					if ( updating )
 						continue;
+					updating = true;
 				}
-				mThreadPool->run( [this, doc] { updateDocCache( doc ); } );
+				mThreadPool->run( [this, doc = std::move( docRef )]() mutable {
+					updateDocCache( std::move( doc ) );
+				} );
 			}
 		}
 	}
@@ -2484,13 +2487,13 @@ void AutoCompletePlugin::resetSignatureHelp() {
 	mSignatureHelpEditor = nullptr;
 }
 
-AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
+AutoCompletePlugin::SymbolsList
+AutoCompletePlugin::getDocumentSymbols( const std::shared_ptr<TextDocument>& docRef ) {
 	static constexpr auto MAX_LINE_COUNT = EE_1KB * 10;
 	AutoCompletePlugin::SymbolsList symbols;
-	std::shared_ptr<TextDocument> docRef =
-		getPluginContext()->getSplitter()->getTextDocumentRef( doc ); // acquire a doc
-	if ( docRef == nullptr )
+	if ( !docRef )
 		return symbols;
+	TextDocument* doc = docRef.get();
 	LuaPattern pattern( mSymbolPattern );
 	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
 		return symbols;

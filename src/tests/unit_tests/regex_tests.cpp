@@ -57,6 +57,53 @@ UTEST( RegEx, captures ) {
 	RegExCache::destroySingleton();
 }
 
+UTEST( PatternMatcher, matchIterationAndGroups ) {
+	RegEx regex( "(\\d+)" );
+	std::string text = "12, 345";
+	auto match = regex.gmatch( text );
+
+	ASSERT_TRUE( match.matches() );
+	EXPECT_TRUE( match.group( 0 ) == "12" );
+	EXPECT_TRUE( match.group( 1 ) == "12" );
+
+	match.next();
+	ASSERT_TRUE( match.matches() );
+	EXPECT_TRUE( match.group( 0 ) == "345" );
+	EXPECT_TRUE( match.group( 1 ) == "345" );
+
+	match.next();
+	EXPECT_FALSE( match.matches() );
+	RegExCache::destroySingleton();
+}
+
+UTEST( PatternMatcher, matchCopyAndAssignment ) {
+	RegEx regex( "(\\d+)" );
+	std::string text = "value 42";
+	auto match = regex.gmatch( text );
+	ASSERT_TRUE( match.matches() );
+
+	auto copy = match;
+	EXPECT_TRUE( copy.group( 0 ) == "42" );
+	EXPECT_TRUE( copy.group( 1 ) == "42" );
+
+	std::string otherText = "no match";
+	auto assigned = regex.gmatch( otherText );
+	assigned = match;
+	EXPECT_TRUE( assigned.group( 0 ) == "42" );
+	EXPECT_TRUE( assigned.group( 1 ) == "42" );
+	RegExCache::destroySingleton();
+}
+
+UTEST( PatternMatcher, matchOwnsTemporaryPattern ) {
+	std::string text = "value 42";
+	auto match = RegEx( "(\\d+)" ).gmatch( text );
+
+	ASSERT_TRUE( match.matches() );
+	EXPECT_TRUE( match.group( 0 ) == "42" );
+	EXPECT_TRUE( match.group( 1 ) == "42" );
+	RegExCache::destroySingleton();
+}
+
 UTEST( RegEx, TextDocument ) {
 	TextDocument doc;
 	doc.textInput( "This number is 42.\nThe number is 23.\n" );

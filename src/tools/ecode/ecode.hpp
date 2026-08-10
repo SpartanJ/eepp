@@ -668,6 +668,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
 	UITextView* mDocInfo{ nullptr };
+	std::string mDocInfoLineAbbr;
+	std::string mDocInfoColAbbr;
+	std::string mDocInfoUtf8Buffer;
+	String mDocInfoText;
 	std::vector<std::string> mRecentFiles;
 	std::stack<std::string> mRecentClosedFiles;
 	std::unordered_map<std::string, TextRanges> mClosedDocumentState;

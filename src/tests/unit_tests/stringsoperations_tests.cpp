@@ -1,12 +1,70 @@
 #include "utest.h"
+#include <cstdlib>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <filesystem>
 
 using namespace std::literals;
 
 using namespace EE;
 using namespace EE::System;
+
+namespace {
+
+class ScopedEnvironmentVariable {
+  public:
+	ScopedEnvironmentVariable( const char* name, const std::string& value ) : mName( name ) {
+		if ( const char* currentValue = std::getenv( name ) ) {
+			mHadValue = true;
+			mValue = currentValue;
+		}
+		set( value.c_str() );
+	}
+
+	~ScopedEnvironmentVariable() {
+		if ( mHadValue )
+			set( mValue.c_str() );
+		else
+			unset();
+	}
+
+  private:
+	void set( const char* value ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		_putenv_s( mName, value );
+#else
+		setenv( mName, value, 1 );
+#endif
+	}
+
+	void unset() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		_putenv_s( mName, "" );
+#else
+		unsetenv( mName );
+#endif
+	}
+
+	const char* mName;
+	std::string mValue;
+	bool mHadValue{ false };
+};
+
+class ScopedTestDirectory {
+  public:
+	explicit ScopedTestDirectory( std::filesystem::path path ) : mPath( std::move( path ) ) {}
+
+	~ScopedTestDirectory() {
+		std::error_code error;
+		std::filesystem::remove_all( mPath, error );
+	}
+
+  private:
+	std::filesystem::path mPath;
+};
+
+} // namespace
 
 UTEST( String, countLines ) {
 	EXPECT_EQ( static_cast<size_t>( 0 ), String::countLines( "" ) );
@@ -28,6 +86,23 @@ UTEST( String, fromStringView ) {
 	Int32 intValue = 0;
 	EXPECT_TRUE( String::fromString( intValue, std::string_view( values ).substr( 0, 4 ) ) );
 	EXPECT_EQ( 1234, intValue );
+}
+
+UTEST( String, reusableFormattingAndUtf8Assignment ) {
+	std::string formatted;
+	formatted.reserve( 128 );
+	const char* formattedStorage = formatted.data();
+	String::formatTo( formatted, "%s: %d", std::string_view{ "line" }, 42 );
+	EXPECT_STREQ( "line: 42", formatted.c_str() );
+	EXPECT_EQ( formattedStorage, formatted.data() );
+
+	String text;
+	text.reserve( 128 );
+	const auto* textStorage = text.getString().data();
+	text.assignUtf8( "áβ中" );
+	const std::string utf8Text = text.toUtf8();
+	EXPECT_STREQ( "áβ中", utf8Text.c_str() );
+	EXPECT_EQ( textStorage, text.getString().data() );
 }
 
 UTEST( FileSystem, fileCountLines ) {
@@ -55,6 +130,60 @@ UTEST( FileSystem, fileCountLines ) {
 	EXPECT_TRUE( isBinary );
 
 	FileSystem::fileRemove( path );
+}
+
+UTEST( Sys, whichUsesPathAndCustomSearchPaths ) {
+	const std::filesystem::path root = std::filesystem::path( Sys::getTempPath() ) /
+									   ( "eepp-sys-which-" + std::to_string( Sys::getProcessID() ) +
+										 "-" + std::to_string( Sys::getTicks() ) );
+	ScopedTestDirectory cleanup( root );
+	const std::filesystem::path firstDir = root / "first";
+	const std::filesystem::path secondDir = root / "second";
+	ASSERT_TRUE( std::filesystem::create_directories( firstDir ) );
+	ASSERT_TRUE( std::filesystem::create_directories( secondDir ) );
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	static constexpr auto EXECUTABLE_NAME = "eepp-which-probe.EXE";
+	static constexpr auto LOOKUP_NAME = "eepp-which-probe";
+	static constexpr auto PATH_SEPARATOR = ';';
+	ScopedEnvironmentVariable pathExt( "PATHEXT", ".COM;.EXE;.BAT;.CMD" );
+#else
+	static constexpr auto EXECUTABLE_NAME = "eepp-which-probe";
+	static constexpr auto LOOKUP_NAME = EXECUTABLE_NAME;
+	static constexpr auto PATH_SEPARATOR = ':';
+#endif
+
+	const std::filesystem::path firstExecutable = firstDir / EXECUTABLE_NAME;
+	const std::filesystem::path secondExecutable = secondDir / EXECUTABLE_NAME;
+	ASSERT_TRUE( FileSystem::fileWrite( firstExecutable.string(), "first" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( secondExecutable.string(), "second" ) );
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	std::error_code permissionError;
+	const auto executablePermissions = std::filesystem::perms::owner_exec |
+									   std::filesystem::perms::group_exec |
+									   std::filesystem::perms::others_exec;
+	std::filesystem::permissions( firstExecutable, executablePermissions,
+								  std::filesystem::perm_options::add, permissionError );
+	ASSERT_FALSE( permissionError );
+	std::filesystem::permissions( secondExecutable, executablePermissions,
+								  std::filesystem::perm_options::add, permissionError );
+	ASSERT_FALSE( permissionError );
+#endif
+
+	const std::string path = firstDir.string() + PATH_SEPARATOR + secondDir.string();
+	ScopedEnvironmentVariable scopedPath( "PATH", path );
+
+	EXPECT_TRUE( Sys::which( LOOKUP_NAME ) == firstExecutable.string() );
+	EXPECT_TRUE( Sys::which( firstExecutable.string() ) == firstExecutable.string() );
+	EXPECT_TRUE( Sys::which( "eepp-which-missing" ).empty() );
+
+	FileSystem::fileRemove( firstExecutable.string() );
+	EXPECT_TRUE( Sys::which( LOOKUP_NAME ) == secondExecutable.string() );
+
+	ScopedEnvironmentVariable emptyPath( "PATH", "" );
+	EXPECT_TRUE( Sys::which( LOOKUP_NAME ).empty() );
+	EXPECT_TRUE( Sys::which( LOOKUP_NAME, { firstDir.string(), secondDir.string() } ) ==
+				 secondExecutable.string() );
 }
 
 UTEST( String, isAscii ) {

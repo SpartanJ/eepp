@@ -4941,21 +4941,22 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 		if ( !end.isValid() )
 			return;
 		TextRange wordPos = { { start.line(), start.column() - 1 }, end };
-		String word = mDoc->getText( wordPos );
+		mDoc->getTextToBuffer( wordPos, mMouseOverColorBuffer );
+		String& word = mMouseOverColorBuffer;
 		bool found = false;
 		if ( word[0] == '#' && ( word.size() == 7 || word.size() == 9 ) ) {
 			if ( checkHexa( word ) )
 				found = true;
 		} else {
 			wordPos = { start, end };
-			word = mDoc->getText( wordPos );
+			mDoc->getTextToBuffer( wordPos, word );
 			if ( end.column() < (Int64)line.size() && line[end.column()] == '(' &&
 				 ( "rgb" == word || "rgba" == word || "hsl" == word || "hsv" == word ||
 				   "hsla" == word || "hsva" == word ) ) {
 				const String& text = mDoc->line( start.line() ).getText();
 				size_t endFun = String::findCloseBracket( text, end.column(), '(', ')' );
 				if ( endFun != std::string::npos ) {
-					word = word + text.substr( end.column(), endFun - end.column() + 1 );
+					word.append( text, end.column(), endFun - end.column() + 1 );
 					if ( word.find( "--" ) == String::InvalidPos ) {
 						found = true;
 						wordPos = { wordPos.start(), { wordPos.end().line(), (Int64)endFun + 1 } };

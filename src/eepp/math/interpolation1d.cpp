@@ -37,7 +37,7 @@ Interpolation1d::Interpolation1d( std::vector<Point1d> points ) :
 	mElapsed( Time::Zero ),
 	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
-	mPoints( points ),
+	mPoints( points.begin(), points.end() ),
 	mActP( NULL ),
 	mNexP( NULL ),
 	mOnPathEndCallback(),
@@ -352,7 +352,7 @@ const Uint32& Interpolation1d::getCurrentPositionIndex() const {
 	return mCurPoint;
 }
 
-const std::vector<Point1d>& Interpolation1d::getPoints() const {
+const SmallVector<Point1d, 8>& Interpolation1d::getPoints() const {
 	return mPoints;
 }
 

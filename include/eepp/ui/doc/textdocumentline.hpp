@@ -78,6 +78,17 @@ class EE_API TextDocumentLine {
 		}
 	}
 
+	void insert( std::size_t position, const String& text ) {
+		if ( mDocMutex ) {
+			Lock lock( *mDocMutex );
+			mText.insert( position, text );
+			updateState();
+		} else {
+			mText.insert( position, text );
+			updateState();
+		}
+	}
+
 	String substr( std::size_t pos = 0, std::size_t n = String::StringType::npos ) const {
 		if ( mDocMutex ) {
 			Lock lock( *mDocMutex );
