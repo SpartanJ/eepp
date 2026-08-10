@@ -101,7 +101,7 @@ class EE_API UIStyle : public UIState {
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
   protected:
-	class PropertyResolution {
+	class EE_API PropertyResolution {
 	  public:
 		PropertyResolution( const PropertyResolution& ) = delete;
 		PropertyResolution& operator=( const PropertyResolution& ) = delete;

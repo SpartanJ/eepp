@@ -6,6 +6,24 @@
 using namespace EE::UI::Doc;
 using namespace EE::System;
 
+UTEST( TextRanges, keepsCommonSelectionsInline ) {
+	TextRanges ranges;
+	EXPECT_TRUE( ranges.is_small() );
+
+	ranges.emplace_back( TextPosition{ 0, 0 }, TextPosition{ 0, 1 } );
+	ranges.emplace_back( TextPosition{ 1, 0 }, TextPosition{ 1, 1 } );
+	EXPECT_EQ( 2u, ranges.size() );
+	EXPECT_TRUE( ranges.is_small() );
+
+	TextRanges copy = ranges;
+	EXPECT_TRUE( ranges == copy );
+	EXPECT_TRUE( copy.is_small() );
+
+	ranges.emplace_back( TextPosition{ 2, 0 }, TextPosition{ 2, 1 } );
+	EXPECT_EQ( 3u, ranges.size() );
+	EXPECT_FALSE( ranges.is_small() );
+}
+
 UTEST( TextDocument, insertSingleLineAtDifferentPositions ) {
 	TextDocument doc;
 

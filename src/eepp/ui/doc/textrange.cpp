@@ -254,9 +254,13 @@ Int64 TextRange::minimumDistance( const TextRange& other ) const {
 
 TextRanges::TextRanges() {}
 
-TextRanges::TextRanges( const std::vector<TextRange>& ranges ) : std::vector<TextRange>( ranges ) {}
+TextRanges::TextRanges( const std::vector<TextRange>& ranges ) :
+	SmallVector<TextRange, 2>( ranges.begin(), ranges.end() ) {}
 
-TextRanges::TextRanges( const TextRange& ranges ) : std::vector<TextRange>( { ranges } ) {}
+TextRanges::TextRanges( std::initializer_list<TextRange> ranges ) :
+	SmallVector<TextRange, 2>( ranges ) {}
+
+TextRanges::TextRanges( const TextRange& range ) : SmallVector<TextRange, 2>( { range } ) {}
 
 bool TextRanges::isSorted() const {
 	return mIsSorted;
