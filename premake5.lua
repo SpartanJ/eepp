@@ -625,7 +625,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			targetextension ".html"
 		end
-		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web -s EXPORTED_RUNTIME_METHODS=ccall" }
 		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }

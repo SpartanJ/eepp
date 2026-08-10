@@ -1,6 +1,8 @@
 #ifndef EMSCRIPTEN_BROWSER_CLIPBOARD_H_INCLUDED
 #define EMSCRIPTEN_BROWSER_CLIPBOARD_H_INCLUDED
 
+// clang-format off
+
 #include <string>
 #include <emscripten.h>
 
@@ -33,8 +35,39 @@ EM_JS_INLINE(void, paste_js, (paste_handler callback, void *callback_data), {
   /// Register the given callback to handle paste events. Callback data pointer is passed through to the callback.
   /// Paste handler callback signature is:
   ///   void my_handler(std::string const &paste_data, void *callback_data = nullptr);
+  /// SDL2's Emscripten backend prevents the default action for every Ctrl key event, which suppresses
+  /// the browser paste event. Let the browser handle Ctrl/Cmd+V first, then replay the keydown after
+  /// the clipboard contents have reached C++ so SDL delivers the normal application paste command.
+  let paste_key_event = null;
+  window.addEventListener('keydown', (event) => {
+    if (event.isTrusted && !event.altKey && (event.ctrlKey || event.metaKey) &&
+        (event.code === 'KeyV' || event.key.toLowerCase() === 'v')) {
+      paste_key_event = event;
+      event.stopPropagation();
+    }
+  }, true);
+  window.addEventListener('mousedown', (event) => {
+    if (event.isTrusted && event.button === 2 && navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then((text) => {
+        Module["ccall"]('paste_return', 'number', ['string', 'number', 'number'], [text, callback, callback_data]);
+      }).catch(() => {});
+    }
+  }, true);
   document.addEventListener('paste', (event) => {
     Module["ccall"]('paste_return', 'number', ['string', 'number', 'number'], [event.clipboardData.getData('text/plain'), callback, callback_data]);
+    if (paste_key_event) {
+      paste_key_event.target.dispatchEvent(new KeyboardEvent('keydown', {
+        key: paste_key_event.key,
+        code: paste_key_event.code,
+        location: paste_key_event.location,
+        ctrlKey: paste_key_event.ctrlKey,
+        metaKey: paste_key_event.metaKey,
+        shiftKey: paste_key_event.shiftKey,
+        bubbles: true,
+        cancelable: true
+      }));
+      paste_key_event = null;
+    }
   });
 });
 
@@ -95,5 +128,7 @@ EMSCRIPTEN_KEEPALIVE inline char const *copy_return(copy_handler callback, void 
 }
 
 }
+
+// clang-format on
 
 #endif // EMSCRIPTEN_BROWSER_CLIPBOARD_H_INCLUDED

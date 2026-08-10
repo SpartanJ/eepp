@@ -659,7 +659,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web" }
+		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web -s EXPORTED_RUNTIME_METHODS=ccall" }
 		buildoptions { "-s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
