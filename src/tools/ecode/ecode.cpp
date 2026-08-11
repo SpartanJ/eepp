@@ -2260,7 +2260,7 @@ void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
 			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot,
-			mPluginManager.get() );
+			mShowHiddenFiles, mPluginManager.get() );
 	}
 }
 
@@ -3685,11 +3685,12 @@ void App::openAllFilesInFolder( const FileInfo& folder ) {
 }
 
 void App::toggleHiddenFiles() {
+	mShowHiddenFiles = !mShowHiddenFiles;
 	mFileSystemModel = FileSystemModel::New( mFileSystemModel->getRootPath(),
 											 FileSystemModel::Mode::FilesAndDirectories,
 											 { true,
 											   true,
-											   !mFileSystemModel->getDisplayConfig().ignoreHidden,
+											   !mShowHiddenFiles,
 											   {},
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
@@ -4223,7 +4224,8 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
-						 mConfig.workspace.sessionSnapshot, mPluginManager.get() );
+						 mConfig.workspace.sessionSnapshot, mShowHiddenFiles,
+						 mPluginManager.get() );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
@@ -4231,7 +4233,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
 											 { true,
 											   true,
-											   true,
+											   !mShowHiddenFiles,
 											   {},
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );

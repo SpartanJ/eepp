@@ -333,11 +333,11 @@ class AppConfig {
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-					  bool sessionSnapshot, PluginManager* );
+					  bool sessionSnapshot, bool showHiddenFiles, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectConfig& docConfig, ecode::App* app,
-					  bool sessionSnapshot, PluginManager* pluginManager );
+					  bool sessionSnapshot, bool& showHiddenFiles, PluginManager* pluginManager );
 
 	void addTabWidgetType( const std::string& type, TabWidgetCbs tabWidget ) {
 		Lock l( tabWidgetTypesMutex );

@@ -728,6 +728,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;
 	size_t mMenuIconSize{ 16 };
 	bool mDirTreeReady{ false };
+	bool mShowHiddenFiles{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
 	bool mDisablePlugins{ false };

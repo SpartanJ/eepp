@@ -590,7 +590,8 @@ json AppConfig::saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool sessionSnapshot, PluginManager* pluginManager ) {
+							 bool sessionSnapshot, bool showHiddenFiles,
+							 PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -599,6 +600,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
 	IniFile cfg( projectCfgPath, false );
 	cfg.setValue( "path", "folder_path", projectFolder );
+	cfg.setValueB( "project_tree", "show_hidden_files", showHiddenFiles );
 	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
 	cfg.setValue( "document", "h_ext_language_type",
 				  HExtLanguageTypeHelper::toString( docConfig.hExtLanguageType ) );
@@ -873,14 +875,17 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectConfig& docConfig,
-							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
+							 ecode::App* app, bool sessionSnapshot, bool& showHiddenFiles,
+							 PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
+	showHiddenFiles = false;
 	if ( !FileSystem::fileExists( projectCfgPath ) )
 		return;
 	IniFile cfg( projectCfgPath );
+	showHiddenFiles = cfg.getValueB( "project_tree", "show_hidden_files", false );
 
 	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
 
