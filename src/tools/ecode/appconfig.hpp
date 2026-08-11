@@ -130,7 +130,7 @@ struct CodeEditorConfig {
 	bool autoReloadOnDiskChange{ false };
 	bool codeFoldingEnabled{ true };
 	bool codeFoldingAlwaysVisible{ false };
-	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
+	LineWrapMode wrapMode{ LineWrapMode::Word };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
 	std::string autoCloseBrackets{ "" };

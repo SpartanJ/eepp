@@ -185,6 +185,10 @@ I'm putting my efforts on improving the documentation on the UI module since
 currently is the most important and complex module but lacks of proper
 documentation. If you have any question you can contact me anytime.
 
+Contributions and pull requests are welcome. Before participating, please read
+the [contribution and community support guidelines](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Getting the code
 
 The repository uses git submodules so you'll need to clone the repository and

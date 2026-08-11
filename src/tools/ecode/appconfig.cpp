@@ -212,7 +212,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
 
-	editor.wrapMode = LineWrap::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+	editor.wrapMode = LineWrap::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "word" ) );
 	editor.wrapType = LineWrap::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
 	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
