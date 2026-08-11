@@ -3300,21 +3300,18 @@ UIMenu* SettingsMenu::createFontsMenu() {
 							createFontHintMenu() );
 	mFontsMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
 							findIcon( "font-size" ), createFontAntiAliasingMenu() );
-	mFontsMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-font-size" );
 	mFontsMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
 		->setId( "ui-panel-font-size" );
-	mFontsMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
-		->setId( "editor-font-size" );
-	mFontsMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
-		->setId( "terminal-font-size" );
 	mFontsMenu
-		->add( i18n( "sans-serif_font_ellipsis", "Sans-Serif Font..." ), findIcon( "font-size" ) )
+		->add( i18n( "ui_font_and_size_ellipsis", "UI Font & Size..." ), findIcon( "font-size" ) )
 		->setId( "sans-serif-font" );
 	mFontsMenu
-		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
+		->add( i18n( "editor_font_and_size_ellipsis", "Editor Font & Size..." ),
+			   findIcon( "font-size" ) )
 		->setId( "monospace-font" );
-	mFontsMenu->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
+	mFontsMenu
+		->add( i18n( "terminal_font_and_size_ellipsis", "Terminal Font & Size..." ),
+			   findIcon( "font-size" ) )
 		->setId( "terminal-font" );
 	mFontsMenu->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
 		->setId( "fallback-font" );

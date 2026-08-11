@@ -249,6 +249,7 @@ Do you want to download it now?</string>
 	<string name="edit">Edit</string>
 	<string name="edit_build">Edit Build</string>
 	<string name="edit_custom_output_parser">Edit Selected Custom Output Parser</string>
+	<string name="editor_font_and_size_ellipsis">Editor Font &amp; Size...</string>
 	<string name="editor_font_size">Editor Font Size</string>
 	<string name="editor_go_back">Editor Go Back</string>
 	<string name="editor_go_forward">Editor Go Forward</string>
@@ -791,7 +792,7 @@ file in the directory tree.</string>
 	<string name="terminal_color_scheme_set">Terminal color scheme: %s</string>
 	<string name="terminal_copy">Terminal Copy</string>
 	<string name="terminal_font">Terminal Font</string>
-	<string name="terminal_font_ellipsis">Terminal Font...</string>
+	<string name="terminal_font_and_size_ellipsis">Terminal Font &amp; Size...</string>
 	<string name="terminal_font_size">Terminal Font Size</string>
 	<string name="terminal_font_size_grow">Terminal Font Size Grow</string>
 	<string name="terminal_font_size_shrink">Terminal Font Size Shrink</string>
@@ -837,6 +838,7 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="trim_trailing_whitespaces">Trim Trailing Whitespaces</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
+	<string name="ui_font_and_size_ellipsis">UI Font &amp; Size...</string>
 	<string name="ui_font_size">Ui Font Size</string>
 	<string name="ui_language">UI Language</string>
 	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>

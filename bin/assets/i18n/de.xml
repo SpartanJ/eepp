@@ -265,6 +265,7 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="edit">Bearbeiten</string>
 	<string name="edit_build">Build bearbeiten</string>
 	<string name="edit_custom_output_parser">Angewählten individuellen Output-Parser bearbeiten</string>
+	<string name="editor_font_and_size_ellipsis">Editor-Schriftart und -größe...</string>
 	<string name="editor_font_size">Editor-Schriftgröße</string>
 	<string name="editor_go_back">Editor: Schritt zurück</string>
 	<string name="editor_go_forward">Editor: Schritt nach vorn</string>
@@ -807,7 +808,7 @@ Datei im Verzeichnisbaum.</string>
 	<string name="terminal_color_scheme_set">Konsolenfarbschema: %s</string>
 	<string name="terminal_copy">Konsole: Kopieren</string>
 	<string name="terminal_font">Konsolenschriftart</string>
-	<string name="terminal_font_ellipsis">Konsolenschriftart...</string>
+	<string name="terminal_font_and_size_ellipsis">Konsolenschriftart und -größe...</string>
 	<string name="terminal_font_size">Konsole: Schriftgröße</string>
 	<string name="terminal_font_size_grow">Konsole: Schriftgröße erhöhen</string>
 	<string name="terminal_font_size_shrink">Konsole: Schriftgröße verringern</string>
@@ -853,6 +854,7 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="trim_trailing_whitespaces">Leerzeichen nach den Enden beschneiden</string>
 	<string name="type">Typ</string>
 	<string name="type_to_locate">Zu findender Typ</string>
+	<string name="ui_font_and_size_ellipsis">Schriftart und -größe der Oberfläche...</string>
 	<string name="ui_font_size">Schriftgröße der Oberfläche</string>
 	<string name="ui_language">Sprache der Oberfläche</string>
 	<string name="ui_multisamples_level">Multisample-Antialiasing-Stufe</string>

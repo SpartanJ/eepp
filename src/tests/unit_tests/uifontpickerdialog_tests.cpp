@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -9,9 +10,12 @@
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -51,12 +55,19 @@ template <typename Predicate> static void pumpUntil( UISceneNode* sceneNode, Pre
 
 class TestFontPickerDialog : public UIFontPickerDialog {
   public:
-	static TestFontPickerDialog* New() { return eeNew( TestFontPickerDialog, () ); }
+	static TestFontPickerDialog* New( Uint32 flags = DefaultFlags ) {
+		return eeNew( TestFontPickerDialog, ( flags ) );
+	}
 
 	FontTrueTypeWeakPtr getPreviewFontHandle() const { return mPreviewFont; }
+	void selectCustomSize( Uint32 size ) { selectSize( size ); }
+	void releasePreviewFont() { clearPreviewFont(); }
+	Uint32 getPreviewTextSize() const { return mPreviewText->getFontSize(); }
+	Uint32 getPreviewInputSize() const { return mPreviewInput->getFontSize(); }
+	String getDetails() const { return mDetailsText->getText(); }
 
   protected:
-	TestFontPickerDialog() : UIFontPickerDialog() {}
+	TestFontPickerDialog( Uint32 flags ) : UIFontPickerDialog( flags ) {}
 };
 
 UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
@@ -74,6 +85,8 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 	EXPECT_FALSE( dialog->getSelection().font.family.empty() );
 	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
 	EXPECT_FALSE( dialog->getStyleList()->getSelection().isEmpty() );
+	EXPECT_TRUE( dialog->getFamilyList()->getSelection().first().data().toString().find(
+					 "[External]" ) != std::string::npos );
 
 	UIFontPickerDialog* selectionDialog = UIFontPickerDialog::New();
 	UIFontSelection selection;
@@ -82,6 +95,58 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 
 	EXPECT_STDSTREQ( fontPath, selectionDialog->getSelection().font.path );
 	EXPECT_FALSE( selectionDialog->getSelection().font.family.empty() );
+}
+
+UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision ) {
+	std::vector<FontDesc> fonts = SystemFontResolver::instance()->enumerate();
+	auto fontIt = std::find_if( fonts.begin(), fonts.end(), []( const FontDesc& font ) {
+		return !font.family.empty() && !font.path.empty() && FileSystem::fileExists( font.path );
+	} );
+	if ( fontIt == fonts.end() )
+		UTEST_SKIP( "no system font available" );
+
+	const std::string externalPath = Sys::getTempPath() + "UIFontPickerDialogExternal-" +
+									 String::toString( Sys::getProcessID() ) + "." +
+									 FileSystem::fileExtension( fontIt->path );
+	ASSERT_TRUE( FileSystem::fileCopy( fontIt->path, externalPath ) );
+
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	ResourceScope& resourceScope = *app.getUI()->getResourceScope();
+	const std::string externalName(
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( externalPath ) ) );
+	const std::string managedFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	FontTrueTypePtr managedFont = FontTrueType::New( externalName, managedFontPath, resourceScope );
+	ASSERT_TRUE( managedFont && managedFont->loaded() );
+
+	TestFontPickerDialog* dialog = TestFontPickerDialog::New();
+	dialog->setSelectedFont( externalPath );
+	pumpUntil( app.getUI(), [dialog] { return dialog->getButtonOK()->isEnabled(); } );
+
+	EXPECT_STDSTREQ( externalPath, dialog->getSelection().font.path );
+	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
+	EXPECT_STDSTREQ( fontIt->family + " [External]",
+					 dialog->getFamilyList()->getSelection().first().data().toString() );
+
+	bool foundSystemFamily = false;
+	bool foundExternalFamily = false;
+	Model* familyModel = dialog->getFamilyList()->getModel();
+	ASSERT_TRUE( familyModel != nullptr );
+	for ( size_t row = 0; row < familyModel->rowCount(); row++ ) {
+		const std::string label = familyModel->index( row ).data().toString();
+		foundSystemFamily |= label == fontIt->family;
+		foundExternalFamily |= label == fontIt->family + " [External]";
+	}
+	EXPECT_TRUE( foundSystemFamily );
+	EXPECT_TRUE( foundExternalFamily );
+	EXPECT_EQ( managedFont.get(), resourceScope.findFont( externalName ).get() );
+
+	dialog->releasePreviewFont();
+	FileSystem::fileRemove( externalPath );
 }
 
 UTEST( UIFontPickerDialog, PreviewFontsDoNotPopulateSceneFontCatalog ) {
@@ -128,6 +193,18 @@ UTEST( UIFontPickerDialog, SelectingFontDoesNotCreateMetricOnlyPage ) {
 		}
 	}
 	EXPECT_TRUE( foundPreviewPage );
+}
+
+UTEST( UIFontPickerDialog, TeardownWithActivePreviewDoesNotInvalidateDestroyedLayouts ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UILinearLayout::New()->setParent( app.getUI()->getRoot() );
+	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
+	UIFontPickerDialog::New()->setSelectedFont( fontPath );
 }
 
 UTEST( UIFontPickerDialog, ReleasesPreviewFontTexturesOnClose ) {
@@ -238,7 +315,7 @@ UTEST( UIFontPickerDialog, AsyncLoadPreservesExternalFontPreselection ) {
 	const std::string fontPath = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	UIFontPickerDialog* dialog = UIFontPickerDialog::New();
+	UIFontPickerDialog* dialog = UIFontPickerDialog::New( UIFontPickerDialog::MonospaceOnly );
 	EXPECT_FALSE( dialog->getButtonOK()->isEnabled() );
 
 	dialog->setSelectedFont( fontPath );
@@ -249,6 +326,8 @@ UTEST( UIFontPickerDialog, AsyncLoadPreservesExternalFontPreselection ) {
 	EXPECT_FALSE( dialog->getSelection().font.family.empty() );
 	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
 	EXPECT_FALSE( dialog->getStyleList()->getSelection().isEmpty() );
+	EXPECT_TRUE( dialog->getFamilyList()->getSelection().first().data().toString().find(
+					 "[External]" ) != std::string::npos );
 }
 
 UTEST( UIFontPickerDialog, DefaultColorComesFromTheme ) {
@@ -359,4 +438,24 @@ UTEST( UIFontPickerDialog, ApplyButtonEmitsOnApply ) {
 	EXPECT_TRUE( applied );
 	EXPECT_TRUE( picked );
 	EXPECT_FALSE( confirmed );
+}
+
+UTEST( UIFontPickerDialog, HidesStyleAndSupportsEveryIntegerSize ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	TestFontPickerDialog* dialog = TestFontPickerDialog::New( UIFontPickerDialog::ShowSize );
+	dialog->selectCustomSize( 15 );
+
+	EXPECT_FALSE( dialog->getStyleList()->getParent()->isVisible() );
+	EXPECT_EQ( 67u, dialog->getSizeList()->getModel()->rowCount() );
+	EXPECT_EQ( 15u, dialog->getSelection().size );
+	EXPECT_FALSE( dialog->getSizeList()->getSelection().isEmpty() );
+	EXPECT_EQ( 15u, dialog->getSizeList()->getSelection().first().data().asUint() );
+	EXPECT_EQ( static_cast<Uint32>( PixelDensity::dpToPxI( 15 ) ), dialog->getPreviewTextSize() );
+	EXPECT_EQ( dialog->getPreviewTextSize(), dialog->getPreviewInputSize() );
+	EXPECT_TRUE( dialog->getDetails().contains( "15 dp" ) );
+	dialog->releasePreviewFont();
 }

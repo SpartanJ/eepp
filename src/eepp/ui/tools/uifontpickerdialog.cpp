@@ -22,7 +22,6 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <set>
 #include <unordered_map>
 
 using namespace EE::UI::Abstract;
@@ -89,7 +88,7 @@ static const char* FONT_PICKER_LAYOUT = R"xml(
 				<TextView class="column_label" layout_width="match_parent" layout_height="wrap_content" text='@string(font_picker_font_family, "Font Family")' />
 				<ListView id="family_list" layout_width="match_parent" layout_height="0dp" layout_weight="1" />
 			</LinearLayout>
-			<LinearLayout orientation="vertical" layout_width="0dp" layout_weight="0.18" layout_height="match_parent" margin-left="8dp">
+			<LinearLayout id="style_column" orientation="vertical" layout_width="0dp" layout_weight="0.18" layout_height="match_parent" margin-left="8dp">
 				<TextView class="column_label" layout_width="match_parent" layout_height="wrap_content" text='@string(font_picker_style, "Style")' />
 				<ListView id="style_list" layout_width="match_parent" layout_height="0dp" layout_weight="1" />
 			</LinearLayout>
@@ -100,7 +99,7 @@ static const char* FONT_PICKER_LAYOUT = R"xml(
 			<LinearLayout orientation="vertical" layout_width="0dp" layout_weight="0.54" layout_height="match_parent" margin-left="8dp">
 				<TextView class="column_label" layout_width="match_parent" layout_height="wrap_content" text='@string(font_picker_preview, "Preview")' />
 				<TextView id="preview_text" class="preview_text" layout_width="match_parent" layout_height="0dp" layout_weight="1" text='The quick brown fox&#10;jumps over the lazy dog' gravity="center" />
-				<TextInput id="preview_input" layout_width="match_parent" layout_height="28dp" margin-top="8dp" />
+				<TextInput id="preview_input" layout_width="match_parent" layout_height="wrap_content" min-height="28dp" margin-top="8dp" />
 			</LinearLayout>
 		</LinearLayout>
 		<Loader id="font_loader" lw="64dp" lh="64dp" outline-thickness="6dp" lg="center" visible="false" />
@@ -149,6 +148,33 @@ class StyleListModel final : public Model {
 
   private:
 	const std::vector<UIFontPickerDialog::FontStyleEntry>* mData{ nullptr };
+};
+
+class FamilyListModel final : public Model {
+  public:
+	explicit FamilyListModel( const std::vector<UIFontPickerDialog::FontFamilyEntry>* data ) :
+		mData( data ) {}
+
+	size_t rowCount( const ModelIndex& ) const override { return mData ? mData->size() : 0; }
+
+	size_t columnCount( const ModelIndex& ) const override { return 1; }
+
+	ModelIndex index( int row, int column,
+					  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= static_cast<int>( rowCount( parent ) ) || column >= 1 )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override {
+		if ( role == ModelRole::Display && mData &&
+			 index.row() < static_cast<Int64>( mData->size() ) )
+			return Variant( ( *mData )[index.row()].label );
+		return {};
+	}
+
+  private:
+	const std::vector<UIFontPickerDialog::FontFamilyEntry>* mData{ nullptr };
 };
 
 static Uint64 loadFontsTaskTag( const UIFontPickerDialog* dialog ) {
@@ -231,7 +257,9 @@ UIFontPickerDialog::UIFontPickerDialog( Uint32 flags ) : UIWindow(), mFlags( fla
 	mStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL;
 	updateWinFlags();
 
-	mSizes = { 8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 32, 48, 64, 72 };
+	mSizes.reserve( 67 );
+	for ( Uint32 size = 6; size <= 72; size++ )
+		mSizes.emplace_back( size );
 	mSelection.size = 12;
 
 	setTitle( i18n( "font_picker_select_font", "Select Font" ) );
@@ -343,6 +371,11 @@ void UIFontPickerDialog::loadWidgets() {
 			sizeColumn->setVisible( false )->setEnabled( false );
 	}
 
+	if ( ( mFlags & ShowStyle ) == 0 ) {
+		if ( auto styleColumn = root->find<UIWidget>( "style_column" ) )
+			styleColumn->setVisible( false )->setEnabled( false );
+	}
+
 	if ( ( mFlags & ShowEffects ) == 0 ) {
 		mAntialiasing->setVisible( false )->setEnabled( false );
 		mUnderline->setVisible( false )->setEnabled( false );
@@ -441,10 +474,13 @@ void UIFontPickerDialog::setFonts( std::vector<FontDesc> fonts ) {
 	FontDesc selectedFont = mSelection.font;
 	mergeLoadedFonts( fonts );
 	for ( const auto& font : mFonts ) {
-		if ( std::find_if( fonts.begin(), fonts.end(), [&]( const FontDesc& desc ) {
-				 return desc.sameFile( font );
-			 } ) == fonts.end() )
+		auto found = std::find_if( fonts.begin(), fonts.end(),
+								   [&]( const FontDesc& desc ) { return desc.sameFile( font ); } );
+		if ( found == fonts.end() ) {
 			fonts.push_back( font );
+		} else if ( mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end() ) {
+			*found = font;
+		}
 	}
 
 	mFonts = std::move( fonts );
@@ -536,29 +572,33 @@ bool UIFontPickerDialog::wantsMonospaceOnly() const {
 }
 
 void UIFontPickerDialog::updateFamilies() {
-	std::string previousFamily = mSelection.font.family;
-	if ( !mFamilyList->getSelection().isEmpty() &&
-		 mFamilyList->getSelection().first().row() < static_cast<Int64>( mFamilies.size() ) )
-		previousFamily = mFamilies[mFamilyList->getSelection().first().row()];
+	FontDesc previousFont = mSelection.font;
 
 	const std::string query = String::toLower( mSearchInput->getText().toUtf8() );
-	std::set<std::string> families;
+	UnorderedSet<std::string> familyKeys;
+	mFamilies.clear();
 	for ( const auto& font : mFonts ) {
-		if ( wantsMonospaceOnly() && !font.monospace )
+		const bool external =
+			mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
+		if ( wantsMonospaceOnly() && !font.monospace && !external )
 			continue;
-		if ( !query.empty() && String::toLower( font.family ).find( query ) == std::string::npos )
+		const std::string label = font.family + ( external ? " [External]" : "" );
+		if ( !query.empty() && String::toLower( label ).find( query ) == std::string::npos )
 			continue;
-		families.insert( font.family );
+		const std::string familyKey =
+			font.family + ( external ? "\n" + font.getFileKey() : std::string{} );
+		if ( familyKeys.insert( familyKey ).second )
+			mFamilies.push_back(
+				{ label, font.family, external ? font.getFileKey() : std::string{} } );
 	}
-	mFamilies.assign( families.begin(), families.end() );
-	mFamilyModel = ItemListModel<std::string>::create( mFamilies );
+	mFamilyModel = std::make_shared<FamilyListModel>( &mFamilies );
 
 	mUpdating = true;
 	mFamilyList->setModel( mFamilyModel );
 	mUpdating = false;
 
-	if ( !previousFamily.empty() )
-		selectFamily( previousFamily );
+	if ( !previousFont.family.empty() )
+		selectFamily( previousFont );
 	if ( mFamilyList->getSelection().isEmpty() && !mFamilies.empty() )
 		mFamilyList->setSelection( mFamilyModel->index( 0 ) );
 
@@ -572,9 +612,15 @@ void UIFontPickerDialog::updateStyles() {
 	if ( !mFamilyList->getSelection().isEmpty() ) {
 		const Int64 row = mFamilyList->getSelection().first().row();
 		if ( row >= 0 && row < static_cast<Int64>( mFamilies.size() ) ) {
-			const std::string& family = mFamilies[row];
+			const FontFamilyEntry& family = mFamilies[row];
 			for ( const auto& font : mFonts ) {
-				if ( font.family == family && ( !wantsMonospaceOnly() || font.monospace ) ) {
+				const bool external =
+					mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
+				const bool matchesSource = family.externalFontKey.empty()
+											   ? !external
+											   : family.externalFontKey == font.getFileKey();
+				if ( font.family == family.family && matchesSource &&
+					 ( !wantsMonospaceOnly() || font.monospace || external ) ) {
 					std::string label( styleLabel( font ) );
 					auto tagIt = mFontTags.find( font.getFileKey() );
 					if ( tagIt != mFontTags.end() )
@@ -651,8 +697,9 @@ void UIFontPickerDialog::updatePreview() {
 		}
 	}
 
-	mPreviewText->setFontSize( PixelDensity::dpToPxI( mSelection.size * 2 ) );
-	mPreviewInput->setFontSize( PixelDensity::dpToPxI( 12 ) );
+	const Uint32 previewSize = PixelDensity::dpToPxI( mSelection.size );
+	mPreviewText->setFontSize( previewSize );
+	mPreviewInput->setFontSize( previewSize );
 	mPreviewText->setFontStyle( styleFlags( mSelection ) );
 	mPreviewInput->setFontStyle( styleFlags( mSelection ) );
 	mPreviewText->setFontColor( mSelection.color );
@@ -668,8 +715,8 @@ void UIFontPickerDialog::updatePreview() {
 		if ( mSelection.font.faceIndex != 0 )
 			faceIndexSuffix = " #" + String::toString( mSelection.font.faceIndex );
 		mDetailsText->setText(
-			String::format( "%s %s - %u pt - %s%s", mSelection.font.family.c_str(),
-							styleLabel( mSelection.font ).c_str(), mSelection.size,
+			String::format( "%s %s - %u dp (%u px) - %s%s", mSelection.font.family.c_str(),
+							styleLabel( mSelection.font ).c_str(), mSelection.size, previewSize,
 							mSelection.font.path.c_str(), faceIndexSuffix.c_str() ) );
 	}
 }
@@ -677,6 +724,10 @@ void UIFontPickerDialog::updatePreview() {
 void UIFontPickerDialog::clearPreviewFont() {
 	if ( !mPreviewFont )
 		return;
+	if ( SceneManager::isShuttingDown() ) {
+		mPreviewFont.reset();
+		return;
+	}
 	if ( mPreviewText && mPreviewTextDefaultFont && mPreviewText->getFont() == mPreviewFont.get() )
 		mPreviewText->setFont( mPreviewTextDefaultFont );
 	if ( mPreviewInput && mPreviewInputDefaultFont &&
@@ -693,11 +744,15 @@ void UIFontPickerDialog::selectInitialRows() {
 		mSizeList->setSelection( mSizeModel->index( 4 ) );
 }
 
-void UIFontPickerDialog::selectFamily( const std::string& family ) {
-	if ( family.empty() || !mFamilyModel )
+void UIFontPickerDialog::selectFamily( const FontDesc& font ) {
+	if ( font.family.empty() || !mFamilyModel )
 		return;
+	const bool external = mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
 	for ( size_t i = 0; i < mFamilies.size(); i++ ) {
-		if ( mFamilies[i] == family ) {
+		const FontFamilyEntry& family = mFamilies[i];
+		if ( family.family == font.family &&
+			 ( external ? family.externalFontKey == font.getFileKey()
+						: family.externalFontKey.empty() ) ) {
 			mFamilyList->setSelection( mFamilyModel->index( i ) );
 			return;
 		}
@@ -738,6 +793,13 @@ void UIFontPickerDialog::selectSize( Uint32 size ) {
 			return;
 		}
 	}
+
+	auto position = std::lower_bound( mSizes.begin(), mSizes.end(), size );
+	const size_t index = position - mSizes.begin();
+	mSizes.insert( position, size );
+	mSizeModel = ItemListModel<Uint32>::create( mSizes );
+	mSizeList->setModel( mSizeModel );
+	mSizeList->setSelection( mSizeModel->index( index ) );
 }
 
 void UIFontPickerDialog::emitPicked() {
@@ -808,25 +870,24 @@ bool UIFontPickerDialog::addExternalFont( const std::string& path, Uint32 faceIn
 		return true;
 	}
 
-	const std::string fontName(
-		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
 	if ( !getUISceneNode() )
 		return false;
 	ResourceScope& resourceScope = *getUISceneNode()->getResourceScope();
-	FontTrueTypePtr font = FontTrueType::New( fontName, resourceScope );
-	if ( !font || !font->loadFromFile( path, faceIndex ) ) {
-		resourceScope.eraseLocalFont( font.get() );
+	FontDesc requestedFont;
+	requestedFont.path = path;
+	requestedFont.faceIndex = faceIndex;
+	FontTrueTypePtr font = resourceScope.getFontService().loadSystemFont( requestedFont );
+	if ( !font )
 		return false;
-	}
 
 	FontDesc desc;
-	if ( !font->getFontDesc( desc ) ) {
-		resourceScope.eraseLocalFont( font.get() );
+	if ( !font->getFontDesc( desc ) )
 		return false;
-	}
-	resourceScope.eraseLocalFont( font.get() );
+	if ( desc.family.empty() )
+		desc.family = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) );
 
 	mLoadedFontKeys.insert( desc.getFileKey() );
+	mExternalFontKeys.insert( desc.getFileKey() );
 	mFonts.push_back( desc );
 	sortFonts();
 	updateFontTags();
@@ -867,7 +928,7 @@ void UIFontPickerDialog::setSelectedFont( const FontDesc& desc ) {
 	mSelection.font = selection;
 	if ( selection.monospace && mMonospaceOnly )
 		mMonospaceOnly->setChecked( true );
-	selectFamily( selection.family );
+	selectFamily( selection );
 	updateStyles();
 	selectStyle( selection );
 	updateSelectionFromLists( false );

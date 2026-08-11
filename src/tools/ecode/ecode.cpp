@@ -442,9 +442,9 @@ void App::openFolderDialog() {
 }
 
 void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont,
-						  std::function<void()> onFinish ) {
+						  std::function<void()> onFinish, bool pickFontSize ) {
 	mFontPickerController->openFontDialog( fontPath, loadingMonoFont, terminalFont,
-										   std::move( onFinish ) );
+										   std::move( onFinish ), pickFontSize );
 }
 
 void App::updateInputFonts() {

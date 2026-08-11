@@ -30,10 +30,13 @@ class SettingsActions {
 	void setUIScaleFactor();
 
 	void setUIFontSize();
+	void setUIFontSize( const StyleSheetLength& size );
 
 	void setEditorFontSize();
+	void setEditorFontSize( const StyleSheetLength& size );
 
 	void setTerminalFontSize();
+	void setTerminalFontSize( const StyleSheetLength& size );
 
 	void setUIPanelFontSize();
 
@@ -43,7 +46,6 @@ class SettingsActions {
 	String i18n( const std::string& key, const String& def );
 
 	void checkForUpdatesResponse( Http::Response&& response, bool fromStartup );
-
 };
 
 } // namespace ecode

@@ -184,6 +184,7 @@
 	<string name="edit">编辑</string>
 	<string name="edit_build">编辑构建</string>
 	<string name="edit_custom_output_parser">编辑已选的自定义输出解析器</string>
+	<string name="editor_font_and_size_ellipsis">编辑器字体和大小...</string>
 	<string name="editor_font_size">编辑器字体大小</string>
 	<string name="editor_go_back">编辑器撤销</string>
 	<string name="editor_go_forward">编辑器重做</string>
@@ -593,7 +594,7 @@ file in the directory tree.</string>
 	<string name="terminal_color_scheme_set">终端配色方案：%s</string>
 	<string name="terminal_copy">终端复制</string>
 	<string name="terminal_font">终端字体</string>
-	<string name="terminal_font_ellipsis">终端字体...</string>
+	<string name="terminal_font_and_size_ellipsis">终端字体和大小...</string>
 	<string name="terminal_font_size">终端字体大小</string>
 	<string name="terminal_font_size_grow">终端字体+</string>
 	<string name="terminal_font_size_shrink">终端字体-</string>
@@ -626,6 +627,7 @@ file in the directory tree.</string>
 	<string name="trim_trailing_whitespaces">Trim Trailing Whitespaces</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
+	<string name="ui_font_and_size_ellipsis">界面字体和大小...</string>
 	<string name="ui_font_size">Ui字体大小</string>
 	<string name="ui_language">界面语言</string>
 	<string name="ui_multisamples_level">多重采样抗锯齿级别</string>

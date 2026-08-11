@@ -250,6 +250,7 @@ Voulez-vous le télécharger maintenant ?</string>
 	<string name="edit">Modifier</string>
 	<string name="edit_build">Modifier la construction</string>
 	<string name="edit_custom_output_parser">Modifier l'analyseur de sortie personnalisé sélectionné</string>
+	<string name="editor_font_and_size_ellipsis">Police et taille de l'éditeur...</string>
 	<string name="editor_font_size">Taille de la police de l'éditeur</string>
 	<string name="editor_go_back">Éditeur : retour en arrière</string>
 	<string name="editor_go_forward">Éditeur : avancer</string>
@@ -782,7 +783,7 @@ dans l'arborescence du répertoire.</string>
 	<string name="terminal_color_scheme_set">Schéma de couleurs du terminal : %s</string>
 	<string name="terminal_copy">Terminal : copie</string>
 	<string name="terminal_font">Police du terminal</string>
-	<string name="terminal_font_ellipsis">Police du terminal...</string>
+	<string name="terminal_font_and_size_ellipsis">Police et taille du terminal...</string>
 	<string name="terminal_font_size">Terminal : taille de la police</string>
 	<string name="terminal_font_size_grow">Terminal : agrandir la taille de la police</string>
 	<string name="terminal_font_size_shrink">Terminal : réduire la taille de la police</string>
@@ -828,6 +829,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="trim_trailing_whitespaces">Retirer les espaces en fin de ligne</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type à localiser</string>
+	<string name="ui_font_and_size_ellipsis">Police et taille de l'interface utilisateur...</string>
 	<string name="ui_font_size">Interface utilisateur : taille de la police</string>
 	<string name="ui_language">Interface utilisateur : langue</string>
 	<string name="ui_multisamples_level">Interface utilisateur : niveau d'anti-aliasing multiéchantillon</string>

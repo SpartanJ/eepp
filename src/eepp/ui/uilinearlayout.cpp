@@ -180,7 +180,7 @@ void UILinearLayout::packVertical() {
 
 	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
-	Sizei freeSize = getTotalUsedSize();
+	auto [freeSize, totalWeight] = getTotalUsedSize();
 
 	Node* child = mChild;
 
@@ -193,15 +193,16 @@ void UILinearLayout::packVertical() {
 
 			Vector2f pos( mPaddingPx.Left, curY );
 
-			if ( widget->getLayoutWeight() != 0 ) {
+			if ( widget->getLayoutWeight() > 0 && totalWeight > 0 ) {
 				Float totSize =
 					( getLayoutHeightPolicy() == SizePolicy::MatchParent ||
 					  getLayoutHeightPolicy() == SizePolicy::Fixed )
 						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
 						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
 							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float newSize = eemax(
-					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight(), 0.f );
+				Float newSize = eemax( eeceil( totSize - freeSize.getHeight() ) *
+										   widget->getLayoutWeight() / totalWeight,
+									   0.f );
 
 				widget->setPixelsSize( widget->getPixelsSize().getWidth(), newSize );
 			}
@@ -315,7 +316,7 @@ void UILinearLayout::packHorizontal() {
 
 	Float curX = mPaddingPx.Left;
 	Float maxY = 0;
-	Sizei freeSize = getTotalUsedSize();
+	auto [freeSize, totalWeight] = getTotalUsedSize();
 
 	Node* child = mChild;
 
@@ -328,15 +329,16 @@ void UILinearLayout::packHorizontal() {
 
 			Vector2f pos( curX, mPaddingPx.Top );
 
-			if ( widget->getLayoutWeight() != 0 ) {
+			if ( widget->getLayoutWeight() > 0 && totalWeight > 0 ) {
 				Float totSize =
 					( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
 					  getLayoutWidthPolicy() == SizePolicy::Fixed )
 						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
 						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
 							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
-				Float newSize = eemax(
-					eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight(), 0.f );
+				Float newSize = eemax( eeceil( totSize - freeSize.getWidth() ) *
+										   widget->getLayoutWeight() / totalWeight,
+									   0.f );
 
 				widget->setPixelsSize( newSize, widget->getPixelsSize().getHeight() );
 			}
@@ -412,13 +414,15 @@ void UILinearLayout::packHorizontal() {
 	mPacking = false;
 }
 
-Sizei UILinearLayout::getTotalUsedSize() {
+std::pair<Sizei, Float> UILinearLayout::getTotalUsedSize() {
 	Node* child = mChild;
 	Sizei size( 0, 0 );
+	Float totalWeight = 0;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
 			UIWidget* widget = static_cast<UIWidget*>( child );
+			totalWeight += eemax( widget->getLayoutWeight(), 0.f );
 			Rectf margin = widget->getLayoutPixelsMargin();
 
 			size.x += margin.Left + margin.Right;
@@ -443,7 +447,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 		child = child->getNextNode();
 	}
 
-	return size;
+	return { size, totalWeight };
 }
 
 std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef,

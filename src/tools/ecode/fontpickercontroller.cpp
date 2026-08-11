@@ -1,5 +1,6 @@
 #include "fontpickercontroller.hpp"
 #include "ecode.hpp"
+#include "settingsactions.hpp"
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
@@ -18,7 +19,8 @@ struct MonospaceFontPreview {
 };
 
 void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMonoFont,
-										   bool terminalFont, std::function<void()> onFinish ) {
+										   bool terminalFont, std::function<void()> onFinish,
+										   bool pickFontSize ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mApp->resPath() + fontPath;
@@ -103,19 +105,20 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 		defaultResourceScope().publishLocalFont( std::move( fontName ), font );
 	};
 
-	const Uint32 flags = UIFontPickerDialog::DefaultFlags |
+	const Uint32 flags = ( pickFontSize ? UIFontPickerDialog::ShowSize : 0 ) |
 						 ( loadingMonoFont ? UIFontPickerDialog::MonospaceOnly : 0 );
 	UIFontPickerDialog* dialog = UIFontPickerDialog::New( flags );
 	dialog->setTitle( mApp->i18n( "select_font", "Select Font" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->on( Event::OnWindowClose, [this, preview, applyMonospaceFont]( const Event* ) {
+		if ( !App::instance() || SceneManager::isShuttingDown() )
+			return;
+
 		if ( preview && !preview->confirmed )
 			applyMonospaceFont( preview->originalFont, false );
 
-		if ( App::instance() && mApp->getSplitter() && mApp->getSplitter()->getCurWidget() &&
-			 !SceneManager::instance()->isShuttingDown() ) {
+		if ( mApp->getSplitter() && mApp->getSplitter()->getCurWidget() )
 			mApp->getSplitter()->getCurWidget()->setFocus();
-		}
 	} );
 	if ( loadingMonoFont ) {
 		dialog->setOnFontSelectionChanged(
@@ -138,9 +141,18 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 				}
 			} );
 	}
-	dialog->setOnFontPicked( [&fontPath, loadingMonoFont, onFinish, preview, normalizedFontPath,
-							  loadPreviewFont, publishPreviewFont,
+	dialog->setOnFontPicked( [this, &fontPath, loadingMonoFont, terminalFont, onFinish, preview,
+							  normalizedFontPath, pickFontSize, loadPreviewFont, publishPreviewFont,
 							  applyMonospaceFont]( const UIFontSelection& selection ) {
+		if ( pickFontSize ) {
+			const StyleSheetLength size( selection.size, StyleSheetLength::Dp );
+			if ( terminalFont )
+				mApp->getSettingsActions()->setTerminalFontSize( size );
+			else if ( loadingMonoFont )
+				mApp->getSettingsActions()->setEditorFontSize( size );
+			else
+				mApp->getSettingsActions()->setUIFontSize( size );
+		}
 		auto newPath = normalizedFontPath( selection.font.path );
 		if ( newPath.empty() )
 			return;
@@ -168,6 +180,16 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 			applyMonospaceFont( preview->originalFont, false );
 		}
 	} );
+	if ( pickFontSize ) {
+		UIFontSelection selection = dialog->getSelection();
+		const Float currentSize =
+			terminalFont ? mApp->getConfig().term.fontSize.asDp( 0, Sizef(), mApp->getDisplayDPI() )
+			: loadingMonoFont
+				? mApp->getConfig().editor.fontSize.asDp( 0, Sizef(), mApp->getDisplayDPI() )
+				: mApp->getConfig().ui.fontSize.asDp( 0, Sizef(), mApp->getDisplayDPI() );
+		selection.size = static_cast<Uint32>( currentSize );
+		dialog->setSelection( selection );
+	}
 	dialog->setSelectedFont( absoluteFontPath );
 	dialog->center();
 	dialog->show();

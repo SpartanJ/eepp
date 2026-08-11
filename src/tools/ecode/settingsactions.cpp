@@ -316,13 +316,16 @@ void SettingsActions::setEditorFontSize() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFontSize(
-				mApp->getConfig().editor.fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ) );
-		} );
+		setEditorFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
+}
+
+void SettingsActions::setEditorFontSize( const StyleSheetLength& size ) {
+	mApp->getConfig().editor.fontSize = size;
+	const Float fontSize = size.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
+	mApp->getSplitter()->forEachEditor(
+		[fontSize]( UICodeEditor* editor ) { editor->setFontSize( fontSize ); } );
 }
 
 void SettingsActions::setTerminalFontSize() {
@@ -333,14 +336,18 @@ void SettingsActions::setTerminalFontSize() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mApp->getSplitter()->forEachWidget( [this]( UIWidget* widget ) {
-			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
-				widget->asType<UITerminal>()->setFontSize(
-					mApp->getConfig().term.fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ) );
-		} );
+		setTerminalFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
+}
+
+void SettingsActions::setTerminalFontSize( const StyleSheetLength& size ) {
+	mApp->getConfig().term.fontSize = size;
+	const Float fontSize = size.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
+	mApp->getSplitter()->forEachWidget( [fontSize]( UIWidget* widget ) {
+		if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
+			widget->asType<UITerminal>()->setFontSize( fontSize );
+	} );
 }
 
 void SettingsActions::setUIFontSize() {
@@ -351,25 +358,28 @@ void SettingsActions::setUIFontSize() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		Float fontSize =
-			mApp->getConfig().ui.fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
-		UIThemeManager* manager = mApp->getUISceneNode()->getUIThemeManager();
-		manager->setDefaultFontSize( fontSize );
-		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-		mApp->getUISceneNode()->forEachNode( [this]( Node* node ) {
-			if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
-				UITextView* textView = node->asType<UITextView>();
-				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
-					textView->setFontSize( mApp->getConfig().ui.fontSize.asPixels(
-						node->getParent()->getPixelsSize().getWidth(), Sizef(),
-						mApp->getUISceneNode()->getDPI() ) );
-				}
-			}
-		} );
+		setUIFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
 		msgBox->closeWindow();
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
+}
+
+void SettingsActions::setUIFontSize( const StyleSheetLength& size ) {
+	mApp->getConfig().ui.fontSize = size;
+	const Float fontSize = size.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
+	UIThemeManager* manager = mApp->getUISceneNode()->getUIThemeManager();
+	manager->setDefaultFontSize( fontSize );
+	manager->getDefaultTheme()->setDefaultFontSize( fontSize );
+	mApp->getUISceneNode()->forEachNode( [this]( Node* node ) {
+		if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
+			UITextView* textView = node->asType<UITextView>();
+			if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
+				textView->setFontSize( mApp->getConfig().ui.fontSize.asPixels(
+					node->getParent()->getPixelsSize().getWidth(), Sizef(),
+					mApp->getUISceneNode()->getDPI() ) );
+			}
+		}
+	} );
 }
 
 void SettingsActions::setUIPanelFontSize() {

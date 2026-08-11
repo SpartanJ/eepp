@@ -13,7 +13,7 @@ class FontPickerController {
 	explicit FontPickerController( App* app ) : mApp( app ) {}
 
 	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false,
-						 std::function<void()> onFinish = {} );
+						 std::function<void()> onFinish = {}, bool pickFontSize = true );
 
   private:
 	App* mApp{ nullptr };

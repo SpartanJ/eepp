@@ -2,6 +2,7 @@
 #define UI_UILINEARLAYOUT_HPP
 
 #include <eepp/ui/uilayout.hpp>
+#include <utility>
 
 namespace EE { namespace UI {
 
@@ -52,7 +53,11 @@ class EE_API UILinearLayout : public UILayout {
 
 	void packHorizontal();
 
-	Sizei getTotalUsedSize();
+	/**
+	 * @return A pair containing the space used by visible fixed-size children and margins, followed
+	 * by the sum of the visible children's positive layout weights.
+	 */
+	std::pair<Sizei, Float> getTotalUsedSize();
 
 	void applyWidthPolicyOnChildren();
 
