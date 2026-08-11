@@ -946,4 +946,5 @@ Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem 
 	<string name="couldnt_find_available_screenshot_filename">Es konnte kein verfügbarer Dateiname für das Bildschirmfoto gefunden werden.</string>
 	<string name="couldnt_save_screenshot">Das Bildschirmfoto konnte nicht gespeichert werden.</string>
 	<string name="screenshot_saved">Bildschirmfoto gespeichert:</string>
+	<string name="open_screenshot_folder">Ordner öffnen</string>
 </resources>

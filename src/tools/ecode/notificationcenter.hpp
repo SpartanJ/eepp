@@ -7,6 +7,11 @@ namespace ecode {
 
 class NotificationCenter {
   public:
+	struct InteractiveAction {
+		String text;
+		std::function<void()> callback;
+	};
+
 	static NotificationCenter* instance();
 
 	NotificationCenter( UILayout* layout, PluginManager* pluginManager );
@@ -19,6 +24,9 @@ class NotificationCenter {
 
 	void addInteractiveNotification( String text, String actionText,
 									 std::function<void()> onInteraction,
+									 const Time& delay = Seconds( 7.5 ), bool allowCopy = false );
+
+	void addInteractiveNotification( String text, std::vector<InteractiveAction> actions,
 									 const Time& delay = Seconds( 7.5 ), bool allowCopy = false );
 
   protected:

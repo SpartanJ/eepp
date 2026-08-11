@@ -704,4 +704,5 @@ file in the directory tree.</string>
 	<string name="couldnt_find_available_screenshot_filename">无法找到可用的屏幕截图文件名。</string>
 	<string name="couldnt_save_screenshot">无法保存屏幕截图。</string>
 	<string name="screenshot_saved">屏幕截图已保存：</string>
+	<string name="open_screenshot_folder">打开屏幕截图文件夹</string>
 </resources>

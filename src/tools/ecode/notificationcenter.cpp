@@ -99,14 +99,21 @@ void NotificationCenter::addShowRequest( const String& uri, const String& action
 void NotificationCenter::addInteractiveNotification( String text, String actionText,
 													 std::function<void()> onInteraction,
 													 const Time& delay, bool allowCopy ) {
-	auto action = [this, text = std::move( text ), actionText = std::move( actionText ), delay,
-				   allowCopy, onInteraction = std::move( onInteraction )]() {
+	std::vector<InteractiveAction> actions;
+	actions.emplace_back(
+		InteractiveAction{ std::move( actionText ), std::move( onInteraction ) } );
+	addInteractiveNotification( std::move( text ), std::move( actions ), delay, allowCopy );
+}
+
+void NotificationCenter::addInteractiveNotification( String text,
+													 std::vector<InteractiveAction> actions,
+													 const Time& delay, bool allowCopy ) {
+	auto action = [this, text = std::move( text ), actions = std::move( actions ), delay,
+				   allowCopy]() mutable {
 		static const auto layout = R"xml(
 	<vbox lw="mp" class="notification">
 		<TextView lw="mp" lh="wc" word-wrap="true" />
-		<hbox lg="right">
-			<PushButton />
-		</hbox>
+		<hbox id="actions" lg="right" />
 	</vbox>
 	)xml";
 		UILinearLayout* lay = mLayout->getUISceneNode()
@@ -121,12 +128,20 @@ void NotificationCenter::addInteractiveNotification( String text, String actionT
 				 ( allowCopy ? EE_BUTTON_MMASK : ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
 				lay->close();
 		} );
-		UIPushButton* pb = lay->findByType( UI_TYPE_PUSHBUTTON )->asType<UIPushButton>();
-		pb->setText( actionText );
-		pb->onClick( [actionText, onInteraction = std::move( onInteraction )]( const MouseEvent* ) {
-			if ( onInteraction )
-				onInteraction();
-		} );
+		UILayout* actionsLayout = lay->find<UILayout>( "actions" );
+		bool firstAction = true;
+		for ( auto& interactiveAction : actions ) {
+			UIPushButton* button = UIPushButton::New();
+			if ( !firstAction )
+				button->setLayoutMarginLeft( 4 );
+			button->setText( interactiveAction.text )->setParent( actionsLayout );
+			button->onClick(
+				[callback = std::move( interactiveAction.callback )]( const MouseEvent* ) {
+					if ( callback )
+						callback();
+				} );
+			firstAction = false;
+		}
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );

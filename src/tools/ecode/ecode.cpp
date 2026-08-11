@@ -2912,9 +2912,16 @@ void App::takeScreenshot() {
 	}
 
 	if ( mWindow->takeScreenshot( filepath, format ) ) {
+		std::vector<NotificationCenter::InteractiveAction> actions;
+		actions.reserve( 2 );
+		actions.emplace_back( NotificationCenter::InteractiveAction{
+			i18n( "open", "Open" ), [this, filepath] { openFileFromPath( filepath ); } } );
+		actions.emplace_back( NotificationCenter::InteractiveAction{
+			i18n( "open_screenshot_folder", "Open Folder" ),
+			[savePath] { Engine::instance()->openURI( savePath ); } } );
 		mNotificationCenter->addInteractiveNotification(
 			i18n( "screenshot_saved", "Screenshot saved:" ) + "\n" + filepath,
-			i18n( "open", "Open" ), [this, filepath] { openFileFromPath( filepath ); } );
+			std::move( actions ) );
 	} else {
 		errorMsgBox( i18n( "couldnt_save_screenshot", "Couldn't save the screenshot." ) );
 	}

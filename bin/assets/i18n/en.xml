@@ -930,4 +930,5 @@ Uses strftime format specifiers. The file extension follows the selected screens
 	<string name="couldnt_find_available_screenshot_filename">Couldn't find an available screenshot filename.</string>
 	<string name="couldnt_save_screenshot">Couldn't save the screenshot.</string>
 	<string name="screenshot_saved">Screenshot saved:</string>
+	<string name="open_screenshot_folder">Open Folder</string>
 </resources>

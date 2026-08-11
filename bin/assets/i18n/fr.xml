@@ -925,4 +925,5 @@ Utilise les spécificateurs de format strftime. L’extension du fichier corresp
 	<string name="couldnt_find_available_screenshot_filename">Impossible de trouver un nom de fichier disponible pour la capture d’écran.</string>
 	<string name="couldnt_save_screenshot">Impossible d’enregistrer la capture d’écran.</string>
 	<string name="screenshot_saved">Capture d’écran enregistrée :</string>
+	<string name="open_screenshot_folder">Ouvrir le dossier</string>
 </resources>
