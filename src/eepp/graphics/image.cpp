@@ -1174,7 +1174,7 @@ bool Image::saveToFile( const std::string& filepath, const SaveType& Format ) {
 									mFormatConfiguration.webpSaveLossless(),
 									mFormatConfiguration.webpCompressionMethod() );
 			if ( !data.empty() )
-				FileSystem::fileWrite( filepath, data );
+				Res = FileSystem::fileWrite( filepath, data );
 		} else if ( SaveType::JPG != Format ) {
 			Res = 0 != ( SOIL_save_image( filepath.c_str(), (int)Format, (Int32)mWidth,
 										  (Int32)mHeight, mChannels, getPixelsPtr() ) );
