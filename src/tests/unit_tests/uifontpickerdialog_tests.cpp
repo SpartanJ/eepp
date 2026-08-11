@@ -124,7 +124,7 @@ UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision )
 	ASSERT_TRUE( managedFont && managedFont->loaded() );
 
 	TestFontPickerDialog* dialog = TestFontPickerDialog::New();
-	dialog->setSelectedFont( externalPath );
+	dialog->setSelectedFont( externalPath, fontIt->faceIndex );
 	pumpUntil( app.getUI(), [dialog] { return dialog->getButtonOK()->isEnabled(); } );
 
 	EXPECT_STDSTREQ( externalPath, dialog->getSelection().font.path );
