@@ -98,17 +98,14 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 }
 
 UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision ) {
-	std::vector<FontDesc> fonts = SystemFontResolver::instance()->enumerate();
-	auto fontIt = std::find_if( fonts.begin(), fonts.end(), []( const FontDesc& font ) {
-		return !font.family.empty() && !font.path.empty() && FileSystem::fileExists( font.path );
-	} );
-	if ( fontIt == fonts.end() )
-		UTEST_SKIP( "no system font available" );
+	const std::string managedFontPath =
+		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	ASSERT_TRUE( FileSystem::fileExists( managedFontPath ) );
 
 	const std::string externalPath = Sys::getTempPath() + "UIFontPickerDialogExternal-" +
 									 String::toString( Sys::getProcessID() ) + "." +
-									 FileSystem::fileExtension( fontIt->path );
-	ASSERT_TRUE( FileSystem::fileCopy( fontIt->path, externalPath ) );
+									 FileSystem::fileExtension( managedFontPath );
+	ASSERT_TRUE( FileSystem::fileCopy( managedFontPath, externalPath ) );
 
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
@@ -118,18 +115,18 @@ UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision )
 	ResourceScope& resourceScope = *app.getUI()->getResourceScope();
 	const std::string externalName(
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( externalPath ) ) );
-	const std::string managedFontPath =
-		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
 	FontTrueTypePtr managedFont = FontTrueType::New( externalName, managedFontPath, resourceScope );
 	ASSERT_TRUE( managedFont && managedFont->loaded() );
+	const std::string family = managedFont->getInfo().family;
+	ASSERT_FALSE( family.empty() );
 
 	TestFontPickerDialog* dialog = TestFontPickerDialog::New();
-	dialog->setSelectedFont( externalPath, fontIt->faceIndex );
+	dialog->setSelectedFont( externalPath );
 	pumpUntil( app.getUI(), [dialog] { return dialog->getButtonOK()->isEnabled(); } );
 
 	EXPECT_STDSTREQ( externalPath, dialog->getSelection().font.path );
 	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
-	EXPECT_STDSTREQ( fontIt->family + " [External]",
+	EXPECT_STDSTREQ( family + " [External]",
 					 dialog->getFamilyList()->getSelection().first().data().toString() );
 
 	bool foundSystemFamily = false;
@@ -138,8 +135,8 @@ UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision )
 	ASSERT_TRUE( familyModel != nullptr );
 	for ( size_t row = 0; row < familyModel->rowCount(); row++ ) {
 		const std::string label = familyModel->index( row ).data().toString();
-		foundSystemFamily |= label == fontIt->family;
-		foundExternalFamily |= label == fontIt->family + " [External]";
+		foundSystemFamily |= label == family;
+		foundExternalFamily |= label == family + " [External]";
 	}
 	EXPECT_TRUE( foundSystemFamily );
 	EXPECT_TRUE( foundExternalFamily );
