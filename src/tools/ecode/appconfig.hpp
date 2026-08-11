@@ -96,6 +96,12 @@ struct WindowStateConfig {
 	std::vector<std::string> sidePanelTabsOrder;
 };
 
+struct ScreenshotConfig {
+	std::string savePath;
+	std::string filenamePattern{ "ecode-%Y-%m-%d-%H-%M-%S.png" };
+	std::string saveFormat{ "png" };
+};
+
 struct CodeEditorConfig {
 	std::string colorScheme{ "ecode" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
@@ -296,6 +302,7 @@ struct TabWidgetCbs {
 class AppConfig {
   public:
 	WindowStateConfig windowState;
+	ScreenshotConfig screenshot;
 	ContextSettings context;
 	CodeEditorConfig editor;
 	DocumentConfig doc;

@@ -1732,12 +1732,32 @@ UIMenu* SettingsMenu::createWindowMenu() {
 								"to choose a language again when opening these files." ) )
 		->setId( "reset-global-file-associations" );
 
-	mWindowMenu->addSeparator();
-
 	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
 		->setId( "welcome-screen-enable" );
+
+	mWindowMenu->addSeparator();
+
+	UIPopUpMenu* screenshotMenu = UIPopUpMenu::New();
+	screenshotMenu->add( i18n( "screenshot_save_path", "Save Path" ) )
+		->setId( "screenshot-save-path" );
+	screenshotMenu->add( i18n( "screenshot_filename_pattern", "Filename Pattern" ) )
+		->setId( "screenshot-filename-pattern" );
+	screenshotMenu->add( i18n( "screenshot_save_format", "Save Format" ) )
+		->setId( "screenshot-save-format" );
+	screenshotMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			runCommand( event->getNode()->getId() );
+	} );
+	mWindowMenu->addSubMenu( i18n( "screenshot_settings", "Screenshot Settings" ),
+							 findIcon( "image" ), screenshotMenu );
+
+	mWindowMenu->addSeparator();
+	mWindowMenu
+		->add( i18n( "take_screenshot", "Take Screenshot" ), findIcon( "image" ),
+			   getKeybind( "take-screenshot" ) )
+		->setId( "take-screenshot" );
 
 	mWindowMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )

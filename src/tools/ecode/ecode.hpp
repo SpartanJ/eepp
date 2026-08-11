@@ -77,6 +77,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string getDefaultFileDialogFolder() const;
 
+	std::string getDefaultScreenshotPath() const;
+
 	void openFolderDialog();
 
 	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false,
@@ -130,6 +132,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	NotificationCenter* getNotificationCenter() const;
 
 	void fullscreenToggle();
+
+	void takeScreenshot();
 
 	void downloadFileWebDialog();
 
@@ -342,6 +346,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "about-ecode", [this] { mSettingsActions->aboutEcode(); } );
 		t.setCommand( "ecode-source", [this] { mSettingsActions->ecodeSource(); } );
 		t.setCommand( "ui-scale-factor", [this] { mSettingsActions->setUIScaleFactor(); } );
+		t.setCommand( "take-screenshot", [this] { takeScreenshot(); } );
+		t.setCommand( "screenshot-save-path",
+					  [this] { mSettingsActions->setScreenshotSavePath(); } );
+		t.setCommand( "screenshot-filename-pattern",
+					  [this] { mSettingsActions->setScreenshotFilenamePattern(); } );
+		t.setCommand( "screenshot-save-format",
+					  [this] { mSettingsActions->setScreenshotSaveFormat(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
 		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );

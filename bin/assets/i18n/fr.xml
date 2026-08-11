@@ -909,4 +909,20 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="terminal_open_link">Ouvrir le lien</string>
 	<string name="terminal_paste">Coller dans le terminal</string>
 	<string name="terminal_rename">Renommer le terminal</string>
+	<string name="take_screenshot">Prendre une capture d’écran</string>
+	<string name="screenshot_settings">Paramètres des captures d’écran</string>
+	<string name="screenshot_save_path">Dossier d’enregistrement</string>
+	<string name="screenshot_filename_pattern">Modèle de nom de fichier</string>
+	<string name="screenshot_save_format">Format d’enregistrement</string>
+	<string name="set_screenshot_filename_pattern">Définir le modèle de nom des captures d’écran</string>
+	<string name="set_screenshot_filename_pattern_message">Définissez le modèle de nom des captures d’écran :
+Utilise les spécificateurs de format strftime. L’extension du fichier correspond au format de capture sélectionné.</string>
+	<string name="set_screenshot_save_format">Définir le format des captures d’écran</string>
+	<string name="set_screenshot_save_format_message">Sélectionnez le format d’enregistrement des captures d’écran :</string>
+	<string name="invalid_screenshot_filename_pattern">Le modèle de nom des captures d’écran n’est pas valide.</string>
+	<string name="invalid_screenshot_save_format">Le format d’enregistrement des captures d’écran n’est pas valide.</string>
+	<string name="couldnt_create_screenshot_directory">Impossible de créer le dossier des captures d’écran.</string>
+	<string name="couldnt_find_available_screenshot_filename">Impossible de trouver un nom de fichier disponible pour la capture d’écran.</string>
+	<string name="couldnt_save_screenshot">Impossible d’enregistrer la capture d’écran.</string>
+	<string name="screenshot_saved">Capture d’écran enregistrée :</string>
 </resources>

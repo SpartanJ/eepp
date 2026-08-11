@@ -930,4 +930,20 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="zoom_in">Hereinzoomen</string>
 	<string name="zoom_out">Herauszoomen</string>
 	<string name="zoom_reset">Zoom zurücksetzen</string>
+	<string name="take_screenshot">Bildschirmfoto aufnehmen</string>
+	<string name="screenshot_settings">Bildschirmfoto-Einstellungen</string>
+	<string name="screenshot_save_path">Speicherpfad</string>
+	<string name="screenshot_filename_pattern">Dateinamensmuster</string>
+	<string name="screenshot_save_format">Speicherformat</string>
+	<string name="set_screenshot_filename_pattern">Dateinamensmuster für Bildschirmfotos festlegen</string>
+	<string name="set_screenshot_filename_pattern_message">Legen Sie das Dateinamensmuster für Bildschirmfotos fest:
+Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem ausgewählten Bildschirmfotoformat.</string>
+	<string name="set_screenshot_save_format">Speicherformat für Bildschirmfotos festlegen</string>
+	<string name="set_screenshot_save_format_message">Wählen Sie das Speicherformat für Bildschirmfotos:</string>
+	<string name="invalid_screenshot_filename_pattern">Das Dateinamensmuster für Bildschirmfotos ist ungültig.</string>
+	<string name="invalid_screenshot_save_format">Ungültiges Speicherformat für Bildschirmfotos.</string>
+	<string name="couldnt_create_screenshot_directory">Das Verzeichnis für Bildschirmfotos konnte nicht erstellt werden.</string>
+	<string name="couldnt_find_available_screenshot_filename">Es konnte kein verfügbarer Dateiname für das Bildschirmfoto gefunden werden.</string>
+	<string name="couldnt_save_screenshot">Das Bildschirmfoto konnte nicht gespeichert werden.</string>
+	<string name="screenshot_saved">Bildschirmfoto gespeichert:</string>
 </resources>

@@ -392,6 +392,14 @@ std::string App::getDefaultFileDialogFolder() const {
 	return mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder;
 }
 
+std::string App::getDefaultScreenshotPath() const {
+	std::string path( mConfigPath );
+	FileSystem::dirAddSlashAtEnd( path );
+	path += "screenshots";
+	FileSystem::dirAddSlashAtEnd( path );
+	return path;
+}
+
 std::string App::getLastUsedFolder() const {
 	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
 		return mCurrentProject;
@@ -2101,6 +2109,7 @@ static Uint32 DefaultSwitchToStatusPanelModifier = KEYMOD_LALT;
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
+		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
@@ -2167,6 +2176,10 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 
 std::vector<std::string> App::getUnlockedCommands() {
 	return {
+		"take-screenshot",
+		"screenshot-save-path",
+		"screenshot-filename-pattern",
+		"screenshot-save-format",
 		"create-new",
 		"create-new-terminal",
 		"create-new-welcome-tab",
@@ -2850,6 +2863,61 @@ NotificationCenter* App::getNotificationCenter() const {
 void App::fullscreenToggle() {
 	mWindow->toggleFullscreen();
 	mSettings->updateViewMenu();
+}
+
+void App::takeScreenshot() {
+	auto format = Image::extensionToSaveType( mConfig.screenshot.saveFormat );
+	if ( format == Image::SaveType::Unknown )
+		format = Image::SaveType::PNG;
+
+	std::string filename =
+		DateTimeController::formatCurrentDate( mConfig.screenshot.filenamePattern );
+	if ( filename.empty() ) {
+		errorMsgBox( i18n( "invalid_screenshot_filename_pattern",
+						   "The screenshot filename pattern is invalid." ) );
+		return;
+	}
+
+	const std::string extension = "." + Image::saveTypeToExtension( format );
+	const std::string configuredExtension = FileSystem::fileExtension( filename );
+	if ( !configuredExtension.empty() )
+		filename.resize( filename.size() - configuredExtension.size() - 1 );
+	filename += extension;
+
+	std::string savePath = mConfig.screenshot.savePath.empty() ? getDefaultScreenshotPath()
+															   : mConfig.screenshot.savePath;
+	FileSystem::dirAddSlashAtEnd( savePath );
+	if ( !FileSystem::isDirectory( savePath ) && !FileSystem::makeDir( savePath, true ) ) {
+		errorMsgBox( i18n( "couldnt_create_screenshot_directory",
+						   "Couldn't create the screenshot directory." ) );
+		return;
+	}
+
+	std::string filepath = savePath + filename;
+	if ( FileSystem::fileExists( filepath ) ) {
+		const std::string stem = FileSystem::fileRemoveExtension( filename );
+		bool availablePathFound = false;
+		for ( Uint32 suffix = 2; suffix < 10000; ++suffix ) {
+			filepath = savePath + stem + "-" + String::toString( suffix ) + extension;
+			if ( !FileSystem::fileExists( filepath ) ) {
+				availablePathFound = true;
+				break;
+			}
+		}
+		if ( !availablePathFound ) {
+			errorMsgBox( i18n( "couldnt_find_available_screenshot_filename",
+							   "Couldn't find an available screenshot filename." ) );
+			return;
+		}
+	}
+
+	if ( mWindow->takeScreenshot( filepath, format ) ) {
+		mNotificationCenter->addInteractiveNotification(
+			i18n( "screenshot_saved", "Screenshot saved:" ) + "\n" + filepath,
+			i18n( "open", "Open" ), [this, filepath] { openFileFromPath( filepath ); } );
+	} else {
+		errorMsgBox( i18n( "couldnt_save_screenshot", "Couldn't save the screenshot." ) );
+	}
 }
 
 void App::showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters ) {

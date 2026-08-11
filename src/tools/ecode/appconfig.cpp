@@ -127,6 +127,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
 	windowState.sidePanelTabsOrder =
 		String::split( iniState.getValue( "ui", "side_panel_tabs_order", "" ), ',' );
+	screenshot.savePath = ini.getValue( "screenshots", "save_path", "" );
+	screenshot.filenamePattern =
+		ini.getValue( "screenshots", "filename_pattern", "ecode-%Y-%m-%d-%H-%M-%S.png" );
+	screenshot.saveFormat = ini.getValue( "screenshots", "save_format", "png" );
+	if ( Image::extensionToSaveType( screenshot.saveFormat ) == Image::SaveType::Unknown )
+		screenshot.saveFormat = "png";
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -366,6 +372,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
 	ini.setValue( "ui", "font_antialiasing",
 				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
+	ini.setValue( "screenshots", "save_path", screenshot.savePath );
+	ini.setValue( "screenshots", "filename_pattern", screenshot.filenamePattern );
+	ini.setValue( "screenshots", "save_format", screenshot.saveFormat );
 	ini.setValueB( "ui", "editor_font_in_input_fields", ui.editorFontInInputFields );
 	iniState.setValue( "ui", "side_panel_tabs_order",
 					   String::join( windowState.sidePanelTabsOrder, ',' ) );

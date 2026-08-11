@@ -40,6 +40,12 @@ class SettingsActions {
 
 	void setUIPanelFontSize();
 
+	void setScreenshotSavePath();
+
+	void setScreenshotFilenamePattern();
+
+	void setScreenshotSaveFormat();
+
   private:
 	App* mApp{ nullptr };
 

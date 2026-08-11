@@ -914,4 +914,20 @@ Restart ecode to see the changes.</string>
 	<string name="zoom_in">Zoom In</string>
 	<string name="zoom_out">Zoom Out</string>
 	<string name="zoom_reset">Zoom Reset</string>
+	<string name="take_screenshot">Take Screenshot</string>
+	<string name="screenshot_settings">Screenshot Settings</string>
+	<string name="screenshot_save_path">Save Path</string>
+	<string name="screenshot_filename_pattern">Filename Pattern</string>
+	<string name="screenshot_save_format">Save Format</string>
+	<string name="set_screenshot_filename_pattern">Set Screenshot Filename Pattern</string>
+	<string name="set_screenshot_filename_pattern_message">Set the screenshot filename pattern:
+Uses strftime format specifiers. The file extension follows the selected screenshot format.</string>
+	<string name="set_screenshot_save_format">Set Screenshot Save Format</string>
+	<string name="set_screenshot_save_format_message">Select the screenshot save format:</string>
+	<string name="invalid_screenshot_filename_pattern">The screenshot filename pattern is invalid.</string>
+	<string name="invalid_screenshot_save_format">Invalid screenshot save format.</string>
+	<string name="couldnt_create_screenshot_directory">Couldn't create the screenshot directory.</string>
+	<string name="couldnt_find_available_screenshot_filename">Couldn't find an available screenshot filename.</string>
+	<string name="couldnt_save_screenshot">Couldn't save the screenshot.</string>
+	<string name="screenshot_saved">Screenshot saved:</string>
 </resources>

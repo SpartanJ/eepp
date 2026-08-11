@@ -688,4 +688,20 @@ file in the directory tree.</string>
 	<string name="zoom_in">字小</string>
 	<string name="zoom_out">字大</string>
 	<string name="zoom_reset">重设字体大小</string>
+	<string name="take_screenshot">截取屏幕截图</string>
+	<string name="screenshot_settings">屏幕截图设置</string>
+	<string name="screenshot_save_path">保存路径</string>
+	<string name="screenshot_filename_pattern">文件名格式</string>
+	<string name="screenshot_save_format">保存格式</string>
+	<string name="set_screenshot_filename_pattern">设置屏幕截图文件名格式</string>
+	<string name="set_screenshot_filename_pattern_message">设置屏幕截图文件名格式：
+使用 strftime 格式说明符。文件扩展名由所选屏幕截图格式决定。</string>
+	<string name="set_screenshot_save_format">设置屏幕截图保存格式</string>
+	<string name="set_screenshot_save_format_message">选择屏幕截图保存格式：</string>
+	<string name="invalid_screenshot_filename_pattern">屏幕截图文件名格式无效。</string>
+	<string name="invalid_screenshot_save_format">屏幕截图保存格式无效。</string>
+	<string name="couldnt_create_screenshot_directory">无法创建屏幕截图目录。</string>
+	<string name="couldnt_find_available_screenshot_filename">无法找到可用的屏幕截图文件名。</string>
+	<string name="couldnt_save_screenshot">无法保存屏幕截图。</string>
+	<string name="screenshot_saved">屏幕截图已保存：</string>
 </resources>

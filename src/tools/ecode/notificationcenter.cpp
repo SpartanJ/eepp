@@ -68,7 +68,7 @@ void NotificationCenter::addShowRequest( const String& uri, const String& action
 	auto action = [this, uri, actionText, delay]() {
 		static const auto layout = R"xml(
 	<vbox lw="mp" class="notification">
-		<TextView lw="mp" wordwrap="true" />
+		<TextView lw="mp" lh="wc" word-wrap="true" />
 		<hbox lg="right">
 			<PushButton />
 		</hbox>
@@ -103,7 +103,7 @@ void NotificationCenter::addInteractiveNotification( String text, String actionT
 				   allowCopy, onInteraction = std::move( onInteraction )]() {
 		static const auto layout = R"xml(
 	<vbox lw="mp" class="notification">
-		<TextView lw="mp" wordwrap="true" />
+		<TextView lw="mp" lh="wc" word-wrap="true" />
 		<hbox lg="right">
 			<PushButton />
 		</hbox>

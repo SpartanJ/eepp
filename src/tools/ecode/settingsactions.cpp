@@ -1,4 +1,5 @@
 #include "settingsactions.hpp"
+#include "datetimecontroller.hpp"
 #include "ecode.hpp"
 #include "version.hpp"
 
@@ -412,6 +413,84 @@ void SettingsActions::setUIPanelFontSize() {
 		msgBox->closeWindow();
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
+}
+
+void SettingsActions::setScreenshotSavePath() {
+	std::string initialPath = mApp->getConfig().screenshot.savePath;
+	if ( !FileSystem::isDirectory( initialPath ) ) {
+		initialPath = mApp->getDefaultScreenshotPath();
+		FileSystem::makeDir( initialPath, true );
+	}
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
+			UIFileDialog::ShowOnlyFolders |
+			( mApp->getConfig().ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
+		"*", initialPath );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( i18n( "screenshot_save_path", "Screenshot Save Path" ) );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->on( Event::OpenFile, [this]( const Event* event ) {
+		std::string path = event->getNode()->asType<UIFileDialog>()->getFullPath();
+		if ( FileSystem::isDirectory( path ) ) {
+			FileSystem::dirAddSlashAtEnd( path );
+			mApp->getConfig().screenshot.savePath = std::move( path );
+			mApp->saveConfig();
+		}
+	} );
+	dialog->center();
+	dialog->show();
+}
+
+void SettingsActions::setScreenshotFilenamePattern() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_screenshot_filename_pattern_message",
+			  "Set the screenshot filename pattern:\nUses strftime format specifiers. The file "
+			  "extension follows the selected screenshot format." ) );
+	msgBox->setTitle(
+		i18n( "set_screenshot_filename_pattern", "Set Screenshot Filename Pattern" ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mApp->getConfig().screenshot.filenamePattern );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		std::string pattern = msgBox->getTextInput()->getText().toUtf8();
+		std::string filename = DateTimeController::formatCurrentDate( pattern );
+		if ( !DateTimeController::isValidDateFormat( pattern ) || filename.empty() ||
+			 filename.find_first_of( "<>:\"/\\|?*" ) != std::string::npos ) {
+			msgBox->getTextInput()->addClass( "error" );
+			mApp->errorMsgBox( i18n( "invalid_screenshot_filename_pattern",
+									 "The screenshot filename pattern is invalid." ) );
+			return;
+		}
+		mApp->getConfig().screenshot.filenamePattern = std::move( pattern );
+		mApp->saveConfig();
+		msgBox->closeWindow();
+	} );
+}
+
+void SettingsActions::setScreenshotSaveFormat() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::DROPDOWNLIST,
+		i18n( "set_screenshot_save_format_message", "Select the screenshot save format:" ) );
+	msgBox->setTitle( i18n( "set_screenshot_save_format", "Set Screenshot Save Format" ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getDropDownList()->getListBox()->addListBoxItems(
+		{ "PNG", "JPG", "WEBP", "QOI", "BMP", "TGA", "DDS" } );
+	msgBox->getDropDownList()->getListBox()->setSelected(
+		String( mApp->getConfig().screenshot.saveFormat ).toUpper() );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		String formatText( msgBox->getDropDownList()->getText() );
+		std::string format = formatText.toLower().toUtf8();
+		if ( Image::extensionToSaveType( format ) == Image::SaveType::Unknown ) {
+			mApp->errorMsgBox(
+				i18n( "invalid_screenshot_save_format", "Invalid screenshot save format." ) );
+			return;
+		}
+		mApp->getConfig().screenshot.saveFormat = std::move( format );
+		mApp->saveConfig();
+		msgBox->closeWindow();
+	} );
 }
 
 String SettingsActions::i18n( const std::string& key, const String& def ) {
