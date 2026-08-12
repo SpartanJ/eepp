@@ -249,6 +249,30 @@ Git::Result Git::diff( const std::string& file, bool isStaged, const std::string
 					  projectDir );
 }
 
+Git::Result Git::diffUntracked( const std::string& file, const std::string& projectDir ) {
+	const std::string emptyFilePath =
+		Sys::getTempPath() + ".ecode-git-empty-" + String::randString( 16 );
+	if ( !FileSystem::fileWrite( emptyFilePath, "" ) )
+		return { "Could not create temporary file for untracked file diff.", EXIT_FAILURE };
+
+	auto result = gitSimple(
+		String::format( "diff --no-index -- \"%s\" \"%s\"", emptyFilePath, file ), projectDir );
+	FileSystem::fileRemove( emptyFilePath );
+
+	// git diff --no-index returns 1 when differences were found.
+	if ( result.returnCode == 1 && !result.result.empty() ) {
+		result.returnCode = 0;
+		const auto oldFileHeader = result.result.find( "\n--- " );
+		if ( oldFileHeader != std::string::npos ) {
+			const auto headerEnd = result.result.find( '\n', oldFileHeader + 1 );
+			if ( headerEnd != std::string::npos )
+				result.result.replace( oldFileHeader + 1, headerEnd - oldFileHeader - 1,
+									   "--- /dev/null" );
+		}
+	}
+	return result;
+}
+
 Git::Result Git::showFile( const std::string& file, const std::string& ref,
 						   const std::string& projectDir ) {
 	std::string relativePath( file );

@@ -858,7 +858,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 
 	UITextEdit* txtEdit = msgBox->getTextEdit();
 	txtEdit->setLineWrapType( LineWrapType::Viewport );
-	txtEdit->setLineWrapMode( LineWrapMode::Letter );
+	txtEdit->setLineWrapMode( LineWrapMode::Word );
 	txtEdit->setText( mLastCommitMsg );
 
 	UICheckBox* chkAmend = UICheckBox::New();
@@ -942,6 +942,20 @@ void GitPlugin::commit( const std::string& repoPath ) {
 
 	msgBox->on( Event::OnDiscard, [this, msgBox]( const Event* ) {
 		mLastCommitMsg = msgBox->getTextEdit()->getText();
+	} );
+
+	msgBox->on( Event::OnVisibleChange, [msgBox, txtEdit]( const Event* ) {
+		if ( !msgBox->isVisible() )
+			return;
+
+		msgBox->getLayoutCont()->setLayoutSizePolicy( SizePolicy::MatchParent,
+													  SizePolicy::MatchParent );
+
+		msgBox->getLayoutCont()->getFirstChild()->asType<UIWidget>()->setLayoutSizePolicy(
+			SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+		txtEdit->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+		txtEdit->setLayoutWeight( 1 );
 	} );
 
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -1034,36 +1048,54 @@ std::optional<Git::Branch> GitPlugin::getBranchFromRepoPath( const std::string& 
 }
 
 void GitPlugin::stage( const std::vector<std::string>& files ) {
-	if ( files.empty() )
-		return;
-	runAsync(
-		[this, files]() { return mGit->add( fixFilePaths( files ), mGit->repoPath( files[0] ) ); },
-		true, false );
+	runFileOperation( files, FileOperation::Stage );
 }
 
 void GitPlugin::unstage( const std::vector<std::string>& files ) {
+	runFileOperation( files, FileOperation::Unstage );
+}
+
+void GitPlugin::runFileOperation( std::vector<std::string> files, FileOperation operation ) {
 	if ( files.empty() )
 		return;
 	runAsync(
-		[this, files]() {
-			return mGit->reset( fixFilePaths( files ), mGit->repoPath( files[0] ) );
+		[this, files = std::move( files ), operation]() {
+			std::map<std::string, std::vector<std::string>> filesByRepo;
+			for ( const auto& file : files )
+				filesByRepo[mGit->repoPath( file )].emplace_back( file );
+
+			Git::Result result;
+			for ( auto& [repoPath, repoFiles] : filesByRepo ) {
+				auto paths = fixFilePaths( repoFiles );
+				switch ( operation ) {
+					case FileOperation::Stage:
+						result = mGit->add( paths, repoPath );
+						break;
+					case FileOperation::Unstage:
+						result = mGit->reset( paths, repoPath );
+						break;
+					case FileOperation::Discard:
+						result = mGit->restore( paths, repoPath );
+						break;
+				}
+				if ( result.fail() )
+					return result;
+			}
+			return result;
 		},
-		true, false );
+		true, operation == FileOperation::Discard );
 }
 
 void GitPlugin::discard( const std::vector<std::string>& files ) {
+	if ( files.empty() )
+		return;
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		i18n( "git_confirm_discard_changes", "Are you sure you want to discard all file changes?" )
 			.toUtf8() );
 
-	msgBox->on( Event::OnConfirm, [this, files]( auto ) {
-		runAsync(
-			[this, files]() {
-				return mGit->restore( fixFilePaths( files ), mGit->repoPath( files[0] ) );
-			},
-			true, true );
-	} );
+	msgBox->on( Event::OnConfirm,
+				[this, files]( auto ) { runFileOperation( files, FileOperation::Discard ); } );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
 	msgBox->center();
@@ -1156,6 +1188,35 @@ void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
 			 oldImagePath = std::move( oldImagePath ), newImagePath = std::move( newImagePath )] {
 				getPluginContext()->loadDiffFromMemory(
 					result, newImagePath.empty() ? filePath : newImagePath, oldImagePath );
+			} );
+	} );
+}
+
+void GitPlugin::diff( std::vector<Git::DiffFile> files ) {
+	if ( files.empty() )
+		return;
+	mThreadPool->run( [this, files = std::move( files )] {
+		std::string patch;
+		std::string repoPath;
+		for ( const auto& file : files ) {
+			auto filePath = fixFilePath( file.file );
+			auto fileRepoPath = mGit->repoPath( file.file );
+			if ( repoPath.empty() )
+				repoPath = fileRepoPath;
+			auto result =
+				file.report.type == Git::GitStatusType::Untracked
+					? mGit->diffUntracked( filePath, fileRepoPath )
+					: mGit->diff( filePath, file.report.type == Git::GitStatusType::Staged,
+								  fileRepoPath );
+			if ( result.fail() )
+				return;
+			patch += result.result;
+			if ( !patch.empty() && patch.back() != '\n' )
+				patch += '\n';
+		}
+		getUISceneNode()->runOnMainThread(
+			[this, patch = std::move( patch ), repoPath = std::move( repoPath )] {
+				getPluginContext()->loadDiffFromMemory( patch, "selected files", "", repoPath );
 			} );
 	} );
 }
@@ -1452,8 +1513,9 @@ void GitPlugin::buildSidePanelTab() {
 		if ( mProjectPath.empty() )
 			return;
 		UIIcon* icon = findIcon( "source-control" );
-		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
-								icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab =
+			mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
+							 icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "source_control_tab" );
 		mTab->setTextAsFallback( true );
 		return;
@@ -1615,6 +1677,7 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setExpandersAsIcons( true );
 	mStatusTree->setScrollViewType( ScrollViewType::Overlay );
 	mStatusTree->setIndentWidth( PixelDensity::dpToPx( 4 ) );
+	mStatusTree->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
 	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();
 		row->on( Event::MouseUp, [this, row]( const Event* event ) {
@@ -1636,7 +1699,16 @@ void GitPlugin::buildSidePanelTab() {
 
 			switch ( modelEvent->getModelEventType() ) {
 				case ModelEventType::OpenMenu: {
-					openFileStatusMenu( *file );
+					std::vector<Git::DiffFile> files;
+					files.reserve( mStatusTree->getSelection().size() );
+					mStatusTree->getSelection().forEachIndex(
+						[model, &files]( const ModelIndex& index ) {
+							if ( const auto* selectedFile = model->file( index ) )
+								files.emplace_back( *selectedFile );
+						} );
+					if ( files.empty() )
+						files.emplace_back( *file );
+					openFileStatusMenu( std::move( files ) );
 					break;
 				}
 				case ModelEventType::Open: {
@@ -1872,41 +1944,76 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	menu->showOverMouseCursor();
 }
 
-void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
+void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
+	if ( files.empty() )
+		return;
+
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_file_status_menu" );
 
-	menuAdd( menu, "git-open-file", i18n( "git_open_file", "Open File" ), "file" );
-	menuAdd( menu, "git-diff", i18n( "git_open_diff", "Open Diff" ), "diff-single" );
-
-	if ( file.report.type != Git::GitStatusType::Staged ) {
-		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ), "diff-added" );
-	} else {
-		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ), "diff-removed" );
+	const bool multiple = files.size() > 1;
+	bool hasStaged = false;
+	bool hasUnstaged = false;
+	for ( const auto& file : files ) {
+		hasStaged |= file.report.type == Git::GitStatusType::Staged;
+		hasUnstaged |= file.report.type != Git::GitStatusType::Staged;
 	}
+
+	menuAdd( menu, "git-open-file",
+			 multiple ? i18n( "git_open_files", "Open Files" )
+					  : i18n( "git_open_file", "Open File" ),
+			 "file" );
+	menuAdd( menu, "git-diff",
+			 multiple ? i18n( "git_open_diffs", "Open Diffs" )
+					  : i18n( "git_open_diff", "Open Diff" ),
+			 multiple ? "diff-multiple" : "diff-single" );
+
+	if ( hasUnstaged )
+		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ), "diff-added" );
+	if ( hasStaged )
+		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ), "diff-removed" );
 
 	menu->addSeparator();
 
-	if ( file.report.type != Git::GitStatusType::Staged )
+	if ( hasUnstaged )
 		menuAdd( menu, "git-discard", i18n( "git_discard", "Discard" ) );
 
-	menu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
-		if ( !mGit )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string id( item->getId() );
-		if ( id == "git-stage" ) {
-			stage( { file.file } );
-		} else if ( id == "git-unstage" ) {
-			unstage( { file.file } );
-		} else if ( id == "git-discard" ) {
-			discard( file.file );
-		} else if ( id == "git-open-file" ) {
-			openFile( file.file );
-		} else if ( id == "git-diff" ) {
-			diff( file.file, file.report.type );
-		}
-	} );
+	menu->on( Event::OnItemClicked,
+			  [this, files = std::move( files )]( const Event* event ) mutable {
+				  if ( !mGit )
+					  return;
+				  UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+				  std::string id( item->getId() );
+				  std::vector<std::string> paths;
+				  paths.reserve( files.size() );
+				  if ( id == "git-stage" ) {
+					  for ( const auto& file : files )
+						  if ( file.report.type != Git::GitStatusType::Staged )
+							  paths.emplace_back( file.file );
+					  stage( paths );
+				  } else if ( id == "git-unstage" ) {
+					  for ( const auto& file : files )
+						  if ( file.report.type == Git::GitStatusType::Staged )
+							  paths.emplace_back( file.file );
+					  unstage( paths );
+				  } else if ( id == "git-discard" ) {
+					  for ( const auto& file : files )
+						  if ( file.report.type != Git::GitStatusType::Staged )
+							  paths.emplace_back( file.file );
+					  if ( paths.size() == 1 )
+						  discard( paths.front() );
+					  else
+						  discard( paths );
+				  } else if ( id == "git-open-file" ) {
+					  for ( const auto& file : files )
+						  openFile( file.file );
+				  } else if ( id == "git-diff" ) {
+					  if ( files.size() == 1 )
+						  diff( files.front().file, files.front().report.type );
+					  else
+						  diff( std::move( files ) );
+				  }
+			  } );
 
 	menu->showOverMouseCursor();
 }

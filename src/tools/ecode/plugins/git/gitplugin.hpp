@@ -176,6 +176,10 @@ class GitPlugin : public PluginBase {
 
 	void unstage( const std::vector<std::string>& files );
 
+	enum class FileOperation { Stage, Unstage, Discard };
+
+	void runFileOperation( std::vector<std::string> files, FileOperation operation );
+
 	void discard( const std::vector<std::string>& files );
 
 	void discard( const std::string& file );
@@ -183,6 +187,8 @@ class GitPlugin : public PluginBase {
 	void diff( const Git::DiffMode mode, const std::string& repoPath );
 
 	void diff( const std::string& file, Git::GitStatusType status );
+
+	void diff( std::vector<Git::DiffFile> files );
 
 	void openFile( const std::string& file );
 
@@ -202,7 +208,7 @@ class GitPlugin : public PluginBase {
 
 	void openBranchMenu( const Git::Branch& branch );
 
-	void openFileStatusMenu( const Git::DiffFile& file );
+	void openFileStatusMenu( std::vector<Git::DiffFile> files );
 
 	void stashPush( const std::vector<std::string>& files, const std::string& repoPath );
 

@@ -269,6 +269,8 @@ class Git {
 
 	Result diff( const std::string& file, bool isStaged, const std::string& projectDir = "" );
 
+	Result diffUntracked( const std::string& file, const std::string& projectDir = "" );
+
 	Result showFile( const std::string& file, const std::string& ref,
 					 const std::string& projectDir = "" );
 
