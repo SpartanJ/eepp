@@ -735,7 +735,7 @@ void ProjectBuildManager::cancelRun() {
 		mProcessRun->kill();
 }
 
-ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
+const ProjectBuildConfiguration& ProjectBuildManager::getConfig() const {
 	return mConfig;
 }
 

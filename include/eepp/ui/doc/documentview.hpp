@@ -37,7 +37,7 @@ class EE_API DocumentView {
 	struct VisibleLineInfo {
 		VisibleIndex visibleIndex{ VisibleIndex::invalid };
 		Float paddingStart{ 0 };
-		std::vector<TextPosition> visualLines;
+		SmallVector<TextPosition, 2> visualLines;
 	};
 
 	struct VisibleLineRange {
