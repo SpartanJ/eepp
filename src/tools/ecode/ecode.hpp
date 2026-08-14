@@ -364,7 +364,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
 		t.setCommand( "sans-serif-font",
 					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
-		t.setCommand( "monospace-font",
+		t.setCommand( "editor-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
 					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );

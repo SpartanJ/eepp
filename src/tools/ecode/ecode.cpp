@@ -2239,7 +2239,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"ui-font-size",
 		"ui-panel-font-size",
 		"sans-serif-font",
-		"monospace-font",
+		"editor-font",
 		"terminal-font",
 		"fallback-font",
 		"tree-view-configure-ignore-files",

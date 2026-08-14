@@ -3328,7 +3328,7 @@ UIMenu* SettingsMenu::createFontsMenu() {
 	mFontsMenu
 		->add( i18n( "editor_font_and_size_ellipsis", "Editor Font & Size..." ),
 			   findIcon( "font-size" ) )
-		->setId( "monospace-font" );
+		->setId( "editor-font" );
 	mFontsMenu
 		->add( i18n( "terminal_font_and_size_ellipsis", "Terminal Font & Size..." ),
 			   findIcon( "font-size" ) )
