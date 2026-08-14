@@ -2,6 +2,7 @@
 #define EE_UI_UITABWIDGET_HPP
 
 #include <deque>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -260,6 +261,7 @@ class EE_API UITabWidget : public UIWidget {
 	UIListView* mTabSwitcher{ nullptr };
 	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
 	std::function<bool( const UIWidget* widget )> mAcceptsDropOfWidgetFn;
+	Scene::EventConnectionList mEventConnections;
 
 	UITabWidget();
 

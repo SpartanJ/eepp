@@ -3,8 +3,11 @@
 
 #include "../../uistatusbar.hpp"
 #include "models/breakpointsmodel.hpp"
+#include <eepp/core/containers.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -34,7 +37,7 @@ class UIBreakpointsTableView : public UITableView {
 	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 };
 
-class StatusDebuggerController : public StatusBarElement {
+class StatusDebuggerController : public StatusBarElement, public UITabWidgetSplitter::Client {
   public:
 	enum class State { NotStarted, Running, Paused };
 
@@ -43,7 +46,11 @@ class StatusDebuggerController : public StatusBarElement {
 	StatusDebuggerController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 							  PluginContextProvider* pluginContext );
 
-	virtual ~StatusDebuggerController() {};
+	virtual ~StatusDebuggerController();
+
+	virtual void show();
+
+	virtual void hide();
 
 	UIWidget* getWidget();
 
@@ -71,7 +78,13 @@ class StatusDebuggerController : public StatusBarElement {
 
 	void setDebuggingState( State state );
 
+	const std::string& saveLayout();
+
 	std::function<void( StatusDebuggerController*, UIWidget* )> onWidgetCreated{ nullptr };
+
+	void onTabCreated( UITab* tab, UIWidget* widget );
+
+	void onWidgetFocusChange( UIWidget* widget );
 
   protected:
 	UIHLinearLayoutCommandExecuter* mContainer{ nullptr };
@@ -90,9 +103,32 @@ class StatusDebuggerController : public StatusBarElement {
 	UIPushButton* mUIButStepOver{ nullptr };
 	UIPushButton* mUIButStepOut{ nullptr };
 	UITabWidget* mUITabWidget{ nullptr };
+	UITabWidget* mUIRightTabWidget{ nullptr };
+	UITabWidgetSplitter* mTabWidgetSplitter{ nullptr };
+	UILayout* mDebuggerTabsContainer{ nullptr };
+	UILayout* mRightPanelContainer{ nullptr };
+	Scene::EventConnectionList mEventConnections;
+	UnorderedMap<UITabWidget*, Scene::EventConnectionList> mTabWidgetEventConnections;
 	bool mScrollLocked{ true };
+	bool mRestoringLayout{ false };
+	bool mRightPanelDropPreview{ false };
+	std::string mSerializedLayout;
 
 	void createContainer();
+
+	void createTabWidgets();
+
+	void restoreTabLayout();
+
+	void saveTabLayout();
+
+	bool rightPanelHasTabs() const;
+
+	void beginRightPanelDropPreview();
+
+	void endRightPanelDropPreview();
+
+	void updateRightPanel();
 };
 
 } // namespace ecode

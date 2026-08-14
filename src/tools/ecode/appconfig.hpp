@@ -90,6 +90,7 @@ struct WindowStateConfig {
 	bool maximized{ false };
 	std::string panelPartition;
 	std::string statusBarPartition;
+	std::string rightPanelPartition{ "75%" };
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 	Uint32 lastRunVersion{ 0 };

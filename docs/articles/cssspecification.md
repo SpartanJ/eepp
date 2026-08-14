@@ -534,6 +534,30 @@ Sets the width of the child elements of a grid layout.
 
 ---
 
+### column-width-mode
+
+Selects how table and tree view column widths are represented and resized.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `pixels`: Column widths are stored as fixed pixel lengths and can extend beyond the available content width.
+  * `percentage`: Visible column widths are stored as normalized percentages of the available content width. Resizing a column adjusts an adjacent visible column to preserve the total.
+* Default value: `pixels`
+
+---
+
+### column-width-mode-menu
+
+Enables a context menu on table and tree view column headers for switching between pixel and
+percentage column width modes.
+
+* Applicable to: EE::UI::UIAbstractTableView (TableView, TreeView)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### cursor
 
 Read [cursor](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor) documentation.
@@ -1934,12 +1958,23 @@ Sets the [skin](#skin) tint color.
 
 ### splitter-always-show
 
-Sets if the splitter divisor is always visible. If false it will be shown only if two views are
-attached to the splitter.
+Sets whether the splitter divisor remains visible whenever two views are attached. This property
+overrides `splitter-hide-on-edge`.
 
 * Applicable to: EE::UI::UISplitter (Splitter)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
+
+---
+
+### splitter-hide-on-edge
+
+Hides the splitter divisor when its percentage partition is exactly `0%` or `100%`, allowing one
+view to consume the complete splitter. This has no effect when `splitter-always-show` is `true`.
+
+* Applicable to: EE::UI::UISplitter (Splitter)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
 
 ---
 

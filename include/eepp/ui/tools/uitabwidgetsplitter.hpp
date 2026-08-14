@@ -1,6 +1,8 @@
 #ifndef EE_UI_TOOLS_UITABWIDGETSPLITTER_HPP
 #define EE_UI_TOOLS_UITABWIDGETSPLITTER_HPP
 
+#include <eepp/core/containers.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -130,6 +132,8 @@ class EE_API UITabWidgetSplitter {
 
 	void setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb );
 
+	void setOnTabWidgetCloseCb( std::function<void( UITabWidget* )> cb );
+
 	void closeSplitter( UISplitter* splitter );
 
 	void addRemainingTabWidgets( Node* widget );
@@ -254,10 +258,13 @@ class EE_API UITabWidgetSplitter {
 	Float mVisualSplitEdgePercent{ 0.1 };
 	Mutex mTabWidgetMutex;
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
+	std::function<void( UITabWidget* )> mOnTabWidgetCloseCb;
 	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
 	TabTryCloseCallback mTabTryCloseCb;
 	mutable Mutex mWidgetTypesMutex;
-	std::unordered_map<std::string, WidgetTypeCallback> mWidgetTypes;
+	UnorderedMap<std::string, WidgetTypeCallback> mWidgetTypes;
+	UnorderedMap<UITabWidget*, Scene::EventConnectionList> mTabWidgetEventConnections;
+	UnorderedMap<UIWidget*, Scene::EventConnectionList> mWidgetEventConnections;
 
 	UITabWidgetSplitter( Client* client, UISceneNode* sceneNode );
 

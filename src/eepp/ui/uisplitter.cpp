@@ -12,29 +12,33 @@ UISplitter::UISplitter() :
 	UILayout( "splitter" ),
 	mOrientation( UIOrientation::Horizontal ),
 	mAlwaysShowSplitter( true ),
+	mHideSplitterOnEdge( false ),
 	mSplitPartition( StyleSheetLength( "50%" ) ),
 	mFirstWidget( NULL ),
 	mLastWidget( NULL ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	mSplitter = UIWidget::NewWithTag( "splitter::separator" );
 	mSplitter->setDragEnabled( true );
-	mSplitter->on( Event::OnDragStart,
-				   [this]( const Event* ) { mSplitter->pushState( UIState::StateSelected ); } );
-	mSplitter->on( Event::OnDragStop,
-				   [this]( const Event* ) { mSplitter->popState( UIState::StateSelected ); } );
+	mEventConnections += mSplitter->connect( Event::OnDragStart, [this]( const Event* ) {
+		mSplitter->pushState( UIState::StateSelected );
+	} );
+	mEventConnections += mSplitter->connect( Event::OnDragStop, [this]( const Event* ) {
+		mSplitter->popState( UIState::StateSelected );
+	} );
 	mSplitter->setParent( this );
 	mSplitter->setMinWidth( 4 );
 	mSplitter->setMinHeight( 4 );
-	mSplitter->on( Event::OnSizeChange, [this]( const Event* ) {
+	mEventConnections += mSplitter->connect( Event::OnSizeChange, [this]( const Event* ) {
 		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	} );
-	mSplitter->on( Event::MouseEnter, [this]( const Event* ) {
+	mEventConnections += mSplitter->connect( Event::MouseEnter, [this]( const Event* ) {
 		getUISceneNode()->setCursor( mOrientation == UIOrientation::Horizontal ? Cursor::SizeWE
 																			   : Cursor::SizeNS );
 	} );
-	mSplitter->on( Event::MouseLeave,
-				   [this]( const Event* ) { getUISceneNode()->setCursor( Cursor::Arrow ); } );
-	mSplitter->on( Event::OnPositionChange, [this]( const Event* ) {
+	mEventConnections += mSplitter->connect( Event::MouseLeave, [this]( const Event* ) {
+		getUISceneNode()->setCursor( Cursor::Arrow );
+	} );
+	mEventConnections += mSplitter->connect( Event::OnPositionChange, [this]( const Event* ) {
 		if ( mSplitter->isDragging() && !mDirtyLayout )
 			updateFromDrag();
 	} );
@@ -73,6 +77,17 @@ const bool& UISplitter::alwaysShowSplitter() const {
 void UISplitter::setAlwaysShowSplitter( bool alwaysShowSplitter ) {
 	if ( alwaysShowSplitter != mAlwaysShowSplitter ) {
 		mAlwaysShowSplitter = alwaysShowSplitter;
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
+	}
+}
+
+const bool& UISplitter::hideSplitterOnEdge() const {
+	return mHideSplitterOnEdge;
+}
+
+void UISplitter::setHideSplitterOnEdge( bool hideSplitterOnEdge ) {
+	if ( hideSplitterOnEdge != mHideSplitterOnEdge ) {
+		mHideSplitterOnEdge = hideSplitterOnEdge;
 		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
@@ -127,6 +142,9 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::SplitterAlwaysShow:
 			setAlwaysShowSplitter( attribute.asBool() );
 			break;
+		case PropertyId::SplitterHideOnEdge:
+			setHideSplitterOnEdge( attribute.asBool() );
+			break;
 		case PropertyId::Orientation:
 			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
 								? UIOrientation::Horizontal
@@ -149,6 +167,8 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 			return getSplitPartition().toString();
 		case PropertyId::SplitterAlwaysShow:
 			return alwaysShowSplitter() ? "true" : "false";
+		case PropertyId::SplitterHideOnEdge:
+			return hideSplitterOnEdge() ? "true" : "false";
 		case PropertyId::Orientation:
 			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		default:
@@ -159,7 +179,7 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 std::vector<PropertyId> UISplitter::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = { PropertyId::SplitterPartition, PropertyId::SplitterAlwaysShow,
-				   PropertyId::Orientation };
+				   PropertyId::SplitterHideOnEdge, PropertyId::Orientation };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -204,7 +224,7 @@ void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 
 void UISplitter::updateFromDrag() {
 	mDirtyLayout = true;
-	mSplitter->setVisible( !mAlwaysShowSplitter && !mLastWidget ? false : true );
+	mSplitter->setVisible( shouldShowSplitter() );
 	mSplitter->setEnabled( mSplitter->isVisible() );
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
@@ -351,7 +371,7 @@ void UISplitter::updateLayout() {
 		return;
 	}
 
-	mSplitter->setVisible( !mAlwaysShowSplitter && !mLastWidget ? false : true );
+	mSplitter->setVisible( shouldShowSplitter() );
 	mSplitter->setEnabled( mSplitter->isVisible() );
 	Float totalSpace = mOrientation == UIOrientation::Horizontal
 						   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
@@ -424,6 +444,14 @@ void UISplitter::updateSplitterDragFlags() {
 																	   : UI_DRAG_VERTICAL );
 	mSplitter->unsetFlags( getOrientation() == UIOrientation::Horizontal ? UI_DRAG_VERTICAL
 																		 : UI_DRAG_HORIZONTAL );
+}
+
+bool UISplitter::shouldShowSplitter() const {
+	if ( !mLastWidget )
+		return false;
+	return mAlwaysShowSplitter || !mHideSplitterOnEdge ||
+		   mSplitPartition.getUnit() != StyleSheetLength::Percentage ||
+		   ( mSplitPartition.getValue() > 0.f && mSplitPartition.getValue() < 100.f );
 }
 
 Uint32 UISplitter::onMessage( const NodeMessage* Msg ) {

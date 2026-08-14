@@ -19,6 +19,7 @@ class Font;
 namespace UI {
 
 class UISplitter;
+class UILayout;
 class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
@@ -58,12 +59,18 @@ class ProjectDirectoryTree;
 struct TerminalConfig;
 class UIMainLayout;
 class UITreeViewFS;
+class StatusDebuggerController;
+class UIRightPanel;
 
 class PluginContextProvider {
   public:
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
+
+	virtual UIRightPanel* getRightPanel() const = 0;
+
+	virtual StatusDebuggerController* getStatusDebuggerController() const = 0;
 
 	virtual UITreeViewFS* getProjectTreeView() const = 0;
 

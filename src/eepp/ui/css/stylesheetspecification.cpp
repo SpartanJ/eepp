@@ -336,6 +336,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength );
 	registerProperty( PropertyId::MainColumn, "main-column", "0" )
 		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::ColumnWidthMode, "column-width-mode", "pixels" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::ColumnWidthModeMenu, "column-width-mode-menu", "false" )
+		.setType( PropertyType::Bool );
 	registerProperty( PropertyId::RowHeaderWidth, "row-header-width", "" )
 		.setType( PropertyType::NumberLength );
 	registerProperty( PropertyId::TableFlags, "table-flags", "" )
@@ -589,6 +593,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth );
 	registerProperty( PropertyId::SplitterAlwaysShow, "splitter-always-show", "true" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::SplitterHideOnEdge, "splitter-hide-on-edge", "false" )
 		.setType( PropertyType::Bool );
 
 	registerProperty( PropertyId::DroppableHoveringColor, "droppable-hovering-color", "#FFFFFF20" )

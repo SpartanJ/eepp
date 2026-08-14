@@ -1926,6 +1926,8 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 					Node* remainingNode = tabWidget == splitter->getFirstWidget()
 											  ? splitter->getLastWidget()
 											  : splitter->getFirstWidget();
+					// Keep the surviving subtree out of closeSplitter()'s recursive bookkeeping.
+					remainingNode->detach();
 					closeSplitter( splitter );
 					eeASSERT( parent->getChildCount() == 0 );
 					remainingNode->setParent( parent );

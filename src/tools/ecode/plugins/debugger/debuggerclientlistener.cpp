@@ -140,8 +140,10 @@ void DebuggerClientListener::initUI() {
 	}
 
 	if ( !mStackModel ) {
-		mStackModel = std::make_shared<StackModel>( StackTraceInfo{}, sceneNode );
-	}
+		mStackModel =
+			std::make_shared<StackModel>( StackTraceInfo{}, sceneNode, mPlugin->mProjectPath );
+	} else
+		mStackModel->setProjectPath( mPlugin->mProjectPath );
 
 	UITableView* uiThreads = sdc->getUIThreads();
 	uiThreads->setModel( mThreadsModel );

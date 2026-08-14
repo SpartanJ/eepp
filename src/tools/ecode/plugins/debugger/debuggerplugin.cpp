@@ -183,6 +183,11 @@ DebuggerPlugin::~DebuggerPlugin() {
 	}
 }
 
+void DebuggerPlugin::onSaveState( IniFile* state ) {
+	if ( auto controller = getStatusDebuggerController() )
+		state->setValue( "debugger", "panel_layout", controller->saveLayout() );
+}
+
 void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 									const std::string& projectStatePath,
 									bool rewriteStateOnlyIfNeeded ) {
@@ -579,11 +584,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		mKeyBindings["debugger-step-over"] = "f10";
 		mKeyBindings["debugger-step-into"] = "f11";
 		mKeyBindings["debugger-step-out"] = "shift+f11";
-		#if EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		mKeyBindings["toggle-status-app-debugger"] = "mod+6";
-		#else
+#else
 		mKeyBindings["toggle-status-app-debugger"] = "alt+6";
-		#endif
+#endif
 	}
 
 	if ( j.contains( "keybindings" ) ) {
@@ -768,8 +773,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 		if ( mProjectPath.empty() )
 			return;
 		UIIcon* icon = findIcon( "debug" );
-		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-								icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab =
+			mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
+							 icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "debugger_tab" );
 		mTab->setTextAsFallback( true );
 
@@ -1217,8 +1223,7 @@ bool DebuggerPlugin::replaceInVal( std::string& val,
 	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_UUID, UUID().toString() );
-	String::replaceAll( val, KEY_TIMESTAMP,
-						std::to_string( Sys::getUnixTimestamp() ) );
+	String::replaceAll( val, KEY_TIMESTAMP, std::to_string( Sys::getUnixTimestamp() ) );
 
 	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
 	if ( getPluginContext()->getSplitter()->getCurEditor() ) {

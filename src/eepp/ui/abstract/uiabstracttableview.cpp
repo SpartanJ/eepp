@@ -9,6 +9,7 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <nlohmann/json.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -104,6 +105,166 @@ const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const
 	return columnData( colIndex ).width;
 }
 
+Float UIAbstractTableView::getColumnWidthPercentage( const size_t& colIndex ) const {
+	return columnData( colIndex ).percentage;
+}
+
+std::vector<Float> UIAbstractTableView::getColumnsWidthPercentage() const {
+	std::vector<Float> percentages;
+	size_t count = getModel() ? getModel()->columnCount() : mColumn.size();
+	percentages.reserve( count );
+	for ( size_t i = 0; i < count; ++i )
+		percentages.emplace_back( columnData( i ).percentage );
+	return percentages;
+}
+
+UIAbstractTableView::ColumnWidthMode UIAbstractTableView::getColumnWidthMode() const {
+	return mColumnWidthMode;
+}
+
+void UIAbstractTableView::setColumnWidthMode( ColumnWidthMode mode, bool convertCurrentWidths ) {
+	if ( mode == mColumnWidthMode )
+		return;
+	if ( mode == ColumnWidthMode::Percentage && getModel() ) {
+		setAutoColumnsWidth( false );
+		if ( convertCurrentWidths ) {
+			Float totalWidth = 0;
+			for ( size_t i = 0; i < getModel()->columnCount(); ++i )
+				if ( !isColumnHidden( i ) )
+					totalWidth += columnData( i ).width;
+			if ( totalWidth > 0 )
+				for ( size_t i = 0; i < getModel()->columnCount(); ++i )
+					if ( !isColumnHidden( i ) )
+						columnData( i ).percentage = columnData( i ).width / totalWidth * 100.f;
+		}
+	}
+	mColumnWidthMode = mode;
+	createOrUpdateColumns( false );
+}
+
+bool UIAbstractTableView::isColumnWidthModeMenuEnabled() const {
+	return mColumnWidthModeMenuEnabled;
+}
+
+void UIAbstractTableView::setColumnWidthModeMenuEnabled( bool enabled ) {
+	mColumnWidthModeMenuEnabled = enabled;
+}
+
+void UIAbstractTableView::setColumnWidthPercentage( const size_t& colIndex, Float percentage ) {
+	if ( mColumnWidthMode != ColumnWidthMode::Percentage )
+		setColumnWidthMode( ColumnWidthMode::Percentage );
+	if ( !getModel() || colIndex >= getModel()->columnCount() )
+		return;
+	auto& column = columnData( colIndex );
+	int adjacent = adjacentVisibleColumn( colIndex );
+	if ( adjacent >= 0 ) {
+		auto& sibling = columnData( adjacent );
+		Float combined = column.percentage + sibling.percentage;
+		column.percentage = eeclamp( percentage, 0.f, combined );
+		sibling.percentage = combined - column.percentage;
+	} else {
+		column.percentage = 100.f;
+	}
+	createOrUpdateColumns( false );
+}
+
+void UIAbstractTableView::setColumnsWidthPercentage( const std::vector<Float>& percentages ) {
+	const size_t columnCount = getModel() ? getModel()->columnCount() : percentages.size();
+	if ( mColumn.size() < columnCount )
+		mColumn.resize( columnCount );
+	const size_t suppliedColumnCount = eemin( percentages.size(), columnCount );
+	Float total = 0;
+	for ( size_t i = 0; i < suppliedColumnCount; ++i ) {
+		columnData( i ).percentage = eemax( 0.f, percentages[i] );
+		if ( !getModel() || !isColumnHidden( i ) )
+			total += columnData( i ).percentage;
+	}
+	size_t missingVisibleColumns = 0;
+	for ( size_t i = suppliedColumnCount; i < columnCount; ++i )
+		if ( !getModel() || !isColumnHidden( i ) )
+			++missingVisibleColumns;
+	const Float missingPercentage =
+		missingVisibleColumns > 0 ? eemax( 0.f, 100.f - total ) / missingVisibleColumns : 0.f;
+	for ( size_t i = suppliedColumnCount; i < columnCount; ++i ) {
+		columnData( i ).percentage = !getModel() || !isColumnHidden( i ) ? missingPercentage : 0.f;
+		total += columnData( i ).percentage;
+	}
+	if ( total > 0 )
+		for ( size_t i = 0; i < columnCount; ++i )
+			if ( !getModel() || !isColumnHidden( i ) )
+				columnData( i ).percentage = columnData( i ).percentage / total * 100.f;
+	setAutoColumnsWidth( false );
+	mColumnWidthMode = ColumnWidthMode::Percentage;
+	if ( getModel() )
+		createOrUpdateColumns( false );
+}
+
+nlohmann::json UIAbstractTableView::serializeColumnWidths() const {
+	if ( !getModel() && !mPendingSerializedColumnWidths.empty() )
+		return nlohmann::json::parse( mPendingSerializedColumnWidths, nullptr, false, true );
+	nlohmann::json saved;
+	const bool percentage = mColumnWidthMode == ColumnWidthMode::Percentage;
+	saved["mode"] = percentage ? "percentage" : "pixels";
+	if ( percentage ) {
+		saved["widths"] = getColumnsWidthPercentage();
+		return saved;
+	}
+	std::vector<Float> widths;
+	if ( !getModel() )
+		return saved;
+	widths.reserve( getModel()->columnCount() );
+	for ( size_t i = 0; i < getModel()->columnCount(); ++i )
+		widths.emplace_back( PixelDensity::pxToDp( getColumnWidth( i ) ) );
+	saved["widths"] = std::move( widths );
+	return saved;
+}
+
+bool UIAbstractTableView::unserializeColumnWidths( const nlohmann::json& saved ) {
+	const nlohmann::json* widths = &saved;
+	ColumnWidthMode mode = ColumnWidthMode::Percentage;
+	if ( saved.is_object() ) {
+		if ( !saved.contains( "widths" ) || !saved["widths"].is_array() )
+			return false;
+		widths = &saved["widths"];
+		if ( saved.value( "mode", "percentage" ) == "pixels" )
+			mode = ColumnWidthMode::Pixels;
+	} else if ( !saved.is_array() ) {
+		return false;
+	}
+	std::vector<Float> values;
+	values.reserve( widths->size() );
+	for ( const auto& value : *widths ) {
+		if ( !value.is_number() )
+			return false;
+		values.emplace_back( value.get<Float>() );
+	}
+	if ( !getModel() ) {
+		mPendingSerializedColumnWidths = saved.dump();
+		return true;
+	}
+	mPendingSerializedColumnWidths.clear();
+	if ( mode == ColumnWidthMode::Percentage ) {
+		setColumnsWidthPercentage( values );
+	} else {
+		if ( values.size() != getModel()->columnCount() )
+			return false;
+		setColumnWidthMode( mode, false );
+		for ( size_t i = 0; i < values.size(); ++i )
+			setColumnWidth( i, PixelDensity::dpToPx( values[i] ) );
+	}
+	return true;
+}
+
+void UIAbstractTableView::restorePendingColumnWidths() {
+	if ( !getModel() || mPendingSerializedColumnWidths.empty() )
+		return;
+	std::string serialized( std::move( mPendingSerializedColumnWidths ) );
+	mPendingSerializedColumnWidths.clear();
+	auto widths = nlohmann::json::parse( serialized, nullptr, false, true );
+	if ( !widths.is_discarded() )
+		unserializeColumnWidths( widths );
+}
+
 void UIAbstractTableView::selectAll() {
 	getSelection().clear();
 	for ( size_t itemIndex = 0; itemIndex < getItemCount(); ++itemIndex ) {
@@ -139,11 +300,13 @@ void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 			[this] {
 				modelUpdate( mPendingUpdateFlags.exchange( 0 ) );
 				createOrUpdateColumns( true );
+				restorePendingColumnWidths();
 			},
 			Time::Zero, onModelUpdateTag );
 	} else {
 		UIAbstractView::onModelUpdate( flags );
 		createOrUpdateColumns( true );
+		restorePendingColumnWidths();
 	}
 }
 
@@ -195,6 +358,9 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
+
+	if ( mColumnWidthMode == ColumnWidthMode::Percentage )
+		updatePercentageColumnWidths();
 
 	if ( mAutoColumnsWidth && visibleColCount > 1 ) {
 		Float contentWidth = getContentSpaceWidth();
@@ -311,9 +477,92 @@ void UIAbstractTableView::onSizeChange() {
 	createOrUpdateColumns( false );
 }
 
-void UIAbstractTableView::onColumnSizeChange( const size_t&, bool fromUserInteraction ) {
+void UIAbstractTableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {
 	if ( fromUserInteraction && mAutoColumnsWidth )
 		mAutoColumnsWidth = false;
+	if ( fromUserInteraction && mColumnWidthMode == ColumnWidthMode::Percentage && getModel() ) {
+		int adjacent = adjacentVisibleColumn( colIndex );
+		Float contentWidth = getContentSpaceWidth();
+		if ( adjacent >= 0 && contentWidth > 0 ) {
+			auto& column = columnData( colIndex );
+			auto& sibling = columnData( adjacent );
+			Float combined = column.percentage + sibling.percentage;
+			Float minPercentage = column.minWidth / contentWidth * 100.f;
+			Float siblingMinPercentage = sibling.minWidth / contentWidth * 100.f;
+			column.percentage = eeclamp( column.width / contentWidth * 100.f, minPercentage,
+										 combined - siblingMinPercentage );
+			sibling.percentage = combined - column.percentage;
+			updatePercentageColumnWidths();
+			updateHeaderSize();
+		}
+	}
+}
+
+void UIAbstractTableView::updatePercentageColumnWidths() {
+	if ( !getModel() )
+		return;
+	Float contentWidth = getContentSpaceWidth();
+	Float totalPercentage = 0;
+	int visibleColumns = 0;
+	for ( size_t i = 0; i < getModel()->columnCount(); ++i ) {
+		if ( !isColumnHidden( i ) ) {
+			totalPercentage += columnData( i ).percentage;
+			visibleColumns++;
+		}
+	}
+	if ( totalPercentage <= 0 && visibleColumns > 0 ) {
+		for ( size_t i = 0; i < getModel()->columnCount(); ++i )
+			if ( !isColumnHidden( i ) )
+				columnData( i ).percentage = 100.f / visibleColumns;
+		totalPercentage = 100.f;
+	}
+	contentWidth = eefloor( contentWidth );
+	Float cumulativePercentage = 0;
+	Float previousBoundary = 0;
+	Float assignedWidth = 0;
+	for ( size_t i = 0; i < getModel()->columnCount(); ++i ) {
+		if ( isColumnHidden( i ) )
+			continue;
+		auto& column = columnData( i );
+		cumulativePercentage += column.percentage;
+		Float boundary = eefloor( contentWidth * cumulativePercentage / totalPercentage + 0.5f );
+		Float width = boundary - previousBoundary;
+		Float minWidth = eeceil( column.minWidth );
+		width = column.maxWidth != 0
+					? eeclamp( width, minWidth, eemax( minWidth, eefloor( column.maxWidth ) ) )
+					: eemax( width, minWidth );
+		column.setWidth( width, true );
+		assignedWidth += width;
+		previousBoundary = boundary;
+	}
+	Float overflow = assignedWidth - contentWidth;
+	for ( size_t i = getModel()->columnCount(); overflow > 0 && i > 0; --i ) {
+		if ( isColumnHidden( i - 1 ) )
+			continue;
+		auto& column = columnData( i - 1 );
+		Float shrink = eemin( overflow, column.width - eeceil( column.minWidth ) );
+		if ( shrink > 0 ) {
+			column.setWidth( column.width - shrink, true );
+			overflow -= shrink;
+		}
+	}
+	for ( size_t i = 0; i < getModel()->columnCount(); ++i ) {
+		auto& column = columnData( i );
+		if ( column.widget && !isColumnHidden( i ) )
+			column.widget->setPixelsSize( column.width, getHeaderHeight() );
+	}
+}
+
+int UIAbstractTableView::adjacentVisibleColumn( size_t column ) const {
+	if ( !getModel() )
+		return -1;
+	for ( size_t i = column + 1; i < getModel()->columnCount(); ++i )
+		if ( !isColumnHidden( i ) )
+			return i;
+	for ( size_t i = column; i > 0; --i )
+		if ( !isColumnHidden( i - 1 ) )
+			return i - 1;
+	return -1;
 }
 
 Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
@@ -322,6 +571,10 @@ Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
 
 void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
 	columnData( colIndex ).setWidth( getMaxColumnContentWidth( colIndex, true ) );
+	if ( mColumnWidthMode == ColumnWidthMode::Percentage ) {
+		onColumnSizeChange( colIndex, true );
+		return;
+	}
 	createOrUpdateColumns( false );
 }
 
@@ -580,6 +833,31 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 
 void UIAbstractTableView::onScrollChange() {
 	mHeader->setPixelsPosition( mRowHeaderWidth + -mScrollOffset.x, 0 );
+}
+
+void UIAbstractTableView::onContentSizeChange() {
+	if ( mUpdatingColumnsForScrollbars ) {
+		UIScrollableWidget::onContentSizeChange();
+		return;
+	}
+
+	bool verticalScrollWasVisible = mVScroll->isVisible();
+	UIScrollableWidget::onContentSizeChange();
+	const bool columnsDependOnContentWidth =
+		mColumnWidthMode == ColumnWidthMode::Percentage || mAutoColumnsWidth ||
+		( mAutoExpandOnSingleColumn && visibleColumnCount() == 1 );
+	if ( !columnsDependOnContentWidth || verticalScrollWasVisible == mVScroll->isVisible() )
+		return;
+
+	mUpdatingColumnsForScrollbars = true;
+	for ( int iteration = 0; iteration < 2; ++iteration ) {
+		bool visibilityUsedForColumns = mVScroll->isVisible();
+		createOrUpdateColumns( false );
+		UIScrollableWidget::onContentSizeChange();
+		if ( visibilityUsedForColumns == mVScroll->isVisible() )
+			break;
+	}
+	mUpdatingColumnsForScrollbars = false;
 }
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
@@ -1012,6 +1290,14 @@ bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MainColumn:
 			setMainColumn( attribute.asInt() );
 			break;
+		case PropertyId::ColumnWidthMode:
+			setColumnWidthMode( String::iequals( attribute.getValue(), "percentage" )
+									? ColumnWidthMode::Percentage
+									: ColumnWidthMode::Pixels );
+			break;
+		case PropertyId::ColumnWidthModeMenu:
+			setColumnWidthModeMenuEnabled( attribute.asBool() );
+			break;
 		case PropertyId::RowHeaderWidth:
 			setRowHeaderWidth(
 				lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
@@ -1063,6 +1349,10 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 			return String::fromFloat( (Float)getSortIconSize(), "px" );
 		case PropertyId::MainColumn:
 			return String::toString( (Int64)getMainColumn() );
+		case PropertyId::ColumnWidthMode:
+			return getColumnWidthMode() == ColumnWidthMode::Percentage ? "percentage" : "pixels";
+		case PropertyId::ColumnWidthModeMenu:
+			return isColumnWidthModeMenuEnabled() ? "true" : "false";
 		case PropertyId::RowHeaderWidth:
 			return String::fromFloat( getRowHeaderWidth(), "px" );
 		case PropertyId::TableFlags: {
@@ -1099,9 +1389,10 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 
 std::vector<PropertyId> UIAbstractTableView::getPropertiesImplemented() const {
 	auto props = UIAbstractView::getPropertiesImplemented();
-	props.insert( props.end(),
-				  { PropertyId::RowHeight, PropertyId::IconSize, PropertyId::SortIconSize,
-					PropertyId::MainColumn, PropertyId::RowHeaderWidth, PropertyId::TableFlags } );
+	props.insert( props.end(), { PropertyId::RowHeight, PropertyId::IconSize,
+								 PropertyId::SortIconSize, PropertyId::MainColumn,
+								 PropertyId::ColumnWidthMode, PropertyId::ColumnWidthModeMenu,
+								 PropertyId::RowHeaderWidth, PropertyId::TableFlags } );
 	return props;
 }
 

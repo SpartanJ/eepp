@@ -890,6 +890,8 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uifiledialog_select_file">Eine Datei auswählen</string>
 	<string name="uifiledialog_select_folder">Einen Ordner auswählen</string>
 	<string name="uifiledialog_table">Tabelle</string>
+	<string name="uitable_fit_columns_to_view">Spalten an Ansicht anpassen</string>
+	<string name="uitable_free_column_widths">Freie Spaltenbreiten</string>
 	<string name="uiterminal_copy">Kopieren</string>
 	<string name="uiterminal_open_link">Link öffnen</string>
 	<string name="uiterminal_paste">Einfügen</string>

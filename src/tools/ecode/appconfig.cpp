@@ -121,6 +121,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
 	windowState.statusBarPartition = iniState.getValue( "window", "status_bar_partition", "85%" );
+	windowState.rightPanelPartition = iniState.getValue( "window", "right_panel_partition", "75%" );
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
@@ -331,6 +332,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
 	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
+	iniState.setValue( "window", "right_panel_partition", windowState.rightPanelPartition );
 	iniState.setValueI( "window", "display_index", windowState.displayIndex );
 	iniState.setValueI( "window", "x", windowState.position.x );
 	iniState.setValueI( "window", "y", windowState.position.y );

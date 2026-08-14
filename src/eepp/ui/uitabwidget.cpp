@@ -87,8 +87,10 @@ UITabWidget::UITabWidget() :
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
 	mTabScroll->setParent( mTabBar );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
-	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
-	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	onSizeChange();
 
@@ -560,6 +562,10 @@ UITab* UITabWidget::add( const String& text, UINode* nodeOwned, DrawablePtr icon
 
 UITabWidget* UITabWidget::add( UITab* tab ) {
 	tab->setParent( mTabBar );
+	if ( tab->getOwnedWidget() && tab->getOwnedWidget()->isWidget() )
+		tab->getOwnedWidget()->asType<UIWidget>()->setLayoutSizePolicy( SizePolicy::Fixed,
+																		SizePolicy::Fixed );
+	refreshOwnedWidget( tab );
 
 	mTabs.push_back( tab );
 

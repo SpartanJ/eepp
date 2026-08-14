@@ -35,6 +35,8 @@ class DateTimeController;
 class FontPickerController;
 class SettingsMenu;
 class UITreeViewFS;
+class StatusDebuggerController;
+class UIRightPanel;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
@@ -599,6 +601,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	UISplitter* getMainSplitter() const;
 
+	UIRightPanel* getRightPanel() const;
+
+	StatusDebuggerController* getStatusDebuggerController() const;
+
 	StatusTerminalController* getStatusTerminalController() const;
 
 	void hideStatusTerminal();
@@ -777,6 +783,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UIThemePtr mTheme;
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
+	std::unique_ptr<UIRightPanel> mRightPanel;
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;

@@ -615,6 +615,7 @@ TabWidget::container > ImageViewer > TextView {
 		</RelativeLayout>
 		<Tab id="treeview_tab" text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
 	</TabWidget>
+	<Splitter id="right_panel_splitter" splitter-partition="100%" splitter-always-show="false" splitter-hide-on-edge="true">
 	<vbox>
 		<Splitter id="main_splitter" lw="mp" lh="0" lw8="1" orientation="vertical">
 			<RelativeLayout id="main_splitter_cont">
@@ -706,6 +707,8 @@ TabWidget::container > ImageViewer > TextView {
 			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />
 		</statusbar>
 	</vbox>
+	<RelativeLayout id="right_panel_container"></RelativeLayout>
+	</Splitter>
 </Splitter>
 <Image id="settings" lw="16dp" lh="16dp" lg="top|right" gravity="center" />
 <TextView id="menu_hint" class="app_hint" lw="wc" lh="wc" lg="bottom|right" visible="false"

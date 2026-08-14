@@ -865,6 +865,8 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="uifiledialog_select_file">Sélectionner un fichier</string>
 	<string name="uifiledialog_select_folder">Sélectionner un dossier</string>
 	<string name="uifiledialog_table">Table</string>
+	<string name="uitable_fit_columns_to_view">Ajuster les colonnes à la vue</string>
+	<string name="uitable_free_column_widths">Largeurs de colonnes libres</string>
 	<string name="uiterminal_copy">Copier</string>
 	<string name="uiterminal_open_link">Ouvrir un lien</string>
 	<string name="uiterminal_paste">Coller</string>

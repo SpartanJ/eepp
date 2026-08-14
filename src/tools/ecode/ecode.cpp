@@ -6,10 +6,12 @@
 #include "fontpickercontroller.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
+#include "plugins/debugger/statusdebuggercontroller.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
 #include "uidownloadwindow.hpp"
+#include "uirightpanel.hpp"
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
@@ -860,6 +862,8 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 void App::saveConfig() {
 	if ( !mCurrentProject.empty() )
 		saveSidePanelTabsOrder();
+	if ( mRightPanel )
+		mRightPanel->saveState();
 
 	mConfig.save(
 		mRecentFiles, mRecentFolders,
@@ -3810,6 +3814,17 @@ UISplitter* App::getMainSplitter() const {
 	return mMainSplitter;
 }
 
+UIRightPanel* App::getRightPanel() const {
+	return mRightPanel.get();
+}
+
+StatusDebuggerController* App::getStatusDebuggerController() const {
+	if ( !mStatusBar )
+		return nullptr;
+	auto element = mStatusBar->getStatusBarElement( "status_app_debugger" );
+	return static_cast<StatusDebuggerController*>( element.get() );
+}
+
 StatusTerminalController* App::getStatusTerminalController() const {
 	return mStatusTerminalController.get();
 }
@@ -4979,6 +4994,8 @@ void App::init( InitParameters& params ) {
 		mSplitter->setOpenDocumentsInMainSplit( mConfig.editor.openDocumentsInMainSplit );
 		mSplitter->setRestoreEditorSelectionOnFocus( mConfig.editor.restoreEditorSelectionOnFocus );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
+			tabWidget->setAcceptsDropOfWidgetFn(
+				[]( const UIWidget* widget ) { return !widget->hasClass( "debugger-tab" ); } );
 			tabWidget->getTabBar()->onDoubleClick(
 				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );
 		} );
@@ -5032,6 +5049,10 @@ void App::init( InitParameters& params ) {
 		mMainSplitter = mUISceneNode->find<UISplitter>( "main_splitter" );
 		mMainSplitter->setSplitPartition(
 			StyleSheetLength( mConfig.windowState.statusBarPartition ) );
+		auto rightPanelSplitter = mUISceneNode->find<UISplitter>( "right_panel_splitter" );
+		auto rightPanelContainer = mUISceneNode->find<UILayout>( "right_panel_container" );
+		mRightPanel =
+			std::make_unique<UIRightPanel>( rightPanelSplitter, rightPanelContainer, &mConfig );
 		mStatusBar = mUISceneNode->find<UIStatusBar>( "status_bar" );
 		mPluginManager->setMainSplitter( mMainSplitter );
 

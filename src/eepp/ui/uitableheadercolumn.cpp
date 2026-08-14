@@ -1,4 +1,6 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 
@@ -31,7 +33,7 @@ Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uin
 		}
 		Vector2f pos( eefloor( position.x ), eefloor( position.y ) );
 		if ( mDragPoint != pos && std::abs( mDragPoint.x - pos.x ) > 1.f ) {
-			Sizef dragDiff( ( Float )( mDragPoint.x - pos.x ), 0 );
+			Sizef dragDiff( (Float)( mDragPoint.x - pos.x ), 0 );
 			if ( onDrag( pos, flags, dragDiff ) ) {
 				mDragPoint = pos;
 				eventDispatcher->setNodeDragging( this );
@@ -75,6 +77,30 @@ Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32
 		return 1;
 	}
 	return UIPushButton::onMouseClick( position, flags );
+}
+
+Uint32 UITableHeaderColumn::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && mView->isColumnWidthModeMenuEnabled() ) {
+		auto* menu = UIPopUpMenu::New();
+		menu->addRadioButton( i18n( "uitable_fit_columns_to_view", "Fit Columns to View" ),
+							  mView->getColumnWidthMode() ==
+								  UIAbstractTableView::ColumnWidthMode::Percentage )
+			->setId( "percentage" );
+		menu->addRadioButton( i18n( "uitable_free_column_widths", "Free Column Widths" ),
+							  mView->getColumnWidthMode() ==
+								  UIAbstractTableView::ColumnWidthMode::Pixels )
+			->setId( "pixels" );
+		menu->on( Event::OnItemClicked, [view = mView]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			view->setColumnWidthMode( event->getNode()->getId() == "percentage"
+										  ? UIAbstractTableView::ColumnWidthMode::Percentage
+										  : UIAbstractTableView::ColumnWidthMode::Pixels );
+		} );
+		menu->setCloseOnHide( true );
+		menu->showAtScreenPosition( position.asFloat() );
+	}
+	return UIPushButton::onMouseUp( position, flags );
 }
 
 Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,

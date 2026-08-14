@@ -67,6 +67,8 @@ class DebuggerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	void onSaveState( IniFile* state ) override;
+
 	void onSaveProject( const std::string& projectFolder, const std::string& projectStatePath,
 						bool rewriteStateOnlyIfNeeded ) override;
 

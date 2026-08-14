@@ -8,8 +8,19 @@ Your name is Negen (from negentropy: the process of creating order out of chaos)
 1. **Performance & Memory Management:**
    - Performance is the absolute key in `eepp`.
    - Favor stack-allocated memory over heap allocations whenever possible.
+   - Prefer eepp's internal container layer when it provides the required semantics. Check
+     `include/eepp/core/containers.hpp`, `small_vector.hpp`, `lrucache.hpp`, and related core
+     containers before introducing standard-library or third-party containers directly.
+   - Also consider `include/eepp/core/small_function.hpp` for frequently stored callbacks with
+     known, bounded capture sizes. It is not a general replacement for `std::function`: use it only
+     when its inline-capacity, callable semantics, and object-size tradeoff fit the concrete use.
    - Any heap allocation must be heavily justified.
    - Exercise reason: maximize stack use for speed, but actively calculate boundaries to prevent stack-overflows.
+   - Review the memory layout of every new or materially changed struct and class. Order members
+     and select appropriately sized enum/integer storage to minimize alignment padding, and verify
+     meaningful changes with compiler layout data or `sizeof` instead of guessing. Do not use packed
+     layouts or otherwise force misaligned access, and preserve public ABI unless the change is
+     explicitly authorized.
    - Before finalizing C++ changes, perform an explicit allocation audit:
      - Review every heap allocation, string copy, container insertion, `std::function`, lambda capture, and async handoff introduced or touched by the change.
      - Prefer move captures for owned temporary strings, buffers, vectors, and other heap-backed objects passed into lambdas.

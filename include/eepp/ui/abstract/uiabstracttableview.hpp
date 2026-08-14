@@ -6,6 +6,7 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/ui/uitablerow.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <unordered_map>
 
 using namespace EE::Math;
@@ -20,6 +21,8 @@ namespace EE { namespace UI { namespace Abstract {
 
 class EE_API UIAbstractTableView : public UIAbstractView {
   public:
+	enum class ColumnWidthMode : Uint8 { Pixels, Percentage };
+
 	enum TableFlags : Uint32 {
 		TableFlagNone = 0,
 		TableFlagHeaders = ( 1 << 0 ),
@@ -84,6 +87,30 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void setColumnsMaxWidth( const Float& width );
 
 	const Float& getColumnWidth( const size_t& colIndex ) const;
+
+	Float getColumnWidthPercentage( const size_t& colIndex ) const;
+
+	std::vector<Float> getColumnsWidthPercentage() const;
+
+	ColumnWidthMode getColumnWidthMode() const;
+
+	void setColumnWidthMode( ColumnWidthMode mode, bool convertCurrentWidths = true );
+
+	bool isColumnWidthModeMenuEnabled() const;
+
+	void setColumnWidthModeMenuEnabled( bool enabled );
+
+	void setColumnWidthPercentage( const size_t& colIndex, Float percentage );
+
+	void setColumnsWidthPercentage( const std::vector<Float>& percentages );
+
+	/** Serializes the column width mode and widths. Pixel widths are stored as dp. */
+	nlohmann::json serializeColumnWidths() const;
+
+	/** Restores column widths serialized by serializeColumnWidths(). Legacy percentage arrays are
+	 * also accepted. Percentage values may be partial or contain surplus entries; pixel widths must
+	 * match the model. Returns false if the data is invalid or incompatible with the model. */
+	bool unserializeColumnWidths( const nlohmann::json& widths );
 
 	virtual Float getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess = false );
 
@@ -180,6 +207,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		Float minHeight{ 0 };
 		Float maxWidth{ 0 };
 		Float width{ 0 };
+		Float percentage{ 0 };
 		bool visible{ true };
 		bool manuallySet{ false };
 		UIPushButton* widget{ nullptr };
@@ -210,6 +238,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::function<void( UITableCell* )> mSetupCellCb;
 	Float mRowHeaderWidth{ 0 };
 	Uint32 mTableFlags{ UITABLE_DEFAULT_FLAGS };
+	ColumnWidthMode mColumnWidthMode{ ColumnWidthMode::Pixels };
+	bool mColumnWidthModeMenuEnabled{ false };
+	bool mUpdatingColumnsForScrollbars{ false };
+	std::string mPendingSerializedColumnWidths;
 
 	virtual ~UIAbstractTableView();
 
@@ -230,6 +262,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onColumnResizeToContent( const size_t& colIndex );
 
 	virtual void updateColumnsWidth();
+
+	void restorePendingColumnWidths();
 
 	virtual Uint32 onFocus( NodeFocusReason reason );
 
@@ -252,6 +286,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onScrollChange();
 
+	virtual void onContentSizeChange();
+
 	virtual void onRowCreated( UITableRow* row );
 
 	virtual void onSortColumn( const size_t& colIndex );
@@ -269,6 +305,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	int visibleColumn();
 
 	void resetColumnData();
+
+	void updatePercentageColumnWidths();
+
+	int adjacentVisibleColumn( size_t column ) const;
 
 	void buildRowHeader();
 

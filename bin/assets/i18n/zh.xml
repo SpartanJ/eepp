@@ -663,6 +663,8 @@ file in the directory tree.</string>
 	<string name="uifiledialog_select_file">选择文件</string>
 	<string name="uifiledialog_select_folder">选择文件夹</string>
 	<string name="uifiledialog_table">Table</string>
+	<string name="uitable_fit_columns_to_view">列宽适应视图</string>
+	<string name="uitable_free_column_widths">自由调整列宽</string>
 	<string name="uiterminal_copy">复制</string>
 	<string name="uiterminal_open_link">打开链接</string>
 	<string name="uiterminal_paste">粘贴</string>

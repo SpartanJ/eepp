@@ -874,6 +874,8 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="uifiledialog_select_file">Select a file</string>
 	<string name="uifiledialog_select_folder">Select a folder</string>
 	<string name="uifiledialog_table">Table</string>
+	<string name="uitable_fit_columns_to_view">Fit Columns to View</string>
+	<string name="uitable_free_column_widths">Free Column Widths</string>
 	<string name="uiterminal_copy">Copy</string>
 	<string name="uiterminal_open_link">Open Link</string>
 	<string name="uiterminal_paste">Paste</string>
