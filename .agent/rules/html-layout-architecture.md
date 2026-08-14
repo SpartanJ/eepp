@@ -241,7 +241,10 @@ Requirements:
 - **Gaps:** `row-gap`/`column-gap` with `gap` shorthand. `gap: normal` resolves to 0px in flexbox.
 - **`min-width: auto` / `min-height: auto`:** Content-based minimum prevents flex items from collapsing below their min-content size. The `overflow` property suppresses this minimum when set to non-visible.
 - **`visibility: collapse`:** Collapsed items are invisible and zero-sized on the main axis, but their cross size still contributes to the flex line cross size (preserving layout stability).
-- **`order`-modified paint order:** `UIHTMLWidget::drawChildren()` override stable-sorts children by CSS `order` when flex items have differing values. For `row-reverse`/`column-reverse`, the sorted list is also reversed before painting.
+- **`order`-modified paint order:** `UIHTMLWidget::drawChildren()` stable-sorts children by CSS
+  `order` when flex items have differing values. Per CSS Flexbox §4.3, painting uses
+  order-modified document order; `row-reverse`/`column-reverse` changes layout direction but does
+  not reverse paint order.
 - **Container baseline:** After layout, the flex container's baseline is available via `FlexLayouter::getBaseline()` for use by outer formatting contexts.
 
 ### Out-Of-Flow Positioning
@@ -256,6 +259,28 @@ Elements with `position: absolute` or `position: fixed`:
 Relative positioning should preserve normal-flow space and then offset painting/positioning according to CSS semantics.
 
 Floats are represented in `RichText::CustomBlock` with `CSSFloat`/`CSSClear` metadata and handled by the float-aware RichText path. Float placement is edge-aligned and should not be altered by inline baseline alignment.
+
+### Paint Order And Supported Stacking Contexts
+
+`UIHTMLWidget` owns HTML box paint ordering and matching reverse-order hit testing. Its lazy paint
+cache implements the supported CSS 2 Appendix E phases: negative positioned stacking groups,
+in-flow content, non-positioned floats, positioned descendants with `z-index: auto` or `0`, and
+positive positioned stacking groups. Equal-category items retain CSS tree order; flex and grid
+containers use `order`-modified document order as their input tree order.
+
+Positioned descendants and child stacking groups can participate in the nearest ancestor stacking
+scope even when they are nested below ordinary blocks or floats. Such promoted nodes remain in their
+DOM hierarchy for layout and ownership. Painting replays the skipped ancestors' transforms and exact
+border/content/padding clip type, and hit testing applies the same ancestor clips. A real stacking
+group is atomic: its descendant z-indices cannot escape and interleave with sibling groups.
+
+The current stacking-context trigger subset consists of positioned boxes with an applicable
+non-`auto` `z-index`, fixed and sticky positioned boxes (including `z-index: auto`), and flex/grid
+items with non-`auto` `z-index`. Relative and absolute boxes with `z-index: auto` participate in the
+positioned-auto phase without becoming atomic. Opacity, transforms, filters, isolation, containment,
+and other modern stacking-context triggers are not yet modeled as CSS stacking groups. Inline
+fragment background/text sub-phases remain owned by `RichText`; implementing their complete Appendix
+E interleaving requires fragment-level paint records rather than widget-level sorting.
 
 ## Pixel Math
 
