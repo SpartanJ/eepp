@@ -1483,9 +1483,4 @@ UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) co
 	return nullptr;
 }
 
-void UIAbstractTableView::ColumnData::setWidth( Float w, bool manSet ) {
-	width = w;
-	manuallySet = manSet;
-}
-
 }}} // namespace EE::UI::Abstract
