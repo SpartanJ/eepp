@@ -65,6 +65,13 @@ class TestFontPickerDialog : public UIFontPickerDialog {
 	Uint32 getPreviewTextSize() const { return mPreviewText->getFontSize(); }
 	Uint32 getPreviewInputSize() const { return mPreviewInput->getFontSize(); }
 	String getDetails() const { return mDetailsText->getText(); }
+	void setFontsForTest( std::vector<FontDesc> fonts ) { setFonts( std::move( fonts ) ); }
+	void markSelectedFontExternalForTest() {
+		FontDesc selectedFont = mSelection.font;
+		mExternalFontKeys.insert( selectedFont.getFileKey() );
+		updateFamilies();
+		setSelectedFont( selectedFont );
+	}
 
   protected:
 	TestFontPickerDialog( Uint32 flags ) : UIFontPickerDialog( flags ) {}
@@ -97,7 +104,7 @@ UTEST( UIFontPickerDialog, PreselectsExternalFontPath ) {
 	EXPECT_FALSE( selectionDialog->getSelection().font.family.empty() );
 }
 
-UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision ) {
+UTEST( UIFontPickerDialog, ExternalFontBecomesDistinctStyleOnFamilyNameCollision ) {
 	const std::string managedFontPath =
 		Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( managedFontPath ) );
@@ -126,23 +133,44 @@ UTEST( UIFontPickerDialog, ExternalFontKeepsSeparateFamilyEntryOnNameCollision )
 
 	EXPECT_STDSTREQ( externalPath, dialog->getSelection().font.path );
 	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
-	EXPECT_STDSTREQ( family + " [External]",
-					 dialog->getFamilyList()->getSelection().first().data().toString() );
+	EXPECT_STDSTREQ( family, dialog->getFamilyList()->getSelection().first().data().toString() );
+	EXPECT_TRUE( dialog->getStyleList()->getSelection().first().data().toString().find(
+					 "[External:" ) != std::string::npos );
 
-	bool foundSystemFamily = false;
-	bool foundExternalFamily = false;
+	size_t matchingFamilies = 0;
 	Model* familyModel = dialog->getFamilyList()->getModel();
 	ASSERT_TRUE( familyModel != nullptr );
 	for ( size_t row = 0; row < familyModel->rowCount(); row++ ) {
 		const std::string label = familyModel->index( row ).data().toString();
-		foundSystemFamily |= label == family;
-		foundExternalFamily |= label == family + " [External]";
+		matchingFamilies += label == family;
 	}
-	EXPECT_TRUE( foundSystemFamily );
-	EXPECT_TRUE( foundExternalFamily );
+	EXPECT_EQ( 1u, matchingFamilies );
+
+	bool foundSystemStyle = false;
+	bool foundExternalStyle = false;
+	Model* styleModel = dialog->getStyleList()->getModel();
+	ASSERT_TRUE( styleModel != nullptr );
+	for ( size_t row = 0; row < styleModel->rowCount(); row++ ) {
+		const std::string label = styleModel->index( row ).data().toString();
+		foundSystemStyle |= label.find( "[External:" ) == std::string::npos;
+		foundExternalStyle |= label.find( "[External:" ) != std::string::npos;
+	}
+	EXPECT_TRUE( foundSystemStyle );
+	EXPECT_TRUE( foundExternalStyle );
 	EXPECT_EQ( managedFont.get(), resourceScope.findFont( externalName ).get() );
 
+	TestFontPickerDialog* hiddenStyleDialog =
+		TestFontPickerDialog::New( UIFontPickerDialog::ShowSize );
+	hiddenStyleDialog->setSelectedFont( externalPath );
+	pumpUntil( app.getUI(),
+			   [hiddenStyleDialog] { return hiddenStyleDialog->getButtonOK()->isEnabled(); } );
+	EXPECT_STDSTREQ( externalPath, hiddenStyleDialog->getSelection().font.path );
+	EXPECT_FALSE( hiddenStyleDialog->getStyleList()->getParent()->isVisible() );
+	EXPECT_TRUE( hiddenStyleDialog->getFamilyList()->getSelection().first().data().toString().find(
+					 "[External:" ) != std::string::npos );
+
 	dialog->releasePreviewFont();
+	hiddenStyleDialog->releasePreviewFont();
 	FileSystem::fileRemove( externalPath );
 }
 
@@ -324,7 +352,44 @@ UTEST( UIFontPickerDialog, AsyncLoadPreservesExternalFontPreselection ) {
 	EXPECT_FALSE( dialog->getFamilyList()->getSelection().isEmpty() );
 	EXPECT_FALSE( dialog->getStyleList()->getSelection().isEmpty() );
 	EXPECT_TRUE( dialog->getFamilyList()->getSelection().first().data().toString().find(
-					 "[External]" ) != std::string::npos );
+					 "[External" ) != std::string::npos );
+}
+
+UTEST( UIFontPickerDialog, AsyncLoadPromotesEnumeratedExternalFontToSystemFamily ) {
+	std::vector<FontDesc> fonts = SystemFontResolver::instance()->enumerate();
+	auto regular = std::find_if( fonts.begin(), fonts.end(), []( const FontDesc& font ) {
+		return font.weight == FontWeight::Normal && !font.italic && !font.family.empty() &&
+			   !font.path.empty();
+	} );
+	if ( regular == fonts.end() )
+		UTEST_SKIP( "no regular system font available" );
+	const FontDesc regularFont = *regular;
+
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	TestFontPickerDialog* dialog = TestFontPickerDialog::New();
+	dialog->setFontsForTest( fonts );
+	dialog->setSelectedFont( regularFont );
+	dialog->markSelectedFontExternalForTest();
+	EXPECT_STDSTREQ( regularFont.family + " [External]",
+					 dialog->getFamilyList()->getSelection().first().data().toString() );
+	EXPECT_TRUE( dialog->getStyleList()->getSelection().first().data().toString().find(
+					 "[External:" ) != std::string::npos );
+
+	dialog->setFontsForTest( std::move( fonts ) );
+	EXPECT_STDSTREQ( regularFont.path, dialog->getSelection().font.path );
+	EXPECT_EQ( regularFont.faceIndex, dialog->getSelection().font.faceIndex );
+	EXPECT_EQ( FontWeight::Normal, dialog->getSelection().font.weight );
+	EXPECT_FALSE( dialog->getSelection().font.italic );
+	EXPECT_STDSTREQ( regularFont.family,
+					 dialog->getFamilyList()->getSelection().first().data().toString() );
+	EXPECT_TRUE( dialog->getStyleList()->getSelection().first().data().toString().find(
+					 "[External:" ) == std::string::npos );
+
+	dialog->releasePreviewFont();
 }
 
 UTEST( UIFontPickerDialog, DefaultColorComesFromTheme ) {
@@ -413,6 +478,43 @@ UTEST( UIFontPickerDialog, StyleLabelsIncludeFontStretch ) {
 	}
 
 	EXPECT_TRUE( foundStyle );
+}
+
+UTEST( UIFontPickerDialog, PreservesVisibleStyleAndPrefersRegularWhenHidden ) {
+	std::vector<FontDesc> fonts = SystemFontResolver::instance()->enumerate();
+	auto italic = std::find_if( fonts.begin(), fonts.end(), [&]( const FontDesc& candidate ) {
+		if ( !candidate.italic )
+			return false;
+		return std::find_if( fonts.begin(), fonts.end(), [&]( const FontDesc& regular ) {
+				   return regular.family == candidate.family &&
+						  regular.weight == FontWeight::Normal && !regular.italic;
+			   } ) != fonts.end();
+	} );
+	if ( italic == fonts.end() )
+		UTEST_SKIP( "no family with regular and italic styles available" );
+	const FontDesc italicFont = *italic;
+
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIFontPickerDialog Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	TestFontPickerDialog* visible = TestFontPickerDialog::New( UIFontPickerDialog::ShowStyle );
+	visible->setFontsForTest( fonts );
+	visible->setSelectedFont( italicFont );
+	EXPECT_TRUE( visible->getStyleList()->getParent()->isVisible() );
+	EXPECT_EQ( italicFont.weight, visible->getSelection().font.weight );
+	EXPECT_TRUE( visible->getSelection().font.italic );
+
+	TestFontPickerDialog* hidden = TestFontPickerDialog::New( UIFontPickerDialog::ShowSize );
+	hidden->setFontsForTest( std::move( fonts ) );
+	hidden->setSelectedFont( italicFont );
+	EXPECT_FALSE( hidden->getStyleList()->getParent()->isVisible() );
+	EXPECT_EQ( FontWeight::Normal, hidden->getSelection().font.weight );
+	EXPECT_FALSE( hidden->getSelection().font.italic );
+
+	visible->releasePreviewFont();
+	hidden->releasePreviewFont();
 }
 
 UTEST( UIFontPickerDialog, ApplyButtonEmitsOnApply ) {

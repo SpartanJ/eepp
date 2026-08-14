@@ -220,6 +220,9 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	void browseFont();
 
 	bool addExternalFont( const std::string& path, Uint32 faceIndex = 0 );
+	bool isExternalFont( const FontDesc& font ) const;
+	std::string externalTag( const FontDesc& font, bool includeFileName );
+	bool familyEntryMatchesFont( const FontFamilyEntry& family, const FontDesc& font ) const;
 
 	void clearBrowseDialog();
 

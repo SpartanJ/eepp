@@ -307,6 +307,8 @@ ecode will try to open an external terminal.</string>
 	<string name="folder_project_settings">Folder/Project Settings</string>
 	<string name="folder_settings">Folder/Project Settings</string>
 	<string name="folds_refresh_freq">Folds Refresh Frequency</string>
+	<string name="font_picker_external">External</string>
+	<string name="font_picker_external_file">External: %s</string>
 	<string name="font_size_grow">Font Size Grow</string>
 	<string name="font_size_reset">Font Size Reset</string>
 	<string name="font_size_shrink">Font Size Shrink</string>

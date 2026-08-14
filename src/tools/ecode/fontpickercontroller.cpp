@@ -105,7 +105,8 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 		defaultResourceScope().publishLocalFont( std::move( fontName ), font );
 	};
 
-	const Uint32 flags = ( pickFontSize ? UIFontPickerDialog::ShowSize : 0 ) |
+	const Uint32 flags = UIFontPickerDialog::ShowStyle |
+						 ( pickFontSize ? UIFontPickerDialog::ShowSize : 0 ) |
 						 ( loadingMonoFont ? UIFontPickerDialog::MonospaceOnly : 0 );
 	UIFontPickerDialog* dialog = UIFontPickerDialog::New( flags );
 	dialog->setTitle( mApp->i18n( "select_font", "Select Font" ) );

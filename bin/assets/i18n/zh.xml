@@ -231,6 +231,8 @@
 	<string name="find_text">查找：</string>
 	<string name="folder_project_settings">文件夹/项目设置</string>
 	<string name="folder_settings">文件夹设置</string>
+	<string name="font_picker_external">外部</string>
+	<string name="font_picker_external_file">外部：%s</string>
 	<string name="font_size_grow">字号+</string>
 	<string name="font_size_reset">字号重置</string>
 	<string name="font_size_shrink">字号-</string>

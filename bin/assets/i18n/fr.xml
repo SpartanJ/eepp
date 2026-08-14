@@ -306,6 +306,8 @@ ecode tentera d'ouvrir un terminal externe.</string>
 	<string name="folder_project_settings">Paramètres du dossier/projet</string>
 	<string name="folder_settings">Paramètres du dossier/projet</string>
 	<string name="folds_refresh_freq">Fréquence de rafraîchissement des replis</string>
+	<string name="font_picker_external">Externe</string>
+	<string name="font_picker_external_file">Externe : %s</string>
 	<string name="font_size_grow">Augmenter la taille de la police</string>
 	<string name="font_size_reset">Réinitialiser la taille de la police</string>
 	<string name="font_size_shrink">Réduire la taille de la police</string>

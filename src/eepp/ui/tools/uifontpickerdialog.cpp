@@ -472,6 +472,8 @@ void UIFontPickerDialog::loadFonts() {
 
 void UIFontPickerDialog::setFonts( std::vector<FontDesc> fonts ) {
 	FontDesc selectedFont = mSelection.font;
+	for ( const auto& font : fonts )
+		mExternalFontKeys.erase( font.getFileKey() );
 	mergeLoadedFonts( fonts );
 	for ( const auto& font : mFonts ) {
 		auto found = std::find_if( fonts.begin(), fonts.end(),
@@ -575,21 +577,32 @@ void UIFontPickerDialog::updateFamilies() {
 	FontDesc previousFont = mSelection.font;
 
 	const std::string query = String::toLower( mSearchInput->getText().toUtf8() );
+	UnorderedSet<std::string> systemFamilies;
+	for ( const auto& font : mFonts ) {
+		if ( !isExternalFont( font ) )
+			systemFamilies.insert( font.family );
+	}
 	UnorderedSet<std::string> familyKeys;
 	mFamilies.clear();
 	for ( const auto& font : mFonts ) {
-		const bool external =
-			mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
+		const bool external = isExternalFont( font );
 		if ( wantsMonospaceOnly() && !font.monospace && !external )
 			continue;
-		const std::string label = font.family + ( external ? " [External]" : "" );
+		const bool separateExternal = external && ( mFlags & ShowStyle ) == 0;
+		const bool externalOnly = systemFamilies.find( font.family ) == systemFamilies.end();
+		std::string label( font.family );
+		if ( separateExternal ) {
+			label += " " + externalTag( font, true );
+		} else if ( externalOnly ) {
+			label += " " + externalTag( font, false );
+		}
 		if ( !query.empty() && String::toLower( label ).find( query ) == std::string::npos )
 			continue;
 		const std::string familyKey =
-			font.family + ( external ? "\n" + font.getFileKey() : std::string{} );
+			font.family + ( separateExternal ? "\n" + font.getFileKey() : std::string{} );
 		if ( familyKeys.insert( familyKey ).second )
 			mFamilies.push_back(
-				{ label, font.family, external ? font.getFileKey() : std::string{} } );
+				{ label, font.family, separateExternal ? font.getFileKey() : std::string{} } );
 	}
 	mFamilyModel = std::make_shared<FamilyListModel>( &mFamilies );
 
@@ -609,22 +622,23 @@ void UIFontPickerDialog::updateFamilies() {
 
 void UIFontPickerDialog::updateStyles() {
 	mStyles.clear();
+	bool selectionMatchesFamily = false;
 	if ( !mFamilyList->getSelection().isEmpty() ) {
 		const Int64 row = mFamilyList->getSelection().first().row();
 		if ( row >= 0 && row < static_cast<Int64>( mFamilies.size() ) ) {
 			const FontFamilyEntry& family = mFamilies[row];
+			selectionMatchesFamily = familyEntryMatchesFont( family, mSelection.font );
 			for ( const auto& font : mFonts ) {
-				const bool external =
-					mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
-				const bool matchesSource = family.externalFontKey.empty()
-											   ? !external
-											   : family.externalFontKey == font.getFileKey();
-				if ( font.family == family.family && matchesSource &&
+				const bool external = isExternalFont( font );
+				if ( familyEntryMatchesFont( family, font ) &&
 					 ( !wantsMonospaceOnly() || font.monospace || external ) ) {
 					std::string label( styleLabel( font ) );
 					auto tagIt = mFontTags.find( font.getFileKey() );
-					if ( tagIt != mFontTags.end() )
+					if ( external ) {
+						label += " " + externalTag( font, true );
+					} else if ( tagIt != mFontTags.end() ) {
 						label += " [" + tagIt->second + "]";
+					}
 					mStyles.push_back( { label, font } );
 				}
 			}
@@ -637,8 +651,7 @@ void UIFontPickerDialog::updateStyles() {
 	mUpdating = false;
 
 	if ( !mStyles.empty() ) {
-		const std::string selectedFamily( mStyles.front().desc.family );
-		if ( selectedFamily == mSelection.font.family )
+		if ( selectionMatchesFamily && ( mFlags & ShowStyle ) != 0 )
 			selectStyle( mSelection.font );
 		else
 			selectRegularStyle();
@@ -747,12 +760,12 @@ void UIFontPickerDialog::selectInitialRows() {
 void UIFontPickerDialog::selectFamily( const FontDesc& font ) {
 	if ( font.family.empty() || !mFamilyModel )
 		return;
-	const bool external = mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
+	const bool separateExternal = isExternalFont( font ) && ( mFlags & ShowStyle ) == 0;
 	for ( size_t i = 0; i < mFamilies.size(); i++ ) {
 		const FontFamilyEntry& family = mFamilies[i];
 		if ( family.family == font.family &&
-			 ( external ? family.externalFontKey == font.getFileKey()
-						: family.externalFontKey.empty() ) ) {
+			 ( separateExternal ? family.externalFontKey == font.getFileKey()
+								: family.externalFontKey.empty() ) ) {
 			mFamilyList->setSelection( mFamilyModel->index( i ) );
 			return;
 		}
@@ -899,6 +912,30 @@ bool UIFontPickerDialog::addExternalFont( const std::string& path, Uint32 faceIn
 	return true;
 }
 
+bool UIFontPickerDialog::isExternalFont( const FontDesc& font ) const {
+	return mExternalFontKeys.find( font.getFileKey() ) != mExternalFontKeys.end();
+}
+
+std::string UIFontPickerDialog::externalTag( const FontDesc& font, bool includeFileName ) {
+	const std::string fileName( FileSystem::fileNameFromPath( font.path ) );
+	if ( includeFileName && !fileName.empty() ) {
+		return "[" +
+			   String::format( i18n( "font_picker_external_file", "External: %s" ).toUtf8(),
+							   fileName ) +
+			   "]";
+	}
+	return "[" + i18n( "font_picker_external", "External" ).toUtf8() + "]";
+}
+
+bool UIFontPickerDialog::familyEntryMatchesFont( const FontFamilyEntry& family,
+												 const FontDesc& font ) const {
+	if ( family.family != font.family )
+		return false;
+	if ( family.externalFontKey.empty() )
+		return ( mFlags & ShowStyle ) != 0 || !isExternalFont( font );
+	return family.externalFontKey == font.getFileKey();
+}
+
 void UIFontPickerDialog::clearBrowseDialog() {
 	if ( !mBrowseDialog )
 		return;
@@ -930,7 +967,6 @@ void UIFontPickerDialog::setSelectedFont( const FontDesc& desc ) {
 		mMonospaceOnly->setChecked( true );
 	selectFamily( selection );
 	updateStyles();
-	selectStyle( selection );
 	updateSelectionFromLists( false );
 	if ( previousSelection != mSelection )
 		emitSelectionChanged();

@@ -323,6 +323,8 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="folder_project_settings">Ordner/Projekteinstellungen</string>
 	<string name="folder_settings">Ordner/Projekteinstellungen</string>
 	<string name="folds_refresh_freq">Blockfaltungsaktualisierungsfrequenz</string>
+	<string name="font_picker_external">Extern</string>
+	<string name="font_picker_external_file">Extern: %s</string>
 	<string name="font_size_grow">Schriftgröße erhöhen</string>
 	<string name="font_size_reset">Schriftgröße zurücksetzen</string>
 	<string name="font_size_shrink">Schriftgröße verringern</string>
