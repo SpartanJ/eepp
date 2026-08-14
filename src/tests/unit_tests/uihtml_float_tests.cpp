@@ -127,6 +127,271 @@ UTEST( UIHTMLFloat, property_GetPropertyString ) {
 	eeDelete( w );
 }
 
+UTEST( UIHTMLFloat, zIndexPreservesAutoAndApplicability ) {
+	auto* child = UIHTMLWidget::New();
+
+	EXPECT_TRUE( child->hasAutoZIndex() );
+	EXPECT_TRUE( child->getPropertyString( "z-index" ) == "auto" );
+	child->applyProperty( StyleSheetProperty( "z-index", "0" ) );
+	EXPECT_FALSE( child->hasAutoZIndex() );
+	EXPECT_EQ( child->getZIndex(), 0 );
+	EXPECT_FALSE( child->hasApplicableZIndex() );
+
+	child->setCSSPosition( CSSPosition::Relative );
+	EXPECT_TRUE( child->hasApplicableZIndex() );
+	EXPECT_TRUE( child->createsSupportedStackingGroup() );
+	child->applyProperty( StyleSheetProperty( "z-index", "-3" ) );
+	EXPECT_EQ( child->getZIndex(), -3 );
+	EXPECT_TRUE( child->getPropertyString( "z-index" ) == "-3" );
+	child->applyProperty( StyleSheetProperty( "z-index", "auto" ) );
+	EXPECT_TRUE( child->hasAutoZIndex() );
+	EXPECT_FALSE( child->createsSupportedStackingGroup() );
+
+	eeDelete( child );
+}
+
+UTEST( UIHTMLFloat, floatPaintsAndHitsAboveLaterNormalBlock ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	parent->setPixelsSize( 300, 200 );
+	parent->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto* side = UIHTMLWidget::New();
+	side->setParent( parent );
+	side->setPixelsSize( 100, 100 );
+	side->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	side->setCSSFloat( CSSFloat::Right );
+
+	auto* sideLink = UIHTMLWidget::New();
+	sideLink->setParent( side );
+	sideLink->setPixelsSize( 100, 100 );
+	sideLink->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto* content = UIHTMLWidget::New();
+	content->setParent( parent );
+	content->setPixelsSize( 300, 200 );
+	content->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	SmallVector<Node*, 127> paintOrder;
+	parent->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 2u );
+	EXPECT_EQ( paintOrder[0], content );
+	EXPECT_EQ( paintOrder[1], side );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+
+	paintOrder.clear();
+	parent->buildDrawOrderVector( paintOrder );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+	EXPECT_EQ( parent->overFind( { 10, 10 } ), sideLink );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+
+	side->setCSSFloat( CSSFloat::None );
+	paintOrder.clear();
+	parent->buildDrawOrderVector( paintOrder );
+	EXPECT_EQ( paintOrder[0], side );
+	EXPECT_EQ( paintOrder[1], content );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 2u );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, positionedDescendantParticipatesInRootStackingScope ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeBox = []( Node* parent ) {
+		auto* box = UIHTMLWidget::New();
+		box->setParent( parent );
+		box->setPixelsSize( 200, 150 );
+		box->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		return box;
+	};
+
+	auto* root = makeBox( sceneNode->getRoot() );
+	auto* section = makeBox( root );
+	auto* popup = makeBox( section );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* overlay = makeBox( root );
+	overlay->setCSSPosition( CSSPosition::Relative );
+	overlay->setZIndex( 5 );
+
+	auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], overlay );
+	EXPECT_EQ( paintOrder[2], popup );
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+	section->setPixelsSize( 50, 50 );
+	section->setClipType( ClipType::ContentBox );
+	EXPECT_EQ( root->overFind( { 100, 100 } ), overlay );
+	section->setPixelsSize( 100, 100 );
+	section->setPadding( Rectf( 20, 20, 20, 20 ) );
+	section->setClipType( ClipType::PaddingBox );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), overlay );
+	EXPECT_EQ( root->overFind( { 30, 30 } ), popup );
+
+	popup->setZIndexAuto();
+	paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], popup );
+	EXPECT_EQ( paintOrder[2], overlay );
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), overlay );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, directStackingGroupIsAtomic ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeGroup = []( Node* parent, int zIndex ) {
+		auto* group = UIHTMLWidget::New();
+		group->setParent( parent );
+		group->setPixelsSize( 200, 150 );
+		group->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		group->setCSSPosition( CSSPosition::Relative );
+		group->setZIndex( zIndex );
+		return group;
+	};
+
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* lowerGroup = makeGroup( root, 1 );
+	auto* highInsideLower = makeGroup( lowerGroup, 1000 );
+	auto* upperGroup = makeGroup( root, 2 );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 2u );
+	EXPECT_EQ( paintOrder[0], lowerGroup );
+	EXPECT_EQ( paintOrder[1], upperGroup );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), upperGroup );
+	EXPECT_FALSE( highInsideLower->isHTMLPaintPromoted() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, positionedDescendantPromotesThroughFloat ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeBox = []( Node* parent ) {
+		auto* box = UIHTMLWidget::New();
+		box->setParent( parent );
+		box->setPixelsSize( 200, 150 );
+		box->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		return box;
+	};
+
+	auto* root = makeBox( sceneNode->getRoot() );
+	auto* floated = makeBox( root );
+	floated->setCSSFloat( CSSFloat::Left );
+	auto* popup = makeBox( floated );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* overlay = makeBox( root );
+	overlay->setCSSPosition( CSSPosition::Relative );
+	overlay->setZIndex( 5 );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], floated );
+	EXPECT_EQ( paintOrder[1], overlay );
+	EXPECT_EQ( paintOrder[2], popup );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, removingLastPromotionClearsSkipMetadata ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( root );
+	section->setPixelsSize( 200, 150 );
+	auto* popup = UIHTMLWidget::New();
+	popup->setParent( section );
+	popup->setPixelsSize( 200, 150 );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+
+	root->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	popup->setZIndexAuto();
+	popup->setCSSPosition( CSSPosition::Static );
+	root->debugGetHTMLPaintOrder();
+	EXPECT_FALSE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, nestedPositionedAutoParticipatesInAncestorPositionedPhase ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( root );
+	section->setPixelsSize( 200, 150 );
+	auto* positionedAuto = UIHTMLWidget::New();
+	positionedAuto->setParent( section );
+	positionedAuto->setPixelsSize( 200, 150 );
+	positionedAuto->setCSSPosition( CSSPosition::Relative );
+	auto* floated = UIHTMLWidget::New();
+	floated->setParent( root );
+	floated->setPixelsSize( 200, 150 );
+	floated->setCSSFloat( CSSFloat::Left );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], floated );
+	EXPECT_EQ( paintOrder[2], positionedAuto );
+	EXPECT_TRUE( positionedAuto->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), positionedAuto );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, reparentingPromotedSubtreeClearsOldScopeMetadata ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* oldRoot = UIHTMLWidget::New();
+	oldRoot->setParent( sceneNode->getRoot() );
+	oldRoot->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( oldRoot );
+	auto* popup = UIHTMLWidget::New();
+	popup->setParent( section );
+	popup->setPixelsSize( 100, 100 );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* newRoot = UIHTMLWidget::New();
+	newRoot->setParent( sceneNode->getRoot() );
+	newRoot->setPixelsSize( 200, 150 );
+
+	oldRoot->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	popup->setParent( newRoot );
+	oldRoot->debugGetHTMLPaintOrder();
+	const auto newOrder = newRoot->debugGetHTMLPaintOrder();
+	ASSERT_EQ( newOrder.size(), 1u );
+	EXPECT_EQ( newOrder[0], popup );
+	EXPECT_FALSE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( newRoot->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, richtext_NoFloatLayout_NoChange ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

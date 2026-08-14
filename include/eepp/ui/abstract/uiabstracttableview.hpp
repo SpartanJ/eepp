@@ -2,11 +2,11 @@
 #define EE_UI_UIABSTRACTTABLEVIEW_HPP
 
 #include <eepp/math/rect.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/ui/uitablerow.hpp>
-#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <unordered_map>
 
 using namespace EE::Math;
@@ -212,7 +212,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		bool manuallySet{ false };
 		UIPushButton* widget{ nullptr };
 
-		void setWidth( Float w, bool manuallySet = false );
+		void setWidth( Float w, bool manuallySet = false ) {
+			width = w;
+			this->manuallySet = manuallySet;
+		}
 	};
 
 	Float mRowHeight{ 0 };

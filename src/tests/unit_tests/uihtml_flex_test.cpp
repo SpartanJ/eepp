@@ -2258,7 +2258,7 @@ UTEST( FlexContainer, orderPaintSortNegatives ) {
 	Engine::destroySingleton();
 }
 
-UTEST( FlexContainer, directionReversePaintColumnReverse ) {
+UTEST( FlexContainer, directionReverseLayoutKeepsColumnPaintOrder ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "Flex Test", WindowStyle::Default,
 													  WindowBackend::Default, 32, {}, 1, false,
 													  true ),
@@ -2294,13 +2294,20 @@ UTEST( FlexContainer, directionReversePaintColumnReverse ) {
 	EXPECT_GT( child1->getPixelsPosition().y, child2->getPixelsPosition().y );
 	EXPECT_GT( child2->getPixelsPosition().y, child3->getPixelsPosition().y );
 
-	// All orders equal, so no order-based sort needed; direction-only reversal in drawChildren
+	SmallVector<Node*, 127> paintOrder;
+	flex->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], child1 );
+	EXPECT_EQ( paintOrder[1], child2 );
+	EXPECT_EQ( paintOrder[2], child3 );
+
+	// CSS Flexbox 4.3 uses order-modified document order, independent of flex-direction.
 	EXPECT_FALSE( flex->getNeedsOrderSort() );
 
 	Engine::destroySingleton();
 }
 
-UTEST( FlexContainer, directionReversePaintRowReverse ) {
+UTEST( FlexContainer, directionReverseLayoutKeepsRowPaintOrder ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "Flex Test", WindowStyle::Default,
 													  WindowBackend::Default, 32, {}, 1, false,
 													  true ),
@@ -2336,13 +2343,20 @@ UTEST( FlexContainer, directionReversePaintRowReverse ) {
 	EXPECT_GT( child1->getPixelsPosition().x, child2->getPixelsPosition().x );
 	EXPECT_GT( child2->getPixelsPosition().x, child3->getPixelsPosition().x );
 
-	// All orders equal so no order-based sort needed
+	SmallVector<Node*, 127> paintOrder;
+	flex->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], child1 );
+	EXPECT_EQ( paintOrder[1], child2 );
+	EXPECT_EQ( paintOrder[2], child3 );
+
+	// All orders equal, so the source order is also the order-modified document order.
 	EXPECT_FALSE( flex->getNeedsOrderSort() );
 
 	Engine::destroySingleton();
 }
 
-UTEST( FlexContainer, directionReversePaintWithOrderSort ) {
+UTEST( FlexContainer, directionReverseLayoutUsesOrderModifiedPaintOrder ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "Flex Test", WindowStyle::Default,
 													  WindowBackend::Default, 32, {}, 1, false,
 													  true ),
@@ -2388,6 +2402,38 @@ UTEST( FlexContainer, directionReversePaintWithOrderSort ) {
 	EXPECT_LT( child3->getPixelsPosition().y, child2->getPixelsPosition().y );
 
 	EXPECT_TRUE( flex->getNeedsOrderSort() );
+	SmallVector<Node*, 127> paintOrder;
+	flex->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], child2 );
+	EXPECT_EQ( paintOrder[1], child3 );
+	EXPECT_EQ( paintOrder[2], child1 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( FlexContainer, floatDoesNotChangeFlexItemPaintPhase ) {
+	Engine::instance()->createWindow( WindowSettings( 640, 480, "Flex paint float",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	init_flex_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* flex = UIHTMLWidget::New();
+	flex->setParent( sceneNode->getRoot() );
+	flex->setDisplay( CSSDisplay::Flex );
+	auto* floated = UIHTMLWidget::New();
+	floated->setParent( flex );
+	floated->setCSSFloat( CSSFloat::Left );
+	auto* normal = UIHTMLWidget::New();
+	normal->setParent( flex );
+	sceneNode->updateDirtyLayouts();
+
+	SmallVector<Node*, 127> paintOrder;
+	flex->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 2u );
+	EXPECT_EQ( paintOrder[0], floated );
+	EXPECT_EQ( paintOrder[1], normal );
 
 	Engine::destroySingleton();
 }
