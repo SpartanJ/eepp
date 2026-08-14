@@ -6,7 +6,7 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/ui/uitablerow.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <unordered_map>
 
 using namespace EE::Math;
