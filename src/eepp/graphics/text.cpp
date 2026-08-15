@@ -24,6 +24,43 @@ bool Text::TextShaperEnabled = false;
 bool Text::TextShaperOptimizations = true;
 Uint32 Text::GlobalInvalidationId = 0;
 
+Uint32 Text::fontFeaturesFromString( const std::string& value ) {
+	Uint32 features = 0;
+	String::splitCb(
+		[&features]( std::string_view feature ) {
+			feature = String::trim( feature, " \t'\"" );
+			if ( String::iequals( feature, "liga" ) )
+				features |= TextHints::StandardLigatures;
+			else if ( String::iequals( feature, "calt" ) )
+				features |= TextHints::ContextualAlternates;
+			else if ( String::iequals( feature, "clig" ) )
+				features |= TextHints::ContextualLigatures;
+			else if ( String::iequals( feature, "dlig" ) )
+				features |= TextHints::DiscretionaryLigatures;
+			return true;
+		},
+		value, ",", "", "" );
+	return features;
+}
+
+std::string Text::fontFeaturesToString( Uint32 features ) {
+	std::string value;
+	const auto append = [&value]( const char* feature ) {
+		if ( !value.empty() )
+			value += ',';
+		value += feature;
+	};
+	if ( features & TextHints::StandardLigatures )
+		append( "liga" );
+	if ( features & TextHints::ContextualAlternates )
+		append( "calt" );
+	if ( features & TextHints::ContextualLigatures )
+		append( "clig" );
+	if ( features & TextHints::DiscretionaryLigatures )
+		append( "dlig" );
+	return value;
+}
+
 Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
 	Float advance = hspace * tabWidth;
 	if ( tabOffset ) {
@@ -661,7 +698,7 @@ void Text::onNewString() {
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
 	mVisualLinesNeedUpdate = true;
-	mTextHints = mString.getTextHints();
+	mTextHints = mString.getTextHints() | mTextDrawHints;
 	checkColorEmojis();
 }
 
@@ -1197,6 +1234,61 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				.trunc();
 		}
 
+		// HarfBuzz can map several source characters to a single glyph cluster. Find the cluster
+		// surrounding the requested grapheme boundary in one pass, regardless of visual order.
+		const ShapedGlyph* caretCluster = nullptr;
+		std::size_t clusterStart = 0;
+		std::size_t clusterEnd = string.size();
+		Float clusterLeft = 0;
+		Float clusterRight = 0;
+		bool hasExactCluster = false;
+		for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
+			for ( std::size_t i = 0; i < sp.shapedGlyphs.size(); ) {
+				const std::size_t currentStart = sp.shapedGlyphs[i].stringIndex;
+				Float currentLeft = sp.shapedGlyphs[i].position.x;
+				Float currentRight = currentLeft + sp.shapedGlyphs[i].advance.x;
+				std::size_t j = i + 1;
+				while ( j < sp.shapedGlyphs.size() &&
+						sp.shapedGlyphs[j].stringIndex == currentStart ) {
+					currentLeft = std::min( currentLeft, sp.shapedGlyphs[j].position.x );
+					currentRight = std::max( currentRight, sp.shapedGlyphs[j].position.x +
+															   sp.shapedGlyphs[j].advance.x );
+					++j;
+				}
+				if ( currentStart < index && ( !caretCluster || currentStart > clusterStart ) ) {
+					caretCluster = &sp.shapedGlyphs[i];
+					clusterStart = currentStart;
+					clusterLeft = currentLeft;
+					clusterRight = currentRight;
+				}
+				if ( currentStart == index )
+					hasExactCluster = true;
+				if ( currentStart > index )
+					clusterEnd = std::min( clusterEnd, currentStart );
+				i = j;
+			}
+		}
+		if ( caretCluster && !hasExactCluster && index < clusterEnd &&
+			 string.isGraphemeBoundary( index ) ) {
+			std::size_t boundaryCount = 0;
+			std::size_t boundaryIndex = 0;
+			for ( std::size_t boundary = clusterStart + 1; boundary <= clusterEnd; ++boundary ) {
+				if ( string.isGraphemeBoundary( boundary ) ) {
+					++boundaryCount;
+					if ( boundary <= index )
+						boundaryIndex = boundaryCount;
+				}
+			}
+			if ( boundaryCount > 0 ) {
+				const Float ratio =
+					static_cast<Float>( boundaryIndex ) / static_cast<Float>( boundaryCount );
+				const Float x = caretCluster->direction == TextDirection::RightToLeft
+									? clusterRight - ( clusterRight - clusterLeft ) * ratio
+									: clusterLeft + ( clusterRight - clusterLeft ) * ratio;
+				return Vector2f{ x, caretCluster->position.y + initialOffset.y }.trunc();
+			}
+		}
+
 		Uint32 maxStringIndex = 0;
 		Uint32 closestDist = std::numeric_limits<Uint32>::max();
 
@@ -1389,6 +1481,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 			for ( auto i = 0; i < sgs; i++ ) {
 				const ShapedGlyph* sg = &sp.shapedGlyphs[i];
+				const ShapedGlyph* firstClusterGlyph = sg;
 
 				charLeft = sg->position.x;
 				charTop = sg->position.y;
@@ -1399,20 +1492,21 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				while ( i + 1 < sgs && sp.shapedGlyphs[i + 1].stringIndex == sg->stringIndex ) {
 					i++;
 					sg = &sp.shapedGlyphs[i];
+					charLeft = std::min( charLeft, sg->position.x );
 					charBottom = sg->position.y + vspace;
-					charRight = sg->position.x + sg->advance.x;
+					charRight = std::max( charRight, sg->position.x + sg->advance.x );
 				};
 
 				if ( fpos.y >= charTop && fpos.y <= charBottom ) {
 					auto findNextInsertionIndex = [&]() -> Int32 {
-						if ( layout->isRTL() ) {
+						if ( firstClusterGlyph->direction == TextDirection::RightToLeft ) {
 							if ( i > 0 ) {
 								for ( auto j = i - 1; j >= 0; j-- ) {
 									if ( sp.shapedGlyphs[j].stringIndex > sg->stringIndex )
 										return sp.shapedGlyphs[j].stringIndex;
 								}
 							}
-							return 0;
+							return tSize;
 						} else {
 							for ( auto j = i + 1; j < sgs; ++j ) {
 								if ( sp.shapedGlyphs[j].stringIndex > sg->stringIndex )
@@ -1423,12 +1517,31 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					};
 
 					if ( fpos.x >= charLeft && fpos.x < charRight ) {
-						Float midPoint = charLeft + ( charRight - charLeft ) * 0.5f;
-						if ( fpos.x < midPoint ) {
-							return sg->stringIndex;
-						} else {
-							return findNextInsertionIndex();
+						const Int32 nextInsertionIndex = findNextInsertionIndex();
+						const std::size_t clusterStart = firstClusterGlyph->stringIndex;
+						const std::size_t clusterEnd = std::max<std::size_t>(
+							static_cast<std::size_t>( nextInsertionIndex ), clusterStart + 1 );
+						std::size_t boundaryCount = 1;
+						for ( std::size_t boundary = clusterStart + 1; boundary < clusterEnd;
+							  ++boundary ) {
+							if ( string.isGraphemeBoundary( boundary ) )
+								++boundaryCount;
 						}
+						const Float width = charRight - charLeft;
+						Float ratio = width > 0 ? ( fpos.x - charLeft ) / width : 0.f;
+						if ( firstClusterGlyph->direction == TextDirection::RightToLeft )
+							ratio = 1.f - ratio;
+						const std::size_t caret = static_cast<std::size_t>(
+							std::round( ratio * static_cast<Float>( boundaryCount ) ) );
+						if ( caret == 0 )
+							return clusterStart;
+						std::size_t boundaryIndex = 0;
+						for ( std::size_t boundary = clusterStart + 1; boundary < clusterEnd;
+							  ++boundary ) {
+							if ( string.isGraphemeBoundary( boundary ) && ++boundaryIndex == caret )
+								return boundary;
+						}
+						return clusterEnd;
 					}
 				}
 
@@ -1721,7 +1834,11 @@ Uint32 Text::getTextHints() const {
 }
 
 void Text::setTextHints( Uint32 textHints ) {
-	mTextHints = textHints;
+	if ( mTextDrawHints != textHints ) {
+		mTextDrawHints = textHints;
+		mTextHints = mString.getTextHints() | mTextDrawHints;
+		invalidate();
+	}
 }
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,

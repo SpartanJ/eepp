@@ -742,6 +742,14 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void setContrastPreference( const ContrastPreference& contrastPreference );
 
+	/** Sets the OpenType feature hints inherited by text-producing widgets in this scene. */
+	void setDefaultTextHints( Uint32 textHints );
+
+	Uint32 getDefaultTextHints() const;
+
+	static Uint32 resolveTextHints( Uint32 defaultHints, Uint32 overrideValue,
+									Uint32 overrideMask );
+
 	/**
 	 * @brief Gets the maximum invalidation depth.
 	 *
@@ -983,6 +991,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::vector<UISceneNode*> mChildUISceneNodes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 	ContrastPreference mContrastPreference{ ContrastPreference::NoPreference };
+	Uint32 mDefaultTextHints{ 0 };
 	Uint32 mMaxInvalidationDepth{ 3 };
 	Node* mCurParent{ nullptr };
 	UISceneNode* mHostUISceneNode{ nullptr };

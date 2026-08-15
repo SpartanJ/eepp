@@ -134,6 +134,14 @@ class EE_API UITextView : public UIWidget {
 
 	void setTextSelectionRange( TextSelectionRange range );
 
+	void setTextHintsOverride( Uint32 value, Uint32 mask = TextHints::OpenTypeFeatures );
+
+	void clearTextHintsOverride();
+
+	Uint32 getTextHints() const;
+
+	virtual void onTextHintsChanged();
+
   protected:
 	Text mTextCache;
 	String mString;
@@ -142,6 +150,8 @@ class EE_API UITextView : public UIWidget {
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
 	Uint32 mTextDrawHints{ 0 };
+	Uint32 mTextHintsOverride{ 0 };
+	Uint32 mTextHintsOverrideMask{ 0 };
 	SmallVector<Rectf> mSelRectsCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;

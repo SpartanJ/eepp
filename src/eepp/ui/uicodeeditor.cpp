@@ -140,7 +140,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
-	mDocView( mDoc, mFontStyleConfig, { .tabStops = mTabStops } ),
+	mDocView( mDoc, mFontStyleConfig,
+			  { .textHints = TextHints::NoKerning, .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),
 	mFoldsRefreshTime( Seconds( 2.f ) ),
 	mTabWidth( 4 ),
@@ -2388,7 +2389,8 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLin
 		}
 	}
 
-	if ( !mFont || mFont->isMonospace() || mLinesWidthCache.empty() )
+	if ( !mFont || ( mFont->isMonospace() && getLigatureFeatures() == 0 ) ||
+		 mLinesWidthCache.empty() )
 		return;
 
 	Int64 linesCount = mDoc->linesCount();
@@ -4333,23 +4335,28 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 								subText,
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
 								fontStyle, mTabWidth,
-								getChunkHints ? String::getTextHints( subText ) : drawHints,
+								getChunkHints
+									? String::getTextHints( subText ) | getWidgetTextDrawHints()
+									: drawHints,
 								mTextDirection, whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
 						String::View subText( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
-						size = Text::draw(
-							subText, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
-							getChunkHints ? String::getTextHints( subText ) : drawHints,
-							mTextDirection, whitespaceDisplayConfig );
+						size = Text::draw( subText, { position.x, position.y + lineOffset },
+										   fontStyle, mTabWidth,
+										   getChunkHints ? String::getTextHints( subText ) |
+															   getWidgetTextDrawHints()
+														 : drawHints,
+										   mTextDirection, whitespaceDisplayConfig );
 					}
 				} else {
-					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									   mTabWidth,
-									   getChunkHints ? String::getTextHints( text ) : drawHints,
-									   mTextDirection, whitespaceDisplayConfig );
+					size = Text::draw(
+						text, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
+						getChunkHints ? String::getTextHints( text ) | getWidgetTextDrawHints()
+									  : drawHints,
+						mTextDirection, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )
@@ -4596,7 +4603,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 							: mLineNumberFontColor,
 						mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
 						mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
-						mFontStyleConfig.ShadowOffset, 4, TextHints::AllAscii );
+						mFontStyleConfig.ShadowOffset, 4,
+						TextHints::AllAscii | getWidgetTextDrawHints() );
 		}
 
 		if ( foldVisible && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
@@ -4664,7 +4672,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 						.asFloat();
 
 				Text::draw( String( (String::StringBaseType)0x2026 /* … */ ), offset, fontStyle,
-							mTabWidth );
+							mTabWidth, getWidgetTextDrawHints() );
 
 				primitives.setColor( mLineBreakColumnColor );
 				primitives.drawLine(
@@ -5694,7 +5702,8 @@ void UICodeEditor::refreshTag() {
 }
 
 bool UICodeEditor::isNotMonospace() const {
-	return ( mFont && !mFont->isMonospace() ) || Text::TextShaperEnabled;
+	return getLigatureFeatures() != 0 || ( mFont && !mFont->isMonospace() ) ||
+		   Text::TextShaperEnabled;
 }
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
@@ -5723,11 +5732,12 @@ void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
 }
 
 bool UICodeEditor::isMonospaceLine( Int64 lineIndex ) const {
-	return mFont && ( ( mFont->isMonospace() &&
-						( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
-					  ( mFont->getType() == FontType::TTF &&
-						static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
-						mDoc->line( lineIndex ).isAscii() ) );
+	return getLigatureFeatures() == 0 && mFont &&
+		   ( ( mFont->isMonospace() &&
+			   ( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
+			 ( mFont->getType() == FontType::TTF &&
+			   static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
+			   mDoc->line( lineIndex ).isAscii() ) );
 }
 
 Float UICodeEditor::editorWidth() const {
@@ -5781,12 +5791,42 @@ void UICodeEditor::setTabStops( bool enabled ) {
 void UICodeEditor::setKerningEnabled( bool enabled ) {
 	if ( mKerningEnabled != enabled ) {
 		mKerningEnabled = enabled;
+		mDocView.setTextHints( getWidgetTextDrawHints() );
+		mLinesWidthCache.clear();
+		invalidateLongestLineWidth();
 		invalidateDraw();
 	}
 }
 
 bool UICodeEditor::isKerningEnabled() const {
 	return mKerningEnabled;
+}
+
+void UICodeEditor::setLigatureFeatures( Uint32 features ) {
+	features &= TextHints::OpenTypeFeatures;
+	if ( !mLigaturesOverride || mLigatureFeatures != features ) {
+		mLigaturesOverride = true;
+		mLigatureFeatures = features;
+		onTextHintsChanged();
+	}
+}
+
+Uint32 UICodeEditor::getLigatureFeatures() const {
+	return getWidgetTextDrawHints() & TextHints::OpenTypeFeatures;
+}
+
+void UICodeEditor::clearLigaturesOverride() {
+	if ( mLigaturesOverride ) {
+		mLigaturesOverride = false;
+		onTextHintsChanged();
+	}
+}
+
+void UICodeEditor::onTextHintsChanged() {
+	mDocView.setTextHints( getWidgetTextDrawHints() );
+	mLinesWidthCache.clear();
+	invalidateLongestLineWidth();
+	invalidateDraw();
 }
 
 void UICodeEditor::setTextDirection( TextDirection direction ) {

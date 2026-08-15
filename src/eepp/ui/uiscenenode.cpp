@@ -317,6 +317,7 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	mThreadPool = hostScene->getThreadPool();
 	mColorSchemePreference = hostScene->getColorSchemePreference();
 	mContrastPreference = hostScene->getContrastPreference();
+	mDefaultTextHints = hostScene->getDefaultTextHints();
 	const FontService& hostFontService = hostScene->getResourceScope()->getFontService();
 	FontService& fontService = mResourceScope->getFontService();
 	fontService.setHinting( hostFontService.getHinting() );
@@ -341,6 +342,37 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 
 const std::vector<UISceneNode*>& UISceneNode::getChildUISceneNodes() const {
 	return mChildUISceneNodes;
+}
+
+void UISceneNode::setDefaultTextHints( Uint32 textHints ) {
+	textHints &= TextHints::OpenTypeFeatures;
+	if ( mDefaultTextHints == textHints )
+		return;
+	mDefaultTextHints = textHints;
+	const auto notifyTextHintsChanged = []( auto&& self, Node* node ) -> void {
+		if ( node->isType( UI_TYPE_WIDGET ) ) {
+			UIWidget* widget = static_cast<UIWidget*>( node );
+			widget->onTextHintsChanged();
+			if ( widget->getTooltip() )
+				widget->getTooltip()->onTextHintsChanged();
+		}
+		for ( Uint32 i = 0; i < node->getChildCount(); ++i )
+			self( self, node->getChildAt( i ) );
+	};
+	notifyTextHintsChanged( notifyTextHintsChanged, this );
+	for ( auto* sceneNode : mChildUISceneNodes )
+		sceneNode->setDefaultTextHints( textHints );
+}
+
+Uint32 UISceneNode::getDefaultTextHints() const {
+	return mDefaultTextHints;
+}
+
+Uint32 UISceneNode::resolveTextHints( Uint32 defaultHints, Uint32 overrideValue,
+									  Uint32 overrideMask ) {
+	const Uint32 featureMask = TextHints::OpenTypeFeatures;
+	overrideMask &= featureMask;
+	return ( defaultHints & featureMask & ~overrideMask ) | ( overrideValue & overrideMask );
 }
 
 void UISceneNode::setHighlightOverRecursive( bool highlight ) {

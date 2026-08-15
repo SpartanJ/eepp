@@ -185,6 +185,14 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	virtual RichText* getRichTextPtr() { return &mRichText; }
 
+	void setTextHintsOverride( Uint32 value, Uint32 mask = TextHints::OpenTypeFeatures );
+
+	void clearTextHintsOverride();
+
+	Uint32 getTextHints() const;
+
+	virtual void onTextHintsChanged();
+
   protected:
 	RichText mRichText;
 	Int64 mSelCurInit{ 0 };
@@ -197,6 +205,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	mutable Float mTextIndentPxCache{ 0 };
 	mutable bool mTextIndentPxDirty{ true };
 	Uint32 mTabSize{ 8 };
+	Uint32 mTextHintsOverride{ 0 };
+	Uint32 mTextHintsOverrideMask{ 0 };
 	WhiteSpaceCollapse mWhiteSpaceCollapse{ WhiteSpaceCollapse::Collapse };
 	bool mLineWrap{ true };
 	TextTransform::Value mTextTransform{ TextTransform::None };

@@ -145,6 +145,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
 	editor.openDocumentsInMainSplit =
 		ini.getValueB( "editor", "open_documents_in_main_split", false );
+	editor.fontFeatures =
+		Graphics::Text::fontFeaturesFromString( ini.getValue( "editor", "font_features" ) );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
@@ -169,6 +171,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
 	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
 		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
+	ui.fontFeatures =
+		Graphics::Text::fontFeaturesFromString( ini.getValue( "ui", "font_features" ) );
 	ui.editorFontInInputFields = ini.getValueB( "ui", "editor_font_in_input_fields", true );
 
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
@@ -350,6 +354,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
 	ini.setValueB( "editor", "open_documents_in_main_split", editor.openDocumentsInMainSplit );
+	ini.setValue( "editor", "font_features",
+				  Graphics::Text::fontFeaturesToString( editor.fontFeatures ) );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
@@ -374,6 +380,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
 	ini.setValue( "ui", "font_antialiasing",
 				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
+	ini.setValue( "ui", "font_features", Graphics::Text::fontFeaturesToString( ui.fontFeatures ) );
 	ini.setValue( "screenshots", "save_path", screenshot.savePath );
 	ini.setValue( "screenshots", "filename_pattern", screenshot.filenamePattern );
 	ini.setValue( "screenshots", "save_format", screenshot.saveFormat );

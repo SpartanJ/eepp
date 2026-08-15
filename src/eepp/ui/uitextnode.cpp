@@ -1,5 +1,6 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/uirichtext.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
 
@@ -36,6 +37,7 @@ void UITextNode::draw() {
 		parent && parent->isType( UI_TYPE_HTML_WIDGET ) && parent->asType<UIHTMLWidget>()->isFlex();
 	if ( isFlexItem ) {
 		Text* flexText = getFlexText();
+		flexText->setTextHints( getTextHints() );
 		if ( flexText->getFont() ) {
 			flexText->setMaxWrapWidth( getPixelsSize().getWidth() );
 			Float alpha = getAlpha();
@@ -53,7 +55,7 @@ void UITextNode::draw() {
 						Float alpha = getAlpha();
 						if ( alpha < 1.f )
 							fc.FontColor.a = (Uint8)( (Float)fc.FontColor.a * alpha );
-						Text::draw( mText, mScreenPos.trunc(), fc );
+						Text::draw( mText, mScreenPos.trunc(), fc, 4, getTextHints() );
 					}
 					break;
 				}
@@ -129,9 +131,37 @@ Float UITextNode::getBaseline() const {
 }
 
 Text* UITextNode::getFlexText() {
-	if ( mFlexText == nullptr )
+	if ( mFlexText == nullptr ) {
 		mFlexText = Text::New();
+		mFlexText->setTextHints( getTextHints() );
+	}
 	return mFlexText;
+}
+
+void UITextNode::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UITextNode::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UITextNode::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UITextNode::onTextHintsChanged() {
+	if ( mFlexText )
+		mFlexText->setTextHints( getTextHints() );
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	invalidateDraw();
 }
 
 }} // namespace EE::UI

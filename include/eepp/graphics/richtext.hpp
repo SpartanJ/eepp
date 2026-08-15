@@ -163,6 +163,10 @@ class EE_API RichText : public Drawable {
 
 	Uint32 getTabWidth() const { return mTabWidth; }
 
+	void setTextHints( Uint32 textHints );
+
+	Uint32 getTextHints() const { return mTextHints; }
+
 	bool setExternalFloatExclusions( const std::vector<FloatExclusion>& exclusions );
 
 	const std::vector<FloatExclusion>& getExternalFloatExclusions() const {
@@ -482,6 +486,7 @@ class EE_API RichText : public Drawable {
 	bool mLineWrap{ true };
 	WhiteSpaceWrapMode mWhiteSpaceWrapMode{ WhiteSpaceWrapMode::Normal };
 	Uint32 mTabWidth{ 8 };
+	Uint32 mTextHints{ 0 };
 };
 
 }} // namespace EE::Graphics

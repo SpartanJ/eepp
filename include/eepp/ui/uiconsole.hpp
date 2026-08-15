@@ -153,6 +153,12 @@ class EE_API UIConsole : public UIWidget,
 
 	TextDocument& getDoc();
 
+	void setLigatureFeatures( Uint32 features );
+	Uint32 getLigatureFeatures() const;
+	void clearLigaturesOverride();
+	Uint32 getTextHints() const;
+	virtual void onTextHintsChanged();
+
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
@@ -171,6 +177,7 @@ class EE_API UIConsole : public UIWidget,
 	std::vector<TextCache> mTextCache;
 	UIFontStyleConfig mFontStyleConfig;
 	Uint32 mMaxLogLines{ 8192 };
+	Uint32 mLigatureFeatures{ 0 };
 	TextDocument mDoc;
 	KeyBindings mKeyBindings;
 	TextRange mSelection;
@@ -192,6 +199,7 @@ class EE_API UIConsole : public UIWidget,
 	Clock mBlinkTimer;
 	Time mBlinkTime{ Seconds( 0.f ) };
 	bool mCursorVisible{ true };
+	bool mLigaturesOverride{ false };
 	int mLastLogPos{ 0 };
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	Float mQuakeModeHeightPercent{ 0.5f };

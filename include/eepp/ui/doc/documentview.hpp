@@ -26,10 +26,12 @@ class EE_API DocumentView {
 		bool keepIndentation{ true };
 		Uint32 tabWidth{ 4 };
 		std::optional<Uint32> maxCharactersWidth{};
+		Uint32 textHints{ 0 };
 		bool tabStops{ false };
 		bool operator==( const Config& other ) {
 			return mode == other.mode && keepIndentation == other.keepIndentation &&
-				   tabWidth == other.tabWidth && maxCharactersWidth == other.maxCharactersWidth;
+				   tabWidth == other.tabWidth && maxCharactersWidth == other.maxCharactersWidth &&
+				   textHints == other.textHints && tabStops == other.tabStops;
 		}
 		bool operator!=( const Config& other ) { return !( *this == other ); }
 	};
@@ -49,7 +51,8 @@ class EE_API DocumentView {
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
-										   bool tabStops = false, Float initialXOffset = 0.f );
+										   bool tabStops = false, Float initialXOffset = 0.f,
+										   Uint32 textHints = 0 );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
@@ -136,6 +139,8 @@ class EE_API DocumentView {
 	void setOnFoldUnfoldCb( std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb );
 
 	void setTabStops( bool enabled );
+
+	void setTextHints( Uint32 textHints );
 
 	bool usesTabStops() const { return mConfig.tabStops; }
 

@@ -134,6 +134,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
+	virtual void onTextHintsChanged();
+
 	TextDocument mDoc;
 	Float mWaitCursorTime;
 	Vector2f mCurPos;

@@ -502,6 +502,17 @@ static void setInlineItemTextTabWidth( std::vector<RichText::InlineItem>& items,
 	}
 }
 
+static void setInlineItemTextHints( std::vector<RichText::InlineItem>& items, Uint32 textHints ) {
+	for ( auto& item : items ) {
+		if ( item.isTextRun() ) {
+			if ( item.asTextRun().text )
+				item.asTextRun().text->setTextHints( textHints );
+		} else if ( item.isBox() ) {
+			setInlineItemTextHints( item.asBox().children, textHints );
+		}
+	}
+}
+
 struct InlineAncestorRef {
 	RichText::RenderSpan::InlinePath path;
 	const RichText::InlineItem::Box* box{ nullptr };
@@ -1947,6 +1958,7 @@ class RichTextInlineLayouter {
 		renderStyle.Style |= inlineAncestorTextDecoration( inlineItems, payload.inlinePath );
 		renderSpanText->setStyleConfig( renderStyle );
 		renderSpanText->setTabWidth( payload.text->getTabWidth() );
+		renderSpanText->setTextHints( payload.text->getTextHints() & TextHints::OpenTypeFeatures );
 
 		Float height = getTextVisualLineHeight( payload.text, payload.lineHeight );
 		Float lineHeight = getTextRunLineHeight( payload.text, payload.lineHeight );
@@ -2313,6 +2325,7 @@ void RichText::addInlineTextImpl( TextType&& text, const FontStyleConfig& style,
 	setTextString( *run.text, std::forward<TextType>( text ) );
 	run.text->setStyleConfig( style );
 	run.text->setTabWidth( mTabWidth );
+	run.text->setTextHints( mTextHints );
 	run.source = source;
 	run.margin = margin;
 	run.padding = padding;
@@ -2440,6 +2453,14 @@ void RichText::setTabWidth( Uint32 tabWidth ) {
 	if ( mTabWidth != tabWidth ) {
 		mTabWidth = tabWidth;
 		setInlineItemTextTabWidth( mInlineItems, mTabWidth );
+		invalidateLayout();
+	}
+}
+
+void RichText::setTextHints( Uint32 textHints ) {
+	if ( mTextHints != textHints ) {
+		mTextHints = textHints;
+		setInlineItemTextHints( mInlineItems, textHints );
 		invalidateLayout();
 	}
 }

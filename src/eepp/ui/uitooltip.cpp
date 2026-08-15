@@ -63,6 +63,7 @@ UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
 
 	mTextCache = Text::New();
+	mTextCache->setTextHints( getTextHints() );
 	mEnabled = false;
 
 	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -710,6 +711,32 @@ void UITooltip::setWordWrap( bool set ) {
 
 bool UITooltip::isWordWrap() const {
 	return mFlags & UI_WORD_WRAP;
+}
+
+void UITooltip::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UITooltip::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UITooltip::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UITooltip::onTextHintsChanged() {
+	if ( mTextCache )
+		mTextCache->setTextHints( getTextHints() );
+	onAutoSize();
+	invalidateDraw();
 }
 
 }} // namespace EE::UI

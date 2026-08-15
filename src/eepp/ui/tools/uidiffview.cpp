@@ -174,7 +174,8 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 					  screenStart.y + textOffsetY );
 
 		Text::draw( mView->getFileName(), pos, font, fontSize, textColor, 0, 0.f, Color::Black,
-					Color::Black, { 1, 1 }, 4, mView->getFileName().getTextHints() );
+					Color::Black, { 1, 1 }, 4,
+					mView->getFileName().getTextHints() | mView->getDefaultTextHints() );
 	}
 
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
@@ -286,14 +287,15 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		FontStyleConfig config = editor->getFontStyleConfig();
 		config.FontColor = editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber );
 
-		Float textWidth = Text::getTextWidth( text, config, 4, TextHints::AllAscii );
+		const Uint32 textHints = TextHints::AllAscii | editor->getDefaultTextHints();
+		Float textWidth = Text::getTextWidth( text, config, 4, textHints );
 
 		Vector2f pos( screenStart.x + std::floor( ( mGutterWidth - textWidth ) * 0.5f ),
 					  screenStart.y + std::floor( ( lineHeight - config.Font->getLineSpacing(
 																	 config.CharacterSize ) ) *
 												  0.5f ) );
 
-		Text::draw( text, pos, config, 4, TextHints::AllAscii );
+		Text::draw( text, pos, config, 4, textHints );
 	}
 
   protected:

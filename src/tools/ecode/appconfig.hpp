@@ -81,6 +81,7 @@ struct UIConfig {
 	std::string language;
 	FontHinting fontHinting{ FontHinting::Full };
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
+	Uint32 fontFeatures{ 0 };
 };
 
 struct WindowStateConfig {
@@ -107,6 +108,7 @@ struct CodeEditorConfig {
 	std::string colorScheme{ "ecode" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	StyleSheetLength lineSpacing{ 0, StyleSheetLength::Dp };
+	Uint32 fontFeatures{ 0 };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool showLineEndings{ false };

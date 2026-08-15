@@ -37,10 +37,17 @@ class EE_API UITextNode : public UIWidget {
 
 	Float getBaseline() const;
 
+	void setTextHintsOverride( Uint32 value, Uint32 mask = TextHints::OpenTypeFeatures );
+	void clearTextHintsOverride();
+	Uint32 getTextHints() const;
+	virtual void onTextHintsChanged();
+
   protected:
 	String mText;
 	size_t mLayoutCharCount{ 0 };
 	Text* mFlexText{ nullptr };
+	Uint32 mTextHintsOverride{ 0 };
+	Uint32 mTextHintsOverrideMask{ 0 };
 
 	UITextNode();
 };

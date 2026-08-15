@@ -27,6 +27,15 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
+Uint32 UIWidget::getDefaultTextHints() const {
+	const UISceneNode* sceneNode = getUISceneNode();
+	return sceneNode ? sceneNode->getDefaultTextHints() : 0;
+}
+
+void UIWidget::onTextHintsChanged() {
+	invalidateDraw();
+}
+
 static bool isDataAttributeName( std::string_view name ) {
 	return String::istartsWith( String::trim( name ), "data-" );
 }

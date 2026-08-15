@@ -41,6 +41,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mMouseDown( false ),
 	mKeyBindings( getInput() ) {
 	mHintCache = Text::New();
+	mHintCache->setTextHints( getTextHints() );
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -321,6 +322,7 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 		if ( mMode == TextInputMode::Password ) {
 			if ( !mPassCache ) {
 				mPassCache = Text::New();
+				mPassCache->setTextHints( getTextHints() );
 				updateFontStyleConfig();
 			}
 			updatePass();
@@ -328,6 +330,14 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 		invalidateDraw();
 	}
 	return this;
+}
+
+void UITextInput::onTextHintsChanged() {
+	UITextView::onTextHintsChanged();
+	if ( mHintCache )
+		mHintCache->setTextHints( getTextHints() );
+	if ( mPassCache )
+		mPassCache->setTextHints( getTextHints() );
 }
 
 UITextInput::TextInputMode UITextInput::getMode() const {

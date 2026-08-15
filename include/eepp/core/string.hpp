@@ -1363,6 +1363,12 @@ struct TextHints {
 		AllAscii = 1 << 0,
 		AllLatin1 = 1 << 1,
 		NoKerning = 1 << 2,
+		StandardLigatures = 1 << 3,
+		ContextualAlternates = 1 << 4,
+		ContextualLigatures = 1 << 5,
+		DiscretionaryLigatures = 1 << 6,
+		OpenTypeFeatures =
+			StandardLigatures | ContextualAlternates | ContextualLigatures | DiscretionaryLigatures,
 	};
 };
 

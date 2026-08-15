@@ -23,11 +23,15 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
 
 using namespace EE;
@@ -334,6 +338,159 @@ UTEST( FontRendering, destroyingFontInvalidatesTextLayoutCache ) {
 	EXPECT_TRUE( layoutWeak.expired() );
 	EXPECT_FALSE( retainedLayoutWeak.expired() );
 }
+
+UTEST( FontRendering, fontFeaturesStringConversion ) {
+	const Uint32 allFeatures = TextHints::StandardLigatures | TextHints::ContextualAlternates |
+							   TextHints::ContextualLigatures | TextHints::DiscretionaryLigatures;
+	EXPECT_EQ( allFeatures,
+			   Text::fontFeaturesFromString( "'liga', CALT, \"clig\", dlig, unsupported" ) );
+	EXPECT_TRUE( Text::fontFeaturesToString( allFeatures ) == "liga,calt,clig,dlig" );
+	EXPECT_EQ( 0u, Text::fontFeaturesFromString( "" ) );
+	EXPECT_TRUE( Text::fontFeaturesToString( 1u << 31 ).empty() );
+}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+UTEST( FontRendering, latinOpenTypeFeaturesAreExplicitAndCachedByTextHints ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Latin Ligatures Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "LatinLigatures-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	const String text( "fi" );
+	const Uint32 latinHints = text.getTextHints();
+	ASSERT_TRUE( latinHints & TextHints::AllLatin1 );
+	EXPECT_TRUE( Text::canSkipShaping( latinHints ) );
+	EXPECT_FALSE( Text::canSkipShaping( latinHints | TextHints::StandardLigatures ) );
+	EXPECT_FALSE( Text::canSkipShaping( latinHints | TextHints::ContextualAlternates ) );
+
+	TextLayout::Cache unshaped =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints );
+	{
+		BoolScopedOp shapingOptimizations( Text::TextShaperOptimizations, false );
+		TextLayout::Cache shapedWithoutLigatures =
+			TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints );
+		ASSERT_EQ( 1u, shapedWithoutLigatures->paragraphs.size() );
+		EXPECT_EQ( 2u, shapedWithoutLigatures->paragraphs.front().shapedGlyphs.size() );
+	}
+	TextLayout::Cache standardLigatures = TextLayout::layout(
+		text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints | TextHints::StandardLigatures );
+	TextLayout::Cache contextualAlternates =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {},
+							latinHints | TextHints::ContextualAlternates );
+	ASSERT_EQ( 1u, unshaped->paragraphs.size() );
+	ASSERT_EQ( 1u, standardLigatures->paragraphs.size() );
+	ASSERT_EQ( 1u, contextualAlternates->paragraphs.size() );
+	EXPECT_EQ( 2u, unshaped->paragraphs.front().shapedGlyphs.size() );
+	EXPECT_EQ( 1u, standardLigatures->paragraphs.front().shapedGlyphs.size() );
+	EXPECT_EQ( 2u, contextualAlternates->paragraphs.front().shapedGlyphs.size() );
+
+	TextLayout::Cache cachedStandardLigatures = TextLayout::layout(
+		text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints | TextHints::StandardLigatures );
+	EXPECT_EQ( standardLigatures.get(), cachedStandardLigatures.get() );
+	EXPECT_NE( standardLigatures.get(), contextualAlternates.get() );
+	TextLayout::Cache noKerningStandardLigatures =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {},
+							latinHints | TextHints::StandardLigatures | TextHints::NoKerning );
+	EXPECT_NE( standardLigatures.get(), noKerningStandardLigatures.get() );
+
+	const Uint32 ligatureHints = latinHints | TextHints::StandardLigatures;
+	const Vector2f beforeLigature = Text::findCharacterPos( 0, font.get(), 24, text, Text::Regular,
+															4, 0, {}, false, ligatureHints );
+	const Vector2f insideLigature = Text::findCharacterPos( 1, font.get(), 24, text, Text::Regular,
+															4, 0, {}, false, ligatureHints );
+	const Vector2f afterLigature = Text::findCharacterPos( 2, font.get(), 24, text, Text::Regular,
+														   4, 0, {}, false, ligatureHints );
+	EXPECT_LT( beforeLigature.x, insideLigature.x );
+	EXPECT_LT( insideLigature.x, afterLigature.x );
+	EXPECT_EQ( 1, Text::findCharacterFromPos( insideLigature.asInt(), true, font.get(), 24, text,
+											  Text::Regular, 4, 0, {}, ligatureHints ) );
+}
+
+UTEST( FontRendering, codeEditorUsesSelectedLigatureFeatures ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Monospace Ligature Positioning Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "MonospaceLigatures-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	ASSERT_TRUE( font->isMonospace() );
+
+	auto* editor = UICodeEditor::New();
+	editor->setParent( app.getUI() );
+	editor->setFont( font.get() );
+	editor->setFontSize( 24 );
+	editor->getDocument().textInput( "fi" );
+	editor->setLigatureFeatures( TextHints::ContextualAlternates );
+
+	const Vector2d editorOffset = editor->getTextPositionOffset( { 0, 2 } );
+	const Vector2f shapedOffset = Text::findCharacterPos(
+		2, font.get(), editor->getCharacterSize(), editor->getDocument().line( 0 ).getText(),
+		Text::Regular, editor->getTabWidth(), 0.f, {}, false,
+		editor->getDocument().line( 0 ).getTextHints() | TextHints::ContextualAlternates |
+			TextHints::NoKerning );
+	EXPECT_NEAR( shapedOffset.x, editorOffset.x, 0.01 );
+}
+
+UTEST( FontRendering, sceneTextHintsPropagateAndWidgetsCanOverrideThem ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Scene Text Hints Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* scene = app.getUI();
+
+	Text text;
+	text.setTextHints( TextHints::StandardLigatures );
+	text.setString( "fi" );
+	EXPECT_TRUE( text.getTextHints() & TextHints::StandardLigatures );
+
+	auto* textView = UITextView::New();
+	textView->setParent( scene );
+	auto* tooltip = textView->createTooltip();
+	auto* richText = UIRichText::New();
+	richText->setParent( scene );
+	auto* textNode = UITextNode::New();
+	textNode->setParent( scene );
+	auto* console = UIConsole::NewOpt( nullptr, false, false );
+	console->setParent( scene );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( scene );
+
+	scene->setDefaultTextHints( TextHints::StandardLigatures | TextHints::ContextualAlternates );
+	EXPECT_TRUE( textView->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( tooltip->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( richText->getRichText().getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( textNode->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		console->getLigatureFeatures() );
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		editor->getLigatureFeatures() );
+
+	textView->setTextHintsOverride( 0, TextHints::StandardLigatures );
+	EXPECT_FALSE( textView->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( textView->getTextCache()->getTextHints() & TextHints::ContextualAlternates );
+	editor->setLigatureFeatures( TextHints::StandardLigatures );
+	EXPECT_EQ( static_cast<Uint32>( TextHints::StandardLigatures ), editor->getLigatureFeatures() );
+	editor->clearLigaturesOverride();
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		editor->getLigatureFeatures() );
+	console->setLigatureFeatures( TextHints::DiscretionaryLigatures );
+	EXPECT_EQ( static_cast<Uint32>( TextHints::DiscretionaryLigatures ),
+			   console->getLigatureFeatures() );
+	console->clearLigaturesOverride();
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		console->getLigatureFeatures() );
+}
+#endif
 
 UTEST( FontRendering, fontsTest ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );

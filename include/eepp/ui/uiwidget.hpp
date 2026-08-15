@@ -94,6 +94,12 @@ class EE_API UIWidget : public UINode {
 		return UIWidget::getType() == type || UINode::isType( type );
 	}
 
+	/** Returns the scene-level text rendering hints inherited by this widget. */
+	Uint32 getDefaultTextHints() const;
+
+	/** Called when the scene-level text rendering hints change. */
+	virtual void onTextHintsChanged();
+
 	/**
 	 * @brief Sets multiple flags on the widget.
 	 *

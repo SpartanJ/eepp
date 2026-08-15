@@ -243,7 +243,8 @@ const String& UITextView::getText() const {
 UITextView* UITextView::setText( const String& text ) {
 	if ( mString != text ) {
 		mString = text;
-		mTextDrawHints = mString.getTextHints();
+		mTextDrawHints = mString.getTextHints() | getTextHints();
+		mTextCache.setTextHints( getTextHints() );
 		mTextCache.setString( mString );
 
 		recalculate();
@@ -257,7 +258,8 @@ UITextView* UITextView::setText( const String& text ) {
 UITextView* UITextView::setText( String&& text ) {
 	if ( mString != text ) {
 		mString = std::move( text );
-		mTextDrawHints = mString.getTextHints();
+		mTextDrawHints = mString.getTextHints() | getTextHints();
+		mTextCache.setTextHints( getTextHints() );
 		mTextCache.setString( mString );
 
 		recalculate();
@@ -266,6 +268,33 @@ UITextView* UITextView::setText( String&& text ) {
 	}
 
 	return this;
+}
+
+void UITextView::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UITextView::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UITextView::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UITextView::onTextHintsChanged() {
+	mTextDrawHints = mString.getTextHints() | getTextHints();
+	mTextCache.setTextHints( getTextHints() );
+	recalculate();
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	invalidateDraw();
 }
 
 const Color& UITextView::getFontColor() const {

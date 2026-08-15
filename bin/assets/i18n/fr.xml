@@ -251,6 +251,16 @@ Voulez-vous le télécharger maintenant ?</string>
 	<string name="edit_build">Modifier la construction</string>
 	<string name="edit_custom_output_parser">Modifier l'analyseur de sortie personnalisé sélectionné</string>
 	<string name="editor_font_and_size_ellipsis">Police et taille de l'éditeur...</string>
+	<string name="editor_font_features">Fonctionnalités de la police de l'éditeur</string>
+	<string name="ui_font_features">Fonctionnalités de la police de l'interface</string>
+	<string name="contextual_alternates">Variantes contextuelles (calt)</string>
+	<string name="contextual_alternates_desc">Variantes dépendant du contexte, dont de nombreuses ligatures de programmation.</string>
+	<string name="standard_ligatures">Ligatures standard (liga)</string>
+	<string name="standard_ligatures_desc">Combinaisons typographiques telles que fi, fl et ffi, selon la police.</string>
+	<string name="contextual_ligatures">Ligatures contextuelles (clig)</string>
+	<string name="contextual_ligatures_desc">Ligatures appliquées dans certains contextes pour améliorer la lisibilité.</string>
+	<string name="discretionary_ligatures">Ligatures discrétionnaires (dlig)</string>
+	<string name="discretionary_ligatures_desc">Ligatures décoratives ou stylistiques facultatives fournies par la police.</string>
 	<string name="editor_font_size">Taille de la police de l'éditeur</string>
 	<string name="editor_go_back">Éditeur : retour en arrière</string>
 	<string name="editor_go_forward">Éditeur : avancer</string>

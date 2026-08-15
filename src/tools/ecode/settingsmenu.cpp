@@ -3316,6 +3316,64 @@ UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
 
 UIMenu* SettingsMenu::createFontsMenu() {
 	mFontsMenu = UIPopUpMenu::New();
+	const auto createFontFeaturesMenu = [this]( bool editorFeatures ) {
+		auto* menu = UIPopUpMenu::New();
+		const Uint32 features = editorFeatures ? mApp->getConfig().editor.fontFeatures
+											   : mApp->getConfig().ui.fontFeatures;
+		menu->addCheckBox( i18n( "standard_ligatures", "Standard Ligatures (liga)" ),
+						   features & TextHints::StandardLigatures )
+			->setTooltipText(
+				i18n( "standard_ligatures_desc",
+					  "Typographic combinations such as fi, fl, and ffi, depending on the font." ) )
+			->setId( "liga" );
+		menu->addCheckBox( i18n( "contextual_alternates", "Contextual Alternates (calt)" ),
+						   features & TextHints::ContextualAlternates )
+			->setTooltipText(
+				i18n( "contextual_alternates_desc",
+					  "Context-dependent alternatives, including many programming ligatures." ) )
+			->setId( "calt" );
+		menu->addCheckBox( i18n( "contextual_ligatures", "Contextual Ligatures (clig)" ),
+						   features & TextHints::ContextualLigatures )
+			->setTooltipText(
+				i18n( "contextual_ligatures_desc",
+					  "Ligatures applied in specific contexts to improve readability." ) )
+			->setId( "clig" );
+		menu->addCheckBox( i18n( "discretionary_ligatures", "Discretionary Ligatures (dlig)" ),
+						   features & TextHints::DiscretionaryLigatures )
+			->setTooltipText(
+				i18n( "discretionary_ligatures_desc",
+					  "Optional decorative or stylistic ligatures provided by the font." ) )
+			->setId( "dlig" );
+		menu->on( Event::OnItemClicked, [this, editorFeatures]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) )
+				return;
+			auto* item = event->getNode()->asType<UIMenuCheckBox>();
+			const String& id = item->getId();
+			const Uint32 feature = id == "liga"	  ? TextHints::StandardLigatures
+								   : id == "calt" ? TextHints::ContextualAlternates
+								   : id == "clig" ? TextHints::ContextualLigatures
+								   : id == "dlig" ? TextHints::DiscretionaryLigatures
+												  : 0;
+			if ( feature == 0 )
+				return;
+			Uint32& features = editorFeatures ? mApp->getConfig().editor.fontFeatures
+											  : mApp->getConfig().ui.fontFeatures;
+			if ( item->isActive() )
+				features |= feature;
+			else
+				features &= ~feature;
+			if ( editorFeatures ) {
+				mSplitter->forEachEditor( [features]( UICodeEditor* editor ) {
+					editor->setLigatureFeatures( features );
+				} );
+			} else {
+				mApp->getUISceneNode()->setDefaultTextHints( features );
+			}
+		} );
+		return menu;
+	};
+	auto* uiFontFeaturesMenu = createFontFeaturesMenu( false );
+	auto* editorFontFeaturesMenu = createFontFeaturesMenu( true );
 	mFontsMenu->addSubMenu( i18n( "ui_font_hint", "Font Hint" ), findIcon( "font-size" ),
 							createFontHintMenu() );
 	mFontsMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
@@ -3325,10 +3383,14 @@ UIMenu* SettingsMenu::createFontsMenu() {
 	mFontsMenu
 		->add( i18n( "ui_font_and_size_ellipsis", "UI Font & Size..." ), findIcon( "font-size" ) )
 		->setId( "sans-serif-font" );
+	mFontsMenu->addSubMenu( i18n( "ui_font_features", "UI Font Features" ), findIcon( "font-size" ),
+							uiFontFeaturesMenu );
 	mFontsMenu
 		->add( i18n( "editor_font_and_size_ellipsis", "Editor Font & Size..." ),
 			   findIcon( "font-size" ) )
 		->setId( "editor-font" );
+	mFontsMenu->addSubMenu( i18n( "editor_font_features", "Editor Font Features" ),
+							findIcon( "font-size" ), editorFontFeaturesMenu );
 	mFontsMenu
 		->add( i18n( "terminal_font_and_size_ellipsis", "Terminal Font & Size..." ),
 			   findIcon( "font-size" ) )

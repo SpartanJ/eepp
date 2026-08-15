@@ -66,6 +66,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 		createDefaultCommands();
 
 	mTextCache.resize( maxLinesOnScreen() );
+	onTextHintsChanged();
 
 	cmdGetLog();
 
@@ -145,6 +146,38 @@ KeyBindings& UIConsole::getKeyBindings() {
 
 TextDocument& UIConsole::getDoc() {
 	return mDoc;
+}
+
+void UIConsole::setLigatureFeatures( Uint32 features ) {
+	features &= TextHints::OpenTypeFeatures;
+	if ( !mLigaturesOverride || mLigatureFeatures != features ) {
+		mLigaturesOverride = true;
+		mLigatureFeatures = features;
+		onTextHintsChanged();
+	}
+}
+
+Uint32 UIConsole::getLigatureFeatures() const {
+	return mLigaturesOverride ? mLigatureFeatures
+							  : getDefaultTextHints() & TextHints::OpenTypeFeatures;
+}
+
+void UIConsole::clearLigaturesOverride() {
+	if ( mLigaturesOverride ) {
+		mLigaturesOverride = false;
+		onTextHintsChanged();
+	}
+}
+
+Uint32 UIConsole::getTextHints() const {
+	return TextHints::NoKerning | getLigatureFeatures();
+}
+
+void UIConsole::onTextHintsChanged() {
+	const Uint32 textHints = getTextHints();
+	for ( auto& cache : mTextCache )
+		cache.text.setTextHints( textHints );
+	invalidateDraw();
 }
 
 Font* UIConsole::getFont() const {
@@ -491,6 +524,13 @@ void UIConsole::draw() {
 
 	Primitives p;
 	p.setColor( Color( mFontStyleConfig.FontSelectionBackColor ).blendAlpha( (Uint8)mAlpha ) );
+	const auto characterPos = [this]( const String& string, std::size_t index ) {
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   string, mFontStyleConfig.Style, 4,
+									   mFontStyleConfig.OutlineThickness, {}, false,
+									   getTextHints() )
+			.x;
+	};
 	auto to = eemax( mCon.min - mCon.modif, 0 );
 	auto from = eemin( mCon.max - mCon.modif, (int)mCmdLog.size() - 1 );
 
@@ -505,23 +545,14 @@ void UIConsole::draw() {
 			auto endCol = eemin( (Int64)mCmdLog[i].log.size(), selNorm.end().column() );
 
 			if ( i == selNorm.start().line() ) {
-				auto tsubstr = mCmdLog[i].log.view().substr(
-					startCol, selNorm.end().line() == i ? eemax( (Int64)0, endCol - startCol )
-														: (Int64)mCmdLog[i].log.size() - startCol );
-				auto twidth =
-					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										tsubstr, mFontStyleConfig.Style );
-				auto fsubstr = mCmdLog[i].log.view().substr( 0, startCol );
-				auto fwidth =
-					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										fsubstr, mFontStyleConfig.Style );
+				const Int64 selectionEnd =
+					selNorm.end().line() == i ? endCol : mCmdLog[i].log.size();
+				const Float fwidth = characterPos( mCmdLog[i].log, startCol );
+				const Float twidth = characterPos( mCmdLog[i].log, selectionEnd ) - fwidth;
 				p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + fwidth, curY },
 										{ twidth, lineHeight } ) );
 			} else if ( i == selNorm.end().line() ) {
-				auto fsubstr = mCmdLog[i].log.view().substr( 0, endCol );
-				auto fwidth =
-					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										fsubstr, mFontStyleConfig.Style );
+				const Float fwidth = characterPos( mCmdLog[i].log, endCol );
 				p.drawRectangle(
 					Rectf( { mScreenPos.x + mPaddingPx.Left, curY }, { fwidth, lineHeight } ) );
 			} else {
@@ -534,14 +565,26 @@ void UIConsole::draw() {
 		}
 
 		Text& text = mTextCache[pos].text;
+		text.setTextHints( getTextHints() );
 		text.setStyleConfig( mFontStyleConfig );
 		text.setFillColor( fontColor );
 		if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
-			if ( mCmdLog[i].log.size() * cw <= mSize.getWidth() ) {
+			std::size_t visibleCharacters = mCmdLog[i].log.size();
+			if ( getLigatureFeatures() != 0 ) {
+				visibleCharacters = eemax<Int32>(
+					0, Text::findCharacterFromPos(
+						   { static_cast<Int32>( mSize.getWidth() + 8 * cw ), 0 }, true,
+						   mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mCmdLog[i].log,
+						   mFontStyleConfig.Style, 4, mFontStyleConfig.OutlineThickness, {},
+						   getTextHints() ) );
+			} else if ( mCmdLog[i].log.size() * cw > mSize.getWidth() ) {
+				visibleCharacters = ( mSize.getWidth() + 8 * cw ) / cw;
+			}
+			if ( visibleCharacters >= mCmdLog[i].log.size() ) {
 				text.setString( mCmdLog[i].log );
 				mTextCache[pos].hash = mCmdLog[i].hash;
 			} else {
-				auto substr = mCmdLog[i].log.substr( 0, ( mSize.getWidth() + 8 * cw ) / cw );
+				auto substr = mCmdLog[i].log.substr( 0, visibleCharacters );
 				mTextCache[pos].hash = String::hash( substr );
 				text.setString( substr );
 			}
@@ -552,19 +595,22 @@ void UIConsole::draw() {
 
 	curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - lineHeight - 1;
 
-	auto editCharWidth = Text::getTextWidth( String( "> " ), mFontStyleConfig );
+	auto editCharWidth = Text::getTextWidth( String( "> " ), mFontStyleConfig, 4, getTextHints() );
+	const String& inputLine = mDoc.getCurrentLine().getText();
 
 	if ( mDoc.hasSelection() ) {
-		Float selStartPos =
-			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
-													0, mDoc.getSelection( true ).start().column() ),
-												mFontStyleConfig );
-		Float selWidth = Text::getTextWidth( mDoc.getSelectedText(), mFontStyleConfig );
+		const Float selectionStart =
+			characterPos( inputLine, mDoc.getSelection( true ).start().column() );
+		const Float selectionEnd =
+			characterPos( inputLine, mDoc.getSelection( true ).end().column() );
+		Float selStartPos = editCharWidth + selectionStart;
+		Float selWidth = selectionEnd - selectionStart;
 		p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + selStartPos, curY },
 								{ selWidth, lineHeight } ) );
 	}
 
 	Text& text = mTextCache[mTextCache.size() - 1].text;
+	text.setTextHints( getTextHints() );
 	text.setStyleConfig( mFontStyleConfig );
 	text.setFillColor( fontColor );
 	text.setString( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
@@ -572,9 +618,7 @@ void UIConsole::draw() {
 
 	if ( mCursorVisible ) {
 		Float cursorPos =
-			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
-													0, mDoc.getSelection().start().column() ),
-												mFontStyleConfig );
+			editCharWidth + characterPos( inputLine, mDoc.getSelection().start().column() );
 		Rectf r( { mScreenPos.x + mPaddingPx.Left + cursorPos, curY }, { cursorPos, lineHeight } );
 		updateIMELocation( r );
 		if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
@@ -585,6 +629,7 @@ void UIConsole::draw() {
 														  Color( fontColor ).blendAlpha( mAlpha ) );
 		} else {
 			Text& text2 = mTextCache[mTextCache.size() - 2].text;
+			text2.setTextHints( getTextHints() );
 			text2.setStyleConfig( mFontStyleConfig );
 			text2.setFillColor( fontColor );
 			text2.setString( "_" );
@@ -597,6 +642,7 @@ void UIConsole::draw() {
 			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false, false )
 				.advance;
 		Text& text = mTextCache[mTextCache.size() - 3].text;
+		text.setTextHints( getTextHints() );
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
 		text.setFillColor( fontColor );
@@ -1103,9 +1149,10 @@ TextPosition UIConsole::getPositionOnScreen( Vector2f position ) {
 	Int64 line = eeclamp( (Int64)eefloor( ( position.y - startOffset ) / lineHeight + 1 ), (Int64)0,
 						  (Int64)mCmdLog.size() - 1 );
 	Int64 fline = eeclamp( firstVisibleLine + line, (Int64)0, (Int64)mCmdLog.size() - 1 );
-	Int64 col = Text::findCharacterFromPos(
-		{ (int)eefloor( position.x - mPaddingPx.Left ), 0 }, true, mFontStyleConfig.Font,
-		mFontStyleConfig.CharacterSize, mCmdLog[fline].log, mFontStyleConfig.Style );
+	Int64 col = Text::findCharacterFromPos( { (int)eefloor( position.x - mPaddingPx.Left ), 0 },
+											true, mFontStyleConfig.Font,
+											mFontStyleConfig.CharacterSize, mCmdLog[fline].log,
+											mFontStyleConfig.Style, 4, 0.f, {}, getTextHints() );
 	return { fline, col };
 }
 

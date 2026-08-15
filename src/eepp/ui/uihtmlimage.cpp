@@ -110,14 +110,15 @@ void UIHTMLImage::draw() {
 			break;
 		}
 	style.FontColor = { color.r, color.g, color.b, static_cast<Uint8>( mAlpha ) };
-	Float width = Text::getTextWidth( mAlt, style );
+	const Uint32 textHints = getDefaultTextHints();
+	Float width = Text::getTextWidth( mAlt, style, 4, textHints );
 	Float available = mSize.x - mPaddingPx.Left - mPaddingPx.Right;
 	Float x = mScreenPos.x + mPaddingPx.Left + eemax( 0.f, ( available - width ) * 0.5f );
 	Float y = mScreenPos.y + mPaddingPx.Top +
 			  ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
 				PixelDensity::getPixelDensity() * style.CharacterSize ) *
 				  0.5f;
-	Text::draw( String( mAlt ), { x, y }, style );
+	Text::draw( String( mAlt ), { x, y }, style, 4, textHints );
 }
 
 void UIHTMLImage::setAlpha( const Float& alpha ) {

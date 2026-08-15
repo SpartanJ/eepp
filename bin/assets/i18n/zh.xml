@@ -185,6 +185,16 @@
 	<string name="edit_build">编辑构建</string>
 	<string name="edit_custom_output_parser">编辑已选的自定义输出解析器</string>
 	<string name="editor_font_and_size_ellipsis">编辑器字体和大小...</string>
+	<string name="editor_font_features">编辑器字体特性</string>
+	<string name="ui_font_features">界面字体特性</string>
+	<string name="contextual_alternates">上下文替代 (calt)</string>
+	<string name="contextual_alternates_desc">根据上下文应用的替代字形，包括许多编程连字。</string>
+	<string name="standard_ligatures">标准连字 (liga)</string>
+	<string name="standard_ligatures_desc">根据字体显示 fi、fl 和 ffi 等排版组合。</string>
+	<string name="contextual_ligatures">上下文连字 (clig)</string>
+	<string name="contextual_ligatures_desc">在特定上下文中应用连字以提高可读性。</string>
+	<string name="discretionary_ligatures">任意连字 (dlig)</string>
+	<string name="discretionary_ligatures_desc">字体提供的可选装饰性或风格化连字。</string>
 	<string name="editor_font_size">编辑器字体大小</string>
 	<string name="editor_go_back">编辑器撤销</string>
 	<string name="editor_go_forward">编辑器重做</string>

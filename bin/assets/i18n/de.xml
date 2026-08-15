@@ -266,6 +266,16 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="edit_build">Build bearbeiten</string>
 	<string name="edit_custom_output_parser">Angewählten individuellen Output-Parser bearbeiten</string>
 	<string name="editor_font_and_size_ellipsis">Editor-Schriftart und -größe...</string>
+	<string name="editor_font_features">Editor-Schriftfunktionen</string>
+	<string name="ui_font_features">UI-Schriftfunktionen</string>
+	<string name="contextual_alternates">Kontextvarianten (calt)</string>
+	<string name="contextual_alternates_desc">Kontextabhängige Varianten, einschließlich vieler Programmierligaturen.</string>
+	<string name="standard_ligatures">Standardligaturen (liga)</string>
+	<string name="standard_ligatures_desc">Typografische Kombinationen wie fi, fl und ffi, abhängig von der Schriftart.</string>
+	<string name="contextual_ligatures">Kontextligaturen (clig)</string>
+	<string name="contextual_ligatures_desc">Ligaturen, die in bestimmten Kontexten die Lesbarkeit verbessern.</string>
+	<string name="discretionary_ligatures">Optionale Ligaturen (dlig)</string>
+	<string name="discretionary_ligatures_desc">Optionale dekorative oder stilistische Ligaturen der Schriftart.</string>
 	<string name="editor_font_size">Editor-Schriftgröße</string>
 	<string name="editor_go_back">Editor: Schritt zurück</string>
 	<string name="editor_go_forward">Editor: Schritt nach vorn</string>

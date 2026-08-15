@@ -841,6 +841,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isKerningEnabled() const;
 
+	void setLigatureFeatures( Uint32 features );
+
+	Uint32 getLigatureFeatures() const;
+
+	void clearLigaturesOverride();
+
+	virtual void onTextHintsChanged();
+
 	void setTextDirection( TextDirection direction );
 
 	TextDirection getTextDirection() const;
@@ -909,6 +917,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
+	bool mLigaturesOverride{ false };
 	bool mDisableScrollInvalidation{ false };
 	bool mDynamicTheming{ false };
 	bool mUpdatingScrollBar{ false };
@@ -917,6 +926,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Time mBlinkTime;
 	Time mFoldsRefreshTime;
 	Uint32 mTabWidth;
+	Uint32 mLigatureFeatures{ 0 };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -1231,7 +1241,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addCursorsFromCurrentToMousePosition();
 
 	inline Uint32 getWidgetTextDrawHints() const {
-		return mKerningEnabled ? 0 : TextHints::NoKerning;
+		const Uint32 ligatureFeatures = mLigaturesOverride
+											? mLigatureFeatures
+											: getDefaultTextHints() & TextHints::OpenTypeFeatures;
+		return ( mKerningEnabled ? 0 : TextHints::NoKerning ) |
+			   ( ligatureFeatures & TextHints::OpenTypeFeatures );
 	}
 
 	bool setInternalFontSize( const Float& size );

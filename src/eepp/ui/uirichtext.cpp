@@ -446,12 +446,39 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 
 	mRichText.getFontStyleConfig().FontColor = Color::Black;
 	mRichText.setTabWidth( mTabSize );
+	mRichText.setTextHints( getTextHints() );
 
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 }
 
 const RichText& UIRichText::getRichText() {
 	return mRichText;
+}
+
+void UIRichText::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UIRichText::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UIRichText::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UIRichText::onTextHintsChanged() {
+	mRichText.setTextHints( getTextHints() );
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
+	invalidateDraw();
 }
 
 void UIRichText::draw() {

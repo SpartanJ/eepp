@@ -42,7 +42,7 @@ class EE_API Text {
 	};
 
 	static inline bool canSkipShaping( Uint32 textDrawHints ) {
-		return Text::TextShaperOptimizations &&
+		return Text::TextShaperOptimizations && !( textDrawHints & TextHints::OpenTypeFeatures ) &&
 			   ( textDrawHints & ( TextHints::AllLatin1 | TextHints::AllAscii ) ) != 0;
 	}
 
@@ -56,6 +56,10 @@ class EE_API Text {
 	static std::string fontWeightToString( FontWeight weight );
 
 	static FontWeight stringToFontWeight( const std::string& str );
+
+	static Uint32 fontFeaturesFromString( const std::string& value );
+
+	static std::string fontFeaturesToString( Uint32 features );
 
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
@@ -416,6 +420,7 @@ class EE_API Text {
 	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
 	TextDirection mDirection{ TextDirection::Unspecified };
 	Vector2f mInitialOffset{ 0.f, 0.f };
+	Uint32 mTextDrawHints{ 0 };
 
 	mutable SmallVector<Int64, 4> mVisualLines;
 	mutable SmallVector<Float, 4> mLinesWidth;

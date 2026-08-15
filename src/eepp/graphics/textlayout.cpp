@@ -149,7 +149,7 @@ static void segmentString( TextLayout& result, String::View input, Callable cb,
 template <typename Callable>
 static void shapeAndRun( TextLayout& result, const String& string, FontTrueType* font,
 						 Uint32 characterSize, Uint32 style, Float outlineThickness,
-						 TextDirection baseDirection, Callable cb ) {
+						 Uint32 textDrawHints, TextDirection baseDirection, Callable cb ) {
 	String::View input = string.view();
 	hb_buffer_t* hbBuffer = getThreadLocalHbBuffer();
 
@@ -178,17 +178,28 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 				hb_buffer_guess_segment_properties( hbBuffer );
 				hb_segment_properties_t props;
 				hb_buffer_get_segment_properties( hbBuffer, &props );
-				std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
+				const bool complexShapingFeaturesEnabled = !isSimpleScript( segment.script );
+				const auto featureEnabled = [complexShapingFeaturesEnabled,
+											 textDrawHints]( Uint32 textHint ) -> std::uint32_t {
+					return static_cast<std::uint32_t>( complexShapingFeaturesEnabled ||
+													   ( textDrawHints & textHint ) );
+				};
 
 				// We use our own kerning algo
 				const hb_feature_t features[] = {
-					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), complexShapingFeaturesEnabled,
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ),
+								  featureEnabled( TextHints::StandardLigatures ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ),
+								  featureEnabled( TextHints::ContextualLigatures ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ),
+								  featureEnabled( TextHints::DiscretionaryLigatures ),
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+					hb_feature_t{ HB_TAG( 'c', 'a', 'l', 't' ),
+								  featureEnabled( TextHints::ContextualAlternates ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
 				};
 
@@ -226,13 +237,16 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
-									 std::optional<Float> tabOffset, TextDirection direction,
-									 LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									 std::optional<Float> tabOffset, Uint32 textDrawHints,
+									 TextDirection direction, LineWrapMode wrapMode,
+									 Uint32 wrapWidth, bool keepIndentation,
 									 Float initialXOffset ) {
 	return hashCombine( std::hash<String::View>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
 						std::hash<std::optional<Float>>()( tabOffset ),
+						std::hash<Uint32>()( textDrawHints & ( TextHints::NoKerning |
+															   TextHints::OpenTypeFeatures ) ),
 						std::hash<std::underlying_type_t<TextDirection>>()(
 							static_cast<std::underlying_type_t<TextDirection>>( direction ) ),
 						std::hash<std::underlying_type_t<LineWrapMode>>()(
@@ -285,8 +299,8 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation,
-							   initialXOffset );
+							   tabOffset, textDrawHints, baseDirection, wrapMode, wrapWidth,
+							   keepIndentation, initialXOffset );
 
 		auto cacheHit = getLayoutCache().get( hash );
 		if ( cacheHit.has_value() )
@@ -320,7 +334,8 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 		 !Text::canSkipShaping( textDrawHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun(
-			result, string, rFont, characterSize, style, outlineThickness, baseDirection,
+			result, string, rFont, characterSize, style, outlineThickness, textDrawHints,
+			baseDirection,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, const TextSegment& segment,
 				 TextShapeRun& run ) {

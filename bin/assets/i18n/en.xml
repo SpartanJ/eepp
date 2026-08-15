@@ -250,6 +250,16 @@ Do you want to download it now?</string>
 	<string name="edit_build">Edit Build</string>
 	<string name="edit_custom_output_parser">Edit Selected Custom Output Parser</string>
 	<string name="editor_font_and_size_ellipsis">Editor Font &amp; Size...</string>
+	<string name="editor_font_features">Editor Font Features</string>
+	<string name="ui_font_features">UI Font Features</string>
+	<string name="contextual_alternates">Contextual Alternates (calt)</string>
+	<string name="contextual_alternates_desc">Context-dependent alternatives, including many programming ligatures.</string>
+	<string name="standard_ligatures">Standard Ligatures (liga)</string>
+	<string name="standard_ligatures_desc">Typographic combinations such as fi, fl, and ffi, depending on the font.</string>
+	<string name="contextual_ligatures">Contextual Ligatures (clig)</string>
+	<string name="contextual_ligatures_desc">Ligatures applied in specific contexts to improve readability.</string>
+	<string name="discretionary_ligatures">Discretionary Ligatures (dlig)</string>
+	<string name="discretionary_ligatures_desc">Optional decorative or stylistic ligatures provided by the font.</string>
 	<string name="editor_font_size">Editor Font Size</string>
 	<string name="editor_go_back">Editor Go Back</string>
 	<string name="editor_go_forward">Editor Go Forward</string>

@@ -1981,6 +1981,7 @@ void App::setTheme( const std::string& path ) {
 		->add( theme );
 
 	mUISceneNode->setTheme( theme.get() );
+	mUISceneNode->setDefaultTextHints( mConfig.ui.fontFeatures );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
 
@@ -2986,6 +2987,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setTabStops( mConfig.doc.tabStops );
+	editor->setLigatureFeatures( mConfig.editor.fontFeatures );
 	editor->setEnableInlineColorBoxes( config.inlineColorBoxes );
 
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
