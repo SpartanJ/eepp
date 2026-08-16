@@ -128,6 +128,24 @@ UTEST( SystemFontResolver, findVerdana ) {
 	query.weight = FontWeight::Normal;
 	query.italic = false;
 	FontDesc desc = resolver->resolve( query );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	auto verdanaFaces = resolver->enumerateFamily( "Verdana" );
+	if ( !verdanaFaces.empty() ) {
+		EXPECT_FALSE( desc.path.empty() );
+		EXPECT_STDSTREQ( "Verdana", desc.family );
+		EXPECT_TRUE_MSG(
+			desc.path.find( "Verdana" ) != std::string::npos,
+			( "Verdana must not resolve through a substituted CoreText family: " + desc.path )
+				.c_str() );
+		for ( const FontDesc& face : verdanaFaces ) {
+			FontTrueTypePtr font = defaultResourceScope().getFontService().loadSystemFont( face );
+			EXPECT_TRUE_MSG(
+				font && font->loaded(),
+				( "CoreText face index must load the selected Verdana face: " + face.getFileKey() )
+					.c_str() );
+		}
+	}
+#endif
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( resolver->enumerate().size() > 0 ) {

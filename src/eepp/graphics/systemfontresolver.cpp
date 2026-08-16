@@ -137,6 +137,35 @@ struct FreeTypeState {
 		return found;
 	}
 
+	bool findFaceIndex( const std::string& path, const std::string& postScriptName,
+						EE::Uint32& faceIndex ) {
+		Lock lock( mutex );
+		FT_Face face{ nullptr };
+		if ( !library || FT_New_Face( library, path.c_str(), -1, &face ) != 0 )
+			return false;
+
+		const FT_Long numFaces = face->num_faces;
+		FT_Done_Face( face );
+		if ( numFaces == 1 ) {
+			faceIndex = 0;
+			return true;
+		}
+		if ( postScriptName.empty() )
+			return false;
+		for ( FT_Long i = 0; i < numFaces; ++i ) {
+			if ( FT_New_Face( library, path.c_str(), i, &face ) != 0 )
+				continue;
+			const char* facePostScriptName = FT_Get_Postscript_Name( face );
+			const bool matches = facePostScriptName && postScriptName == facePostScriptName;
+			FT_Done_Face( face );
+			if ( matches ) {
+				faceIndex = static_cast<EE::Uint32>( i );
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void clearProbeCache() {
 		Lock lock( mutex );
 		probeCache.clear();
@@ -777,6 +806,11 @@ void SystemFontResolver::populateFontList() const {
 		return;
 
 	CFIndex count = CFArrayGetCount( descriptors );
+	std::shared_ptr<FreeTypeState> ftState = getFTState();
+	if ( !ftState ) {
+		CFRelease( descriptors );
+		return;
+	}
 
 	for ( CFIndex i = 0; i < count; ++i ) {
 		CFStringRef familyNameRef = (CFStringRef)CFArrayGetValueAtIndex( descriptors, i );
@@ -792,8 +826,12 @@ void SystemFontResolver::populateFontList() const {
 		CTFontDescriptorRef familyDesc = CTFontDescriptorCreateWithAttributes( queryDict );
 		CFRelease( queryDict );
 
-		CFSetRef mandatoryAttrs = CFSetCreate(
-			kCFAllocatorDefault, (const void**)&kCTFontURLAttribute, 1, &kCFTypeSetCallBacks );
+		// mandatoryAttributes describes which query attributes must match; it is not a list of
+		// attributes to return. Requiring the URL (which is absent from the query) lets CoreText
+		// substitute Helvetica for families such as Verdana.
+		CFSetRef mandatoryAttrs =
+			CFSetCreate( kCFAllocatorDefault, (const void**)&kCTFontFamilyNameAttribute, 1,
+						 &kCFTypeSetCallBacks );
 
 		CFArrayRef matchingDescs =
 			CTFontDescriptorCreateMatchingFontDescriptors( familyDesc, mandatoryAttrs );
@@ -820,6 +858,20 @@ void SystemFontResolver::populateFontList() const {
 			CFRelease( pathRef );
 
 			if ( fontPath.empty() )
+				continue;
+
+			CFStringRef postScriptNameRef =
+				(CFStringRef)CTFontDescriptorCopyAttribute( desc, kCTFontNameAttribute );
+			std::string postScriptName = cfStringToStd( postScriptNameRef );
+			if ( postScriptNameRef )
+				CFRelease( postScriptNameRef );
+
+			CFStringRef matchedFamilyRef =
+				(CFStringRef)CTFontDescriptorCopyAttribute( desc, kCTFontFamilyNameAttribute );
+			std::string matchedFamily = cfStringToStd( matchedFamilyRef );
+			if ( matchedFamilyRef )
+				CFRelease( matchedFamilyRef );
+			if ( normalizeFamily( matchedFamily ) != normalizeFamily( familyName ) )
 				continue;
 
 			CFDictionaryRef traits =
@@ -857,9 +909,12 @@ void SystemFontResolver::populateFontList() const {
 			}
 
 			FontDesc fontDesc;
-			fontDesc.family = familyName;
+			fontDesc.family = matchedFamily;
 			fontDesc.path = fontPath;
-			fontDesc.faceIndex = static_cast<Uint32>( j );
+			// j is only the descriptor's position in matchingDescs and is unrelated to the face's
+			// index inside a TTC. Match CoreText's PostScript name against the actual file faces.
+			if ( !ftState->findFaceIndex( fontPath, postScriptName, fontDesc.faceIndex ) )
+				continue;
 			fontDesc.weight = ctWeightToFontWeight( weightVal );
 			fontDesc.stretch = ctWidthToFontStretch( widthVal );
 			fontDesc.italic = ( slantVal > 0.0 );
