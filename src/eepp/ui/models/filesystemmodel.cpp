@@ -392,6 +392,18 @@ void FileSystemModel::setRootPath( const std::string& rootPath ) {
 
 FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool folderNode,
 														 bool invalidateTree ) {
+	// A configured root can be an alias of its canonical path (for example, /var maps to
+	// /private/var on macOS). Translate that prefix first so a moved or deleted leaf, which can no
+	// longer be resolved by realpath(), still maps to the canonical paths stored by the model.
+	const bool rootMatches =
+		!mRootPath.empty() &&
+		( path == mRootPath ||
+		  ( String::startsWith( path, mRootPath ) &&
+			( mRootPath.back() == '/' || mRootPath.back() == '\\' ||
+			  ( path.size() > mRootPath.size() &&
+				( path[mRootPath.size()] == '/' || path[mRootPath.size()] == '\\' ) ) ) ) );
+	if ( mRootPath != mRealRootPath && rootMatches )
+		path.replace( 0, mRootPath.size(), mRealRootPath );
 	path = FileSystem::getRealPath( path );
 	if ( folderNode && !FileSystem::isDirectory( path ) )
 		path = FileSystem::fileRemoveFileName( path );
@@ -428,7 +440,9 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 
 std::string_view FileSystemModel::getNodeRelativePath( const Node* node ) const {
 	auto rp = std::string_view{ node->fullPath() };
-	if ( mRootPath.size() < rp.size() )
+	if ( mRealRootPath.size() < rp.size() && String::startsWith( rp, mRealRootPath ) )
+		return rp.substr( mRealRootPath.size() );
+	if ( mRootPath.size() < rp.size() && String::startsWith( rp, mRootPath ) )
 		return rp.substr( mRootPath.size() );
 	return rp;
 }
