@@ -8,8 +8,6 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/window/cursormanager.hpp>
 
-#include <filesystem>
-
 namespace ecode {
 
 static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings() {
@@ -405,14 +403,10 @@ void UITreeViewFS::deleteItems( const std::vector<std::string>& paths ) {
 	msgBox->on( Event::OnConfirm, [paths]( const Event* ) {
 		for ( const auto& path : paths ) {
 			FileInfo info( path );
-			try {
-				if ( info.isDirectory() ) {
-					std::filesystem::remove_all( std::filesystem::path( path ) );
-				} else {
-					FileSystem::fileRemove( path );
-				}
-			} catch ( const std::filesystem::filesystem_error& ) {
-			}
+			if ( info.isDirectory() )
+				FileSystem::dirRemoveAll( path );
+			else
+				FileSystem::fileRemove( path );
 		}
 	} );
 }

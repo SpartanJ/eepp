@@ -1,9 +1,6 @@
 #include "settingsmenu.hpp"
 #include "uitreeviewfs.hpp"
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
 namespace ecode {
 
 String SettingsMenu::i18n( const std::string& key, const String& def ) {
@@ -2866,14 +2863,6 @@ void SettingsMenu::createProjectTreeMenu() {
 	showProjectTreeMenu();
 }
 
-static void fsRemoveAll( const std::string& fpath ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
-#else
-	fs::remove_all( fpath );
-#endif
-}
-
 void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
@@ -3152,13 +3141,8 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 		};
 
 		if ( file.isDirectory() ) {
-			try {
-				std::string fpath( file.getFilepath() );
-				FileSystem::dirRemoveSlashAtEnd( fpath );
-				fsRemoveAll( fpath );
-			} catch ( const fs::filesystem_error& ) {
+			if ( !FileSystem::dirRemoveAll( file.getFilepath() ) )
 				errFn();
-			}
 		} else if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
 			errFn();
 		}

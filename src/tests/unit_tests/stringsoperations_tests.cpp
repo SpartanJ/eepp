@@ -55,10 +55,7 @@ class ScopedTestDirectory {
   public:
 	explicit ScopedTestDirectory( std::filesystem::path path ) : mPath( std::move( path ) ) {}
 
-	~ScopedTestDirectory() {
-		std::error_code error;
-		std::filesystem::remove_all( mPath, error );
-	}
+	~ScopedTestDirectory() { FileSystem::dirRemoveAll( mPath.string() ); }
 
   private:
 	std::filesystem::path mPath;

@@ -1046,14 +1046,6 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mFontPickerController( std::make_unique<FontPickerController>( this ) ),
 	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {}
 
-static void fsRemoveAll( const std::string& fpath ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
-#else
-	fs::remove_all( fpath );
-#endif
-}
-
 App::~App() {
 	appInstance = nullptr;
 	mDestroyingApp = true;
@@ -1082,7 +1074,8 @@ App::~App() {
 	}
 	mDirTree.reset();
 
-	fsRemoveAll( mPidPath );
+	if ( !FileSystem::dirRemoveAll( mPidPath ) )
+		Log::warning( "Failed to remove directory \"%s\"", mPidPath );
 
 	if ( mFirstInstance )
 		FileSystem::fileRemove( firstInstanceIndicatorPath() );

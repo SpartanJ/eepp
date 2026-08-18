@@ -81,6 +81,11 @@ class EE_API FileSystem {
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
 
+	/** Recursively deletes a directory and all of its contents.
+	 * @return True if the directory was removed or did not exist, false on error.
+	 */
+	static bool dirRemoveAll( const std::string& path );
+
 	/** Moves a file or folder to the destination path
 	 * @param fromPath The path of the file or folder to move
 	 * @param toPath The folder / directory destination path

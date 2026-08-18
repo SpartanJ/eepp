@@ -202,6 +202,19 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 #endif
 }
 
+bool FileSystem::dirRemoveAll( const std::string& path ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::filesystem::path normalizedPath( String( path ).toWideString() );
+#else
+	std::filesystem::path normalizedPath( path );
+#endif
+	if ( normalizedPath.has_relative_path() && !normalizedPath.has_filename() )
+		normalizedPath = normalizedPath.parent_path();
+	std::error_code error;
+	std::filesystem::remove_all( normalizedPath, error );
+	return !error;
+}
+
 bool FileSystem::fileHide( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(),

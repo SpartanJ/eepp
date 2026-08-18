@@ -6,6 +6,7 @@
 #include <filesystem>
 
 using namespace EE::UI::Models;
+using namespace EE::System;
 
 namespace {
 
@@ -131,11 +132,11 @@ struct TempTree {
 		static unsigned long long id = 0;
 		path = std::filesystem::temp_directory_path() /
 			   ( "eepp-filesystem-model-move-" + std::to_string( ++id ) );
-		std::filesystem::remove_all( path );
+		FileSystem::dirRemoveAll( path.string() );
 		std::filesystem::create_directories( path );
 	}
 
-	~TempTree() { std::filesystem::remove_all( path ); }
+	~TempTree() { FileSystem::dirRemoveAll( path.string() ); }
 
 	std::filesystem::path path;
 };

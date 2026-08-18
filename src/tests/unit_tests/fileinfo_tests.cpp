@@ -26,12 +26,25 @@ struct TempDirectory {
 		std::filesystem::create_directories( path );
 	}
 
-	~TempDirectory() { std::filesystem::remove_all( path ); }
+	~TempDirectory() { FileSystem::dirRemoveAll( path.string() ); }
 
 	std::filesystem::path path;
 };
 
 } // namespace
+
+UTEST( FileSystem, dirRemoveAllHandlesTrailingSlash ) {
+	TempDirectory temp;
+	const std::filesystem::path nested = temp.path / "nested";
+	std::filesystem::create_directories( nested );
+	ASSERT_TRUE( FileSystem::fileWrite( ( nested / "file.txt" ).string(), "contents" ) );
+
+	std::string path( temp.path.string() );
+	FileSystem::dirAddSlashAtEnd( path );
+	EXPECT_TRUE( FileSystem::dirRemoveAll( path ) );
+	EXPECT_FALSE( std::filesystem::exists( temp.path ) );
+	EXPECT_TRUE( FileSystem::dirRemoveAll( path ) );
+}
 
 UTEST( FileInfo, sameInodeUsesDeviceAndRejectsInvalidIdentity ) {
 	FileInfoIdentity first;
