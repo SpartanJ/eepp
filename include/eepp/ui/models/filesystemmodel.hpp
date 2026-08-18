@@ -228,7 +228,7 @@ class EE_API FileSystemModel : public Model {
 					 const DisplayConfig& displayConfig, Translator* translator,
 					 std::shared_ptr<ThreadPool> threadPool );
 
-	size_t getFileIndex( Node* parent, const FileInfo& file );
+	size_t getFileIndex( Node* parent, const FileInfo& file, const Node* excludedNode = nullptr );
 
 	bool handleFileEventLocked( const FileEvent& event );
 

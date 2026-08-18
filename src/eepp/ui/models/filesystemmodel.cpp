@@ -641,11 +641,14 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 	mPreviouslySelectedIndex = previouslySelectedIndex;
 }
 
-size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
+size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file,
+									  const Node* excludedNode ) {
 	std::vector<FileInfo> files;
 	files.reserve( parent->mChildren.size() + 1 );
 
 	for ( Node* nodeFile : parent->mChildren ) {
+		if ( nodeFile == excludedNode )
+			continue;
 		files.emplace_back( nodeFile->info() );
 
 		if ( nodeFile->info().getFileName() == file.getFileName() )
@@ -777,6 +780,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			} );
 
 			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
+				auto notifyDescendantsDeleted = [&]( auto&& notify, const Node* node ) -> void {
+					for ( const Node* childNode : node->mChildren ) {
+						notifyIndexDeleted( childNode );
+						notify( notify, childNode );
+					}
+				};
+				notifyDescendantsDeleted( notifyDescendantsDeleted, child );
 				{
 					Lock l( mResourceLock );
 					eeDelete( parent->mChildren[index.row()] );
@@ -813,11 +823,14 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 		}
 		case FileSystemEventType::Moved: {
 			FileInfo file( event.directory + event.filename, false );
+			const std::string oldFilePath = FileSystem::isRelativePath( event.oldFilename )
+												? event.directory + event.oldFilename
+												: event.oldFilename;
 
 			if ( !file.exists() )
 				return false;
 
-			auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );
+			auto* node = getNodeFromPath( oldFilePath, false, false );
 			if ( !node ) {
 				return handleFileEventLocked(
 					{ FileSystemEventType::Add, event.directory, event.filename } );
@@ -826,89 +839,81 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			ModelIndex index = node->index( *this, 0 );
 			if ( !index.isValid() )
 				return false;
+			ModelIndex sourceParentIndex = index.parent();
 
-			Node* parent = node->mParent;
-			if ( !parent )
+			Node* sourceParent = node->mParent;
+			if ( !sourceParent )
 				return false;
 
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
 				return false;
 
 			if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden && file.isHidden() ) {
-				return handleFileEventLocked(
-					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 			}
 
 			const auto& displayCfg = getDisplayConfig();
 
 			if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) ) {
-				return handleFileEventLocked(
-					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 			}
 
-			Node* childNode = parent->mChildren[index.row()];
-			{
-				Lock l( mResourceLock );
-				childNode->rename( file );
-				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-			}
-
-			size_t pos = getFileIndex( node->getParent(), file );
+			Node* targetParent = getNodeFromPath(
+				file.isDirectory() ? FileSystem::removeLastFolderFromPath( file.getDirectoryPath() )
+								   : file.getDirectoryPath(),
+				true, false );
+			// Keep unopened branches lazy. The node only needs to disappear from its old,
+			// materialized parent; a later traversal of the destination will discover it.
+			if ( !targetParent )
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 
 			// Don't add the file if already exists (if moved an old file to another old
 			// file)
-			if ( pos == INDEX_ALREADY_EXISTS ) {
-				eeDelete( childNode );
-				return false;
-			}
+			Node* targetChild = targetParent->findChildName( file.getFileName(), *this );
+			if ( targetChild && targetChild != node )
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 
-			std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
-			std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
-			std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
+			UnorderedMap<UIAbstractView*, std::vector<ModelIndex>> selections;
 
 			forEachView( [&]( UIAbstractView* view ) {
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
-					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
-					if ( curNode->mParent == parent ) {
-						prevSelectionsModelIndex[view].emplace_back( selectedIndex );
-						prevSelections[view].emplace_back(
-							( curNode->getName() == event.oldFilename ) ? event.filename
-																		: curNode->getName() );
-					} else {
-						keptSelections[view].emplace_back( selectedIndex );
-					}
+					selections[view].emplace_back( selectedIndex );
 				} );
 			} );
 
-			beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
+			Node* childNode = sourceParent->mChildren[index.row()];
+			size_t pos = getFileIndex( targetParent, file, childNode );
+			eeASSERT( pos != INDEX_ALREADY_EXISTS );
+			beginMoveRows( sourceParentIndex, index.row(), index.row(),
+						   targetParent->index( *this, 0 ), pos );
 
 			{
 				Lock l( mResourceLock );
-				if ( pos >= parent->mChildren.size() ) {
-					parent->mChildren.emplace_back( childNode );
+				sourceParent->mChildren.erase( sourceParent->mChildren.begin() + index.row() );
+				childNode->rename( file );
+				childNode->mParent = targetParent;
+			}
+
+			{
+				Lock l( mResourceLock );
+				if ( pos >= targetParent->mChildren.size() ) {
+					targetParent->mChildren.emplace_back( childNode );
 				} else {
-					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+					targetParent->mChildren.insert( targetParent->mChildren.begin() + pos,
+													childNode );
 				}
 			}
 
 			endMoveRows();
 
 			forEachView( [&]( UIAbstractView* view ) {
-				std::vector<std::string> names = prevSelections[view];
-				std::vector<ModelIndex> newIndexes = keptSelections[view];
-				int i = 0;
-				for ( const auto& name : names ) {
-					Int64 row = -1;
-					{
-						Lock l( mResourceLock );
-						row = parent->findChildRowFromName( name, *this );
-					}
-					if ( row >= 0 ) {
-						newIndexes.emplace_back(
-							this->index( row, prevSelectionsModelIndex[view][i].column(),
-										 prevSelectionsModelIndex[view][i].parent() ) );
-					}
-					++i;
+				std::vector<ModelIndex> newIndexes;
+				newIndexes.reserve( selections[view].size() );
+				for ( const ModelIndex& selectedIndex : selections[view] ) {
+					Node* selectedNode = static_cast<Node*>( selectedIndex.internalData() );
+					ModelIndex newIndex = selectedNode->index( *this, selectedIndex.column() );
+					if ( newIndex.isValid() )
+						newIndexes.emplace_back( std::move( newIndex ) );
 				}
 				view->getSelection().set( newIndexes, false );
 			} );

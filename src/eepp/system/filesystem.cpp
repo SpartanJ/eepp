@@ -383,13 +383,17 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	std::string realPath;
 #ifdef EE_PLATFORM_POSIX
 	char dir[PATH_MAX];
-	realpath( path.c_str(), &dir[0] );
-	realPath = std::string( dir );
+	if ( realpath( path.c_str(), &dir[0] ) )
+		realPath = std::string( dir );
+	else
+		realPath = path;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	wchar_t dir[_MAX_PATH + 1];
-	GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
-					  nullptr );
-	realPath = String( dir ).toUtf8();
+	if ( GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
+						   nullptr ) )
+		realPath = String( dir ).toUtf8();
+	else
+		realPath = path;
 #else
 #warning FileSystem::getRealPath() not implemented on this platform.
 #endif

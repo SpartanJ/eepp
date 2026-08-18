@@ -3572,7 +3572,8 @@ void App::loadDirTree( const std::string& path ) {
 					mFolderWatches.insert( { dirTree.getPath(), 0 } );
 				}
 				mFolderWatches[dirTree.getPath()] =
-					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true );
+					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true,
+											{ { efsw::Options::ReportCrossDirectoryMoves, 1 } } );
 			}
 			mFileSystemListener->setDirTree( mDirTree );
 		},

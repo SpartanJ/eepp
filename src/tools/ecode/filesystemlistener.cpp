@@ -62,14 +62,12 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				if ( file.isLink() )
 					file = FileInfo( file.linksTo() );
 
-				if ( isFileOpen( oldFile ) )
-					notifyMove( oldFile, file );
+				notifyMove( oldFile, file );
 
 				if ( oldFile.isLink() ) {
 					oldFile = FileInfo( oldFile.linksTo() );
 
-					if ( isFileOpen( oldFile ) )
-						notifyMove( oldFile, file );
+					notifyMove( oldFile, file );
 				}
 			} else if ( action == efsw::Actions::Delete ) {
 				notifyDelete( file );
@@ -83,8 +81,7 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 
 			Lock l( mCbsMutex );
 			if ( !mCbs.empty() ) {
-				auto cbs = mCbs;
-				for ( const auto& cb : cbs )
+				for ( const auto& cb : mCbs )
 					cb.second( event, file );
 			}
 
@@ -98,9 +95,8 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 
 			Lock l( mCbsMutex );
 			if ( !mCbs.empty() ) {
-				auto cbs = mCbs;
 				FileEvent event( (FileSystemEventType)action, dir, filename, oldFilename );
-				for ( const auto& cb : cbs )
+				for ( const auto& cb : mCbs )
 					cb.second( event, file );
 			}
 		}
@@ -162,9 +158,21 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 }
 
 void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& newFile ) {
+	std::string oldPath( oldFile.getFilepath() );
+	std::string newPath( newFile.getFilepath() );
+	const bool directoryMoved = newFile.isDirectory();
+	if ( directoryMoved ) {
+		FileSystem::dirAddSlashAtEnd( oldPath );
+		FileSystem::dirAddSlashAtEnd( newPath );
+	}
+
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
-		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
-			doc.notifyDocumentMoved( newFile.getFilepath() );
+		const std::string& documentPath = doc.getFileInfo().getFilepath();
+		if ( oldPath == documentPath ) {
+			doc.notifyDocumentMoved( newPath );
+		} else if ( directoryMoved && String::startsWith( documentPath, oldPath ) ) {
+			doc.notifyDocumentMoved( newPath + documentPath.substr( oldPath.size() ) );
+		}
 	} );
 }
 

@@ -74,6 +74,10 @@ class EE_API FileInfo {
 
 	const Uint64& getInode() const;
 
+	const Uint64& getDevice() const;
+
+	const Uint64& getLinkCount() const;
+
 	bool isUninitialized() const;
 
 	std::string getExtension( const bool& lowerExt = true ) const;
@@ -87,6 +91,8 @@ class EE_API FileInfo {
 	Uint32 mGroupId{ 0 };
 	Uint32 mPermissions{ 0 };
 	Uint64 mInode{ 0 };
+	Uint64 mDevice{ 0 };
+	Uint64 mLinkCount{ 0 };
 };
 
 typedef std::map<std::string, FileInfo> FileInfoMap;

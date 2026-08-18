@@ -174,6 +174,12 @@ class EE_API Model {
 	enum class Direction { Row, Column };
 
 	struct Operation {
+		struct PersistentMove {
+			ModelIndex index;
+			ModelIndex targetParent;
+			int targetDimension;
+		};
+
 		OperationType type{ OperationType::Invalid };
 		Direction direction{ Direction::Row };
 		ModelIndex sourceParent;
@@ -181,6 +187,7 @@ class EE_API Model {
 		int last{ 0 };
 		ModelIndex targetParent;
 		int target{ 0 };
+		std::vector<PersistentMove> persistentMoves;
 
 		Operation( OperationType type ) : type( type ) {}
 
@@ -206,6 +213,10 @@ class EE_API Model {
 	void handleInsert( Operation const& );
 	void handleMove( Operation const& );
 	void handleDelete( Operation const& );
+	void saveMovedIndices( Operation& );
+	void notifyIndexDeleted( const void* internalData ) const;
+	void applyPersistentIndexChanges(
+		const std::vector<std::pair<ModelIndex, ModelIndex>>& indexChanges );
 
 	template <bool IsRow> void saveDeletedIndices( ModelIndex const& parent, int first, int last );
 

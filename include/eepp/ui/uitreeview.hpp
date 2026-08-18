@@ -165,6 +165,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );
 
+	virtual void onModelIndexDeleted( const void* internalData );
+
 	virtual UIWidget* updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 

@@ -45,6 +45,10 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	return mViewMetadata[index.internalData()];
 }
 
+void UITreeView::onModelIndexDeleted( const void* internalData ) {
+	mViewMetadata.erase( const_cast<void*>( internalData ) );
+}
+
 UITreeView::IterationDecision UITreeView::traverseIndex( TraverseTreeVars& v,
 														 const ModelIndex& index ) const {
 	if ( index.isValid() ) {
