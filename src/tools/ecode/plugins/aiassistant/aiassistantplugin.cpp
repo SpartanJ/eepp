@@ -52,6 +52,12 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 		if ( providerJson.contains( "version" ) ) {
 			provider.version = providerJson["version"].get<int>();
 		}
+		if ( providerJson.contains( "api_key_env_vars" ) &&
+			 providerJson["api_key_env_vars"].is_array() ) {
+			for ( const auto& env : providerJson["api_key_env_vars"] )
+				if ( env.is_string() )
+					provider.apiKeyEnvVars.emplace_back( env.get<std::string>() );
+		}
 
 		if ( providerJson.contains( "models" ) ) {
 			const auto& modelsJson = providerJson["models"];
@@ -88,6 +94,9 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 				if ( modelJson.contains( "tool_calling" ) ) {
 					model.toolCalling = modelJson.value( "tool_calling", false );
 				}
+				if ( modelJson.contains( "reasoning_options" ) )
+					model.reasoningConfiguration = LLMModelCatalog::parseReasoningConfiguration(
+						modelJson["reasoning_options"] );
 
 				if ( modelJson.contains( "cache_configuration" ) &&
 					 !modelJson["cache_configuration"].is_null() ) {
@@ -110,6 +119,39 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 	}
 
 	return providers;
+}
+
+static void mergeLLMProviders( LLMProviders& destination, LLMProviders providers,
+							   bool overrideModels ) {
+	for ( auto& [key, value] : providers ) {
+		auto providerIt = destination.find( key );
+		if ( providerIt == destination.end() ) {
+			destination.insert( { key, std::move( value ) } );
+			continue;
+		}
+		auto& provider = providerIt->second;
+		if ( !value.apiUrl.empty() )
+			provider.apiUrl = std::move( value.apiUrl );
+		if ( !value.name.empty() )
+			provider.name = std::move( value.name );
+		if ( value.displayName )
+			provider.displayName = std::move( value.displayName );
+		if ( value.fetchModelsUrl )
+			provider.fetchModelsUrl = std::move( value.fetchModelsUrl );
+		if ( !value.apiKeyEnvVars.empty() )
+			provider.apiKeyEnvVars = std::move( value.apiKeyEnvVars );
+		for ( auto& model : value.models ) {
+			auto current = std::find_if( provider.models.begin(), provider.models.end(),
+										 [&model]( const LLMModel& candidate ) {
+											 return candidate.provider == model.provider &&
+													candidate.name == model.name;
+										 } );
+			if ( current == provider.models.end() )
+				provider.models.emplace_back( std::move( model ) );
+			else if ( overrideModels )
+				*current = std::move( model );
+		}
+	}
 }
 
 static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j ) {
@@ -166,6 +208,10 @@ AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) 
 }
 
 AIAssistantPlugin::~AIAssistantPlugin() {
+	{
+		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
+		mModelCatalog.reset();
+	}
 	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() ) {
 		getPluginContext()->getSplitter()->forEachWidgetClass(
 			"llm_chatui", []( UIWidget* widget ) {
@@ -203,24 +249,53 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 										  return processMessage( notification );
 									  } );
 
-	std::vector<std::string> paths;
-	std::string path( pluginManager->getResourcesPath() + "plugins/aiassistant.json" );
-	if ( FileSystem::fileExists( path ) )
-		paths.emplace_back( path );
-	path = pluginManager->getPluginsPath() + "aiassistant.json";
-	if ( FileSystem::fileExists( path ) ||
+	const std::string bundledPath( pluginManager->getResourcesPath() + "plugins/aiassistant.json" );
+	const std::string userPath( pluginManager->getPluginsPath() + "aiassistant.json" );
+	if ( FileSystem::fileExists( userPath ) ||
 		 FileSystem::fileWrite(
-			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":{}\n}\n" ) ) {
-		mConfigPath = path;
-		paths.emplace_back( path );
-	}
-	if ( paths.empty() )
+			 userPath, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":{}\n}\n" ) )
+		mConfigPath = userPath;
+	if ( !FileSystem::fileExists( bundledPath ) && mConfigPath.empty() )
 		return;
-	for ( const auto& tpath : paths ) {
+
+	if ( FileSystem::fileExists( bundledPath ) ) {
 		try {
-			loadAIAssistantConfig( tpath, mConfigPath == tpath );
+			loadAIAssistantConfig( bundledPath, false );
 		} catch ( const json::exception& e ) {
-			Log::error( "Parsing linter \"%s\" failed:\n%s", tpath.c_str(), e.what() );
+			Log::error( "Parsing AI assistant config \"%s\" failed:\n%s", bundledPath.c_str(),
+						e.what() );
+		}
+	}
+
+	LLMModelCatalog::Settings catalogSettings;
+	catalogSettings.cachePath = getPluginStatePath() + "models.json";
+	std::string userData;
+	if ( !mConfigPath.empty() && FileSystem::fileGet( mConfigPath, userData ) ) {
+		const auto userJson = json::parse( userData, nullptr, false, true );
+		if ( userJson.is_object() && userJson.contains( "config" ) &&
+			 userJson["config"].is_object() ) {
+			const auto& userConfig = userJson["config"];
+			if ( userConfig.contains( "model_catalog_enabled" ) &&
+				 userConfig["model_catalog_enabled"].is_boolean() )
+				catalogSettings.enabled = userConfig["model_catalog_enabled"].get<bool>();
+			if ( userConfig.contains( "model_catalog_url" ) &&
+				 userConfig["model_catalog_url"].is_string() )
+				catalogSettings.url = userConfig["model_catalog_url"].get<std::string>();
+			if ( userConfig.contains( "model_catalog_refresh_hours" ) &&
+				 userConfig["model_catalog_refresh_hours"].is_number_unsigned() )
+				catalogSettings.refreshIntervalHours =
+					userConfig["model_catalog_refresh_hours"].get<std::uint32_t>();
+		}
+	}
+	LLMModelCatalog catalog( catalogSettings );
+	catalog.loadCached( mProviders );
+
+	if ( !mConfigPath.empty() ) {
+		try {
+			loadAIAssistantConfig( mConfigPath, true );
+		} catch ( const json::exception& e ) {
+			Log::error( "Parsing AI assistant config \"%s\" failed:\n%s", mConfigPath.c_str(),
+						e.what() );
 		}
 	}
 
@@ -283,11 +358,72 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	};
 
 	getPluginContext()->getConfig().addTabWidgetType( "llm_chatui", config );
+	{
+		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
+		mModelCatalogSettings = catalogSettings;
+	}
 
 	if ( mReady ) {
 		fireReadyCbs();
 		setReady( clock.getElapsedTime() );
+		// Re-enabled plugins already have a UI context. Initial startup safely defers this
+		// request until PluginMessageType::UIReady.
+		refreshModelCatalogAsync();
 	}
+}
+
+void AIAssistantPlugin::refreshModelCatalogAsync() {
+	LLMModelCatalog::Settings settings;
+	Node* mainThreadNode;
+	LLMModelCatalog* catalog;
+	{
+		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
+		if ( mModelCatalogRefreshStarted || !mModelCatalogSettings ||
+			 !mModelCatalogSettings->enabled || mModelCatalogSettings->url.empty() )
+			return;
+		mainThreadNode =
+			mManager->getSplitter() ? mManager->getSplitter()->getBaseLayout() : nullptr;
+		if ( !mainThreadNode || !mainThreadNode->getSceneNode() )
+			return;
+		settings = *mModelCatalogSettings;
+		mModelCatalog = std::make_unique<LLMModelCatalog>( settings );
+		catalog = mModelCatalog.get();
+		mModelCatalogRefreshStarted = true;
+	}
+	auto* manager = mManager;
+	catalog->refreshAsync( mProviders, [manager, mainThreadNode]( LLMProviders providers ) mutable {
+		mainThreadNode->runOnMainThread( [providers = std::move( providers ), manager]() mutable {
+			if ( manager->isClosing() )
+				return;
+			auto* plugin = manager->get( AIAssistantPlugin::Definition().id );
+			if ( plugin )
+				static_cast<AIAssistantPlugin*>( plugin )->applyModelCatalog(
+					std::move( providers ) );
+			else
+				Log::warning(
+					"Could not apply refreshed LLM model catalog: plugin is unavailable" );
+		} );
+	} );
+}
+
+void AIAssistantPlugin::applyModelCatalog( LLMProviders providers ) {
+	std::string userData;
+	if ( !mConfigPath.empty() && FileSystem::fileGet( mConfigPath, userData ) ) {
+		const auto userJson = json::parse( userData, nullptr, false, true );
+		try {
+			if ( userJson.is_object() && userJson.contains( "providers" ) &&
+				 userJson["providers"].is_object() )
+				mergeLLMProviders( providers, parseLLMProviders( userJson["providers"] ), true );
+		} catch ( const json::exception& error ) {
+			Log::warning( "Could not reapply AI Assistant user providers after catalog refresh: %s",
+						  error.what() );
+		}
+	}
+	mProviders = std::move( providers );
+	getPluginContext()->getSplitter()->forEachWidgetClass(
+		"llm_chatui", [this]( UIWidget* widget ) {
+			static_cast<LLMChatUI*>( widget )->setProviders( LLMProviders( mProviders ), true );
+		} );
 }
 
 void AIAssistantPlugin::displayBrokenUserConfigFileWarning() {
@@ -337,6 +473,14 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+		if ( updateConfigFile ) {
+			if ( !config.contains( "model_catalog_enabled" ) )
+				config["model_catalog_enabled"] = true;
+			if ( !config.contains( "model_catalog_url" ) )
+				config["model_catalog_url"] = "https://models.dev/api.json";
+			if ( !config.contains( "model_catalog_refresh_hours" ) )
+				config["model_catalog_refresh_hours"] = 24;
+		}
 
 		if ( config.contains( "display_reasoning" ) && config["display_reasoning"].is_boolean() )
 			mDisplayReasoning = config.value( "display_reasoning", false );
@@ -389,9 +533,9 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			config["openrouter_api_key"] = mApiKeys["openrouter"];
 
 		if ( config.contains( "moonshot_api_key" ) )
-			mApiKeys["moonshot"] = config.value( "moonshot_api_key", "" );
+			mApiKeys["moonshotai"] = config.value( "moonshot_api_key", "" );
 		else if ( updateConfigFile )
-			config["moonshot_api_key"] = mApiKeys["moonshot"];
+			config["moonshot_api_key"] = mApiKeys["moonshotai"];
 
 		if ( config.contains( "nvidia_api_key" ) )
 			mApiKeys["nvidia"] = config.value( "nvidia_api_key", "" );
@@ -399,14 +543,22 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			config["nvidia_api_key"] = mApiKeys["nvidia"];
 
 		if ( config.contains( "together_api_key" ) )
-			mApiKeys["together"] = config.value( "together_api_key", "" );
+			mApiKeys["togetherai"] = config.value( "together_api_key", "" );
 		else if ( updateConfigFile )
-			config["together_api_key"] = mApiKeys["together"];
+			config["together_api_key"] = mApiKeys["togetherai"];
 
 		if ( config.contains( "mimo_api_key" ) )
-			mApiKeys["mimo"] = config.value( "mimo_api_key", "" );
+			mApiKeys["xiaomi"] = config.value( "mimo_api_key", "" );
 		else if ( updateConfigFile )
-			config["mimo_api_key"] = mApiKeys["mimo"];
+			config["mimo_api_key"] = mApiKeys["xiaomi"];
+
+		if ( config.contains( "api_keys" ) && config["api_keys"].is_object() ) {
+			for ( const auto& [provider, apiKey] : config["api_keys"].items() )
+				if ( apiKey.is_string() )
+					mApiKeys[provider] = apiKey.get<std::string>();
+		} else if ( updateConfigFile ) {
+			config["api_keys"] = json::object();
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -460,32 +612,8 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	if ( mProviders.empty() ) {
 		mProviders = std::move( providers );
 	} else {
-		for ( const auto& [key, value] : providers ) {
-			auto providerIt = mProviders.find( key );
-			if ( providerIt != mProviders.end() ) {
-				auto& provider = providerIt->second;
-				if ( !value.apiUrl.empty() )
-					provider.apiUrl = value.apiUrl;
-				if ( !value.name.empty() )
-					provider.name = value.name;
-				if ( value.displayName )
-					provider.displayName = value.displayName;
-				if ( value.fetchModelsUrl )
-					provider.fetchModelsUrl = value.fetchModelsUrl;
-				// Add model if not exists
-				for ( auto& model : value.models ) {
-					if ( std::find_if( provider.models.begin(), provider.models.end(),
-									   [&model]( const LLMModel& cmodel ) {
-										   return cmodel.provider == model.provider &&
-												  cmodel.name == model.name;
-									   } ) == provider.models.end() ) {
-						provider.models.emplace_back( std::move( model ) );
-					}
-				}
-			} else {
-				mProviders.insert( { key, std::move( value ) } );
-			}
-		}
+		// User models override catalog metadata; bundled configs only fill gaps.
+		mergeLLMProviders( mProviders, std::move( providers ), updateConfigFile );
 	}
 
 	if ( getUISceneNode() )
@@ -529,6 +657,8 @@ void AIAssistantPlugin::onUnregisterEditor( UICodeEditor* editor ) {
 PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case ecode::PluginMessageType::UIReady: {
+			refreshModelCatalogAsync();
+
 			for ( const auto& kb : mKeyBindings ) {
 				if ( !String::startsWith( kb.first, "ai-" ) ) {
 					getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString(
@@ -613,18 +743,29 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "PERPLEXITY_API_KEY" );
 	} else if ( provider == "openrouter" ) {
 		ret = getenv( "OPENROUTER_API_KEY" );
-	} else if ( provider == "moonshot" ) {
+	} else if ( provider == "moonshotai" ) {
 		ret = getenv( "MOONSHOT_API_KEY" );
 	} else if ( provider == "nvidia" ) {
 		ret = getenv( "NVIDIA_API_KEY" );
-	} else if ( provider == "together" ) {
+	} else if ( provider == "togetherai" ) {
 		ret = getenv( "TOGETHER_API_KEY" );
-	} else if ( provider == "mimo" ) {
+	} else if ( provider == "xiaomi" ) {
 		ret = getenv( "MIMO_API_KEY" );
 	} else {
 		const auto& providerModelIt = instance->mProviders.find( provider );
-		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )
-			ret = OPEN_API_KEY;
+		if ( providerModelIt != instance->mProviders.end() ) {
+			for ( const auto& env : providerModelIt->second.apiKeyEnvVars ) {
+				if ( !String::icontains( env, "key" ) && !String::icontains( env, "token" ) )
+					continue;
+				ret = getenv( env.c_str() );
+				if ( ret )
+					break;
+			}
+			if ( !ret && providerModelIt->second.apiKeyEnvVars.size() == 1 )
+				ret = getenv( providerModelIt->second.apiKeyEnvVars.front().c_str() );
+			if ( !ret && providerModelIt->second.openApi )
+				ret = OPEN_API_KEY;
+		}
 	}
 
 	if ( ret )

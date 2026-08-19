@@ -80,7 +80,7 @@ void UIDropDown::onAutoSize() {
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
-	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
+	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() && max > 0 ) {
 		setInternalPixelsHeight( eeceil( max ) );
 	}
 }

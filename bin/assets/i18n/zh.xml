@@ -719,4 +719,8 @@ file in the directory tree.</string>
 	<string name="couldnt_save_screenshot">无法保存屏幕截图。</string>
 	<string name="screenshot_saved">屏幕截图已保存：</string>
 	<string name="open_screenshot_folder">打开屏幕截图文件夹</string>
+	<string name="reasoning_effort">推理强度</string>
+	<string name="reasoning_off">关闭</string>
+	<string name="reasoning_default">默认</string>
+	<string name="reasoning_on">开启</string>
 </resources>

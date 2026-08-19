@@ -51,6 +51,8 @@ class LLMChat {
 };
 
 class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
+	friend class AIAssistantPlugin;
+
   public:
 	static LLMChatUI* New( PluginManager* manager ) { return eeNew( LLMChatUI, ( manager ) ); }
 
@@ -116,6 +118,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIPushButton* mModelBtn{ nullptr };
+	UIDropDownList* mReasoningEffort{ nullptr };
 	UIPushButton* mAgentBtn{ nullptr };
 	UIPushButton* mAgentConfigBtn{ nullptr };
 
@@ -162,6 +165,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	bool mLinkMode{ false };
 	bool mDisplayReasoning{ false };
 	bool mInReasoning{ false };
+	bool mReasoningEnabled{ false };
+	std::string mSelectedReasoningEffort;
+	std::size_t mReasoningBudgetTokens{ 0 };
 	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
@@ -217,6 +223,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool selectModel( std::optional<LLMModel> model );
 
+	void updateReasoningControl();
+
 	bool selectAgent( const std::string& agent );
 
 	void fillModelDropDownList();
@@ -247,7 +255,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void removeLastChat();
 
-	void setProviders( LLMProviders&& providers );
+	void setProviders( LLMProviders&& providers, bool refreshModels = false );
 
 	virtual Uint32 onMessage( const NodeMessage* );
 

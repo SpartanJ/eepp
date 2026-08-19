@@ -945,4 +945,8 @@ Uses strftime format specifiers. The file extension follows the selected screens
 	<string name="couldnt_save_screenshot">Couldn't save the screenshot.</string>
 	<string name="screenshot_saved">Screenshot saved:</string>
 	<string name="open_screenshot_folder">Open Folder</string>
+	<string name="reasoning_effort">Reasoning Effort</string>
+	<string name="reasoning_off">Off</string>
+	<string name="reasoning_default">Default</string>
+	<string name="reasoning_on">On</string>
 </resources>

@@ -940,4 +940,8 @@ Utilise les spécificateurs de format strftime. L’extension du fichier corresp
 	<string name="couldnt_save_screenshot">Impossible d’enregistrer la capture d’écran.</string>
 	<string name="screenshot_saved">Capture d’écran enregistrée :</string>
 	<string name="open_screenshot_folder">Ouvrir le dossier</string>
+	<string name="reasoning_effort">Effort de raisonnement</string>
+	<string name="reasoning_off">Désactivé</string>
+	<string name="reasoning_default">Par défaut</string>
+	<string name="reasoning_on">Activé</string>
 </resources>

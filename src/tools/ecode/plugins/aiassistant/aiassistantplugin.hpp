@@ -2,7 +2,10 @@
 
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
+#include "llmmodelcatalog.hpp"
 #include "protocol.hpp"
+
+#include <mutex>
 
 namespace ecode {
 
@@ -64,6 +67,10 @@ class AIAssistantPlugin : public PluginBase {
 	AIAssistantConfig mConfig;
 	Uint32 mAIChatButtonPosCbId{ 0 };
 	std::string mConfigFileError;
+	std::mutex mModelCatalogMutex;
+	std::optional<LLMModelCatalog::Settings> mModelCatalogSettings;
+	std::unique_ptr<LLMModelCatalog> mModelCatalog;
+	bool mModelCatalogRefreshStarted{ false };
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
@@ -82,6 +89,10 @@ class AIAssistantPlugin : public PluginBase {
 	void initUI();
 
 	void displayBrokenUserConfigFileWarning();
+
+	void refreshModelCatalogAsync();
+
+	void applyModelCatalog( LLMProviders providers );
 };
 
 } // namespace ecode

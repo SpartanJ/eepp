@@ -98,6 +98,19 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
 	return UIDropDown::onKeyDown( Event );
 }
 
+void UIDropDownList::onAutoSize() {
+	UIDropDown::onAutoSize();
+
+	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getWidth() ),
+							  getTextWidth() );
+
+	if ( mWidthPolicy == SizePolicy::WrapContent ) {
+		setInternalPixelsWidth( eeceil( max + mPaddingPx.Left + mPaddingPx.Right ) );
+	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getWidth() && max > 0 ) {
+		setInternalPixelsWidth( eeceil( max ) );
+	}
+}
+
 UIDropDownList* UIDropDownList::showList() {
 	if ( NULL == mListBox )
 		return this;

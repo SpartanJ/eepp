@@ -961,4 +961,8 @@ Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem 
 	<string name="couldnt_save_screenshot">Das Bildschirmfoto konnte nicht gespeichert werden.</string>
 	<string name="screenshot_saved">Bildschirmfoto gespeichert:</string>
 	<string name="open_screenshot_folder">Ordner öffnen</string>
+	<string name="reasoning_effort">Denkaufwand</string>
+	<string name="reasoning_off">Aus</string>
+	<string name="reasoning_default">Standard</string>
+	<string name="reasoning_on">Ein</string>
 </resources>
