@@ -23,8 +23,9 @@ class LLMModelCatalog {
 
 	explicit LLMModelCatalog( Settings settings );
 	~LLMModelCatalog();
+	void cancel();
 
-	bool loadCached( LLMProviders& providers ) const;
+	bool loadCached( LLMProviders& providers );
 
 	std::uint64_t refreshAsync( LLMProviders providers,
 								std::function<void( LLMProviders )> refreshedCallback );
@@ -38,8 +39,12 @@ class LLMModelCatalog {
 	EE::Network::URI mProxyURI;
 	std::uint64_t mRequestId{ 0 };
 	std::shared_ptr<std::atomic_bool> mCancelled{ std::make_shared<std::atomic_bool>( false ) };
+	std::string mCachedData;
+	std::string mCachedETag;
+	bool mCachedCatalogValid{ false };
 
-	bool applyCatalog( const std::string& data, LLMProviders& providers ) const;
+	bool applyCatalog( const std::string& data, LLMProviders& providers,
+					   std::string* etag = nullptr ) const;
 };
 
 } // namespace ecode

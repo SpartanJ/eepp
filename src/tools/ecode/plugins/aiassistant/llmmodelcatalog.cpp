@@ -2,6 +2,7 @@
 
 #include <eepp/network/http.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
@@ -32,9 +33,7 @@ static bool supportsTextChat( const json& model ) {
 }
 
 static json normalizeCatalog( const json& source ) {
-	json result = { { "version", CATALOG_VERSION },
-					{ "fetched_at", Sys::getUnixTimestamp() },
-					{ "providers", json::object() } };
+	json result = { { "version", CATALOG_VERSION }, { "providers", json::object() } };
 	for ( const auto& [providerId, provider] : source.items() ) {
 		if ( !provider.is_object() || !provider.contains( "models" ) ||
 			 !provider["models"].is_object() )
@@ -124,6 +123,10 @@ static bool writeAtomically( const std::string& path, const std::string& data ) 
 LLMModelCatalog::LLMModelCatalog( Settings settings ) : mSettings( std::move( settings ) ) {}
 
 LLMModelCatalog::~LLMModelCatalog() {
+	cancel();
+}
+
+void LLMModelCatalog::cancel() {
 	mCancelled->store( true );
 	if ( mRequestId && Http::Pool::getGlobal().exists( mRequestURI, mProxyURI ) )
 		Http::Pool::getGlobal().get( mRequestURI, mProxyURI )->setCancelRequest( mRequestId );
@@ -161,7 +164,8 @@ LLMModelCatalog::parseReasoningConfiguration( const json& options ) {
 	return fallback;
 }
 
-bool LLMModelCatalog::applyCatalog( const std::string& data, LLMProviders& providers ) const {
+bool LLMModelCatalog::applyCatalog( const std::string& data, LLMProviders& providers,
+									std::string* etag ) const {
 	const auto catalog = json::parse( data, nullptr, false, true );
 	if ( !catalog.is_object() || !catalog.contains( "version" ) ||
 		 !catalog["version"].is_number_integer() ||
@@ -243,15 +247,24 @@ bool LLMModelCatalog::applyCatalog( const std::string& data, LLMProviders& provi
 			catalogProviders.insert_or_assign( providerId, std::move( provider ) );
 	if ( catalogProviders.empty() )
 		return false;
+	if ( etag )
+		*etag = catalog.contains( "etag" ) && catalog["etag"].is_string()
+					? catalog["etag"].get<std::string>()
+					: "";
 	providers = std::move( catalogProviders );
 	return true;
 }
 
-bool LLMModelCatalog::loadCached( LLMProviders& providers ) const {
+bool LLMModelCatalog::loadCached( LLMProviders& providers ) {
 	if ( !mSettings.enabled )
 		return false;
 	std::string data;
-	return FileSystem::fileGet( mSettings.cachePath, data ) && applyCatalog( data, providers );
+	if ( !FileSystem::fileGet( mSettings.cachePath, data ) ||
+		 !applyCatalog( data, providers, &mCachedETag ) )
+		return false;
+	mCachedData = std::move( data );
+	mCachedCatalogValid = true;
+	return true;
 }
 
 std::uint64_t
@@ -260,36 +273,23 @@ LLMModelCatalog::refreshAsync( LLMProviders providers,
 	if ( !mSettings.enabled || mSettings.url.empty() )
 		return 0;
 	Clock clock;
-	std::string cached;
-	json cache;
-	if ( FileSystem::fileGet( mSettings.cachePath, cached ) )
-		cache = json::parse( cached, nullptr, false, true );
-	const bool validCache = cache.is_object() && cache.contains( "version" ) &&
-							cache["version"].is_number_integer() &&
-							cache["version"].get<int>() == CATALOG_VERSION;
-	const std::int64_t fetchedAt =
-		validCache && cache.contains( "fetched_at" ) && cache["fetched_at"].is_number_integer()
-			? cache["fetched_at"].get<std::int64_t>()
-			: 0;
 	const std::int64_t maxAge =
 		static_cast<std::int64_t>( mSettings.refreshIntervalHours ) * 60 * 60;
-	if ( fetchedAt > 0 && Sys::getUnixTimestamp() - fetchedAt < maxAge )
+	const FileInfo cacheInfo( mSettings.cachePath );
+	if ( mCachedCatalogValid && cacheInfo.exists() && cacheInfo.getModificationTime() > 0 &&
+		 Sys::getUnixTimestamp() - cacheInfo.getModificationTime() < maxAge )
 		return 0;
 
 	Http::Request::FieldTable headers;
-	if ( validCache ) {
-		const std::string etag = cache.contains( "etag" ) && cache["etag"].is_string()
-									 ? cache["etag"].get<std::string>()
-									 : "";
-		if ( !etag.empty() )
-			headers["If-None-Match"] = etag;
-	}
+	if ( !mCachedETag.empty() )
+		headers["If-None-Match"] = mCachedETag;
 	const Settings settings = mSettings;
+	std::string cachedData = std::move( mCachedData );
 	mCancelled->store( false );
 	mRequestURI = URI( mSettings.url );
 	mProxyURI = Http::getEnvProxyURI();
 	mRequestId = Http::getAsync(
-		[settings, cache = std::move( cache ), providers = std::move( providers ),
+		[settings, cachedData = std::move( cachedData ), providers = std::move( providers ),
 		 refreshedCallback = std::move( refreshedCallback ), clock,
 		 cancelled = mCancelled]( const Http&, Http::Request&, Http::Response& response ) mutable {
 			if ( cancelled->load() )
@@ -297,8 +297,8 @@ LLMModelCatalog::refreshAsync( LLMProviders providers,
 			if ( response.getStatus() == Http::Response::Status::NotModified ) {
 				if ( cancelled->load() )
 					return;
-				cache["fetched_at"] = Sys::getUnixTimestamp();
-				writeAtomically( settings.cachePath, cache.dump() );
+				if ( !cachedData.empty() )
+					writeAtomically( settings.cachePath, cachedData );
 				return;
 			}
 			if ( response.getStatus() != Http::Response::Status::Ok ) {

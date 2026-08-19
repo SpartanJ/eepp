@@ -210,6 +210,9 @@ AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) 
 AIAssistantPlugin::~AIAssistantPlugin() {
 	{
 		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
+		mModelCatalogCancelled->store( true );
+		if ( mModelCatalog )
+			mModelCatalog->cancel();
 		mModelCatalog.reset();
 	}
 	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() ) {
@@ -287,9 +290,6 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 					userConfig["model_catalog_refresh_hours"].get<std::uint32_t>();
 		}
 	}
-	LLMModelCatalog catalog( catalogSettings );
-	catalog.loadCached( mProviders );
-
 	if ( !mConfigPath.empty() ) {
 		try {
 			loadAIAssistantConfig( mConfigPath, true );
@@ -375,7 +375,8 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 void AIAssistantPlugin::refreshModelCatalogAsync() {
 	LLMModelCatalog::Settings settings;
 	Node* mainThreadNode;
-	LLMModelCatalog* catalog;
+	std::shared_ptr<LLMModelCatalog> catalog;
+	std::shared_ptr<std::atomic_bool> cancelled;
 	{
 		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
 		if ( mModelCatalogRefreshStarted || !mModelCatalogSettings ||
@@ -386,23 +387,39 @@ void AIAssistantPlugin::refreshModelCatalogAsync() {
 		if ( !mainThreadNode || !mainThreadNode->getSceneNode() )
 			return;
 		settings = *mModelCatalogSettings;
-		mModelCatalog = std::make_unique<LLMModelCatalog>( settings );
-		catalog = mModelCatalog.get();
+		mModelCatalog = std::make_shared<LLMModelCatalog>( settings );
+		catalog = mModelCatalog;
+		cancelled = mModelCatalogCancelled;
 		mModelCatalogRefreshStarted = true;
 	}
 	auto* manager = mManager;
-	catalog->refreshAsync( mProviders, [manager, mainThreadNode]( LLMProviders providers ) mutable {
-		mainThreadNode->runOnMainThread( [providers = std::move( providers ), manager]() mutable {
-			if ( manager->isClosing() )
-				return;
-			auto* plugin = manager->get( AIAssistantPlugin::Definition().id );
-			if ( plugin )
-				static_cast<AIAssistantPlugin*>( plugin )->applyModelCatalog(
-					std::move( providers ) );
-			else
-				Log::warning(
-					"Could not apply refreshed LLM model catalog: plugin is unavailable" );
-		} );
+	auto applyProviders = [manager, mainThreadNode, cancelled]( LLMProviders providers ) mutable {
+		if ( cancelled->load() )
+			return;
+		mainThreadNode->runOnMainThread(
+			[providers = std::move( providers ), manager, cancelled]() mutable {
+				if ( cancelled->load() || manager->isClosing() )
+					return;
+				auto* plugin = manager->get( AIAssistantPlugin::Definition().id );
+				if ( plugin ) {
+					static_cast<AIAssistantPlugin*>( plugin )->applyModelCatalog(
+						std::move( providers ) );
+				} else {
+					Log::warning(
+						"Could not apply refreshed LLM model catalog: plugin is unavailable" );
+				}
+			} );
+	};
+	LLMProviders providers = mProviders;
+	mThreadPool->run( [catalog = std::move( catalog ), providers = std::move( providers ),
+					   applyProviders = std::move( applyProviders ), cancelled]() mutable {
+		if ( cancelled->load() )
+			return;
+		if ( catalog->loadCached( providers ) && !cancelled->load() )
+			applyProviders( LLMProviders( providers ) );
+		if ( cancelled->load() )
+			return;
+		catalog->refreshAsync( std::move( providers ), std::move( applyProviders ) );
 	} );
 }
 

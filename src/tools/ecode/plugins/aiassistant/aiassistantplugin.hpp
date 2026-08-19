@@ -69,7 +69,9 @@ class AIAssistantPlugin : public PluginBase {
 	std::string mConfigFileError;
 	std::mutex mModelCatalogMutex;
 	std::optional<LLMModelCatalog::Settings> mModelCatalogSettings;
-	std::unique_ptr<LLMModelCatalog> mModelCatalog;
+	std::shared_ptr<LLMModelCatalog> mModelCatalog;
+	std::shared_ptr<std::atomic_bool> mModelCatalogCancelled{
+		std::make_shared<std::atomic_bool>( false ) };
 	bool mModelCatalogRefreshStarted{ false };
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
