@@ -1965,6 +1965,9 @@ void LLMChatUI::writeToLastChat( const std::string& text ) {
 
 void LLMChatUI::updateAgentModeUI() {
 	mModelBtn->setVisible( !mIsAgentMode );
+	mReasoningEffort->setVisible( !mIsAgentMode && mCurModel.reasoningConfiguration &&
+								  mCurModel.reasoningConfiguration->type !=
+									  LLMReasoningType::None );
 	mAgentBtn->setVisible( mIsAgentMode );
 	mAgentConfigBtn->setVisible( mIsAgentMode );
 	mChatAdd->setVisible( !mIsAgentMode );
@@ -2001,7 +2004,6 @@ void LLMChatUI::setupAgentSession() {
 		auto sessionUpdate = msg.value( "sessionUpdate", "" );
 		if ( sessionUpdate == "agent_message_chunk" ) {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
-				mThinkingBubble = nullptr; // Reset thinking bubble so next thought gets a new one
 				auto chunk = msg["content"].value( "text", "" );
 				if ( !chunk.empty() )
 					writeToLastChat( chunk );
@@ -2010,7 +2012,7 @@ void LLMChatUI::setupAgentSession() {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
 				auto chunk = msg["content"].value( "text", "" );
 				if ( !chunk.empty() )
-					runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+					updateThinkingBubble( std::move( chunk ) );
 			}
 		} else if ( sessionUpdate == "tool_call" || sessionUpdate == "tool_call_update" ) {
 			addToolCallUpdate( msg );
@@ -3056,7 +3058,7 @@ void LLMChatUI::addToolCallUpdate( const nlohmann::json& msg ) {
 	} );
 }
 
-void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
+void LLMChatUI::updateThinkingBubble( std::string chunk ) {
 	if ( chunk.empty() )
 		return;
 

@@ -212,7 +212,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void addThinkingBubble();
 
-	void updateThinkingBubble( const std::string& chunk );
+	void updateThinkingBubble( std::string chunk );
 
 	void addPermissionUI( const acp::RequestPermissionRequest& req,
 						  std::function<void( const acp::RequestPermissionResponse& )> cb );
