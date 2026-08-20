@@ -24,6 +24,7 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mButton->setVisible( true );
 	mButton->setEnabled( true );
 	mButton->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
+	mDropDownList->addRelatedWidget( mButton );
 
 	applyDefaultTheme();
 }

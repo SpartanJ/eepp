@@ -75,14 +75,21 @@ void UIDropDown::setFriendNode( UINode* friendNode ) {
 }
 
 void UIDropDown::onAutoSize() {
+	if ( mFlags & UI_AUTO_SIZING )
+		return;
+
+	mFlags |= UI_AUTO_SIZING;
+
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ),
 							  mTextCache.getLineSpacing() );
 
-	if ( mHeightPolicy == SizePolicy::WrapContent && mLayoutWeight == 0 ) {
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() && max > 0 ) {
 		setInternalPixelsHeight( eeceil( max ) );
 	}
+
+	mFlags &= ~UI_AUTO_SIZING;
 }
 
 UIWidget* UIDropDown::getPopUpWidget() const {
@@ -207,15 +214,21 @@ void UIDropDown::onItemKeyDown( const Event* Event ) {
 	}
 }
 
-void UIDropDown::onPopUpFocusLoss( const Event* ) {
+void UIDropDown::onPopUpFocusLoss() {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	bool frienIsFocus = NULL != mFriendNode && mFriendNode == getEventDispatcher()->getFocusNode();
+	bool friendIsFocus = NULL != mFriendNode && mFriendNode == getEventDispatcher()->getFocusNode();
 	bool isChildFocus = isChild( getEventDispatcher()->getFocusNode() );
+	bool isRelatedWidget =
+		std::find( mRelatedWidgets.begin(), mRelatedWidgets.end(),
+				   getEventDispatcher()->getFocusNode() ) != mRelatedWidgets.end();
 
-	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !frienIsFocus ) {
+	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !friendIsFocus &&
+		 !isRelatedWidget ) {
 		hide();
+
+		mLastFocusLoss = Sys::getTicks();
 	}
 }
 

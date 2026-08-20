@@ -47,6 +47,7 @@ enum UIFlag : Int64 {
 	UI_HTML_ELEMENT = ( 1ULL << 31 ),
 	UI_CREATING_NODE = ( 1ULL << 32 ),
 	UI_IGNORE_GLOBAL_CSS = ( 1ULL << 33 ),
+	UI_AUTO_SIZING = ( 1ULL << 34 ),
 };
 
 enum UINodeType {

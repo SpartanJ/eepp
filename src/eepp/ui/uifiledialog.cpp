@@ -110,7 +110,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )
-		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mPath->on( Event::OnPressEnter, [this]( auto event ) { onPressEnter( event ); } );
@@ -176,7 +176,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	mMultiView = UIMultiModelView::New();
 	mMultiView->setParent( linearLayout );
-	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
 	mMultiView->on( Event::KeyDown, [this]( const Event* event ) {
@@ -245,7 +245,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setEnabled( false );
 
 	mFile = UITextInput::New();
-	mFile->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+	mFile->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );

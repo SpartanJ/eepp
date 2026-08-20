@@ -51,15 +51,24 @@ class EE_API UIDropDown : public UITextInput {
 										   const Uint32& propertyIndex = 0 ) const;
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
+	void addRelatedWidget( UIWidget* widget ) { mRelatedWidgets.push_back( widget ); }
+
+	void removeRelatedWidget( UIWidget* widget ) {
+		mRelatedWidgets.erase(
+			std::find( mRelatedWidgets.begin(), mRelatedWidgets.end(), widget ) );
+	}
+
   protected:
 	StyleConfig mStyleConfig;
 	UINode* mFriendNode{ nullptr };
+	Uint64 mLastFocusLoss{ 0 };
+	std::vector<UIWidget*> mRelatedWidgets;
 
 	UIDropDown( const std::string& tag );
 
 	virtual UIWidget* getPopUpWidget() const;
 
-	void onPopUpFocusLoss( const Event* Event );
+	virtual void onPopUpFocusLoss();
 
 	virtual void onItemSelected( const Event* Event );
 	virtual void show();

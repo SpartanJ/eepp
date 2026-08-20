@@ -31,7 +31,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) : UIDropDown( tag ), mL
 	// This will force to change the parent when shown, and force the CSS style reload.
 	mListBox->setParent( this );
 
-	mListBox->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss( event ); } );
+	mListBox->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss(); } );
 	mListBox->on( Event::OnItemSelected, [this]( auto event ) { onItemSelected( event ); } );
 	mListBox->on( Event::OnItemClicked, [this]( auto event ) { onItemClicked( event ); } );
 	mListBox->on( Event::OnItemKeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
@@ -99,16 +99,22 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
 }
 
 void UIDropDownList::onAutoSize() {
+	if ( mFlags & UI_AUTO_SIZING )
+		return;
+
 	UIDropDown::onAutoSize();
 
-	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getWidth() ),
-							  getTextWidth() );
+	mFlags |= UI_AUTO_SIZING;
 
-	if ( mWidthPolicy == SizePolicy::WrapContent && mLayoutWeight == 0 ) {
+	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getWidth() ), getTextWidth() );
+
+	if ( mWidthPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsWidth( eeceil( max + mPaddingPx.Left + mPaddingPx.Right ) );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getWidth() && max > 0 ) {
 		setInternalPixelsWidth( eeceil( max ) );
 	}
+
+	mFlags &= ~UI_AUTO_SIZING;
 }
 
 UIDropDownList* UIDropDownList::showList() {

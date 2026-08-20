@@ -29,7 +29,7 @@ UIDropDownModelList::UIDropDownModelList( const std::string& tag ) :
 	mListView->setParent( this );
 	mListView->setSingleClickNavigation( true );
 
-	mListView->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss( event ); } );
+	mListView->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss(); } );
 	mListView->on( Event::OnModelEvent, [this]( auto event ) { onItemSelected( event ); } );
 	mListView->on( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
 	mListView->on( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
@@ -87,7 +87,7 @@ void UIDropDownModelList::setListView( UIAbstractTableView* listView ) {
 	mListView->setVisible( false );
 	mListView->setParent( this );
 
-	mListView->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss( event ); } );
+	mListView->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onPopUpFocusLoss(); } );
 	mListView->on( Event::OnModelEvent, [this]( auto event ) { onItemSelected( event ); } );
 	mListView->on( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
 	mListView->on( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
