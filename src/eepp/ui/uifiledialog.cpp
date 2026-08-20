@@ -278,7 +278,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setEnabled( false );
 
 	mFiletype = UIDropDownList::New();
-	mFiletype->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+	mFiletype->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFiletype->setPopUpToRoot( true );

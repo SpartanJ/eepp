@@ -104,7 +104,7 @@ void UIDropDownList::onAutoSize() {
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getWidth() ),
 							  getTextWidth() );
 
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent && mLayoutWeight == 0 ) {
 		setInternalPixelsWidth( eeceil( max + mPaddingPx.Left + mPaddingPx.Right ) );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getWidth() && max > 0 ) {
 		setInternalPixelsWidth( eeceil( max ) );

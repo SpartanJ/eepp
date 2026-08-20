@@ -78,7 +78,7 @@ void UIDropDown::onAutoSize() {
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ),
 							  mTextCache.getLineSpacing() );
 
-	if ( mHeightPolicy == SizePolicy::WrapContent ) {
+	if ( mHeightPolicy == SizePolicy::WrapContent && mLayoutWeight == 0 ) {
 		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() && max > 0 ) {
 		setInternalPixelsHeight( eeceil( max ) );
