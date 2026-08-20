@@ -227,8 +227,6 @@ void UIDropDown::onPopUpFocusLoss() {
 	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !friendIsFocus &&
 		 !isRelatedWidget ) {
 		hide();
-
-		mLastFocusLoss = Sys::getTicks();
 	}
 }
 

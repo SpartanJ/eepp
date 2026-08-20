@@ -141,7 +141,9 @@ StatusDebuggerController::getLocalDefaultKeybindings() {
 StatusDebuggerController::StatusDebuggerController( UISplitter* mainSplitter,
 													UISceneNode* uiSceneNode,
 													PluginContextProvider* pluginContext ) :
-	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {}
+	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {
+	mSerializedLayout = mContext->getConfig().iniState.getValue( "debugger", "panel_layout" );
+}
 
 StatusDebuggerController::~StatusDebuggerController() {
 	mEventConnections.clear();
@@ -346,9 +348,7 @@ void StatusDebuggerController::restoreTabLayout() {
 		"debugger-breakpoints", "debugger-console" };
 	mRestoringLayout = true;
 	bool restored = false;
-	mSerializedLayout = mContext->getConfig().iniState.getValue(
-		"debugger", "panel_layout",
-		mContext->getConfig().iniState.getValue( "ui", "debugger_panel_layout", "" ) );
+	mSerializedLayout = mContext->getConfig().iniState.getValue( "debugger", "panel_layout" );
 	const std::string& saved = mSerializedLayout;
 	if ( !saved.empty() ) {
 		auto layout = nlohmann::json::parse( saved, nullptr, false, true );
@@ -392,11 +392,13 @@ void StatusDebuggerController::restoreTabLayout() {
 		mUITabWidget->setTabSelected( Uint32{ 0 } );
 		mUIRightTabWidget->setTabSelected( Uint32{ 0 } );
 	}
-	if ( mUITabWidget->getTabCount() )
+
+	if ( mUITabWidget->getTabCount() ) {
 		mTabWidgetSplitter->setCurrentWidget(
 			mUITabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
+	}
+
 	mRestoringLayout = false;
-	saveTabLayout();
 	updateRightPanel();
 }
 

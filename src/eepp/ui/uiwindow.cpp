@@ -563,13 +563,12 @@ void UIWindow::onSizeChange() {
 	Sizef size( getMinWindowSizeWithDecoration() );
 
 	if ( getSize().getWidth() < size.getWidth() || getSize().getHeight() < size.getHeight() ) {
-		if ( getSize().getWidth() < size.getWidth() &&
-			 getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
-			setSize( mStyleConfig.MinWindowSize );
+		if ( getSize().getWidth() < size.getWidth() && getSize().getHeight() < size.getHeight() ) {
+			internalSize( size );
 		} else if ( getSize().getWidth() < size.getWidth() ) {
-			setSize( Sizef( mStyleConfig.MinWindowSize.getWidth(), getSize().getHeight() ) );
+			internalSize( Sizef( size.getWidth(), getSize().getHeight() ) );
 		} else if ( getSize().getHeight() < size.getHeight() ) {
-			setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
+			internalSize( Sizef( getSize().getWidth(), size.getHeight() ) );
 		}
 	} else {
 		fixChildrenSize();

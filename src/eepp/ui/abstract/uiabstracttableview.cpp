@@ -629,7 +629,11 @@ void UIAbstractTableView::updateColumnsWidth() {
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
 			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
 			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
-			if ( mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f ) {
+			const bool verticalScrollConsumesWidth =
+				mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f;
+			mAutoExpandedColumnUsesVerticalScroll =
+				shouldVScrollBeVisible && verticalScrollConsumesWidth;
+			if ( verticalScrollConsumesWidth ) {
 				if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
 					width -= getVerticalScrollBar()->getPixelsSize().getWidth();
 				else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
@@ -843,10 +847,19 @@ void UIAbstractTableView::onContentSizeChange() {
 
 	bool verticalScrollWasVisible = mVScroll->isVisible();
 	UIScrollableWidget::onContentSizeChange();
-	const bool columnsDependOnContentWidth =
-		mColumnWidthMode == ColumnWidthMode::Percentage || mAutoColumnsWidth ||
-		( mAutoExpandOnSingleColumn && visibleColumnCount() == 1 );
-	if ( !columnsDependOnContentWidth || verticalScrollWasVisible == mVScroll->isVisible() )
+	const bool autoExpandedSingleColumn = mAutoExpandOnSingleColumn && visibleColumnCount() == 1;
+	const bool columnsDependOnContentWidth = mColumnWidthMode == ColumnWidthMode::Percentage ||
+											 mAutoColumnsWidth || autoExpandedSingleColumn;
+	const bool verticalScrollConsumesWidth =
+		mVScroll->isVisible() &&
+		( mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f );
+	// Visibility can be updated before this callback begins, so comparing only the state before and
+	// after the base implementation can miss a stale auto-expanded width.
+	const bool autoExpandedColumnIsStale =
+		autoExpandedSingleColumn &&
+		mAutoExpandedColumnUsesVerticalScroll != verticalScrollConsumesWidth;
+	if ( !columnsDependOnContentWidth ||
+		 ( verticalScrollWasVisible == mVScroll->isVisible() && !autoExpandedColumnIsStale ) )
 		return;
 
 	mUpdatingColumnsForScrollbars = true;

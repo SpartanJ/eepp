@@ -61,8 +61,7 @@ class EE_API UIDropDown : public UITextInput {
   protected:
 	StyleConfig mStyleConfig;
 	UINode* mFriendNode{ nullptr };
-	Uint64 mLastFocusLoss{ 0 };
-	std::vector<UIWidget*> mRelatedWidgets;
+	SmallVector<UIWidget*, 1> mRelatedWidgets;
 
 	UIDropDown( const std::string& tag );
 

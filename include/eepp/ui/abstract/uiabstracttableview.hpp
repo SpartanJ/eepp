@@ -244,6 +244,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	ColumnWidthMode mColumnWidthMode{ ColumnWidthMode::Pixels };
 	bool mColumnWidthModeMenuEnabled{ false };
 	bool mUpdatingColumnsForScrollbars{ false };
+	bool mAutoExpandedColumnUsesVerticalScroll{ false };
 	std::string mPendingSerializedColumnWidths;
 
 	virtual ~UIAbstractTableView();

@@ -35,6 +35,7 @@ class TransferTestTabWidget : public UITabWidget {
 class ThreeColumnModel : public Model {
   public:
 	explicit ThreeColumnModel( size_t rows = 1 ) : mRows( rows ) {}
+	void setRows( size_t rows ) { mRows = rows; }
 
 	size_t rowCount( const ModelIndex& = ModelIndex() ) const override { return mRows; }
 	size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 3; }
@@ -73,6 +74,8 @@ class PercentageTestTable : public UITableView {
 		mContentWidth = width;
 		onColumnResizeToContent( column );
 	}
+
+	void updateScrollbars() { onContentSizeChange(); }
 
 	Float getMaxColumnContentWidth( const size_t&, bool ) override { return mContentWidth; }
 
@@ -327,6 +330,32 @@ UTEST( UIAbstractTableView, AutoPixelColumnsRecomputeWhenVerticalScrollbarAppear
 
 	EXPECT_TRUE( table->getColumnWidthMode() == UIAbstractTableView::ColumnWidthMode::Pixels );
 	EXPECT_TRUE( table->getVerticalScrollBar()->isVisible() );
+	EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
+}
+
+UTEST( UIAbstractTableView, AutoExpandedSingleColumnAccountsForVerticalScrollbar ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 400, 100 );
+	table->setAutoExpandOnSingleColumn( true );
+	table->setModel( std::make_shared<ThreeColumnModel>( 100 ) );
+	table->setColumnsVisible( { 0 } );
+	app.getUI()->update( Milliseconds( 16 ) );
+
+	EXPECT_TRUE( table->getVerticalScrollBar()->isVisible() );
+	EXPECT_EQ( table->getColumnWidth( 0 ), table->getContentSpaceWidth() );
+	EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
+
+	auto model = std::make_shared<ThreeColumnModel>();
+	table->setModel( model );
+	model->setRows( 100 );
+	table->getVerticalScrollBar()->setVisible( true );
+	table->updateScrollbars();
+	EXPECT_TRUE( table->getVerticalScrollBar()->isVisible() );
+	EXPECT_EQ( table->getColumnWidth( 0 ), table->getContentSpaceWidth() );
 	EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
 }
 
