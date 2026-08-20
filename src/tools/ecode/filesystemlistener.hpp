@@ -25,7 +25,7 @@ class FileSystemListener : public efsw::FileWatchListener {
 						std::shared_ptr<FileSystemModel> fileSystemModel,
 						const std::vector<std::string>& ignoreFiles );
 
-	virtual ~FileSystemListener() {}
+	virtual ~FileSystemListener();
 
 	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
 						   efsw::Action action, const std::string& oldFilename );
@@ -46,6 +46,11 @@ class FileSystemListener : public efsw::FileWatchListener {
 	std::unordered_map<Uint64, FileEventFn> mCbs;
 	std::vector<std::string> mIgnoredFiles;
 	Mutex mCbsMutex;
+	// Tag of the queued main-thread file-event actions; the destructor cancels
+	// them and marks the lifetime token dead so a queued runnable can never
+	// dereference the destroyed listener.
+	Uint64 mEventActionTag{ 0 };
+	std::shared_ptr<std::atomic<bool>> mLifetime;
 
 	bool isFileOpen( const FileInfo& file );
 

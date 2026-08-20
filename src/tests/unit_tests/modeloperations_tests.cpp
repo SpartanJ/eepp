@@ -1,12 +1,24 @@
 #include "utest.hpp"
 
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/persistentmodelindex.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitreeview.hpp>
+#include <eepp/window/engine.hpp>
 #include <filesystem>
+#include <thread>
 
 using namespace EE::UI::Models;
 using namespace EE::System;
+using namespace EE::Scene;
+using namespace EE::UI;
+using namespace EE::Window;
+using namespace EE::Graphics;
 
 namespace {
 
@@ -141,6 +153,20 @@ struct TempTree {
 	std::filesystem::path path;
 };
 
+static UISceneNode* initTreeViewTestScene() {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	// Use a unique font name and skip applyDefaultTheme(): the default theme
+	// and the "NotoSans-Regular" resource-scope entry are shared globals that
+	// later tests (e.g. UIDiffView's UIApplication) replace and free.
+	FontTrueType* font = FontTrueType::New( "eepp-fsm-test-font" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	return sceneNode;
+}
+
 } // namespace
 
 UTEST( ModelMove, crossParentPersistentIndexesFollowNodesAndShiftSiblings ) {
@@ -270,4 +296,115 @@ UTEST( FileSystemModelMove, keepsUnopenedDestinationBranchLazy ) {
 	ASSERT_TRUE( model->getNodeFromPath( destination.string(), true, false ) == nullptr );
 	ASSERT_TRUE( model->getNodeFromPath( ( destination / "file.txt" ).string(), false, true ) !=
 				 nullptr );
+}
+
+static ModelIndex indexOfNode( const FileSystemModel& model, const void* node,
+							   const ModelIndex& parent = {} ) {
+	for ( Int64 row = 0; row < (Int64)model.rowCount( parent ); ++row ) {
+		ModelIndex idx = model.index( row, 0, parent );
+		if ( idx.isValid() && idx.internalData() == node )
+			return idx;
+	}
+	return {};
+}
+
+UTEST( FileSystemModelMove, deleteFallbackWithAttachedViewAndSelection ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "FileSystemModel test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	initTreeViewTestScene();
+
+	TempTree tree;
+	auto source = tree.path / "source";
+	auto destination = tree.path / "outer" / "destination";
+	std::filesystem::create_directories( source / "folder" );
+	std::filesystem::create_directories( destination );
+	std::FILE* file = std::fopen( ( source / "folder" / "file.txt" ).string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	auto* sourceNode = model->getNodeFromPath( ( source ).string(), true );
+	auto* folderNode = model->getNodeFromPath( ( source / "folder" ).string(), true );
+	auto* fileNode = model->getNodeFromPath( ( source / "folder" / "file.txt" ).string() );
+	ASSERT_TRUE( sourceNode != nullptr );
+	ASSERT_TRUE( folderNode != nullptr );
+	ASSERT_TRUE( fileNode != nullptr );
+
+	UITreeView* treeView = UITreeView::New();
+	treeView->setModel( model );
+
+	// Select the file inside the folder that will be moved away.
+	ModelIndex sourceIndex = indexOfNode( *model, sourceNode );
+	ModelIndex folderIndex = indexOfNode( *model, folderNode, sourceIndex );
+	ModelIndex fileIndex = indexOfNode( *model, fileNode, folderIndex );
+	ASSERT_TRUE( fileIndex.isValid() );
+	treeView->getSelection().set( fileIndex );
+	ASSERT_EQ( treeView->getSelection().size(), 1 );
+
+	// Moving the folder to an unopened destination falls back to deleting the
+	// materialized source node; the attached view and its selection must
+	// survive without crashing.
+	std::filesystem::rename( source / "folder", destination / "renamed" );
+	ASSERT_TRUE( model->handleFileEvent(
+		{ FileSystemEventType::Moved, destination.string() + EE::System::FileSystem::getOSSlash(),
+		  "renamed", ( source / "folder" ).string() } ) );
+
+	ASSERT_TRUE( model->getNodeFromPath( ( source / "folder" ).string(), false, false ) ==
+				 nullptr );
+	ASSERT_TRUE( treeView->getSelection().isEmpty() );
+}
+
+UTEST( FileSystemModelMove, deleteFallbackWithStaleSelectionDoesNotCrash ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "FileSystemModel test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	initTreeViewTestScene();
+
+	TempTree tree;
+	auto source = tree.path / "source";
+	auto destination = tree.path / "outer" / "destination";
+	std::filesystem::create_directories( source / "folder" );
+	std::filesystem::create_directories( destination );
+	std::FILE* file = std::fopen( ( source / "folder" / "file.txt" ).string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	auto* sourceNode = model->getNodeFromPath( ( source ).string(), true );
+	auto* folderNode = model->getNodeFromPath( ( source / "folder" ).string(), true );
+	auto* fileNode = model->getNodeFromPath( ( source / "folder" / "file.txt" ).string() );
+	ASSERT_TRUE( sourceNode != nullptr );
+	ASSERT_TRUE( folderNode != nullptr );
+	ASSERT_TRUE( fileNode != nullptr );
+
+	UITreeView* treeView = UITreeView::New();
+	treeView->setModel( model );
+
+	ModelIndex sourceIndex = indexOfNode( *model, sourceNode );
+	ModelIndex folderIndex = indexOfNode( *model, folderNode, sourceIndex );
+	ModelIndex fileIndex = indexOfNode( *model, fileNode, folderIndex );
+	ASSERT_TRUE( fileIndex.isValid() );
+	treeView->getSelection().set( fileIndex );
+
+	// Delete the file from disk and refresh from a background thread: the
+	// model drops the node without touching the view selection (the debounced
+	// selection cleanup is queued but has not run yet), leaving a stale
+	// selection entry pointing at freed memory.
+	std::filesystem::remove( source / "folder" / "file.txt" );
+	std::thread refresher( [&model]() { model->refresh(); } );
+	refresher.join();
+	ASSERT_EQ( treeView->getSelection().size(), 1 );
+
+	// Moving the folder to an unopened destination triggers the delete
+	// fallback, which used to dereference the stale selection entry.
+	std::filesystem::rename( source / "folder", destination / "renamed" );
+	ASSERT_TRUE( model->handleFileEvent(
+		{ FileSystemEventType::Moved, destination.string() + EE::System::FileSystem::getOSSlash(),
+		  "renamed", ( source / "folder" ).string() } ) );
+
+	// The stale entry must have been dropped without crashing.
+	ASSERT_TRUE( treeView->getSelection().isEmpty() );
 }

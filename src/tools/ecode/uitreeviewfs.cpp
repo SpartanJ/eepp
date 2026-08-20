@@ -137,7 +137,9 @@ class UITreeViewCellFS : public UITreeViewCell {
 	}
 
 	const std::string& getCurrentPath() const {
-		return getModel()->node( getCurIndex() ).fullPath();
+		static const std::string empty;
+		const auto* node = getModel()->nodePtr( getCurIndex() );
+		return node ? node->fullPath() : empty;
 	}
 
   protected:
@@ -343,9 +345,9 @@ void UITreeViewFS::copyFiles( const std::vector<std::string>& paths, const std::
 }
 
 std::string UITreeViewFS::getSelectionPath() const {
-	return static_cast<const FileSystemModel*>( getModel() )
-		->node( getSelection().first() )
-		.fullPath();
+	const auto* node =
+		static_cast<const FileSystemModel*>( getModel() )->nodePtr( getSelection().first() );
+	return node ? node->fullPath() : "";
 }
 
 std::string UITreeViewFS::getSelectionPathAtIndex( int index ) const {
@@ -353,9 +355,9 @@ std::string UITreeViewFS::getSelectionPathAtIndex( int index ) const {
 	if ( index < 0 || static_cast<size_t>( index ) >= static_cast<size_t>( selection.size() ) )
 		return "";
 	auto indexVec = selection.indexes();
-	return static_cast<const FileSystemModel*>( getModel() )
-		->node( indexVec[static_cast<size_t>( index )] )
-		.fullPath();
+	const auto* node = static_cast<const FileSystemModel*>( getModel() )
+						   ->nodePtr( indexVec[static_cast<size_t>( index )] );
+	return node ? node->fullPath() : "";
 }
 
 std::vector<FileInfo> UITreeViewFS::getSelectionsFileInfo() const {
@@ -363,7 +365,8 @@ std::vector<FileInfo> UITreeViewFS::getSelectionsFileInfo() const {
 	auto indexVec = getSelection().indexes();
 	auto model = static_cast<const FileSystemModel*>( getModel() );
 	for ( const auto& index : indexVec ) {
-		ret.emplace_back( FileInfo( model->node( index ).fullPath() ) );
+		if ( const auto* node = model->nodePtr( index ) )
+			ret.emplace_back( FileInfo( node->fullPath() ) );
 	}
 	return ret;
 }

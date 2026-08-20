@@ -100,7 +100,7 @@ class EE_API Model {
 
 	virtual bool isEditable( const ModelIndex& ) const { return false; }
 
-	bool isValid( const ModelIndex& index ) const {
+	virtual bool isValid( const ModelIndex& index ) const {
 		auto parentIndex = this->parentIndex( index );
 		return index.row() >= 0 && index.row() < (Int64)rowCount( parentIndex ) &&
 			   index.column() >= 0 && index.column() < (Int64)columnCount( parentIndex );

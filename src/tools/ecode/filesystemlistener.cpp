@@ -1,6 +1,10 @@
 #include "filesystemlistener.hpp"
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/time.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace ecode {
 
@@ -22,7 +26,28 @@ std::string getFileSystemEventTypeName( FileSystemEventType action ) {
 FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 										std::shared_ptr<FileSystemModel> fileSystemModel,
 										const std::vector<std::string>& ignoreFiles ) :
-	mSplitter( splitter ), mFileSystemModel( fileSystemModel ), mIgnoredFiles( ignoreFiles ) {}
+	mSplitter( splitter ), mFileSystemModel( fileSystemModel ), mIgnoredFiles( ignoreFiles ) {
+	// Namespaced 64-bit tag: a stable class-name prefix plus an atomic instance
+	// counter, which minimizes (but cannot mathematically eliminate) collision
+	// with unrelated scene action tags.
+	static std::atomic<Uint64> nextEventActionTag{ 0 };
+	mEventActionTag =
+		( static_cast<Uint64>( EE::String::hash( "ecode::FileSystemListener" ) ) << 32 ) |
+		( ++nextEventActionTag & 0xFFFFFFFFULL );
+	mLifetime = std::make_shared<std::atomic<bool>>( true );
+}
+
+FileSystemListener::~FileSystemListener() {
+	// The lifetime token is complete only because destruction runs on the main
+	// thread, where queued actions also execute: a runnable cannot be
+	// interleaved between its token check and its use of `this`. Assert that
+	// invariant; cross-thread destruction would need a synchronized control
+	// block instead of an atomic flag.
+	eeASSERT( !Engine::existsSingleton() || Engine::isMainThread() );
+	*mLifetime = false;
+	if ( auto* scene = SceneManager::instance()->getUISceneNode() )
+		scene->getActionManager()->removeActionsByTagFromTarget( scene, mEventActionTag );
+}
 
 static inline bool endsWithSlash( const std::string& dir ) {
 	return !dir.empty() && ( dir.back() == '\\' || dir.back() == '/' );
@@ -31,6 +56,27 @@ static inline bool endsWithSlash( const std::string& dir ) {
 void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir,
 										   const std::string& filename, efsw::Action action,
 										   const std::string& oldFilename ) {
+	// The whole logical event (model, directory tree, open documents,
+	// callbacks) must run on the main thread in its original order: the model
+	// update used to complete synchronously before the other consequences, and
+	// all of them touch UI-owned state. The destructor cancels queued actions
+	// (tagged with mEventActionTag), so a runnable can never outlive the
+	// listener.
+	if ( !Engine::isMainThread() ) {
+		if ( auto* scene = SceneManager::instance()->getUISceneNode() ) {
+			scene->runOnMainThread(
+				[lifetime = mLifetime, this, dir, filename, action, oldFilename]() {
+					if ( !lifetime->load( std::memory_order_acquire ) )
+						return;
+					handleFileAction( 0, dir, filename, action, oldFilename );
+				},
+				Time::Zero, mEventActionTag );
+			return;
+		}
+		// No scene node: cannot safely touch UI state from this thread.
+		return;
+	}
+
 	FileInfo file( ( endsWithSlash( dir ) ? dir : ( dir + FileSystem::getOSSlash() ) ) + filename );
 
 	switch ( action ) {

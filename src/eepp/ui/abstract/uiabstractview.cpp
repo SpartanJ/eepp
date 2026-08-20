@@ -12,9 +12,13 @@ UIAbstractView::UIAbstractView( const std::string& tag ) :
 	UIScrollableWidget( tag ), mSelection( this ) {}
 
 UIAbstractView::~UIAbstractView() {
-	eeSAFE_DELETE( mEditingDelegate );
+	// Unregister first so the view leaves the model's view set before its
+	// members are torn down. This is defense-in-depth only: view callbacks are
+	// safe because model events run on the main thread, not because of this
+	// ordering.
 	if ( mModel )
 		mModel->unregisterView( this );
+	eeSAFE_DELETE( mEditingDelegate );
 }
 
 UIAbstractView::SelectionKind UIAbstractView::getSelectionKind() const {

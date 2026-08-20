@@ -476,8 +476,8 @@ std::vector<const FileSystemModel::Node*> UIFileDialog::getSelectionNodes() cons
 	std::vector<const FileSystemModel::Node*> nodes;
 	nodes.reserve( localIndexes.size() );
 	for ( const auto& localIndex : localIndexes ) {
-		const FileSystemModel::Node& node = mModel->node( localIndex );
-		nodes.push_back( &node );
+		if ( const auto* node = mModel->nodePtr( localIndex ) )
+			nodes.push_back( node );
 	}
 	return nodes;
 }
