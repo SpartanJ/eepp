@@ -273,7 +273,7 @@ void TextureFactory::queueReleasedTexture( Texture* texture ) {
 }
 
 void TextureFactory::collectReleasedTextures() {
-	eeASSERTM( Window::Engine::existsSingleton() && Window::Engine::isMainThread(),
+	eeASSERTM( EE::Window::Engine::existsSingleton() && EE::Window::Engine::isMainThread(),
 			   Texture_collection_must_run_on_the_graphics_thread );
 
 	std::vector<Texture*> releasedTextures;
