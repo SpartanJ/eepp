@@ -194,6 +194,7 @@ class EE_API UIWindow : public UIWidget {
 	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
 
 	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+	void removeKeyBindingCommand( const std::string& command );
 
 	void executeKeyBindingCommand( const std::string& command );
 

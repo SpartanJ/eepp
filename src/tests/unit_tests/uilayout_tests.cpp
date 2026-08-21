@@ -115,6 +115,43 @@ UTEST( UILinearLayout, HorizontalWeightsNormalizeAcrossVisibleChildren ) {
 	EXPECT_NEAR( 150.f, last->getPixelsSize().getWidth(), 0.1f );
 }
 
+UTEST( UILinearLayout, HorizontalWeightAccountsForFixedSiblingMargins ) {
+	UIApplication app(
+		WindowSettings( 480, 240, "eepp - UILinearLayout Margin Weight Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	UIWidget* parent = UIWidget::New();
+	parent->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	parent->setPixelsSize( 400, 100 );
+	parent->setPadding( { 12, 0, 12, 0 } );
+	parent->setParent( app.getUI()->getRoot() );
+
+	UILinearLayout* layout = UILinearLayout::NewHorizontal();
+	layout->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	layout->setParent( parent );
+
+	UIWidget* weighted = UIWidget::New();
+	weighted->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	weighted->setPixelsSize( 0, 30 );
+	weighted->setLayoutWeight( 1 );
+	weighted->setParent( layout );
+
+	for ( int i = 0; i < 3; ++i ) {
+		UIWidget* fixed = UIWidget::New();
+		fixed->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		fixed->setPixelsSize( 60, 30 );
+		fixed->setLayoutMarginLeft( 8 );
+		fixed->setParent( layout );
+	}
+
+	app.getUI()->updateDirtyLayouts();
+
+	EXPECT_NEAR( 172.f, weighted->getPixelsSize().getWidth(), 0.1f );
+	EXPECT_NEAR( 376.f, layout->getLastChild()->asType<UIWidget>()->getPixelsPosition().x + 60.f,
+				 0.1f );
+}
+
 UTEST( UILinearLayout, VerticalWeightsNormalize ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - UILinearLayout Test", WindowStyle::Default,

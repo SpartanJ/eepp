@@ -679,6 +679,7 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param func The function to call when the command is executed.
 	 */
 	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+	void removeKeyBindingCommand( const std::string& command );
 
 	/**
 	 * @brief Executes a keybinding command.

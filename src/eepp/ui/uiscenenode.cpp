@@ -2091,6 +2091,10 @@ void UISceneNode::setKeyBindingCommand( const std::string& command,
 	mKeyBindingCommands[command] = func;
 }
 
+void UISceneNode::removeKeyBindingCommand( const std::string& command ) {
+	mKeyBindingCommands.erase( command );
+}
+
 void UISceneNode::executeKeyBindingCommand( const std::string& command ) {
 	auto cmdIt = mKeyBindingCommands.find( command );
 	if ( cmdIt != mKeyBindingCommands.end() ) {

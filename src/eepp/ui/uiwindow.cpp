@@ -1812,6 +1812,10 @@ void UIWindow::setKeyBindingCommand( const std::string& command,
 	mKeyBindingCommands[command] = func;
 }
 
+void UIWindow::removeKeyBindingCommand( const std::string& command ) {
+	mKeyBindingCommands.erase( command );
+}
+
 void UIWindow::executeKeyBindingCommand( const std::string& command ) {
 	auto cmdIt = mKeyBindingCommands.find( command );
 	if ( cmdIt != mKeyBindingCommands.end() ) {
