@@ -193,7 +193,8 @@ class ProjectDirectoryTree {
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
 							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher,
-							GitIgnoreMatcher* allowedMatcher, GitIgnoreMatcher* disallowedMatcher );
+							GitIgnoreMatcher* allowedMatcher, GitIgnoreMatcher* disallowedMatcher,
+							bool initialScan = true );
 
 	void addFile( const FileInfo& file );
 

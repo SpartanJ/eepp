@@ -341,12 +341,12 @@ void ProjectDirectoryTree::getDirectoryFiles(
 	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
 	std::set<std::string> currentDirs, const bool& ignoreHidden,
 	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher,
-	GitIgnoreMatcher* disallowedMatcher ) {
-	if ( !mRunning )
+	GitIgnoreMatcher* disallowedMatcher, bool initialScan ) {
+	if ( mClosing || ( initialScan && !mRunning ) )
 		return;
 	currentDirs.insert( directory );
 	std::vector<std::string> pathFiles =
-		FileSystem::filesGetInPath( directory, false, false, false );
+		FileSystem::filesGetInPath( directory, false, false, ignoreHidden );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
 		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
@@ -393,7 +393,7 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				ignoreMatcher.addChild( childMatch );
 			}
 			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
-							   allowedMatcher, disallowedMatcher );
+							   allowedMatcher, disallowedMatcher, initialScan );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -461,31 +461,30 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			return;
 		Lock rl( mMatchingMutex );
 		Lock l( mFilesMutex );
+		std::string directory( file.getFilepath() );
+		FileSystem::dirAddSlashAtEnd( directory );
 		std::vector<std::string> files;
 		std::vector<std::string> names;
-		std::vector<LuaPattern> patterns;
 		std::set<std::string> info;
-		if ( !mAcceptedPatterns.empty() ) {
-			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
-			size_t namesCount = names.size();
-			bool found;
-			for ( size_t i = 0; i < namesCount; i++ ) {
-				found = false;
-				for ( auto& pattern : patterns ) {
-					if ( pattern.matches( names[i] ) ) {
-						found = true;
-						break;
-					}
-				}
-				if ( found ) {
-					mFiles.emplace_back( std::move( files[i] ) );
-					mNames.emplace_back( std::move( names[i] ) );
+		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( directory ) );
+		{
+			Lock ld( mDirectoriesMutex );
+			mDirectories.emplace_back( directory );
+		}
+		getDirectoryFiles( files, names, directory, info, mIgnoreHidden, matcher,
+						   mAllowedMatcher.get(), mDisallowedMatcher.get(), false );
+		for ( size_t i = 0; i < files.size(); ++i ) {
+			bool accepted = mAcceptedPatterns.empty();
+			for ( const auto& pattern : mAcceptedPatterns ) {
+				if ( pattern.matches( files[i] ) ) {
+					accepted = true;
+					break;
 				}
 			}
-		} else {
-			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
+			if ( accepted && std::find( mFiles.begin(), mFiles.end(), files[i] ) == mFiles.end() ) {
+				mFiles.emplace_back( std::move( files[i] ) );
+				mNames.emplace_back( std::move( names[i] ) );
+			}
 		}
 	} else {
 		tryAddFile( file );
