@@ -949,4 +949,8 @@ Uses strftime format specifiers. The file extension follows the selected screens
 	<string name="reasoning_off">Off</string>
 	<string name="reasoning_default">Default</string>
 	<string name="reasoning_on">On</string>
+	<string name="tab_out">Tab Out</string>
+	<string name="tab_out_desc">Pressing Tab before a configured character moves the cursor past it. Only applies to a single cursor without a selection.</string>
+	<string name="set_tab_out_characters">Set Tab Out Characters</string>
+	<string name="set_tab_out_characters_message">Set the characters the cursor can move past when pressing Tab.</string>
 </resources>

@@ -294,6 +294,73 @@ UTEST( TextDocument, newLineNormal ) {
 	EXPECT_STDSTREQ( TextPosition( 1, 2 ).toString(), doc.getSelection().start().toString() );
 }
 
+UTEST( TextDocument, indentTabsOutOfTrailingCharactersWithSingleCursor ) {
+	static constexpr char trailingCharacters[] = ")]}'\":;>,";
+
+	for ( const char trailingCharacter : trailingCharacters ) {
+		if ( trailingCharacter == '\0' )
+			break;
+
+		TextDocument doc;
+		doc.setIndentType( TextDocument::IndentType::IndentTabs );
+		doc.setTabOutEnabled( true );
+		doc.insert( 0, { 0, 0 }, String( trailingCharacter ) );
+		doc.setSelection( { 0, 0 } );
+		doc.indent();
+
+		EXPECT_STRINGEQ( String( trailingCharacter ) + "\n", doc.line( 0 ).getText() );
+		EXPECT_STDSTREQ( TextPosition( 0, 1 ).toString(), doc.getSelection().start().toString() );
+	}
+}
+
+UTEST( TextDocument, indentFallsBackToExistingBehavior ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.setTabOutEnabled( true );
+	doc.insert( 0, { 0, 0 }, ") ordinary" );
+
+	// A non-trailing character still inserts indentation.
+	doc.setSelection( { 0, 2 } );
+	doc.indent();
+	EXPECT_STRINGEQ( ") \tordinary\n", doc.line( 0 ).getText() );
+
+	// A selection still indents the selected line, even before a trailing character.
+	doc.setSelection( { { 0, 0 }, { 0, 1 } } );
+	doc.indent();
+	EXPECT_STRINGEQ( "\t) \tordinary\n", doc.line( 0 ).getText() );
+}
+
+UTEST( TextDocument, indentDoesNotTabOutWithMultipleCursors ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.setTabOutEnabled( true );
+	doc.insert( 0, { 0, 0 }, ")\n}" );
+	doc.resetSelection( TextRanges( std::vector<TextRange>{ TextRange( { 0, 0 }, { 0, 0 } ),
+															TextRange( { 1, 0 }, { 1, 0 } ) } ) );
+	doc.indent();
+
+	EXPECT_STRINGEQ( "\t)\n", doc.line( 0 ).getText() );
+	EXPECT_STRINGEQ( "\t}\n", doc.line( 1 ).getText() );
+}
+
+UTEST( TextDocument, indentTabOutIsOptionalAndConfigurable ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.insert( 0, { 0, 0 }, ")x" );
+	doc.setSelection( { 0, 0 } );
+
+	// Disabled by default.
+	doc.indent();
+	EXPECT_STRINGEQ( "\t)x\n", doc.line( 0 ).getText() );
+
+	// A custom set replaces the defaults.
+	doc.setTabOutEnabled( true );
+	doc.setTabOutChars( "x" );
+	doc.setSelection( { 0, 2 } );
+	doc.indent();
+	EXPECT_STDSTREQ( TextPosition( 0, 3 ).toString(), doc.getSelection().start().toString() );
+}
+
 UTEST( TextDocument, moveToStartOfContent ) {
 	TextDocument doc;
 	doc.insert( 0, { 0, 0 }, "    content" );

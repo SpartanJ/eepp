@@ -25,6 +25,8 @@ class SettingsActions {
 
 	void setIndentTabCharacter();
 
+	void setTabOutChars();
+
 	void setFoldRefreshFreq();
 
 	void setUIScaleFactor();

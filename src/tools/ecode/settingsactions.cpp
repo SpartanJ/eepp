@@ -251,6 +251,25 @@ void SettingsActions::setIndentTabCharacter() {
 	mApp->setFocusEditorOnClose( msgBox );
 }
 
+void SettingsActions::setTabOutChars() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_tab_out_characters_message",
+			  "Set the characters the cursor can move past when pressing Tab." ) );
+	msgBox->setTitle( i18n( "set_tab_out_characters", "Set Tab Out Characters" ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( String::fromUtf8( mApp->getConfig().doc.tabOutChars ) );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		String chars = msgBox->getTextInput()->getText();
+		mApp->getConfig().doc.tabOutChars = chars.toUtf8();
+		mApp->getSplitter()->forEachEditor(
+			[&chars]( UICodeEditor* editor ) { editor->getDocument().setTabOutChars( chars ); } );
+		msgBox->closeWindow();
+	} );
+	mApp->setFocusEditorOnClose( msgBox );
+}
+
 void SettingsActions::setFoldRefreshFreq() {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::INPUT,

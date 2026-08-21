@@ -944,4 +944,8 @@ Utilise les spécificateurs de format strftime. L’extension du fichier corresp
 	<string name="reasoning_off">Désactivé</string>
 	<string name="reasoning_default">Par défaut</string>
 	<string name="reasoning_on">Activé</string>
+	<string name="tab_out">Sortie par tabulation</string>
+	<string name="tab_out_desc">Appuyer sur Tab avant un caractère configuré déplace le curseur après celui-ci. S'applique uniquement à un curseur sans sélection.</string>
+	<string name="set_tab_out_characters">Définir les caractères de sortie</string>
+	<string name="set_tab_out_characters_message">Définissez les caractères que le curseur peut franchir en appuyant sur Tab.</string>
 </resources>

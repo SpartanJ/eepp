@@ -2985,6 +2985,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
+	doc.setTabOutEnabled( mConfig.doc.tabOutEnabled );
+	doc.setTabOutChars( String::fromUtf8( mConfig.doc.tabOutChars ) );
 	doc.setLineEnding( docc.lineEndings );
 	doc.setTrimTrailingWhitespaces( docc.trimTrailingWhitespaces );
 	doc.setForceNewLineAtEndOfFile( docc.forceNewLineAtEndOfFile );

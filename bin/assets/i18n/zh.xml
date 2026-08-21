@@ -723,4 +723,8 @@ file in the directory tree.</string>
 	<string name="reasoning_off">关闭</string>
 	<string name="reasoning_default">默认</string>
 	<string name="reasoning_on">开启</string>
+	<string name="tab_out">Tab 跳出</string>
+	<string name="tab_out_desc">在已配置的字符前按 Tab 可将光标移至该字符之后。仅适用于无选区的单个光标。</string>
+	<string name="set_tab_out_characters">设置 Tab 跳出字符</string>
+	<string name="set_tab_out_characters_message">设置按 Tab 时光标可以跳过的字符。</string>
 </resources>

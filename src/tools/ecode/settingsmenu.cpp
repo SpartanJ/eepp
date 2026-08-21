@@ -824,6 +824,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				  "like a fixed number of spaces regardless of their position." ) )
 		->setId( "tab_stops" );
 
+	mGlobalMenu->addCheckBox( i18n( "tab_out", "Tab Out" ), mApp->getConfig().doc.tabOutEnabled )
+		->setTooltipText( i18n(
+			"tab_out_desc", "Pressing Tab before a configured character moves the cursor past it. "
+							"Only applies to a single cursor without a selection." ) )
+		->setId( "tab_out" );
+	mGlobalMenu->add( i18n( "set_tab_out_characters", "Set Tab Out Characters" ) )
+		->setId( "set_tab_out_characters" );
+
 	mGlobalMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
@@ -948,6 +956,11 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 					editor->setTabStops( mApp->getConfig().doc.tabStops );
 				} );
+			} else if ( "tab_out" == id ) {
+				mApp->getConfig().doc.tabOutEnabled = item->isActive();
+				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+					editor->getDocument().setTabOutEnabled( mApp->getConfig().doc.tabOutEnabled );
+				} );
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->getSettingsActions()->setLineBreakingColumn();
@@ -957,6 +970,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getSettingsActions()->setCursorBlinkingTime();
 		} else if ( "indent_tab_character" == id ) {
 			mApp->getSettingsActions()->setIndentTabCharacter();
+		} else if ( "set_tab_out_characters" == id ) {
+			mApp->getSettingsActions()->setTabOutChars();
 		}
 	} );
 

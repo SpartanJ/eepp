@@ -564,6 +564,14 @@ class EE_API TextDocument {
 		const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
 			autoCloseBracketsPairs );
 
+	bool getTabOutEnabled() const;
+
+	void setTabOutEnabled( bool enabled );
+
+	const String& getTabOutChars() const;
+
+	void setTabOutChars( const String& chars );
+
 	bool isDirtyOnFileSystem() const;
 
 	void setDirtyOnFileSystem( bool dirtyOnFileSystem );
@@ -780,6 +788,7 @@ class EE_API TextDocument {
 	bool mTrimTrailingWhitespaces{ false };
 	bool mVerbose{ false };
 	bool mAutoCloseBrackets{ false };
+	bool mTabOutEnabled{ false };
 	bool mDirtyOnFileSystem{ false };
 	bool mSaving{ false };
 	bool mDeleteOnClose{ false };
@@ -789,6 +798,7 @@ class EE_API TextDocument {
 	bool mDoingTextInput{ false };
 	bool mInsertingText{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
+	String mTabOutChars{ ")]}'\":;>," };
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
 	AutoIndentConfig mAutoIndent{ AutoIndentConfig::Smart };

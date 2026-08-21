@@ -184,6 +184,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
 	doc.tabStops = ini.getValueB( "document", "tab_stops", true );
+	doc.tabOutEnabled = ini.getValueB( "document", "tab_out_enabled", false );
+	doc.tabOutChars = ini.getValue( "document", "tab_out_chars", ")]}'\":;>," );
 	doc.lineEndings =
 		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	editor.newTabPosition =
@@ -395,6 +397,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "tab_stops", doc.tabStops );
+	ini.setValueB( "document", "tab_out_enabled", doc.tabOutEnabled );
+	ini.setValue( "document", "tab_out_chars", doc.tabOutChars );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
 	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );

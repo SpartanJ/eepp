@@ -156,8 +156,10 @@ struct DocumentConfig {
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
 	bool tabStops{ true };
+	bool tabOutEnabled{ false };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
 	TextDocument::AutoIndentConfig autoIndent{ TextDocument::AutoIndentConfig::Smart };
+	std::string tabOutChars{ ")]}'\":;>," };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };

@@ -965,4 +965,8 @@ Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem 
 	<string name="reasoning_off">Aus</string>
 	<string name="reasoning_default">Standard</string>
 	<string name="reasoning_on">Ein</string>
+	<string name="tab_out">Tab-Ausgang</string>
+	<string name="tab_out_desc">Wenn Tab vor einem konfigurierten Zeichen gedrückt wird, springt der Cursor darüber. Gilt nur für einen einzelnen Cursor ohne Auswahl.</string>
+	<string name="set_tab_out_characters">Tab-Ausgangszeichen festlegen</string>
+	<string name="set_tab_out_characters_message">Legen Sie die Zeichen fest, über die der Cursor beim Drücken von Tab springen kann.</string>
 </resources>

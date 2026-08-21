@@ -2906,6 +2906,12 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 }
 
 void TextDocument::indent() {
+	if ( mTabOutEnabled && mSelection.size() == 1 && !hasSelection() &&
+		 mTabOutChars.find( getCurrentChar() ) != String::InvalidPos ) {
+		moveToNextChar();
+		return;
+	}
+
 	if ( hasSelection() ) {
 		insertAtStartOfSelectedLines( getIndentString(), false );
 	} else {
@@ -3040,6 +3046,22 @@ void TextDocument::setAutoCloseBracketsPairs(
 	const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
 		autoCloseBracketsPairs ) {
 	mAutoCloseBracketsPairs = autoCloseBracketsPairs;
+}
+
+bool TextDocument::getTabOutEnabled() const {
+	return mTabOutEnabled;
+}
+
+void TextDocument::setTabOutEnabled( bool enabled ) {
+	mTabOutEnabled = enabled;
+}
+
+const String& TextDocument::getTabOutChars() const {
+	return mTabOutChars;
+}
+
+void TextDocument::setTabOutChars( const String& chars ) {
+	mTabOutChars = chars;
 }
 
 bool TextDocument::isDirtyOnFileSystem() const {
