@@ -460,13 +460,29 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		if ( mIgnoreHidden && file.isHidden() )
 			return;
 		Lock rl( mMatchingMutex );
-		Lock l( mFilesMutex );
-		std::string directory( file.getFilepath() );
+		const std::string& directoryEntry = file.getFilepath();
+		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( directoryEntry ) );
+		if ( matcher.foundMatch() && matcher.match( file ) ) {
+			if ( !mAllowedMatcher || !mAllowedMatcher->hasPatterns() )
+				return;
+			std::string_view localPath( directoryEntry );
+			if ( String::startsWith( directoryEntry, mAllowedMatcher->getPath() ) )
+				localPath.remove_prefix( mAllowedMatcher->getPath().size() );
+			if ( !mAllowedMatcher->match( localPath ) )
+				return;
+		} else if ( mDisallowedMatcher && mDisallowedMatcher->hasPatterns() ) {
+			std::string_view localPath( directoryEntry );
+			if ( String::startsWith( directoryEntry, mDisallowedMatcher->getPath() ) )
+				localPath.remove_prefix( mDisallowedMatcher->getPath().size() );
+			if ( mDisallowedMatcher->match( localPath ) )
+				return;
+		}
+		std::string directory( directoryEntry );
 		FileSystem::dirAddSlashAtEnd( directory );
+		Lock l( mFilesMutex );
 		std::vector<std::string> files;
 		std::vector<std::string> names;
 		std::set<std::string> info;
-		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( directory ) );
 		{
 			Lock ld( mDirectoriesMutex );
 			mDirectories.emplace_back( directory );
