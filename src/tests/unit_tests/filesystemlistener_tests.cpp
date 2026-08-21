@@ -1,4 +1,5 @@
-#include "../../tools/ecode/filesystemlistener.hpp"
+#include "../../tools/ecode/filesystemlistenercallbackstate.hpp"
+#include "../../tools/ecode/filesystemlisteneroptions.hpp"
 #include "utest.h"
 #include <condition_variable>
 #include <future>
@@ -8,10 +9,10 @@
 using namespace ecode;
 
 UTEST( FileSystemListenerOptions, filtersByEventTypeAndPathPrefix ) {
-	FileSystemListener::ListenerOptions options;
+	FileSystemListenerOptions options;
 	FileSystemListenerFilter filter;
-	filter.eventTypes = FileSystemListener::eventTypeMask( FileSystemEventType::Add ) |
-						FileSystemListener::eventTypeMask( FileSystemEventType::Modified );
+	filter.eventTypes = fileEventTypeMask( FileSystemEventType::Add ) |
+						fileEventTypeMask( FileSystemEventType::Modified );
 	filter.path = "/tmp/ecode-ipc/";
 	options.filters.emplace_back( std::move( filter ) );
 
@@ -22,9 +23,9 @@ UTEST( FileSystemListenerOptions, filtersByEventTypeAndPathPrefix ) {
 }
 
 UTEST( FileSystemListenerOptions, matchesAnyFilterWithoutDuplicateSemantics ) {
-	FileSystemListener::ListenerOptions options;
+	FileSystemListenerOptions options;
 	FileSystemListenerFilter config;
-	config.eventTypes = FileSystemListener::eventTypeMask( FileSystemEventType::Modified );
+	config.eventTypes = fileEventTypeMask( FileSystemEventType::Modified );
 	config.path = "/tmp/plugin.json";
 	config.pathMatch = FileEventPathMatch::Exact;
 	options.filters.emplace_back( std::move( config ) );
@@ -43,8 +44,8 @@ UTEST( FileSystemListenerOptions, matchesAnyFilterWithoutDuplicateSemantics ) {
 }
 
 UTEST( FileSystemListenerOptions, defaultsToAllEventsAndPathsOnMainThread ) {
-	FileSystemListener::ListenerOptions options;
-	EXPECT_EQ( options.affinity, FileSystemListener::ThreadAffinity::Main );
+	FileSystemListenerOptions options;
+	EXPECT_EQ( options.affinity, FileEventThreadAffinity::Main );
 	EXPECT_TRUE( options.matches( FileSystemEventType::Add, "/any/path" ) );
 	EXPECT_TRUE( options.matches( FileSystemEventType::Delete, "/another/path" ) );
 	EXPECT_TRUE( options.matches( FileSystemEventType::Modified, "relative/path" ) );

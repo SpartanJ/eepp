@@ -232,7 +232,7 @@ class EE_API FileSystemModel : public Model {
 	 */
 	bool handleFileEvent( const FileEvent& event, const FileInfo& file );
 
-	virtual bool isValid( const ModelIndex& index ) const override;
+	virtual bool isValid( const ModelIndex& index ) const;
 
 	virtual bool classModelRoleEnabled() { return true; }
 
