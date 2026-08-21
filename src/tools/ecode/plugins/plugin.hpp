@@ -1,6 +1,7 @@
 #ifndef ECODE_PLUGIN_HPP
 #define ECODE_PLUGIN_HPP
 
+#include "../filesystemlisteneroptions.hpp"
 #include "lsp/lspprotocol.hpp"
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -53,6 +54,8 @@ class Plugin : public UICodeEditorPlugin {
 	virtual String::HashType getConfigFileHash() { return 0; }
 
 	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
+
+	virtual FileSystemListenerOptions getFileSystemListenerOptions() const;
 
 	String i18n( const std::string& key, const String& def ) const;
 

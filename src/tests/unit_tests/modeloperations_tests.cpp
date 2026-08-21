@@ -298,6 +298,29 @@ UTEST( FileSystemModelMove, keepsUnopenedDestinationBranchLazy ) {
 				 nullptr );
 }
 
+UTEST( FileSystemModelEvents, preparedMetadataSurvivesDelayedAddDelivery ) {
+	TempTree tree;
+	auto directory = tree.path / "directory";
+	auto path = directory / "transient.txt";
+	std::filesystem::create_directories( directory );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	ASSERT_TRUE( model->getNodeFromPath( directory.string(), true ) != nullptr );
+
+	std::FILE* file = std::fopen( path.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+	FileInfo preparedFile( path.string(), false );
+	ASSERT_TRUE( preparedFile.exists() );
+	std::filesystem::remove( path );
+
+	ASSERT_TRUE(
+		model->handleFileEvent( { FileSystemEventType::Add,
+								  directory.string() + FileSystem::getOSSlash(), "transient.txt" },
+								preparedFile ) );
+	ASSERT_TRUE( model->getNodeFromPath( path.string(), false, false ) != nullptr );
+}
+
 static ModelIndex indexOfNode( const FileSystemModel& model, const void* node,
 							   const ModelIndex& parent = {} ) {
 	for ( Int64 row = 0; row < (Int64)model.rowCount( parent ); ++row ) {

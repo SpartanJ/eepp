@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -378,6 +379,14 @@ UIDiffView::UIDiffView() :
 		mLeftPlugin->registerUpdate( mLeftEditor );
 	} );
 
+	for ( auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
+		editor->on( Event::OnSizeChange, [this]( auto ) { onAutoSize(); } );
+
+		editor->on( Event::OnShowFindReplace, [this]( auto ) { updateButtonsVisibility(); } );
+
+		editor->on( Event::OnHideFindReplace, [this]( auto ) { updateButtonsVisibility(); } );
+	}
+
 	mLeftEditor->setVisible( false );
 	mRightEditor->setVisible( false );
 	mLeftEditor->setVerticalScrollBarEnabled( false );
@@ -519,7 +528,7 @@ void UIDiffView::setViewMode( ViewMode mode ) {
 
 void UIDiffView::setViewModeToggleVisible( bool visible ) {
 	mViewModeToggleVisible = visible;
-	mModeToggle->setVisible( visible );
+	updateButtonsVisibility();
 	updateModeButton();
 }
 
@@ -537,7 +546,7 @@ void UIDiffView::setCompleteView( bool complete ) {
 
 void UIDiffView::setCompleteViewToggleVisible( bool visible ) {
 	mCompleteViewToggleVisible = visible;
-	mCompleteViewToggle->setVisible( visible );
+	updateButtonsVisibility();
 	updateModeButton();
 }
 
@@ -590,9 +599,10 @@ void UIDiffView::onAutoSize() {
 		return;
 
 	if ( mEditor && mLeftEditor && !mIsImageDiff ) {
-		setPixelsSize( getPixelsSize().getWidth(), mViewMode == ViewMode::Unified
-													   ? mEditor->getPixelsSize().getHeight()
-													   : mLeftEditor->getPixelsSize().getHeight() );
+		setPixelsSize( getPixelsSize().getWidth(),
+					   std::ceil( mViewMode == ViewMode::Unified
+									  ? mEditor->getPixelsSize().getHeight()
+									  : mLeftEditor->getPixelsSize().getHeight() ) );
 	}
 
 	if ( mIsImageDiff && mLeftImageViewer && mRightImageViewer && mDiffImageViewer ) {
@@ -610,7 +620,7 @@ void UIDiffView::onAutoSize() {
 		height = std::max( height, viewImageHeight( mRightImageViewer ) );
 
 		if ( displayDiffImage )
-			height = std::max( height, viewImageHeight( mDiffImageViewer ) );
+			height = std::ceil( std::max( height, viewImageHeight( mDiffImageViewer ) ) );
 
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
@@ -1281,12 +1291,26 @@ void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string
 	loadFromStrings( oldText, newText );
 }
 
+void UIDiffView::updateButtonsVisibility() {
+	bool findReplaceVisible{ false };
+	for ( const auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
+		const auto* findReplace = editor->getFindReplace();
+		if ( editor->isVisible() && findReplace && findReplace->isVisible() ) {
+			findReplaceVisible = true;
+			break;
+		}
+	}
+	mModeToggle->setVisible( mViewModeToggleVisible && !findReplaceVisible );
+	mCompleteViewToggle->setVisible( mCompleteViewToggleVisible && !findReplaceVisible &&
+									 !mIsImageDiff );
+}
+
 void UIDiffView::updateButtonsText() {
 	mModeToggle->setText( i18n( "diffview_side_by_side", "Side by Side" ) );
 	mModeToggle->setSelected( mViewMode != ViewMode::Unified );
 	mCompleteViewToggle->setText( i18n( "diffview_compact", "Compact" ) );
-	mCompleteViewToggle->setVisible( !mIsImageDiff );
 	mCompleteViewToggle->setSelected( !mShowCompleteView );
+	updateButtonsVisibility();
 }
 
 void UIDiffView::setSyntaxColorScheme( const SyntaxColorScheme& colorScheme ) {

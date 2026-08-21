@@ -110,6 +110,16 @@ void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	}
 }
 
+FileSystemListenerOptions Plugin::getFileSystemListenerOptions() const {
+	FileSystemListenerOptions options;
+	FileSystemListenerFilter filter;
+	filter.eventTypes = fileEventTypeMask( FileSystemEventType::Modified );
+	filter.path = mConfigPath;
+	filter.pathMatch = FileEventPathMatch::Exact;
+	options.filters.emplace_back( std::move( filter ) );
+	return options;
+}
+
 void Plugin::setReady( Time loadTime ) {
 	if ( mReady ) {
 		if ( loadTime != Time::Zero ) {

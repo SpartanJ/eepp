@@ -674,6 +674,23 @@ void AutoCompletePlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo&
 	}
 }
 
+FileSystemListenerOptions AutoCompletePlugin::getFileSystemListenerOptions() const {
+	auto options = Plugin::getFileSystemListenerOptions();
+	const auto eventTypes = fileEventTypeMask( FileSystemEventType::Add ) |
+							fileEventTypeMask( FileSystemEventType::Delete ) |
+							fileEventTypeMask( FileSystemEventType::Modified ) |
+							fileEventTypeMask( FileSystemEventType::Moved );
+	for ( const auto* path : { &mUserSnippetsPath, &mVSCodeSnippetsPath, &mEcodeSnippetsPath } ) {
+		if ( path->empty() )
+			continue;
+		FileSystemListenerFilter filter;
+		filter.eventTypes = eventTypes;
+		filter.path = *path;
+		options.filters.emplace_back( std::move( filter ) );
+	}
+	return options;
+}
+
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	registerSnippetLocatorProvider();
 	Lock l( mDocMutex );

@@ -109,6 +109,7 @@ class AutoCompletePlugin : public Plugin {
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 	void onFileSystemEvent( const FileEvent&, const FileInfo& ) override;
+	FileSystemListenerOptions getFileSystemListenerOptions() const override;
 	void onLoadProject( const std::string& projectFolder,
 						const std::string& projectStatePath ) override;
 

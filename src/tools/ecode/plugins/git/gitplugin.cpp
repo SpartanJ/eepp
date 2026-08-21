@@ -562,6 +562,17 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	updateUI();
 }
 
+FileSystemListenerOptions GitPlugin::getFileSystemListenerOptions() const {
+	auto options = Plugin::getFileSystemListenerOptions();
+	const auto& workspace = getManager()->getWorkspaceFolder();
+	if ( !workspace.empty() ) {
+		FileSystemListenerFilter filter;
+		filter.path = workspace;
+		options.filters.emplace_back( std::move( filter ) );
+	}
+	return options;
+}
+
 void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 								const Vector2f& position ) {
 	// HACK: Gets the old font style to restore it when the tooltip is hidden

@@ -2170,8 +2170,14 @@ void UICodeEditor::updateScrollBar() {
 		bool showHScroll =
 			mLongestLineWidth > viewPortWidth &&
 			( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn );
+		bool wasVisible = mHScrollBar->isVisible();
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
+
+		if ( wasVisible != showHScroll ) {
+			// Must be updated because the horizontal scrollbar affects the visible lines count
+			notVisibleLineCount = (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y;
+		}
 	}
 
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(),
@@ -2190,6 +2196,8 @@ void UICodeEditor::updateScrollBar() {
 
 	setScrollY( mScroll.y );
 	mUpdatingScrollBar = false;
+
+	onAutoSize();
 }
 
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
@@ -4902,8 +4910,13 @@ void UICodeEditor::showFindReplace() {
 
 	if ( !mFindReplaceEnabled )
 		return;
-	if ( nullptr == mFindReplace )
+	if ( nullptr == mFindReplace ) {
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
+		mFindReplace->on( Event::OnVisibleChange, [this]( auto ) {
+			sendCommonEvent( mFindReplace->isVisible() ? Event::OnShowFindReplace
+													   : Event::OnHideFindReplace );
+		} );
+	}
 	mFindReplace->setReplaceDisabled( mLocked );
 	mFindReplace->show();
 
@@ -5890,10 +5903,13 @@ void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 
 void UICodeEditor::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		auto visibleLineCount = getDocumentView().getVisibleLinesCount();
+		auto visibleLineCount = getTotalVisibleLines();
 		Float lineHeight = getLineHeight();
-		Float height = lineHeight * visibleLineCount + getPixelsPadding().Top +
-					   getPixelsPadding().Bottom + getTotalTopSpace();
+		Float height = std::ceil( lineHeight * visibleLineCount + mPaddingPx.Top +
+								  mPaddingPx.Bottom + getTotalTopSpace() );
+		if ( mHorizontalScrollBarEnabled && mHScrollBar->isVisible() ) {
+			height += std::ceil( mHScrollBar->getPixelsSize().getHeight() );
+		}
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
 }

@@ -764,12 +764,14 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file,
 	return pos;
 }
 
-bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
+bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
+											 const FileInfo* preparedFile ) {
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
 
-			if ( !file.exists() )
+			if ( !preparedFile && !file.exists() )
 				return false;
 
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) ||
@@ -789,11 +791,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			if ( childNodeExists )
 				return false;
 
-			Node* childNode = parent->createChild( file.getFileName(), *this );
-
-			if ( childNode == nullptr || childNode->getName().empty() )
-				return false;
-
 			size_t pos = getFileIndex( parent, file );
 
 			const auto& displayCfg = getDisplayConfig();
@@ -803,6 +800,15 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			if ( pos == INDEX_ALREADY_EXISTS )
 				return false;
+
+			// The listener can provide metadata captured on its worker thread. Construct the node
+			// from that snapshot instead of probing the path again on the UI thread.
+			Node* childNode = eeNew( Node, ( FileInfo( file ), parent, *this ) );
+
+			if ( childNode == nullptr || childNode->getName().empty() ) {
+				eeDelete( childNode );
+				return false;
+			}
 
 			beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
@@ -846,7 +852,8 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			break;
 		}
 		case FileSystemEventType::Delete: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
 
 			auto* child = getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
 			if ( !child )
@@ -922,18 +929,19 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			break;
 		}
 		case FileSystemEventType::Moved: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
 			const std::string oldFilePath = FileSystem::isRelativePath( event.oldFilename )
 												? event.directory + event.oldFilename
 												: event.oldFilename;
 
-			if ( !file.exists() )
+			if ( !preparedFile && !file.exists() )
 				return false;
 
 			auto* node = getNodeFromPath( oldFilePath, false, false );
 			if ( !node ) {
 				return handleFileEventLocked(
-					{ FileSystemEventType::Add, event.directory, event.filename } );
+					{ FileSystemEventType::Add, event.directory, event.filename }, preparedFile );
 			}
 
 			ModelIndex index = node->index( *this, 0 );
@@ -1050,6 +1058,14 @@ void FileSystemModel::setupColumnNames( Translator* translator ) {
 }
 
 bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
+	return handleFileEvent( event, nullptr );
+}
+
+bool FileSystemModel::handleFileEvent( const FileEvent& event, const FileInfo& file ) {
+	return handleFileEvent( event, &file );
+}
+
+bool FileSystemModel::handleFileEvent( const FileEvent& event, const FileInfo* preparedFile ) {
 	if ( !mInitOK )
 		return false;
 
@@ -1064,7 +1080,7 @@ bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
 	{
 		Lock l( resourceMutex() );
 
-		ret = handleFileEventLocked( event );
+		ret = handleFileEventLocked( event, preparedFile );
 	}
 
 	if ( ret )

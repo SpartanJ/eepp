@@ -5059,12 +5059,16 @@ void App::init( InitParameters& params ) {
 		mFileWatcher->addWatch( mPidPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
-		mIpcListenerId =
-			mFileSystemListener->addListener( [this]( const FileEvent& fe, const FileInfo& fi ) {
-				if ( !( ( fe.type == FileSystemEventType::Add ||
-						  fe.type == FileSystemEventType::Modified ) &&
-						fe.directory == mPidPath ) )
-					return;
+		FileSystemListener::ListenerOptions ipcListenerOptions;
+		FileSystemListenerFilter ipcListenerFilter;
+		ipcListenerFilter.eventTypes =
+			FileSystemListener::eventTypeMask( FileSystemEventType::Add ) |
+			FileSystemListener::eventTypeMask( FileSystemEventType::Modified );
+		ipcListenerFilter.path = mPidPath;
+		ipcListenerOptions.filters.emplace_back( std::move( ipcListenerFilter ) );
+		ipcListenerOptions.affinity = FileSystemListener::ThreadAffinity::Worker;
+		mIpcListenerId = mFileSystemListener->addListener(
+			[this]( const FileEvent&, const FileInfo& fi ) {
 				std::string path;
 				FileSystem::fileGet( fi.getFilepath(), path );
 				String::trimInPlace( path, ' ' );
@@ -5091,7 +5095,8 @@ void App::init( InitParameters& params ) {
 					} );
 				}
 				FileSystem::fileRemove( fi.getFilepath() );
-			} );
+			},
+			std::move( ipcListenerOptions ) );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(

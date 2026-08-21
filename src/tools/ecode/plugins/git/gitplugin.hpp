@@ -54,6 +54,8 @@ class GitPlugin : public PluginBase {
 
 	void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
 
+	FileSystemListenerOptions getFileSystemListenerOptions() const override;
+
 	void onRegister( UICodeEditor* ) override;
 
 	void onUnregister( UICodeEditor* ) override;

@@ -393,8 +393,8 @@ class PluginManager {
 	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
-	Uint64 mFileSystemListenerCb{ 0 };
 	UnorderedSet<Plugin*> mPluginsFSSubs;
+	UnorderedMap<Plugin*, Uint64> mPluginFSListenerIds;
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
 	bool mPluginsDisabled{ false };
@@ -410,6 +410,8 @@ class PluginManager {
 	void subscribeFileSystemListener();
 
 	void unsubscribeFileSystemListener();
+
+	void registerFileSystemListener( Plugin* plugin );
 };
 
 class PluginsModel : public Model {

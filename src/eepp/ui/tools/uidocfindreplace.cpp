@@ -107,7 +107,7 @@ const char DOC_FIND_REPLACE_CSS[] = R"css(
 )css";
 
 const char DOC_FIND_REPLACE_XML[] = R"xml(
-<hbox class="ce_find_replace_box" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="right|top" layout-margin-right="32dp">
+<hbox class="ce_find_replace_box" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="right|top" margin_right="32dp">
 	<Widget class="expander" layout_width="2dp" layout_height="match_parent" />
 	<PushButton class="find_replace_toggle" layout_width="16dp" layout_height="wrap_content" padding="2dp" layout_gravity="center" />
 	<vbox layout_width="wrap_content" layout_height="wrap_content">

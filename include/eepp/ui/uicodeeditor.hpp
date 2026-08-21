@@ -869,6 +869,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setDynamicTheming( bool set );
 
+	const Tools::UIDocFindReplace* getFindReplace() const { return mFindReplace; }
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };

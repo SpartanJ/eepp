@@ -135,6 +135,7 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	void computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine );
 	void updateEditorsText();
 	void updateButtonsText();
+	void updateButtonsVisibility();
 	void createImageViewers();
 	bool loadImageDiffFromPaths( const std::string& oldFilePath, const std::string& newFilePath );
 	void updateImageDiffView();

@@ -224,6 +224,14 @@ class EE_API FileSystemModel : public Model {
 	 */
 	bool handleFileEvent( const FileEvent& event );
 
+	/**
+	 * @brief Processes a filesystem event using metadata captured when the event was received.
+	 *
+	 * This avoids querying the filesystem from the main thread and preserves the state observed by
+	 * an asynchronous listener even if a later event changes the path before this event is applied.
+	 */
+	bool handleFileEvent( const FileEvent& event, const FileInfo& file );
+
 	virtual bool isValid( const ModelIndex& index ) const override;
 
 	virtual bool classModelRoleEnabled() { return true; }
@@ -256,7 +264,9 @@ class EE_API FileSystemModel : public Model {
 
 	size_t getFileIndex( Node* parent, const FileInfo& file, const Node* excludedNode = nullptr );
 
-	bool handleFileEventLocked( const FileEvent& event );
+	bool handleFileEventLocked( const FileEvent& event, const FileInfo* preparedFile = nullptr );
+
+	bool handleFileEvent( const FileEvent& event, const FileInfo* preparedFile );
 
 	void setupColumnNames( Translator* translator );
 };

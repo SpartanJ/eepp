@@ -168,6 +168,10 @@ void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 	mWorkspaceFolder = workspaceFolder;
 	json data{ { "folder", mWorkspaceFolder } };
 	sendBroadcast( PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data );
+	// Workspace-scoped plugin filters are snapshots. Re-register after plugins
+	// receive the workspace notification and update their own paths.
+	unsubscribeFileSystemListener();
+	subscribeFileSystemListener();
 }
 
 PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMessageFormat format,
@@ -295,6 +299,7 @@ void PluginManager::setMainSplitter( UISplitter* splitter ) {
 void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 	if ( listener == mFileSystemListener )
 		return;
+	unsubscribeFileSystemListener();
 	mFileSystemListener = listener;
 	sendBroadcast( PluginMessageType::FileSystemListenerReady, PluginMessageFormat::Empty,
 				   nullptr );
@@ -302,34 +307,80 @@ void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 }
 
 void PluginManager::subscribeFileSystemListener( Plugin* plugin ) {
-	Lock l( mPluginsFSSubsMutex );
-	mPluginsFSSubs.insert( plugin );
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( !mPluginsFSSubs.insert( plugin ).second )
+			return;
+	}
+	registerFileSystemListener( plugin );
 }
 
 void PluginManager::unsubscribeFileSystemListener( Plugin* plugin ) {
-	Lock l( mPluginsFSSubsMutex );
-	mPluginsFSSubs.erase( plugin );
+	Uint64 listenerId{ 0 };
+	{
+		Lock l( mPluginsFSSubsMutex );
+		mPluginsFSSubs.erase( plugin );
+		auto it = mPluginFSListenerIds.find( plugin );
+		if ( it != mPluginFSListenerIds.end() ) {
+			listenerId = it->second;
+			mPluginFSListenerIds.erase( it );
+		}
+	}
+	if ( listenerId != 0 && mFileSystemListener )
+		mFileSystemListener->removeListener( listenerId );
 }
 
 void PluginManager::subscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 || mFileSystemListener == nullptr )
+	if ( mFileSystemListener == nullptr )
 		return;
-
-	mFileSystemListenerCb =
-		mFileSystemListener->addListener( [this]( const FileEvent& ev, const FileInfo& file ) {
-			UnorderedSet<Plugin*> plugins;
-			{
-				Lock l( mPluginsFSSubsMutex );
-				plugins = mPluginsFSSubs;
-			}
-			for ( Plugin* plugin : plugins )
-				plugin->onFileSystemEvent( ev, file );
-		} );
+	UnorderedSet<Plugin*> plugins;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		plugins = mPluginsFSSubs;
+	}
+	for ( Plugin* plugin : plugins )
+		registerFileSystemListener( plugin );
 }
 
 void PluginManager::unsubscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 && mFileSystemListener )
-		mFileSystemListener->removeListener( mFileSystemListenerCb );
+	std::vector<Uint64> listenerIds;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		listenerIds.reserve( mPluginFSListenerIds.size() );
+		for ( const auto& listener : mPluginFSListenerIds )
+			listenerIds.emplace_back( listener.second );
+		mPluginFSListenerIds.clear();
+	}
+	if ( mFileSystemListener ) {
+		for ( Uint64 listenerId : listenerIds )
+			mFileSystemListener->removeListener( listenerId );
+	}
+}
+
+void PluginManager::registerFileSystemListener( Plugin* plugin ) {
+	if ( mFileSystemListener == nullptr )
+		return;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( mPluginsFSSubs.find( plugin ) == mPluginsFSSubs.end() ||
+			 mPluginFSListenerIds.find( plugin ) != mPluginFSListenerIds.end() )
+			return;
+	}
+	const Uint64 listenerId = mFileSystemListener->addListener(
+		[plugin]( const FileEvent& ev, const FileInfo& file ) {
+			plugin->onFileSystemEvent( ev, file );
+		},
+		plugin->getFileSystemListenerOptions() );
+	bool removeListener{ false };
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( mPluginsFSSubs.find( plugin ) != mPluginsFSSubs.end() )
+			mPluginFSListenerIds[plugin] = listenerId;
+		else
+			removeListener = true;
+	}
+	if ( removeListener )
+		mFileSystemListener->removeListener( listenerId );
 }
 
 void PluginManager::sendBroadcast( const PluginMessageType& notification,
