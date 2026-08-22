@@ -11,6 +11,7 @@
 #include <eepp/system/packregistry.hpp>
 
 #include <algorithm>
+#include <array>
 #include <memory>
 
 #include <imageresampler/resampler.h>
@@ -36,16 +37,24 @@ struct Lab {
 	double l, a, b;
 };
 
-// sRGB to Linear RGB conversion
-static constexpr double srgbToLinear( double c ) {
-	return ( c > 0.04045 ) ? pow( ( c + 0.055 ) / 1.055, 2.4 ) : ( c / 12.92 );
+static const std::array<double, 256>& getSRGBToLinearLUT() {
+	static const std::array<double, 256> lut = [] {
+		std::array<double, 256> values{};
+		for ( size_t i = 0; i < values.size(); ++i ) {
+			const double c = static_cast<double>( i ) / 255.0;
+			values[i] = c > 0.04045 ? pow( ( c + 0.055 ) / 1.055, 2.4 ) : c / 12.92;
+		}
+		return values;
+	}();
+	return lut;
 }
 
 // RGB to XYZ conversion (D65 illuminant)
-static constexpr XYZ rgbToXyz( const Color& c ) {
-	double r = srgbToLinear( c.r / 255.0 );
-	double g = srgbToLinear( c.g / 255.0 );
-	double b = srgbToLinear( c.b / 255.0 );
+static XYZ rgbToXyz( const Color& c ) {
+	const auto& lut = getSRGBToLinearLUT();
+	double r = lut[c.r];
+	double g = lut[c.g];
+	double b = lut[c.b];
 	return {
 		.x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375,
 		.y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750,
@@ -1510,7 +1519,8 @@ std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
 	return { std::move( gif ), delay ? delay : 100 };
 }
 
-Image::DiffResult Image::diff( const Image& other, float threshold, const Color& diffColor ) const {
+Image::DiffResult Image::diff( const Image& other, float threshold, const Color& diffColor,
+							   bool createDiffImage ) const {
 	DiffResult result;
 
 	if ( getWidth() != other.getWidth() || getHeight() != other.getHeight() ) {
@@ -1525,59 +1535,69 @@ Image::DiffResult Image::diff( const Image& other, float threshold, const Color&
 		return result;
 	}
 
-	// Create a 4-channel RGBA image for the diff output
-	result.diffImage = Image::New( getWidth(), getHeight(), 4 );
-	if ( !result.diffImage ) {
-		Log::error( "Image::diff: Failed to create diff image." );
-		return result;
+	if ( createDiffImage ) {
+		// Create a 4-channel RGBA image for the diff output
+		result.diffImage = Image::New( getWidth(), getHeight(), 4 );
+		if ( !result.diffImage ) {
+			Log::error( "Image::diff: Failed to create diff image." );
+			return result;
+		}
 	}
 
-	const Uint8* p1 = this->getPixelsPtr();
-	const Uint8* p2 = other.getPixelsPtr();
-	Uint8* pDiff = result.diffImage->getPixels();
+	const size_t pixelCount =
+		static_cast<size_t>( getWidth() ) * static_cast<size_t>( getHeight() );
+	const unsigned int channels1 = getChannels();
+	const unsigned int channels2 = other.getChannels();
+	const Uint8* pixel1 = getPixelsPtr();
+	const Uint8* pixel2 = other.getPixelsPtr();
+	Uint8* diffPixel = result.diffImage ? result.diffImage->getPixels() : nullptr;
 
-	unsigned int channels1 = this->getChannels();
-	unsigned int channels2 = other.getChannels();
-	unsigned int channelsDiff = result.diffImage->getChannels();
+	for ( size_t i = 0; i < pixelCount; ++i ) {
+		const Uint8 r1 = pixel1[0];
+		const Uint8 g1 = pixel1[1];
+		const Uint8 b1 = pixel1[2];
+		const Uint8 r2 = pixel2[0];
+		const Uint8 g2 = pixel2[1];
+		const Uint8 b2 = pixel2[2];
+		const Uint8 a1 = channels1 == 4 ? pixel1[3] : 255;
+		const Uint8 a2 = channels2 == 4 ? pixel2[3] : 255;
+		const bool rgbEqual = r1 == r2 && g1 == g2 && b1 == b2;
+		const bool alphaDiffers = a1 != a2;
+		double delta = 0.0;
 
-	for ( unsigned int y = 0; y < getHeight(); ++y ) {
-		for ( unsigned int x = 0; x < getWidth(); ++x ) {
-			size_t offset1 = ( y * getWidth() + x ) * channels1;
-			size_t offset2 = ( y * getWidth() + x ) * channels2;
-			size_t offsetDiff = ( y * getWidth() + x ) * channelsDiff;
+		if ( !rgbEqual ) {
+			const Color c1( r1, g1, b1, a1 );
+			const Color c2( r2, g2, b2, a2 );
+			const Lab lab1 = xyzToLab( rgbToXyz( c1 ) );
+			const Lab lab2 = xyzToLab( rgbToXyz( c2 ) );
+			delta = deltaECIEDE2000( lab1, lab2 );
+			result.maxDeltaE = eemax( result.maxDeltaE, delta );
+		}
 
-			Color c1( p1[offset1], p1[offset1 + 1], p1[offset1 + 2],
-					  channels1 == 4 ? p1[offset1 + 3] : 255 );
-			Color c2( p2[offset2], p2[offset2 + 1], p2[offset2 + 2],
-					  channels2 == 4 ? p2[offset2 + 3] : 255 );
+		const bool differs = delta > threshold || alphaDiffers;
+		if ( differs )
+			++result.numDifferentPixels;
 
-			// Also compare alpha channels directly, as perceptual diff is for color only
-			bool alphaDiffers = ( c1.a != c2.a );
-
-			Lab lab1 = xyzToLab( rgbToXyz( c1 ) );
-			Lab lab2 = xyzToLab( rgbToXyz( c2 ) );
-			double delta = deltaECIEDE2000( lab1, lab2 );
-
-			if ( delta > result.maxDeltaE ) {
-				result.maxDeltaE = delta;
-			}
-
-			if ( delta > threshold || alphaDiffers ) {
-				result.numDifferentPixels++;
-				pDiff[offsetDiff] = diffColor.r;
-				pDiff[offsetDiff + 1] = diffColor.g;
-				pDiff[offsetDiff + 2] = diffColor.b;
-				pDiff[offsetDiff + 3] = diffColor.a;
+		if ( diffPixel ) {
+			if ( differs ) {
+				diffPixel[0] = diffColor.r;
+				diffPixel[1] = diffColor.g;
+				diffPixel[2] = diffColor.b;
+				diffPixel[3] = diffColor.a;
 			} else {
 				// Blend original pixel with a transparent gray to fade it out
 				// This makes the highlighted differences stand out more.
-				Uint8 avg = ( c1.r + c1.g + c1.b ) / 3;
-				pDiff[offsetDiff] = avg;
-				pDiff[offsetDiff + 1] = avg;
-				pDiff[offsetDiff + 2] = avg;
-				pDiff[offsetDiff + 3] = 128; // Semi-transparent
+				const Uint8 avg = ( r1 + g1 + b1 ) / 3;
+				diffPixel[0] = avg;
+				diffPixel[1] = avg;
+				diffPixel[2] = avg;
+				diffPixel[3] = 128; // Semi-transparent
 			}
+			diffPixel += 4;
 		}
+
+		pixel1 += channels1;
+		pixel2 += channels2;
 	}
 
 	return result;

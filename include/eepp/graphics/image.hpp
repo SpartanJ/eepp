@@ -432,7 +432,7 @@ class EE_API Image {
 	const FormatConfiguration& getImageFormatConfiguration() const;
 
 	struct DiffResult {
-		Image* diffImage{ nullptr }; ///< The visual diff image. Null if dimensions mismatched.
+		Image* diffImage{ nullptr }; ///< Null when visual output was disabled or cannot be created.
 		long long numDifferentPixels{ 0 }; ///< The number of pixels that exceeded the threshold.
 		double maxDeltaE{ 0.0 };		   ///< The maximum perceptual difference (Delta E) found.
 		bool areSame() const { return numDifferentPixels == 0; }
@@ -450,10 +450,13 @@ class EE_API Image {
 	 *        A value of 1.0 is roughly the limit of human perception.
 	 *        A common default for tests is 2.3 (a "just noticeable difference").
 	 * @param diffColor The color used to highlight differing pixels in the output image.
+	 * @param createDiffImage Whether to create the visual diff image. Disable this for comparisons
+	 *        that only need statistics.
 	 * @return A DiffResult struct containing the diff image and statistics.
 	 */
 	DiffResult diff( const Image& other, float threshold = 2.3f,
-					 const Color& diffColor = Color( 255, 0, 255, 255 ) ) const;
+					 const Color& diffColor = Color( 255, 0, 255, 255 ),
+					 bool createDiffImage = true ) const;
 
   protected:
 	Uint8* mPixels;
