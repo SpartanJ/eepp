@@ -57,6 +57,17 @@ jobs:
       with:
         name: windows-eepp-sdk-x86_64-msvc
         path: projects\windows\sdk\eepp-sdk-*.zip
+    - name: Publish nightly SDK package
+      if: github.ref == 'refs/heads/develop'
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.sdk_version.outputs.version }}
+        draft: false
+        prerelease: true
+        generate_release_notes: false
+        fail_on_unmatched_files: true
+        files: |
+          projects\windows\sdk\eepp-sdk-windows-x86_64-msvc-nightly.zip
     - name: Publish stable release package
       if: startsWith(github.ref, 'refs/tags/eepp-')
       uses: softprops/action-gh-release@v3

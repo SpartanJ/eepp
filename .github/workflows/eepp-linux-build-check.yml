@@ -48,6 +48,17 @@ jobs:
       with:
         name: linux-eepp-sdk-x86_64
         path: projects/linux/sdk/eepp-sdk-*.tar.gz
+    - name: Publish nightly SDK package
+      if: github.ref == 'refs/heads/develop'
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.sdk_version.outputs.version }}
+        draft: false
+        prerelease: true
+        generate_release_notes: false
+        fail_on_unmatched_files: true
+        files: |
+          projects/linux/sdk/eepp-sdk-linux-x86_64-nightly.tar.gz
     - name: Publish stable release package
       if: startsWith(github.ref, 'refs/tags/eepp-')
       uses: softprops/action-gh-release@v3
