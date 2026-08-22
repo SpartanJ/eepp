@@ -1,0 +1,65 @@
+name: Windows MinGW Nightly
+
+on:
+  push:
+    branches:
+      - 'develop'
+    tags:
+      - 'eepp-*'
+
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build_windows_mingw:
+    name: Windows x86_64 MinGW SDK
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Configure Git
+      run: |
+        git config --global core.autocrlf false
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 2
+        submodules: 'recursive'
+    - name: Install dependencies
+      run: |
+        sudo add-apt-repository -y universe
+        sudo add-apt-repository -y multiverse
+        sudo apt update
+        sudo apt install -y mingw-w64 gcc-12 g++-12 zip wget
+        wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
+        tar xvzf premake-5.0.0-beta6-linux.tar.gz
+    - name: Set SDK version
+      id: sdk_version
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/eepp-* ]]; then
+          echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        else
+          echo "version=nightly" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Build
+      run: |
+        bash projects/mingw32/make.sh -e config=release_x86_64 -j$(nproc)
+    - name: Package eepp SDK
+      run: |
+        bash projects/scripts/package_sdk.sh windows x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}
+    - name: Upload SDK package
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-eepp-sdk-x86_64-mingw
+        path: projects/windows/sdk/eepp-sdk-*.zip
+    - name: Publish package
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.sdk_version.outputs.version }}
+        draft: false
+        prerelease: ${{ steps.sdk_version.outputs.version == 'nightly' }}
+        generate_release_notes: false
+        fail_on_unmatched_files: true
+        files: |
+          projects/windows/sdk/eepp-sdk-windows-x86_64-mingw-*.zip

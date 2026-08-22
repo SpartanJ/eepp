@@ -74,6 +74,9 @@ ecode.dmg
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
 /bin/unit_tests/output/*
+/projects/linux/sdk/
+/projects/macos/sdk/
+/projects/windows/sdk/
 /projects/linux/ecode/polyfill-glibc
 /bin/crashes/*
 /bin/config/*

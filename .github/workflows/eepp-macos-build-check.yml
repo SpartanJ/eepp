@@ -2,6 +2,9 @@ name: macOS
 
 on: [push, pull_request]
 
+permissions:
+  contents: write
+
 jobs:
   MacOS:
     runs-on: macos-latest
@@ -21,6 +24,36 @@ jobs:
       run: |
         premake5 --disable-static-build --with-debug-symbols gmake
         make -C make/macosx/ -j$(sysctl -n hw.ncpu) -e config=release_arm64
+    - name: Set SDK version
+      id: sdk_version
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/eepp-* ]]; then
+          echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        else
+          echo "version=nightly" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Package eepp SDK
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+      run: |
+        bash projects/scripts/package_sdk.sh macos arm64 --version ${{ steps.sdk_version.outputs.version }}
+    - name: Upload SDK package
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-eepp-sdk-arm64
+        path: projects/macos/sdk/eepp-sdk-*.tar.gz
+    - name: Publish stable release package
+      if: startsWith(github.ref, 'refs/tags/eepp-')
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.sdk_version.outputs.version }}
+        draft: false
+        prerelease: false
+        generate_release_notes: false
+        fail_on_unmatched_files: true
+        files: |
+          projects/macos/sdk/eepp-sdk-macos-arm64-*.tar.gz
+    - name: Unit Tests
     - name: Unit Tests
       run: |
         set +e
