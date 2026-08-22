@@ -54,7 +54,6 @@ jobs:
         files: |
           projects/macos/sdk/eepp-sdk-macos-arm64-*.tar.gz
     - name: Unit Tests
-    - name: Unit Tests
       run: |
         set +e
         cd bin/unit_tests
