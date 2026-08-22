@@ -7,23 +7,33 @@ The test binary manages its own current working directory, so you can execute it
 
 *   **Prefer the release test binary during normal development:**
     When AddressSanitizer or other debug-only diagnostics are not required, build and run `bin/unit_tests/eepp-unit_tests`. The optimized release suite is substantially faster and should be the default for iterative testing. Use `bin/unit_tests/eepp-unit_tests-debug` when investigating memory safety, assertions, or other behavior that specifically requires the debug configuration.
-*   **Default Execution for Agents on Linux & FreeBSD:**
-    Always run unit tests through the project wrapper unless the user explicitly asks for a different harness:
-    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests`
-*   **Why the wrapper is required:**
-    Tests open ~400 individual windows. The wrapper runs them in an isolated framebuffer, enables race-safe automatic display selection for concurrent agent test runs, sets the default screen to `1280x1024x24`, and injects `ASAN_OPTIONS=detect_leaks=0` automatically.
-*   **Do not skip the wrapper for filtered tests:**
-    A focused test still needs the same wrapper:
-    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests --filter="FontRendering.*Offset*"`
-*   **Fallback only when the wrapper itself fails:**
-    If `projects/scripts/xvfb-run-eepp` fails before launching the test binary, report that wrapper failure and then use this fallback to keep verification moving:
-    `xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests`
-    Do not use plain `xvfb-run` as the first attempt for GUI/unit tests.
-*   **Direct Execution (Only for non-window tests or explicit user requests):**
+*   **Default Execution on a Graphical Linux Desktop:**
+    Unit-test windows are created hidden, so run the release suite directly against the desktop:
     `bin/unit_tests/eepp-unit_tests`
+    This keeps the windows invisible and unfocused while preserving hardware OpenGL acceleration.
+    Confirm that the renderer log names the real GPU rather than llvmpipe when validating rendering
+    behavior or performance.
+*   **Filtered Tests on a Graphical Linux Desktop:**
+    Use the same direct hardware-backed command for focused runs:
+    `bin/unit_tests/eepp-unit_tests --filter="FontRendering.*Offset*"`
+*   **Headless CI and Systems Without a Usable Desktop Display:**
+    Keep `projects/scripts/xvfb-run-eepp` as the fallback when no desktop display is available:
+    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests`
+    The wrapper provides a race-safe isolated display at `1280x1024x24` and injects
+    `ASAN_OPTIONS=detect_leaks=0`. Xvfb can use llvmpipe, so do not use wrapper timings to evaluate
+    hardware-rendered performance.
+*   **Wrapper Fallback:**
+    If `projects/scripts/xvfb-run-eepp` itself fails before launching the test binary, report that
+    failure and use:
+    `xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests`
+    Do not use plain `xvfb-run` as the first headless attempt.
+*   **Non-window Tests:**
+    Tests known not to create windows can run without selecting a video driver:
+    `bin/unit_tests/eepp-unit_tests --filter="NonWindowTest.*"`
 *   **Filtering Tests:**
     Use the `--filter` parameter to run specific tests (supports glob patterns).
-    Keep the wrapper in front of the binary unless the test is known not to create windows.
+    Keep the same harness as the full suite: direct execution on a graphical Linux desktop, or the
+    wrapper in a genuinely headless environment.
 
 ## Writing New Tests
 Writing new tests is highly encouraged, but depends on the context of your changes:

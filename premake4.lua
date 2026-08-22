@@ -1954,6 +1954,7 @@ solution "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
+		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"

@@ -25,8 +25,11 @@ enum WindowStyle {
 	Resize = ( 1 << 2 ),
 	Fullscreen = ( 1 << 3 ),
 	UseDesktopResolution = ( 1 << 4 ),
+	Hidden = ( 1 << 5 ),
 #if EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
 	Default = Borderless
+#elif defined( EE_UNIT_TESTS )
+	Default = Titlebar | Resize | Hidden
 #else
 	Default = Titlebar | Resize
 #endif

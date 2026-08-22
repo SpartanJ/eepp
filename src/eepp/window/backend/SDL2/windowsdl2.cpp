@@ -84,6 +84,13 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 
+#if defined( EE_X11_PLATFORM )
+	// Unmapped GLX windows do not provide reliable front-buffer storage. Keep hidden windows
+	// double-buffered so rendering and readback use the drawable's back buffer.
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
+		mWindow.ContextConfig.DoubleBuffering = true;
+#endif
+
 	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
@@ -106,7 +113,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height = mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
+	mWindow.Flags = SDL_WINDOW_OPENGL |
+					( ( mWindow.WindowConfig.Style & WindowStyle::Hidden ) ? SDL_WINDOW_HIDDEN
+																		   : SDL_WINDOW_SHOWN ) |
 					( ( !mWindow.WindowConfig.DisableHiDPI ? SDL_WINDOW_ALLOW_HIGHDPI : 0 ) );
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
@@ -283,6 +292,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	Backend::BackendHelper::setUserTheme( (HWND)getWindowHandler() );
 #endif
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
+		SDL_HideWindow( mSDLWindow );
 
 	logSuccessfulInit( getVersion() );
 

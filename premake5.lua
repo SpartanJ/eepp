@@ -1982,6 +1982,7 @@ workspace "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
