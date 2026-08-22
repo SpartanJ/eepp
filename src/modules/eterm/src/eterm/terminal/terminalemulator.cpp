@@ -38,13 +38,16 @@
 
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/cpu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 
 using namespace EE::Network;
 using namespace EE::System;
 
+#include <algorithm>
 #include <assert.h>
+#include <bit>
 #include <cmath>
 #include <ctype.h>
 #include <errno.h>
@@ -58,6 +61,12 @@ using namespace EE::System;
 #include <string.h>
 #include <sys/types.h>
 
+#if defined( EE_ARCH_X86_64 )
+#include <immintrin.h>
+#elif defined( EE_ARCH_ARM64 )
+#include <arm_neon.h>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
 extern "C" {
@@ -66,6 +75,48 @@ extern "C" {
 #endif
 
 namespace eterm { namespace Terminal {
+
+#if defined( EE_ARCH_X86_64 )
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static int trailingNonSpaceWidthAVX2( Line line, int width, int minimumWidth ) {
+	const __m256i offsets = _mm256_set_epi32( 112, 96, 80, 64, 48, 32, 16, 0 );
+	const __m256i spaces = _mm256_set1_epi32( ' ' );
+	while ( width - minimumWidth >= 8 ) {
+		int start = width - 8;
+		const __m256i codepoints =
+			_mm256_i32gather_epi32( reinterpret_cast<const int*>( line + start ), offsets, 1 );
+		unsigned int nonSpaces =
+			( ~static_cast<unsigned int>( _mm256_movemask_ps(
+				_mm256_castsi256_ps( _mm256_cmpeq_epi32( codepoints, spaces ) ) ) ) ) &
+			0xFFu;
+		if ( nonSpaces != 0 )
+			return start + std::bit_width( nonSpaces );
+		width = start;
+	}
+	while ( width > minimumWidth && line[width - 1].u == ' ' )
+		--width;
+	return width;
+}
+#elif defined( EE_ARCH_ARM64 )
+static int trailingNonSpaceWidthNEON( Line line, int width, int minimumWidth ) {
+	const uint32x4_t spaces = vdupq_n_u32( ' ' );
+	while ( width - minimumWidth >= 4 ) {
+		int start = width - 4;
+		const uint32x4x4_t glyphs = vld4q_u32( reinterpret_cast<const uint32_t*>( line + start ) );
+		if ( vminvq_u32( vceqq_u32( glyphs.val[0], spaces ) ) != UINT32_MAX ) {
+			for ( int x = width - 1; x >= start; --x )
+				if ( line[x].u != ' ' )
+					return x + 1;
+		}
+		width = start;
+	}
+	while ( width > minimumWidth && line[width - 1].u == ' ' )
+		--width;
+	return width;
+}
+#endif
 
 /* identification sequence returned in DA and DECID */
 static const char* vtiden = "\033[?6c";
@@ -382,8 +433,15 @@ int TerminalEmulator::tlinelen( int y ) const {
 
 int TerminalEmulator::tlinelen( Line line, int col ) const {
 	int i = col;
-	if ( line[i - 1].mode & ATTR_WRAP )
+	if ( i > 0 && ( line[i - 1].mode & ATTR_WRAP ) )
 		return i;
+	/* Scan backwards in 4-glyph steps while possible: the trailing-run check is
+	 * branch-light and the common cases are either a full-width wrapped line
+	 * or a short trailing space run, so this keeps the scan cheap without
+	 * changing semantics. */
+	while ( i >= 4 && line[i - 1].u == ' ' && line[i - 2].u == ' ' && line[i - 3].u == ' ' &&
+			line[i - 4].u == ' ' )
+		i -= 4;
 	while ( i > 0 && line[i - 1].u == ' ' )
 		--i;
 	return i;
@@ -769,6 +827,7 @@ void TerminalEmulator::clearHistory() {
 	mTerm.histi = 0;
 	mTerm.histlen = 0;
 	mTerm.max_width = 0;
+	mTerm.histcapacity = 0;
 	mTerm.scr = 0;
 	trimMemory();
 }
@@ -859,8 +918,12 @@ void TerminalEmulator::tsetdirt( int top, int bot ) {
 	LIMIT( top, 0, mTerm.row - 1 );
 	LIMIT( bot, 0, mTerm.row - 1 );
 	mDirty = true;
+	if ( mAllDirty )
+		return;
 	for ( i = top; i <= bot; i++ )
 		mTerm.dirty[i] = 1;
+	if ( top == 0 && bot == mTerm.row - 1 )
+		mAllDirty = true;
 }
 
 void TerminalEmulator::tsetdirtattr( int attr ) {
@@ -971,7 +1034,6 @@ void TerminalEmulator::tscrolldown( int top, int n ) {
 
 void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	int i;
-	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - top + 1 );
 
@@ -982,7 +1044,7 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 			mTerm.scr += n;
 
 		for ( i = 0; i < n; i++ )
-			historyPush( mTerm.line[top + i], mTerm.col );
+			historyStealPush( &mTerm.line[top + i], mTerm.col );
 
 		if ( attop )
 			mTerm.scr = mTerm.histlen;
@@ -993,11 +1055,31 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	tclearregion( 0, top, mTerm.col - 1, top + n - 1, copyhist != 0 );
 	tsetdirt( top + n, mTerm.bot );
 
-	for ( i = top; i <= mTerm.bot - n; i++ ) {
-		temp = mTerm.line[i];
-		mTerm.line[i] = mTerm.line[i + n];
-		mTerm.line[i + n] = temp;
+	/* Move the whole live region with a single rotation instead of swapping line
+	 * pointers one by one: this loop is the hot path when large amounts of output
+	 * stream through the terminal. The semantics match the original per-line
+	 * swap: the vacated bottom slots receive the pointers of the cleared top
+	 * rows (a rotation), so every slot keeps owning exactly one unique buffer.
+	 * The per-line dirty flags are gathered first because tsetdirt() above
+	 * already marked the rows that must be redrawn and the move below would
+	 * otherwise clobber that information for the rows being shifted. */
+	int shift = mTerm.bot - n - top + 1;
+	if ( shift > 0 ) {
+		std::rotate( &mTerm.line[top], &mTerm.line[top + n], &mTerm.line[mTerm.bot + 1] );
+
+		/* After a plain scroll every shifted-in row is either a cleared row (top
+		 * region) or an untouched row moving up; both keep their previous dirty
+		 * state except that the vacated bottom rows must be redrawn with the
+		 * cleared content. */
+		for ( i = mTerm.bot; i > mTerm.bot - n && i >= top; i-- )
+			mTerm.dirty[i] = 1;
 	}
+
+	/* A full-screen scroll dirties the cleared rows and every shifted row. Once
+	 * presentation is deferred, later scrolls in the same PTY burst can skip
+	 * repeatedly walking the complete dirty array. */
+	if ( top == 0 && mTerm.bot == mTerm.row - 1 )
+		mAllDirty = true;
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, -n );
@@ -1005,13 +1087,39 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	onScrollPositionChange();
 }
 
+void TerminalEmulator::historyUpdateMaxWidth( Line line, int col ) {
+	if ( mTerm.max_width >= col )
+		return;
+
+	if ( line[col - 1].mode & ATTR_WRAP ) {
+		mTerm.max_width = col;
+		return;
+	}
+
+	/* Only inspect cells that could extend the current maximum. This preserves
+	 * tlinelen() semantics for lines with trailing spaces without repeatedly
+	 * scanning the already-known prefix of short history lines. */
+	int width = col;
+#if defined( EE_ARCH_X86_64 )
+	if ( EE::System::CPU::hasAVX2() )
+		width = trailingNonSpaceWidthAVX2( line, width, mTerm.max_width );
+	else
+#elif defined( EE_ARCH_ARM64 )
+	if ( EE::System::CPU::hasNEON() )
+		width = trailingNonSpaceWidthNEON( line, width, mTerm.max_width );
+	else
+#endif
+		while ( width > mTerm.max_width && line[width - 1].u == ' ' )
+			--width;
+	if ( width > mTerm.max_width )
+		mTerm.max_width = width;
+}
+
 void TerminalEmulator::historyPush( Line line, int col ) {
 	if ( mTerm.histsize <= 0 )
 		return;
 
-	int width = tlinelen( line, col );
-	if ( width > mTerm.max_width )
-		mTerm.max_width = width;
+	historyUpdateMaxWidth( line, col );
 
 	mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
 	if ( mTerm.histlen < mTerm.histsize ) {
@@ -1023,12 +1131,57 @@ void TerminalEmulator::historyPush( Line line, int col ) {
 				mTerm.hist[i] = nullptr;
 			mTerm.histcursize = newSize;
 		}
-	} else if ( mTerm.hist[mTerm.histi] ) {
-		eeSAFE_FREE( mTerm.hist[mTerm.histi] );
 	}
 
-	mTerm.hist[mTerm.histi] = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
-	memcpy( mTerm.hist[mTerm.histi], line, col * sizeof( TerminalGlyph ) );
+	Line* slot = &mTerm.hist[mTerm.histi];
+	/* All slots are (re)allocated together whenever the terminal width changes
+	 * (see tresize/historyReflow), so a single shared capacity is enough to know
+	 * when a slot can be recycled in place. This avoids a malloc+free pair for
+	 * every pushed line, which is the hot path when output scrolls quickly. */
+	if ( !*slot || mTerm.histcapacity < col ) {
+		eeSAFE_FREE( *slot );
+		mTerm.histcapacity = col;
+		*slot = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
+	}
+	memcpy( *slot, line, col * sizeof( TerminalGlyph ) );
+}
+
+void TerminalEmulator::historyStealPush( Line* lineSlot, int col ) {
+	if ( mTerm.histsize <= 0 )
+		return;
+
+	/* Inspect the line before its ownership moves into the history ring. */
+	historyUpdateMaxWidth( *lineSlot, col );
+
+	mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
+	if ( mTerm.histlen < mTerm.histsize )
+		mTerm.histlen++;
+
+	if ( mTerm.histi >= (int)mTerm.histcursize ) {
+		int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
+		mTerm.hist = (Line*)xrealloc( mTerm.hist, newSize * sizeof( Line ) );
+		for ( int i = mTerm.histcursize; i < newSize; i++ )
+			mTerm.hist[i] = nullptr;
+		mTerm.histcursize = newSize;
+	}
+
+	/* Zero-copy scroll: the screen row's buffer becomes the history entry and
+	 * the evicted history buffer becomes the screen row. Ownership trades
+	 * places; no bytes move. tscrollup() blanks the returned buffer right
+	 * after through tclearregion(), so no clearing happens here. This keeps a
+	 * single write pass per scrolled row instead of a copy plus a clear. */
+	Line* slot = &mTerm.hist[mTerm.histi];
+	Line recycled = *slot;
+	*slot = *lineSlot;
+	*lineSlot = recycled;
+
+	if ( !recycled || mTerm.histcapacity < col ) {
+		/* Fresh ring growth (null slot) or an undersized leftover buffer: the
+		 * screen row gets a brand-new buffer instead. */
+		eeSAFE_FREE( recycled );
+		*lineSlot = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
+		mTerm.histcapacity = col;
+	}
 }
 
 void TerminalEmulator::historyReflow( int old_col, int new_col ) {
@@ -1087,7 +1240,6 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 
 		if ( is_wrapped )
 			continue;
-
 		while ( logical_len > 0 ) {
 			TerminalGlyph* g = &logical[logical_len - 1];
 			if ( g->u == ' ' && g->bg == mDefaultBg && ( g->mode & ATTR_BOLD ) == 0 )
@@ -1107,7 +1259,17 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 
 		int cursor = 0;
 		while ( cursor < logical_len ) {
-			Line nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
+			Line nl;
+			if ( new_len < mTerm.histsize ) {
+				/* Fresh slot: allocate a new line buffer. */
+				nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
+			} else {
+				/* Destination ring already holds histsize lines: detach the oldest
+				 * one and reuse its buffer instead of free+malloc. */
+				int next = ( new_histi + 1 ) % mTerm.histsize;
+				nl = new_hist[next];
+				new_hist[next] = nullptr;
+			}
 			for ( j = 0; j < new_col; j++ ) {
 				nl[j] = mTerm.c.attr;
 				nl[j].u = ' ';
@@ -1151,12 +1313,21 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			else
 				nl[new_col - 1].mode &= ~ATTR_WRAP;
 
+			/* Clear the rest of a reused buffer so no stale glyphs from the previous
+			 * reflow pass remain visible beyond the copied content. */
+			for ( j = copy_width; j < new_col; j++ ) {
+				nl[j] = mTerm.c.attr;
+				nl[j].u = ' ';
+				nl[j].mode = 0;
+			}
+
 			new_histi = ( new_histi + 1 ) % mTerm.histsize;
 			if ( new_len < mTerm.histsize ) {
 				new_len++;
-			} else {
-				eeSAFE_FREE( new_hist[new_histi] );
 			}
+			/* When the ring is full the buffer ownership was already resolved above
+			 * (oldest line detached and reused, or freshly allocated), so there is
+			 * nothing left to free here. */
 			new_hist[new_histi] = nl;
 
 			int current_width = ( cursor + copy_width < logical_len ) ? new_col : copy_width;
@@ -1180,6 +1351,7 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 	mTerm.histlen = new_len;
 	mTerm.histi = ( new_histi == -1 ) ? 0 : new_histi;
 	mTerm.max_width = new_max_width;
+	mTerm.histcapacity = new_col;
 }
 
 void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
@@ -1195,6 +1367,11 @@ void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
 	}
 	mTerm.histi = ( mTerm.histi - loaded + mTerm.histsize ) % mTerm.histsize;
 	mTerm.histlen -= loaded;
+	if ( mTerm.histlen == 0 ) {
+		mTerm.histcursize = 0;
+		mTerm.histcapacity = 0;
+		eeSAFE_FREE( mTerm.hist );
+	}
 }
 
 void TerminalEmulator::selmove( int n ) {
@@ -1338,6 +1515,27 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 	LIMIT( x2, 0, mTerm.col - 1 );
 	LIMIT( y1, 0, mTerm.row - 1 );
 	LIMIT( y2, 0, mTerm.row - 1 );
+
+	/*
+	 * Fast path for the common full-row clear performed while scrolling: no
+	 * selection can be affected and every cleared cell gets the exact same
+	 * glyph, so fill complete glyph objects instead of touching four scattered
+	 * members per cell and running a per-cell selected() check.
+	 */
+	if ( skip_clear && mSel.ob.x == -1 && x1 == 0 && x2 == mTerm.col - 1 ) {
+		static_assert( sizeof( TerminalGlyph ) == 16,
+					   "tclearregion fast path expects 16-byte glyphs" );
+		TerminalGlyph blank = mTerm.c.attr;
+		blank.mode = 0;
+		blank.u = ' ';
+		for ( y = y1; y <= y2; y++ ) {
+			gp = TLINE( y );
+			mTerm.dirty[y] = 1;
+			std::fill_n( gp, mTerm.col, blank );
+			mDirty = true;
+		}
+		return;
+	}
 
 	for ( y = y1; y <= y2; y++ ) {
 		mTerm.dirty[y] = 1;
@@ -2588,6 +2786,35 @@ void TerminalEmulator::tputc( Rune u ) {
 	size_t len;
 	TerminalGlyph* gp;
 
+	/*
+	 * Fast path for plain printable ASCII while idle (no escape sequence in
+	 * progress, no special print/insert mode): the checks below are all
+	 * invariant for this class of input, so the glyph is written and the
+	 * cursor advanced directly. This is the hot loop when large amounts of
+	 * text stream through the terminal.
+	 */
+	if ( u >= ' ' && u < 127 && !mTerm.esc && !( mTerm.c.state & CURSOR_WRAPNEXT ) &&
+		 !IS_SET( MODE_PRINT ) && !IS_SET( MODE_INSERT ) && mTerm.c.x + 1 < mTerm.col &&
+		 mTerm.c.x < mTerm.col && mTerm.c.y < mTerm.row &&
+		 mTerm.trantbl[mTerm.charset] != CS_GRAPHIC0 ) {
+		gp = &TLINE( mTerm.c.y )[mTerm.c.x];
+		/* tsetchar() repairs both halves when overwriting a wide glyph. Keep that
+		 * uncommon case on the complete path. */
+		if ( !( gp->mode & ( ATTR_WIDE | ATTR_WDUMMY ) ) ) {
+			if ( selected( mTerm.c.x, mTerm.c.y ) )
+				selclear();
+			gp->u = u;
+			gp->mode = mTerm.c.attr.mode;
+			gp->fg = mTerm.c.attr.fg;
+			gp->bg = mTerm.c.attr.bg;
+			mDirty = true;
+			mTerm.dirty[mTerm.c.y] = 1;
+			mTerm.lastc = u;
+			mTerm.c.x++;
+			return;
+		}
+	}
+
 	control = ISCONTROL( u );
 	if ( u < 127 || !IS_SET( MODE_UTF8 ) ) {
 		c[0] = u;
@@ -2859,6 +3086,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 					}
 				}
 			}
+			mTerm.histcapacity = eemax( mTerm.histcapacity, col );
 			if ( has_sel ) {
 				if ( mSel.ob.x >= col )
 					mSel.ob.x = col - 1;
@@ -2872,6 +3100,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		eeSAFE_FREE( mTerm.line[i] );
 		eeSAFE_FREE( mTerm.alt[i] );
 	}
+	mAllDirty = true;
 	eeSAFE_FREE( mTerm.line );
 	eeSAFE_FREE( mTerm.alt );
 	eeSAFE_FREE( mTerm.dirty );
@@ -2968,6 +3197,7 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 	}
 
 	mDirty = false;
+	mAllDirty = false;
 }
 
 void TerminalEmulator::draw() {
@@ -3002,6 +3232,8 @@ void TerminalEmulator::draw() {
 		mTerm.ocy = mTerm.c.y;
 
 		dpy->drawEnd();
+		mDeferredPresentationBatches = 0;
+		mPresentationClock.restart();
 	}
 
 	// if (ocx != term.ocx || ocy != term.ocy)
@@ -3364,22 +3596,40 @@ bool TerminalEmulator::update() {
 		return true;
 	}
 
-	int read = MAX_TTY_READS;
-	while ( ttyread() > 0 && --read )
-		;
+	int reads = 0;
+	Clock readBudgetClock;
+	while ( reads < MAX_TTY_READS && ttyread() > 0 ) {
+		++reads;
+		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
+			break;
+	}
+	bool readBudgetSaturated =
+		reads == MAX_TTY_READS ||
+		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
 
-	if ( read != MAX_TTY_READS || mDirty )
+	/* Keep presentation decoupled from every PTY read batch, but bound the
+	 * deferral so sustained output remains visibly live. The time limit handles
+	 * expensive batches; the batch limit guarantees progress when updates are
+	 * individually very fast. */
+	if ( readBudgetSaturated )
+		++mDeferredPresentationBatches;
+	bool presentationDue = !readBudgetSaturated || mDeferredPresentationBatches >= 32 ||
+						   mPresentationClock.getElapsedTime() >= Milliseconds( 75 );
+	if ( presentationDue && ( reads > 0 || mDirty ) )
 		draw();
 
 	mProcess->checkExitStatus();
 
-	if ( mProcess->hasExited() ) {
+	/* A process may exit while the kernel still has unread PTY output. Keep the
+	 * emulator running until a read slice reaches EOF; otherwise the time budget
+	 * can truncate the final output of fast-exiting producers. */
+	if ( mProcess->hasExited() && !readBudgetSaturated ) {
 		mExitCode = mProcess->getExitCode();
 		mStatus = TERMINATED;
 		onProcessExit( mExitCode );
 	}
 
-	return read != 0;
+	return !readBudgetSaturated;
 }
 
 Term::~Term() {

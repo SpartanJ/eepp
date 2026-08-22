@@ -61,15 +61,20 @@ constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
 
 /* Internal representation of the screen */
 struct Term {
-	int row{ 0 };				   /* nb row */
-	int col{ 0 };				   /* nb col */
-	Line* line{ nullptr };		   /* screen */
-	Line* alt{ nullptr };		   /* alternate screen */
-	Line* hist{ nullptr };		   /* history buffer */
-	int histcursize{ 0 };		   /* history current size */
-	int histsize{ 0 };			   /* history max size */
-	int histi{ 0 };				   /* history index */
-	int histlen{ 0 };			   /* history valid length */
+	int row{ 0 };		   /* nb row */
+	int col{ 0 };		   /* nb col */
+	Line* line{ nullptr }; /* screen */
+	Line* alt{ nullptr };  /* alternate screen */
+	Line* hist{ nullptr }; /* history buffer */
+	int histcursize{ 0 };  /* history current size */
+	int histsize{ 0 };	   /* history max size */
+	int histi{ 0 };		   /* history index */
+	int histlen{ 0 };	   /* history valid length */
+	/* Allocation width of each history line. All slots are (re)allocated together
+	 * on every resize/reflow, so a single shared capacity is enough to know when a
+	 * recycled ring-buffer slot can be overwritten in place instead of being freed
+	 * and reallocated for every pushed line (hot path on fast-scrolling output). */
+	int histcapacity{ 0 };
 	int max_width{ 0 };			   /* max width of lines in history */
 	int scr{ 0 };				   /* scroll back */
 	int* dirty{ nullptr };		   /* dirtyness of lines */
@@ -271,12 +276,15 @@ class TerminalEmulator final {
 	Clock mPendingPtyResizeClock;
 
 	bool mDirty{ true };
+	bool mAllDirty{ true };
+	uint8_t mDeferredPresentationBatches{ 0 };
+	Clock mPresentationClock;
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
 
 	enum { STARTING = 0, RUNNING, TERMINATED } mStatus;
 
-	char mBuf[8192];
+	char mBuf[4 * 8192];
 	int mBuflen;
 
 	Term mTerm;
@@ -339,7 +347,12 @@ class TerminalEmulator final {
 	void treset();
 	void tscrollup( int, int, int );
 	void tscrolldown( int, int );
+	void historyUpdateMaxWidth( Line line, int col );
 	void historyPush( Line line, int col );
+	/* Zero-copy variant: trades buffer ownership between the screen row and the
+	 * recycled history slot. The caller must blank the returned screen row
+	 * afterwards (tscrollup does this via tclearregion). */
+	void historyStealPush( Line* lineSlot, int col );
 	void historyReflow( int old_col, int new_col );
 	void historyPopToScreen( int loaded, int col );
 	void tsetattr( int*, int );

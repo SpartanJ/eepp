@@ -3,6 +3,7 @@
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
+#include <limits>
 
 using namespace eterm::Terminal;
 using namespace eterm::System;
@@ -10,6 +11,7 @@ using namespace eterm::System;
 class MockPty : public IPseudoTerminal {
   public:
 	std::string mBuffer;
+	size_t mMaxRead{ std::numeric_limits<size_t>::max() };
 	int mCols = 80;
 	int mRows = 24;
 	int getNumColumns() const override { return mCols; }
@@ -27,7 +29,7 @@ class MockPty : public IPseudoTerminal {
 	int read( char* buf, size_t n, bool ) override {
 		if ( mBuffer.empty() )
 			return 0;
-		size_t toRead = std::min( n, mBuffer.size() );
+		size_t toRead = std::min( { n, mBuffer.size(), mMaxRead } );
 		memcpy( buf, mBuffer.data(), toRead );
 		mBuffer.erase( 0, toRead );
 		return toRead;
@@ -36,8 +38,9 @@ class MockPty : public IPseudoTerminal {
 
 class MockProcess : public IProcess {
   public:
+	bool mExited{ false };
 	void checkExitStatus() override {}
-	bool hasExited() const override { return false; }
+	bool hasExited() const override { return mExited; }
 	int getExitCode() const override { return 0; }
 	void terminate() override {}
 	void waitForExit() override {}
@@ -46,8 +49,15 @@ class MockProcess : public IProcess {
 
 class MockDisplay : public ITerminalDisplay {
   public:
+	int mDrawLines{ 0 };
+	uint32_t mFirstMode{ 0 };
+	uint32_t mSecondMode{ 0 };
 	bool drawBegin( Uint32, Uint32 ) override { return true; }
-	void drawLine( Line, int, int, int ) override {}
+	void drawLine( Line line, int, int, int ) override {
+		++mDrawLines;
+		mFirstMode = line[0].mode;
+		mSecondMode = line[1].mode;
+	}
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
 	void drawEnd() override {}
 };
@@ -65,6 +75,133 @@ UTEST( eterm, basic_write ) {
 	term->selextend( 2, 0, 1, 0 );
 	EXPECT_TRUE( term->hasSelection() );
 	EXPECT_STDSTREQ( "ABC", term->getSelection() );
+}
+
+UTEST( eterm, selection_redraw_while_idle ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->write( "ABC", 3 );
+	term->update();
+	display->mDrawLines = 0;
+
+	term->selstart( 0, 0, 0 );
+	term->selextend( 2, 0, 1, 0 );
+	term->update();
+
+	EXPECT_TRUE( display->mDrawLines > 0 );
+}
+
+UTEST( eterm, saturated_read_defers_only_intermediate_draw ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mMaxRead = 1;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	std::string output( 1024, 'A' );
+	term->write( output.data(), output.size() );
+	display->mDrawLines = 0;
+
+	EXPECT_FALSE( term->update() );
+	EXPECT_EQ( 0, display->mDrawLines );
+	EXPECT_TRUE( term->update() );
+	EXPECT_TRUE( display->mDrawLines > 0 );
+}
+
+UTEST( eterm, sustained_saturated_reads_present_periodically ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mMaxRead = 1;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	display->mDrawLines = 0;
+	std::string output( 33 * 1024, 'A' );
+	term->write( output.data(), output.size() );
+
+	for ( int batch = 0; batch < 31; ++batch ) {
+		EXPECT_FALSE( term->update() );
+		EXPECT_EQ( 0, display->mDrawLines );
+	}
+	EXPECT_FALSE( term->update() );
+	EXPECT_TRUE( display->mDrawLines > 0 );
+}
+
+UTEST( eterm, process_exit_drains_buffered_pty_output ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mMaxRead = 1;
+	auto process = std::make_unique<MockProcess>();
+	process->mExited = true;
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	size_t bytesRead = 0;
+	term->setDataCb( [&bytesRead]( const char*, size_t size ) { bytesRead += size; } );
+	std::string output( 3 * 1024, 'A' );
+	term->write( output.data(), output.size() );
+	display->mDrawLines = 0;
+
+	EXPECT_FALSE( term->update() );
+	EXPECT_EQ( static_cast<size_t>( 1024 ), bytesRead );
+	while ( !term->update() ) {
+	}
+
+	EXPECT_EQ( output.size(), bytesRead );
+	EXPECT_TRUE( display->mDrawLines > 0 );
+}
+
+UTEST( eterm, repeated_deferred_scrolls_redraw_every_row ) {
+	auto pty = std::make_unique<MockPty>();
+	MockPty* mockPty = pty.get();
+	pty->mMaxRead = 1;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	// Consume the initial full redraw so this burst starts with clean dirty flags.
+	term->update();
+	display->mDrawLines = 0;
+
+	for ( int line = 0; line < 200; ++line )
+		mockPty->mBuffer += "scrolling line " + std::to_string( line ) + "\r\n";
+
+	EXPECT_FALSE( term->update() );
+	EXPECT_EQ( 0, display->mDrawLines );
+	while ( !term->update() ) {
+	}
+	EXPECT_TRUE( display->mDrawLines >= 24 );
+	EXPECT_EQ( 0, display->mDrawLines % 24 );
+}
+
+UTEST( eterm, ascii_overwrite_clears_wide_glyph_state ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->write( "\xF0\x9F\x9A\x80\rA", 6 );
+	term->update();
+
+	EXPECT_EQ( 0u, display->mFirstMode & ATTR_WIDE );
+	EXPECT_EQ( 0u, display->mSecondMode & ATTR_WDUMMY );
+}
+
+UTEST( eterm, ascii_respects_vt100_graphics_charset ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->write( "\033(0q", 4 );
+	term->update();
+	term->selstart( 0, 0, 0 );
+	term->selextend( 0, 0, 1, 0 );
+
+	EXPECT_STDSTREQ( "─", term->getSelection() );
 }
 
 UTEST( eterm, selection_reflow ) {
