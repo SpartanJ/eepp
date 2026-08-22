@@ -3,7 +3,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
-#include <eepp/ui/uivaluevalidation.hpp>
+#include <eepp/ui/databinding/uivaluevalidation.hpp>
 #include <functional>
 #include <string>
 #include <type_traits>
@@ -31,18 +31,32 @@ namespace EE { namespace UI {
  * @endcode
  */
 template <typename T> struct UIValueConverter {
+	/** @brief Parses a widget property string into the model type. */
 	using ToValue =
 		std::function<UIValueResult<T>( const CSS::PropertyDefinition*, const std::string& )>;
+
+	/** @brief Formats a model value as a widget property string. */
 	using FromValue =
 		std::function<UIValueResult<std::string>( const CSS::PropertyDefinition*, const T& )>;
 
 	UIValueConverter() = default;
+
+	/**
+	 * @brief Creates a converter with custom parsing and the default formatter for @p T.
+	 *
+	 * This is the common form for validation rules that only constrain text entering the model.
+	 */
+	explicit UIValueConverter( ToValue toValue ) :
+		UIValueConverter( std::move( toValue ), converterDefault().fromValue ) {}
+
+	/** @brief Creates a converter with custom parsing and formatting policies. */
 	UIValueConverter( ToValue toValue, FromValue fromValue ) :
 		toValue( std::move( toValue ) ), fromValue( std::move( fromValue ) ) {}
 
 	ToValue toValue;
 	FromValue fromValue;
 
+	/** @return The standard string conversion policy for @p T. */
 	static UIValueConverter converterDefault() {
 		return UIValueConverter(
 			[]( const CSS::PropertyDefinition* property, const std::string& string ) {
@@ -78,6 +92,7 @@ template <typename T> struct UIValueConverter {
 			} );
 	}
 
+	/** @return A converter that preserves text verbatim for string-compatible @p T. */
 	static UIValueConverter converterString() {
 		return UIValueConverter(
 			[]( const CSS::PropertyDefinition*, const std::string& string ) {

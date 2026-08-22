@@ -43,6 +43,7 @@
 #include <eepp/graphics/renderer/rendererglshader.hpp>
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 #include <eepp/graphics/rendermode.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>

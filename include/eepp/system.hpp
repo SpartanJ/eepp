@@ -11,12 +11,14 @@
 #include <eepp/system/cpu.hpp>
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/fileinfo.hpp>
+#include <eepp/system/filemapped.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamdeflate.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreamfilemapped.hpp>
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/iostreampak.hpp>
@@ -39,6 +41,7 @@
 #include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/singleton.hpp>
+#include <eepp/system/singletondeclarations.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/threadlocal.hpp>

@@ -2,7 +2,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uiproperty.hpp>
+#include <eepp/ui/databinding/uiproperty.hpp>
 #include <eepp/ui/uitextinput.hpp>
 
 using namespace EE;
@@ -102,11 +102,55 @@ UTEST( UIProperty, stringConcatenationPropagatesForStandardAndEEStrings ) {
 	EXPECT_TRUE( eeString + String( "!" ) == String( "hello eepp!" ) );
 }
 
+UTEST( UIProperty, observersCanDestroyPropertyDuringWidgetNotification ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - UIProperty Destruction Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto input = UITextInput::New();
+	auto property = std::make_unique<UIProperty<std::string>>( input );
+	bool observed = false;
+	bool changed = false;
+	property->changed( [&]( const std::string& value ) { changed = value == "destroy"; } );
+	auto connection = property->observe( [&]( const std::string& value ) {
+		observed = value == "destroy";
+		property.reset();
+	} );
+
+	input->setText( "destroy" );
+
+	EXPECT_TRUE( observed );
+	EXPECT_TRUE( changed );
+	EXPECT_TRUE( property == nullptr );
+	EXPECT_FALSE( static_cast<bool>( connection ) );
+	eeDelete( input );
+}
+
 UTEST( UIDataBind, defaultStringConverterReadsWidgetValue ) {
 	auto converter = UIDataBind<std::string>::converterDefault();
 	auto value = converter.toValue( nullptr, "widget value" );
 	EXPECT_TRUE( value );
 	EXPECT_TRUE( *value.value == "widget value" );
+}
+
+UTEST( UIDataBind, sharedValueSurvivesBindingDestructionDuringNotification ) {
+	auto value = std::make_shared<std::string>( 256, 'a' );
+	std::weak_ptr<std::string> weakValue = value;
+	auto binding = std::make_unique<UIDataBind<std::string>>(
+		value, UnorderedSet<UIWidget*>{}, UIDataBind<std::string>::converterString() );
+	bool observed = false;
+	auto connection = binding->observe( [&]( const std::string& current ) {
+		observed = current.size() == 512;
+		value.reset();
+		binding.reset();
+		EXPECT_FALSE( weakValue.expired() );
+	} );
+
+	binding->set( std::string( 512, 'b' ) );
+
+	EXPECT_TRUE( observed );
+	EXPECT_TRUE( weakValue.expired() );
+	EXPECT_FALSE( static_cast<bool>( connection ) );
 }
 
 UTEST( UIDataBind, lateBoundWidgetReceivesValueAndCanDieFirst ) {

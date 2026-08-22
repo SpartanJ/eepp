@@ -1751,6 +1751,18 @@ workspace "eepp"
 		files { "src/examples/ui_dropdownmodellist/*.cpp" }
 		build_link_configuration( "eepp-ui-dropdownmodellist", true )
 
+	project "eepp-ui-data-handling"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_handling/*.cpp" }
+		build_link_configuration( "eepp-ui-data-handling", true )
+
+	project "eepp-ui-data-collections"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_collections/*.cpp" }
+		build_link_configuration( "eepp-ui-data-collections", true )
+
 	project "eepp-ui-richtext"
 		set_kind()
 		language "C++"

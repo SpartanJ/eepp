@@ -12,7 +12,7 @@
 #include <eterm/terminal/terminaltypes.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 using namespace EE;
 using namespace EE::Math;

@@ -7,7 +7,7 @@
 #include <eepp/network/http.hpp>
 #include <functional>
 #include <memory>
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <string>
 
 namespace ecode {

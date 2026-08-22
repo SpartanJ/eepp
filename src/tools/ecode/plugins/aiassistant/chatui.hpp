@@ -9,7 +9,7 @@
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
 #include <eepp/core/containers.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 namespace EE { namespace UI {
 class UIWidget;

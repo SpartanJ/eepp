@@ -14,6 +14,7 @@
 ../../bin/assets/ui/breeze.css
 ../../bin/assets/ui/uitheme.css
 ../../docs/articles/cssspecification.md
+../../docs/articles/uidatabinding.md
 ../../docs/articles/uiintroduction.md
 ../../external_projects.lua
 ../../include/eepp/audio/alresource.hpp
@@ -336,6 +337,14 @@
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/timingfunction.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/databinding/uibindinggroup.hpp
+../../include/eepp/ui/databinding/uicommand.hpp
+../../include/eepp/ui/databinding/uidatabind.hpp
+../../include/eepp/ui/databinding/uiobservedelivery.hpp
+../../include/eepp/ui/databinding/uiproperty.hpp
+../../include/eepp/ui/databinding/uivaluebinding.hpp
+../../include/eepp/ui/databinding/uivalueconverter.hpp
+../../include/eepp/ui/databinding/uivaluevalidation.hpp
 ../../include/eepp/ui/doc/foldrangetype.hpp
 ../../include/eepp/ui/doc/syntaxcolorscheme.hpp
 ../../include/eepp/ui/doc/syntaxdefinition.hpp
@@ -373,7 +382,6 @@
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uiconsole.hpp
-../../include/eepp/ui/uidatabind.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uieventdispatcher.hpp
 ../../include/eepp/ui/uifiledialog.hpp

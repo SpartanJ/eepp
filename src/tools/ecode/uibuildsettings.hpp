@@ -2,7 +2,7 @@
 #define EE_UI_UIBUILDSETTINGS_HPP
 
 #include "projectbuild.hpp"
-#include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/databinding/uidatabind.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 
 namespace EE { namespace UI {

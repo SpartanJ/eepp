@@ -3,9 +3,11 @@
 
 #include <algorithm>
 #include <eepp/config.hpp>
+#include <eepp/core/debug.hpp>
 #include <eepp/core/small_vector.hpp>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace EE {
@@ -42,29 +44,62 @@ template <typename T> class ObservableValue {
 		struct Observer {
 			Uint32 id;
 			Callback callback;
+			bool connected{ true };
 		};
 		using Observers = SmallVector<Observer, 4>;
 
 		explicit State( T value ) : value( std::move( value ) ) {}
 
-		void set( const T& newValue ) {
+		void set( const T& newValue ) { setImpl( newValue ); }
+
+		void set( T&& newValue ) { setImpl( std::move( newValue ) ); }
+
+		template <typename U> void setImpl( U&& newValue ) {
+			if ( notifying ) {
+				if ( value == newValue ) {
+					pendingValue.reset();
+				} else if ( !pendingValue || *pendingValue != newValue ) {
+					pendingValue = std::forward<U>( newValue );
+				}
+				return;
+			}
 			if ( value == newValue )
 				return;
-			value = newValue;
-			notify();
-		}
 
-		void set( T&& newValue ) {
-			if ( value == newValue )
-				return;
-			value = std::move( newValue );
-			notify();
-		}
-
-		void notify() {
-			auto snapshot = observers;
-			for ( const auto& observer : snapshot )
-				observer.callback( value );
+			value = std::forward<U>( newValue );
+			notifying = true;
+			Uint32 notificationCount = 0;
+			do {
+				// Keep the callback objects in their stable observer slots while invoking them. New
+				// observers go into pendingObservers so growing the container cannot relocate a
+				// std::function that is currently executing. Disconnected observers are tombstoned
+				// until this pass ends, preserving snapshot semantics without copying callbacks.
+				const std::size_t observerCount = observers.size();
+				for ( std::size_t i = 0; i < observerCount; ++i )
+					// Disconnections made during this delivery take effect on the next one.
+					// The observer remains in place so callbacks are never copied here.
+					observers[i].callback( value );
+				observers.erase( std::remove_if( observers.begin(), observers.end(),
+												 []( const Observer& observer ) {
+													 return !observer.connected;
+												 } ),
+								 observers.end() );
+				for ( auto& observer : pendingObservers )
+					observers.emplace_back( std::move( observer ) );
+				pendingObservers.clear();
+				if ( !pendingValue )
+					break;
+				value = std::move( *pendingValue );
+				pendingValue.reset();
+				// A bounded drain turns accidental observer cycles into a clear debug failure
+				// instead of unbounded recursion (or an infinite release-build loop).
+				if ( ++notificationCount == MaxReentrantNotifications ) {
+					eeASSERTM( false, "ObservableValue observer cycle detected" );
+					break;
+				}
+			} while ( true );
+			notifying = false;
+			pendingValue.reset();
 		}
 
 		typename Observers::iterator find( Uint32 id ) {
@@ -83,21 +118,50 @@ template <typename T> class ObservableValue {
 
 		bool contains( Uint32 id ) const {
 			auto observer = find( id );
-			return observer != observers.end() && observer->id == id;
+			if ( observer != observers.end() && observer->id == id )
+				return observer->connected;
+			auto pending = std::lower_bound(
+				pendingObservers.begin(), pendingObservers.end(), id,
+				[]( const Observer& item, Uint32 observerId ) { return item.id < observerId; } );
+			return pending != pendingObservers.end() && pending->id == id && pending->connected;
 		}
 
 		void remove( Uint32 id ) {
 			auto observer = find( id );
-			if ( observer != observers.end() && observer->id == id )
-				observers.erase( observer );
+			if ( observer != observers.end() && observer->id == id ) {
+				if ( notifying )
+					observer->connected = false;
+				else
+					observers.erase( observer );
+				return;
+			}
+			auto pending = std::lower_bound(
+				pendingObservers.begin(), pendingObservers.end(), id,
+				[]( const Observer& item, Uint32 observerId ) { return item.id < observerId; } );
+			if ( pending != pendingObservers.end() && pending->id == id )
+				pendingObservers.erase( pending );
+		}
+
+		void add( Uint32 id, Callback callback ) {
+			// Appending directly while a callback runs could reallocate observers and destroy the
+			// executing std::function. Pending callbacks become visible on the next delivery.
+			auto& destination = notifying ? pendingObservers : observers;
+			destination.emplace_back( Observer{ id, std::move( callback ), true } );
 		}
 
 		T value;
+		static constexpr Uint32 MaxReentrantNotifications = 1024;
 		Uint32 nextId{ 0 };
 		Observers observers;
+		// Separate inline storage avoids both callback copies and heap allocation for the usual
+		// case of a few observers added during notification.
+		Observers pendingObservers;
+		std::optional<T> pendingValue;
+		bool notifying{ false };
 	};
 
   public:
+	using ValueType = T;
 	using Callback = std::function<void( const T& )>;
 
 	/** @brief Move-only scoped ownership of one ObservableValue observer. */
@@ -123,6 +187,7 @@ template <typename T> class ObservableValue {
 			return *this;
 		}
 
+		/** @brief Disconnects the observer. Calling this more than once is safe. */
 		void disconnect() {
 			if ( auto state = mState.lock() )
 				state->remove( mId );
@@ -144,11 +209,17 @@ template <typename T> class ObservableValue {
 		Uint32 mId{ 0 };
 	};
 
-	/** @brief Non-owning, lifetime-safe access used by adapters such as UIValueBinding. */
+	/**
+	 * @brief Non-owning, lifetime-safe access used by adapters such as UIValueBinding.
+	 *
+	 * Operations fail harmlessly after the owning ObservableValue is destroyed. A WeakHandle does
+	 * not make cross-thread access safe.
+	 */
 	class WeakHandle {
 	  public:
 		WeakHandle() = default;
 
+		/** @return true when the owner still exists and accepted the set operation. */
 		bool set( const T& value ) const {
 			if ( auto state = mState.lock() ) {
 				state->set( value );
@@ -157,12 +228,30 @@ template <typename T> class ObservableValue {
 			return false;
 		}
 
+		/** @return true when the owner still exists and accepted the set operation. */
 		bool set( T&& value ) const {
 			if ( auto state = mState.lock() ) {
 				state->set( std::move( value ) );
 				return true;
 			}
 			return false;
+		}
+
+		/** @return A copy of the current value, or std::nullopt after the owner expires. */
+		std::optional<T> get() const {
+			if ( auto state = mState.lock() )
+				return state->value;
+			return std::nullopt;
+		}
+
+		/** @return A scoped observer connection, or an empty connection after owner expiration. */
+		Connection observe( Callback callback ) const {
+			if ( auto state = mState.lock() ) {
+				auto id = ++state->nextId;
+				state->add( id, std::move( callback ) );
+				return Connection( state, id );
+			}
+			return {};
 		}
 
 		explicit operator bool() const { return !mState.expired(); }
@@ -173,18 +262,26 @@ template <typename T> class ObservableValue {
 		std::weak_ptr<State> mState;
 	};
 
+	/** @brief Creates an observable containing a default-constructed value. */
 	ObservableValue() : mState( std::make_shared<State>( T{} ) ) {}
+
+	/** @brief Creates an observable containing @p value. No notification is emitted. */
 	explicit ObservableValue( T value ) : mState( std::make_shared<State>( std::move( value ) ) ) {}
 	ObservableValue( const ObservableValue& ) = delete;
 	ObservableValue& operator=( const ObservableValue& ) = delete;
 	ObservableValue( ObservableValue&& ) noexcept = default;
 	ObservableValue& operator=( ObservableValue&& ) noexcept = default;
 
+	/** @return A reference to the current value. */
 	const T& get() const { return mState->value; }
+
+	/** @brief Replaces the value and synchronously notifies observers when it changed. */
 	void set( const T& value ) {
 		auto state = mState;
 		state->set( value );
 	}
+
+	/** @brief Move-replaces the value and synchronously notifies observers when it changed. */
 	void set( T&& value ) {
 		auto state = mState;
 		state->set( std::move( value ) );
@@ -201,16 +298,32 @@ template <typename T> class ObservableValue {
 	}
 
 	const T& operator*() const { return get(); }
+
 	const T* operator->() const { return &get(); }
+
 	operator const T&() const { return get(); }
 
+	/**
+	 * @brief Observes subsequent value changes.
+	 * @return A scoped connection; destroying it disconnects the callback.
+	 *
+	 * Registration does not invoke @p callback with the current value. Reentrant set() calls are
+	 * queued and delivered after the current observer snapshot completes.
+	 */
 	Connection observe( Callback callback ) {
 		auto id = ++mState->nextId;
-		mState->observers.emplace_back( typename State::Observer{ id, std::move( callback ) } );
+		mState->add( id, std::move( callback ) );
 		return Connection( mState, id );
 	}
 
+	/** @return A non-owning handle that expires safely with this observable. */
 	WeakHandle weakHandle() const { return WeakHandle( mState ); }
+
+	/** @return The number of currently connected observers. */
+	std::size_t observerCount() const { return mState->observers.size(); }
+
+	/** @return Whether observer callbacks are currently being delivered. */
+	bool isNotifying() const { return mState->notifying; }
 
   private:
 	std::shared_ptr<State> mState;
