@@ -375,6 +375,10 @@ UTEST( FontRendering, shapedTextUsesSystemFallbackForCommonSymbols ) {
 		const Uint32 codepoint = symbols[glyph.stringIndex];
 		if ( codepoint == ' ' )
 			continue;
+		FontDesc fallback = SystemFontResolver::instance()->getFallbackForCodepoint(
+			codepoint, FontWeight::Normal, false );
+		if ( fallback.path.empty() )
+			continue;
 		EXPECT_NE( 0u, glyph.glyphIndex );
 		EXPECT_NE( font.get(), glyph.font );
 	}

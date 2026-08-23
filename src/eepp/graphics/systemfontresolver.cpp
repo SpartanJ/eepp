@@ -504,7 +504,8 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 	}
 
 	FontDesc nativeMatch = matchFallbackForCodepoint( codepoint, weight, italic );
-	if ( !nativeMatch.path.empty() && !( isEmoji && fontHasSvgTable( nativeMatch.path ) ) ) {
+	if ( !nativeMatch.path.empty() && fontContainsCodepoint( nativeMatch.path, codepoint ) &&
+		 !( isEmoji && fontHasSvgTable( nativeMatch.path ) ) ) {
 		Lock lock( mMutex );
 		mCodepointFallbackCache[codepoint] = nativeMatch.path;
 		return nativeMatch;
