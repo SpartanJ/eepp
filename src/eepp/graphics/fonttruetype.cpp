@@ -742,7 +742,7 @@ Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool
 		}
 	}
 
-	if ( 0 == idx && mEnableSystemFallback && SystemFontResolver::existsSingleton() ) {
+	if ( 0 == idx && mEnableSystemFallback && SystemFontResolver::isEnabled() ) {
 		FontDesc fallbackDesc = SystemFontResolver::instance()->getFallbackForCodepoint(
 			codePoint, FontWeight::Normal, false );
 		if ( !fallbackDesc.path.empty() ) {
@@ -892,7 +892,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 				glyphIndex = getGlyphIndex( codePoint );
 		}
 
-		if ( 0 == glyphIndex && mEnableSystemFallback && SystemFontResolver::existsSingleton() ) {
+		if ( 0 == glyphIndex && mEnableSystemFallback && SystemFontResolver::isEnabled() ) {
 			FontDesc fallbackDesc = SystemFontResolver::instance()->getFallbackForCodepoint(
 				codePoint, FontWeight::Normal, false );
 			if ( !fallbackDesc.path.empty() ) {
@@ -1301,8 +1301,7 @@ Float FontTrueType::getGlyphAdvance( Uint32 codePoint, unsigned int characterSiz
 			}
 		}
 	}
-	if ( index == 0 && mEnableSystemFallback && mFontService &&
-		 SystemFontResolver::existsSingleton() ) {
+	if ( index == 0 && mEnableSystemFallback && mFontService && SystemFontResolver::isEnabled() ) {
 		FontDesc fallbackDesc = SystemFontResolver::instance()->getFallbackForCodepoint(
 			codePoint, FontWeight::Normal, false );
 		FontTrueType* fallbackFont =

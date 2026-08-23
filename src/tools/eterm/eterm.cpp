@@ -243,6 +243,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 
+	SystemFontResolver::setEnabled( true );
+
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 
@@ -271,6 +273,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		for ( const auto& tcs : terminalColorSchemes )
 			std::cout << "\t" << tcs.first << "\n";
 		return EXIT_SUCCESS;
+	}
+
+	std::unique_ptr<Thread> systemFontWarmUp;
+	if ( SystemFontResolver::isEnabled() ) {
+		systemFontWarmUp =
+			std::make_unique<Thread>( [] { SystemFontResolver::instance()->warmUp(); } );
+		systemFontWarmUp->launch();
 	}
 
 	displayManager->enableScreenSaver();
@@ -349,6 +358,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			win->showMessageBox( EE::Window::Window::MessageBoxType::Error, "eterm",
 								 "Operating System not supported." );
 			terminal.reset();
+			systemFontWarmUp.reset();
 			Engine::destroySingleton();
 			MemoryManager::showResults();
 			return EXIT_FAILURE;
@@ -473,6 +483,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	terminal.reset();
+	systemFontWarmUp.reset();
 
 	Engine::destroySingleton();
 

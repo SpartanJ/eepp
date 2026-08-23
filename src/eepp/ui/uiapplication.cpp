@@ -1,8 +1,10 @@
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/thread.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -11,6 +13,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#include <atomic>
 #include <iostream>
 
 using namespace EE::Graphics;
@@ -19,8 +22,31 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
+namespace Private {
+
+class UIApplicationSystemFontState {
+  public:
+	UIApplicationSystemFontState() :
+		warmUpThread( [] { SystemFontResolver::instance()->warmUp(); } ) {
+		warmUpThread.launch();
+	}
+
+	Thread warmUpThread;
+};
+
+} // namespace Private
+
+static std::atomic<bool> sSystemFontsEnabledByDefault{ true };
+
 UIApplication::UIApplication( const WindowSettings& windowSettings, const Settings& appSettings,
 							  const ContextSettings& contextSettings ) {
+	const bool enableSystemFonts = appSettings.enableSystemFonts.value_or(
+		sSystemFontsEnabledByDefault.load( std::memory_order_acquire ) );
+	if ( enableSystemFonts ) {
+		SystemFontResolver::setEnabled( true );
+		mSystemFontState = std::make_unique<Private::UIApplicationSystemFontState>();
+	}
+
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -113,6 +139,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 }
 
 UIApplication::~UIApplication() {
+	mSystemFontState.reset();
 	Engine::destroySingleton();
 	if ( mShowMemoryManagerResult )
 		MemoryManager::showResults();
@@ -165,6 +192,14 @@ void UIApplication::setShowMemoryManagerResult( bool show ) {
 
 bool UIApplication::showMemoryManagerResult() const {
 	return mShowMemoryManagerResult;
+}
+
+void UIApplication::setSystemFontsEnabledByDefault( bool enabled ) {
+	sSystemFontsEnabledByDefault.store( enabled, std::memory_order_release );
+}
+
+bool UIApplication::systemFontsEnabledByDefault() {
+	return sSystemFontsEnabledByDefault.load( std::memory_order_acquire );
 }
 
 }} // namespace EE::UI

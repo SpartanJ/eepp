@@ -110,6 +110,10 @@ class EE_API SystemFontResolver {
 
 	FontDesc getFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic );
 
+	/** Populate and cache the system font database without copying the resulting font list.
+	 * Safe to call from a worker thread after enabling the resolver. */
+	void warmUp() const;
+
 	bool fontContainsCodepoint( const std::string& path, Uint32 codepoint );
 
 	void invalidateCache();
@@ -144,11 +148,13 @@ class EE_API SystemFontResolver {
 
 	void populateGenericFallbacks() const;
 
+	FontDesc matchFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic ) const;
+
 	static int scoreMatch( const FontQuery& query, const FontDesc& candidate );
 
 	mutable System::Mutex mMutex;
 	mutable std::vector<FontDesc> mFontList;
-	mutable bool mFontListPopulated{ false };
+	mutable std::atomic<bool> mFontListPopulated{ false };
 	mutable std::atomic<bool> mFontListLoading{ false };
 
 	static Uint64 makeCacheKey( const std::string& normFamily, FontWeight weight,
@@ -166,7 +172,7 @@ class EE_API SystemFontResolver {
 	};
 	mutable std::vector<GenericEntry> mGenericFallbacks;
 
-	static bool sEnabled;
+	static std::atomic<bool> sEnabled;
 };
 
 }} // namespace EE::Graphics

@@ -4,6 +4,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/window.hpp>
 
+#include <memory>
 #include <optional>
 
 using namespace EE::Window;
@@ -11,6 +12,10 @@ using namespace EE::Window;
 namespace EE { namespace UI {
 
 class UISceneNode;
+
+namespace Private {
+class UIApplicationSystemFontState;
+}
 
 class EE_API UIApplication {
   public:
@@ -50,6 +55,9 @@ class EE_API UIApplication {
 		FontHinting fontHinting{ FontHinting::Full };
 		//! The antialiasing policy applied to fonts owned by the default and UI resource scopes.
 		FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
+		//! Enables system font fallback and warms the system font list on a background thread. If
+		//! not set, UIApplication::systemFontsEnabledByDefault() is used.
+		std::optional<bool> enableSystemFonts;
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),
@@ -74,6 +82,12 @@ class EE_API UIApplication {
 
 	bool showMemoryManagerResult() const;
 
+	//! Controls the system-font fallback policy used by Settings::enableSystemFonts when unset.
+	//! Enabled by default. Test runners can disable it before constructing any UIApplication.
+	static void setSystemFontsEnabledByDefault( bool enabled );
+
+	static bool systemFontsEnabledByDefault();
+
 	String::HashType getStyleSheetDefaultMarker() const { return mStyleSheetMarker; }
 
   protected:
@@ -82,6 +96,7 @@ class EE_API UIApplication {
 	String::HashType mStyleSheetMarker{ 0 };
 	bool mDidRun{ false };
 	bool mShowMemoryManagerResult{ false };
+	std::unique_ptr<Private::UIApplicationSystemFontState> mSystemFontState;
 };
 
 }} // namespace EE::UI

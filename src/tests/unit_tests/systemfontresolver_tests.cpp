@@ -5,6 +5,7 @@
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/thread.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 #include <dirent.h>
@@ -35,7 +36,13 @@ static std::size_t getOpenFileDescriptorCount() {
 #endif
 
 UTEST( SystemFontResolver, singletonLifecycle ) {
+	SystemFontResolver::destroySingleton();
+	SystemFontResolver::setEnabled( false );
+
+	UTEST_PRINT_STEP( "Enabling creates singleton" );
 	SystemFontResolver::setEnabled( true );
+	EXPECT_TRUE( SystemFontResolver::existsSingleton() != nullptr );
+
 	UTEST_PRINT_STEP( "Create singleton" );
 	auto* resolver = SystemFontResolver::createSingleton();
 	EXPECT_TRUE( resolver != nullptr );
@@ -52,6 +59,43 @@ UTEST( SystemFontResolver, singletonLifecycle ) {
 
 	SystemFontResolver::destroySingleton();
 	SystemFontResolver::setEnabled( false );
+}
+
+UTEST( SystemFontResolver, workerWarmUp ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+
+	Thread warmUpThread( [resolver] { resolver->warmUp(); } );
+	warmUpThread.launch();
+	warmUpThread.wait();
+
+	EXPECT_FALSE( resolver->isLoading() );
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_HAIKU
+	EXPECT_FALSE( resolver->enumerate().empty() );
+#endif
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
+}
+
+UTEST( SystemFontResolver, fallbackWaitsForConcurrentWarmUp ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+	resolver->invalidateCache();
+
+	Thread warmUpThread( [resolver] { resolver->warmUp(); } );
+	warmUpThread.launch();
+	FontDesc fallback = resolver->getFallbackForCodepoint( 'A', FontWeight::Normal, false );
+	warmUpThread.wait();
+
+	EXPECT_FALSE( resolver->isLoading() );
+	EXPECT_FALSE( fallback.path.empty() );
+	EXPECT_FALSE( resolver->enumerate().empty() );
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
 }
 
 UTEST( SystemFontResolver, genericFamilyFromName ) {
@@ -83,8 +127,9 @@ UTEST( SystemFontResolver, enumerate ) {
 	const auto& fonts = resolver->enumerate();
 	UTEST_PRINT_INFO( String::format( "Enumerated %zu system fonts", fonts.size() ).c_str() );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	EXPECT_TRUE_MSG( fonts.size() > 0, "Fontconfig should find fonts on Linux/BSD" );
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	EXPECT_TRUE_MSG( fonts.size() > 0, "Fontconfig should find fonts on Linux/BSD/Haiku" );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	EXPECT_TRUE_MSG( fonts.size() > 0, "DirectWrite should find fonts on Windows" );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
@@ -147,7 +192,8 @@ UTEST( SystemFontResolver, findVerdana ) {
 	}
 #endif
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
+	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
 	if ( resolver->enumerate().size() > 0 ) {
 		if ( !desc.path.empty() ) {
 			EXPECT_STDSTREQ( "Verdana", desc.family );

@@ -23,6 +23,7 @@
 #endif
 #include <dwrite.h>
 #include <dwrite_1.h>
+#include <dwrite_2.h>
 #include <windows.h>
 #include <wrl/client.h>
 #pragma comment( lib, "dwrite.lib" )
@@ -34,14 +35,6 @@
 #include <android/font_matcher.h>
 #endif
 #include <pugixml/pugixml.hpp>
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_HAIKU
-#include <Directory.h>
-#include <Entry.h>
-#include <Font.h>
-#include <Path.h>
-#include <String.h>
 #endif
 
 #include <ft2build.h>
@@ -210,23 +203,31 @@ bool fontHasSvgTable( const std::string& path ) {
 
 namespace EE { namespace Graphics {
 
+static void destroyNativeFontResolverState();
+
 SINGLETON_DECLARE_IMPLEMENTATION( SystemFontResolver )
 
-bool SystemFontResolver::sEnabled = false;
+std::atomic<bool> SystemFontResolver::sEnabled{ false };
 
 SystemFontResolver::SystemFontResolver() {}
 
 SystemFontResolver::~SystemFontResolver() {
+	sEnabled.store( false, std::memory_order_release );
 	invalidateCache();
+	destroyNativeFontResolverState();
 	destroyFTState();
 }
 
 void SystemFontResolver::setEnabled( bool enabled ) {
-	sEnabled = enabled;
+	// Enabling establishes the invariant used by hot glyph lookup paths: an enabled resolver always
+	// has an initialized singleton. Font enumeration remains lazy and can be warmed on a worker.
+	if ( enabled )
+		instance();
+	sEnabled.store( enabled, std::memory_order_release );
 }
 
 bool SystemFontResolver::isEnabled() {
-	return sEnabled;
+	return sEnabled.load( std::memory_order_acquire );
 }
 
 void SystemFontResolver::invalidateCache() {
@@ -237,7 +238,7 @@ void SystemFontResolver::invalidateCache() {
 		mCodepointFallbackCache.clear();
 		mFontList.clear();
 		mGenericFallbacks.clear();
-		mFontListPopulated = false;
+		mFontListPopulated.store( false, std::memory_order_release );
 	}
 	clearFTProbeCache();
 }
@@ -259,15 +260,21 @@ GenericFamily SystemFontResolver::genericFamilyFromName( const std::string& name
 }
 
 void SystemFontResolver::ensureFontListPopulated() const {
-	if ( !mFontListPopulated ) {
+	if ( !mFontListPopulated.load( std::memory_order_acquire ) ) {
 		Lock lock( mMutex );
-		if ( !mFontListPopulated ) {
-			AtomicBoolScopedOp op( mFontListLoading );
+		if ( !mFontListPopulated.load( std::memory_order_relaxed ) ) {
+			AtomicBoolScopedOp op( mFontListLoading, true );
 			populateFontList();
 			populateGenericFallbacks();
-			mFontListPopulated = true;
+			mFontListPopulated.store( true, std::memory_order_release );
 		}
 	}
+}
+
+void SystemFontResolver::warmUp() const {
+	Clock c;
+	ensureFontListPopulated();
+	Log::info( "SystemFontResolver::warmUp took: %s", c.getElapsedTime().toString() );
 }
 
 std::vector<FontDesc> SystemFontResolver::enumerate() {
@@ -474,7 +481,6 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 	ensureFontListPopulated();
 	const bool isEmoji = Font::isEmojiCodePoint( codepoint );
 
-	std::vector<FontDesc> snapshot;
 	{
 		Lock lock( mMutex );
 
@@ -495,8 +501,19 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 				}
 			}
 		}
+	}
 
-		snapshot = mFontList;
+	FontDesc nativeMatch = matchFallbackForCodepoint( codepoint, weight, italic );
+	if ( !nativeMatch.path.empty() && !( isEmoji && fontHasSvgTable( nativeMatch.path ) ) ) {
+		Lock lock( mMutex );
+		mCodepointFallbackCache[codepoint] = nativeMatch.path;
+		return nativeMatch;
+	}
+
+	static thread_local std::vector<FontDesc> snapshot;
+	{
+		Lock lock( mMutex );
+		snapshot.assign( mFontList.begin(), mFontList.end() );
 	}
 
 	for ( const auto& desc : snapshot ) {
@@ -602,14 +619,164 @@ static std::string wideToUtf8( const WCHAR* wstr ) {
 }
 
 static IDWriteFactory* getDWriteFactory() {
-	static IDWriteFactory* sFactory = nullptr;
+	static Microsoft::WRL::ComPtr<IDWriteFactory> sFactory;
 	if ( !sFactory ) {
 		HRESULT hr = DWriteCreateFactory( DWRITE_FACTORY_TYPE_SHARED, __uuidof( IDWriteFactory ),
-										  reinterpret_cast<IUnknown**>( &sFactory ) );
+										  reinterpret_cast<IUnknown**>( sFactory.GetAddressOf() ) );
 		if ( FAILED( hr ) )
 			return nullptr;
 	}
-	return sFactory;
+	return sFactory.Get();
+}
+
+class CodepointAnalysisSource final : public IDWriteTextAnalysisSource {
+  public:
+	explicit CodepointAnalysisSource( Uint32 codepoint ) {
+		if ( codepoint <= 0xFFFF ) {
+			mText[0] = static_cast<WCHAR>( codepoint );
+			mLength = 1;
+		} else {
+			codepoint -= 0x10000;
+			mText[0] = static_cast<WCHAR>( 0xD800 + ( codepoint >> 10 ) );
+			mText[1] = static_cast<WCHAR>( 0xDC00 + ( codepoint & 0x3FF ) );
+			mLength = 2;
+		}
+	}
+
+	UINT32 length() const { return mLength; }
+
+	HRESULT STDMETHODCALLTYPE QueryInterface( REFIID iid, void** object ) override {
+		if ( !object )
+			return E_POINTER;
+		if ( iid == __uuidof( IUnknown ) || iid == __uuidof( IDWriteTextAnalysisSource ) ) {
+			*object = this;
+			return S_OK;
+		}
+		*object = nullptr;
+		return E_NOINTERFACE;
+	}
+
+	ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+	ULONG STDMETHODCALLTYPE Release() override { return 1; }
+
+	HRESULT STDMETHODCALLTYPE GetTextAtPosition( UINT32 position, const WCHAR** text,
+												 UINT32* length ) override {
+		if ( !text || !length )
+			return E_POINTER;
+		if ( position >= mLength ) {
+			*text = nullptr;
+			*length = 0;
+		} else {
+			*text = mText + position;
+			*length = mLength - position;
+		}
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE GetTextBeforePosition( UINT32 position, const WCHAR** text,
+													 UINT32* length ) override {
+		if ( !text || !length )
+			return E_POINTER;
+		if ( position == 0 || position > mLength ) {
+			*text = nullptr;
+			*length = 0;
+		} else {
+			*text = mText;
+			*length = position;
+		}
+		return S_OK;
+	}
+
+	DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override {
+		return DWRITE_READING_DIRECTION_LEFT_TO_RIGHT;
+	}
+
+	HRESULT STDMETHODCALLTYPE GetLocaleName( UINT32 position, UINT32* length,
+											 const WCHAR** localeName ) override {
+		if ( !length || !localeName )
+			return E_POINTER;
+		*length = position < mLength ? mLength - position : 0;
+		*localeName = L"en-us";
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE GetNumberSubstitution(
+		UINT32 position, UINT32* length, IDWriteNumberSubstitution** substitution ) override {
+		if ( !length || !substitution )
+			return E_POINTER;
+		*length = position < mLength ? mLength - position : 0;
+		*substitution = nullptr;
+		return S_OK;
+	}
+
+  private:
+	WCHAR mText[2]{};
+	UINT32 mLength{ 0 };
+};
+
+static FontDesc fontDescFromDWriteFont( IDWriteFont* font, FontWeight weight, bool italic ) {
+	using Microsoft::WRL::ComPtr;
+	FontDesc desc;
+	if ( !font )
+		return desc;
+
+	ComPtr<IDWriteFontFamily> family;
+	ComPtr<IDWriteLocalizedStrings> familyNames;
+	if ( FAILED( font->GetFontFamily( &family ) ) || !family ||
+		 FAILED( family->GetFamilyNames( &familyNames ) ) || !familyNames )
+		return desc;
+	UINT32 nameLength = 0;
+	if ( FAILED( familyNames->GetStringLength( 0, &nameLength ) ) )
+		return desc;
+	std::wstring familyName( nameLength + 1, L'\0' );
+	if ( FAILED( familyNames->GetString( 0, &familyName[0], nameLength + 1 ) ) )
+		return desc;
+
+	ComPtr<IDWriteFontFace> face;
+	if ( FAILED( font->CreateFontFace( &face ) ) || !face )
+		return desc;
+	UINT32 fileCount = 0;
+	if ( FAILED( face->GetFiles( &fileCount, nullptr ) ) || fileCount == 0 )
+		return desc;
+	std::vector<IDWriteFontFile*> rawFiles( fileCount, nullptr );
+	if ( FAILED( face->GetFiles( &fileCount, rawFiles.data() ) ) )
+		return desc;
+	for ( UINT32 i = 1; i < fileCount; ++i )
+		rawFiles[i]->Release();
+	ComPtr<IDWriteFontFile> fontFile;
+	fontFile.Attach( rawFiles[0] );
+
+	ComPtr<IDWriteFontFileLoader> loader;
+	ComPtr<IDWriteLocalFontFileLoader> localLoader;
+	if ( FAILED( fontFile->GetLoader( &loader ) ) || !loader ||
+		 FAILED( loader.As( &localLoader ) ) || !localLoader )
+		return desc;
+	const void* key = nullptr;
+	UINT32 keySize = 0;
+	if ( FAILED( fontFile->GetReferenceKey( &key, &keySize ) ) )
+		return desc;
+	UINT32 pathLength = 0;
+	if ( FAILED( localLoader->GetFilePathLengthFromKey( key, keySize, &pathLength ) ) )
+		return desc;
+	std::wstring path( pathLength + 1, L'\0' );
+	if ( FAILED( localLoader->GetFilePathFromKey( key, keySize, &path[0], pathLength + 1 ) ) )
+		return desc;
+
+	desc.family = wideToUtf8( familyName.c_str() );
+	desc.path = wideToUtf8( path.c_str() );
+	desc.faceIndex = face->GetIndex();
+	desc.weight = weight;
+	desc.stretch = static_cast<FontStretch>( static_cast<Uint8>( font->GetStretch() ) );
+	desc.italic = italic;
+	desc.monospace = false;
+	ComPtr<IDWriteFont1> font1;
+	if ( SUCCEEDED( font->QueryInterface( __uuidof( IDWriteFont1 ), &font1 ) ) && font1 ) {
+		DWRITE_PANOSE panose;
+		font1->GetPanose( &panose );
+		const BYTE* raw = reinterpret_cast<const BYTE*>( &panose );
+		desc.monospace = raw[0] == 2 && raw[3] == 9;
+	}
+	return desc;
 }
 
 void SystemFontResolver::populateFontList() const {
@@ -800,6 +967,56 @@ static FontStretch ctWidthToFontStretch( CGFloat width ) {
 	return FontStretch::UltraExpanded;
 }
 
+static FontDesc fontDescFromCTFont( CTFontRef font, FontWeight weight, bool italic ) {
+	FontDesc desc;
+	if ( !font )
+		return desc;
+
+	CTFontDescriptorRef descriptor = CTFontCopyFontDescriptor( font );
+	if ( !descriptor )
+		return desc;
+	CFURLRef url =
+		static_cast<CFURLRef>( CTFontDescriptorCopyAttribute( descriptor, kCTFontURLAttribute ) );
+	CFRelease( descriptor );
+	if ( !url )
+		return desc;
+	CFStringRef pathRef = CFURLCopyFileSystemPath( url, kCFURLPOSIXPathStyle );
+	CFRelease( url );
+	desc.path = cfStringToStd( pathRef );
+	if ( pathRef )
+		CFRelease( pathRef );
+	if ( desc.path.empty() )
+		return {};
+
+	CFStringRef familyRef = CTFontCopyFamilyName( font );
+	desc.family = cfStringToStd( familyRef );
+	if ( familyRef )
+		CFRelease( familyRef );
+	CFStringRef postScriptNameRef = CTFontCopyPostScriptName( font );
+	std::string postScriptName = cfStringToStd( postScriptNameRef );
+	if ( postScriptNameRef )
+		CFRelease( postScriptNameRef );
+
+	std::shared_ptr<FreeTypeState> ftState = getFTState();
+	if ( !ftState || !ftState->findFaceIndex( desc.path, postScriptName, desc.faceIndex ) )
+		return {};
+
+	CGFloat widthValue = 0.0;
+	CFDictionaryRef traits = CTFontCopyTraits( font );
+	if ( traits ) {
+		CFNumberRef widthNumber =
+			static_cast<CFNumberRef>( CFDictionaryGetValue( traits, kCTFontWidthTrait ) );
+		if ( widthNumber )
+			CFNumberGetValue( widthNumber, kCFNumberCGFloatType, &widthValue );
+		CFRelease( traits );
+	}
+	desc.weight = weight;
+	desc.stretch = ctWidthToFontStretch( widthValue );
+	desc.italic = italic;
+	desc.monospace = ( CTFontGetSymbolicTraits( font ) & kCTFontMonoSpaceTrait ) != 0;
+	return desc;
+}
+
 void SystemFontResolver::populateFontList() const {
 	CFArrayRef descriptors = CTFontManagerCopyAvailableFontFamilyNames();
 	if ( !descriptors )
@@ -930,9 +1147,10 @@ void SystemFontResolver::populateFontList() const {
 }
 
 // =====================================================================
-// Platform: Linux / FreeBSD (Fontconfig — dynamically loaded)
+// Platform: Linux / FreeBSD / Haiku (Fontconfig — dynamically loaded)
 // =====================================================================
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
 
 struct FcLib {
 	void* handle{ nullptr };
@@ -943,6 +1161,7 @@ struct FcLib {
 
 	struct FcConfig;
 	struct FcPattern;
+	struct FcCharSet;
 	struct FcObjectSet;
 	struct FcFontSet {
 		int nfont;
@@ -990,6 +1209,13 @@ struct FcLib {
 	void ( *FontSetDestroy )( FcFontSet* );
 	FcResult ( *PatternGetString )( const FcPattern*, const char*, int, FcChar8** );
 	FcResult ( *PatternGetInteger )( const FcPattern*, const char*, int, int* );
+	FcCharSet* ( *CharSetCreate )( void );
+	void ( *CharSetDestroy )( FcCharSet* );
+	FcBool ( *CharSetAddChar )( FcCharSet*, Uint32 );
+	FcBool ( *PatternAddCharSet )( FcPattern*, const char*, const FcCharSet* );
+	FcBool ( *ConfigSubstitute )( FcConfig*, FcPattern*, int );
+	void ( *DefaultSubstitute )( FcPattern* );
+	FcPattern* ( *FontMatch )( FcConfig*, FcPattern*, FcResult* );
 
 	bool load() {
 		handle = Sys::loadObject( "libfontconfig.so.1" );
@@ -1017,10 +1243,24 @@ struct FcLib {
 			(decltype( PatternGetString ))Sys::loadFunction( handle, "FcPatternGetString" );
 		PatternGetInteger =
 			(decltype( PatternGetInteger ))Sys::loadFunction( handle, "FcPatternGetInteger" );
+		CharSetCreate = (decltype( CharSetCreate ))Sys::loadFunction( handle, "FcCharSetCreate" );
+		CharSetDestroy =
+			(decltype( CharSetDestroy ))Sys::loadFunction( handle, "FcCharSetDestroy" );
+		CharSetAddChar =
+			(decltype( CharSetAddChar ))Sys::loadFunction( handle, "FcCharSetAddChar" );
+		PatternAddCharSet =
+			(decltype( PatternAddCharSet ))Sys::loadFunction( handle, "FcPatternAddCharSet" );
+		ConfigSubstitute =
+			(decltype( ConfigSubstitute ))Sys::loadFunction( handle, "FcConfigSubstitute" );
+		DefaultSubstitute =
+			(decltype( DefaultSubstitute ))Sys::loadFunction( handle, "FcDefaultSubstitute" );
+		FontMatch = (decltype( FontMatch ))Sys::loadFunction( handle, "FcFontMatch" );
 
 		return InitLoadConfigAndFonts && ConfigDestroy && Fini && PatternCreate &&
 			   ObjectSetCreate && ObjectSetAdd && FontList && PatternDestroy && ObjectSetDestroy &&
-			   FontSetDestroy && PatternGetString && PatternGetInteger;
+			   FontSetDestroy && PatternGetString && PatternGetInteger && CharSetCreate &&
+			   CharSetDestroy && CharSetAddChar && PatternAddCharSet && ConfigSubstitute &&
+			   DefaultSubstitute && FontMatch;
 	}
 
 	void finish( FcConfig* config ) {
@@ -1036,6 +1276,37 @@ struct FcLib {
 		}
 	}
 };
+
+struct FontconfigState {
+	FcLib fc;
+	FcLib::FcConfig* config{ nullptr };
+	Mutex mutex;
+
+	FontconfigState() {
+		if ( fc.load() )
+			config = fc.InitLoadConfigAndFonts();
+	}
+
+	~FontconfigState() {
+		Lock lock( mutex );
+		if ( fc.handle ) {
+			fc.finish( config );
+			fc.unload();
+		}
+	}
+
+	bool ready() const { return config != nullptr; }
+};
+
+Mutex sFontconfigStateMutex;
+std::shared_ptr<FontconfigState> sFontconfigState;
+
+static std::shared_ptr<FontconfigState> getFontconfigState() {
+	Lock lock( sFontconfigStateMutex );
+	if ( !sFontconfigState )
+		sFontconfigState = std::make_shared<FontconfigState>();
+	return sFontconfigState;
+}
 
 #define FC_W( v ) FcLib::FC_WEIGHT_##v
 #define FC_S( v ) FcLib::FC_SLANT_##v
@@ -1082,18 +1353,14 @@ static FontStretch fcWidthToFontStretch( int fcWidth ) {
 }
 
 void SystemFontResolver::populateFontList() const {
-	FcLib fc;
-	if ( !fc.load() ) {
+	std::shared_ptr<FontconfigState> state = getFontconfigState();
+	if ( !state || !state->ready() ) {
 		populateFontListFallback();
 		return;
 	}
-	FcLib::FcConfig* config = fc.InitLoadConfigAndFonts();
-	if ( !config ) {
-		fc.finish( nullptr );
-		fc.unload();
-		populateFontListFallback();
-		return;
-	}
+	Lock stateLock( state->mutex );
+	FcLib& fc = state->fc;
+	FcLib::FcConfig* config = state->config;
 
 	FcLib::FcPattern* pattern = fc.PatternCreate();
 	FcLib::FcObjectSet* os = fc.ObjectSetCreate();
@@ -1102,8 +1369,6 @@ void SystemFontResolver::populateFontList() const {
 			fc.PatternDestroy( pattern );
 		if ( os )
 			fc.ObjectSetDestroy( os );
-		fc.finish( config );
-		fc.unload();
 		populateFontListFallback();
 		return;
 	}
@@ -1115,8 +1380,6 @@ void SystemFontResolver::populateFontList() const {
 	if ( !objectSetOk ) {
 		fc.PatternDestroy( pattern );
 		fc.ObjectSetDestroy( os );
-		fc.finish( config );
-		fc.unload();
 		populateFontListFallback();
 		return;
 	}
@@ -1127,8 +1390,6 @@ void SystemFontResolver::populateFontList() const {
 	fc.ObjectSetDestroy( os );
 
 	if ( !fontSet ) {
-		fc.finish( config );
-		fc.unload();
 		populateFontListFallback();
 		return;
 	}
@@ -1172,8 +1433,6 @@ void SystemFontResolver::populateFontList() const {
 	}
 
 	fc.FontSetDestroy( fontSet );
-	fc.finish( config );
-	fc.unload();
 }
 
 // =====================================================================
@@ -1246,15 +1505,6 @@ void SystemFontResolver::populateFontList() const {
 }
 
 // =====================================================================
-// Platform: Haiku (Fallback)
-// =====================================================================
-#elif EE_PLATFORM == EE_PLATFORM_HAIKU
-
-void SystemFontResolver::populateFontList() const {
-	return populateFontListFallback();
-}
-
-// =====================================================================
 // Platform: Emscripten / Unknown (no system font access)
 // =====================================================================
 #else
@@ -1262,6 +1512,144 @@ void SystemFontResolver::populateFontList() const {
 void SystemFontResolver::populateFontList() const {}
 
 #endif
+
+FontDesc SystemFontResolver::matchFallbackForCodepoint( Uint32 codepoint, FontWeight weight,
+														bool italic ) const {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	using Microsoft::WRL::ComPtr;
+	IDWriteFactory* factory = getDWriteFactory();
+	if ( !factory )
+		return {};
+	ComPtr<IDWriteFactory2> factory2;
+	if ( FAILED( factory->QueryInterface( __uuidof( IDWriteFactory2 ),
+										  reinterpret_cast<void**>( factory2.GetAddressOf() ) ) ) ||
+		 !factory2 )
+		return {};
+	ComPtr<IDWriteFontFallback> fallback;
+	if ( FAILED( factory2->GetSystemFontFallback( &fallback ) ) || !fallback )
+		return {};
+
+	CodepointAnalysisSource source( codepoint );
+	UINT32 mappedLength = 0;
+	FLOAT scale = 1.f;
+	ComPtr<IDWriteFont> mappedFont;
+	HRESULT result =
+		fallback->MapCharacters( &source, 0, source.length(), nullptr, nullptr,
+								 static_cast<DWRITE_FONT_WEIGHT>( static_cast<Uint16>( weight ) ),
+								 italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
+								 DWRITE_FONT_STRETCH_NORMAL, &mappedLength, &mappedFont, &scale );
+	if ( FAILED( result ) || !mappedFont || mappedLength < source.length() )
+		return {};
+	return fontDescFromDWriteFont( mappedFont.Get(), weight, italic );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	if ( codepoint > 0x10FFFF || ( codepoint >= 0xD800 && codepoint <= 0xDFFF ) )
+		return {};
+	UniChar characters[2];
+	CFIndex length = 1;
+	if ( codepoint <= 0xFFFF ) {
+		characters[0] = static_cast<UniChar>( codepoint );
+	} else {
+		codepoint -= 0x10000;
+		characters[0] = static_cast<UniChar>( 0xD800 + ( codepoint >> 10 ) );
+		characters[1] = static_cast<UniChar>( 0xDC00 + ( codepoint & 0x3FF ) );
+		length = 2;
+	}
+	CFStringRef text = CFStringCreateWithCharacters( kCFAllocatorDefault, characters, length );
+	if ( !text )
+		return {};
+
+	CTFontRef baseFont = CTFontCreateWithName( CFSTR( "Helvetica" ), 12.0, nullptr );
+	if ( !baseFont ) {
+		CFRelease( text );
+		return {};
+	}
+	CTFontSymbolicTraits desiredTraits = 0;
+	if ( weight >= FontWeight::Bold )
+		desiredTraits |= kCTFontBoldTrait;
+	if ( italic )
+		desiredTraits |= kCTFontItalicTrait;
+	CTFontRef styledFont = CTFontCreateCopyWithSymbolicTraits(
+		baseFont, 0.0, nullptr, desiredTraits, kCTFontBoldTrait | kCTFontItalicTrait );
+	CTFontRef fallbackFont =
+		CTFontCreateForString( styledFont ? styledFont : baseFont, text, CFRangeMake( 0, length ) );
+	FontDesc desc = fontDescFromCTFont( fallbackFont, weight, italic );
+	if ( fallbackFont )
+		CFRelease( fallbackFont );
+	if ( styledFont )
+		CFRelease( styledFont );
+	CFRelease( baseFont );
+	CFRelease( text );
+	return desc;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Fontconfig caches charset coverage, so ask it to match the codepoint instead of opening every
+	// font file with FreeType. Its dynamically loaded API uses process-global internals.
+	Lock lock( mMutex );
+	std::shared_ptr<FontconfigState> state = getFontconfigState();
+	if ( !state || !state->ready() )
+		return {};
+	Lock stateLock( state->mutex );
+	FcLib& fc = state->fc;
+	FcLib::FcConfig* config = state->config;
+	FcLib::FcPattern* pattern = fc.PatternCreate();
+	FcLib::FcCharSet* charset = pattern ? fc.CharSetCreate() : nullptr;
+	FontDesc desc;
+
+	if ( charset && fc.CharSetAddChar( charset, codepoint ) &&
+		 fc.PatternAddCharSet( pattern, "charset", charset ) &&
+		 fc.ConfigSubstitute( config, pattern, 0 ) ) {
+		fc.DefaultSubstitute( pattern );
+		FcLib::FcResult matchResult{};
+		FcLib::FcPattern* match = fc.FontMatch( config, pattern, &matchResult );
+		if ( match && matchResult == FcLib::FcResultMatch ) {
+			FcLib::FcChar8* family = nullptr;
+			FcLib::FcChar8* file = nullptr;
+			if ( fc.PatternGetString( match, "family", 0, &family ) == FcLib::FcResultMatch &&
+				 family && fc.PatternGetString( match, "file", 0, &file ) == FcLib::FcResultMatch &&
+				 file ) {
+				int fcIndex = 0;
+				int fcWidth = FC_WI( NORMAL );
+				int fcSpacing = FcLib::FC_PROPORTIONAL;
+				fc.PatternGetInteger( match, "index", 0, &fcIndex );
+				fc.PatternGetInteger( match, "width", 0, &fcWidth );
+				fc.PatternGetInteger( match, "spacing", 0, &fcSpacing );
+				desc.family = reinterpret_cast<const char*>( family );
+				desc.path = reinterpret_cast<const char*>( file );
+				desc.faceIndex = fcIndex >= 0 ? static_cast<Uint32>( fcIndex & 0xFFFF ) : 0;
+				desc.weight = weight;
+				desc.stretch = fcWidthToFontStretch( fcWidth );
+				desc.italic = italic;
+				desc.monospace = fcSpacing == FcLib::FC_MONO;
+			}
+		}
+		if ( match )
+			fc.PatternDestroy( match );
+	}
+
+	if ( charset )
+		fc.CharSetDestroy( charset );
+	if ( pattern )
+		fc.PatternDestroy( pattern );
+	return desc;
+#else
+	(void)codepoint;
+	(void)weight;
+	(void)italic;
+	return {};
+#endif
+}
+
+static void destroyNativeFontResolverState() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::shared_ptr<FontconfigState> state;
+	{
+		Lock lock( sFontconfigStateMutex );
+		state = std::move( sFontconfigState );
+	}
+	state.reset();
+#endif
+}
 
 void SystemFontResolver::populateFontListFallback() const {
 	// Added Haiku font paths so testing this fallback on Haiku actually finds files

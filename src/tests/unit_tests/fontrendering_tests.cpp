@@ -13,6 +13,7 @@
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -350,6 +351,37 @@ UTEST( FontRendering, fontFeaturesStringConversion ) {
 }
 
 #ifdef EE_TEXT_SHAPER_ENABLED
+UTEST( FontRendering, shapedTextUsesSystemFallbackForCommonSymbols ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Shaped System Font Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "SystemFallbackSymbols-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	SystemFontResolver::setEnabled( true );
+	SystemFontResolver::instance()->warmUp();
+	BoolScopedOp shaperEnabled( Text::TextShaperEnabled, true );
+	BoolScopedOp shaperOptimizations( Text::TextShaperOptimizations, false );
+	const String symbols( "⬢  ⑂  ⟲" );
+	TextLayout::Cache layout =
+		TextLayout::layout( symbols, font.get(), 24, Text::Regular, 4, 0, {}, 0 );
+
+	ASSERT_EQ( 1u, layout->paragraphs.size() );
+	ASSERT_EQ( symbols.size(), layout->paragraphs.front().shapedGlyphs.size() );
+	for ( const ShapedGlyph& glyph : layout->paragraphs.front().shapedGlyphs ) {
+		const Uint32 codepoint = symbols[glyph.stringIndex];
+		if ( codepoint == ' ' )
+			continue;
+		EXPECT_NE( 0u, glyph.glyphIndex );
+		EXPECT_NE( font.get(), glyph.font );
+	}
+
+	SystemFontResolver::setEnabled( false );
+}
+
 UTEST( FontRendering, latinOpenTypeFeaturesAreExplicitAndCachedByTextHints ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - Latin Ligatures Test", WindowStyle::Default,

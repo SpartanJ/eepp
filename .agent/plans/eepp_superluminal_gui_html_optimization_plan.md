@@ -1,5 +1,34 @@
 # eepp Superluminal GUI/HTML Optimization Plan - 2026-07-09
 
+## Status (updated 2026-08-23)
+
+Implemented since this plan was written:
+
+### Item 3 — Fast-parse common CSS lengths without allocations: DONE
+
+`StyleSheetLength::fromString()` trims once, scans numeric prefixes directly from a
+`std::string_view`, and converts through `String::fromString()` view overloads; the CSS parser
+no longer builds number/unit strings or retries parsing by removing characters. Function
+expressions retain the existing parser.
+
+- Focused benchmark median for 320,000 mixed values: 13.67 ms → 10.10 ms, a 26.1% reduction.
+- Post-change full release suite: 737 passed, one skipped.
+
+### Item 10 — Broaden hot accessor/type-check inlining beyond selector code: DONE (core hierarchy)
+
+Trivial `getType()` / `isType()` implementations for `Node`, `UINode`, `UIWidget`, `UILayout`,
+`UIHTMLWidget`, and `UIRichText`, plus `Node::isLayout()`, are now inline.
+
+- `UISceneNode::invalidateLayout()`: 86.1 ms inclusive / 41.5 ms exclusive → 26.3 ms total.
+- Base type accessor symbols largely disappeared from the hot function list.
+- `getEffectiveWhiteSpaceCollapse()`: 344.0 ms → 162.9 ms inclusive, partly from cheaper type checks.
+- Unit-test process CPU time: 20.12 s → 19.88 s (~1.2%, directional only).
+
+Further subclass inlining (table widgets) remains possible but is not an independent priority
+here; it can be folded into other items if needed.
+
+All remaining items (1, 2, 4–9, 11, 12) are **not started**.
+
 ## Goal
 
 Use the Superluminal capture from `2026-07-09_19-52-19_eepp-unit_tests` to identify cheap, low-risk optimization work in eepp's GUI, text, and HTML compatibility layers. This plan intentionally ignores unit-test-specific hotspots such as `EE::Graphics::Image::diff()` and focuses on code paths likely to matter in real applications and `ecode`.
@@ -58,7 +87,6 @@ Approximate aggregate timings from the capture:
 | White-space inheritance lookup | `getEffectiveWhiteSpaceCollapse`: ~406 ms inclusive, 3235 calls |
 | Text width measurement | `Text::updateWidthCache`: ~142 ms inclusive, 916 calls |
 | Font glyph/kerning lookup | `FontTrueType::getGlyphByIndex`: ~338 ms inclusive, 2189 calls; `getKerning`: ~72 ms inclusive, 525 calls |
-| CSS length parsing | `StyleSheetLength::fromString`: ~44.7 ms exclusive / ~106.9 ms inclusive, 872 calls |
 | CSS style selection | `StyleSheet::getElementStyles`: ~154 ms inclusive; `StyleSheetSelector::select`: ~116 ms inclusive; `StyleSheetSelectorRule::matches`: ~55 ms inclusive |
 | HTML load/style reload | `UIHTML_KittyHomeSmallDoesNotHang` branch: `loadLayoutFromString` ~199 ms, recursive `reloadStyle` ~101 ms, `updateDirtyLayouts` ~185 ms |
 
@@ -120,58 +148,6 @@ Validation:
 
 - Existing `UIHTML.*white*`, `UIRichText.*`, and text-transform tests.
 - Add a nested span test with inherited `white-space`, local `white-space-collapse`, and nested text-transform override.
-
-### 3. Fast-parse common CSS lengths without allocations
-
-**Status: Implemented and measured**
-
-`StyleSheetLength::fromString()` now trims once, scans scalar numeric prefixes directly from a
-`std::string_view`, and converts the numeric subview through `String::fromString()`. The core string
-API exposes `std::string_view` numeric overloads while retaining exact `std::string` forwarding
-overloads for source and ABI compatibility with the implicitly constructible `EE::String` type.
-The CSS parser no longer builds separate number/unit strings or retries parsing by removing
-characters. Function expressions retain the existing parser, and position keywords map directly
-to percentage lengths without recursive string construction.
-
-Validation includes signed values, leading-dot decimals, scientific notation, surrounding
-whitespace, position keywords, unitless and unknown units, `pxAsDp`, all existing CSS function
-tests, and a dedicated release benchmark.
-
-- Final focused benchmark median for 320,000 mixed values: 13.67 ms to 10.10 ms, a 26.1%
-  reduction.
-- Before numeric conversion was centralized in `String`, the full-suite capture measured 105.4 ms
-  inclusive / 44.6 ms exclusive to 46.5 ms / 12.4 ms. A future full capture should refresh those
-  aggregate numbers for the final implementation.
-- Post-change full release suite: 737 passed, one skipped.
-
-Comparison capture:
-
-```text
-/tmp/eepp-unit-tests-length-fast-path-2026-07-10.linux
-```
-
-Files:
-
-```text
-src/eepp/ui/css/stylesheetlength.cpp
-include/eepp/ui/css/stylesheetlength.hpp
-```
-
-Current hot section: `src/eepp/ui/css/stylesheetlength.cpp:391`.
-
-`StyleSheetLength::fromString()` allocates `num`, allocates `unit` via `substr`, lower-hashes the whole string before knowing whether it is a keyword, and may repeatedly call `String::fromString()` while popping characters.
-
-Proposed cheap path:
-
-- First scan a trimmed `std::string_view`.
-- If the first non-sign character is numeric or `.`, parse numeric prefix directly and pass the unit suffix as `std::string_view`.
-- Add `unitFromString(std::string_view)` and avoid constructing `unit`.
-- Only call `String::hashToLower()` for non-numeric keyword candidates.
-- Keep the existing function-parser path for `calc()`, `min()`, `max()`, and `clamp()`.
-
-Validation:
-
-- CSS length parser tests for signed values, decimals, percentages, unitless `0`, `pxAsDp`, keywords, and function strings.
 
 ### 4. Avoid duplicate content-offset and size work in `UIRichText::rebuildRichText()`
 
@@ -345,57 +321,6 @@ Validation:
 - Existing layout loading tests.
 - HTML fixture tests involving inherited color/font/white-space and immediate layout after load.
 
-### 10. Broaden hot accessor/type-check inlining beyond selector code
-
-**Status: Core hierarchy implemented and measured**
-
-The trivial `getType()` / `isType()` implementations for `Node`, `UINode`, `UIWidget`,
-`UILayout`, `UIHTMLWidget`, and `UIRichText` are now inline, along with `Node::isLayout()`.
-
-In the comparable full-suite captures:
-
-- `UISceneNode::invalidateLayout()` decreased from 86.1 ms inclusive / 41.5 ms exclusive to
-  26.3 ms total.
-- Base type accessor symbols largely disappeared from the hot function list.
-- `getEffectiveWhiteSpaceCollapse()` decreased from 344.0 ms to 162.9 ms inclusive, partly
-  because its repeated type checks became cheaper.
-- Unit-test process CPU time decreased from 20.12 s to 19.88 s, approximately 1.2%. Treat this
-  whole-process result as directional because the full suite contains rendering and image-diff
-  noise.
-
-Further subclass inlining remains possible, especially table widgets, but the next independent
-high-value target is CSS length parsing.
-
-Files:
-
-```text
-include/eepp/scene/node.hpp
-include/eepp/ui/uiwidget.hpp
-include/eepp/ui/uinode.hpp
-include/eepp/ui/uilayout.hpp
-```
-
-The selector optimization plan already lists some inlining work. This capture shows the same issue in rich-text and layout code:
-
-```text
-Node::getParent: ~37.7 ms exclusive
-Node::getType: ~36.1 ms exclusive
-UIWidget::isType: ~37.6 ms exclusive
-UINode::isType: ~26.9 ms exclusive
-UIHTMLWidget::isType / getType: ~32.0 ms combined
-```
-
-Proposed cheap path:
-
-- Execute the accessor-inline phase from the CSS selector plan, but validate impact on rich-text/layout too.
-- Include `getType()`/`isType()` candidates for `UINode`, `UIWidget`, `UILayout`, `UIHTMLWidget`, `UIRichText`, and table element subclasses where definitions are trivial.
-- Keep ABI/ODR constraints in mind; remove matching out-of-line definitions where required.
-
-Validation:
-
-- Full build and unit test smoke.
-- `git diff --check` and one focused HTML/rich-text filter.
-
 ### 11. Keep CSS selector optimization in the existing dedicated plan
 
 Files:
@@ -415,11 +340,11 @@ StyleSheetSelector::select: ~116 ms inclusive
 StyleSheetSelectorRule::matches: ~55 ms inclusive
 ```
 
-Do not duplicate that work here. When executing this plan, treat selector indexing, sibling combinator correctness, and class/hash matching as owned by `eepp_css_selector_optimization_plan.md`.
+Do not duplicate that work here. When executing this plan, treat selector instrumentation and any further selector work as owned by `eepp_css_selector_optimization_plan.md` (its Phases 1–3 and 5–8 are done; Phase 4 instrumentation plus optional Phases 9–10 remain).
 
 Small complementary task:
 
-- If a style reload batching change is implemented first, rerun the same capture or filtered HTML tests before starting selector indexing. Batching may reduce selector call volume and change the measured priority.
+- If a style reload batching change is implemented first, rerun the same capture or filtered HTML tests before starting further selector work. Batching may reduce selector call volume and change the measured priority.
 
 ### 12. Add a repeatable profiling harness for these focused cases
 
@@ -451,12 +376,12 @@ The goal is not new product code, but a repeatable before/after measurement path
 
 ## Suggested Execution Order
 
-1. Fast local wins: CSS length parsing, white-space collapse reuse, duplicate content-offset/size work.
+1. Fast local wins: white-space collapse reuse, duplicate content-offset/size work.
 2. Dirty layout invalidation coalescing.
 3. RichText update-layout de-duplication and buffer reuse.
 4. Text/glyph/kerning metrics helper.
 5. Style reload batching.
-6. Existing CSS selector optimization plan.
+6. Remaining items of the CSS selector optimization plan (Phase 4 instrumentation first).
 
 ## Non-Goals For This Pass
 

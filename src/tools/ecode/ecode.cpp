@@ -1044,7 +1044,10 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 4, Sys::getCPUCount() ) ) ),
 	mDateTimeController( std::make_unique<DateTimeController>( this ) ),
 	mFontPickerController( std::make_unique<FontPickerController>( this ) ),
-	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {}
+	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {
+	if ( SystemFontResolver::isEnabled() )
+		mThreadPool->run( [] { SystemFontResolver::instance()->warmUp(); } );
+}
 
 App::~App() {
 	appInstance = nullptr;
@@ -5378,6 +5381,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
+
+	SystemFontResolver::setEnabled( true );
 
 	if ( convertLangPath && !convertLangPath.Get().empty() ) {
 		Sys::windowAttachConsole();
