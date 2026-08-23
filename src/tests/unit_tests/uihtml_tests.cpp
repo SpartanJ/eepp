@@ -26,6 +26,7 @@
 #include <eepp/ui/uihtmldetails.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmlinput.hpp>
+#include <eepp/ui/uihtmlliststyle.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
@@ -2400,6 +2401,25 @@ UTEST( UILayout, listStyleTypeDecimal ) {
 	EXPECT_TRUE( li3->getPropertyString( propDef ) == "decimal" );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UILayout, textListMarkerTracksInheritedColor ) {
+	FontStyleConfig inheritedStyle;
+	inheritedStyle.FontColor = Color( 224, 230, 237 );
+	inheritedStyle.CharacterSize = 19;
+
+	Text marker;
+	marker.setString( "1." );
+	UIHTMLListStyle::syncTextMarkerColor( marker, inheritedStyle.FontColor );
+
+	EXPECT_TRUE( marker.getFillColor() == inheritedStyle.FontColor );
+}
+
+UTEST( UILayout, textListMarkerPositionIsPixelAligned ) {
+	const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
+		{ 100.75f, 40.5f }, Rectf( 0.25f, 1.75f, 0.f, 0.f ), 12.4f, 17.f );
+
+	EXPECT_TRUE( markerPos == markerPos.floor() );
 }
 
 UTEST( UILayout, listStyleTypeDisc ) {
