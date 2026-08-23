@@ -2418,6 +2418,15 @@ Font* UISceneNode::reevaluateFontStyle( Font* currentFont, Uint32 fontStyle,
 		return nullptr;
 
 	auto authorFamilyIt = mFontFaceFamilies.find( currentFont );
+	auto* currentTrueTypeFont = static_cast<FontTrueType*>( currentFont );
+	if ( authorFamilyIt == mFontFaceFamilies.end() ) {
+		const Uint32 weightStyle = fontStyle & ( Text::Bold | Text::Italic );
+		if ( ( weightStyle == Text::Bold && currentTrueTypeFont->getBoldFont() ) ||
+			 ( weightStyle == Text::Italic && currentTrueTypeFont->getItalicFont() ) ||
+			 ( weightStyle == ( Text::Bold | Text::Italic ) &&
+			   currentTrueTypeFont->getBoldItalicFont() ) )
+			return nullptr;
+	}
 	if ( authorFamilyIt == mFontFaceFamilies.end() && !SystemFontResolver::isEnabled() )
 		return nullptr;
 

@@ -274,6 +274,26 @@ UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
 	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
 }
 
+UTEST( FontRendering, systemResolverPreservesRelatedBoldFont ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Preserve Related Bold Font", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "BundledNotoSans-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	FontFamily::loadFromRegular( font.get() );
+	ASSERT_TRUE( font->getBoldFont() );
+	FontTrueType* bundledBold = font->getBoldFont().get();
+
+	SystemFontResolver::setEnabled( true );
+	EXPECT_EQ( nullptr,
+			   app.getUI()->reevaluateFontStyle( font.get(), Text::Bold, FontWeight::Bold ) );
+	EXPECT_EQ( bundledBold, font->getGlyph( 'A', 16, true, false ).font );
+	SystemFontResolver::setEnabled( false );
+}
+
 UTEST( FontRendering, regularFontOwnsRelatedFonts ) {
 	FontTrueTypePtr font = FontTrueType::New( "RelatedFonts-Regular" );
 	FontTrueTypePtr bold = FontTrueType::New( "RelatedFonts-Bold" );
