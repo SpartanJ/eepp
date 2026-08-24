@@ -73,6 +73,16 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
 	mSettingsMenu->addSeparator()->setId( "settings-submenus-sep" );
+	mSettingsMenu
+		->add( i18n( "open_settings_ellipsis", "Open Settings..." ), findIcon( "settings" ),
+			   getKeybind( "open-settings" ) )
+		->setId( "open-settings" );
+	mSettingsMenu
+		->add( i18n( "open_project_settings_ellipsis", "Open Project Settings..." ),
+			   findIcon( "folder-settings" ), getKeybind( "open-project-settings" ) )
+		->setId( "open-project-settings" )
+		->setEnabled( mApp->projectIsOpen() );
+	mSettingsMenu->addSeparator();
 
 	mProjectMenu = UIPopUpMenu::New();
 	mDocMenu = UIPopUpMenu::New();
@@ -2353,7 +2363,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 		} else if ( item->getId() == "enable-color-preview" ) {
 			mApp->getConfig().editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-				editor->setEnableColorPickerOnSelection( mApp->getConfig().editor.colorPreview );
+				editor->setColorPreview( mApp->getConfig().editor.colorPreview );
 			} );
 		} else if ( item->getId() == "enable-color-picker" ) {
 			mApp->getConfig().editor.colorPickerSelection =
@@ -2587,6 +2597,7 @@ void SettingsMenu::toggleSettingsMenu() {
 }
 
 void SettingsMenu::updateProjectSettingsMenu() {
+	mSettingsMenu->getItemId( "open-project-settings" )->setEnabled( mApp->projectIsOpen() );
 	mSettingsMenu->getItemId( "project_settings" )
 		->setEnabled( !mApp->getCurrentProject().empty() );
 

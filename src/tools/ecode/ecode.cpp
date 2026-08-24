@@ -9,6 +9,7 @@
 #include "plugins/debugger/statusdebuggercontroller.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
+#include "settingspanel.hpp"
 #include "uibuildsettings.hpp"
 #include "uidownloadwindow.hpp"
 #include "uirightpanel.hpp"
@@ -2123,6 +2124,8 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -2206,6 +2209,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"toggle-status-terminal",
 		"toggle-status-app-output",
 		"menu-toggle",
+		"open-settings",
+		"open-project-settings",
 		"switch-side-panel",
 		"toggle-status-bar",
 		"download-file-web",
@@ -3591,6 +3596,20 @@ UIMessageBox* App::fileAlreadyExistsMsgBox() {
 
 void App::toggleSettingsMenu() {
 	mSettings->toggleSettingsMenu();
+}
+
+void App::openSettings() {
+	if ( !mSettingsPanel )
+		mSettingsPanel = std::make_unique<SettingsPanel>( this );
+	mSettingsPanel->show( SettingsPanel::Scope::User );
+}
+
+void App::openProjectSettings() {
+	if ( !projectIsOpen() )
+		return;
+	if ( !mSettingsPanel )
+		mSettingsPanel = std::make_unique<SettingsPanel>( this );
+	mSettingsPanel->show( SettingsPanel::Scope::Project );
 }
 
 void App::showFolderTreeViewTab() {
