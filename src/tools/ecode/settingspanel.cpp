@@ -331,7 +331,7 @@ void SettingsPanel::show( Scope scope, const std::string& category ) {
 		panel.window->show();
 		panel.window->toFront();
 		selectCategory( panel, category );
-		panel.categories->setFocus();
+		panel.search->runOnMainThread( [search = panel.search] { search->setFocus(); } );
 		return;
 	}
 	Clock c;
@@ -436,7 +436,7 @@ void SettingsPanel::create( Scope scope ) {
 			if ( index.isValid() )
 				panel.categories->setSelection( index );
 		}
-		panel.categories->setFocus();
+		panel.search->runOnMainThread( [search = panel.search] { search->setFocus(); } );
 	} );
 	panel.connections +=
 		panel.window->connect( Event::OnWindowClose, [this, &panel, scope]( const Event* ) {
@@ -448,7 +448,7 @@ void SettingsPanel::create( Scope scope ) {
 		} );
 	panel.window->center();
 	panel.window->showWhenReady();
-	panel.categories->setFocus();
+	panel.search->setFocus();
 }
 
 void SettingsPanel::addCategory( PanelState& panel, const std::string& id, const String& parent,
