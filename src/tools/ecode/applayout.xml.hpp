@@ -712,7 +712,7 @@ TabWidget::container > ImageViewer > TextView {
 </Splitter>
 <Image id="settings" lw="16dp" lh="16dp" lg="top|right" gravity="center" />
 <TextView id="menu_hint" class="app_hint" lw="wc" lh="wc" lg="bottom|right" visible="false"
-		  text='@string(menu_hold_shift_hint, "Hold \"Shift\" to keep menu open)"'
+		  text='@string(menu_hold_shift_hint, Hold "Shift" to keep menu open)'
 		  tooltip='@string(menu_hold_shift_hint_desc, "Keeping \"Shift\" clicked while changing any options it will keep the menu open.")' />
 </MainLayout>
 </vbox>
