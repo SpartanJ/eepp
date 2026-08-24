@@ -258,7 +258,7 @@ static constexpr const char* SETTINGS_SUBCATEGORY_HEADING_LAYOUT = R"xml(
 )xml";
 static constexpr const char* SETTINGS_BOOL_LAYOUT = R"xml(<CheckBox class="settings_bool" />)xml";
 static constexpr const char* SETTINGS_CHOICE_LAYOUT =
-	R"xml(<DropDownList class="settings_choice" />)xml";
+	R"xml(<DropDownModelList class="settings_choice" />)xml";
 static constexpr const char* SETTINGS_EDITABLE_CHOICE_LAYOUT =
 	R"xml(<ComboBox class="settings_editable_choice" popup-to-root="true" />)xml";
 static constexpr const char* SETTINGS_INTEGER_LAYOUT =
@@ -539,18 +539,22 @@ void SettingsPanel::addChoice( PanelState& panel, SettingBinding binding,
 	auto* dropDown = mApp->getUISceneNode()
 						 ->loadLayoutFromString( SETTINGS_CHOICE_LAYOUT,
 												 row->find<UILinearLayout>( "setting_control" ) )
-						 ->asType<UIDropDownList>();
-	dropDown->getListBox()->addListBoxItems( choices );
+						 ->asType<UIDropDownModelList>();
+	auto model = ItemListOwnerModel<String>::create( choices );
+	dropDown->setModel( model );
 	const size_t selected = get();
-	dropDown->getListBox()->setSelected( selected );
+	if ( selected < choices.size() ) {
+		dropDown->getListView()->getSelection().set( model->index( selected, 0 ) );
+		dropDown->setText( choices[selected] );
+	}
 	if ( selected < choiceDescriptions.size() )
 		dropDown->setTooltipText( choiceDescriptions[selected] );
 	panel.connections += dropDown->connect(
 		Event::OnValueChange, [dropDown, set = std::move( set ),
 							   descriptions = std::move( choiceDescriptions )]( const Event* ) {
-			if ( !dropDown->getListBox()->hasSelection() )
+			if ( dropDown->getListView()->getSelection().isEmpty() )
 				return;
-			const size_t selected = dropDown->getListBox()->getItemSelectedIndex();
+			const size_t selected = dropDown->getListView()->getSelection().first().row();
 			if ( selected < descriptions.size() )
 				dropDown->setTooltipText( descriptions[selected] );
 			set( selected );
@@ -567,7 +571,8 @@ void SettingsPanel::addEditableChoice( PanelState& panel, SettingBinding binding
 					  ->loadLayoutFromString( SETTINGS_EDITABLE_CHOICE_LAYOUT,
 											  row->find<UILinearLayout>( "setting_control" ) )
 					  ->asType<UIComboBox>();
-	combo->getListBox()->addListBoxItems( choices );
+	for ( const auto& choice : choices )
+		combo->getListBox()->addListBoxItem( choice );
 	combo->setText( get() );
 	panel.connections +=
 		combo->connect( Event::OnValueChange, [combo, set = std::move( set )]( const Event* ) {

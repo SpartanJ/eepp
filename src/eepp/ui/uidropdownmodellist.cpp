@@ -152,29 +152,36 @@ UIDropDownModelList* UIDropDownModelList::showList() {
 		if ( !mModel->hasChildren() )
 			return this;
 
+		const Uint32 itemCount = static_cast<Uint32>( mModel->rowCount() );
+		mListView->setVerticalScrollMode( itemCount > mStyleConfig.MaxNumVisibleItems
+											  ? ScrollBarMode::AlwaysOn
+											  : ScrollBarMode::AlwaysOff );
+
 		Rectf tPadding = mListView->getPadding();
 
 		Float sliderValue = 0;
 		if ( mListView->getVerticalScrollBar() )
 			sliderValue = mListView->getVerticalScrollBar()->getValue();
 
-		Float contentsWidth = eeceil( PixelDensity::pxToDp(
-			mListView->getMaxColumnContentWidth( 0, true ) +
-			PixelDensity::dpToPx( mListView->getPadding().getWidth() ) +
-			( mListView->getVerticalScrollBar()
-				  ? mListView->getVerticalScrollBar()->getPixelsSize().getWidth()
-				  : 0.f ) ) );
+		Float contentsWidth = 0;
+		if ( mStyleConfig.menuWidthRule != MenuWidthMode::DropDown ) {
+			contentsWidth = eeceil( PixelDensity::pxToDp(
+				mListView->getMaxColumnContentWidth( 0, true ) +
+				PixelDensity::dpToPx( mListView->getPadding().getWidth() ) +
+				( mListView->getVerticalScrollBar()
+					  ? mListView->getVerticalScrollBar()->getPixelsSize().getWidth()
+					  : 0.f ) ) );
+		}
 
 		Float width = getPopUpWidth( contentsWidth );
 
-		Float height = std::ceil(
-			std::ceil( eemin( (Uint32)mModel->rowCount(), mStyleConfig.MaxNumVisibleItems ) *
-					   PixelDensity::pxToDp( mListView->getRowHeight() ) ) +
-			tPadding.Top + tPadding.Bottom + mListView->getHeaderHeight() +
-			( mListView->getHorizontalScrollBar() &&
-					  mListView->getHorizontalScrollBar()->isVisible()
-				  ? mListView->getHorizontalScrollBar()->getSize().getHeight()
-				  : 0.f ) );
+		Float height = std::ceil( std::ceil( eemin( itemCount, mStyleConfig.MaxNumVisibleItems ) *
+											 PixelDensity::pxToDp( mListView->getRowHeight() ) ) +
+								  tPadding.Top + tPadding.Bottom + mListView->getHeaderHeight() +
+								  ( mListView->getHorizontalScrollBar() &&
+											mListView->getHorizontalScrollBar()->isVisible()
+										? mListView->getHorizontalScrollBar()->getSize().getHeight()
+										: 0.f ) );
 
 		mListView->setSize( width, height );
 

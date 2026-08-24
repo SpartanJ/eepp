@@ -122,10 +122,11 @@ void UIScrollableWidget::onContentSizeChange() {
 	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
 		mVScroll->setVisible( false )->setEnabled( false );
 	} else {
-		Float totH =
-			getPixelsSize().getHeight() - getPixelsPadding().Top - getPixelsPadding().Bottom -
-			( ScrollBarMode::AlwaysOff == mHScrollMode ? 0
-													   : mHScroll->getPixelsSize().getHeight() );
+		Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top -
+					 getPixelsPadding().Bottom -
+					 ( ScrollBarMode::AlwaysOff == mHScrollMode || !mHScroll->isVisible()
+						   ? 0
+						   : mHScroll->getPixelsSize().getHeight() );
 
 		bool visible = contentSize.getHeight() > totH;
 
