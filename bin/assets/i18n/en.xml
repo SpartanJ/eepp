@@ -31,6 +31,7 @@ This operation cannot be reverted!</string>
 	<string name="author">Author</string>
 	<string name="auto_close_brackets_and_tags">Auto-Close Brackets &amp; Tags</string>
 	<string name="auto_close_xml_tags">Auto Close XML Tags</string>
+	<string name="auto_close_brackets_and_tags">Auto-Close Brackets &amp; Tags</string>
 	<string name="auto_detect_indent_type_and_width">Auto Detect Indent Type &amp; Width</string>
 	<string name="autoreload_on_disk_change">Auto-Reload on Disk Change</string>
 	<string name="back_quotes">Back Quotes ``</string>
@@ -262,12 +263,9 @@ Do you want to download it now?</string>
 	<string name="discretionary_ligatures">Discretionary Ligatures (dlig)</string>
 	<string name="discretionary_ligatures_desc">Optional decorative or stylistic ligatures provided by the font.</string>
 	<string name="editor_font_size">Editor Font Size</string>
+	<string name="editor_font_features">Editor Font Features</string>
 	<string name="editor_go_back">Editor Go Back</string>
 	<string name="editor_go_forward">Editor Go Forward</string>
-	<string name="editor_set_cursor_blinking_time">Editor Set Cursor Blinking Time</string>
-	<string name="editor_set_indent_tab_character">Editor Set Indent Tab Character</string>
-	<string name="editor_set_line_breaking_column">Editor Set Line Breaking Column</string>
-	<string name="editor_set_line_spacing">Editor Set Line Spacing</string>
 	<string name="empty_file_name">You must set a name to the file.</string>
 	<string name="enable_autoreload">Enable Auto-Reload</string>
 	<string name="enable_color_picker">Enable Color Picker</string>
@@ -430,8 +428,6 @@ Restart ecode to see the changes.</string>
 	<string name="inspect_widgets">Inspect Widgets</string>
 	<string name="issues">issues</string>
 	<string name="issues_capitalized">Issues</string>
-	<string name="it_must_be_a_single_character">It must be a single character</string>
-	<string name="jump_lines_down">Jump Lines Down</string>
 	<string name="jump_lines_up">Jump Lines Up</string>
 	<string name="keep_indentation">Keep Indentation</string>
 	<string name="key_bindings">Key Bindings</string>
@@ -534,8 +530,6 @@ Restart ecode to see the changes.</string>
 	<string name="new_terminal_name">New terminal name:</string>
 	<string name="new_ui_language">New language assigned.
 Please restart the application to see the complete changes.</string>
-	<string name="new_ui_scale_factor">New UI scale factor assigned.
-Please restart the application.</string>
 	<string name="new_value">New Value</string>
 	<string name="new_window">New Window</string>
 	<string name="next">Next</string>
@@ -711,28 +705,9 @@ Please check that the application directory has write permissions.</string>
 	<string name="session_snapshot_desc">When session snapshot is enabled the editor will keep
 the document buffer changes between sessions, even if they are not saved
 before exiting the program.</string>
-	<string name="set_cursor_blinking_time">Set Cursor Blinking Time:
-Set 0 to disable it.
-</string>
-	<string name="set_editor_font_size">Set the editor font size:</string>
-	<string name="set_fold_refresh_frequency">Set code folds refresh frequency:
-It should be bigger than 1 second.
-Folds are only refreshed after any document modification.</string>
 	<string name="set_frame_rate_limit">Set Frame Rate Limit:
 Set 0 to disable it.
 </string>
-	<string name="set_indent_tab_character">Set the tab indentation guide character displayed.</string>
-	<string name="set_line_breaking_column">Set Line Breaking Column:
-Set 0 to disable it.
-</string>
-	<string name="set_line_spacing">Set Line Spacing:
-Set 0 to disable it.
-</string>
-	<string name="set_side_panel_font_size">Set side panel font size:</string>
-	<string name="set_terminal_font_size">Set the terminal font size:</string>
-	<string name="set_ui_font_size">Set the UI font size:</string>
-	<string name="set_ui_scale_factor">Set the UI scale factor (pixel density):
-Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="settings">Settings</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Shell Configuration</string>
@@ -853,6 +828,7 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_and_size_ellipsis">UI Font &amp; Size...</string>
 	<string name="ui_font_size">Ui Font Size</string>
+	<string name="ui_font_features">UI Font Features</string>
 	<string name="ui_language">UI Language</string>
 	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>
 	<string name="ui_panel_font_size">Ui Panel Font Size</string>
@@ -935,13 +911,7 @@ Restart ecode to see the changes.</string>
 	<string name="screenshot_filename_pattern">Filename Pattern</string>
 	<string name="screenshot_save_format">Save Format</string>
 	<string name="set_screenshot_filename_pattern">Set Screenshot Filename Pattern</string>
-	<string name="set_screenshot_filename_pattern_message">Set the screenshot filename pattern:
-Uses strftime format specifiers. The file extension follows the selected screenshot format.</string>
 	<string name="set_screenshot_save_format">Set Screenshot Save Format</string>
-	<string name="set_screenshot_save_format_message">Select the screenshot save format:</string>
-	<string name="invalid_screenshot_filename_pattern">The screenshot filename pattern is invalid.</string>
-	<string name="invalid_screenshot_save_format">Invalid screenshot save format.</string>
-	<string name="couldnt_create_screenshot_directory">Couldn't create the screenshot directory.</string>
 	<string name="couldnt_find_available_screenshot_filename">Couldn't find an available screenshot filename.</string>
 	<string name="couldnt_save_screenshot">Couldn't save the screenshot.</string>
 	<string name="screenshot_saved">Screenshot saved:</string>
@@ -956,6 +926,8 @@ Uses strftime format specifiers. The file extension follows the selected screens
 	<string name="set_tab_out_characters_message">Set the characters the cursor can move past when pressing Tab.</string>
 	<string name="open_settings_ellipsis">Open Settings...</string>
 	<string name="open_project_settings_ellipsis">Open Project Settings...</string>
+	<string name="open_document_settings">Open Document Settings</string>
+	<string name="open_terminal_settings">Open Terminal Settings</string>
 	<string name="project_settings">Project Settings</string>
 	<string name="search_settings">Search settings...</string>
 	<string name="show_line_numbers_desc">Display line numbers beside the editor.</string>

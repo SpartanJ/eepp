@@ -153,6 +153,13 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	padding-bottom: 6dp;
 	border-bottom: 1dp solid var(--tab-line);
 }
+.settings_panel .settings_subcategory_heading {
+	font-size: 12dp;
+	font-weight: bold;
+	margin: 18dp 4dp 3dp 4dp;
+	padding-bottom: 6dp;
+	border-bottom: 1dp solid var(--tab-line);
+}
 .settings_panel .settings_option {
 	border-bottom: 1dp solid var(--disabled-border);
 	padding: 9dp 4dp 11dp 4dp;
@@ -246,6 +253,9 @@ static constexpr const char* SETTINGS_ROW_LAYOUT = R"xml(
 static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT = R"xml(
 <TextView lw="mp" lh="wc" class="settings_category_heading" visible="false" focusable="false" />
 )xml";
+static constexpr const char* SETTINGS_SUBCATEGORY_HEADING_LAYOUT = R"xml(
+<TextView lw="mp" lh="wc" class="settings_subcategory_heading" visible="false" focusable="false" />
+)xml";
 static constexpr const char* SETTINGS_BOOL_LAYOUT = R"xml(<CheckBox class="settings_bool" />)xml";
 static constexpr const char* SETTINGS_CHOICE_LAYOUT =
 	R"xml(<DropDownList class="settings_choice" />)xml";
@@ -285,23 +295,56 @@ void SettingsPanel::PanelState::reset() {
 	categorySearchText.clear();
 	categoryTitles.clear();
 	categoryHeadings.clear();
+	subcategoryHeadings.clear();
 	bindings.clear();
 	selectedCategory.clear();
 	categoryFilter.clear();
 }
 
-void SettingsPanel::show( Scope scope ) {
+void SettingsPanel::show( Scope scope, const std::string& category ) {
 	auto& panel = state( scope );
 	if ( panel.window ) {
 		panel.window->show();
 		panel.window->toFront();
+		selectCategory( panel, category );
 		panel.categories->setFocus();
 		return;
 	}
 	Clock c;
 	create( scope );
+	selectCategory( panel, category );
 	Log::info( "Settings Panel %s created in %s", scope == Scope::User ? "User" : "Project",
 			   c.getElapsedTime().toString() );
+}
+
+void SettingsPanel::selectCategory( PanelState& panel, const std::string& category ) {
+	if ( category.empty() || !panel.categories )
+		return;
+	String title;
+	if ( String::endsWith( category, ".*" ) ) {
+		const std::string prefix = category.substr( 0, category.size() - 1 );
+		for ( const auto& [parent, children] : panel.categoryItems ) {
+			if ( !children.empty() ) {
+				auto id = panel.categoryIds.find( parent + '/' + children.front() );
+				if ( id != panel.categoryIds.end() && String::startsWith( id->second, prefix ) ) {
+					title = String::fromUtf8( parent );
+					break;
+				}
+			}
+		}
+	} else if ( auto found = panel.categoryTitles.find( category );
+				found != panel.categoryTitles.end() ) {
+		title = found->second;
+	}
+	if ( title.empty() )
+		return;
+	panel.selectedCategory = category;
+	auto index = panel.categories->findRowWithText(
+		title.toUtf8(), true, UIAbstractView::FindRowWithTextMatchKind::Equals );
+	if ( index.isValid() )
+		panel.categories->setSelection( index );
+	filter( panel );
+	panel.scroll->getVerticalScrollBar()->setValue( 0, false );
 }
 
 void SettingsPanel::create( Scope scope ) {
@@ -407,6 +450,16 @@ void SettingsPanel::addCategory( PanelState& panel, const std::string& id, const
 	panel.categoryHeadings[id] = heading;
 	if ( panel.selectedCategory.empty() )
 		panel.selectedCategory = id;
+}
+
+void SettingsPanel::addSubcategoryHeading( PanelState& panel, const std::string& category,
+										   const String& name ) {
+	auto* heading =
+		mApp->getUISceneNode()
+			->loadLayoutFromString( SETTINGS_SUBCATEGORY_HEADING_LAYOUT, panel.settings )
+			->asType<UITextView>();
+	heading->setText( name );
+	panel.subcategoryHeadings.push_back( { category, name, heading } );
 }
 
 void SettingsPanel::setupCategories( PanelState& panel ) {
@@ -550,22 +603,28 @@ void SettingsPanel::addInteger( PanelState& panel, SettingBinding binding, int m
 
 void SettingsPanel::addText( PanelState& panel, SettingBinding binding,
 							 std::function<std::string()> get,
-							 std::function<bool( const std::string& )> set ) {
+							 std::function<bool( const std::string& )> set,
+							 bool commitOnFocusLoss ) {
 	auto* row = createRow( panel, binding );
 	auto* input = mApp->getUISceneNode()
 					  ->loadLayoutFromString( SETTINGS_TEXT_LAYOUT,
 											  row->find<UILinearLayout>( "setting_control" ) )
 					  ->asType<UITextInput>();
 	input->setText( String::fromUtf8( get() ) );
-	panel.connections +=
-		input->connect( Event::OnTextChanged, [input, set = std::move( set )]( const Event* ) {
-			std::string text = input->getText().toUtf8();
-			if ( !set( text ) ) {
-				input->addClass( "error" );
-				return;
-			}
-			input->removeClass( "error" );
-		} );
+	auto commit = [input, set = std::move( set )]( const Event* ) {
+		std::string text = input->getText().toUtf8();
+		if ( !set( text ) ) {
+			input->addClass( "error" );
+			return;
+		}
+		input->removeClass( "error" );
+	};
+	if ( commitOnFocusLoss ) {
+		panel.connections += input->connect( Event::OnPressEnter, commit );
+		panel.connections += input->connect( Event::OnFocusLoss, std::move( commit ) );
+	} else {
+		panel.connections += input->connect( Event::OnTextChanged, std::move( commit ) );
+	}
 	panel.bindings.emplace_back( std::move( binding ) );
 }
 
@@ -1069,16 +1128,20 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 					? TextFormat::LineEnding::CRLF
 					: ( selected == 2 ? TextFormat::LineEnding::CR : TextFormat::LineEnding::LF );
 		} );
+	const String autoCloseGroup =
+		mApp->i18n( "auto_close_brackets_and_tags", "Auto-Close Brackets & Tags" );
+	addSubcategoryHeading( panel, "editor.document", autoCloseGroup );
 	addBool( panel,
 			 { "autoCloseXMLTags", "editor.document",
 			   mApp->i18n( "auto_close_xml_tags", "Auto Close XML Tags" ),
-			   mApp->i18n( "auto_close_xml_tags_desc", "Automatically insert closing XML tags." ) },
+			   mApp->i18n( "auto_close_xml_tags_desc", "Automatically insert closing XML tags." ),
+			   autoCloseGroup },
 			 &mApp->getConfig().editor.autoCloseXMLTags, [this]( bool value ) {
 				 mApp->getSplitter()->forEachEditor(
 					 [value]( UICodeEditor* editor ) { editor->setAutoCloseXMLTags( value ); } );
 			 } );
-	auto addAutoClosePair = [this, &panel]( std::string id, const char* nameKey, const char* name,
-											std::string pair ) {
+	auto addAutoClosePair = [this, &panel, &autoCloseGroup]( std::string id, const char* nameKey,
+															 const char* name, std::string pair ) {
 		auto containsPair = [this, pair] {
 			auto pairs = String::split( mApp->getConfig().editor.autoCloseBrackets, ',' );
 			return std::find( pairs.begin(), pairs.end(), pair ) != pairs.end();
@@ -1086,7 +1149,8 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		addBool( panel,
 				 { std::move( id ), "editor.document", mApp->i18n( nameKey, name ),
 				   mApp->i18n( "auto_close_pair_desc",
-							   "Automatically insert the matching closing character." ) },
+							   "Automatically insert the matching closing character." ),
+				   autoCloseGroup },
 				 std::move( containsPair ), [this, pair = std::move( pair )]( bool enabled ) {
 					 auto pairs = String::split( mApp->getConfig().editor.autoCloseBrackets, ',' );
 					 auto found = std::find( pairs.begin(), pairs.end(), pair );
@@ -1273,13 +1337,15 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			   [this] { mApp->runCommand( "fallback-font" ); } );
 	auto addFontSize = [this, &panel]( SettingBinding binding, std::function<std::string()> get,
 									   std::function<void( const StyleSheetLength& )> set ) {
-		addText( panel, std::move( binding ), std::move( get ),
-				 [set = std::move( set )]( const std::string& text ) {
-					 if ( !StyleSheetLength::isLength( text ) )
-						 return false;
-					 set( StyleSheetLength::fromString( text ) );
-					 return true;
-				 } );
+		addText(
+			panel, std::move( binding ), std::move( get ),
+			[set = std::move( set )]( const std::string& text ) {
+				if ( !StyleSheetLength::isLength( text ) )
+					return false;
+				set( StyleSheetLength::fromString( text ) );
+				return true;
+			},
+			true );
 	};
 	addFontSize(
 		{ "uiFontSize", "appearance.fonts", mApp->i18n( "ui_font_size", "UI Font Size" ),
@@ -1364,11 +1430,12 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		} );
 	auto addFontFeature = [this, &panel]( std::string id, const char* nameKey, const char* name,
 										  const char* descriptionKey, const char* description,
-										  Uint32 feature, bool editorFeature ) {
+										  Uint32 feature, bool editorFeature,
+										  const String& group ) {
 		addBool(
 			panel,
 			{ std::move( id ), "appearance.fonts", mApp->i18n( nameKey, name ),
-			  mApp->i18n( descriptionKey, description ) },
+			  mApp->i18n( descriptionKey, description ), group },
 			[this, feature, editorFeature] {
 				const Uint32 features = editorFeature ? mApp->getConfig().editor.fontFeatures
 													  : mApp->getConfig().ui.fontFeatures;
@@ -1392,22 +1459,26 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 	};
 	for ( bool editorFeature : { false, true } ) {
 		const std::string prefix = editorFeature ? "editor" : "ui";
+		const String group = editorFeature
+								 ? mApp->i18n( "editor_font_features", "Editor Font Features" )
+								 : mApp->i18n( "ui_font_features", "UI Font Features" );
+		addSubcategoryHeading( panel, "appearance.fonts", group );
 		addFontFeature( prefix + "StandardLigatures", "standard_ligatures",
 						"Standard Ligatures (liga)", "standard_ligatures_desc",
 						"Typographic combinations such as fi, fl, and ffi, depending on the font.",
-						TextHints::StandardLigatures, editorFeature );
+						TextHints::StandardLigatures, editorFeature, group );
 		addFontFeature( prefix + "ContextualAlternates", "contextual_alternates",
 						"Contextual Alternates (calt)", "contextual_alternates_desc",
 						"Context-dependent alternatives, including many programming ligatures.",
-						TextHints::ContextualAlternates, editorFeature );
+						TextHints::ContextualAlternates, editorFeature, group );
 		addFontFeature( prefix + "ContextualLigatures", "contextual_ligatures",
 						"Contextual Ligatures (clig)", "contextual_ligatures_desc",
 						"Ligatures applied in specific contexts to improve readability.",
-						TextHints::ContextualLigatures, editorFeature );
+						TextHints::ContextualLigatures, editorFeature, group );
 		addFontFeature( prefix + "DiscretionaryLigatures", "discretionary_ligatures",
 						"Discretionary Ligatures (dlig)", "discretionary_ligatures_desc",
 						"Optional decorative or stylistic ligatures provided by the font.",
-						TextHints::DiscretionaryLigatures, editorFeature );
+						TextHints::DiscretionaryLigatures, editorFeature, group );
 	}
 
 	addCategory( panel, "editor.advanced", mApp->i18n( "editor", "Editor" ),
@@ -1968,7 +2039,7 @@ void SettingsPanel::addProjectSettings( PanelState& panel ) {
 				HExtLanguageType::ObjectiveC, HExtLanguageType::ObjectiveCPP };
 			auto value = values[std::min( selected, size_t{ 4 } )];
 			mApp->getProjectConfig().hExtLanguageType = value;
-			mApp->getSplitter()->forEachEditor( [this, value]( UICodeEditor* editor ) {
+			mApp->getSplitter()->forEachEditor( [value]( UICodeEditor* editor ) {
 				auto& document = editor->getDocument();
 				document.setHExtLanguageType( value );
 				if ( document.getFileInfo().getExtension() == "h" ) {
@@ -1997,6 +2068,7 @@ void SettingsPanel::filter( PanelState& panel ) {
 		for ( const auto& binding : panel.bindings ) {
 			if ( String::icontains( binding.name, query ) ||
 				 String::icontains( binding.description, query ) ||
+				 String::icontains( binding.group, query ) ||
 				 String::icontains( binding.id, queryUtf8 ) )
 				matchingCategories.insert( binding.category );
 		}
@@ -2020,8 +2092,17 @@ void SettingsPanel::filter( PanelState& panel ) {
 					  ( aggregate && String::startsWith( binding.category, aggregatePrefix ) )
 				: categoryMatches || String::icontains( binding.name, query ) ||
 					  String::icontains( binding.description, query ) ||
+					  String::icontains( binding.group, query ) ||
 					  String::icontains( binding.id, queryUtf8 );
 		binding.row->setVisible( matches );
+	}
+	for ( auto& subcategory : panel.subcategoryHeadings ) {
+		const bool hasVisibleSetting = std::any_of(
+			panel.bindings.begin(), panel.bindings.end(), [&subcategory]( const auto& binding ) {
+				return binding.category == subcategory.category &&
+					   binding.group == subcategory.name && binding.row && binding.row->isVisible();
+			} );
+		subcategory.heading->setVisible( hasVisibleSetting );
 	}
 }
 

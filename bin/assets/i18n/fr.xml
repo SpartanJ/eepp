@@ -32,6 +32,7 @@ Cette opération est irréversible !</string>
 	<string name="author">Auteur</string>
 	<string name="auto_close_brackets_and_tags">Fermeture automatique des crochets et des balises</string>
 	<string name="auto_close_xml_tags">Fermeture automatique des balises XML</string>
+	<string name="auto_close_brackets_and_tags">Fermeture automatique des crochets et des balises</string>
 	<string name="auto_detect_indent_type_and_width">Détection automatique du type et de la taille de l'indentation</string>
 	<string name="autoreload_on_disk_change">Rechargement automatique en cas de modification du disque</string>
 	<string name="back_quotes">Guillemets inversés ``</string>
@@ -263,12 +264,9 @@ Voulez-vous le télécharger maintenant ?</string>
 	<string name="discretionary_ligatures">Ligatures discrétionnaires (dlig)</string>
 	<string name="discretionary_ligatures_desc">Ligatures décoratives ou stylistiques facultatives fournies par la police.</string>
 	<string name="editor_font_size">Taille de la police de l'éditeur</string>
+	<string name="editor_font_features">Fonctionnalités de la police de l'éditeur</string>
 	<string name="editor_go_back">Éditeur : retour en arrière</string>
 	<string name="editor_go_forward">Éditeur : avancer</string>
-	<string name="editor_set_cursor_blinking_time">Éditeur : définir le temps de clignotement du curseur</string>
-	<string name="editor_set_indent_tab_character">Éditeur : définir le caractère de tabulation d'indentation</string>
-	<string name="editor_set_line_breaking_column">Éditeur : définir la colonne de saut de ligne</string>
-	<string name="editor_set_line_spacing">Éditeur : définir l'espacement des lignes</string>
 	<string name="empty_file_name">Vous devez définir un nom pour le fichier.</string>
 	<string name="enable_autoreload">Activer le rechargement automatique</string>
 	<string name="enable_color_picker">Activer le sélecteur de couleurs</string>
@@ -428,8 +426,6 @@ Redémarrez ecode pour voir les changements.</string>
 	<string name="inspect_widgets">Inspecter les widgets</string>
 	<string name="issues">Problèmes</string>
 	<string name="issues_capitalized">Problèmes</string>
-	<string name="it_must_be_a_single_character">Un seul caractère est autorisé</string>
-	<string name="jump_lines_down">Sauter des lignes vers le bas</string>
 	<string name="jump_lines_up">Sauter des lignes vers le haut</string>
 	<string name="keep_indentation">Conserver l'indentation</string>
 	<string name="key_bindings">Raccourcis clavier</string>
@@ -533,8 +529,6 @@ Redémarrez ecode pour voir les modifications.</string>
 	<string name="new_terminal_name">Nouveau nom de terminal :</string>
 	<string name="new_ui_language">Nouvelle langue attribuée.
 Veuillez redémarrer l'application pour voir les changements complets.</string>
-  <string name="new_ui_scale_factor">Nouveau facteur d'échelle de l'interface utilisateur attribué.
-Veuillez redémarrer l'application.</string>
 	<string name="new_value">Nouvelle valeur</string>
 	<string name="new_window">Nouvelle fenêtre</string>
 	<string name="next">Suivant</string>
@@ -707,24 +701,8 @@ Veuillez vérifier que le répertoire de l'application dispose des autorisations
 	<string name="session_snapshot_desc">Lorsque la capture instantanée de session est activée, l'éditeur conservera
 les modifications du tampon du document entre les sessions, même si elles ne sont pas enregistrées
 avant de quitter le programme.</string>
-	<string name="set_cursor_blinking_time">Définir le temps de clignotement du curseur :
-Choisir 0 pour le désactiver.</string>
-	<string name="set_editor_font_size">Définir la taille de la police de l'éditeur :</string>
-	<string name="set_fold_refresh_frequency">Définir la fréquence d'actualisation des pliages de code :
-Elle doit être supérieure à 1 seconde.
-Les pliages ne sont actualisés qu'après toute modification du document.</string>
 	<string name="set_frame_rate_limit">Définir la limite de fréquence d'images :
 Choisir 0 pour la désactiver.</string>
-	<string name="set_indent_tab_character">Définir le caractère utilisé pour le marqueur d'indentation.</string>
-	<string name="set_line_breaking_column">Définir la colonne de saut de ligne :
-Choisir 0 pour la désactiver.</string>
-	<string name="set_line_spacing">Définir l'espacement des lignes :
-Choisir 0 pour le désactiver.</string>
-	<string name="set_side_panel_font_size">Définir la taille de la police du panneau latéral :</string>
-	<string name="set_terminal_font_size">Définir la taille de la police du terminal :</string>
-	<string name="set_ui_font_size">Définir la taille de la police de l'interface utilisateur :</string>
-	<string name="set_ui_scale_factor">Définir le facteur d'échelle de l'interface utilisateur (densité de pixels) :
-La valeur minimale est 1 et le maximum est 6. Nécessite un redémarrage.</string>
 	<string name="settings">Paramètres</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Configuration du shell</string>
@@ -844,6 +822,7 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="type_to_locate">Type à localiser</string>
 	<string name="ui_font_and_size_ellipsis">Police et taille de l'interface utilisateur...</string>
 	<string name="ui_font_size">Interface utilisateur : taille de la police</string>
+	<string name="ui_font_features">Fonctionnalités de la police de l'interface</string>
 	<string name="ui_language">Interface utilisateur : langue</string>
 	<string name="ui_multisamples_level">Interface utilisateur : niveau d'anti-aliasing multiéchantillon</string>
 	<string name="ui_panel_font_size">Interface utilisateur : taille de police des panneaux</string>
@@ -930,13 +909,7 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="screenshot_filename_pattern">Modèle de nom de fichier</string>
 	<string name="screenshot_save_format">Format d’enregistrement</string>
 	<string name="set_screenshot_filename_pattern">Définir le modèle de nom des captures d’écran</string>
-	<string name="set_screenshot_filename_pattern_message">Définissez le modèle de nom des captures d’écran :
-Utilise les spécificateurs de format strftime. L’extension du fichier correspond au format de capture sélectionné.</string>
 	<string name="set_screenshot_save_format">Définir le format des captures d’écran</string>
-	<string name="set_screenshot_save_format_message">Sélectionnez le format d’enregistrement des captures d’écran :</string>
-	<string name="invalid_screenshot_filename_pattern">Le modèle de nom des captures d’écran n’est pas valide.</string>
-	<string name="invalid_screenshot_save_format">Le format d’enregistrement des captures d’écran n’est pas valide.</string>
-	<string name="couldnt_create_screenshot_directory">Impossible de créer le dossier des captures d’écran.</string>
 	<string name="couldnt_find_available_screenshot_filename">Impossible de trouver un nom de fichier disponible pour la capture d’écran.</string>
 	<string name="couldnt_save_screenshot">Impossible d’enregistrer la capture d’écran.</string>
 	<string name="screenshot_saved">Capture d’écran enregistrée :</string>
@@ -951,6 +924,8 @@ Utilise les spécificateurs de format strftime. L’extension du fichier corresp
 	<string name="set_tab_out_characters_message">Définissez les caractères que le curseur peut franchir en appuyant sur Tab.</string>
 	<string name="open_settings_ellipsis">Ouvrir les paramètres...</string>
 	<string name="open_project_settings_ellipsis">Ouvrir les paramètres du projet...</string>
+	<string name="open_document_settings">Ouvrir les paramètres du document</string>
+	<string name="open_terminal_settings">Ouvrir les paramètres du terminal</string>
 	<string name="project_settings">Paramètres du projet</string>
 	<string name="search_settings">Rechercher dans les paramètres...</string>
 	<string name="show_line_numbers_desc">Afficher les numéros de ligne à côté de l'éditeur.</string>

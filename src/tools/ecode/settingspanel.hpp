@@ -16,7 +16,7 @@ class SettingsPanel {
 
 	explicit SettingsPanel( App* app );
 
-	void show( Scope scope );
+	void show( Scope scope, const std::string& category = {} );
 
   protected:
 	struct SettingBinding {
@@ -24,7 +24,13 @@ class SettingsPanel {
 		std::string category;
 		String name;
 		String description;
+		String group;
 		UIWidget* row{ nullptr };
+	};
+	struct SubcategoryHeading {
+		std::string category;
+		String name;
+		UITextView* heading{ nullptr };
 	};
 
 	struct PanelState {
@@ -42,6 +48,7 @@ class SettingsPanel {
 		UnorderedMap<std::string, String> categorySearchText;
 		UnorderedMap<std::string, String> categoryTitles;
 		UnorderedMap<std::string, UITextView*> categoryHeadings;
+		std::vector<SubcategoryHeading> subcategoryHeadings;
 		std::vector<SettingBinding> bindings;
 		std::string selectedCategory;
 		std::string categoryFilter;
@@ -55,10 +62,13 @@ class SettingsPanel {
 
 	PanelState& state( Scope scope );
 	void create( Scope scope );
+	void selectCategory( PanelState& state, const std::string& category );
 	void addUserSettings( PanelState& state );
 	void addProjectSettings( PanelState& state );
 	void addCategory( PanelState& state, const std::string& id, const String& parent,
 					  const String& name );
+	void addSubcategoryHeading( PanelState& state, const std::string& category,
+								const String& name );
 	void setupCategories( PanelState& state );
 	void addBool( PanelState& state, SettingBinding binding, bool* value,
 				  std::function<void( bool )> apply = {} );
@@ -73,7 +83,7 @@ class SettingsPanel {
 	void addInteger( PanelState& state, SettingBinding binding, int min, int max,
 					 std::function<int()> get, std::function<void( int )> set );
 	void addText( PanelState& state, SettingBinding binding, std::function<std::string()> get,
-				  std::function<bool( const std::string& )> set );
+				  std::function<bool( const std::string& )> set, bool commitOnFocusLoss = false );
 	void addFloat( PanelState& state, SettingBinding binding, double min, double max, double step,
 				   std::function<double()> get, std::function<void( double )> set );
 	void addAction( PanelState& state, SettingBinding binding, const String& buttonText,

@@ -30,23 +30,11 @@ class SettingsMenu {
 
 	UIMenu* createWindowMenu();
 
-	UIMenu* createRendererMenu();
-
 	UIMenu* createViewMenu();
 
 	UIPopUpMenu* createToolsMenu();
 
 	UIMenu* createHelpMenu();
-
-	UIMenu* createThemesMenu();
-
-	UIMenu* createLanguagesMenu();
-
-	UIMenu* createFontHintMenu();
-
-	UIMenu* createFontAntiAliasingMenu();
-
-	UIMenu* createFontsMenu();
 
 	void updateTerminalMenu();
 
@@ -59,8 +47,6 @@ class SettingsMenu {
 	void updateDocumentMenu();
 
 	void updateViewMenu();
-
-	void updateGlobalDocumentSettingsMenu();
 
 	void showProjectTreeMenu();
 
@@ -108,32 +94,20 @@ class SettingsMenu {
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UIPopUpMenu* mDocMenu{ nullptr };
-	UIPopUpMenu* mGlobalMenu{ nullptr };
 	UIPopUpMenu* mTerminalMenu{ nullptr };
 	UIPopUpMenu* mViewMenu{ nullptr };
 	UIPopUpMenu* mWindowMenu{ nullptr };
-	UIPopUpMenu* mRendererMenu{ nullptr };
 	UIPopUpMenu* mToolsMenu{ nullptr };
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
-	UIPopUpMenu* mProjectDocMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
-	UIPopUpMenu* mHExtLanguageTypeMenu{ nullptr };
 	UIPopUpMenu* mEditMenu{ nullptr };
 	UIPopUpMenu* mDateMenu{ nullptr };
 	UIPopUpMenu* mHelpMenu{ nullptr };
-	UIPopUpMenu* mLineWrapMenu{ nullptr };
-	UIPopUpMenu* mCodeFoldingMenu{ nullptr };
-	UIPopUpMenu* mTabBarMenu{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
-	UIPopUpMenu* mFontHintMenu{ nullptr };
-	UIPopUpMenu* mFontAntiAliasingMenu{ nullptr };
-	UIPopUpMenu* mFontsMenu{ nullptr };
 	std::vector<UIPopUpMenu*> mFileTypeMenus;
 	Float mFileTypeMenusCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenus;
 	Float mColorSchemeMenusCreatedWithHeight{ 0 };
-
-	void forEachTerminal( const std::function<void( UITerminal* )> fn );
 
 	void updateDateMenu();
 

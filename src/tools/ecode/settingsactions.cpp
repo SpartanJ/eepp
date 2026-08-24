@@ -1,9 +1,6 @@
 #include "settingsactions.hpp"
-#include "datetimecontroller.hpp"
 #include "ecode.hpp"
 #include "version.hpp"
-
-using namespace std::string_literals;
 
 namespace ecode {
 
@@ -143,222 +140,11 @@ void SettingsActions::ecodeSource() {
 	Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
 }
 
-void SettingsActions::setLineBreakingColumn() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_line_breaking_column", "Set Line Breaking Column:\nSet 0 to disable it.\n" )
-			.unescape() );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-	msgBox->getTextInput()->setText( String::toString( mApp->getConfig().doc.lineBreakingColumn ) );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		int val;
-		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-			mApp->getConfig().doc.lineBreakingColumn = val;
-			mApp->getSplitter()->forEachEditor(
-				[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-			msgBox->closeWindow();
-		}
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setLineSpacing() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" ).unescape() );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mApp->getConfig().editor.lineSpacing.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().editor.lineSpacing =
-			StyleSheetLength( msgBox->getTextInput()->getText() );
-		mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setLineSpacing( mApp->getConfig().editor.lineSpacing );
-		} );
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setCursorBlinkingTime() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_cursor_blinking_time", "Set Cursor Blinking Time:\nSet 0 to disable it.\n" )
-			.unescape() );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mApp->getConfig().editor.cursorBlinkingTime.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().editor.cursorBlinkingTime =
-			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
-		mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setCursorBlinkTime( mApp->getConfig().editor.cursorBlinkingTime );
-		} );
-		msgBox->closeWindow();
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setIndentTabCharacter() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::COMBOBOX,
-		i18n( "set_indent_tab_character", "Set the tab indentation guide character displayed." ) );
-	msgBox->setId( "indent_tab_window" );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	UIComboBox* comboBox = msgBox->getComboBox();
-	UIListBox* listBox = msgBox->getComboBox()->getDropDownList()->getListBox();
-	listBox->addClass( "indent_tab_listbox_item" );
-	listBox->addListBoxItems( { u8"»"s, u8"→"s, u8"⇒"s, u8"↪"s, u8"⇢"s, u8"↣"s } );
-	msgBox->getComboBox()->setText(
-		mApp->getConfig().editor.tabIndentCharacter.empty()
-			? String( u8"»"s )
-			: String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter ) );
-	msgBox->showWhenReady();
-	comboBox->on( Event::OnValueChange, [this, comboBox]( const Event* ) {
-		if ( comboBox->getText().size() != 1 )
-			return;
-		mApp->getSplitter()->forEachEditor( [comboBox]( UICodeEditor* editor ) {
-			editor->setTabIndentCharacter( comboBox->getText()[0] );
-		} );
-	} );
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		auto txt( msgBox->getComboBox()->getText() );
-		if ( txt.size() == 1 ) {
-			mApp->getConfig().editor.tabIndentCharacter = txt.toUtf8();
-			mApp->getSplitter()->forEachEditor(
-				[txt]( UICodeEditor* editor ) { editor->setTabIndentCharacter( txt[0] ); } );
-			msgBox->closeWindow();
-		} else {
-			UIMessageBox* msgBoxAlert =
-				UIMessageBox::New( UIMessageBox::OK, i18n( "it_must_be_a_single_character",
-														   "It must be a single character" ) );
-			msgBoxAlert->setTitle( mApp->getWindowTitle() );
-			msgBoxAlert->setCloseShortcut( { KEY_ESCAPE, 0 } );
-		}
-	} );
-	msgBox->on( Event::OnDiscard, [this]( const Event* ) {
-		String txt = String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter );
-		if ( txt.size() != 1 )
-			return;
-		mApp->getSplitter()->forEachEditor(
-			[&txt]( UICodeEditor* editor ) { editor->setTabIndentCharacter( txt[0] ); } );
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setTabOutChars() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_tab_out_characters_message",
-			  "Set the characters the cursor can move past when pressing Tab." ) );
-	msgBox->setTitle( i18n( "set_tab_out_characters", "Set Tab Out Characters" ) );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( String::fromUtf8( mApp->getConfig().doc.tabOutChars ) );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		String chars = msgBox->getTextInput()->getText();
-		mApp->getConfig().doc.tabOutChars = chars.toUtf8();
-		mApp->getSplitter()->forEachEditor(
-			[&chars]( UICodeEditor* editor ) { editor->getDocument().setTabOutChars( chars ); } );
-		msgBox->closeWindow();
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setFoldRefreshFreq() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_fold_refresh_frequency",
-			  "Set code folds refresh frequency:\nIt should be bigger than 1 second.\nFolds are "
-			  "only refreshed after any document modification." )
-			.unescape() );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mApp->getConfig().editor.codeFoldingRefreshFreq.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().editor.codeFoldingRefreshFreq =
-			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
-		if ( mApp->getConfig().editor.codeFoldingRefreshFreq < Seconds( 1 ) )
-			mApp->getConfig().editor.codeFoldingRefreshFreq = Seconds( 1 );
-		mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFoldsRefreshTime( mApp->getConfig().editor.codeFoldingRefreshFreq );
-		} );
-		msgBox->closeWindow();
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
-void SettingsActions::setUIScaleFactor() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_ui_scale_factor", "Set the UI scale factor (pixel density):\nMinimum value is "
-									 "1, and maximum 6. Requires restart." ) );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->getTextInput()->setText(
-		String::fromFloat( mApp->getConfig().windowState.pixelDensity ) );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		msgBox->closeWindow();
-		Float val;
-		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
-			 val <= 6 ) {
-			if ( mApp->getConfig().windowState.pixelDensity != val ) {
-				mApp->getConfig().windowState.pixelDensity = val;
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK,
-					i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
-												 "restart the application." ) );
-				msg->showWhenReady();
-				mApp->setFocusEditorOnClose( msg );
-			} else if ( mApp->getSplitter() && mApp->getSplitter()->getCurWidget() ) {
-				mApp->getSplitter()->getCurWidget()->setFocus();
-			}
-		} else {
-			UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
-			msg->showWhenReady();
-			mApp->setFocusEditorOnClose( msg );
-		}
-	} );
-}
-
-void SettingsActions::setEditorFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->getTextInput()->setText( mApp->getConfig().editor.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		setEditorFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
-}
-
 void SettingsActions::setEditorFontSize( const StyleSheetLength& size ) {
 	mApp->getConfig().editor.fontSize = size;
 	const Float fontSize = size.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
 	mApp->getSplitter()->forEachEditor(
 		[fontSize]( UICodeEditor* editor ) { editor->setFontSize( fontSize ); } );
-}
-
-void SettingsActions::setTerminalFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_terminal_font_size", "Set the terminal font size:" ) );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->getTextInput()->setText( mApp->getConfig().term.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		setTerminalFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
 }
 
 void SettingsActions::setTerminalFontSize( const StyleSheetLength& size ) {
@@ -368,20 +154,6 @@ void SettingsActions::setTerminalFontSize( const StyleSheetLength& size ) {
 		if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
 			widget->asType<UITerminal>()->setFontSize( fontSize );
 	} );
-}
-
-void SettingsActions::setUIFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
-											  i18n( "set_ui_font_size", "Set the UI font size:" ) );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->getTextInput()->setText( mApp->getConfig().ui.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		setUIFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
-		msgBox->closeWindow();
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
 }
 
 void SettingsActions::setUIFontSize( const StyleSheetLength& size ) {
@@ -400,26 +172,11 @@ void SettingsActions::setUIFontSize( const StyleSheetLength& size ) {
 			}
 		}
 	} );
-}
-
-void SettingsActions::setUIPanelFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_side_panel_font_size", "Set side panel font size:" ) );
-	msgBox->setTitle( mApp->getWindowTitle() );
-	msgBox->getTextInput()->setText( mApp->getConfig().ui.panelFontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		setUIPanelFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
-		msgBox->closeWindow();
-	} );
-	mApp->setFocusEditorOnClose( msgBox );
+	setUIPanelFontSize( mApp->getConfig().ui.panelFontSize );
 }
 
 void SettingsActions::setUIPanelFontSize( const StyleSheetLength& size ) {
 	mApp->getConfig().ui.panelFontSize = size;
-
-	// Update the CSS
 	auto selsFound = mApp->getUISceneNode()->getStyleSheet().findStyleFromSelectorName(
 		"#project_view > treeview::row > treeview::cell" );
 	if ( !selsFound.empty() ) {
@@ -429,10 +186,10 @@ void SettingsActions::setUIPanelFontSize( const StyleSheetLength& size ) {
 	}
 
 	UITreeView* treeView = mApp->getUISceneNode()->find<UITreeView>( "project_view" );
-	if ( !treeView )
-		return;
-	treeView->reloadStyle( true, true, true, true );
-	treeView->updateContentSize();
+	if ( treeView ) {
+		treeView->reloadStyle( true, true, true, true );
+		treeView->updateContentSize();
+	}
 }
 
 void SettingsActions::setScreenshotSavePath() {
@@ -459,58 +216,6 @@ void SettingsActions::setScreenshotSavePath() {
 	} );
 	dialog->center();
 	dialog->show();
-}
-
-void SettingsActions::setScreenshotFilenamePattern() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_screenshot_filename_pattern_message",
-			  "Set the screenshot filename pattern:\nUses strftime format specifiers. The file "
-			  "extension follows the selected screenshot format." ) );
-	msgBox->setTitle(
-		i18n( "set_screenshot_filename_pattern", "Set Screenshot Filename Pattern" ) );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mApp->getConfig().screenshot.filenamePattern );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		std::string pattern = msgBox->getTextInput()->getText().toUtf8();
-		std::string filename = DateTimeController::formatCurrentDate( pattern );
-		if ( !DateTimeController::isValidDateFormat( pattern ) || filename.empty() ||
-			 filename.find_first_of( "<>:\"/\\|?*" ) != std::string::npos ) {
-			msgBox->getTextInput()->addClass( "error" );
-			mApp->errorMsgBox( i18n( "invalid_screenshot_filename_pattern",
-									 "The screenshot filename pattern is invalid." ) );
-			return;
-		}
-		mApp->getConfig().screenshot.filenamePattern = std::move( pattern );
-		mApp->saveConfig();
-		msgBox->closeWindow();
-	} );
-}
-
-void SettingsActions::setScreenshotSaveFormat() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::DROPDOWNLIST,
-		i18n( "set_screenshot_save_format_message", "Select the screenshot save format:" ) );
-	msgBox->setTitle( i18n( "set_screenshot_save_format", "Set Screenshot Save Format" ) );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getDropDownList()->getListBox()->addListBoxItems(
-		{ "PNG", "JPG", "WEBP", "QOI", "BMP", "TGA", "DDS" } );
-	msgBox->getDropDownList()->getListBox()->setSelected(
-		String( mApp->getConfig().screenshot.saveFormat ).toUpper() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		String formatText( msgBox->getDropDownList()->getText() );
-		std::string format = formatText.toLower().toUtf8();
-		if ( Image::extensionToSaveType( format ) == Image::SaveType::Unknown ) {
-			mApp->errorMsgBox(
-				i18n( "invalid_screenshot_save_format", "Invalid screenshot save format." ) );
-			return;
-		}
-		mApp->getConfig().screenshot.saveFormat = std::move( format );
-		mApp->saveConfig();
-		msgBox->closeWindow();
-	} );
 }
 
 String SettingsActions::i18n( const std::string& key, const String& def ) {

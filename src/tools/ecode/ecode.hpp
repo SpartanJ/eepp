@@ -216,7 +216,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void toggleSettingsMenu();
 
-	void openSettings();
+	void openSettings( const std::string& category = {} );
 
 	void openProjectSettings();
 
@@ -249,6 +249,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "debug-widget-tree-view", [this] { createWidgetInspector(); } );
 		t.setCommand( "menu-toggle", [this] { toggleSettingsMenu(); } );
 		t.setCommand( "open-settings", [this] { openSettings(); } );
+		t.setCommand( "open-document-settings", [this] { openSettings( "editor.document" ); } );
+		t.setCommand( "open-terminal-settings", [this] { openSettings( "terminal.*" ); } );
 		t.setCommand( "open-project-settings", [this] { openProjectSettings(); } );
 		t.setCommand( "switch-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "download-file-web", [this] { downloadFileWebDialog(); } );
@@ -344,31 +346,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					  [this] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",
 					  [this] { mUniversalLocator->showDocumentSymbol(); } );
-		t.setCommand( "editor-set-line-breaking-column",
-					  [this] { mSettingsActions->setLineBreakingColumn(); } );
-		t.setCommand( "editor-set-line-spacing", [this] { mSettingsActions->setLineSpacing(); } );
-		t.setCommand( "editor-set-cursor-blinking-time",
-					  [this] { mSettingsActions->setCursorBlinkingTime(); } );
-		t.setCommand( "editor-set-indent-tab-character",
-					  [this] { mSettingsActions->setIndentTabCharacter(); } );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates(); } );
 		t.setCommand( "about-ecode", [this] { mSettingsActions->aboutEcode(); } );
 		t.setCommand( "ecode-source", [this] { mSettingsActions->ecodeSource(); } );
-		t.setCommand( "ui-scale-factor", [this] { mSettingsActions->setUIScaleFactor(); } );
 		t.setCommand( "take-screenshot", [this] { takeScreenshot(); } );
-		t.setCommand( "screenshot-save-path",
-					  [this] { mSettingsActions->setScreenshotSavePath(); } );
-		t.setCommand( "screenshot-filename-pattern",
-					  [this] { mSettingsActions->setScreenshotFilenamePattern(); } );
-		t.setCommand( "screenshot-save-format",
-					  [this] { mSettingsActions->setScreenshotSaveFormat(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
 		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
-		t.setCommand( "editor-font-size", [this] { mSettingsActions->setEditorFontSize(); } );
-		t.setCommand( "terminal-font-size", [this] { mSettingsActions->setTerminalFontSize(); } );
-		t.setCommand( "ui-font-size", [this] { mSettingsActions->setUIFontSize(); } );
-		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
 		t.setCommand( "sans-serif-font",
 					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
 		t.setCommand( "editor-font", [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );

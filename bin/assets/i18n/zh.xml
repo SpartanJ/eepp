@@ -33,6 +33,7 @@
 	<string name="author">作者</string>
 	<string name="auto_close_brackets_and_tags">Auto-Close Brackets &amp; Tags</string>
 	<string name="auto_close_xml_tags">自动关闭XML标签</string>
+	<string name="auto_close_brackets_and_tags">自动闭合括号和标签</string>
 	<string name="auto_detect_indent_type_and_width">Auto Detect Indent Type &amp; Width</string>
 	<string name="back_quotes">Back Quotes ``</string>
 	<string name="brackets">括号()</string>
@@ -197,12 +198,9 @@
 	<string name="discretionary_ligatures">任意连字 (dlig)</string>
 	<string name="discretionary_ligatures_desc">字体提供的可选装饰性或风格化连字。</string>
 	<string name="editor_font_size">编辑器字体大小</string>
+	<string name="editor_font_features">编辑器字体特性</string>
 	<string name="editor_go_back">编辑器撤销</string>
 	<string name="editor_go_forward">编辑器重做</string>
-	<string name="editor_set_cursor_blinking_time">编辑器设置光标闪烁时间</string>
-	<string name="editor_set_line_breaking_column">编辑器设置打断行</string>
-	<string name="editor_set_line_spacing">Editor Set Line Spacing</string>
-	<string name="empty_file_name">请给文件取名。</string>
 	<string name="enable_color_picker">开启颜色选择器</string>
 	<string name="enable_color_picker_tooltip">开启颜色选择工具
 当光标悬浮在颜色字符串上时</string>
@@ -416,8 +414,6 @@ Restart ecode to see the changes.</string>
 	<string name="new_terminal_name">新终端名称：</string>
 	<string name="new_ui_language">语言已设置New Lang assigned.
 请重启Ecode以应用更改。Please Restart Ecode.</string>
-	<string name="new_ui_scale_factor">新的UI缩放已设置。
-请重启Ecode以应用更改。</string>
 	<string name="new_value">新值</string>
 	<string name="new_window">新建窗口</string>
 	<string name="next">下一个</string>
@@ -536,22 +532,6 @@ Restart ecode to see the changes.</string>
 	<string name="select_to_previous_line">选择上一行</string>
 	<string name="sans-serif_font">Sans-Serif字体</string>
 	<string name="sans-serif_font_ellipsis">Sans-Serif字体...</string>
-	<string name="set_cursor_blinking_time">设置光标闪烁时间：设置0禁用
-</string>
-	<string name="set_editor_font_size">设置字体大小：</string>
-	<string name="set_frame_rate_limit">设置FPS限制：设置0禁用
-</string>
-	<string name="set_line_breaking_column">设置断点行：
-设为0禁用
-</string>
-	<string name="set_line_spacing">Set Line Spacing:
-设为0禁用
-</string>
-	<string name="set_side_panel_font_size">设置侧边字体大小：</string>
-	<string name="set_terminal_font_size">设置终端字体大小：</string>
-	<string name="set_ui_font_size">设置UI字体大小：</string>
-	<string name="set_ui_scale_factor">设置按像素的UI缩放：
-最小1，最大6，需要重启Ecode</string>
 	<string name="shell">外壳</string>
 	<string name="shell_configuration">外壳设置</string>
 	<string name="show_build_tab">显示构建页</string>
@@ -642,6 +622,7 @@ file in the directory tree.</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_and_size_ellipsis">界面字体和大小...</string>
 	<string name="ui_font_size">Ui字体大小</string>
+	<string name="ui_font_features">界面字体特性</string>
 	<string name="ui_language">界面语言</string>
 	<string name="ui_multisamples_level">多重采样抗锯齿级别</string>
 	<string name="ui_panel_font_size">界面面板字体大小</string>
@@ -709,13 +690,7 @@ file in the directory tree.</string>
 	<string name="screenshot_filename_pattern">文件名格式</string>
 	<string name="screenshot_save_format">保存格式</string>
 	<string name="set_screenshot_filename_pattern">设置屏幕截图文件名格式</string>
-	<string name="set_screenshot_filename_pattern_message">设置屏幕截图文件名格式：
-使用 strftime 格式说明符。文件扩展名由所选屏幕截图格式决定。</string>
 	<string name="set_screenshot_save_format">设置屏幕截图保存格式</string>
-	<string name="set_screenshot_save_format_message">选择屏幕截图保存格式：</string>
-	<string name="invalid_screenshot_filename_pattern">屏幕截图文件名格式无效。</string>
-	<string name="invalid_screenshot_save_format">屏幕截图保存格式无效。</string>
-	<string name="couldnt_create_screenshot_directory">无法创建屏幕截图目录。</string>
 	<string name="couldnt_find_available_screenshot_filename">无法找到可用的屏幕截图文件名。</string>
 	<string name="couldnt_save_screenshot">无法保存屏幕截图。</string>
 	<string name="screenshot_saved">屏幕截图已保存：</string>
@@ -730,6 +705,8 @@ file in the directory tree.</string>
 	<string name="set_tab_out_characters_message">设置按 Tab 时光标可以跳过的字符。</string>
 	<string name="open_settings_ellipsis">打开设置...</string>
 	<string name="open_project_settings_ellipsis">打开项目设置...</string>
+	<string name="open_document_settings">打开文档设置</string>
+	<string name="open_terminal_settings">打开终端设置</string>
 	<string name="project_settings">项目设置</string>
 	<string name="search_settings">搜索设置...</string>
 	<string name="show_line_numbers_desc">在编辑器旁显示行号。</string>

@@ -17,37 +17,15 @@ class SettingsActions {
 
 	void ecodeSource();
 
-	void setLineBreakingColumn();
-
-	void setLineSpacing();
-
-	void setCursorBlinkingTime();
-
-	void setIndentTabCharacter();
-
-	void setTabOutChars();
-
-	void setFoldRefreshFreq();
-
-	void setUIScaleFactor();
-
-	void setUIFontSize();
 	void setUIFontSize( const StyleSheetLength& size );
 
-	void setEditorFontSize();
 	void setEditorFontSize( const StyleSheetLength& size );
 
-	void setTerminalFontSize();
 	void setTerminalFontSize( const StyleSheetLength& size );
 
-	void setUIPanelFontSize();
 	void setUIPanelFontSize( const StyleSheetLength& size );
 
 	void setScreenshotSavePath();
-
-	void setScreenshotFilenamePattern();
-
-	void setScreenshotSaveFormat();
 
   private:
 	App* mApp{ nullptr };

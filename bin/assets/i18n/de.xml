@@ -47,6 +47,7 @@ Diese Operation kann nicht rückgängig gemacht werden!</string>
 	<string name="author">Autor</string>
 	<string name="auto_close_brackets_and_tags">Klammern &amp; Tags automatisch vervollständigen</string>
 	<string name="auto_close_xml_tags">XML-Tags automatisch vervollständigen</string>
+	<string name="auto_close_brackets_and_tags">Klammern &amp; Tags automatisch vervollständigen</string>
 	<string name="auto_detect_indent_type_and_width">Einzugsart- &amp; weite automatisch erkennen</string>
 	<string name="autoreload_on_disk_change">Auto-Auffrischen bei Dateiänderung im Festspeicher</string>
 	<string name="back_quotes">Backticks ``</string>
@@ -278,12 +279,9 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="discretionary_ligatures">Optionale Ligaturen (dlig)</string>
 	<string name="discretionary_ligatures_desc">Optionale dekorative oder stilistische Ligaturen der Schriftart.</string>
 	<string name="editor_font_size">Editor-Schriftgröße</string>
+	<string name="editor_font_features">Editor-Schriftfunktionen</string>
 	<string name="editor_go_back">Editor: Schritt zurück</string>
 	<string name="editor_go_forward">Editor: Schritt nach vorn</string>
-	<string name="editor_set_cursor_blinking_time">Editor: Blinkdauer der Eingabemarke festlegen</string>
-	<string name="editor_set_indent_tab_character">Editor: Tab-Einzugszeichen festlegen</string>
-	<string name="editor_set_line_breaking_column">Editor: Umbruchspalte setzen</string>
-	<string name="editor_set_line_spacing">Editor: Zeilenabstand festlegen</string>
 	<string name="empty_file_name">Der Dateiname darf nicht leer sein.</string>
 	<string name="enable_autoreload">Auto-Auffrischen aktivieren</string>
 	<string name="enable_color_picker">Farbwähler aktivieren</string>
@@ -446,8 +444,6 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="inspect_widgets">Widgets einsehen</string>
 	<string name="issues">probleme</string>
 	<string name="issues_capitalized">Probleme</string>
-	<string name="it_must_be_a_single_character">Es muss ein einzelnes Zeichen sein</string>
-	<string name="jump_lines_down">Zeilen abwärts springen</string>
 	<string name="jump_lines_up">Zeilen aufwärts springen</string>
 	<string name="keep_indentation">Einrückung beibehalten</string>
 	<string name="key_bindings">Tastenzuweisungen</string>
@@ -550,8 +546,6 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="new_terminal_name">Neuer Konsolenname:</string>
 	<string name="new_ui_language">Neue Sprache zugewiesen.
 Für vollständige Änderung bitte die Anwendung neu starten.</string>
-	<string name="new_ui_scale_factor">Neue Oberflächenskalierung festgelegt.
-Bitte die Anwendung neu starten.</string>
 	<string name="new_value">Neuer Wert</string>
 	<string name="new_window">Neues Fenster</string>
 	<string name="next">Nächstes</string>
@@ -726,29 +720,9 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="session_snapshot">Sitzungs-Snapshot &amp; Regelmäßige Sicherung</string>
 	<string name="session_snapshot_desc">Wenn Sitzungs-Snapshots aktiv sind, wird der Editor Änderungen im 
 	Dokumenten-Buffer beibehalten, auch, wenn sie vor Beendigung nicht gespeichert wurden.</string>
-	<string name="set_cursor_blinking_time">Blinkdauer der Eingabemarke festlegen:
-Auf 0 setzen zum Deaktivieren.
-</string>
-	<string name="set_editor_font_size">Editor-Schriftgröße festlegen:</string>
-	<string name="set_fold_refresh_frequency">Blockfaltungsaktualisierungsfrequenz festlegen:
-Dies sollte größer als eine Sekunde sein.
-Faltungen werden nur bei Dokumentmodifikation aktualisiert.
-</string>
 	<string name="set_frame_rate_limit">Bildwiederholrate begrenzen:
 Auf 0 setzen zum Deaktivieren.
 </string>
-	<string name="set_indent_tab_character">Legt das Zeichen für den Tab-Einzugsmarker fest.</string>
-	<string name="set_line_breaking_column">Umbruchspalte festlegen:
-Auf 0 setzen zum Deaktivieren.
-</string>
-	<string name="set_line_spacing">Zeilenabstand festlegen:
-Auf 0 setzen zum Deaktivieren.
-</string>
-	<string name="set_side_panel_font_size">Seitenpaneel-Schriftgöße festlegen:</string>
-	<string name="set_terminal_font_size">Konsolenschriftgöße festlegen:</string>
-	<string name="set_ui_font_size">Größe der Oberflächenschriftart festlegen:</string>
-	<string name="set_ui_scale_factor">Oberflächenskalierung festlegen (Pixeldichte):
-Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="settings">Einstellungen</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Shell-Konfiguration</string>
@@ -869,6 +843,7 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="type_to_locate">Zu findender Typ</string>
 	<string name="ui_font_and_size_ellipsis">Schriftart und -größe der Oberfläche...</string>
 	<string name="ui_font_size">Schriftgröße der Oberfläche</string>
+	<string name="ui_font_features">UI-Schriftfunktionen</string>
 	<string name="ui_language">Sprache der Oberfläche</string>
 	<string name="ui_multisamples_level">Multisample-Antialiasing-Stufe</string>
 	<string name="ui_panel_font_size">Schriftgröße im Paneel der Oberfläche</string>
@@ -951,13 +926,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="screenshot_filename_pattern">Dateinamensmuster</string>
 	<string name="screenshot_save_format">Speicherformat</string>
 	<string name="set_screenshot_filename_pattern">Dateinamensmuster für Bildschirmfotos festlegen</string>
-	<string name="set_screenshot_filename_pattern_message">Legen Sie das Dateinamensmuster für Bildschirmfotos fest:
-Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem ausgewählten Bildschirmfotoformat.</string>
 	<string name="set_screenshot_save_format">Speicherformat für Bildschirmfotos festlegen</string>
-	<string name="set_screenshot_save_format_message">Wählen Sie das Speicherformat für Bildschirmfotos:</string>
-	<string name="invalid_screenshot_filename_pattern">Das Dateinamensmuster für Bildschirmfotos ist ungültig.</string>
-	<string name="invalid_screenshot_save_format">Ungültiges Speicherformat für Bildschirmfotos.</string>
-	<string name="couldnt_create_screenshot_directory">Das Verzeichnis für Bildschirmfotos konnte nicht erstellt werden.</string>
 	<string name="couldnt_find_available_screenshot_filename">Es konnte kein verfügbarer Dateiname für das Bildschirmfoto gefunden werden.</string>
 	<string name="couldnt_save_screenshot">Das Bildschirmfoto konnte nicht gespeichert werden.</string>
 	<string name="screenshot_saved">Bildschirmfoto gespeichert:</string>
@@ -972,6 +941,8 @@ Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem 
 	<string name="set_tab_out_characters_message">Legen Sie die Zeichen fest, über die der Cursor beim Drücken von Tab springen kann.</string>
 	<string name="open_settings_ellipsis">Einstellungen öffnen...</string>
 	<string name="open_project_settings_ellipsis">Projekteinstellungen öffnen...</string>
+	<string name="open_document_settings">Dokumenteinstellungen öffnen</string>
+	<string name="open_terminal_settings">Terminaleinstellungen öffnen</string>
 	<string name="project_settings">Projekteinstellungen</string>
 	<string name="search_settings">Einstellungen durchsuchen...</string>
 	<string name="show_line_numbers_desc">Zeilennummern neben dem Editor anzeigen.</string>
