@@ -106,15 +106,11 @@ void UIMenuCheckBox::switchActive() {
 	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::onMessage( const NodeMessage* msg ) {
-	switch ( msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			if ( msg->getFlags() & EE_BUTTON_LMASK )
-				switchActive();
-			break;
-		}
-	}
-	return 0;
+void UIMenuCheckBox::activate() {
+	if ( !isEnabled() )
+		return;
+	switchActive();
+	UIMenuItem::activate();
 }
 
 void UIMenuCheckBox::onStateChange() {

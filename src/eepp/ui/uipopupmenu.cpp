@@ -52,7 +52,7 @@ bool UIPopUpMenu::show() {
 					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
-		sendCommonEvent( Event::OnMenuShow );
+		notifyMenuWillShow();
 		setFocus();
 		return true;
 	}
@@ -92,7 +92,7 @@ bool UIPopUpMenu::hide() {
 				close();
 		}
 		safeHide();
-		sendCommonEvent( Event::OnMenuHide );
+		notifyMenuDidHide();
 		return true;
 	}
 	return false;

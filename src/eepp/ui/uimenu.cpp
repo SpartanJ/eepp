@@ -305,8 +305,13 @@ Uint32 UIMenu::onMessage( const NodeMessage* msg ) {
 		}
 		case NodeMessage::MouseUp: {
 			if ( msg->getSender()->getParent() == this && ( msg->getFlags() & EE_BUTTONS_LRM ) ) {
-				Event itemEvent( msg->getSender(), Event::OnItemClicked );
-				sendEvent( &itemEvent );
+				if ( msg->getSender()->isType( UI_TYPE_MENUITEM ) &&
+					 !msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) ) {
+					msg->getSender()->asType<UIMenuItem>()->activate();
+				} else {
+					Event itemEvent( msg->getSender(), Event::OnItemClicked );
+					sendEvent( &itemEvent );
+				}
 				return 1;
 			}
 			break;
@@ -386,16 +391,39 @@ void UIMenu::resizeMe() {
 }
 
 bool UIMenu::show() {
+	const bool notify = !isVisible();
 	setEnabled( true );
 	setVisible( true );
+	if ( notify )
+		notifyMenuWillShow();
 	return true;
 }
 
 bool UIMenu::hide() {
+	const bool notify = isVisible();
 	setEnabled( false );
 	setVisible( false );
 	safeHide();
+	if ( notify )
+		notifyMenuDidHide();
 	return true;
+}
+
+void UIMenu::notifyMenuWillShow() {
+	sendCommonEvent( Event::OnMenuShow );
+}
+
+void UIMenu::notifyMenuDidHide() {
+	sendCommonEvent( Event::OnMenuHide );
+}
+
+MenuBarRole UIMenu::getMenuBarRole() const {
+	return mMenuBarRole;
+}
+
+UIMenu* UIMenu::setMenuBarRole( MenuBarRole role ) {
+	mMenuBarRole = role;
+	return this;
 }
 
 void UIMenu::safeHide() {

@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-void macOS_createApplicationMenus();
-
 void macOS_enableScrollMomentum();
 
 void macOS_removeTitleBarSeparator( void* nsWindow );

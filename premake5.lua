@@ -656,7 +656,7 @@ function generate_os_links()
 	elseif os.istarget("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
@@ -1651,6 +1651,22 @@ workspace "eepp"
 			buildoptions { "-Wall" }
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++20" }
+
+	if os.istarget("macosx") then
+	project "eepp-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		cppdialect "C++20"
+		incdirs { "include", "src" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.m" }
+		buildoptions { "-x objective-c++" }
+		build_base_cpp_configuration( "eepp-macos-helper" )
+		target_dir_lib( "" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++20" }
+	end
 
 	-- Library
 	if not _OPTIONS["disable-static-build"] then

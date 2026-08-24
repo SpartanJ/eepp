@@ -168,6 +168,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	toolsMenuButton->on( Event::OnMenuShow, lazyBuildToolsMenu );
 
 	mWindowMenu = UIPopUpMenu::New();
+	mWindowMenu->setMenuBarRole( MenuBarRole::Window );
 	const auto lazyBuildWindowMenu = [this]( const Event* ) {
 		if ( mWindowMenu->getCount() == 0 ) {
 			createWindowMenu();
@@ -183,6 +184,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	windowMenuButton->on( Event::OnMenuShow, lazyBuildWindowMenu );
 
 	mHelpMenu = UIPopUpMenu::New();
+	mHelpMenu->setMenuBarRole( MenuBarRole::Help );
 	const auto lazyBuildHelpMenu = [this]( const Event* ) {
 		if ( mHelpMenu->getCount() == 0 ) {
 			createHelpMenu();
@@ -206,6 +208,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 		->setId( "close-folder" );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
+		->setMenuRole( MenuRole::Quit )
 		->setId( "close-app" );
 	mSettingsButton = mUISceneNode->find<UIWidget>( "settings" );
 	mSettingsButton->on( Event::MouseClick, [this]( const Event* ) { toggleSettingsMenu(); } );
@@ -280,6 +283,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	onMenuShowEvent( mToolsMenu, toolsMenuButton, 6 );
 	onMenuShowEvent( mWindowMenu, windowMenuButton, 7 );
 	onMenuShowEvent( mHelpMenu, helpMenuButton, 8 );
+	createHelpMenu();
 
 	updateMenu();
 
@@ -2464,6 +2468,7 @@ UIMenu* SettingsMenu::createHelpMenu() {
 	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
 	mHelpMenu->add( i18n( "about_ecode", "About ecode" ), findIcon( "ecode" ) )
+		->setMenuRole( MenuRole::About )
 		->setId( "about-ecode" );
 	mHelpMenu->on( Event::OnItemClicked,
 				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
@@ -2524,46 +2529,38 @@ UIMenu* SettingsMenu::createLanguagesMenu() {
 	if ( curLang.empty() )
 		curLang = "en";
 
-	mApp->getThreadPool()->run( [this, menu, curLang] {
-		auto files =
-			FileSystem::filesInfoGetInPath( mApp->geti18nPath(), false, true, false, true );
+	auto files = FileSystem::filesInfoGetInPath( mApp->geti18nPath(), false, true, false, true );
 
-		std::map<std::string, std::string> languages;
-		for ( const auto& file : files ) {
-			if ( file.getExtension() != "xml" )
-				continue;
-			auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
-			std::string data;
-			FileSystem::fileGet( file.getFilepath(), data );
-			std::string lptrn( "title=\"(.-)\"" );
-			LuaPattern pattern( lptrn );
-			PatternMatcher::Range matches[2];
-			if ( pattern.matches( data, matches ) ) {
-				std::string title(
-					data.substr( matches[1].start, matches[1].end - matches[1].start ) );
-				languages[title] = name;
-			} else {
-				languages[name] = name;
-			}
+	std::map<std::string, std::string> languages;
+	for ( const auto& file : files ) {
+		if ( file.getExtension() != "xml" )
+			continue;
+		auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
+		std::string data;
+		FileSystem::fileGet( file.getFilepath(), data );
+		std::string lptrn( "title=\"(.-)\"" );
+		LuaPattern pattern( lptrn );
+		PatternMatcher::Range matches[2];
+		if ( pattern.matches( data, matches ) ) {
+			std::string title( data.substr( matches[1].start, matches[1].end - matches[1].start ) );
+			languages[title] = name;
+		} else {
+			languages[name] = name;
 		}
-		if ( languages.empty() )
-			return;
+	}
 
-		menu->runOnMainThread( [this, menu, curLang, languages] {
-			for ( const auto& lang : languages )
-				menu->addRadioButton( lang.first, curLang == lang.second )->setId( lang.second );
+	for ( const auto& lang : languages )
+		menu->addRadioButton( lang.first, curLang == lang.second )->setId( lang.second );
 
-			menu->on( Event::OnItemClicked, [this]( const Event* event ) {
-				auto id = event->getNode()->getId();
-				mApp->getConfig().ui.language = id;
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK,
-					i18n( "new_ui_language", "New language assigned.\nPlease restart the "
-											 "application to see the complete changes." ) );
-				msg->showWhenReady();
-				mApp->setFocusEditorOnClose( msg );
-			} );
-		} );
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		auto id = event->getNode()->getId();
+		mApp->getConfig().ui.language = id;
+		UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK,
+											   i18n( "new_ui_language",
+													 "New language assigned.\nPlease restart the "
+													 "application to see the complete changes." ) );
+		msg->showWhenReady();
+		mApp->setFocusEditorOnClose( msg );
 	} );
 
 	return menu;
