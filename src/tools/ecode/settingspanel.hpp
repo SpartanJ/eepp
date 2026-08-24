@@ -88,7 +88,7 @@ class SettingsPanel {
 				   std::function<double()> get, std::function<void( double )> set );
 	void addAction( PanelState& state, SettingBinding binding, const String& buttonText,
 					std::function<void()> action );
-	UIWidget* createRow( PanelState& state, SettingBinding& binding );
+	UIWidget* createRow( PanelState& state, SettingBinding& binding, pugi::xml_node layout );
 	UICheckBox* createBoolControl( PanelState& state, SettingBinding& binding );
 	void setCategoryEnabled( PanelState& state, const std::string& category, bool enabled,
 							 const std::string& excludedSetting = {} );

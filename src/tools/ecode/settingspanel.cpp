@@ -4,6 +4,8 @@
 #include "uitreeviewfs.hpp"
 #include <deque>
 #include <limits>
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 using namespace EE::UI::Models;
 
@@ -238,17 +240,36 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 </vbox>
 )xml";
 
-static constexpr const char* SETTINGS_ROW_LAYOUT = R"xml(
+static std::string settingsRowLayout( std::string_view control ) {
+	return R"xml(
 <vbox lw="mp" lh="wc" class="settings_option">
 	<hbox lw="mp" lh="wc" class="settings_option_content">
 		<vbox lw="0" lw8="1" lh="wc">
 			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
 			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
 		</vbox>
-		<hbox id="setting_control" lw="wc" lh="wc" class="settings_option_control" />
+		<hbox id="setting_control" lw="wc" lh="wc" class="settings_option_control">
+)xml" + std::string( control ) +
+		   R"xml(
+		</hbox>
 	</hbox>
 </vbox>
 )xml";
+}
+
+class SettingsLayoutTemplate {
+  public:
+	explicit SettingsLayoutTemplate( const std::string& layout ) {
+		[[maybe_unused]] auto result =
+			mDocument.load_string( layout.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
+		eeASSERT( result );
+	}
+
+	pugi::xml_node root() const { return mDocument.first_child(); }
+
+  private:
+	pugi::xml_document mDocument;
+};
 
 static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT = R"xml(
 <TextView lw="mp" lh="wc" class="settings_category_heading" visible="false" focusable="false" />
@@ -256,16 +277,18 @@ static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT = R"xml(
 static constexpr const char* SETTINGS_SUBCATEGORY_HEADING_LAYOUT = R"xml(
 <TextView lw="mp" lh="wc" class="settings_subcategory_heading" visible="false" focusable="false" />
 )xml";
-static constexpr const char* SETTINGS_BOOL_LAYOUT = R"xml(<CheckBox class="settings_bool" />)xml";
-static constexpr const char* SETTINGS_CHOICE_LAYOUT =
-	R"xml(<DropDownModelList class="settings_choice" />)xml";
-static constexpr const char* SETTINGS_EDITABLE_CHOICE_LAYOUT =
-	R"xml(<ComboBox class="settings_editable_choice" popup-to-root="true" />)xml";
-static constexpr const char* SETTINGS_INTEGER_LAYOUT =
-	R"xml(<SpinBox class="settings_integer" />)xml";
-static constexpr const char* SETTINGS_TEXT_LAYOUT = R"xml(<TextInput class="settings_text" />)xml";
-static constexpr const char* SETTINGS_ACTION_LAYOUT =
-	R"xml(<PushButton class="settings_action" />)xml";
+static const SettingsLayoutTemplate SETTINGS_BOOL_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<CheckBox id="setting_control_widget" class="settings_bool" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_CHOICE_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<DropDownModelList id="setting_control_widget" class="settings_choice" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_EDITABLE_CHOICE_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<ComboBox id="setting_control_widget" class="settings_editable_choice" popup-to-root="true" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_INTEGER_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<SpinBox id="setting_control_widget" class="settings_integer" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_TEXT_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<TextInput id="setting_control_widget" class="settings_text" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_ACTION_ROW_LAYOUT( settingsRowLayout(
+	R"xml(<PushButton id="setting_control_widget" class="settings_action" />)xml" ) );
 
 static void disableTabFocusTree( Node* node ) {
 	if ( node->isWidget() )
@@ -485,8 +508,9 @@ void SettingsPanel::setupCategories( PanelState& panel ) {
 		} );
 }
 
-UIWidget* SettingsPanel::createRow( PanelState& panel, SettingBinding& binding ) {
-	auto* row = mApp->getUISceneNode()->loadLayoutFromString( SETTINGS_ROW_LAYOUT, panel.settings );
+UIWidget* SettingsPanel::createRow( PanelState& panel, SettingBinding& binding,
+									pugi::xml_node layout ) {
+	auto* row = mApp->getUISceneNode()->loadLayoutNodes( layout, panel.settings, 0 );
 	row->setId( "setting_" + binding.id );
 	row->find<UITextView>( "setting_name" )->setText( binding.name );
 	auto* description = row->find<UITextView>( "setting_description" );
@@ -517,12 +541,9 @@ void SettingsPanel::addBool( PanelState& panel, SettingBinding binding, std::fun
 }
 
 UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingBinding& binding ) {
-	auto* row = createRow( panel, binding );
+	auto* row = createRow( panel, binding, SETTINGS_BOOL_ROW_LAYOUT.root() );
 	row->addClass( "settings_boolean_option" );
-	auto* check = mApp->getUISceneNode()
-					  ->loadLayoutFromString( SETTINGS_BOOL_LAYOUT,
-											  row->find<UILinearLayout>( "setting_control" ) )
-					  ->asType<UICheckBox>();
+	auto* check = row->find<UICheckBox>( "setting_control_widget" );
 	auto toggle = [check]( const Event* ) { check->setChecked( !check->isChecked() ); };
 	panel.connections +=
 		row->find<UITextView>( "setting_name" )->connect( Event::MouseClick, toggle );
@@ -535,11 +556,8 @@ void SettingsPanel::addChoice( PanelState& panel, SettingBinding binding,
 							   const std::vector<String>& choices, std::function<size_t()> get,
 							   std::function<void( size_t )> set,
 							   std::vector<String> choiceDescriptions ) {
-	auto* row = createRow( panel, binding );
-	auto* dropDown = mApp->getUISceneNode()
-						 ->loadLayoutFromString( SETTINGS_CHOICE_LAYOUT,
-												 row->find<UILinearLayout>( "setting_control" ) )
-						 ->asType<UIDropDownModelList>();
+	auto* row = createRow( panel, binding, SETTINGS_CHOICE_ROW_LAYOUT.root() );
+	auto* dropDown = row->find<UIDropDownModelList>( "setting_control_widget" );
 	auto model = ItemListOwnerModel<String>::create( choices );
 	dropDown->setModel( model );
 	const size_t selected = get();
@@ -566,11 +584,8 @@ void SettingsPanel::addEditableChoice( PanelState& panel, SettingBinding binding
 									   const std::vector<String>& choices,
 									   std::function<String()> get,
 									   std::function<bool( const String& )> set ) {
-	auto* row = createRow( panel, binding );
-	auto* combo = mApp->getUISceneNode()
-					  ->loadLayoutFromString( SETTINGS_EDITABLE_CHOICE_LAYOUT,
-											  row->find<UILinearLayout>( "setting_control" ) )
-					  ->asType<UIComboBox>();
+	auto* row = createRow( panel, binding, SETTINGS_EDITABLE_CHOICE_ROW_LAYOUT.root() );
+	auto* combo = row->find<UIComboBox>( "setting_control_widget" );
 	for ( const auto& choice : choices )
 		combo->getListBox()->addListBoxItem( choice );
 	combo->setText( get() );
@@ -589,11 +604,8 @@ void SettingsPanel::addEditableChoice( PanelState& panel, SettingBinding binding
 
 void SettingsPanel::addInteger( PanelState& panel, SettingBinding binding, int min, int max,
 								std::function<int()> get, std::function<void( int )> set ) {
-	auto* row = createRow( panel, binding );
-	auto* spin = mApp->getUISceneNode()
-					 ->loadLayoutFromString( SETTINGS_INTEGER_LAYOUT,
-											 row->find<UILinearLayout>( "setting_control" ) )
-					 ->asType<UISpinBox>();
+	auto* row = createRow( panel, binding, SETTINGS_INTEGER_ROW_LAYOUT.root() );
+	auto* spin = row->find<UISpinBox>( "setting_control_widget" );
 	spin->setMinValue( min )->setMaxValue( max );
 	spin->unsetTabFocusable();
 	spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
@@ -610,11 +622,8 @@ void SettingsPanel::addText( PanelState& panel, SettingBinding binding,
 							 std::function<std::string()> get,
 							 std::function<bool( const std::string& )> set,
 							 bool commitOnFocusLoss ) {
-	auto* row = createRow( panel, binding );
-	auto* input = mApp->getUISceneNode()
-					  ->loadLayoutFromString( SETTINGS_TEXT_LAYOUT,
-											  row->find<UILinearLayout>( "setting_control" ) )
-					  ->asType<UITextInput>();
+	auto* row = createRow( panel, binding, SETTINGS_TEXT_ROW_LAYOUT.root() );
+	auto* input = row->find<UITextInput>( "setting_control_widget" );
 	input->setText( String::fromUtf8( get() ) );
 	auto commit = [input, set = std::move( set )]( const Event* ) {
 		std::string text = input->getText().toUtf8();
@@ -636,11 +645,8 @@ void SettingsPanel::addText( PanelState& panel, SettingBinding binding,
 void SettingsPanel::addFloat( PanelState& panel, SettingBinding binding, double min, double max,
 							  double step, std::function<double()> get,
 							  std::function<void( double )> set ) {
-	auto* row = createRow( panel, binding );
-	auto* spin = mApp->getUISceneNode()
-					 ->loadLayoutFromString( SETTINGS_INTEGER_LAYOUT,
-											 row->find<UILinearLayout>( "setting_control" ) )
-					 ->asType<UISpinBox>();
+	auto* row = createRow( panel, binding, SETTINGS_INTEGER_ROW_LAYOUT.root() );
+	auto* spin = row->find<UISpinBox>( "setting_control_widget" );
 	spin->setMinValue( min )->setMaxValue( max )->setClickStep( step );
 	spin->allowFloatingPoint( true )->setValue( get() );
 	spin->unsetTabFocusable();
@@ -655,11 +661,8 @@ void SettingsPanel::addFloat( PanelState& panel, SettingBinding binding, double 
 
 void SettingsPanel::addAction( PanelState& panel, SettingBinding binding, const String& buttonText,
 							   std::function<void()> action ) {
-	auto* row = createRow( panel, binding );
-	auto* button = mApp->getUISceneNode()
-					   ->loadLayoutFromString( SETTINGS_ACTION_LAYOUT,
-											   row->find<UILinearLayout>( "setting_control" ) )
-					   ->asType<UIPushButton>();
+	auto* row = createRow( panel, binding, SETTINGS_ACTION_ROW_LAYOUT.root() );
+	auto* button = row->find<UIPushButton>( "setting_control_widget" );
 	button->setText( buttonText );
 	panel.connections += button->connect(
 		Event::MouseClick, [action = std::move( action )]( const Event* ) { action(); } );
