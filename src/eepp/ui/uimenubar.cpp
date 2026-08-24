@@ -1,6 +1,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/platformmenubar.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -88,6 +89,7 @@ void UIMenuBar::showPrevMenu() {
 }
 
 UIMenuBar::~UIMenuBar() {
+	setGlobalMenuBarEnabled( false );
 	destroyMenus();
 }
 
@@ -153,6 +155,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 		button->setThemeSkin( mTheme, "menubarbutton" );
 
 	refreshButtons();
+	syncGlobalMenuBar();
 }
 
 void UIMenuBar::setTheme( UITheme* theme ) {
@@ -176,6 +179,7 @@ void UIMenuBar::removeMenuButton( const String& buttonText ) {
 				it->second->close();
 			mButtons.erase( it );
 			refreshButtons();
+			syncGlobalMenuBar();
 			break;
 		}
 	}
@@ -208,7 +212,36 @@ UIPopUpMenu* UIMenuBar::getPopUpMenu( const Uint32& index ) const {
 UIMenuBar* UIMenuBar::setPopUpMenu( const Uint32& index, UIPopUpMenu* menu ) {
 	eeASSERT( index < mButtons.size() );
 	mButtons[index].second = menu;
+	syncGlobalMenuBar();
 	return this;
+}
+
+bool UIMenuBar::isGlobalMenuBarSupported() const {
+	return PlatformMenuBar::isSupported();
+}
+
+UIMenuBar* UIMenuBar::setGlobalMenuBarEnabled( bool enabled ) {
+	if ( enabled == isGlobalMenuBarEnabled() )
+		return this;
+
+	if ( enabled ) {
+		mPlatformMenuBar = PlatformMenuBar::create();
+		if ( mPlatformMenuBar )
+			mPlatformMenuBar->install( this );
+	} else if ( mPlatformMenuBar ) {
+		mPlatformMenuBar->uninstall();
+		mPlatformMenuBar.reset();
+	}
+	return this;
+}
+
+bool UIMenuBar::isGlobalMenuBarEnabled() const {
+	return nullptr != mPlatformMenuBar;
+}
+
+void UIMenuBar::syncGlobalMenuBar() {
+	if ( mPlatformMenuBar )
+		mPlatformMenuBar->syncTopLevel();
 }
 
 size_t UIMenuBar::getButtonsCount() const {

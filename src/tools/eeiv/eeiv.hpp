@@ -93,6 +93,6 @@ class App {
 	UIConsole* mConsole{ nullptr };
 	UIWelcomeScreen* mWelcomeScreen{ nullptr };
 	bool mCursorVisible{ true };
-	Texture::Filter mTextureFilter{ Texture::Filter::Linear };
+	Texture::Filter mTextureFilter{ Texture::Filter::Nearest };
 	std::unique_ptr<ConsoleCommands> mConsoleCommands;
 };

@@ -23,6 +23,8 @@ class EE_API UIMenuRadioButton : public UIMenuItem {
 
 	void switchActive();
 
+	virtual void activate();
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
@@ -36,8 +38,6 @@ class EE_API UIMenuRadioButton : public UIMenuItem {
 	UISkin* mSkinInactive;
 
 	UIMenuRadioButton();
-
-	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 	virtual void onStateChange();
 };

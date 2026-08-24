@@ -27,6 +27,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	void showSubMenu();
 
+	void notifySubMenuWillShow();
+
 	const Time& getMouseOverTimeShowMenu() const;
 
 	void setMouseOverTimeShowMenu( const Time& maxTime );

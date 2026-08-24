@@ -5,8 +5,11 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <memory>
 
 namespace EE { namespace UI {
+
+class PlatformMenuBar;
 
 class EE_API UIMenuBar : public UIWidget {
   public:
@@ -56,6 +59,12 @@ class EE_API UIMenuBar : public UIWidget {
 
 	void showPrevMenu();
 
+	bool isGlobalMenuBarSupported() const;
+
+	UIMenuBar* setGlobalMenuBarEnabled( bool enabled );
+
+	bool isGlobalMenuBarEnabled() const;
+
   protected:
 	UIMenuBar();
 
@@ -65,6 +74,7 @@ class EE_API UIMenuBar : public UIWidget {
 	UIPopUpMenu* mCurrentMenu;
 	MenuBarList mButtons;
 	UIPopUpMenu* mWaitingUp;
+	std::unique_ptr<PlatformMenuBar> mPlatformMenuBar;
 
 	Uint32 getMenuIndex( UIPopUpMenu* menu );
 
@@ -83,6 +93,8 @@ class EE_API UIMenuBar : public UIWidget {
 	void destroyMenus();
 
 	void autoHeight();
+
+	void syncGlobalMenuBar();
 };
 
 }} // namespace EE::UI

@@ -177,6 +177,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	toolsMenuButton->on( Event::OnMenuShow, lazyBuildToolsMenu );
 
 	mWindowMenu = UIPopUpMenu::New();
+	mWindowMenu->setMenuBarRole( MenuBarRole::Window );
 	const auto lazyBuildWindowMenu = [this]( const Event* ) {
 		if ( mWindowMenu->getCount() == 0 ) {
 			createWindowMenu();
@@ -192,6 +193,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	windowMenuButton->on( Event::OnMenuShow, lazyBuildWindowMenu );
 
 	mHelpMenu = UIPopUpMenu::New();
+	mHelpMenu->setMenuBarRole( MenuBarRole::Help );
 	const auto lazyBuildHelpMenu = [this]( const Event* ) {
 		if ( mHelpMenu->getCount() == 0 ) {
 			createHelpMenu();
@@ -215,6 +217,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 		->setId( "close-folder" );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
+		->setMenuRole( MenuRole::Quit )
 		->setId( "close-app" );
 	mSettingsButton = mUISceneNode->find<UIWidget>( "settings" );
 	mSettingsButton->on( Event::MouseClick, [this]( const Event* ) { toggleSettingsMenu(); } );
@@ -289,6 +292,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	onMenuShowEvent( mToolsMenu, toolsMenuButton, 6 );
 	onMenuShowEvent( mWindowMenu, windowMenuButton, 7 );
 	onMenuShowEvent( mHelpMenu, helpMenuButton, 8 );
+	createHelpMenu();
 
 	updateMenu();
 
@@ -1071,6 +1075,7 @@ UIMenu* SettingsMenu::createHelpMenu() {
 	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
 	mHelpMenu->add( i18n( "about_ecode", "About ecode" ), findIcon( "ecode" ) )
+		->setMenuRole( MenuRole::About )
 		->setId( "about-ecode" );
 	mHelpMenu->on( Event::OnItemClicked,
 				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );

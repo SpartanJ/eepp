@@ -691,7 +691,7 @@ function generate_os_links()
 	elseif os.is_real("mingw64") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
 	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
@@ -1609,6 +1609,20 @@ solution "eepp"
 			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "languages-syntax-highlighting" )
+
+	if os.is_real("macosx") then
+	project "eepp-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm" }
+		buildoptions { "-x objective-c++" }
+		if not is_vs() then
+			buildoptions{ "-std=c++20" }
+		end
+		build_base_cpp_configuration( "eepp-macos-helper" )
+	end
 
 	-- Library
 	if not _OPTIONS["disable-static-build"] then

@@ -4689,7 +4689,6 @@ void App::init( InitParameters& params ) {
 	EE_PLATFORM == EE_PLATFORM_BSD
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		macOS_createApplicationMenus();
 		macOS_enableScrollMomentum();
 		macOS_removeTitleBarSeparator( mWindow->getWindowHandler() );
 #endif
@@ -5144,6 +5143,8 @@ void App::init( InitParameters& params ) {
 
 		mSettings = std::make_unique<SettingsMenu>();
 		mSettings->createSettingsMenu( this, mMenuBar );
+		if ( mMenuBar->isGlobalMenuBarSupported() )
+			mMenuBar->setGlobalMenuBarEnabled( true );
 
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 

@@ -97,7 +97,9 @@ UIMenu* UIMenuSubMenu::getSubMenu() const {
 }
 
 void UIMenuSubMenu::showSubMenu() {
-	sendCommonEvent( Event::OnMenuShow );
+	notifySubMenuWillShow();
+	if ( nullptr == mSubMenu )
+		return;
 	UIMenu* menu = getParent()->asType<UIMenu>();
 	mSubMenu->setParent( menu->getParent() );
 	Vector2f pos = getPixelsPosition();
@@ -112,6 +114,10 @@ void UIMenuSubMenu::showSubMenu() {
 		mSubMenu->show();
 		menu->mCurrentSubMenu = mSubMenu;
 	}
+}
+
+void UIMenuSubMenu::notifySubMenuWillShow() {
+	sendCommonEvent( Event::OnMenuShow );
 }
 
 Uint32 UIMenuSubMenu::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
