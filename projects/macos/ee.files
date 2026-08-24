@@ -1183,7 +1183,7 @@
 ../../src/eepp/ui/uimenubar.cpp
 ../../src/eepp/ui/platformmenubar.hpp
 ../../src/eepp/ui/platformmenubar.cpp
-../../src/eepp/ui/platform/macos/macosmenubar.m
+../../src/eepp/ui/platform/macos/macosmenubar.mm
 ../../src/eepp/ui/uimenucheckbox.cpp
 ../../src/eepp/ui/uimenu.cpp
 ../../src/eepp/ui/uimenuitem.cpp

@@ -1658,7 +1658,7 @@ workspace "eepp"
 		language "C++"
 		cppdialect "C++20"
 		incdirs { "include", "src" }
-		files { "src/eepp/ui/platform/macos/macosmenubar.m" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )

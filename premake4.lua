@@ -1616,7 +1616,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src" }
-		files { "src/eepp/ui/platform/macos/macosmenubar.m" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
 			buildoptions{ "-std=c++20" }
