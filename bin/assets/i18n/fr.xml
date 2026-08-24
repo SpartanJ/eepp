@@ -133,6 +133,7 @@ Cette opération est irréversible !</string>
 	<string name="configure_ellipsis">Configurer...</string>
 	<string name="configure_ignore_files_ellipsis">Configurer les fichiers ignorés...</string>
 	<string name="configure_terminal_scrollback">Configurer le défilement de l'historique du terminal</string>
+	<string name="terminal_scrollback">Historique du terminal</string>
 	<string name="configure_terminal_shell">Configurer l'interpréteur de commandes du terminal</string>
 	<string name="configured_debugger">Débogueur configuré</string>
 	<string name="configured_formatter">Formatteur configuré</string>
@@ -1003,10 +1004,10 @@ Utilise les spécificateurs de format strftime. L’extension du fichier corresp
 	<string name="ui_panel_font_size_desc">Set the font size used by side panels.</string>
 	<string name="editor_font_size_desc">Set the default code editor font size.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
-	<string name="ui_scale_factor_desc">Scale the complete user interface.</string>
-	<string name="line_spacing_desc">Set additional vertical spacing between editor lines.</string>
-	<string name="cursor_blinking_time_desc">Set the text cursor blink interval.</string>
-	<string name="folds_refresh_freq_desc">Set how frequently code folding ranges are recalculated.</string>
+	<string name="ui_scale_factor_desc">Mettre l’interface à l’échelle de 1 à 6. Redémarrage requis.</string>
+	<string name="line_spacing_desc">Définir l’espace vertical supplémentaire entre les lignes. Utiliser 0 pour désactiver.</string>
+	<string name="cursor_blinking_time_desc">Définir l’intervalle de clignotement du curseur. Utiliser 0 pour désactiver.</string>
+	<string name="folds_refresh_freq_desc">Définir la fréquence de recalcul des zones de pliage du code (minimum 1 seconde).</string>
 	<string name="screenshot_save_path_desc">Choose where screenshots are saved.</string>
 	<string name="screenshot_filename_pattern_desc">Configure the timestamp-based screenshot filename pattern.</string>
 	<string name="screenshot_save_format_desc">Choose the image format for screenshots.</string>

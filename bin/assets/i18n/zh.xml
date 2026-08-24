@@ -110,6 +110,7 @@
 	<string name="configure_default_shell">配置默认终端</string>
 	<string name="configure_ignore_files_ellipsis">设置忽略的文件...</string>
 	<string name="configure_terminal_scrollback">Configure Terminal Scrollback</string>
+	<string name="terminal_scrollback">终端回滚行数</string>
 	<string name="configure_terminal_shell">设置终端程序</string>
 	<string name="confirm_build_delete">你确定要删除构建设置吗？</string>
 	<string name="confirm_close_folder">确定要关闭此文件夹吗？
@@ -782,10 +783,10 @@ file in the directory tree.</string>
 	<string name="ui_panel_font_size_desc">Set the font size used by side panels.</string>
 	<string name="editor_font_size_desc">Set the default code editor font size.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
-	<string name="ui_scale_factor_desc">Scale the complete user interface.</string>
-	<string name="line_spacing_desc">Set additional vertical spacing between editor lines.</string>
-	<string name="cursor_blinking_time_desc">Set the text cursor blink interval.</string>
-	<string name="folds_refresh_freq_desc">Set how frequently code folding ranges are recalculated.</string>
+	<string name="ui_scale_factor_desc">将整个用户界面缩放为 1 到 6。需要重新启动。</string>
+	<string name="line_spacing_desc">设置编辑器行之间的额外垂直间距。设置为 0 可禁用。</string>
+	<string name="cursor_blinking_time_desc">设置文本光标闪烁间隔。设置为 0 可禁用。</string>
+	<string name="folds_refresh_freq_desc">设置重新计算代码折叠区域的频率（最少 1 秒）。</string>
 	<string name="screenshot_save_path_desc">Choose where screenshots are saved.</string>
 	<string name="screenshot_filename_pattern_desc">Configure the timestamp-based screenshot filename pattern.</string>
 	<string name="screenshot_save_format_desc">Choose the image format for screenshots.</string>

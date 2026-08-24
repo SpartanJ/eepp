@@ -2,6 +2,7 @@
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -10,6 +11,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/cursor.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -388,6 +390,34 @@ UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
 	sceneNode->flushDirtyStyleAndLayout();
 
 	EXPECT_TRUE( dialog->getButtonOpen() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Modal Key Binding Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_scene_node();
+	int executedCommands = 0;
+	sceneNode->setKeyBindingCommand( "global-command",
+									 [&executedCommands] { executedCommands++; } );
+	sceneNode->addKeyBinding( { KEY_F, KEYMOD_LMETA | KEYMOD_LSHIFT }, "global-command" );
+
+	UIWindow* window = UIWindow::New();
+	window->setParent( sceneNode->getRoot() );
+	sceneNode->getEventDispatcher()->setFocusNode( window->getContainer() );
+
+	sceneNode->getEventDispatcher()->sendKeyDown( KEY_F, SCANCODE_UNKNOWN, 0,
+												  KEYMOD_LMETA | KEYMOD_LSHIFT );
+	EXPECT_EQ( executedCommands, 1 );
+
+	window->setWindowFlags( window->getWinFlags() | UI_WIN_MODAL );
+	sceneNode->getEventDispatcher()->sendKeyDown( KEY_F, SCANCODE_UNKNOWN, 0,
+												  KEYMOD_LMETA | KEYMOD_LSHIFT );
+	EXPECT_EQ( executedCommands, 1 );
 
 	Engine::destroySingleton();
 }

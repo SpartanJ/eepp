@@ -170,7 +170,7 @@ void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
 
 void TerminalManager::configureTerminalShell() {
 	static const auto layout( R"xml(
-		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
+		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow|modal" window-title='@string(shell_configuration, "Shell Configuration")'>
 		<vbox lw="mp" lh="mp" padding="4dp">
 			<vbox lw="mp" lh="0" lw8="1">
 				<TextView text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
@@ -265,7 +265,7 @@ void TerminalManager::configureTerminalScrollback() {
 
 void TerminalManager::configureTerminalWorkingDir() {
 	static const auto layout( R"xml(
-	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow"
+	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow|modal"
 		window-title='@string(terminal_working_dir_configuration, "Terminal Default Working Directory Configuration")'>
 		<vbox lw="mp" lh="wrap_content" padding="4dp">
 			<TextView text='@string(configure_terminal_default_working_dir, "Configure Terminal default working directory:")' font-size="14dp" margin-bottom="8dp" />

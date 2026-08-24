@@ -41,6 +41,7 @@ class SettingsActions {
 	void setTerminalFontSize( const StyleSheetLength& size );
 
 	void setUIPanelFontSize();
+	void setUIPanelFontSize( const StyleSheetLength& size );
 
 	void setScreenshotSavePath();
 

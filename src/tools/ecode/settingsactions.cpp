@@ -410,28 +410,29 @@ void SettingsActions::setUIPanelFontSize() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mApp->getConfig().ui.panelFontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-
-		// Update the CSS
-		auto selsFound = mApp->getUISceneNode()->getStyleSheet().findStyleFromSelectorName(
-			"#project_view > treeview::row > treeview::cell" );
-		if ( !selsFound.empty() ) {
-			for ( auto sel : selsFound )
-				sel->updatePropertyValue( "font-size",
-										  mApp->getConfig().ui.panelFontSize.toString() );
-			mApp->getUISceneNode()->getStyleSheet().refreshCacheFromStyles( selsFound );
-		}
-
-		UITreeView* treeView = mApp->getUISceneNode()->find<UITreeView>( "project_view" );
-		if ( !treeView ) {
-			msgBox->closeWindow();
-			return;
-		}
-		treeView->reloadStyle( true, true, true, true );
-		treeView->updateContentSize();
+		setUIPanelFontSize( StyleSheetLength( msgBox->getTextInput()->getText() ) );
 		msgBox->closeWindow();
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
+}
+
+void SettingsActions::setUIPanelFontSize( const StyleSheetLength& size ) {
+	mApp->getConfig().ui.panelFontSize = size;
+
+	// Update the CSS
+	auto selsFound = mApp->getUISceneNode()->getStyleSheet().findStyleFromSelectorName(
+		"#project_view > treeview::row > treeview::cell" );
+	if ( !selsFound.empty() ) {
+		for ( auto sel : selsFound )
+			sel->updatePropertyValue( "font-size", size.toString() );
+		mApp->getUISceneNode()->getStyleSheet().refreshCacheFromStyles( selsFound );
+	}
+
+	UITreeView* treeView = mApp->getUISceneNode()->find<UITreeView>( "project_view" );
+	if ( !treeView )
+		return;
+	treeView->reloadStyle( true, true, true, true );
+	treeView->updateContentSize();
 }
 
 void SettingsActions::setScreenshotSavePath() {

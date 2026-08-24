@@ -148,6 +148,7 @@ Diese Operation kann nicht rückgängig gemacht werden!</string>
 	<string name="configure_ellipsis">Verwalten...</string>
 	<string name="configure_ignore_files_ellipsis">Ignorierte Dateien verwalten...</string>
 	<string name="configure_terminal_scrollback">Konsolenverlaufslänge ändern</string>
+	<string name="terminal_scrollback">Terminal-Verlauf</string>
 	<string name="configure_terminal_shell">Konsolen-Shell wählen</string>
 	<string name="configured_debugger">Gewählter Debugger</string>
 	<string name="configured_formatter">Gewählter Formatter</string>
@@ -1024,10 +1025,10 @@ Verwendet strftime-Formatbezeichner. Die Dateierweiterung richtet sich nach dem 
 	<string name="ui_panel_font_size_desc">Schriftgröße der Seitenbereiche festlegen.</string>
 	<string name="editor_font_size_desc">Standardschriftgröße des Code-Editors festlegen.</string>
 	<string name="terminal_font_size_desc">Standardschriftgröße des Terminals festlegen.</string>
-	<string name="ui_scale_factor_desc">Gesamte Benutzeroberfläche skalieren.</string>
-	<string name="line_spacing_desc">Zusätzlichen vertikalen Abstand zwischen Editorzeilen festlegen.</string>
-	<string name="cursor_blinking_time_desc">Blinkintervall des Textcursors festlegen.</string>
-	<string name="folds_refresh_freq_desc">Häufigkeit der Neuberechnung von Faltungsbereichen festlegen.</string>
+	<string name="ui_scale_factor_desc">Gesamte Benutzeroberfläche von 1 bis 6 skalieren. Neustart erforderlich.</string>
+	<string name="line_spacing_desc">Zusätzlichen vertikalen Abstand zwischen Editorzeilen festlegen. Zum Deaktivieren 0 einstellen.</string>
+	<string name="cursor_blinking_time_desc">Blinkintervall des Textcursors festlegen. Zum Deaktivieren 0 einstellen.</string>
+	<string name="folds_refresh_freq_desc">Häufigkeit der Neuberechnung von Faltungsbereichen festlegen (mindestens 1 Sekunde).</string>
 	<string name="screenshot_save_path_desc">Speicherort für Bildschirmfotos auswählen.</string>
 	<string name="screenshot_filename_pattern_desc">Zeitstempel-Dateinamensmuster für Bildschirmfotos konfigurieren.</string>
 	<string name="screenshot_save_format_desc">Bildformat für Bildschirmfotos auswählen.</string>

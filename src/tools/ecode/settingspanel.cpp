@@ -1,7 +1,9 @@
 #include "settingspanel.hpp"
+#include "datetimecontroller.hpp"
 #include "ecode.hpp"
 #include "uitreeviewfs.hpp"
 #include <deque>
+#include <limits>
 
 using namespace EE::UI::Models;
 
@@ -110,49 +112,82 @@ class SettingsCategoryModel final : public Model {
 static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 <style>
 <![CDATA[
+.settings_panel #settings_sidebar {
+	background-color: var(--list-back);
+	padding: 10dp 8dp 8dp 8dp;
+}
 .settings_panel #settings_filter {
-	margin-top: 8dp;
-	margin-bottom: 8dp;
+	margin-bottom: 10dp;
+}
+.settings_panel #settings_categories * {
+	focusable: false;
+}
+.settings_panel #settings_categories {
+	background-color: var(--list-back);
+}
+.settings_panel #settings_categories treeview::row {
+	border-left: 0dp solid var(--primary);
+	transition: border-left-width 0.1s;
+}
+.settings_panel #settings_categories treeview::row:selected {
+	background-color: var(--tab-hover);
+	border-left: 2dp solid var(--primary);
+}
+.settings_panel #settings_categories treeview::row:selected treeview::cell {
+	color: var(--font);
 }
 .settings_panel #settings_rows {
-	padding-left: 16dp;
-	padding-right: 16dp;
-	margin-bottom: 8dp;
+	max-width: 820dp;
+	padding: 20dp 28dp 28dp 28dp;
+	layout-gravity: center_horizontal;
 }
 .settings_panel #settings_page_title {
-	font-size: 16dp;
-	padding-bottom: 2dp;
-	margin-bottom: 6dp;
+	font-size: 18dp;
+	margin-bottom: 18dp;
 	font-weight: bold;
-	font-style: shadow;
-	border-bottom: 1dp solid var(--tab-line);
 }
 .settings_panel .settings_category_heading {
-	font-size: 15dp;
+	font-size: 14dp;
 	font-weight: bold;
-	margin: 12dp 8dp 8dp 0dp;
-	font-style: shadow;
+	margin: 12dp 0dp 6dp 0dp;
+	padding-bottom: 6dp;
 	border-bottom: 1dp solid var(--tab-line);
 }
 .settings_panel .settings_option {
-	border-bottom: 1dp solid var(--tab-line);
-	padding: 4dp 8dp 8dp 0dp;
-	margin-bottom: 12dp;
+	border-bottom: 1dp solid var(--disabled-border);
+	padding: 9dp 4dp 11dp 4dp;
+	margin-bottom: 0dp;
+}
+.settings_panel .settings_option:disabled {
+	opacity: 0.5;
 }
 .settings_panel .settings_option_name {
-	font-weight: bold;
-	font-style: shadow;
+	font-style: normal;
 }
 .settings_panel .settings_option_description {
-	margin-top: 4dp;
+	color: var(--disabled-color);
+	font-size: 10dp;
+	margin-top: 3dp;
 	word-wrap: true;
+	font-style: normal;
+}
+@media (prefers-color-scheme: dark) {
+	.settings_panel .settings_option_name,
+	.settings_panel .settings_option_description {
+		font-style: shadow;
+	}
+	.settings_panel .settings_option_description {
+		color: var(--font-hint);
+	}
 }
 .settings_panel .settings_boolean_option .settings_option_name,
 .settings_panel .settings_boolean_option .settings_option_description {
 	cursor: pointer;
 }
 .settings_panel .settings_option_control {
-	margin-left: 12dp;
+	layout-width: 210dp;
+	gravity: right|center_vertical;
+	margin-left: 20dp;
 	layout-gravity: center_vertical;
 }
 .settings_panel .settings_bool,
@@ -167,6 +202,14 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	layout-width: 190dp;
 	layout-height: wrap_content;
 }
+.settings_panel .settings_editable_choice {
+	layout-width: 210dp;
+	layout-height: wrap_content;
+}
+.settings_panel .settings_text {
+	layout-width: 210dp;
+	layout-height: wrap_content;
+}
 .settings_panel .settings_integer {
 	layout-width: 110dp;
 	layout-height: wrap_content;
@@ -174,12 +217,14 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 ]]>
 </style>
 <vbox lw="mp" lh="mp" class="settings_panel">
-	<TextInput id="settings_filter" lw="mp" lh="wc" hint="@string(search_settings, Search settings...)" />
-	<Splitter id="settings_splitter" lw="mp" lh="0" lw8="1" orientation="horizontal" splitter-partition="160dp">
-		<TreeView id="settings_categories" lw="mp" lh="mp" />
-		<ScrollView id="settings_scroll" lw="0" lw8="1" lh="mp">
+	<Splitter id="settings_splitter" lw="mp" lh="mp" orientation="horizontal" splitter-partition="220dp">
+		<vbox id="settings_sidebar" lw="0" lh="0" min-width="160dp">
+			<TextInput id="settings_filter" lw="mp" lh="wc" hint="@string(search_settings, Search settings...)" />
+			<TreeView id="settings_categories" lw="mp" lh="mp" />
+		</vbox>
+		<ScrollView id="settings_scroll" lw="0" lw8="1" lh="mp" focusable="false">
 			<vbox id="settings_rows" lw="mp" lh="wc">
-				<TextView id="settings_page_title" lw="mp" lh="wc" />
+				<TextView id="settings_page_title" lw="mp" lh="wc" focusable="false" />
 			</vbox>
 		</ScrollView>
 	</Splitter>
@@ -190,23 +235,34 @@ static constexpr const char* SETTINGS_ROW_LAYOUT = R"xml(
 <vbox lw="mp" lh="wc" class="settings_option">
 	<hbox lw="mp" lh="wc" class="settings_option_content">
 		<vbox lw="0" lw8="1" lh="wc">
-			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" />
-			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" />
+			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
+			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
 		</vbox>
 		<hbox id="setting_control" lw="wc" lh="wc" class="settings_option_control" />
 	</hbox>
 </vbox>
 )xml";
 
-static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT =
-	R"xml(<TextView lw="mp" lh="wc" class="settings_category_heading" visible="false" />)xml";
+static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT = R"xml(
+<TextView lw="mp" lh="wc" class="settings_category_heading" visible="false" focusable="false" />
+)xml";
 static constexpr const char* SETTINGS_BOOL_LAYOUT = R"xml(<CheckBox class="settings_bool" />)xml";
 static constexpr const char* SETTINGS_CHOICE_LAYOUT =
 	R"xml(<DropDownList class="settings_choice" />)xml";
+static constexpr const char* SETTINGS_EDITABLE_CHOICE_LAYOUT =
+	R"xml(<ComboBox class="settings_editable_choice" popup-to-root="true" />)xml";
 static constexpr const char* SETTINGS_INTEGER_LAYOUT =
 	R"xml(<SpinBox class="settings_integer" />)xml";
+static constexpr const char* SETTINGS_TEXT_LAYOUT = R"xml(<TextInput class="settings_text" />)xml";
 static constexpr const char* SETTINGS_ACTION_LAYOUT =
 	R"xml(<PushButton class="settings_action" />)xml";
+
+static void disableTabFocusTree( Node* node ) {
+	if ( node->isWidget() )
+		node->asType<UIWidget>()->unsetTabFocusable();
+	for ( auto* child = node->getFirstChild(); child; child = child->getNextNode() )
+		disableTabFocusTree( child );
+}
 
 SettingsPanel::SettingsPanel( App* app ) : mApp( app ) {}
 
@@ -242,7 +298,10 @@ void SettingsPanel::show( Scope scope ) {
 		panel.categories->setFocus();
 		return;
 	}
+	Clock c;
 	create( scope );
+	Log::info( "Settings Panel %s created in %s", scope == Scope::User ? "User" : "Project",
+			   c.getElapsedTime().toString() );
 }
 
 void SettingsPanel::create( Scope scope ) {
@@ -274,11 +333,31 @@ void SettingsPanel::create( Scope scope ) {
 	panel.scroll = layout->find<UIScrollView>( "settings_scroll" );
 	panel.scroll->setVerticalScrollMode( ScrollBarMode::Auto );
 	panel.scroll->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	disableTabFocusTree( panel.categories->getVerticalScrollBar() );
+	disableTabFocusTree( panel.categories->getHorizontalScrollBar() );
+	disableTabFocusTree( panel.scroll->getVerticalScrollBar() );
+	disableTabFocusTree( panel.scroll->getHorizontalScrollBar() );
+	panel.window->setKeyBindingCommand( "focusSettingsFilter", [&panel] {
+		panel.search->setFocus();
+		panel.search->getDocument().selectAll();
+	} );
+	panel.window->setKeyBindingCommand( "focusSettingsCategories", [&panel] {
+		auto selected = panel.categories->getSelection().first();
+		if ( selected.isValid() )
+			panel.categories->setSelection( selected );
+		panel.categories->setFocus();
+	} );
+	panel.window->getKeyBindings().addKeybind( { KEY_F, KeyMod::getDefaultModifier() },
+											   "focusSettingsFilter" );
+	panel.window->getKeyBindings().addKeybind(
+		{ KEY_E, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "focusSettingsCategories" );
+	panel.settings->beginAttributesTransaction();
 	if ( scope == Scope::User )
 		addUserSettings( panel );
 	else
 		addProjectSettings( panel );
 	setupCategories( panel );
+	panel.settings->endAttributesTransaction();
 	filter( panel );
 	panel.connections += panel.search->connect(
 		Event::OnTextChanged, [this, &panel]( const Event* ) { filter( panel ); } );
@@ -426,17 +505,87 @@ void SettingsPanel::addChoice( PanelState& panel, SettingBinding binding,
 	panel.bindings.emplace_back( std::move( binding ) );
 }
 
+void SettingsPanel::addEditableChoice( PanelState& panel, SettingBinding binding,
+									   const std::vector<String>& choices,
+									   std::function<String()> get,
+									   std::function<bool( const String& )> set ) {
+	auto* row = createRow( panel, binding );
+	auto* combo = mApp->getUISceneNode()
+					  ->loadLayoutFromString( SETTINGS_EDITABLE_CHOICE_LAYOUT,
+											  row->find<UILinearLayout>( "setting_control" ) )
+					  ->asType<UIComboBox>();
+	combo->getListBox()->addListBoxItems( choices );
+	combo->setText( get() );
+	panel.connections +=
+		combo->connect( Event::OnValueChange, [combo, set = std::move( set )]( const Event* ) {
+			if ( !set( combo->getText() ) ) {
+				combo->addClass( "error" );
+				combo->getDropDownList()->addClass( "error" );
+				return;
+			}
+			combo->removeClass( "error" );
+			combo->getDropDownList()->removeClass( "error" );
+		} );
+	panel.bindings.emplace_back( std::move( binding ) );
+}
+
 void SettingsPanel::addInteger( PanelState& panel, SettingBinding binding, int min, int max,
-								int* value, std::function<void( int )> apply ) {
+								std::function<int()> get, std::function<void( int )> set ) {
 	auto* row = createRow( panel, binding );
 	auto* spin = mApp->getUISceneNode()
 					 ->loadLayoutFromString( SETTINGS_INTEGER_LAYOUT,
 											 row->find<UILinearLayout>( "setting_control" ) )
 					 ->asType<UISpinBox>();
 	spin->setMinValue( min )->setMaxValue( max );
-	auto valueBinding = UIDataBind<int>::New( value, spin );
-	valueBinding->onValueChangeCb = std::move( apply );
-	panel.bindingGroup += std::move( valueBinding );
+	spin->unsetTabFocusable();
+	spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
+	spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
+	spin->setValue( get() );
+	panel.connections +=
+		spin->connect( Event::OnValueChange, [spin, set = std::move( set )]( const Event* ) {
+			set( static_cast<int>( spin->getValue() ) );
+		} );
+	panel.bindings.emplace_back( std::move( binding ) );
+}
+
+void SettingsPanel::addText( PanelState& panel, SettingBinding binding,
+							 std::function<std::string()> get,
+							 std::function<bool( const std::string& )> set ) {
+	auto* row = createRow( panel, binding );
+	auto* input = mApp->getUISceneNode()
+					  ->loadLayoutFromString( SETTINGS_TEXT_LAYOUT,
+											  row->find<UILinearLayout>( "setting_control" ) )
+					  ->asType<UITextInput>();
+	input->setText( String::fromUtf8( get() ) );
+	panel.connections +=
+		input->connect( Event::OnTextChanged, [input, set = std::move( set )]( const Event* ) {
+			std::string text = input->getText().toUtf8();
+			if ( !set( text ) ) {
+				input->addClass( "error" );
+				return;
+			}
+			input->removeClass( "error" );
+		} );
+	panel.bindings.emplace_back( std::move( binding ) );
+}
+
+void SettingsPanel::addFloat( PanelState& panel, SettingBinding binding, double min, double max,
+							  double step, std::function<double()> get,
+							  std::function<void( double )> set ) {
+	auto* row = createRow( panel, binding );
+	auto* spin = mApp->getUISceneNode()
+					 ->loadLayoutFromString( SETTINGS_INTEGER_LAYOUT,
+											 row->find<UILinearLayout>( "setting_control" ) )
+					 ->asType<UISpinBox>();
+	spin->setMinValue( min )->setMaxValue( max )->setClickStep( step );
+	spin->allowFloatingPoint( true )->setValue( get() );
+	spin->unsetTabFocusable();
+	spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
+	spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
+	panel.connections +=
+		spin->connect( Event::OnValueChange, [spin, set = std::move( set )]( const Event* ) {
+			set( spin->getValue() );
+		} );
 	panel.bindings.emplace_back( std::move( binding ) );
 }
 
@@ -451,6 +600,43 @@ void SettingsPanel::addAction( PanelState& panel, SettingBinding binding, const 
 	panel.connections += button->connect(
 		Event::MouseClick, [action = std::move( action )]( const Event* ) { action(); } );
 	panel.bindings.emplace_back( std::move( binding ) );
+}
+
+static void setNodeTreeEnabled( Node* node, bool enabled ) {
+	node->setEnabled( enabled );
+	for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() )
+		setNodeTreeEnabled( child, enabled );
+}
+
+static bool parseNonNegativeTime( const std::string& text, Time& time ) {
+	auto parts = String::split( text, " " );
+	bool hasValue = false;
+	for ( auto& part : parts ) {
+		String::trimInPlace( part );
+		if ( part.empty() )
+			continue;
+		size_t suffixLength =
+			String::endsWith( part, "ms" )
+				? 2
+				: ( String::endsWith( part, "s" ) || String::endsWith( part, "m" ) ? 1 : 0 );
+		std::string number = part.substr( 0, part.size() - suffixLength );
+		double value;
+		if ( number.empty() || !String::fromString( value, number ) || value < 0 )
+			return false;
+		hasValue = true;
+	}
+	if ( !hasValue )
+		return false;
+	time = Time::fromString( text );
+	return true;
+}
+
+void SettingsPanel::setCategoryEnabled( PanelState& panel, const std::string& category,
+										bool enabled, const std::string& excludedSetting ) {
+	for ( auto& binding : panel.bindings ) {
+		if ( binding.category == category && binding.id != excludedSetting && binding.row )
+			setNodeTreeEnabled( binding.row, enabled );
+	}
 }
 
 void SettingsPanel::addUserSettings( PanelState& panel ) {
@@ -665,7 +851,9 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		  mApp->i18n( "line_breaking_column", "Line Breaking Column" ),
 		  mApp->i18n( "line_breaking_column_desc",
 					  "Column used for wrapping and the editor width guide. Set 0 to disable." ) },
-		0, 1000, &mApp->getConfig().doc.lineBreakingColumn, [this]( int value ) {
+		0, 1000, [this] { return mApp->getConfig().doc.lineBreakingColumn; },
+		[this]( int value ) {
+			mApp->getConfig().doc.lineBreakingColumn = value;
 			mApp->getSplitter()->forEachEditor(
 				[value]( UICodeEditor* editor ) { editor->setLineBreakingColumn( value ); } );
 		} );
@@ -848,14 +1036,18 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 							 editor->getDocument().setTabOutEnabled( value );
 						 } );
 					 } );
-	addInteger( panel,
-				{ "indentWidth", "editor.document", mApp->i18n( "indent_width", "Indent Width" ),
-				  mApp->i18n( "indent_width_desc", "Columns in one indentation level." ) },
-				1, 16, &mApp->getConfig().doc.indentWidth );
-	addInteger( panel,
-				{ "tabWidth", "editor.document", mApp->i18n( "tab_width", "Tab Width" ),
-				  mApp->i18n( "tab_width_desc", "Columns used to display a tab character." ) },
-				1, 16, &mApp->getConfig().doc.tabWidth );
+	addInteger(
+		panel,
+		{ "indentWidth", "editor.document", mApp->i18n( "indent_width", "Indent Width" ),
+		  mApp->i18n( "indent_width_desc", "Columns in one indentation level." ) },
+		1, 16, [this] { return mApp->getConfig().doc.indentWidth; },
+		[this]( int value ) { mApp->getConfig().doc.indentWidth = value; } );
+	addInteger(
+		panel,
+		{ "tabWidth", "editor.document", mApp->i18n( "tab_width", "Tab Width" ),
+		  mApp->i18n( "tab_width_desc", "Columns used to display a tab character." ) },
+		1, 16, [this] { return mApp->getConfig().doc.tabWidth; },
+		[this]( int value ) { mApp->getConfig().doc.tabWidth = value; } );
 	addChoice(
 		panel,
 		{ "lineEndings", "editor.document", mApp->i18n( "line_endings", "Line Endings" ),
@@ -1079,38 +1271,56 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 				 mApp->i18n( "fallback_font_desc", "Choose the font used for missing glyphs." ) },
 			   mApp->i18n( "choose_font", "Choose Font..." ),
 			   [this] { mApp->runCommand( "fallback-font" ); } );
-	addAction(
-		panel,
+	auto addFontSize = [this, &panel]( SettingBinding binding, std::function<std::string()> get,
+									   std::function<void( const StyleSheetLength& )> set ) {
+		addText( panel, std::move( binding ), std::move( get ),
+				 [set = std::move( set )]( const std::string& text ) {
+					 if ( !StyleSheetLength::isLength( text ) )
+						 return false;
+					 set( StyleSheetLength::fromString( text ) );
+					 return true;
+				 } );
+	};
+	addFontSize(
 		{ "uiFontSize", "appearance.fonts", mApp->i18n( "ui_font_size", "UI Font Size" ),
 		  mApp->i18n( "ui_font_size_desc", "Set the font size used by the application UI." ) },
-		mApp->i18n( "configure", "Configure..." ),
-		[this] { mApp->getSettingsActions()->setUIFontSize(); } );
-	addAction(
-		panel,
+		[this] { return mApp->getConfig().ui.fontSize.toString(); },
+		[this]( const StyleSheetLength& size ) {
+			mApp->getSettingsActions()->setUIFontSize( size );
+		} );
+	addFontSize(
 		{ "panelFontSize", "appearance.fonts",
 		  mApp->i18n( "ui_panel_font_size", "Panel Font Size" ),
 		  mApp->i18n( "ui_panel_font_size_desc", "Set the font size used by side panels." ) },
-		mApp->i18n( "configure", "Configure..." ),
-		[this] { mApp->getSettingsActions()->setUIPanelFontSize(); } );
-	addAction( panel,
-			   { "editorFontSize", "appearance.fonts",
-				 mApp->i18n( "editor_font_size", "Editor Font Size" ),
-				 mApp->i18n( "editor_font_size_desc", "Set the default code editor font size." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setEditorFontSize(); } );
-	addAction( panel,
-			   { "terminalFontSize", "appearance.fonts",
-				 mApp->i18n( "terminal_font_size", "Terminal Font Size" ),
-				 mApp->i18n( "terminal_font_size_desc",
-							 "Set the default integrated terminal font size." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setTerminalFontSize(); } );
-	addAction( panel,
-			   { "uiScaleFactor", "appearance.fonts",
-				 mApp->i18n( "ui_scale_factor", "UI Scale Factor" ),
-				 mApp->i18n( "ui_scale_factor_desc", "Scale the complete user interface." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setUIScaleFactor(); } );
+		[this] { return mApp->getConfig().ui.panelFontSize.toString(); },
+		[this]( const StyleSheetLength& size ) {
+			mApp->getSettingsActions()->setUIPanelFontSize( size );
+		} );
+	addFontSize(
+		{ "editorFontSize", "appearance.fonts",
+		  mApp->i18n( "editor_font_size", "Editor Font Size" ),
+		  mApp->i18n( "editor_font_size_desc", "Set the default code editor font size." ) },
+		[this] { return mApp->getConfig().editor.fontSize.toString(); },
+		[this]( const StyleSheetLength& size ) {
+			mApp->getSettingsActions()->setEditorFontSize( size );
+		} );
+	addFontSize(
+		{ "terminalFontSize", "appearance.fonts",
+		  mApp->i18n( "terminal_font_size", "Terminal Font Size" ),
+		  mApp->i18n( "terminal_font_size_desc",
+					  "Set the default integrated terminal font size." ) },
+		[this] { return mApp->getConfig().term.fontSize.toString(); },
+		[this]( const StyleSheetLength& size ) {
+			mApp->getSettingsActions()->setTerminalFontSize( size );
+		} );
+	addFloat(
+		panel,
+		{ "uiScaleFactor", "appearance.fonts", mApp->i18n( "ui_scale_factor", "UI Scale Factor" ),
+		  mApp->i18n( "ui_scale_factor_desc",
+					  "Scale the complete user interface from 1 to 6. Restart required." ) },
+		1, 6, 0.1,
+		[this] { return std::max<Float>( 1, mApp->getConfig().windowState.pixelDensity ); },
+		[this]( double value ) { mApp->getConfig().windowState.pixelDensity = value; } );
 	addBool( panel,
 			 { "editorFontInInputFields", "appearance.fonts",
 			   mApp->i18n( "editor_font_in_input_fields", "Editor Font in Input Fields" ),
@@ -1202,25 +1412,59 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 
 	addCategory( panel, "editor.advanced", mApp->i18n( "editor", "Editor" ),
 				 mApp->i18n( "advanced", "Advanced" ) );
-	addAction( panel,
-			   { "lineSpacing", "editor.advanced", mApp->i18n( "line_spacing", "Line Spacing" ),
-				 mApp->i18n( "line_spacing_desc",
-							 "Set additional vertical spacing between editor lines." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setLineSpacing(); } );
-	addAction( panel,
-			   { "cursorBlinkingTime", "editor.advanced",
-				 mApp->i18n( "cursor_blinking_time", "Cursor Blinking Time" ),
-				 mApp->i18n( "cursor_blinking_time_desc", "Set the text cursor blink interval." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setCursorBlinkingTime(); } );
-	addAction( panel,
-			   { "indentTabCharacter", "editor.advanced",
-				 mApp->i18n( "indent_tab_character", "Indent Tab Character" ),
-				 mApp->i18n( "indent_tab_character_desc",
-							 "Choose the character inserted when indenting with Tab." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setIndentTabCharacter(); } );
+	addText(
+		panel,
+		{ "lineSpacing", "editor.advanced", mApp->i18n( "line_spacing", "Line Spacing" ),
+		  mApp->i18n( "line_spacing_desc",
+					  "Set additional vertical spacing between editor lines. Set 0 to disable." ) },
+		[this] { return mApp->getConfig().editor.lineSpacing.toString(); },
+		[this]( const std::string& text ) {
+			if ( !StyleSheetLength::isLength( text ) )
+				return false;
+			mApp->getConfig().editor.lineSpacing = StyleSheetLength::fromString( text );
+			mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->setLineSpacing( mApp->getConfig().editor.lineSpacing );
+			} );
+			return true;
+		} );
+	addText(
+		panel,
+		{ "cursorBlinkingTime", "editor.advanced",
+		  mApp->i18n( "cursor_blinking_time", "Cursor Blinking Time" ),
+		  mApp->i18n( "cursor_blinking_time_desc",
+					  "Set the text cursor blink interval. Set 0 to disable." ) },
+		[this] { return mApp->getConfig().editor.cursorBlinkingTime.toString(); },
+		[this]( const std::string& text ) {
+			Time value;
+			if ( !parseNonNegativeTime( text, value ) )
+				return false;
+			mApp->getConfig().editor.cursorBlinkingTime = value;
+			mApp->getSplitter()->forEachEditor(
+				[value]( UICodeEditor* editor ) { editor->setCursorBlinkTime( value ); } );
+			return true;
+		} );
+	addEditableChoice(
+		panel,
+		{ "indentTabCharacter", "editor.advanced",
+		  mApp->i18n( "indent_tab_character", "Indent Tab Character" ),
+		  mApp->i18n( "indent_tab_character_desc",
+					  "Choose the character inserted when indenting with Tab." ) },
+		{ String( u8"»" ), String( u8"→" ), String( u8"⇒" ), String( u8"↪" ), String( u8"⇢" ),
+		  String( u8"↣" ) },
+		[this] {
+			return mApp->getConfig().editor.tabIndentCharacter.empty()
+					   ? String( u8"»" )
+					   : String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter );
+		},
+		[this]( const String& value ) {
+			if ( value.size() != 1 )
+				return false;
+			mApp->getConfig().editor.tabIndentCharacter = value.toUtf8();
+			mApp->getSplitter()->forEachEditor( [character = value[0]]( UICodeEditor* editor ) {
+				editor->setTabIndentCharacter( character );
+			} );
+			return true;
+		} );
 	addChoice(
 		panel,
 		{ "indentTabAlignment", "editor.advanced",
@@ -1244,20 +1488,38 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			mApp->getSplitter()->forEachEditor(
 				[value]( UICodeEditor* editor ) { editor->setTabIndentAlignment( value ); } );
 		} );
-	addAction( panel,
-			   { "foldRefreshFrequency", "editor.advanced",
-				 mApp->i18n( "folds_refresh_freq", "Folds Refresh Frequency" ),
-				 mApp->i18n( "folds_refresh_freq_desc",
-							 "Set how frequently code folding ranges are recalculated." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setFoldRefreshFreq(); } );
-	addAction( panel,
-			   { "tabOutCharacters", "editor.advanced",
-				 mApp->i18n( "set_tab_out_characters", "Set Tab Out Characters" ),
-				 mApp->i18n( "set_tab_out_characters_message",
-							 "Set the characters the cursor can move past when pressing Tab." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setTabOutChars(); } );
+	addText(
+		panel,
+		{ "foldRefreshFrequency", "editor.advanced",
+		  mApp->i18n( "folds_refresh_freq", "Folds Refresh Frequency" ),
+		  mApp->i18n(
+			  "folds_refresh_freq_desc",
+			  "Set how frequently code folding ranges are recalculated (minimum 1 second)." ) },
+		[this] { return mApp->getConfig().editor.codeFoldingRefreshFreq.toString(); },
+		[this]( const std::string& text ) {
+			Time value;
+			if ( !parseNonNegativeTime( text, value ) || value < Seconds( 1 ) )
+				return false;
+			mApp->getConfig().editor.codeFoldingRefreshFreq = value;
+			mApp->getSplitter()->forEachEditor(
+				[value]( UICodeEditor* editor ) { editor->setFoldsRefreshTime( value ); } );
+			return true;
+		} );
+	addText(
+		panel,
+		{ "tabOutCharacters", "editor.advanced",
+		  mApp->i18n( "set_tab_out_characters", "Set Tab Out Characters" ),
+		  mApp->i18n( "set_tab_out_characters_message",
+					  "Set the characters the cursor can move past when pressing Tab." ) },
+		[this] { return mApp->getConfig().doc.tabOutChars; },
+		[this]( const std::string& text ) {
+			mApp->getConfig().doc.tabOutChars = text;
+			String characters = String::fromUtf8( text );
+			mApp->getSplitter()->forEachEditor( [&characters]( UICodeEditor* editor ) {
+				editor->getDocument().setTabOutChars( characters );
+			} );
+			return true;
+		} );
 
 	addCategory( panel, "window.screenshots", mApp->i18n( "window", "Window" ),
 				 mApp->i18n( "screenshots", "Screenshots" ) );
@@ -1267,20 +1529,40 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 				 mApp->i18n( "screenshot_save_path_desc", "Choose where screenshots are saved." ) },
 			   mApp->i18n( "configure", "Configure..." ),
 			   [this] { mApp->getSettingsActions()->setScreenshotSavePath(); } );
-	addAction( panel,
-			   { "screenshotFilenamePattern", "window.screenshots",
-				 mApp->i18n( "set_screenshot_filename_pattern", "Screenshot Filename Pattern" ),
-				 mApp->i18n( "screenshot_filename_pattern_desc",
-							 "Configure the timestamp-based screenshot filename pattern." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->getSettingsActions()->setScreenshotFilenamePattern(); } );
-	addAction(
+	addText(
+		panel,
+		{ "screenshotFilenamePattern", "window.screenshots",
+		  mApp->i18n( "set_screenshot_filename_pattern", "Screenshot Filename Pattern" ),
+		  mApp->i18n( "screenshot_filename_pattern_desc",
+					  "Set the timestamp-based screenshot filename pattern." ) },
+		[this] { return mApp->getConfig().screenshot.filenamePattern; },
+		[this]( const std::string& pattern ) {
+			std::string filename = DateTimeController::formatCurrentDate( pattern );
+			if ( !DateTimeController::isValidDateFormat( pattern ) || filename.empty() ||
+				 filename.find_first_of( "<>:\"/\\|?*" ) != std::string::npos )
+				return false;
+			mApp->getConfig().screenshot.filenamePattern = pattern;
+			return true;
+		} );
+	static const std::vector<String> screenshotFormats{ "PNG", "JPG", "WEBP", "QOI",
+														"BMP", "TGA", "DDS" };
+	auto screenshotFormat = String( mApp->getConfig().screenshot.saveFormat ).toUpper().toUtf8();
+	auto selectedScreenshotFormat = std::find( screenshotFormats.begin(), screenshotFormats.end(),
+											   String::fromUtf8( screenshotFormat ) );
+	addChoice(
 		panel,
 		{ "screenshotSaveFormat", "window.screenshots",
 		  mApp->i18n( "set_screenshot_save_format", "Screenshot Save Format" ),
 		  mApp->i18n( "screenshot_save_format_desc", "Choose the image format for screenshots." ) },
-		mApp->i18n( "configure", "Configure..." ),
-		[this] { mApp->getSettingsActions()->setScreenshotSaveFormat(); } );
+		screenshotFormats,
+		[selected = static_cast<size_t>(
+			 selectedScreenshotFormat == screenshotFormats.end()
+				 ? 0
+				 : selectedScreenshotFormat - screenshotFormats.begin() )] { return selected; },
+		[this]( size_t selected ) {
+			String format = screenshotFormats[std::min( selected, screenshotFormats.size() - 1 )];
+			mApp->getConfig().screenshot.saveFormat = format.toLower().toUtf8();
+		} );
 
 	addCategory( panel, "window.renderer", mApp->i18n( "window", "Window" ),
 				 mApp->i18n( "renderer", "Renderer" ) );
@@ -1296,17 +1578,19 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 							"Vsync configuration changed.\nRestart ecode to see the changes." )
 					.unescape() );
 		} );
-	addInteger( panel,
-				{ "frameRateLimit", "window.renderer",
-				  mApp->i18n( "frame_rate_limit", "Frame Rate Limit" ),
-				  mApp->i18n( "frame_rate_limit_desc",
-							  "Limit rendered frames per second. Set 0 to disable." ) },
-				0, 1000, &mApp->getConfig().context.FrameRateLimit, [this]( int value ) {
-					mApp->saveConfig();
-					mApp->getWindow()->setFrameRateLimit( value );
-					mApp->getNotificationCenter()->addNotification(
-						mApp->i18n( "frame_rate_limit_applied", "Frame Rate Limit Applied" ) );
-				} );
+	addInteger(
+		panel,
+		{ "frameRateLimit", "window.renderer", mApp->i18n( "frame_rate_limit", "Frame Rate Limit" ),
+		  mApp->i18n( "frame_rate_limit_desc",
+					  "Limit rendered frames per second. Set 0 to disable." ) },
+		0, 1000, [this] { return mApp->getConfig().context.FrameRateLimit; },
+		[this]( int value ) {
+			mApp->getConfig().context.FrameRateLimit = value;
+			mApp->saveConfig();
+			mApp->getWindow()->setFrameRateLimit( value );
+			mApp->getNotificationCenter()->addNotification(
+				mApp->i18n( "frame_rate_limit_applied", "Frame Rate Limit Applied" ) );
+		} );
 	std::vector<GraphicsLibraryVersion> rendererVersions =
 		Renderer::getAvailableGraphicsLibraryVersions();
 	std::vector<String> rendererVersionNames;
@@ -1427,13 +1711,18 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 							 "Set the shell executable and command-line arguments." ) },
 			   mApp->i18n( "configure", "Configure..." ),
 			   [this] { mApp->runCommand( "configure-terminal-shell" ); } );
-	addAction( panel,
-			   { "terminalScrollback", "terminal.behavior",
-				 mApp->i18n( "configure_terminal_scrollback", "Configure Terminal Scrollback" ),
-				 mApp->i18n( "configure_terminal_scrollback_desc",
-							 "Set the number of terminal history lines retained." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->runCommand( "configure-terminal-scrollback" ); } );
+	addInteger(
+		panel,
+		{ "terminalScrollback", "terminal.behavior",
+		  mApp->i18n( "terminal_scrollback", "Terminal Scrollback" ),
+		  mApp->i18n( "configure_terminal_scrollback_desc",
+					  "Set the number of terminal history lines retained." ) },
+		0, std::numeric_limits<int>::max(),
+		[this] {
+			return static_cast<int>( std::min<Uint64>( mApp->getConfig().term.scrollback,
+													   std::numeric_limits<int>::max() ) );
+		},
+		[this]( int value ) { mApp->getConfig().term.scrollback = static_cast<Uint64>( value ); } );
 	addAction( panel,
 			   { "terminalWorkingDirectory", "terminal.behavior",
 				 mApp->i18n( "configure_terminal_working_dir",
@@ -1558,7 +1847,10 @@ void SettingsPanel::addProjectSettings( PanelState& panel ) {
 			   mApp->i18n( "use_global_settings", "Use Global Settings" ),
 			   mApp->i18n( "use_global_settings_desc",
 						   "Inherit document defaults from the user settings." ) },
-			 &mApp->getProjectConfig().useGlobalSettings );
+			 &mApp->getProjectConfig().useGlobalSettings, [this, &panel]( bool useGlobalSettings ) {
+				 setCategoryEnabled( panel, "editor.document", !useGlobalSettings,
+									 "useGlobalSettings" );
+			 } );
 	auto addProjectBool = [this, &panel]( std::string id, const char* nameKey, const char* name,
 										  const char* descriptionKey, const char* description,
 										  bool DocumentConfig::* member ) {
@@ -1602,22 +1894,27 @@ void SettingsPanel::addProjectSettings( PanelState& panel ) {
 	addProjectBool( "writeUnicodeBOM", "write_unicode_bom", "Write Unicode BOM",
 					"write_unicode_bom_desc", "Write a Unicode byte-order mark when saving.",
 					&DocumentConfig::writeUnicodeBOM );
-	addInteger( panel,
-				{ "indentWidth", "editor.document", mApp->i18n( "indent_width", "Indent Width" ),
-				  mApp->i18n( "indent_width_desc",
-							  "Number of columns inserted for one indentation level." ) },
-				1, 16, &mApp->getProjectConfig().doc.indentWidth );
+	addInteger(
+		panel,
+		{ "indentWidth", "editor.document", mApp->i18n( "indent_width", "Indent Width" ),
+		  mApp->i18n( "indent_width_desc",
+					  "Number of columns inserted for one indentation level." ) },
+		1, 16, [this] { return mApp->getProjectConfig().doc.indentWidth; },
+		[this]( int value ) { mApp->getProjectConfig().doc.indentWidth = value; } );
 	addInteger(
 		panel,
 		{ "tabWidth", "editor.document", mApp->i18n( "tab_width", "Tab Width" ),
 		  mApp->i18n( "tab_width_desc", "Number of columns used to display a tab character." ) },
-		1, 16, &mApp->getProjectConfig().doc.tabWidth );
-	addInteger( panel,
-				{ "lineBreakingColumn", "editor.document",
-				  mApp->i18n( "line_breaking_column", "Line Breaking Column" ),
-				  mApp->i18n( "line_breaking_column_desc",
-							  "Column used for wrapping and the editor width guide." ) },
-				0, 1000, &mApp->getProjectConfig().doc.lineBreakingColumn );
+		1, 16, [this] { return mApp->getProjectConfig().doc.tabWidth; },
+		[this]( int value ) { mApp->getProjectConfig().doc.tabWidth = value; } );
+	addInteger(
+		panel,
+		{ "lineBreakingColumn", "editor.document",
+		  mApp->i18n( "line_breaking_column", "Line Breaking Column" ),
+		  mApp->i18n( "line_breaking_column_desc",
+					  "Column used for wrapping and the editor width guide." ) },
+		0, 1000, [this] { return mApp->getProjectConfig().doc.lineBreakingColumn; },
+		[this]( int value ) { mApp->getProjectConfig().doc.lineBreakingColumn = value; } );
 	addChoice(
 		panel,
 		{ "lineEndings", "editor.document", mApp->i18n( "line_endings", "Line Endings" ),
@@ -1639,6 +1936,8 @@ void SettingsPanel::addProjectSettings( PanelState& panel ) {
 					? TextFormat::LineEnding::CRLF
 					: ( selected == 2 ? TextFormat::LineEnding::CR : TextFormat::LineEnding::LF );
 		} );
+	setCategoryEnabled( panel, "editor.document", !mApp->getProjectConfig().useGlobalSettings,
+						"useGlobalSettings" );
 
 	addCategory( panel, "languages.file_associations", mApp->i18n( "languages", "Languages" ),
 				 mApp->i18n( "file_associations", "File Associations" ) );

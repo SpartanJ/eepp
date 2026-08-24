@@ -67,12 +67,21 @@ class SettingsPanel {
 	void addChoice( PanelState& state, SettingBinding binding, const std::vector<String>& choices,
 					std::function<size_t()> get, std::function<void( size_t )> set,
 					std::vector<String> choiceDescriptions = {} );
-	void addInteger( PanelState& state, SettingBinding binding, int min, int max, int* value,
-					 std::function<void( int )> apply = {} );
+	void addEditableChoice( PanelState& state, SettingBinding binding,
+							const std::vector<String>& choices, std::function<String()> get,
+							std::function<bool( const String& )> set );
+	void addInteger( PanelState& state, SettingBinding binding, int min, int max,
+					 std::function<int()> get, std::function<void( int )> set );
+	void addText( PanelState& state, SettingBinding binding, std::function<std::string()> get,
+				  std::function<bool( const std::string& )> set );
+	void addFloat( PanelState& state, SettingBinding binding, double min, double max, double step,
+				   std::function<double()> get, std::function<void( double )> set );
 	void addAction( PanelState& state, SettingBinding binding, const String& buttonText,
 					std::function<void()> action );
 	UIWidget* createRow( PanelState& state, SettingBinding& binding );
 	UICheckBox* createBoolControl( PanelState& state, SettingBinding& binding );
+	void setCategoryEnabled( PanelState& state, const std::string& category, bool enabled,
+							 const std::string& excludedSetting = {} );
 	void filter( PanelState& state );
 };
 

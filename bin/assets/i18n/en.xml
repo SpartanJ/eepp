@@ -132,6 +132,7 @@ This operation cannot be reverted!</string>
 	<string name="configure_ellipsis">Configure...</string>
 	<string name="configure_ignore_files_ellipsis">Configure Ignore Files...</string>
 	<string name="configure_terminal_scrollback">Configure Terminal Scrollback</string>
+	<string name="terminal_scrollback">Terminal Scrollback</string>
 	<string name="configure_terminal_shell">Configure Terminal Shell</string>
 	<string name="configured_debugger">Configured debugger</string>
 	<string name="configured_formatter">Configured formatter</string>
@@ -1008,10 +1009,10 @@ Uses strftime format specifiers. The file extension follows the selected screens
 	<string name="ui_panel_font_size_desc">Set the font size used by side panels.</string>
 	<string name="editor_font_size_desc">Set the default code editor font size.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
-	<string name="ui_scale_factor_desc">Scale the complete user interface.</string>
-	<string name="line_spacing_desc">Set additional vertical spacing between editor lines.</string>
-	<string name="cursor_blinking_time_desc">Set the text cursor blink interval.</string>
-	<string name="folds_refresh_freq_desc">Set how frequently code folding ranges are recalculated.</string>
+	<string name="ui_scale_factor_desc">Scale the complete user interface from 1 to 6. Restart required.</string>
+	<string name="line_spacing_desc">Set additional vertical spacing between editor lines. Set 0 to disable.</string>
+	<string name="cursor_blinking_time_desc">Set the text cursor blink interval. Set 0 to disable.</string>
+	<string name="folds_refresh_freq_desc">Set how frequently code folding ranges are recalculated (minimum 1 second).</string>
 	<string name="screenshot_save_path_desc">Choose where screenshots are saved.</string>
 	<string name="screenshot_filename_pattern_desc">Configure the timestamp-based screenshot filename pattern.</string>
 	<string name="screenshot_save_format_desc">Choose the image format for screenshots.</string>
