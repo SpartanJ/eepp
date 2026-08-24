@@ -189,6 +189,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 		color: var(--font-hint);
 	}
 }
+.settings_panel .settings_boolean_option #setting_info,
 .settings_panel .settings_boolean_option .settings_option_name,
 .settings_panel .settings_boolean_option .settings_option_description {
 	cursor: pointer;
@@ -244,7 +245,7 @@ static std::string settingsRowLayout( std::string_view control ) {
 	return R"xml(
 <vbox lw="mp" lh="wc" class="settings_option">
 	<hbox lw="mp" lh="wc" class="settings_option_content">
-		<vbox lw="0" lw8="1" lh="wc">
+		<vbox id="setting_info" lw="0" lw8="1" lh="wc">
 			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
 			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
 		</vbox>
@@ -545,9 +546,7 @@ UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingBinding&
 	row->addClass( "settings_boolean_option" );
 	auto* check = row->find<UICheckBox>( "setting_control_widget" );
 	auto toggle = [check]( const Event* ) { check->setChecked( !check->isChecked() ); };
-	panel.connections +=
-		row->find<UITextView>( "setting_name" )->connect( Event::MouseClick, toggle );
-	panel.connections += row->find<UITextView>( "setting_description" )
+	panel.connections += row->find<UILinearLayout>( "setting_info" )
 							 ->connect( Event::MouseClick, std::move( toggle ) );
 	return check;
 }
