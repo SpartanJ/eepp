@@ -546,6 +546,10 @@ UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingBinding&
 	row->addClass( "settings_boolean_option" );
 	auto* check = row->find<UICheckBox>( "setting_control_widget" );
 	auto toggle = [check]( const Event* ) { check->setChecked( !check->isChecked() ); };
+	panel.connections +=
+		row->find<UITextView>( "setting_name" )->connect( Event::MouseClick, toggle );
+	panel.connections +=
+		row->find<UITextView>( "setting_description" )->connect( Event::MouseClick, toggle );
 	panel.connections += row->find<UILinearLayout>( "setting_info" )
 							 ->connect( Event::MouseClick, std::move( toggle ) );
 	return check;
