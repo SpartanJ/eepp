@@ -7,6 +7,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/window/engine.hpp>
 
 using namespace EE;
@@ -38,6 +39,14 @@ UTEST( UIDropDownModelList, basicFunctionality ) {
 	EXPECT_EQ( dropDown->getListView()->getModel()->rowCount(), 3ul );
 
 	// Max visible items
+	dropDown->setSize( 200, 30 );
+	dropDown->setMaxNumVisibleItems( 3 );
+	dropDown->showList();
+	EXPECT_FALSE( dropDown->getListView()->getVerticalScrollBar()->isVisible() );
+
+	dropDown->getListView()->setVisible( false );
 	dropDown->setMaxNumVisibleItems( 2 );
+	dropDown->showList();
 	EXPECT_EQ( dropDown->getMaxNumVisibleItems(), 2ul );
+	EXPECT_TRUE( dropDown->getListView()->getVerticalScrollBar()->isVisible() );
 }

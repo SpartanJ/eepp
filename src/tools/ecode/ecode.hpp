@@ -34,6 +34,7 @@ class FormatterPlugin;
 class DateTimeController;
 class FontPickerController;
 class SettingsMenu;
+class SettingsPanel;
 class UITreeViewFS;
 class StatusDebuggerController;
 class UIRightPanel;
@@ -215,6 +216,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void toggleSettingsMenu();
 
+	void openSettings( const std::string& category = {} );
+
+	void openProjectSettings();
+
 	UIStatusBar* getStatusBar() const { return mStatusBar; }
 
 	void showFolderTreeViewTab();
@@ -243,6 +248,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );
 		t.setCommand( "debug-widget-tree-view", [this] { createWidgetInspector(); } );
 		t.setCommand( "menu-toggle", [this] { toggleSettingsMenu(); } );
+		t.setCommand( "open-settings", [this] { openSettings(); } );
+		t.setCommand( "open-document-settings", [this] { openSettings( "editor.document" ); } );
+		t.setCommand( "open-terminal-settings", [this] { openSettings( "terminal.*" ); } );
+		t.setCommand( "open-project-settings", [this] { openProjectSettings(); } );
 		t.setCommand( "switch-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "download-file-web", [this] { downloadFileWebDialog(); } );
 		t.setCommand( "move-panel-left", [this] { panelPosition( PanelPosition::Left ); } );
@@ -337,35 +346,16 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					  [this] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",
 					  [this] { mUniversalLocator->showDocumentSymbol(); } );
-		t.setCommand( "editor-set-line-breaking-column",
-					  [this] { mSettingsActions->setLineBreakingColumn(); } );
-		t.setCommand( "editor-set-line-spacing", [this] { mSettingsActions->setLineSpacing(); } );
-		t.setCommand( "editor-set-cursor-blinking-time",
-					  [this] { mSettingsActions->setCursorBlinkingTime(); } );
-		t.setCommand( "editor-set-indent-tab-character",
-					  [this] { mSettingsActions->setIndentTabCharacter(); } );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates(); } );
 		t.setCommand( "about-ecode", [this] { mSettingsActions->aboutEcode(); } );
 		t.setCommand( "ecode-source", [this] { mSettingsActions->ecodeSource(); } );
-		t.setCommand( "ui-scale-factor", [this] { mSettingsActions->setUIScaleFactor(); } );
 		t.setCommand( "take-screenshot", [this] { takeScreenshot(); } );
-		t.setCommand( "screenshot-save-path",
-					  [this] { mSettingsActions->setScreenshotSavePath(); } );
-		t.setCommand( "screenshot-filename-pattern",
-					  [this] { mSettingsActions->setScreenshotFilenamePattern(); } );
-		t.setCommand( "screenshot-save-format",
-					  [this] { mSettingsActions->setScreenshotSaveFormat(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
 		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
-		t.setCommand( "editor-font-size", [this] { mSettingsActions->setEditorFontSize(); } );
-		t.setCommand( "terminal-font-size", [this] { mSettingsActions->setTerminalFontSize(); } );
-		t.setCommand( "ui-font-size", [this] { mSettingsActions->setUIFontSize(); } );
-		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
 		t.setCommand( "sans-serif-font",
 					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
-		t.setCommand( "editor-font",
-					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
+		t.setCommand( "editor-font", [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
 					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
 		t.setCommand( "fallback-font", [this] {
@@ -777,6 +767,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;
+	std::unique_ptr<SettingsPanel> mSettingsPanel;
 	std::unique_ptr<DateTimeController> mDateTimeController;
 	std::unique_ptr<FontPickerController> mFontPickerController;
 	std::string mFileToOpen;

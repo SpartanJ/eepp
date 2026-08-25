@@ -1771,7 +1771,8 @@ Uint32 UIWindow::onKeyDown( const KeyEvent& event ) {
 		executeKeyBindingCommand( cmd );
 		return 1;
 	}
-	return UIWidget::onKeyDown( event );
+	Uint32 handled = UIWidget::onKeyDown( event );
+	return handled || isModal();
 }
 
 KeyBindings& UIWindow::getKeyBindings() {

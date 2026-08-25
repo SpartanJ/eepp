@@ -9,6 +9,7 @@
 #include "plugins/debugger/statusdebuggercontroller.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
+#include "settingspanel.hpp"
 #include "uibuildsettings.hpp"
 #include "uidownloadwindow.hpp"
 #include "uirightpanel.hpp"
@@ -2123,6 +2124,8 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -2178,9 +2181,6 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 std::vector<std::string> App::getUnlockedCommands() {
 	return {
 		"take-screenshot",
-		"screenshot-save-path",
-		"screenshot-filename-pattern",
-		"screenshot-save-format",
 		"create-new",
 		"create-new-terminal",
 		"create-new-welcome-tab",
@@ -2206,6 +2206,10 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"toggle-status-terminal",
 		"toggle-status-app-output",
 		"menu-toggle",
+		"open-settings",
+		"open-project-settings",
+		"open-document-settings",
+		"open-terminal-settings",
 		"switch-side-panel",
 		"toggle-status-bar",
 		"download-file-web",
@@ -2221,20 +2225,11 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"debug-draw-highlight-toggle",
 		"debug-draw-boxes-toggle",
 		"debug-draw-debug-data",
-		"editor-set-line-breaking-column",
-		"editor-set-line-spacing",
-		"editor-set-cursor-blinking-time",
-		"editor-set-indent-tab-character",
 		"check-for-updates",
 		"keybindings",
 		"about-ecode",
 		"ecode-source",
-		"ui-scale-factor",
 		"show-side-panel",
-		"editor-font-size",
-		"terminal-font-size",
-		"ui-font-size",
-		"ui-panel-font-size",
 		"sans-serif-font",
 		"editor-font",
 		"terminal-font",
@@ -2246,8 +2241,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"show-folder-treeview-tab",
 		"show-build-tab",
 		"create-new-window",
-		"reset-global-language-extensions-priorities",
-		"reset-project-language-extensions-priorities",
+		"reset-global-file-associations",
+		"reset-project-file-associations",
 		"maximize-tab-widget",
 		"restore-maximized-tab-widget",
 		"close-folder",
@@ -2392,7 +2387,6 @@ void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload )
 			docAlert->close();
 			editor->setFocus();
 			mConfig.editor.autoReloadOnDiskChange = true;
-			mSettings->updateGlobalDocumentSettingsMenu();
 		} );
 
 	docAlert->find( "file_reload" )->onClick( [editor, docAlert]( const MouseEvent* ) {
@@ -3591,6 +3585,20 @@ UIMessageBox* App::fileAlreadyExistsMsgBox() {
 
 void App::toggleSettingsMenu() {
 	mSettings->toggleSettingsMenu();
+}
+
+void App::openSettings( const std::string& category ) {
+	if ( !mSettingsPanel )
+		mSettingsPanel = std::make_unique<SettingsPanel>( this );
+	mSettingsPanel->show( SettingsPanel::Scope::User, category );
+}
+
+void App::openProjectSettings() {
+	if ( !projectIsOpen() )
+		return;
+	if ( !mSettingsPanel )
+		mSettingsPanel = std::make_unique<SettingsPanel>( this );
+	mSettingsPanel->show( SettingsPanel::Scope::Project );
 }
 
 void App::showFolderTreeViewTab() {
