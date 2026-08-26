@@ -571,7 +571,10 @@ UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingDefiniti
 	auto* row = createRow( panel, setting, view, SETTINGS_BOOL_ROW_LAYOUT.root() );
 	row->addClass( "settings_boolean_option" );
 	auto* check = row->find<UICheckBox>( "setting_control_widget" );
-	auto toggle = [check]( const Event* ) { check->setChecked( !check->isChecked() ); };
+	auto toggle = [check]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+			check->setChecked( !check->isChecked() );
+	};
 	panel.connections +=
 		row->find<UITextView>( "setting_name" )->connect( Event::MouseClick, toggle );
 	panel.connections +=
@@ -749,8 +752,10 @@ void SettingsPanel::materializeCategory( PanelState& panel, const std::string& c
 			auto* row = createRow( panel, setting, view, SETTINGS_ACTION_ROW_LAYOUT.root() );
 			auto* button = row->find<UIPushButton>( "setting_control_widget" );
 			button->setText( value->buttonText );
-			panel.connections +=
-				button->connect( Event::MouseClick, [value]( const Event* ) { value->action(); } );
+			panel.connections += button->connect( Event::MouseClick, [value]( const Event* event ) {
+				if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+					value->action();
+			} );
 		}
 		if ( view.row && !setting.enabled )
 			setNodeTreeEnabled( view.row, false );
