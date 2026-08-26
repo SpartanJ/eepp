@@ -6,6 +6,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
@@ -131,6 +132,7 @@ struct CodeEditorConfig {
 	UITabWidget::TabJumpMode tabJumpMode{ UITabWidget::TabJumpMode::Linear };
 	NewTabPosition::Position newTabPosition{ NewTabPosition::Last };
 	std::string customDateFormat{ "%d.%m.%Y %H:%M:%S" };
+	UIDiffView::ViewMode diffViewMode{ UIDiffView::ViewMode::Unified };
 
 	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };

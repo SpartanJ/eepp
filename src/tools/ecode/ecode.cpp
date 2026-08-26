@@ -2617,8 +2617,10 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
 
 		while ( diffView ) {
-			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) )
+			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) ) {
+				configureDiffView( diffView->asType<UIDiffView>() );
 				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
+			}
 			diffView = diffView->getNextNode();
 		}
 		return;
@@ -2626,6 +2628,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
+	configureDiffView( diffView );
 	diffView->setAutoDeleteOldTempImage( true );
 	auto [tab, iv] = getSplitter()->createWidget( diffView, diffViewTitle );
 	if ( !tab )
@@ -2669,8 +2672,10 @@ void App::loadDiffFromPath( const std::string& path ) {
 		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
 
 		while ( diffView ) {
-			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) )
+			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) ) {
+				configureDiffView( diffView->asType<UIDiffView>() );
 				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
+			}
 			diffView = diffView->getNextNode();
 		}
 		return;
@@ -2678,6 +2683,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
+	configureDiffView( diffView );
 	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
 	if ( !path.empty() ) {
 		std::string fileName = FileSystem::fileNameFromPath( path );
@@ -2698,6 +2704,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) {
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
+	configureDiffView( diffView );
 	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
 	if ( !newPath.empty() ) {
 		std::string fileName = FileSystem::fileNameFromPath( newPath );
@@ -2718,6 +2725,7 @@ void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newP
 void App::loadDiffFromStrings( const std::string& str, const std::string& otherStr ) {
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
+	configureDiffView( diffView );
 	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
 	tab->setText( diffViewTitle );
 	auto icon = findIcon( "filetype-diff" );
@@ -2726,6 +2734,11 @@ void App::loadDiffFromStrings( const std::string& str, const std::string& otherS
 	diffView->loadFromStrings( str, otherStr );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 	registerUnlockedCommands( *diffView );
+}
+
+void App::configureDiffView( UIDiffView* diffView ) {
+	if ( diffView )
+		diffView->setViewMode( mConfig.editor.diffViewMode );
 }
 
 void App::openFileFromPath( const std::string& path ) {

@@ -214,6 +214,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "restore_editor_selection_on_focus", true );
 	editor.tabJumpMode =
 		UITabWidget::tabJumpModefromString( ini.getValue( "editor", "tab_jump_mode", "linear" ) );
+	editor.diffViewMode = ini.getValue( "editor", "diff_view_mode", "unified" ) == "side_by_side"
+							  ? UIDiffView::ViewMode::SideBySide
+							  : UIDiffView::ViewMode::Unified;
 
 	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
@@ -419,6 +422,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  UITabWidget::tabJumpModeToString( editor.tabJumpMode ) );
 	ini.setValue( "editor", "new_tab_position", NewTabPosition::toString( editor.newTabPosition ) );
 	ini.setValue( "editor", "custom_date_format", editor.customDateFormat );
+	ini.setValue( "editor", "diff_view_mode",
+				  editor.diffViewMode == UIDiffView::ViewMode::SideBySide ? "side_by_side"
+																		  : "unified" );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );

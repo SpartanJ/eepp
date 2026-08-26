@@ -903,6 +903,25 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 				mApp->getSplitter()->setColorScheme(
 					editorSchemeIds[std::min( selected, editorSchemeIds.size() - 1 )] );
 			} );
+	addChoice(
+		panel,
+		{ "defaultDiffView", "editor.appearance",
+		  mApp->i18n( "default_diff_view", "Default Diff View" ),
+		  mApp->i18n( "default_diff_view_desc",
+					  "Choose the initial layout used when opening text diffs." ) },
+		{ mApp->i18n( "diff_view_unified", "Unified" ),
+		  mApp->i18n( "diff_view_side_by_side", "Side by Side" ) },
+		[this] {
+			return mApp->getConfig().editor.diffViewMode == UIDiffView::ViewMode::Unified ? 0 : 1;
+		},
+		[this]( size_t selected ) {
+			auto mode =
+				selected == 0 ? UIDiffView::ViewMode::Unified : UIDiffView::ViewMode::SideBySide;
+			mApp->getConfig().editor.diffViewMode = mode;
+			mApp->getSplitter()->forEachWidgetType( UI_TYPE_DIFF_VIEW, [mode]( UIWidget* widget ) {
+				widget->asType<UIDiffView>()->setViewMode( mode );
+			} );
+		} );
 	auto addEditorBool = [this, &panel]( std::string id, const char* nameKey, const char* name,
 										 const char* descriptionKey, const char* description,
 										 bool CodeEditorConfig::* member, auto apply ) {

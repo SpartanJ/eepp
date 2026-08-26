@@ -1195,4 +1195,8 @@ Restart ecode to see the changes.</string>
 	<string name="xmltools_auto_edit_match_desc">Update the matching tag automatically while editing.</string>
 	<string name="xmltools_highlight_match">Highlight Matching Tags</string>
 	<string name="xmltools_highlight_match_desc">Highlight the matching XML or HTML tag at the cursor.</string>
+	<string name="default_diff_view">Default Diff View</string>
+	<string name="default_diff_view_desc">Choose the initial layout used when opening text diffs.</string>
+	<string name="diff_view_side_by_side">Side by Side</string>
+	<string name="diff_view_unified">Unified</string>
 </resources>

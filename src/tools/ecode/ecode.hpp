@@ -584,6 +584,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 							 const std::string& repoPath = "" );
 
 	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
+	void configureDiffView( UIDiffView* diffView );
 
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
