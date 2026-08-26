@@ -273,7 +273,10 @@ class SettingsLayoutTemplate {
 };
 
 static constexpr const char* SETTINGS_CATEGORY_HEADING_LAYOUT = R"xml(
-<TextView lw="mp" lh="wc" class="settings_category_heading" visible="false" focusable="false" />
+<vbox lw="mp" lh="wc" visible="false">
+	<TextView id="settings_category_heading" lw="mp" lh="wc" class="settings_category_heading" visible="false" focusable="false" />
+	<vbox id="settings_category_rows" lw="mp" lh="wc" />
+</vbox>
 )xml";
 static constexpr const char* SETTINGS_SUBCATEGORY_HEADING_LAYOUT = R"xml(
 <TextView lw="mp" lh="wc" class="settings_subcategory_heading" visible="false" focusable="false" />
@@ -319,8 +322,12 @@ void SettingsPanel::PanelState::reset() {
 	categorySearchText.clear();
 	categoryTitles.clear();
 	categoryHeadings.clear();
+	categorySections.clear();
+	categoryContainers.clear();
+	materializedCategories.clear();
 	subcategoryHeadings.clear();
-	bindings.clear();
+	model.clear();
+	settingViews.clear();
 	selectedCategory.clear();
 	categoryFilter.clear();
 }
@@ -423,11 +430,23 @@ void SettingsPanel::create( Scope scope ) {
 		addUserSettings( panel );
 	else
 		addProjectSettings( panel );
+	materializeCategory( panel, panel.selectedCategory );
 	setupCategories( panel );
 	panel.settings->endAttributesTransaction();
 	filter( panel );
-	panel.connections += panel.search->connect(
-		Event::OnTextChanged, [this, &panel]( const Event* ) { filter( panel ); } );
+	panel.connections +=
+		panel.search->connect( Event::OnTextChanged, [this, &panel]( const Event* ) {
+			String query = panel.search->getText();
+			query.trim();
+			const UintPtr debounceTag = reinterpret_cast<UintPtr>( &panel );
+			if ( query.size() < 2 ) {
+				panel.search->removeActionsByTag( debounceTag );
+				filter( panel );
+				return;
+			}
+			panel.search->debounce( [this, &panel] { filter( panel ); }, Milliseconds( 150 ),
+									debounceTag );
+		} );
 	panel.connections += panel.window->connect( Event::OnWindowReady, [&panel]( const Event* ) {
 		auto title = panel.categoryTitles.find( panel.selectedCategory );
 		if ( title != panel.categoryTitles.end() ) {
@@ -453,6 +472,7 @@ void SettingsPanel::create( Scope scope ) {
 
 void SettingsPanel::addCategory( PanelState& panel, const std::string& id, const String& parent,
 								 const String& name ) {
+	panel.model.addCategory( { id, parent, name } );
 	const auto parentText = parent.toUtf8();
 	const auto nameText = name.toUtf8();
 	auto parentItems =
@@ -466,24 +486,22 @@ void SettingsPanel::addCategory( PanelState& panel, const std::string& id, const
 	panel.categoryIds[parentText + '/' + nameText] = id;
 	panel.categorySearchText[id] = parent + " " + name;
 	panel.categoryTitles[id] = name;
-	auto* heading = mApp->getUISceneNode()
-						->loadLayoutFromString( SETTINGS_CATEGORY_HEADING_LAYOUT, panel.settings )
-						->asType<UITextView>();
+	auto* section = mApp->getUISceneNode()->loadLayoutFromString( SETTINGS_CATEGORY_HEADING_LAYOUT,
+																  panel.settings );
+	auto* heading = section->find<UITextView>( "settings_category_heading" );
 	heading->setText( name );
 	heading->setId( "settings_category_" + id );
 	panel.categoryHeadings[id] = heading;
+	panel.categorySections[id] = section;
+	panel.categoryContainers[id] = section->find<UILinearLayout>( "settings_category_rows" );
 	if ( panel.selectedCategory.empty() )
 		panel.selectedCategory = id;
 }
 
 void SettingsPanel::addSubcategoryHeading( PanelState& panel, const std::string& category,
 										   const String& name ) {
-	auto* heading =
-		mApp->getUISceneNode()
-			->loadLayoutFromString( SETTINGS_SUBCATEGORY_HEADING_LAYOUT, panel.settings )
-			->asType<UITextView>();
-	heading->setText( name );
-	panel.subcategoryHeadings.push_back( { category, name, heading } );
+	panel.model.addGroup( { category, name, panel.model.settings().size() } );
+	panel.subcategoryHeadings.push_back( { category, name, nullptr } );
 }
 
 void SettingsPanel::setupCategories( PanelState& panel ) {
@@ -509,40 +527,35 @@ void SettingsPanel::setupCategories( PanelState& panel ) {
 		} );
 }
 
-UIWidget* SettingsPanel::createRow( PanelState& panel, SettingBinding& binding,
-									pugi::xml_node layout ) {
-	auto* row = mApp->getUISceneNode()->loadLayoutNodes( layout, panel.settings, 0 );
+UIWidget* SettingsPanel::createRow( PanelState& panel, SettingDefinition& setting,
+									SettingView& view, pugi::xml_node layout ) {
+	auto& binding = setting.descriptor;
+	auto container = panel.categoryContainers.find( binding.category );
+	eeASSERT( container != panel.categoryContainers.end() );
+	auto* row = mApp->getUISceneNode()->loadLayoutNodes( layout, container->second, 0 );
 	row->setId( "setting_" + binding.id );
 	row->find<UITextView>( "setting_name" )->setText( binding.name );
 	auto* description = row->find<UITextView>( "setting_description" );
 	description->setText( binding.description );
-	binding.row = row;
+	view.row = row;
 	return row;
 }
 
-void SettingsPanel::addBool( PanelState& panel, SettingBinding binding, bool* value,
+void SettingsPanel::addBool( PanelState& panel, SettingDescriptor binding, bool* value,
 							 std::function<void( bool )> apply ) {
-	auto* check = createBoolControl( panel, binding );
-	auto valueBinding =
-		UIDataBind<bool>::New( value, check, UIValueConverter<bool>::converterBool() );
-	valueBinding->onValueChangeCb = std::move( apply );
-	panel.bindingGroup += std::move( valueBinding );
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting(
+		{ std::move( binding ), BoolPointerSetting{ value, std::move( apply ) } } );
 }
 
-void SettingsPanel::addBool( PanelState& panel, SettingBinding binding, std::function<bool()> get,
-							 std::function<void( bool )> set ) {
-	auto* check = createBoolControl( panel, binding );
-	check->setChecked( get() );
-	panel.connections +=
-		check->connect( Event::OnValueChange, [check, set = std::move( set )]( const Event* ) {
-			set( check->isChecked() );
-		} );
-	panel.bindings.emplace_back( std::move( binding ) );
+void SettingsPanel::addBool( PanelState& panel, SettingDescriptor binding,
+							 std::function<bool()> get, std::function<void( bool )> set ) {
+	panel.model.addSetting(
+		{ std::move( binding ), BoolSetting{ std::move( get ), std::move( set ) } } );
 }
 
-UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingBinding& binding ) {
-	auto* row = createRow( panel, binding, SETTINGS_BOOL_ROW_LAYOUT.root() );
+UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingDefinition& setting,
+											  SettingView& view ) {
+	auto* row = createRow( panel, setting, view, SETTINGS_BOOL_ROW_LAYOUT.root() );
 	row->addClass( "settings_boolean_option" );
 	auto* check = row->find<UICheckBox>( "setting_control_widget" );
 	auto toggle = [check]( const Event* ) { check->setChecked( !check->isChecked() ); };
@@ -555,121 +568,217 @@ UICheckBox* SettingsPanel::createBoolControl( PanelState& panel, SettingBinding&
 	return check;
 }
 
-void SettingsPanel::addChoice( PanelState& panel, SettingBinding binding,
+void SettingsPanel::addChoice( PanelState& panel, SettingDescriptor binding,
 							   const std::vector<String>& choices, std::function<size_t()> get,
 							   std::function<void( size_t )> set,
 							   std::vector<String> choiceDescriptions ) {
-	auto* row = createRow( panel, binding, SETTINGS_CHOICE_ROW_LAYOUT.root() );
-	auto* dropDown = row->find<UIDropDownModelList>( "setting_control_widget" );
-	auto model = ItemListOwnerModel<String>::create( choices );
-	dropDown->setModel( model );
-	const size_t selected = get();
-	if ( selected < choices.size() ) {
-		dropDown->getListView()->getSelection().set( model->index( selected, 0 ) );
-		dropDown->setText( choices[selected] );
-	}
-	if ( selected < choiceDescriptions.size() )
-		dropDown->setTooltipText( choiceDescriptions[selected] );
-	panel.connections += dropDown->connect(
-		Event::OnValueChange, [dropDown, set = std::move( set ),
-							   descriptions = std::move( choiceDescriptions )]( const Event* ) {
-			if ( dropDown->getListView()->getSelection().isEmpty() )
-				return;
-			const size_t selected = dropDown->getListView()->getSelection().first().row();
-			if ( selected < descriptions.size() )
-				dropDown->setTooltipText( descriptions[selected] );
-			set( selected );
-		} );
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting(
+		{ std::move( binding ), ChoiceSetting{ choices, std::move( choiceDescriptions ),
+											   std::move( get ), std::move( set ) } } );
 }
 
-void SettingsPanel::addEditableChoice( PanelState& panel, SettingBinding binding,
+void SettingsPanel::addEditableChoice( PanelState& panel, SettingDescriptor binding,
 									   const std::vector<String>& choices,
 									   std::function<String()> get,
 									   std::function<bool( const String& )> set ) {
-	auto* row = createRow( panel, binding, SETTINGS_EDITABLE_CHOICE_ROW_LAYOUT.root() );
-	auto* combo = row->find<UIComboBox>( "setting_control_widget" );
-	for ( const auto& choice : choices )
-		combo->getListBox()->addListBoxItem( choice );
-	combo->setText( get() );
-	panel.connections +=
-		combo->connect( Event::OnValueChange, [combo, set = std::move( set )]( const Event* ) {
-			if ( !set( combo->getText() ) ) {
-				combo->addClass( "error" );
-				combo->getDropDownList()->addClass( "error" );
-				return;
-			}
-			combo->removeClass( "error" );
-			combo->getDropDownList()->removeClass( "error" );
-		} );
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting(
+		{ std::move( binding ),
+		  EditableChoiceSetting{ choices, std::move( get ), std::move( set ) } } );
 }
 
-void SettingsPanel::addInteger( PanelState& panel, SettingBinding binding, int min, int max,
+void SettingsPanel::addInteger( PanelState& panel, SettingDescriptor binding, int min, int max,
 								std::function<int()> get, std::function<void( int )> set ) {
-	auto* row = createRow( panel, binding, SETTINGS_INTEGER_ROW_LAYOUT.root() );
-	auto* spin = row->find<UISpinBox>( "setting_control_widget" );
-	spin->setMinValue( min )->setMaxValue( max );
-	spin->unsetTabFocusable();
-	spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
-	spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
-	spin->setValue( get() );
-	panel.connections +=
-		spin->connect( Event::OnValueChange, [spin, set = std::move( set )]( const Event* ) {
-			set( static_cast<int>( spin->getValue() ) );
-		} );
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting(
+		{ std::move( binding ), IntegerSetting{ min, max, std::move( get ), std::move( set ) } } );
 }
 
-void SettingsPanel::addText( PanelState& panel, SettingBinding binding,
+void SettingsPanel::addText( PanelState& panel, SettingDescriptor binding,
 							 std::function<std::string()> get,
 							 std::function<bool( const std::string& )> set,
 							 bool commitOnFocusLoss ) {
-	auto* row = createRow( panel, binding, SETTINGS_TEXT_ROW_LAYOUT.root() );
-	auto* input = row->find<UITextInput>( "setting_control_widget" );
-	input->setText( String::fromUtf8( get() ) );
-	auto commit = [input, set = std::move( set )]( const Event* ) {
-		std::string text = input->getText().toUtf8();
-		if ( !set( text ) ) {
-			input->addClass( "error" );
-			return;
-		}
-		input->removeClass( "error" );
-	};
-	if ( commitOnFocusLoss ) {
-		panel.connections += input->connect( Event::OnPressEnter, commit );
-		panel.connections += input->connect( Event::OnFocusLoss, std::move( commit ) );
-	} else {
-		panel.connections += input->connect( Event::OnTextChanged, std::move( commit ) );
-	}
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting( { std::move( binding ), TextSetting{ std::move( get ), std::move( set ),
+																 commitOnFocusLoss } } );
 }
 
-void SettingsPanel::addFloat( PanelState& panel, SettingBinding binding, double min, double max,
+void SettingsPanel::addFloat( PanelState& panel, SettingDescriptor binding, double min, double max,
 							  double step, std::function<double()> get,
 							  std::function<void( double )> set ) {
-	auto* row = createRow( panel, binding, SETTINGS_INTEGER_ROW_LAYOUT.root() );
-	auto* spin = row->find<UISpinBox>( "setting_control_widget" );
-	spin->setMinValue( min )->setMaxValue( max )->setClickStep( step );
-	spin->allowFloatingPoint( true )->setValue( get() );
-	spin->unsetTabFocusable();
-	spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
-	spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
-	panel.connections +=
-		spin->connect( Event::OnValueChange, [spin, set = std::move( set )]( const Event* ) {
-			set( spin->getValue() );
-		} );
-	panel.bindings.emplace_back( std::move( binding ) );
+	panel.model.addSetting( { std::move( binding ), FloatSetting{ min, max, step, std::move( get ),
+																  std::move( set ) } } );
 }
 
-void SettingsPanel::addAction( PanelState& panel, SettingBinding binding, const String& buttonText,
-							   std::function<void()> action ) {
-	auto* row = createRow( panel, binding, SETTINGS_ACTION_ROW_LAYOUT.root() );
-	auto* button = row->find<UIPushButton>( "setting_control_widget" );
-	button->setText( buttonText );
-	panel.connections += button->connect(
-		Event::MouseClick, [action = std::move( action )]( const Event* ) { action(); } );
-	panel.bindings.emplace_back( std::move( binding ) );
+void SettingsPanel::addAction( PanelState& panel, SettingDescriptor binding,
+							   const String& buttonText, std::function<void()> action ) {
+	panel.model.addSetting(
+		{ std::move( binding ), ActionSetting{ buttonText, std::move( action ) } } );
+}
+
+static void setNodeTreeEnabled( Node* node, bool enabled );
+
+void SettingsPanel::materializeCategory( PanelState& panel, const std::string& category ) {
+	if ( category.empty() || panel.materializedCategories.contains( category ) )
+		return;
+	auto container = panel.categoryContainers.find( category );
+	if ( container == panel.categoryContainers.end() )
+		return;
+	auto& settings = panel.model.settings();
+	panel.settingViews.resize( settings.size() );
+	container->second->beginAttributesTransaction();
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		auto& setting = settings[i];
+		if ( setting.descriptor.category != category )
+			continue;
+		for ( const auto& group : panel.model.groups() ) {
+			if ( group.category != category || group.beforeSetting != i )
+				continue;
+			auto* heading =
+				mApp->getUISceneNode()
+					->loadLayoutFromString( SETTINGS_SUBCATEGORY_HEADING_LAYOUT, container->second )
+					->asType<UITextView>();
+			heading->setText( group.name );
+			auto subcategory =
+				std::find_if( panel.subcategoryHeadings.begin(), panel.subcategoryHeadings.end(),
+							  [&group]( const auto& item ) {
+								  return item.category == group.category &&
+										 item.name == group.name && !item.heading;
+							  } );
+			if ( subcategory != panel.subcategoryHeadings.end() )
+				subcategory->heading = heading;
+		}
+		auto& view = panel.settingViews[i];
+		if ( auto* value = std::get_if<BoolPointerSetting>( &setting.value ) ) {
+			auto* check = createBoolControl( panel, setting, view );
+			auto binding = UIDataBind<bool>::New( value->value, check,
+												  UIValueConverter<bool>::converterBool() );
+			binding->onValueChangeCb = value->apply;
+			panel.bindingGroup += std::move( binding );
+		} else if ( auto* value = std::get_if<BoolSetting>( &setting.value ) ) {
+			auto* check = createBoolControl( panel, setting, view );
+			check->setChecked( value->get() );
+			panel.connections +=
+				check->connect( Event::OnValueChange, [check, value]( const Event* ) {
+					value->set( check->isChecked() );
+				} );
+		} else if ( auto* value = std::get_if<ChoiceSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_CHOICE_ROW_LAYOUT.root() );
+			auto* dropDown = row->find<UIDropDownModelList>( "setting_control_widget" );
+			auto model = ItemListOwnerModel<String>::create( value->choices );
+			dropDown->setModel( model );
+			const size_t selected = value->get();
+			if ( selected < value->choices.size() ) {
+				dropDown->getListView()->getSelection().set( model->index( selected, 0 ) );
+				dropDown->setText( value->choices[selected] );
+			}
+			if ( selected < value->descriptions.size() )
+				dropDown->setTooltipText( value->descriptions[selected] );
+			panel.connections +=
+				dropDown->connect( Event::OnValueChange, [dropDown, value]( const Event* ) {
+					if ( dropDown->getListView()->getSelection().isEmpty() )
+						return;
+					const size_t selected = dropDown->getListView()->getSelection().first().row();
+					if ( selected < value->descriptions.size() )
+						dropDown->setTooltipText( value->descriptions[selected] );
+					value->set( selected );
+				} );
+		} else if ( auto* value = std::get_if<EditableChoiceSetting>( &setting.value ) ) {
+			auto* row =
+				createRow( panel, setting, view, SETTINGS_EDITABLE_CHOICE_ROW_LAYOUT.root() );
+			auto* combo = row->find<UIComboBox>( "setting_control_widget" );
+			for ( const auto& choice : value->choices )
+				combo->getListBox()->addListBoxItem( choice );
+			combo->setText( value->get() );
+			panel.connections +=
+				combo->connect( Event::OnValueChange, [combo, value]( const Event* ) {
+					if ( !value->set( combo->getText() ) ) {
+						combo->addClass( "error" );
+						combo->getDropDownList()->addClass( "error" );
+						return;
+					}
+					combo->removeClass( "error" );
+					combo->getDropDownList()->removeClass( "error" );
+				} );
+		} else if ( auto* value = std::get_if<IntegerSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_INTEGER_ROW_LAYOUT.root() );
+			auto* spin = row->find<UISpinBox>( "setting_control_widget" );
+			spin->setMinValue( value->min )->setMaxValue( value->max );
+			spin->unsetTabFocusable();
+			spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
+			spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
+			spin->setValue( value->get() );
+			panel.connections +=
+				spin->connect( Event::OnValueChange, [spin, value]( const Event* ) {
+					value->set( static_cast<int>( spin->getValue() ) );
+				} );
+		} else if ( auto* value = std::get_if<TextSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_TEXT_ROW_LAYOUT.root() );
+			auto* input = row->find<UITextInput>( "setting_control_widget" );
+			input->setText( String::fromUtf8( value->get() ) );
+			auto commit = [input, value]( const Event* ) {
+				if ( !value->set( input->getText().toUtf8() ) ) {
+					input->addClass( "error" );
+					return;
+				}
+				input->removeClass( "error" );
+			};
+			if ( value->commitOnFocusLoss ) {
+				panel.connections += input->connect( Event::OnPressEnter, commit );
+				panel.connections += input->connect( Event::OnFocusLoss, std::move( commit ) );
+			} else {
+				panel.connections += input->connect( Event::OnTextChanged, std::move( commit ) );
+			}
+		} else if ( auto* value = std::get_if<FloatSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_INTEGER_ROW_LAYOUT.root() );
+			auto* spin = row->find<UISpinBox>( "setting_control_widget" );
+			spin->setMinValue( value->min )->setMaxValue( value->max )->setClickStep( value->step );
+			spin->allowFloatingPoint( true )->setValue( value->get() );
+			spin->unsetTabFocusable();
+			spin->getButtonPushUp()->asType<UIWidget>()->unsetTabFocusable();
+			spin->getButtonPushDown()->asType<UIWidget>()->unsetTabFocusable();
+			panel.connections +=
+				spin->connect( Event::OnValueChange,
+							   [spin, value]( const Event* ) { value->set( spin->getValue() ); } );
+		} else if ( auto* value = std::get_if<ActionSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_ACTION_ROW_LAYOUT.root() );
+			auto* button = row->find<UIPushButton>( "setting_control_widget" );
+			button->setText( value->buttonText );
+			panel.connections +=
+				button->connect( Event::MouseClick, [value]( const Event* ) { value->action(); } );
+		}
+		if ( view.row && !setting.enabled )
+			setNodeTreeEnabled( view.row, false );
+	}
+	container->second->endAttributesTransaction();
+	panel.materializedCategories.insert( category );
+}
+
+void SettingsPanel::materializeVisibleSettings( PanelState& panel, const String& query ) {
+	const std::string queryUtf8 = query.toUtf8();
+	const bool aggregate = String::endsWith( panel.selectedCategory, ".*" );
+	const std::string aggregatePrefix =
+		aggregate ? panel.selectedCategory.substr( 0, panel.selectedCategory.size() - 1 )
+				  : std::string{};
+	for ( const auto& category : panel.model.categories() ) {
+		bool materialize =
+			query.empty() ? category.id == panel.selectedCategory ||
+								( aggregate && String::startsWith( category.id, aggregatePrefix ) )
+						  : String::icontains( category.parent, query ) ||
+								String::icontains( category.name, query );
+		if ( !materialize && !query.empty() ) {
+			for ( const auto& setting : panel.model.settings() ) {
+				const auto& descriptor = setting.descriptor;
+				if ( descriptor.category == category.id &&
+					 ( String::icontains( descriptor.name, query ) ||
+					   String::icontains( descriptor.description, query ) ||
+					   String::icontains( descriptor.group, query ) ||
+					   String::icontains( descriptor.id, queryUtf8 ) ) ) {
+					materialize = true;
+					break;
+				}
+			}
+		}
+		if ( materialize )
+			materializeCategory( panel, category.id );
+	}
 }
 
 static void setNodeTreeEnabled( Node* node, bool enabled ) {
@@ -703,9 +812,15 @@ static bool parseNonNegativeTime( const std::string& text, Time& time ) {
 
 void SettingsPanel::setCategoryEnabled( PanelState& panel, const std::string& category,
 										bool enabled, const std::string& excludedSetting ) {
-	for ( auto& binding : panel.bindings ) {
-		if ( binding.category == category && binding.id != excludedSetting && binding.row )
-			setNodeTreeEnabled( binding.row, enabled );
+	auto& settings = panel.model.settings();
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		auto& setting = settings[i];
+		const auto& descriptor = setting.descriptor;
+		if ( descriptor.category != category || descriptor.id == excludedSetting )
+			continue;
+		setting.enabled = enabled;
+		if ( i < panel.settingViews.size() && panel.settingViews[i].row )
+			setNodeTreeEnabled( panel.settingViews[i].row, enabled );
 	}
 }
 
@@ -1346,7 +1461,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 				 mApp->i18n( "fallback_font_desc", "Choose the font used for missing glyphs." ) },
 			   mApp->i18n( "choose_font", "Choose Font..." ),
 			   [this] { mApp->runCommand( "fallback-font" ); } );
-	auto addFontSize = [this, &panel]( SettingBinding binding, std::function<std::string()> get,
+	auto addFontSize = [this, &panel]( SettingDescriptor binding, std::function<std::string()> get,
 									   std::function<void( const StyleSheetLength& )> set ) {
 		addText(
 			panel, std::move( binding ), std::move( get ),
@@ -2063,6 +2178,9 @@ void SettingsPanel::addProjectSettings( PanelState& panel ) {
 void SettingsPanel::filter( PanelState& panel ) {
 	String query = panel.search ? panel.search->getText() : String{};
 	query.trim().toLower();
+	if ( query.size() < 2 )
+		query.clear();
+	materializeVisibleSettings( panel, query );
 	if ( !query.empty() ) {
 		panel.pageTitle->setText( mApp->i18n( "search_results", "Search Results" ) );
 	} else if ( auto title = panel.categoryTitles.find( panel.selectedCategory );
@@ -2076,7 +2194,8 @@ void SettingsPanel::filter( PanelState& panel ) {
 		aggregate ? panel.selectedCategory.substr( 0, panel.selectedCategory.size() - 1 )
 				  : std::string{};
 	if ( !query.empty() ) {
-		for ( const auto& binding : panel.bindings ) {
+		for ( const auto& setting : panel.model.settings() ) {
+			const auto& binding = setting.descriptor;
 			if ( String::icontains( binding.name, query ) ||
 				 String::icontains( binding.description, query ) ||
 				 String::icontains( binding.group, query ) ||
@@ -2093,7 +2212,9 @@ void SettingsPanel::filter( PanelState& panel ) {
 	for ( auto& [category, heading] : panel.categoryHeadings )
 		heading->setVisible( query.empty() && aggregate &&
 							 String::startsWith( category, aggregatePrefix ) );
-	for ( auto& binding : panel.bindings ) {
+	const auto& settings = panel.model.settings();
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		const auto& binding = settings[i].descriptor;
 		const auto categoryName = panel.categorySearchText.find( binding.category );
 		const bool categoryMatches = categoryName != panel.categorySearchText.end() &&
 									 String::icontains( categoryName->second, query );
@@ -2105,13 +2226,33 @@ void SettingsPanel::filter( PanelState& panel ) {
 					  String::icontains( binding.description, query ) ||
 					  String::icontains( binding.group, query ) ||
 					  String::icontains( binding.id, queryUtf8 );
-		binding.row->setVisible( matches );
+		if ( i < panel.settingViews.size() && panel.settingViews[i].row )
+			panel.settingViews[i].row->setVisible( matches );
+	}
+	for ( const auto& category : panel.model.categories() ) {
+		auto section = panel.categorySections.find( category.id );
+		if ( section == panel.categorySections.end() )
+			continue;
+		bool visible = false;
+		for ( size_t i = 0; i < settings.size(); ++i ) {
+			if ( settings[i].descriptor.category == category.id && i < panel.settingViews.size() &&
+				 panel.settingViews[i].row && panel.settingViews[i].row->isVisible() ) {
+				visible = true;
+				break;
+			}
+		}
+		section->second->setVisible( visible );
 	}
 	for ( auto& subcategory : panel.subcategoryHeadings ) {
+		if ( !subcategory.heading )
+			continue;
 		const bool hasVisibleSetting = std::any_of(
-			panel.bindings.begin(), panel.bindings.end(), [&subcategory]( const auto& binding ) {
+			settings.begin(), settings.end(), [&panel, &subcategory]( const auto& setting ) {
+				const auto& binding = setting.descriptor;
+				const size_t index = &setting - panel.model.settings().data();
 				return binding.category == subcategory.category &&
-					   binding.group == subcategory.name && binding.row && binding.row->isVisible();
+					   binding.group == subcategory.name && index < panel.settingViews.size() &&
+					   panel.settingViews[index].row && panel.settingViews[index].row->isVisible();
 			} );
 		subcategory.heading->setVisible( hasVisibleSetting );
 	}
