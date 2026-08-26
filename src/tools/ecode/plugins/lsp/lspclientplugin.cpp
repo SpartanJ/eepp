@@ -1,5 +1,6 @@
 #include "lspclientplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -25,6 +26,52 @@ using namespace EE::Window;
 using json = nlohmann::json;
 
 namespace ecode {
+
+void LSPClientPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "hover-delay", "/config/hover_delay", i18n( "lsp_hover_delay", "Hover Delay" ),
+				  i18n( "lsp_hover_delay_desc",
+						"Time to wait before showing language server information while hovering." ),
+				  mHoverDelay.toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addText( "server-close-after-idle-time", "/config/server_close_after_idle_time",
+				  i18n( "lsp_server_close_after_idle_time", "Server Close After Idle Time" ),
+				  i18n( "lsp_server_close_after_idle_time_desc",
+						"Time to keep an unused language server running before closing it." ),
+				  mClientManager.getLSPDecayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addBool( "silent", "/config/silent", i18n( "lsp_silent", "Silent Language Server Logs" ),
+				  i18n( "lsp_silent_desc", "Hide non-critical language server log messages." ),
+				  mSilence );
+	page.addBool(
+		"trim-logs", "/config/trim_logs", i18n( "lsp_trim_logs", "Trim Language Server Logs" ),
+		i18n( "lsp_trim_logs_desc", "Limit each language server log line to 1 KiB." ), mTrimLogs );
+	page.addBool( "semantic-highlighting", "/config/semantic_highlighting",
+				  i18n( "lsp_semantic_highlighting", "Semantic Highlighting" ),
+				  i18n( "lsp_semantic_highlighting_desc",
+						"Use semantic tokens provided by language servers when available." ),
+				  mSemanticHighlighting );
+	page.addStringList(
+		"disable-semantic-highlighting-lang", "/config/disable_semantic_highlighting_lang",
+		i18n( "lsp_disable_semantic_highlighting_lang", "Disable Semantic Highlighting Languages" ),
+		i18n( "lsp_disable_semantic_highlighting_lang_desc",
+			  "Comma-separated language identifiers where semantic highlighting is disabled." ) );
+	page.addBool( "breadcrumb-navigation", "/config/breadcrumb_navigation",
+				  i18n( "lsp_breadcrumb_navigation", "Breadcrumb Navigation" ),
+				  i18n( "lsp_breadcrumb_navigation_desc",
+						"Display language-aware breadcrumb navigation above the editor." ),
+				  mBreadcrumb );
+	page.addText(
+		"breadcrumb-height", "/config/breadcrumb_height",
+		i18n( "lsp_breadcrumb_height", "Breadcrumb Height" ),
+		i18n( "lsp_breadcrumb_height_desc", "Height of the editor breadcrumb using a CSS length." ),
+		mBreadcrumbHeight.toString(),
+		[]( const std::string& text ) { return StyleSheetLength::isLength( text ); } );
+}
 
 static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 	return hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
@@ -1982,8 +2029,8 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 			Vector2f iconPos( { pos.x, screenStart.y + textOffsetY +
 										   eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
 			separatorDrawable->draw( iconPos );
-			pos.x +=
-				separatorDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
+			pos.x += separatorDrawable->getPixelsSize().getWidth() +
+					 eefloor( PixelDensity::dpToPx( 8 ) );
 			separatorDrawable->setColor( c );
 		} else {
 			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );

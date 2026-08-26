@@ -1,4 +1,5 @@
 #include "gitplugin.hpp"
+#include "../../settingspage.hpp"
 #include "gitbranchmodel.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/image.hpp>
@@ -32,6 +33,45 @@ using namespace std::literals;
 using json = nlohmann::json;
 
 namespace ecode {
+
+void GitPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "ui-refresh-frequency", "/config/ui_refresh_frequency",
+				  i18n( "git_ui_refresh_frequency", "Refresh Frequency" ),
+				  i18n( "git_ui_refresh_frequency_desc",
+						"How often Git information in the interface is refreshed." ),
+				  mRefreshFreq.toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addBool( "statusbar-display-branch", "/config/statusbar_display_branch",
+				  i18n( "git_statusbar_display_branch", "Show Branch in Status Bar" ),
+				  i18n( "git_statusbar_display_branch_desc",
+						"Display the current Git branch in the status bar." ),
+				  true );
+	page.addBool( "filetree-highlight-changes", "/config/filetree_highlight_changes",
+				  i18n( "git_filetree_highlight_changes", "Highlight File Tree Changes" ),
+				  i18n( "git_filetree_highlight_changes_desc",
+						"Highlight files with Git changes in the file tree." ),
+				  true );
+	page.addText( "filetree-highlight-style-color", "/config/filetree_highlight_style_color",
+				  i18n( "git_filetree_highlight_style_color", "File Tree Highlight Color" ),
+				  i18n( "git_filetree_highlight_style_color_desc",
+						"CSS color used to highlight changed files." ),
+				  "var(--font-highlight)" );
+	page.addBool( "statusbar-display-modifications", "/config/statusbar_display_modifications",
+				  i18n( "git_statusbar_display_modifications", "Show Modifications in Status Bar" ),
+				  i18n( "git_statusbar_display_modifications_desc",
+						"Display repository modification counts in the status bar." ),
+				  true );
+	page.addBool( "status-recurse-submodules", "/config/status_recurse_submodules",
+				  i18n( "git_status_recurse_submodules", "Recurse into Submodules" ),
+				  i18n( "git_status_recurse_submodules_desc",
+						"Include submodule changes when collecting repository status." ),
+				  true );
+	page.addBool( "silent", "/config/silent", i18n( "git_silent", "Silent Git Logs" ),
+				  i18n( "git_silent_desc", "Hide non-critical Git plugin log messages." ), true );
+}
 
 static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
 static constexpr auto GIT_STATUS_UPDATE_TAG = String::hash( "git::status-update" );

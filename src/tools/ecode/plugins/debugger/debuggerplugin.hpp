@@ -67,6 +67,10 @@ class DebuggerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	void onSaveState( IniFile* state ) override;
 
 	void onSaveProject( const std::string& projectFolder, const std::string& projectStatePath,
@@ -150,16 +154,27 @@ class DebuggerPlugin : public PluginBase {
 			mDoc( doc ), mParent( parent ) {}
 
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) {}
+
 		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) {}
+
 		virtual void onDocumentCursorChange( const TextPosition& ) {}
+
 		virtual void onDocumentSelectionChange( const TextRange& ) {}
+
 		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {}
+
 		virtual void onDocumentLineChanged( const Int64& ) {}
+
 		virtual void onDocumentSaved( TextDocument* ) {}
+
 		virtual void onDocumentClosed( TextDocument* doc ) { onDocumentReset( doc ); }
+
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
+
 		virtual void onDocumentMoved( TextDocument* ) {}
+
 		virtual void onDocumentReset( TextDocument* ) {}
+
 		Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 		virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,

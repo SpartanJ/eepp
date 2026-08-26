@@ -102,7 +102,7 @@ const char DOC_FIND_REPLACE_CSS[] = R"css(
 }
 .ce_find_replace_box .input-find.error,
 .ce_find_replace_box .input-replace.error {
-	border-color: #ff4040;
+	border-color: var(--theme-error);
 }
 )css";
 

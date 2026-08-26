@@ -1,6 +1,10 @@
 #include "settingspanel.hpp"
 #include "datetimecontroller.hpp"
 #include "ecode.hpp"
+#include "plugins/plugin.hpp"
+#include "plugins/pluginmanager.hpp"
+#include "settingsdocument.hpp"
+#include "settingspage.hpp"
 #include "uitreeviewfs.hpp"
 #include <deque>
 #include <limits>
@@ -220,6 +224,9 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	layout-width: 210dp;
 	layout-height: wrap_content;
 }
+.settings_panel .settings_text.error {
+	border-color: var(--theme-error);
+}
 .settings_panel .settings_integer {
 	layout-width: 110dp;
 	layout-height: wrap_content;
@@ -230,7 +237,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	<Splitter id="settings_splitter" lw="mp" lh="mp" orientation="horizontal" splitter-partition="220dp">
 		<vbox id="settings_sidebar" lw="0" lh="0" min-width="160dp">
 			<TextInput id="settings_filter" lw="mp" lh="wc" hint="@string(search_settings, Search settings...)" />
-			<TreeView id="settings_categories" lw="mp" lh="mp" />
+			<TreeView id="settings_categories" lw="mp" lh="o" lw8="1" />
 		</vbox>
 		<ScrollView id="settings_scroll" lw="0" lw8="1" lh="mp" focusable="false">
 			<vbox id="settings_rows" lw="mp" lh="wc">
@@ -327,6 +334,7 @@ void SettingsPanel::PanelState::reset() {
 	materializedCategories.clear();
 	subcategoryHeadings.clear();
 	model.clear();
+	documents.clear();
 	settingViews.clear();
 	selectedCategory.clear();
 	categoryFilter.clear();
@@ -426,10 +434,12 @@ void SettingsPanel::create( Scope scope ) {
 	panel.window->getKeyBindings().addKeybind(
 		{ KEY_E, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "focusSettingsCategories" );
 	panel.settings->beginAttributesTransaction();
-	if ( scope == Scope::User )
+	if ( scope == Scope::User ) {
 		addUserSettings( panel );
-	else
+		addPluginSettings( panel );
+	} else {
 		addProjectSettings( panel );
+	}
 	materializeCategory( panel, panel.selectedCategory );
 	setupCategories( panel );
 	panel.settings->endAttributesTransaction();
@@ -459,6 +469,10 @@ void SettingsPanel::create( Scope scope ) {
 	} );
 	panel.connections +=
 		panel.window->connect( Event::OnWindowClose, [this, &panel, scope]( const Event* ) {
+			for ( const auto& document : panel.documents ) {
+				if ( !document->save() )
+					Log::error( "Could not save settings document: %s", document->path() );
+			}
 			if ( scope == Scope::User )
 				mApp->saveConfig();
 			else
@@ -501,7 +515,6 @@ void SettingsPanel::addCategory( PanelState& panel, const std::string& id, const
 void SettingsPanel::addSubcategoryHeading( PanelState& panel, const std::string& category,
 										   const String& name ) {
 	panel.model.addGroup( { category, name, panel.model.settings().size() } );
-	panel.subcategoryHeadings.push_back( { category, name, nullptr } );
 }
 
 void SettingsPanel::setupCategories( PanelState& panel ) {
@@ -636,14 +649,7 @@ void SettingsPanel::materializeCategory( PanelState& panel, const std::string& c
 					->loadLayoutFromString( SETTINGS_SUBCATEGORY_HEADING_LAYOUT, container->second )
 					->asType<UITextView>();
 			heading->setText( group.name );
-			auto subcategory =
-				std::find_if( panel.subcategoryHeadings.begin(), panel.subcategoryHeadings.end(),
-							  [&group]( const auto& item ) {
-								  return item.category == group.category &&
-										 item.name == group.name && !item.heading;
-							  } );
-			if ( subcategory != panel.subcategoryHeadings.end() )
-				subcategory->heading = heading;
+			panel.subcategoryHeadings.push_back( { group.category, group.name, heading } );
 		}
 		auto& view = panel.settingViews[i];
 		if ( auto* value = std::get_if<BoolPointerSetting>( &setting.value ) ) {
@@ -712,6 +718,8 @@ void SettingsPanel::materializeCategory( PanelState& panel, const std::string& c
 		} else if ( auto* value = std::get_if<TextSetting>( &setting.value ) ) {
 			auto* row = createRow( panel, setting, view, SETTINGS_TEXT_ROW_LAYOUT.root() );
 			auto* input = row->find<UITextInput>( "setting_control_widget" );
+			if ( value->password )
+				input->setMode( UITextInput::TextInputMode::Password );
 			input->setText( String::fromUtf8( value->get() ) );
 			auto commit = [input, value]( const Event* ) {
 				if ( !value->set( input->getText().toUtf8() ) ) {
@@ -785,29 +793,6 @@ static void setNodeTreeEnabled( Node* node, bool enabled ) {
 	node->setEnabled( enabled );
 	for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() )
 		setNodeTreeEnabled( child, enabled );
-}
-
-static bool parseNonNegativeTime( const std::string& text, Time& time ) {
-	auto parts = String::split( text, " " );
-	bool hasValue = false;
-	for ( auto& part : parts ) {
-		String::trimInPlace( part );
-		if ( part.empty() )
-			continue;
-		size_t suffixLength =
-			String::endsWith( part, "ms" )
-				? 2
-				: ( String::endsWith( part, "s" ) || String::endsWith( part, "m" ) ? 1 : 0 );
-		std::string number = part.substr( 0, part.size() - suffixLength );
-		double value;
-		if ( number.empty() || !String::fromString( value, number ) || value < 0 )
-			return false;
-		hasValue = true;
-	}
-	if ( !hasValue )
-		return false;
-	time = Time::fromString( text );
-	return true;
 }
 
 void SettingsPanel::setCategoryEnabled( PanelState& panel, const std::string& category,
@@ -1633,7 +1618,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this] { return mApp->getConfig().editor.cursorBlinkingTime.toString(); },
 		[this]( const std::string& text ) {
 			Time value;
-			if ( !parseNonNegativeTime( text, value ) )
+			if ( !SettingsPage::parseNonNegativeSettingsTime( text, value ) )
 				return false;
 			mApp->getConfig().editor.cursorBlinkingTime = value;
 			mApp->getSplitter()->forEachEditor(
@@ -1695,7 +1680,8 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this] { return mApp->getConfig().editor.codeFoldingRefreshFreq.toString(); },
 		[this]( const std::string& text ) {
 			Time value;
-			if ( !parseNonNegativeTime( text, value ) || value < Seconds( 1 ) )
+			if ( !SettingsPage::parseNonNegativeSettingsTime( text, value ) ||
+				 value < Seconds( 1 ) )
 				return false;
 			mApp->getConfig().editor.codeFoldingRefreshFreq = value;
 			mApp->getSplitter()->forEachEditor(
@@ -2034,6 +2020,42 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 					  "Keep the terminal scrollbar visible." ),
 		  mApp->i18n( "scrollbar_mode_always_hidden_tooltip",
 					  "Keep the terminal scrollbar hidden." ) } );
+}
+
+void SettingsPanel::addPluginSettings( PanelState& panel ) {
+	auto* manager = mApp->getPluginManager();
+	if ( !manager )
+		return;
+	manager->forEachPlugin( [this, &panel]( Plugin* plugin ) {
+		if ( !plugin || !plugin->isReady() || !plugin->hasSettingsPage() ||
+			 !plugin->hasFileConfig() )
+			return;
+		std::string error;
+		auto document = SettingsDocument::load( plugin->getFileConfigPath(), error );
+		if ( !document ) {
+			Log::warning( "Could not load settings for plugin %s: %s", plugin->getId(), error );
+			return;
+		}
+		const std::string category = "plugins." + plugin->getId();
+		addCategory( panel, category, mApp->i18n( "plugins", "Plugins" ), plugin->getTitle() );
+		SettingsPage page( panel.model, document, category, plugin->getId() );
+		plugin->registerSettings( page );
+		const std::string path = document->path();
+		addAction( panel,
+				   { plugin->getId() + ".edit-json", category,
+					 mApp->i18n( "edit_settings_json", "Edit Settings JSON" ),
+					 mApp->i18n( "edit_settings_json_desc",
+								 "Open the complete plugin configuration file." ) },
+				   mApp->i18n( "open_file_ellipsis", "Open File..." ), [this, &panel, path] {
+					   auto* window = panel.window;
+					   window->runOnMainThread( [this, window, path] {
+						   window->closeWindow();
+						   mApp->getUISceneNode()->runOnMainThread(
+							   [this, path] { mApp->focusOrLoadFile( path ); } );
+					   } );
+				   } );
+		panel.documents.emplace_back( std::move( document ) );
+	} );
 }
 
 void SettingsPanel::addProjectSettings( PanelState& panel ) {

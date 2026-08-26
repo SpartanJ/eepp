@@ -40,7 +40,12 @@ class AIAssistantPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	const LLMProviders& getProviders() { return mProviders; }
+
 	const ACPAgents& getAgents() { return mAgents; }
 
 	std::string getPluginStatePath() const;

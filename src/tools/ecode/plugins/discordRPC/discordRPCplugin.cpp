@@ -1,4 +1,5 @@
 #include "discordRPCplugin.hpp"
+#include "../../settingspage.hpp"
 
 using json = nlohmann::json;
 
@@ -6,6 +7,34 @@ namespace ecode {
 
 static const auto DEFAULT_CLIENT_ID = "1339026777158455336";
 static const auto DebounceUniqueId = String::hash( "DiscordRPCplugin::debounce" );
+
+void DiscordRPCplugin::registerSettings( SettingsPage& page ) {
+	auto general = i18n( "general", "General" );
+	page.addGroup( general );
+	page.addText( "application-id", "/config/appID",
+				  i18n( "discordrpc_application_id", "Discord Application ID" ),
+				  i18n( "discordrpc_application_id_desc",
+						"Discord application identifier used for Rich Presence." ),
+				  DEFAULT_CLIENT_ID, {}, false, general );
+	page.addBool( "language-icons", "/config/doLanguageIcons",
+				  i18n( "discordrpc_language_icons", "Language Icons" ),
+				  i18n( "discordrpc_language_icons_desc",
+						"Display an icon for the active document language." ),
+				  true, general );
+	page.addBool( "git-integration", "/config/doGitIntegration",
+				  i18n( "discordrpc_git_integration", "Git Integration" ),
+				  i18n( "discordrpc_git_integration_desc",
+						"Include repository information in Rich Presence." ),
+				  true, general );
+	auto advanced = i18n( "advanced", "Advanced" );
+	page.addGroup( advanced );
+	page.addJsonObject( "icon-bindings", "/config/iconBindings",
+						i18n( "discordrpc_icon_bindings", "Language Icon Bindings" ),
+						i18n( "discordrpc_icon_bindings_desc",
+							  "JSON object mapping language identifiers to Discord image assets." ),
+						nlohmann::json::object(), advanced );
+}
+
 static const std::vector<std::string> DiscordRPCCommandList = { "discordrpc-reconnect" };
 
 static const auto DISCORDRPC_DEFAULT_ICON =

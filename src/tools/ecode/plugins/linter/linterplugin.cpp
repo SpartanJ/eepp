@@ -1,5 +1,6 @@
 ﻿#include "linterplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -29,6 +30,41 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void LinterPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "delay-time", "/config/delay_time", i18n( "linter_delay_time", "Lint Delay" ),
+				  i18n( "linter_delay_time_desc", "Time to wait before linting after an edit." ),
+				  getDelayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addBool( "enable-lsp-diagnostics", "/config/enable_lsp_diagnostics",
+				  i18n( "linter_enable_lsp_diagnostics", "Language Server Diagnostics" ),
+				  i18n( "linter_enable_lsp_diagnostics_desc",
+						"Display diagnostics reported by language servers." ),
+				  true );
+	page.addBool( "enable-error-lens", "/config/enable_error_lens",
+				  i18n( "linter_enable_error_lens", "Error Lens" ),
+				  i18n( "linter_enable_error_lens_desc",
+						"Display diagnostic messages inline in the editor." ),
+				  true );
+	page.addStringList(
+		"disable-lsp-languages", "/config/disable_lsp_languages",
+		i18n( "linter_disable_lsp_languages", "Disable LSP Diagnostic Languages" ),
+		i18n( "linter_disable_lsp_languages_desc",
+			  "Comma-separated language identifiers where LSP diagnostics are disabled." ) );
+	page.addStringList(
+		"disable-languages", "/config/disable_languages",
+		i18n( "linter_disable_languages", "Disable Linter Languages" ),
+		i18n( "linter_disable_languages_desc",
+			  "Comma-separated language identifiers where linters are disabled." ) );
+	page.addBool( "goto-ignore-warnings", "/config/goto_ignore_warnings",
+				  i18n( "linter_goto_ignore_warnings", "Ignore Warnings When Navigating" ),
+				  i18n( "linter_goto_ignore_warnings_desc",
+						"Skip warnings when navigating between diagnostics." ),
+				  false );
+}
 
 Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
@@ -1145,9 +1181,8 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 				if ( mLightbulbIcon == nullptr )
-					mLightbulbIcon =
-						editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
-							"lightbulb-autofix" );
+					mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
+						"lightbulb-autofix" );
 				if ( nullptr != mLightbulbIcon ) {
 					const int iconSize = (int)eefloor( lineHeight );
 					Drawable* drawable = mLightbulbIcon->getSource( iconSize ).get();

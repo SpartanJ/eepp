@@ -4,6 +4,7 @@
 
 #include "../../appconfig.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include "../../widgetcommandexecuter.hpp"
 
 #include <eepp/system/filesystem.hpp>
@@ -12,6 +13,66 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void AIAssistantPlugin::registerSettings( SettingsPage& page ) {
+	auto general = i18n( "general", "General" );
+	page.addGroup( general );
+	page.addBool( "display-reasoning", "/config/display_reasoning",
+				  i18n( "aiassistant_display_reasoning", "Display Reasoning" ),
+				  i18n( "aiassistant_display_reasoning_desc",
+						"Display reasoning content returned by supported models." ),
+				  false, general );
+	page.addBool( "model-catalog-enabled", "/config/model_catalog_enabled",
+				  i18n( "aiassistant_model_catalog_enabled", "Enable Model Catalog" ),
+				  i18n( "aiassistant_model_catalog_enabled_desc",
+						"Download model metadata from the configured catalog." ),
+				  true, general );
+	page.addText(
+		"model-catalog-url", "/config/model_catalog_url",
+		i18n( "aiassistant_model_catalog_url", "Model Catalog URL" ),
+		i18n( "aiassistant_model_catalog_url_desc",
+			  "URL used to download model catalog metadata." ),
+		"https://models.dev/api.json", []( const std::string& value ) { return !value.empty(); },
+		false, general );
+	page.addInteger(
+		"model-catalog-refresh-hours", "/config/model_catalog_refresh_hours",
+		i18n( "aiassistant_model_catalog_refresh_hours", "Model Catalog Refresh Interval" ),
+		i18n( "aiassistant_model_catalog_refresh_hours_desc",
+			  "Hours between model catalog refreshes." ),
+		1, 8760, 24, general );
+
+	auto apiKeys = i18n( "aiassistant_api_keys", "API Keys" );
+	page.addGroup( apiKeys );
+	struct Provider {
+		const char* id;
+		const char* name;
+		const char* legacyKey;
+	};
+	static constexpr Provider providers[] = {
+		{ "openai", "OpenAI", "openai_api_key" },
+		{ "anthropic", "Anthropic", "anthropic_api_key" },
+		{ "google", "Google AI", "google_ai_api_key" },
+		{ "deepseek", "DeepSeek", "deepseek_api_key" },
+		{ "mistral", "Mistral", "mistral_api_key" },
+		{ "xai", "xAI", "xai_api_key" },
+		{ "github", "GitHub Models", "github_api_key" },
+		{ "perplexity", "Perplexity", "perplexity_api_key" },
+		{ "openrouter", "OpenRouter", "openrouter_api_key" },
+		{ "moonshotai", "Moonshot AI", "moonshot_api_key" },
+		{ "nvidia", "NVIDIA", "nvidia_api_key" },
+		{ "togetherai", "Together AI", "together_api_key" },
+		{ "xiaomi", "Xiaomi MiMo", "mimo_api_key" },
+	};
+	for ( const auto& provider : providers ) {
+		page.addSecret(
+			std::string{ "api-key-" } + provider.id,
+			std::string{ "/config/api_keys/" } + provider.id,
+			i18n( std::string{ "aiassistant_api_key_" } + provider.id,
+				  String::fromUtf8( std::string_view{ provider.name } ) + " API Key" ),
+			i18n( "aiassistant_api_key_desc", "Credential used to access this model provider." ),
+			{}, apiKeys, std::string{ "/config/" } + provider.legacyKey );
+	}
+}
 
 static std::initializer_list<std::string> AIAssistantUnlockedCommandList = {
 
@@ -285,7 +346,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 				 userConfig["model_catalog_url"].is_string() )
 				catalogSettings.url = userConfig["model_catalog_url"].get<std::string>();
 			if ( userConfig.contains( "model_catalog_refresh_hours" ) &&
-				 userConfig["model_catalog_refresh_hours"].is_number_unsigned() )
+				 userConfig["model_catalog_refresh_hours"].is_number_integer() )
 				catalogSettings.refreshIntervalHours =
 					userConfig["model_catalog_refresh_hours"].get<std::uint32_t>();
 		}

@@ -1,4 +1,5 @@
 #include "spellcheckerplugin.hpp"
+#include "../../settingspage.hpp"
 #include "eepp/ui/abstract/uiabstractview.hpp"
 #include "eepp/ui/models/itemlistmodel.hpp"
 #include "eepp/window/engine.hpp"
@@ -14,6 +15,18 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void SpellCheckerPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "delay-time", "/config/delay_time",
+				  i18n( "spellchecker_delay_time", "Spell Check Delay" ),
+				  i18n( "spellchecker_delay_time_desc",
+						"Time to wait before checking spelling after an edit." ),
+				  getDelayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+}
 
 static constexpr auto SPELL_CHECKER_CMD = "typos";
 static constexpr auto SPELL_CHECKER_ARGS = "--format=brief";

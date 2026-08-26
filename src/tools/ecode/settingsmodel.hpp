@@ -52,6 +52,7 @@ struct TextSetting {
 	std::function<std::string()> get;
 	std::function<bool( const std::string& )> set;
 	bool commitOnFocusLoss{ false };
+	bool password{ false };
 };
 
 struct FloatSetting {
@@ -129,8 +130,11 @@ class SettingsModel {
 	}
 
 	const std::vector<SettingsCategory>& categories() const { return mCategories; }
+
 	const std::vector<SettingsGroup>& groups() const { return mGroups; }
+
 	std::vector<SettingDefinition>& settings() { return mSettings; }
+
 	const std::vector<SettingDefinition>& settings() const { return mSettings; }
 
   private:

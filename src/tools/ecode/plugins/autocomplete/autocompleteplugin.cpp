@@ -1,4 +1,5 @@
 #include "autocompleteplugin.hpp"
+#include "../../settingspage.hpp"
 #include "../../universallocator.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -24,6 +25,55 @@ using json = nlohmann::json;
 using namespace std::literals;
 
 namespace ecode {
+
+void AutoCompletePlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool(
+		"suggestions-syntax-highlight", "/config/suggestions_syntax_highlight",
+		i18n( "autocomplete_suggestions_syntax_highlight", "Syntax Highlight Suggestions" ),
+		i18n( "autocomplete_suggestions_syntax_highlight_desc",
+			  "Apply syntax highlighting to completion suggestions." ),
+		true );
+	page.addInteger( "max-label-characters", "/config/max_label_characters",
+					 i18n( "autocomplete_max_label_characters", "Maximum Label Characters" ),
+					 i18n( "autocomplete_max_label_characters_desc",
+						   "Maximum number of characters shown in a suggestion label." ),
+					 1, 10000, 100 );
+	auto cssLength = []( const std::string& text ) { return StyleSheetLength::isLength( text ); };
+	page.addText( "max-suggestion-documentation-width",
+				  "/config/max_suggestion_documentation_width",
+				  i18n( "autocomplete_max_suggestion_documentation_width",
+						"Maximum Suggestion Documentation Width" ),
+				  i18n( "autocomplete_max_suggestion_documentation_width_desc",
+						"Maximum documentation popup width as a CSS length." ),
+				  "100%", cssLength );
+	page.addText( "max-signature-helper-width", "/config/max_signature_helper_width",
+				  i18n( "autocomplete_max_signature_helper_width", "Maximum Signature Help Width" ),
+				  i18n( "autocomplete_max_signature_helper_width_desc",
+						"Maximum signature help popup width as a CSS length." ),
+				  "90%", cssLength );
+	page.addBool( "signature-help-multi-line", "/config/signature_help_multi_line",
+				  i18n( "autocomplete_signature_help_multi_line", "Multiline Signature Help" ),
+				  i18n( "autocomplete_signature_help_multi_line_desc",
+						"Allow signature help to use multiple lines." ),
+				  true );
+	page.addBool( "suggestion-documentation", "/config/suggestion_documentation",
+				  i18n( "autocomplete_suggestion_documentation", "Suggestion Documentation" ),
+				  i18n( "autocomplete_suggestion_documentation_desc",
+						"Show documentation alongside completion suggestions." ),
+				  true );
+	page.addBool(
+		"signature-help-documentation", "/config/signature_help_documentation",
+		i18n( "autocomplete_signature_help_documentation", "Signature Help Documentation" ),
+		i18n( "autocomplete_signature_help_documentation_desc",
+			  "Show documentation alongside signature help." ),
+		true );
+	page.addBool( "load-vscode-snippets", "/config/load_vscode_snippets",
+				  i18n( "autocomplete_load_vscode_snippets", "Load VS Code Snippets" ),
+				  i18n( "autocomplete_load_vscode_snippets_desc",
+						"Load compatible snippets installed for VS Code." ),
+				  true );
+}
 
 class SnippetLocatorModel : public Model {
   public:
@@ -380,7 +430,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		if ( config.contains( "signature_help_documentation" ) )
 			mSignatureHelpDocumentation = config.value( "signature_help_documentation", true );
 		else {
-			config["suggestion_documentation"] = mSignatureHelpDocumentation;
+			config["signature_help_documentation"] = mSignatureHelpDocumentation;
 			updateConfigFile = true;
 		}
 

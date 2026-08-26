@@ -29,7 +29,6 @@ class UIDocFindReplace;
 
 class UIIcon;
 class UICodeEditor;
-class UIWindow;
 class UIScrollBar;
 class UILoader;
 class UIPopUpMenu;
@@ -45,37 +44,57 @@ class UICodeEditorPlugin {
   public:
 	typedef std::function<void( UICodeEditorPlugin*, const Uint32& )> OnReadyCb;
 	virtual std::string getId() = 0;
+
 	virtual std::string getTitle() = 0;
+
 	virtual std::string getDescription() = 0;
+
 	virtual bool isReady() const = 0;
-	virtual bool hasGUIConfig() { return false; }
+
 	virtual bool hasFileConfig() { return false; }
-	virtual UIWindow* getGUIConfig() { return nullptr; }
+
 	virtual std::string getFileConfigPath() { return ""; }
 
 	virtual ~UICodeEditorPlugin() {}
 
 	virtual void onRegister( UICodeEditor* ) = 0;
+
 	virtual void onUnregister( UICodeEditor* ) = 0;
+
 	virtual bool onKeyDown( UICodeEditor*, const KeyEvent& ) { return false; }
+
 	virtual bool onKeyUp( UICodeEditor*, const KeyEvent& ) { return false; }
+
 	virtual bool onTextInput( UICodeEditor*, const TextInputEvent& ) { return false; }
+
 	virtual void update( UICodeEditor* ) {}
+
 	virtual void preDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
 						  const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+
 	virtual void postDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
 						   const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+
 	virtual void onFocus( UICodeEditor* ) {}
+
 	virtual void onFocusLoss( UICodeEditor* ) {}
+
 	virtual bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) {
 		return false;
 	}
+
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onCreateContextMenu( UICodeEditor*, UIPopUpMenu* /*menu*/,
 									  const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
 		return false;
@@ -142,6 +161,7 @@ class EE_API DocEvent : public Event {
   public:
 	DocEvent( Node* node, TextDocument* doc, const Uint32& eventType ) :
 		Event( node, eventType ), doc( doc ) {}
+
 	TextDocument* getDoc() const { return doc; }
 
   protected:
@@ -165,7 +185,9 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 	DocSyntaxDefEvent( Node* node, TextDocument* doc, const Uint32& eventType,
 					   const std::string& oldLang, const std::string& newLang ) :
 		DocEvent( node, doc, eventType ), oldLang( oldLang ), newLang( newLang ) {}
+
 	const std::string& getOldLang() const { return oldLang; }
+
 	const std::string& getNewLang() const { return newLang; }
 
   protected:

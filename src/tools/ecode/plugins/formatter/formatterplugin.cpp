@@ -1,5 +1,6 @@
 #include "formatterplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
@@ -17,6 +18,15 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void FormatterPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool( "auto-format-on-save", "/config/auto_format_on_save",
+				  i18n( "formatter_auto_format_on_save", "Format on Save" ),
+				  i18n( "formatter_auto_format_on_save_desc",
+						"Automatically format supported documents when saving." ),
+				  false );
+}
 
 Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );

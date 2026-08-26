@@ -82,7 +82,7 @@ StatusBar > #doc_info {
 }
 #search_find.error,
 #search_replace.error {
-	border-color: #ff4040;
+	border-color: var(--theme-error);
 }
 TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2),
 TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {

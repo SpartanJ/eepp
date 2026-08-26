@@ -46,6 +46,10 @@ class LSPClientPlugin : public Plugin {
 
 	virtual String::HashType getConfigFileHash() { return mConfigHash; }
 
+	bool hasSettingsPage() const { return true; }
+
+	void registerSettings( SettingsPage& page );
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );

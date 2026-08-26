@@ -26,6 +26,7 @@ namespace ecode {
 
 class PluginManager;
 class PluginContextProvider;
+class SettingsPage;
 
 class Plugin : public UICodeEditorPlugin {
   public:
@@ -44,6 +45,10 @@ class Plugin : public UICodeEditorPlugin {
 	virtual bool hasFileConfig();
 
 	virtual std::string getFileConfigPath();
+
+	virtual bool hasSettingsPage() const { return false; }
+
+	virtual void registerSettings( SettingsPage& ) {}
 
 	PluginManager* getManager() const;
 

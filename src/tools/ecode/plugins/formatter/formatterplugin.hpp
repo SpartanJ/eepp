@@ -50,6 +50,10 @@ class FormatterPlugin : public Plugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	virtual String::HashType getConfigFileHash() { return mConfigHash; }
 
 	void onRegister( UICodeEditor* );

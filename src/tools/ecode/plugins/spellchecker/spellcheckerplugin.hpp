@@ -39,6 +39,10 @@ class SpellCheckerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							const Float& fontSize, const Float& lineHeight ) override;
 
@@ -98,7 +102,8 @@ class SpellCheckerPlugin : public PluginBase {
 
 	void invalidateEditors( TextDocument* doc );
 
-	std::optional<SpellCheckerMatch> getMatchFromTextPosition( UICodeEditor* editor, TextPosition pos );
+	std::optional<SpellCheckerMatch> getMatchFromTextPosition( UICodeEditor* editor,
+															   TextPosition pos );
 
 	std::optional<SpellCheckerMatch> getMatchFromScreenPos( UICodeEditor* editor, Vector2f pos );
 
@@ -109,7 +114,6 @@ class SpellCheckerPlugin : public PluginBase {
 	void goToNextError( UICodeEditor* editor );
 
 	void goToPrevError( UICodeEditor* editor );
-
 };
 
 } // namespace ecode

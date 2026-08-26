@@ -1,4 +1,5 @@
 #include "xmltoolsplugin.hpp"
+#include "../../settingspage.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -7,6 +8,20 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void XMLToolsPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool( "highlight-match", "/config/highlight_match",
+				  i18n( "xmltools_highlight_match", "Highlight Matching Tags" ),
+				  i18n( "xmltools_highlight_match_desc",
+						"Highlight the matching XML or HTML tag at the cursor." ),
+				  true );
+	page.addBool( "auto-edit-match", "/config/auto_edit_match",
+				  i18n( "xmltools_auto_edit_match", "Edit Matching Tags" ),
+				  i18n( "xmltools_auto_edit_match_desc",
+						"Update the matching tag automatically while editing." ),
+				  true );
+}
 
 Plugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, false ) );

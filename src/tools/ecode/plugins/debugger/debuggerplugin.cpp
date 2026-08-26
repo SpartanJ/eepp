@@ -1,6 +1,7 @@
 #include "debuggerplugin.hpp"
 #include "../../jsonhelper.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
@@ -29,6 +30,27 @@ static constexpr auto REQUEST_TYPE_LAUNCH = "launch";
 static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
 namespace ecode {
+
+void DebuggerPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool(
+		"fetch-registers", "/config/fetch_registers",
+		i18n( "debugger_fetch_registers", "Fetch Registers" ),
+		i18n( "debugger_fetch_registers_desc", "Request processor registers while debugging." ),
+		false );
+	page.addBool(
+		"fetch-globals", "/config/fetch_globals",
+		i18n( "debugger_fetch_globals", "Fetch Global Variables" ),
+		i18n( "debugger_fetch_globals_desc", "Request global variables while debugging." ), false );
+	page.addBool( "silent", "/config/silent", i18n( "debugger_silent", "Silent Debugger Logs" ),
+				  i18n( "debugger_silent_desc", "Hide non-critical debugger log messages." ),
+				  true );
+	page.addBool( "load-vscode-launch-config", "/config/load_vscode_launch_config",
+				  i18n( "debugger_load_vscode_launch_config", "Load VS Code Launch Configuration" ),
+				  i18n( "debugger_load_vscode_launch_config_desc",
+						"Load compatible launch configurations from .vscode/launch.json." ),
+				  true );
+}
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
 static constexpr auto ENV_PATTERN = "%$%{env%:([%w_]+)%}"sv;

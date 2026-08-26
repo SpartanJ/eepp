@@ -95,21 +95,38 @@ class AutoCompletePlugin : public Plugin {
 
 	bool isReady() const override { return true; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	void onRegister( UICodeEditor* ) override;
+
 	void onUnregister( UICodeEditor* ) override;
+
 	bool onKeyDown( UICodeEditor*, const KeyEvent& ) override;
+
 	bool onTextInput( UICodeEditor*, const TextInputEvent& ) override;
+
 	void update( UICodeEditor* ) override;
+
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor ) override;
+
 	void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
 							 const Float& ) override;
+
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
 	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
 	void onFileSystemEvent( const FileEvent&, const FileInfo& ) override;
+
 	FileSystemListenerOptions getFileSystemListenerOptions() const override;
+
 	void onLoadProject( const std::string& projectFolder,
 						const std::string& projectStatePath ) override;
 

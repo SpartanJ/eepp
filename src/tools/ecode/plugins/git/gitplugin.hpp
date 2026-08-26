@@ -52,6 +52,10 @@ class GitPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
 
 	FileSystemListenerOptions getFileSystemListenerOptions() const override;
