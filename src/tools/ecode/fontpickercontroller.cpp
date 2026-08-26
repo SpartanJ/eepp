@@ -160,26 +160,25 @@ void FontPickerController::openFontDialog( std::string& fontPath, bool loadingMo
 		if ( fontPath != newPath ) {
 			if ( !loadingMonoFont ) {
 				fontPath = newPath;
-				if ( onFinish )
-					onFinish();
-				return;
-			}
-
-			FontTrueTypePtr previewFont = preview && newPath != preview->originalPath
-											  ? loadPreviewFont( selection.font )
-											  : FontTrueTypePtr{};
-			FontTrueType* fontMono = previewFont ? previewFont.get() : preview->originalFont;
-			if ( fontMono ) {
-				fontPath = newPath;
-				if ( preview )
-					preview->confirmed = true;
-				publishPreviewFont( newPath, previewFont );
-				applyMonospaceFont( fontMono, previewFont != nullptr );
+			} else {
+				FontTrueTypePtr previewFont = preview && newPath != preview->originalPath
+												  ? loadPreviewFont( selection.font )
+												  : FontTrueTypePtr{};
+				FontTrueType* fontMono = previewFont ? previewFont.get() : preview->originalFont;
+				if ( fontMono ) {
+					fontPath = newPath;
+					if ( preview )
+						preview->confirmed = true;
+					publishPreviewFont( newPath, previewFont );
+					applyMonospaceFont( fontMono, previewFont != nullptr );
+				}
 			}
 		} else if ( preview ) {
 			preview->confirmed = true;
 			applyMonospaceFont( preview->originalFont, false );
 		}
+		if ( onFinish )
+			onFinish();
 	} );
 	if ( pickFontSize ) {
 		UIFontSelection selection = dialog->getSelection();

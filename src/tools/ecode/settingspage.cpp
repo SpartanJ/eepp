@@ -185,7 +185,7 @@ bool SettingsPage::addJsonObject( std::string id, std::string jsonPointer, Strin
 						   document->setValue( jsonPointer, std::move( parsed ) );
 						   return true;
 					   },
-					   true } } );
+					   false } } );
 }
 
 bool SettingsPage::addStringList( std::string id, std::string jsonPointer, String name,

@@ -629,6 +629,20 @@ void SettingsPanel::addAction( PanelState& panel, SettingDescriptor binding,
 		{ std::move( binding ), ActionSetting{ buttonText, std::move( action ) } } );
 }
 
+void SettingsPanel::refreshTextSetting( PanelState& panel, const std::string& id ) {
+	const auto& settings = panel.model.settings();
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		if ( settings[i].descriptor.id != id || i >= panel.settingViews.size() ||
+			 !panel.settingViews[i].row )
+			continue;
+		auto* value = std::get_if<TextSetting>( &settings[i].value );
+		auto* input = panel.settingViews[i].row->find<UITextInput>( "setting_control_widget" );
+		if ( value && input )
+			input->setText( String::fromUtf8( value->get() ) );
+		return;
+	}
+}
+
 static void setNodeTreeEnabled( Node* node, bool enabled );
 
 void SettingsPanel::materializeCategory( PanelState& panel, const std::string& category ) {
@@ -724,7 +738,7 @@ void SettingsPanel::materializeCategory( PanelState& panel, const std::string& c
 			if ( value->password )
 				input->setMode( UITextInput::TextInputMode::Password );
 			input->setText( String::fromUtf8( value->get() ) );
-			auto commit = [input, value]( const Event* ) {
+			auto commit = [input, value] {
 				if ( !value->set( input->getText().toUtf8() ) ) {
 					input->addClass( "error" );
 					return;
@@ -732,10 +746,21 @@ void SettingsPanel::materializeCategory( PanelState& panel, const std::string& c
 				input->removeClass( "error" );
 			};
 			if ( value->commitOnFocusLoss ) {
-				panel.connections += input->connect( Event::OnPressEnter, commit );
-				panel.connections += input->connect( Event::OnFocusLoss, std::move( commit ) );
+				const auto debounceTag = reinterpret_cast<Action::UniqueID>( input );
+				panel.connections += input->connect(
+					Event::OnTextChanged, [input, commit, debounceTag]( const Event* ) {
+						input->debounce( commit, Milliseconds( 500 ), debounceTag );
+					} );
+				auto flush = [input, commit, debounceTag]( const Event* ) {
+					input->removeActionsByTag( debounceTag );
+					commit();
+				};
+				panel.connections += input->connect( Event::OnPressEnter, flush );
+				panel.connections += input->connect( Event::OnFocusLoss, std::move( flush ) );
 			} else {
-				panel.connections += input->connect( Event::OnTextChanged, std::move( commit ) );
+				panel.connections +=
+					input->connect( Event::OnTextChanged,
+									[commit = std::move( commit )]( const Event* ) { commit(); } );
 			}
 		} else if ( auto* value = std::get_if<FloatSetting>( &setting.value ) ) {
 			auto* row = createRow( panel, setting, view, SETTINGS_INTEGER_ROW_LAYOUT.root() );
@@ -1429,22 +1454,30 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		{ "uiFont", "appearance.fonts",
 		  mApp->i18n( "ui_font_and_size_ellipsis", "UI Font & Size..." ),
 		  mApp->i18n( "ui_font_desc", "Choose the proportional font used by the interface." ) },
-		mApp->i18n( "choose_font", "Choose Font..." ),
-		[this] { mApp->runCommand( "sans-serif-font" ); } );
+		mApp->i18n( "choose_font", "Choose Font..." ), [this, &panel] {
+			mApp->openFontDialog( mApp->getConfig().ui.sansSerifFont, false, false,
+								  [this, &panel] { refreshTextSetting( panel, "uiFontSize" ); } );
+		} );
 	addAction(
 		panel,
 		{ "editorFont", "appearance.fonts",
 		  mApp->i18n( "editor_font_and_size_ellipsis", "Editor Font & Size..." ),
 		  mApp->i18n( "editor_font_desc", "Choose the monospace font used by code editors." ) },
-		mApp->i18n( "choose_font", "Choose Font..." ),
-		[this] { mApp->runCommand( "editor-font" ); } );
+		mApp->i18n( "choose_font", "Choose Font..." ), [this, &panel] {
+			mApp->openFontDialog( mApp->getConfig().ui.monospaceFont, true, false, [this, &panel] {
+				refreshTextSetting( panel, "editorFontSize" );
+			} );
+		} );
 	addAction(
 		panel,
 		{ "terminalFont", "appearance.fonts",
 		  mApp->i18n( "terminal_font_and_size_ellipsis", "Terminal Font & Size..." ),
 		  mApp->i18n( "terminal_font_desc", "Choose the monospace font used by terminals." ) },
-		mApp->i18n( "choose_font", "Choose Font..." ),
-		[this] { mApp->runCommand( "terminal-font" ); } );
+		mApp->i18n( "choose_font", "Choose Font..." ), [this, &panel] {
+			mApp->openFontDialog( mApp->getConfig().ui.terminalFont, true, true, [this, &panel] {
+				refreshTextSetting( panel, "terminalFontSize" );
+			} );
+		} );
 	addAction( panel,
 			   { "fallbackFont", "appearance.fonts",
 				 mApp->i18n( "fallback_font_ellipsis", "Fallback Font..." ),

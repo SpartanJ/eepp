@@ -108,6 +108,7 @@ class SettingsPanel {
 
 	void addAction( PanelState& state, SettingDescriptor binding, const String& buttonText,
 					std::function<void()> action );
+	void refreshTextSetting( PanelState& state, const std::string& id );
 
 	UIWidget* createRow( PanelState& state, SettingDefinition& setting, SettingView& view,
 						 pugi::xml_node layout );
