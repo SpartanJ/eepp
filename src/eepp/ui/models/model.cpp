@@ -147,6 +147,19 @@ bool Model::beginDeleteRows( ModelIndex const& parent, int first, int last ) {
 	return false;
 }
 
+bool Model::beginDeleteRows( ModelIndex const& index ) {
+	if ( !index.isValid() )
+		return false;
+	const int row = static_cast<int>( index.row() );
+	if ( row < 0 || static_cast<Int64>( row ) != index.row() )
+		return false;
+	ModelIndex parent = index.parent();
+	notifyIndexDeleted( index.internalData() );
+	saveDeletedIndices<true>( parent, row, row );
+	mOperationStack.push( { OperationType::Delete, Direction::Row, parent, row, row } );
+	return true;
+}
+
 void Model::notifyIndexDeleted( const void* internalData ) const {
 	forEachView(
 		[internalData]( UIAbstractView* view ) { view->onModelIndexDeleted( internalData ); } );

@@ -141,6 +141,7 @@ class EE_API Model {
 	void beginMoveColumns( ModelIndex const& sourceParent, int first, int last,
 						   ModelIndex const& targetParent, int target_index );
 	bool beginDeleteRows( ModelIndex const& parent, int first, int last );
+	bool beginDeleteRows( ModelIndex const& index );
 	bool beginDeleteColumns( ModelIndex const& parent, int first, int last );
 
 	void endInsertRows();

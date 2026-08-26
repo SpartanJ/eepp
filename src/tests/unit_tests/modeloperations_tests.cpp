@@ -306,6 +306,9 @@ UTEST( FileSystemModelEvents, preparedMetadataSurvivesDelayedAddDelivery ) {
 
 	auto model = FileSystemModel::New( tree.path.string() );
 	ASSERT_TRUE( model->getNodeFromPath( directory.string(), true ) != nullptr );
+	// Materialize the directory so this test isolates delayed prepared metadata delivery.
+	ASSERT_TRUE( model->getNodeFromPath( ( directory / "missing" ).string(), false, true ) ==
+				 nullptr );
 
 	std::FILE* file = std::fopen( path.string().c_str(), "wb" );
 	ASSERT_TRUE( file != nullptr );
@@ -319,6 +322,100 @@ UTEST( FileSystemModelEvents, preparedMetadataSurvivesDelayedAddDelivery ) {
 								  directory.string() + FileSystem::getOSSlash(), "transient.txt" },
 								preparedFile ) );
 	ASSERT_TRUE( model->getNodeFromPath( path.string(), false, false ) != nullptr );
+}
+
+UTEST( FileSystemModelEvents, deletesEventCreatedNodeFromUnopenedDirectory ) {
+	TempTree tree;
+	auto directory = tree.path / "unopened";
+	auto path = directory / "transient.cpp";
+	std::filesystem::create_directories( directory );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	ASSERT_TRUE( model->getNodeFromPath( directory.string(), true, false ) != nullptr );
+
+	std::FILE* file = std::fopen( path.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	// Add attaches the event-created node to the lazy parent. Delete must use that already resolved
+	// index directly: querying rowCount() traverses the parent and frees the child first.
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Add,
+										   directory.string() + FileSystem::getOSSlash(),
+										   path.filename().string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( path.string(), false, false ) != nullptr );
+
+	std::filesystem::remove( path );
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Delete,
+										   directory.string() + FileSystem::getOSSlash(),
+										   path.filename().string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( path.string(), false, false ) == nullptr );
+}
+
+UTEST( FileSystemModelEvents, deletesNodeMovedIntoUnopenedDirectory ) {
+	TempTree tree;
+	auto source = tree.path / "source";
+	auto target = tree.path / "target";
+	auto sourceFile = source / "transient.cpp";
+	auto targetFile = target / "transient.cpp";
+	std::filesystem::create_directories( source );
+	std::filesystem::create_directories( target );
+	std::FILE* file = std::fopen( sourceFile.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	ASSERT_TRUE( model->getNodeFromPath( sourceFile.string() ) != nullptr );
+	ASSERT_TRUE( model->getNodeFromPath( target.string(), true, false ) != nullptr );
+
+	// This models two ordered watcher events waiting in the queue. Move attaches the node to a
+	// known but unopened destination. Delete must not call rowCount() and traverse that
+	// destination, since traversal frees the node that Delete has already resolved.
+	std::filesystem::rename( sourceFile, targetFile );
+	ASSERT_TRUE( model->handleFileEvent(
+		{ FileSystemEventType::Moved, target.string() + FileSystem::getOSSlash(),
+		  targetFile.filename().string(), sourceFile.string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( targetFile.string(), false, false ) != nullptr );
+
+	std::filesystem::remove( targetFile );
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Delete,
+										   target.string() + FileSystem::getOSSlash(),
+										   targetFile.filename().string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( targetFile.string(), false, false ) == nullptr );
+}
+
+UTEST( FileSystemModelEvents, deletesDirectoryMovedIntoUnopenedDirectory ) {
+	TempTree tree;
+	auto source = tree.path / "source";
+	auto target = tree.path / "target";
+	auto sourceDirectory = source / "folder";
+	auto targetDirectory = target / "folder";
+	auto descendant = sourceDirectory / "nested" / "file.cpp";
+	std::filesystem::create_directories( descendant.parent_path() );
+	std::filesystem::create_directories( target );
+	std::FILE* file = std::fopen( descendant.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	auto* directoryNode = model->getNodeFromPath( sourceDirectory.string(), true );
+	auto* descendantNode = model->getNodeFromPath( descendant.string() );
+	ASSERT_TRUE( directoryNode != nullptr );
+	ASSERT_TRUE( descendantNode != nullptr );
+	ASSERT_TRUE( model->getNodeFromPath( target.string(), true, false ) != nullptr );
+
+	std::filesystem::rename( sourceDirectory, targetDirectory );
+	ASSERT_TRUE( model->handleFileEvent(
+		{ FileSystemEventType::Moved, target.string() + FileSystem::getOSSlash(),
+		  targetDirectory.filename().string(), sourceDirectory.string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( targetDirectory.string(), true, false ) == directoryNode );
+	ASSERT_TRUE( model->getNodeFromPath( ( targetDirectory / "nested" / "file.cpp" ).string(),
+										 false, false ) == descendantNode );
+
+	std::filesystem::remove_all( targetDirectory );
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Delete,
+										   target.string() + FileSystem::getOSSlash(),
+										   targetDirectory.filename().string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( targetDirectory.string(), false, false ) == nullptr );
 }
 
 static ModelIndex indexOfNode( const FileSystemModel& model, const void* node,
@@ -365,6 +462,11 @@ UTEST( FileSystemModelMove, deleteFallbackWithAttachedViewAndSelection ) {
 	ASSERT_TRUE( fileIndex.isValid() );
 	treeView->getSelection().set( fileIndex );
 	ASSERT_EQ( treeView->getSelection().size(), 1 );
+	int selectionCallbacks = 0;
+	treeView->setOnSelectionChange( [&] {
+		++selectionCallbacks;
+		model->refresh();
+	} );
 
 	// Moving the folder to an unopened destination falls back to deleting the
 	// materialized source node; the attached view and its selection must
@@ -377,6 +479,9 @@ UTEST( FileSystemModelMove, deleteFallbackWithAttachedViewAndSelection ) {
 	ASSERT_TRUE( model->getNodeFromPath( ( source / "folder" ).string(), false, false ) ==
 				 nullptr );
 	ASSERT_TRUE( treeView->getSelection().isEmpty() );
+	// Model-driven selection repair is silent; invoking user callbacks while Delete retains raw
+	// nodes would allow a re-entrant refresh to invalidate them.
+	ASSERT_EQ( selectionCallbacks, 0 );
 }
 
 UTEST( FileSystemModelMove, deleteFallbackWithStaleSelectionDoesNotCrash ) {

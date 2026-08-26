@@ -821,8 +821,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 				}
 			}
 
-			endInsertRows();
-
 			forEachView( [&]( UIAbstractView* view ) {
 				std::vector<ModelIndex> newIndexes;
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
@@ -836,9 +834,10 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 					}
 					if ( curNode->getParent() == parent ) {
 						if ( selectedIndex.row() >= (Int64)pos ) {
-							newIndexes.emplace_back( this->index( selectedIndex.row() + 1,
-																  selectedIndex.column(),
-																  selectedIndex.parent() ) );
+							newIndexes.emplace_back(
+								createIndex( static_cast<int>( selectedIndex.row() + 1 ),
+											 static_cast<int>( selectedIndex.column() ), curNode,
+											 curNode->mId ) );
 						} else {
 							newIndexes.emplace_back( selectedIndex );
 						}
@@ -848,6 +847,8 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 				} );
 				view->getSelection().set( newIndexes, false );
 			} );
+
+			endInsertRows();
 
 			break;
 		}
@@ -870,32 +871,37 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 			Int64 pos = index.row();
 
 			forEachView( [&]( UIAbstractView* view ) {
-				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
+				std::vector<ModelIndex> keptIndexes;
+				view->getSelection().forEachIndex( [&]( const ModelIndex& selectionIndex ) {
 					Node* node = static_cast<Node*>( index.internalData() );
 					Node* nodeSelected = static_cast<Node*>( selectionIndex.internalData() );
-					// A stale selection entry points at freed memory: drop it
-					// instead of dereferencing it.
+					// Drop stale entries without dereferencing them.
 					if ( !isNodeAlive( nodeSelected, selectionIndex.internalId() ) )
-						return true;
-					return selectionIndex.internalData() == index.internalData() ||
-						   ( node->childCount() > 0 && nodeSelected->inParentTree( node ) );
+						return;
+					if ( selectionIndex.internalData() != index.internalData() &&
+						 !( node->childCount() > 0 && nodeSelected->inParentTree( node ) ) )
+						keptIndexes.emplace_back( selectionIndex );
 				} );
+				// A model-driven cleanup must not emit user callbacks while this operation retains
+				// nodes.
+				view->getSelection().set( keptIndexes, false );
 			} );
 
-			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
-				auto notifyDescendantsDeleted = [&]( auto&& notify, const Node* node ) -> void {
-					for ( const Node* childNode : node->mChildren ) {
-						notifyIndexDeleted( childNode );
-						notify( notify, childNode );
-					}
-				};
-				notifyDescendantsDeleted( notifyDescendantsDeleted, child );
-				{
-					Lock l( mResourceLock );
-					eeDelete( parent->mChildren[index.row()] );
-					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			// Use the already resolved index. Re-querying rowCount(parent) here can traverse a lazy
+			// parent and delete child before this operation finishes using it.
+			if ( !beginDeleteRows( index ) )
+				return false;
+			auto notifyDescendantsDeleted = [&]( auto&& notify, const Node* node ) -> void {
+				for ( const Node* childNode : node->mChildren ) {
+					notifyIndexDeleted( childNode );
+					notify( notify, childNode );
 				}
-				endDeleteRows();
+			};
+			notifyDescendantsDeleted( notifyDescendantsDeleted, child );
+			{
+				Lock l( mResourceLock );
+				eeDelete( parent->mChildren[index.row()] );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
 			}
 
 			forEachView( [&]( UIAbstractView* view ) {
@@ -910,11 +916,12 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 					}
 					if ( curNode->getParent() == parent ) {
 						if ( selectedIndex.row() >= (Int64)pos ) {
-							auto newIndex =
-								this->index( selectedIndex.row() - 1, selectedIndex.column(),
-											 selectedIndex.parent() );
-							if ( newIndex.isValid() )
-								newIndexes.emplace_back( newIndex );
+							if ( selectedIndex.row() > 0 ) {
+								newIndexes.emplace_back(
+									createIndex( static_cast<int>( selectedIndex.row() - 1 ),
+												 static_cast<int>( selectedIndex.column() ),
+												 curNode, curNode->mId ) );
+							}
 						} else {
 							newIndexes.emplace_back( selectedIndex );
 						}
@@ -925,6 +932,8 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 
 				view->getSelection().set( newIndexes, false );
 			} );
+
+			endDeleteRows();
 
 			break;
 		}
@@ -1012,8 +1021,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 				}
 			}
 
-			endMoveRows();
-
 			forEachView( [&]( UIAbstractView* view ) {
 				std::vector<ModelIndex> newIndexes;
 				newIndexes.reserve( selections[view].size() );
@@ -1029,6 +1036,8 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
 				}
 				view->getSelection().set( newIndexes, false );
 			} );
+
+			endMoveRows();
 			break;
 		}
 		case FileSystemEventType::Modified: {
