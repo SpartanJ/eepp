@@ -2365,6 +2365,8 @@ nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 		if ( !roleDDL || !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) )
 			continue;
 		UICodeEditor* codeEditor = editorNode->asType<UICodeEditor>();
+		if ( codeEditor->getDocument().isEmpty() )
+			continue;
 		std::string role = LLMChat::roleToString(
 			static_cast<LLMChat::Role>( roleDDL->getListBox()->getItemSelectedIndex() ) );
 		auto text = codeEditor->getDocument().toUtf8String();
