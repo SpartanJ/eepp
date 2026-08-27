@@ -13,10 +13,11 @@ KeyBindings::Shortcut KeyBindings::sanitizeShortcut( const KeyBindings::Shortcut
 		sanitized.mod |= KEYMOD_SHIFT;
 	if ( shortcut.mod & KEYMOD_META )
 		sanitized.mod |= KEYMOD_META;
-	if ( shortcut.mod & KEYMOD_LALT )
+	const Uint32 alt = shortcut.mod & KEYMOD_ALT;
+	if ( alt == KEYMOD_ALT )
 		sanitized.mod |= KEYMOD_LALT;
-	if ( shortcut.mod & KEYMOD_RALT )
-		sanitized.mod |= KEYMOD_RALT;
+	else
+		sanitized.mod |= alt;
 	return sanitized;
 }
 
@@ -149,6 +150,7 @@ std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& key
 
 std::string KeyBindings::keybindFormat( std::string str ) {
 	if ( !str.empty() ) {
+		String::replace( str, "mod2", KeyMod::getDefaultSecondaryModifierString() );
 		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
 		str[0] = std::toupper( str[0] );
 		size_t found = str.find_first_of( '+' );
@@ -185,20 +187,24 @@ const std::map<std::string, Uint64>& KeyBindings::getKeybindings() const {
 
 std::string KeyBindings::fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
 									   bool format ) {
+	shortcut = sanitizeShortcut( shortcut );
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( input->getKeyName( shortcut.key ) ) );
 	const auto& MOD_MAP = KeyMod::getModMap();
 	if ( shortcut.mod & MOD_MAP.at( "mod" ) )
 		mods.emplace_back( "mod" );
-	if ( ( shortcut.mod & KEYMOD_CTRL ) && KEYMOD_CTRL != MOD_MAP.at( "mod" ) )
+	if ( shortcut.mod & MOD_MAP.at( "mod2" ) )
+		mods.emplace_back( "mod2" );
+	const Uint32 abstractMods = MOD_MAP.at( "mod" ) | MOD_MAP.at( "mod2" );
+	if ( ( shortcut.mod & KEYMOD_CTRL ) && !( KEYMOD_CTRL & abstractMods ) )
 		mods.emplace_back( "ctrl" );
-	if ( ( shortcut.mod & KEYMOD_SHIFT ) && KEYMOD_SHIFT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_SHIFT ) && !( KEYMOD_SHIFT & abstractMods ) )
 		mods.emplace_back( "shift" );
-	if ( ( shortcut.mod & KEYMOD_LALT ) && KEYMOD_LALT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_LALT ) && !( KEYMOD_LALT & abstractMods ) )
 		mods.emplace_back( "alt" );
-	if ( ( shortcut.mod & KEYMOD_RALT ) && KEYMOD_RALT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_RALT ) && !( KEYMOD_RALT & abstractMods ) )
 		mods.emplace_back( "altgr" );
-	if ( ( shortcut.mod & KEYMOD_META ) && KEYMOD_META != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_META ) && !( KEYMOD_META & abstractMods ) )
 		mods.emplace_back( "meta" );
 	if ( mods.empty() )
 		return format ? keybindFormat( keyname ) : keyname;

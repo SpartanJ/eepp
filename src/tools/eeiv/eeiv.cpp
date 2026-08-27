@@ -362,9 +362,10 @@ void App::registerKeyBindings() {
 		if ( key == KEY_ESCAPE || key == KEY_Q ) {
 			saveConfig();
 			getWindow()->close();
-		} else if ( key == KEY_TAB && keyEvent->getMod() & KEYMOD_ALT )
+		} else if ( key == KEY_TAB && keyEvent->getMod() & KeyMod::getDefaultSecondaryModifier() )
 			getWindow()->minimize();
-		else if ( key == KEY_F || ( key == KEY_RETURN && keyEvent->getMod() & KEYMOD_ALT ) )
+		else if ( key == KEY_F || ( key == KEY_RETURN &&
+									keyEvent->getMod() & KeyMod::getDefaultSecondaryModifier() ) )
 			getWindow()->toggleFullscreen();
 		else if ( key == KEY_F12 )
 			getWindow()->takeScreenshot();

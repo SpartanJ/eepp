@@ -1454,6 +1454,24 @@ void App::loadKeybindings() {
 		ini.setValue( "modifier", "mod", defMod );
 		ini.writeFile();
 	}
+	Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
+	if ( KEYMOD_NONE != defModKeyCode )
+		KeyMod::setDefaultModifier( defModKeyCode );
+
+	std::string defMod2 = ini.getValue( "modifier", "mod2", "" );
+	if ( defMod2.empty() ) {
+		defMod2 = KeyMod::getDefaultSecondaryModifierString();
+		ini.setValue( "modifier", "mod2", defMod2 );
+		ini.writeFile();
+	}
+	Uint32 defMod2KeyCode = KeyMod::getKeyMod( defMod2 );
+	if ( KEYMOD_NONE != defMod2KeyCode && !( defMod2KeyCode & KeyMod::getDefaultModifier() ) ) {
+		KeyMod::setDefaultSecondaryModifier( defMod2KeyCode );
+	} else {
+		defMod2 = KeyMod::getDefaultSecondaryModifierString();
+		ini.setValue( "modifier", "mod2", defMod2 );
+		ini.writeFile();
+	}
 
 	bool forceRebind = false;
 	auto version = ini.getValueU( "version", "version", 0 );
@@ -1462,10 +1480,6 @@ void App::loadKeybindings() {
 		ini.writeFile();
 		forceRebind = true;
 	}
-
-	Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
-	if ( KEYMOD_NONE != defModKeyCode )
-		KeyMod::setDefaultModifier( defModKeyCode );
 
 	KeybindingsHelper::updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings,
 										  mKeybindingsInvert, getDefaultKeybindings(), forceRebind,
@@ -2106,13 +2120,14 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
 #else
-static Uint32 DefaultSwitchToStatusPanelModifier = KEYMOD_LALT;
+static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryModifier();
 #endif
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
-		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
+		{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
+		  "fullscreen-toggle" },
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
@@ -2134,18 +2149,24 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
 		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_F9, KeyMod::getDefaultSecondaryModifier() }, "switch-side-panel" },
+		{ { KEY_J,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "terminal-split-left" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_L,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "terminal-split-right" },
-		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_I,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "terminal-split-top" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_K,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "terminal-split-bottom" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_S,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "terminal-split-swap" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_T,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "reopen-closed-tab" },
 		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
 		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
@@ -2155,10 +2176,10 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_O, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "show-open-documents" },
 		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
 		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
-		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+		{ { KEY_N, KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() }, "create-new-window" },
 	};
 }
 

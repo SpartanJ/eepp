@@ -679,7 +679,8 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 
 	Input* input = editor->getInput();
 	Uint32 mod = input->getSanitizedModState();
-	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
+	if ( mod != ( KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() ) ||
+		 ( flags & EE_BUTTON_LMASK ) == 0 )
 		return false;
 
 	auto docPos = editor->resolveScreenPosition( pos.asFloat() );

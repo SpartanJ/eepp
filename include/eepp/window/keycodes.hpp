@@ -702,9 +702,15 @@ class EE_API KeyMod {
   public:
 	static Uint32 getDefaultModifier();
 
+	/** @return A platform-appropriate secondary modifier that does not overlap the default one. */
+	static Uint32 getDefaultSecondaryModifier();
+
 	static void setDefaultModifier( const Uint32& mod );
+	static void setDefaultSecondaryModifier( const Uint32& mod );
 
 	static std::string getDefaultModifierString();
+
+	static std::string getDefaultSecondaryModifierString();
 
 	static bool isKeyMod( std::string key );
 
@@ -716,6 +722,7 @@ class EE_API KeyMod {
 
   private:
 	static Uint32 defaultModifier;
+	static Uint32 defaultSecondaryModifier;
 };
 
 /** @enum MouseButton Mouse buttons */
@@ -734,7 +741,7 @@ enum MouseButton {
 	EE_BUTTON_WHEELRIGHT = 31
 };
 
-#define EE_BUTTON_MASK( X ) ( 1 << ( (X)-1 ) )
+#define EE_BUTTON_MASK( X ) ( 1 << ( ( X ) - 1 ) )
 
 /** @enum MouseButtonsMask Mouse buttons mask, to check the current state of every button. */
 enum MouseButtonMask {

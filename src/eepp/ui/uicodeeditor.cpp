@@ -114,13 +114,15 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_0, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "font-size-reset" },
 		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() }, "toggle-line-comments" },
 		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "toggle-block-comments" },
-		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-upper" },
-		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
+		{ { KEY_UP, KEYMOD_CTRL | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "selection-to-upper" },
+		{ { KEY_DOWN, KEYMOD_CTRL | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_D, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-words" },
-		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
-		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
+		{ { KEY_UP, KeyMod::getDefaultSecondaryModifier() }, "add-cursor-above" },
+		{ { KEY_DOWN, KeyMod::getDefaultSecondaryModifier() }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },
 		{ { KEY_U, KeyMod::getDefaultModifier() }, "cursor-undo" },
 		{ { KEY_A, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-matches" },
@@ -131,7 +133,8 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
 	return { { { MouseAction::Down, EE_BUTTON_LMASK, KeyMod::getDefaultModifier() },
 			   "add-cursor-at-mouse-position" },
-			 { { MouseAction::Down, EE_BUTTON_LMASK, KEYMOD_SHIFT | KEYMOD_LALT },
+			 { { MouseAction::Down, EE_BUTTON_LMASK,
+				 KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() },
 			   "add-cursors-from-current-to-mouse-position" } };
 }
 
