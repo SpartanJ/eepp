@@ -127,6 +127,19 @@ diff --git a/second.txt b/second.txt
 	for ( const auto* diffView : diffViews )
 		EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffView->getViewMode() );
 
+	UIDiffView::setMultiFileViewMode( viewer, UIDiffView::ViewMode::Unified );
+	UIDiffView::setMultiFileCollapsed( viewer, true );
+	for ( const auto* diffView : diffViews ) {
+		EXPECT_EQ( UIDiffView::ViewMode::Unified, diffView->getViewMode() );
+		EXPECT_TRUE( diffView->isCollapsed() );
+		EXPECT_TRUE( diffView->getViewLines().empty() );
+	}
+	UIDiffView::setMultiFileCollapsed( viewer, false );
+	for ( const auto* diffView : diffViews ) {
+		EXPECT_FALSE( diffView->isCollapsed() );
+		EXPECT_FALSE( diffView->getViewLines().empty() );
+	}
+
 	eeDelete( viewer );
 }
 

@@ -418,7 +418,8 @@ void UICodeEditor::draw() {
 	}
 
 	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
-		auto offset = getTextPositionOffset( cursor, lineHeight );
+		auto offset = getTextPositionOffset( cursor, lineHeight, false, false,
+											 Text::LigatureCaretMode::ClosestGlyph );
 		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
@@ -2056,7 +2057,8 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() &&
 		 !mDocView.isFolded( cursor.line(), true ) ) {
-		auto offset = getTextPositionOffset( cursor, lineHeight );
+		auto offset = getTextPositionOffset( cursor, lineHeight, false, false,
+											 Text::LigatureCaretMode::ClosestGlyph );
 		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y + getLineOffset() );
 		Primitives primitives;
 		primitives.setColor( Color( mCaretColor ).blendAlpha( mAlpha ) );
@@ -2613,8 +2615,8 @@ bool UICodeEditor::setScrollY( const Float& val, bool emitEvent ) {
 
 Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 											  std::optional<Float> lineHeight,
-											  bool allowVisualLineEnd,
-											  bool visualizeNewLine ) const {
+											  bool allowVisualLineEnd, bool visualizeNewLine,
+											  Text::LigatureCaretMode ligatureCaretMode ) const {
 	double lh = lineHeight ? *lineHeight : getLineHeight();
 	if ( mDocView.isWrappedLine( position.line() ) ) {
 		auto info = mDocView.getVisibleLineRange( position, allowVisualLineEnd );
@@ -2635,7 +2637,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 					partialLine, mFontStyleConfig.Style, mTabWidth,
 					mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(),
 					false, mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
-					mTextDirection )
+					mTextDirection, {}, ligatureCaretMode )
 					.x;
 			if ( visualizeNewLine && allowVisualLineEnd &&
 				 position.column() == (Int64)mDoc->line( position.line() ).getText().size() - 1 )
@@ -2670,7 +2672,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 				mDoc->line( position.line() ).getText(), mFontStyleConfig.Style, mTabWidth,
 				mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(), false,
 				mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
-				mTextDirection )
+				mTextDirection, {}, ligatureCaretMode )
 				.x;
 		if ( visualizeNewLine && isLastChar )
 			x += getGlyphWidth();

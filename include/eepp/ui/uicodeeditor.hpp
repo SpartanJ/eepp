@@ -559,10 +559,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
-	virtual Vector2d getTextPositionOffset( const TextPosition& pos,
-											std::optional<Float> lineHeight = {},
-											bool allowVisualLineEnd = false,
-											bool visualizeNewLine = false ) const;
+	virtual Vector2d getTextPositionOffset(
+		const TextPosition& pos, std::optional<Float> lineHeight = {},
+		bool allowVisualLineEnd = false, bool visualizeNewLine = false,
+		Text::LigatureCaretMode ligatureCaretMode = Text::LigatureCaretMode::Interpolate ) const;
 
 	Vector2d getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
@@ -1042,7 +1042,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
-	std::vector<SyntaxTokenPosition> mTokens;
+	SmallVector<SyntaxTokenPosition, 4> mTokens;
 	TextDirection mTextDirection{ TextDirection::LeftToRight };
 
 	UICodeEditor( const bool& autoRegisterBaseCommands = true,

@@ -1,6 +1,8 @@
 #include "gitplugin.hpp"
 #include "../../settingspage.hpp"
 #include "gitbranchmodel.hpp"
+#include "githistorymodel.hpp"
+#include "githistorytreeview.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -24,6 +26,8 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/engine.hpp>
 #include <nlohmann/json.hpp>
 
 using namespace EE::UI;
@@ -172,6 +176,9 @@ GitPlugin::~GitPlugin() {
 		Sys::sleep( Milliseconds( 1.f ) );
 
 	while ( mRunningUpdateBranches )
+		Sys::sleep( Milliseconds( 1.f ) );
+
+	while ( mRunningHistoryRequests )
 		Sys::sleep( Milliseconds( 1.f ) );
 
 	while ( *mRunningAsyncTasks )
@@ -909,7 +916,11 @@ void GitPlugin::checkout( Git::Branch branch ) {
 			} else {
 				showMessage( LSPMessageType::Warning, result.result );
 			}
-			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+			getUISceneNode()->runOnMainThread( [this, success = result.success()] {
+				if ( success )
+					invalidateHistory();
+				mLoader->setVisible( false );
+			} );
 		} );
 	};
 
@@ -1135,6 +1146,7 @@ void GitPlugin::commit( const std::string& repoPath, bool mergeCommit ) {
 				if ( res.success() ) {
 					lifetime.run( [mergeCommit, repoPath]( GitPlugin* plugin ) {
 						plugin->mLastCommitMsg.clear();
+						plugin->invalidateHistory();
 						if ( mergeCommit ) {
 							++plugin->mConflictGeneration;
 							plugin->mConflictSessions.erase( repoPath );
@@ -1199,7 +1211,7 @@ void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 
 			return mGit->updateRef( branch.name, remoteBranch[0].lastCommit, repoSelected() );
 		},
-		false, true );
+		false, true, false, false, false, true );
 }
 
 // Branch operations
@@ -2232,6 +2244,395 @@ std::unordered_map<std::string, std::string> GitPlugin::updateReposBranches() {
 	return prevBranch;
 }
 
+void GitPlugin::invalidateHistory() {
+	++mHistoryGeneration;
+	mHistoryLoaded = false;
+	mHistoryRepo.clear();
+	if ( mPanelSwicher && mPanelSwicher->getListBox()->getItemSelectedIndex() == 2 )
+		reloadHistory();
+}
+
+void GitPlugin::updateHistoryHeader() {
+	if ( !mHistoryRefText )
+		return;
+	std::string branch;
+	{
+		const std::string repo = repoSelected();
+		Lock l( mGitBranchMutex );
+		auto it = mGitBranches.find( repo );
+		if ( it != mGitBranches.end() )
+			branch = it->second;
+	}
+	mHistoryRefText->setText( branch.empty() ? "HEAD" : branch );
+}
+
+void GitPlugin::ensureHistoryLoaded() {
+	const std::string repo = repoSelected();
+	if ( !mHistoryLoaded || mHistoryRepo != repo )
+		reloadHistory();
+}
+
+void GitPlugin::reloadHistory() {
+	if ( mShuttingDown || !mGit || !mGitFound || !mHistoryTree )
+		return;
+	updateHistoryHeader();
+	const std::string repo = repoSelected();
+	const Uint64 generation = ++mHistoryGeneration;
+	mHistoryRepo = repo;
+	mHistoryLoaded = false;
+	if ( !mHistoryModel ) {
+		mHistoryModel = GitHistoryModel::asModel( this );
+		mHistoryTree->setModel( mHistoryModel );
+		mHistoryTree->setColumnsVisible( { GitHistoryModel::Subject } );
+	}
+	mHistoryTree->clearViewMetadata();
+	mHistoryModel->setRootLoading();
+	Git::HistoryQuery query;
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	++mRunningHistoryRequests;
+	mThreadPool->run(
+		[git = std::move( git ), lifetime, repo, generation, query]() mutable {
+			auto page = git->history( query, repo );
+			lifetime.run(
+				[repo, generation, query, page = std::move( page )]( GitPlugin* plugin ) mutable {
+					if ( plugin->mShuttingDown || generation != plugin->mHistoryGeneration ||
+						 repo != plugin->repoSelected() )
+						return;
+					plugin->mHistoryLoaded = true;
+					if ( page.success() )
+						plugin->mHistoryModel->setRootPage( std::move( page ), query );
+					else
+						plugin->mHistoryModel->setRootError( std::move( page.result ) );
+				} );
+		},
+		[this]( auto ) { --mRunningHistoryRequests; } );
+}
+
+void GitPlugin::loadHistoryPage( GitHistoryModel::Node* node, Git::HistoryQuery query,
+								 bool append ) {
+	if ( !node || mShuttingDown || node->childrenLoading )
+		return;
+	if ( append && node->type != GitHistoryModel::NodeType::LoadMore && !node->retryAppend )
+		return;
+	if ( !append && ( node->type != GitHistoryModel::NodeType::Commit || node->childrenLoaded ) )
+		return;
+	const std::string repo = repoSelected();
+	const Uint64 generation = mHistoryGeneration;
+	if ( append )
+		mHistoryModel->setPageLoading( node );
+	else
+		mHistoryModel->setChildrenLoading( node );
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	++mRunningHistoryRequests;
+	mThreadPool->run(
+		[git = std::move( git ), lifetime, repo, generation, node, query = std::move( query ),
+		 append]() mutable {
+			auto page = git->history( query, repo );
+			lifetime.run( [repo, generation, node, query = std::move( query ), append,
+						   page = std::move( page )]( GitPlugin* plugin ) mutable {
+				if ( plugin->mShuttingDown || generation != plugin->mHistoryGeneration ||
+					 repo != plugin->repoSelected() )
+					return;
+				if ( page.fail() ) {
+					if ( append )
+						plugin->mHistoryModel->setPageError( node, std::move( page.result ) );
+					else
+						plugin->mHistoryModel->setChildrenError( node, std::move( page.result ),
+																 query );
+					return;
+				}
+				if ( append )
+					plugin->mHistoryModel->appendPage( node, std::move( page ) );
+				else
+					plugin->mHistoryModel->setChildrenPage( node, std::move( page ), query );
+				plugin->mHistoryTree->recalculateColumnsWidth();
+			} );
+		},
+		[this]( auto ) { --mRunningHistoryRequests; } );
+}
+
+void GitPlugin::activateHistoryIndex( const ModelIndex& index, bool expand ) {
+	if ( !mHistoryModel )
+		return;
+	auto* node = mHistoryModel->node( index );
+	if ( !node )
+		return;
+	if ( node->type == GitHistoryModel::NodeType::LoadMore ) {
+		if ( !expand && !node->childrenLoading )
+			loadHistoryPage( node, node->query, true );
+		return;
+	}
+	if ( node->type == GitHistoryModel::NodeType::Error && !expand ) {
+		if ( node->retryAppend && !node->childrenLoading )
+			loadHistoryPage( node, node->query, true );
+		else if ( node->parent && !node->parent->childrenLoading )
+			loadHistoryPage( node->parent, node->query, false );
+		else
+			reloadHistory();
+		return;
+	}
+	if ( expand && node->type == GitHistoryModel::NodeType::Commit &&
+		 node->commit.parents.size() == 2 && !node->childrenLoaded && !node->childrenLoading ) {
+		loadHistoryPage( node, mHistoryModel->mergeQuery( node, 200 ), false );
+	}
+}
+
+void GitPlugin::openCommitDetails( const Git::Commit& commit ) {
+	if ( commit.hash.empty() )
+		return;
+	const std::string repo = repoSelected();
+	const Uint64 generation = ++mCommitDetailsGeneration;
+	mCommitDetailsCommit = commit;
+	mCommitDetailsRepo = repo;
+
+	const bool newView =
+		!mCommitDetailsView || !mManager->getSplitter()->ownedWidgetExists( mCommitDetailsView );
+	if ( newView ) {
+		mCommitDetailsView = getUISceneNode()->loadLayoutFromString( R"xml(
+			<vbox id="git_commit_details" lw="mp" lh="mp">
+				<vbox lw="mp" lh="wc" padding="12dp">
+					<hbox lw="mp" lh="wc">
+						<TextView id="git_commit_metadata" lw="0" lw8="1" lh="wc"
+								  word-wrap="true" focusable="false" />
+						<PushButton id="git_commit_sha" text="Commit SHA"
+									text-as-fallback="true" margin-left="8dp" />
+					</hbox>
+					<hbox lw="mp" lh="wc" margin-top="8dp">
+						<TextView id="git_commit_subject" lw="0" lw8="1" lh="wc"
+								  font-size="14dp" word-wrap="true" focusable="false" />
+						<PushButton id="git_commit_message_toggle"
+									text="@string(git_expand_commit_description, Expand Commit Description)"
+									icon="icon(unfold, 12dp)" text-as-fallback="true"
+									margin-left="8dp" visible="false" />
+					</hbox>
+					<TextView id="git_commit_message" lw="mp" lh="wc" margin-top="8dp"
+							  word-wrap="true" focusable="false" visible="false" />
+					<TextView id="git_commit_parents" lw="mp" lh="wc" margin-top="4dp"
+							  word-wrap="true" focusable="false" />
+				</vbox>
+				<hbox lw="mp" lh="wc" padding-left="8dp" padding-right="8dp"
+					  padding-top="4dp" padding-bottom="4dp">
+					<PushButton id="git_commit_files_toggle"
+								tooltip="@string(git_collapse_all_files, Collapse All Files)"
+								icon="icon(collapse-all, 12dp)" />
+					<PushButton id="git_commit_mode_toggle"
+								text="@string(git_split_diff, Split)"
+								icon="icon(split-horizontal, 12dp)" text-as-fallback="true"
+								margin-left="4dp" />
+					<TextView id="git_commit_files_status" lw="0" lw8="1" lh="wc"
+							  margin-left="8dp" layout_gravity="center_vertical" focusable="false" />
+					<PushButton id="git_commit_github"
+								text="@string(git_view_on_github, View on GitHub)"
+								icon="icon(github, 12dp)" text-as-fallback="true"
+								visible="false" />
+				</hbox>
+				<vbox id="git_commit_diff" lw="mp" lh="0" lw8="1" />
+			</vbox>
+		)xml" );
+		mCommitDetailsSubject = mCommitDetailsView->find<UITextView>( "git_commit_subject" );
+		mCommitDetailsMetadata = mCommitDetailsView->find<UITextView>( "git_commit_metadata" );
+		mCommitDetailsParents = mCommitDetailsView->find<UITextView>( "git_commit_parents" );
+		mCommitDetailsMessage = mCommitDetailsView->find<UITextView>( "git_commit_message" );
+		mCommitDetailsStatus = mCommitDetailsView->find<UITextView>( "git_commit_files_status" );
+		mCommitDetailsMessageToggle =
+			mCommitDetailsView->find<UIPushButton>( "git_commit_message_toggle" );
+		mCommitDetailsFilesToggle =
+			mCommitDetailsView->find<UIPushButton>( "git_commit_files_toggle" );
+		mCommitDetailsModeToggle =
+			mCommitDetailsView->find<UIPushButton>( "git_commit_mode_toggle" );
+		mCommitDetailsGitHub = mCommitDetailsView->find<UIPushButton>( "git_commit_github" );
+		mCommitDetailsDiffContainer = mCommitDetailsView->find<UIWidget>( "git_commit_diff" );
+		mCommitDetailsMessageToggle->onClick( [this]( const Event* ) {
+			mCommitDetailsMessageExpanded = !mCommitDetailsMessageExpanded;
+			mCommitDetailsMessage->setVisible( mCommitDetailsMessageExpanded );
+			mCommitDetailsMessageToggle->setText(
+				mCommitDetailsMessageExpanded
+					? i18n( "git_collapse_commit_description", "Collapse Commit Description" )
+					: i18n( "git_expand_commit_description", "Expand Commit Description" ) );
+		} );
+		mCommitDetailsFilesToggle->onClick( [this]( const Event* ) {
+			mCommitDetailsFilesCollapsed = !mCommitDetailsFilesCollapsed;
+			UIDiffView::setMultiFileCollapsed( mCommitDetailsDiff, mCommitDetailsFilesCollapsed );
+			mCommitDetailsFilesToggle->setTooltipText(
+				mCommitDetailsFilesCollapsed
+					? i18n( "git_expand_all_files", "Expand All Files" )
+					: i18n( "git_collapse_all_files", "Collapse All Files" ) );
+			if ( auto* icon =
+					 findIcon( mCommitDetailsFilesCollapsed ? "expand-all" : "collapse-all" ) )
+				mCommitDetailsFilesToggle->setIcon(
+					icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+		} );
+		mCommitDetailsModeToggle->onClick( [this]( const Event* ) {
+			mCommitDetailsViewMode = mCommitDetailsViewMode == UIDiffView::ViewMode::Unified
+										 ? UIDiffView::ViewMode::SideBySide
+										 : UIDiffView::ViewMode::Unified;
+			UIDiffView::setMultiFileViewMode( mCommitDetailsDiff, mCommitDetailsViewMode );
+			mCommitDetailsModeToggle->setText( mCommitDetailsViewMode ==
+													   UIDiffView::ViewMode::Unified
+												   ? i18n( "git_split_diff", "Split" )
+												   : i18n( "git_unified_diff", "Unified" ) );
+			if ( auto* icon = findIcon( mCommitDetailsViewMode == UIDiffView::ViewMode::Unified
+											? "split-horizontal"
+											: "layout" ) )
+				mCommitDetailsModeToggle->setIcon(
+					icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+		} );
+		mCommitDetailsGitHub->onClick( [this]( const Event* ) {
+			if ( !mCommitDetailsURL.empty() )
+				Engine::instance()->openURI( mCommitDetailsURL );
+		} );
+		mCommitDetailsView->find<UIPushButton>( "git_commit_sha" )
+			->onClick( [this]( const Event* ) {
+				getUISceneNode()->getWindow()->getClipboard()->setText( mCommitDetailsCommit.hash );
+			} );
+		auto* view = mCommitDetailsView;
+		mCommitDetailsCloseConnection =
+			view->connect( Event::OnClose, [this, view]( const Event* ) {
+				if ( mCommitDetailsView != view )
+					return;
+				++mCommitDetailsGeneration;
+				mCommitDetailsView = nullptr;
+				mCommitDetailsSubject = nullptr;
+				mCommitDetailsMetadata = nullptr;
+				mCommitDetailsParents = nullptr;
+				mCommitDetailsMessage = nullptr;
+				mCommitDetailsStatus = nullptr;
+				mCommitDetailsMessageToggle = nullptr;
+				mCommitDetailsFilesToggle = nullptr;
+				mCommitDetailsModeToggle = nullptr;
+				mCommitDetailsGitHub = nullptr;
+				mCommitDetailsDiffContainer = nullptr;
+				mCommitDetailsDiff = nullptr;
+				mCommitDetailsMessageBody.clear();
+				mCommitDetailsURL.clear();
+				mCommitDetailsRepo.clear();
+			} );
+	}
+
+	mCommitDetailsSubject->setText( String::fromUtf8( commit.subject ) );
+	String metadata = String::fromUtf8( commit.authorName ) + "\n" +
+					  Sys::epochToString( commit.commitTime ) + " - " +
+					  String::fromUtf8( commit.authorEmail );
+	mCommitDetailsMetadata->setText( metadata );
+	String parents;
+	for ( size_t i = 0; i < commit.parents.size(); ++i ) {
+		if ( i )
+			parents += ", ";
+		parents += String::fromUtf8( commit.parents[i] );
+	}
+	mCommitDetailsMessageBody.clear();
+	mCommitDetailsMessageExpanded = false;
+	mCommitDetailsMessage->setText( "" );
+	mCommitDetailsMessage->setVisible( false );
+	mCommitDetailsMessageToggle->setVisible( false );
+	mCommitDetailsParents->setVisible( !parents.empty() );
+	mCommitDetailsParents->setText( i18n( "git_parents", "Parents" ) + ": " + parents );
+	mCommitDetailsStatus->setText(
+		i18n( "git_loading_changed_files", "Loading changed files..." ) );
+	mCommitDetailsFilesCollapsed = false;
+	mCommitDetailsFilesToggle->setTooltipText(
+		i18n( "git_collapse_all_files", "Collapse All Files" ) );
+	if ( auto* icon = findIcon( "collapse-all" ) )
+		mCommitDetailsFilesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	mCommitDetailsURL.clear();
+	mCommitDetailsGitHub->setVisible( false );
+	mCommitDetailsDiff = nullptr;
+	mCommitDetailsDiffContainer->closeAllChildren();
+	auto* shaButton = mCommitDetailsView->find<UIPushButton>( "git_commit_sha" );
+	shaButton->setText( String::fromUtf8( commit.shortHash ) );
+	shaButton->setTooltipText( String::fromUtf8( commit.hash ) );
+
+	const std::string tabName = commit.shortHash + " " + commit.subject;
+	if ( newView ) {
+		mManager->getSplitter()->createWidget( mCommitDetailsView, tabName, true );
+	} else {
+		auto tabs = mManager->getSplitter()->getTabFromOwnedWidgetId( mCommitDetailsView->getId() );
+		if ( !tabs.empty() ) {
+			tabs.front().first->setText( tabName );
+			tabs.front().second->setTabSelected( tabs.front().first );
+		}
+	}
+	if ( generation == mCommitDetailsGeneration )
+		loadCommitFiles();
+}
+
+void GitPlugin::loadCommitFiles() {
+	const Uint64 generation = mCommitDetailsGeneration;
+	const std::string repo = mCommitDetailsRepo;
+	const Git::Commit commit = mCommitDetailsCommit;
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit] {
+		auto result = git->commitFiles( commit, repo );
+		lifetime.run( [generation, repo, commit,
+					   result = std::move( result )]( GitPlugin* plugin ) mutable {
+			if ( plugin->mShuttingDown || generation != plugin->mCommitDetailsGeneration ||
+				 repo != plugin->mCommitDetailsRepo || repo != plugin->repoSelected() ||
+				 commit.hash != plugin->mCommitDetailsCommit.hash || !plugin->mCommitDetailsView ||
+				 !plugin->mManager->getSplitter()->ownedWidgetExists( plugin->mCommitDetailsView ) )
+				return;
+			if ( result.fail() ) {
+				plugin->mCommitDetailsStatus->setText(
+					plugin->i18n( "git_changed_files_error", "Could not load changed files" ) +
+					( result.result.empty() ? "" : ": " + result.result ) );
+				return;
+			}
+			std::string body = std::move( result.message );
+			if ( body.compare( 0, commit.subject.size(), commit.subject ) == 0 ) {
+				body.erase( 0, commit.subject.size() );
+				while ( !body.empty() && ( body.front() == '\n' || body.front() == '\r' ) )
+					body.erase( body.begin() );
+			}
+			plugin->mCommitDetailsMessageBody = std::move( body );
+			plugin->mCommitDetailsMessage->setText(
+				String::fromUtf8( plugin->mCommitDetailsMessageBody ) );
+			plugin->mCommitDetailsMessage->setVisible( false );
+			plugin->mCommitDetailsMessageExpanded = false;
+			plugin->mCommitDetailsMessageToggle->setVisible(
+				!plugin->mCommitDetailsMessageBody.empty() );
+			plugin->mCommitDetailsMessageToggle->setText(
+				plugin->i18n( "git_expand_commit_description", "Expand Commit Description" ) );
+
+			int totalInserts = 0;
+			int totalDeletes = 0;
+			for ( const auto& file : result.files ) {
+				totalInserts += file.inserts;
+				totalDeletes += file.deletes;
+			}
+			if ( result.files.empty() ) {
+				plugin->mCommitDetailsStatus->setText(
+					plugin->i18n( "git_no_changed_files", "No changed files" ) );
+			} else {
+				plugin->mCommitDetailsStatus->setText( String::format(
+					plugin->i18n( "git_changed_files_summary", "Changed files (%zu)  +%d -%d" )
+						.toUtf8(),
+					result.files.size(), totalInserts, totalDeletes ) );
+			}
+
+			plugin->mCommitDetailsURL = std::move( result.commitURL );
+			plugin->mCommitDetailsGitHub->setVisible( !plugin->mCommitDetailsURL.empty() );
+			plugin->mCommitDetailsDiffContainer->closeAllChildren();
+			plugin->mCommitDetailsDiff = nullptr;
+			if ( !result.patch.empty() ) {
+				plugin->mCommitDetailsDiff = UIDiffView::NewMultiFileDiffViewer(
+					result.patch, repo, plugin->mCommitDetailsViewMode );
+				plugin->mCommitDetailsDiff->setLayoutSizePolicy( SizePolicy::MatchParent,
+																 SizePolicy::MatchParent );
+				plugin->mCommitDetailsDiff->setParent( plugin->mCommitDetailsDiffContainer );
+				for ( auto* diff : UIDiffView::multiFileDiffViews( plugin->mCommitDetailsDiff ) ) {
+					if ( const auto* scheme = plugin->getPluginContext()->getCurrentColorScheme() )
+						diff->setSyntaxColorScheme( *scheme );
+				}
+			}
+			const bool hasDiff = plugin->mCommitDetailsDiff != nullptr;
+			plugin->mCommitDetailsFilesToggle->setVisible( hasDiff );
+			plugin->mCommitDetailsModeToggle->setVisible( hasDiff );
+		} );
+	} );
+}
+
 void GitPlugin::updateBranches( bool force ) {
 	if ( !mGit || !mGitFound || ( mRunningUpdateBranches && !force ) )
 		return;
@@ -2254,14 +2655,29 @@ void GitPlugin::updateBranches( bool force ) {
 			auto hash = GitBranchModel::hashBranches( branches );
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
 
+			bool branchChanged;
+			{
+				Lock l( mGitBranchMutex );
+				branchChanged = prevBranch != mGitBranches;
+			}
 			if ( mBranchesTree && mBranchesTree->getModel() &&
 				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash ) {
-				if ( prevBranch != mGitBranches )
-					mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
+				if ( branchChanged ) {
+					getUISceneNode()->runOnMainThread( [this] {
+						if ( mBranchesTree && mBranchesTree->getModel() )
+							mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
+						updateHistoryHeader();
+						invalidateHistory();
+					} );
+				}
 				return;
 			}
 
-			getUISceneNode()->runOnMainThread( [this, model] { updateBranchesUI( model ); } );
+			getUISceneNode()->runOnMainThread( [this, model, branchChanged] {
+				updateBranchesUI( model );
+				if ( branchChanged )
+					invalidateHistory();
+			} );
 		},
 		[this]( auto ) { mRunningUpdateBranches--; } );
 }
@@ -2290,6 +2706,7 @@ void GitPlugin::updateRepos() {
 
 void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	buildSidePanelTab();
+	updateHistoryHeader();
 
 	if ( !model ) {
 		mBranchesTree->setModel( model );
@@ -2340,10 +2757,13 @@ void GitPlugin::buildSidePanelTab() {
 		return;
 	if ( mSidePanel == nullptr )
 		getUISceneNode()->bind( "panel", mSidePanel );
+	if ( !UIWidgetCreator::isWidgetRegistered( "GitHistoryTreeView" ) )
+		UIWidgetCreator::registerWidget( "GitHistoryTreeView", GitHistoryTreeView::New );
 	static constexpr auto STYLE = R"html(
 	<style>
 	#git_branches_tree ScrollBar,
-	#git_status_tree ScrollBar {
+	#git_status_tree ScrollBar,
+	#git_history_tree ScrollBar {
 		opacity: 0;
 		transition: opacity 0.15;
 	}
@@ -2352,8 +2772,29 @@ void GitPlugin::buildSidePanelTab() {
 	#git_branches_tree ScrollBar:focus-within,
 	#git_status_tree:hover ScrollBar,
 	#git_status_tree ScrollBar.dragging,
-	#git_status_tree ScrollBar:focus-within {
+	#git_status_tree ScrollBar:focus-within,
+	#git_history_tree:hover ScrollBar,
+	#git_history_tree ScrollBar.dragging,
+	#git_history_tree ScrollBar:focus-within {
 		opacity: 1;
+	}
+	treeview::cell.git_history_secondary {
+		color: var(--font-hint);
+	}
+	treeview::cell.git_history_hash {
+		color: var(--font-hint);
+		font-family: monospace;
+	}
+	treeview::cell.git_history_action {
+		color: %s;
+	}
+	treeview::cell.git_history_merge {
+		font-style: italic;
+	}
+	treeview::row:selected treeview::cell.git_history_secondary,
+	treeview::row:selected treeview::cell.git_history_hash,
+	treeview::row:selected treeview::cell.git_history_action {
+		color: var(--font-selected-pressed);
 	}
 	treeview::cell.git_highlight_style {
 		color: %s;
@@ -2395,6 +2836,13 @@ void GitPlugin::buildSidePanelTab() {
 				<vbox id="git_status" lw="mp" lh="mp">
 					<TreeView id="git_status_tree" lw="mp" lh="mp" />
 				</vbox>
+				<vbox id="git_history" lw="mp" lh="mp">
+					<hbox lw="mp" lh="wc" padding="4dp">
+						<TextView id="git_history_ref" text="HEAD" lw="0" lw8="1" lh="wc" layout_gravity="center_vertical" text-overflow="ellipsis" />
+						<PushButton id="git_history_refresh" text="@string(git_history_refresh, Refresh)" icon="icon(refresh, 12dp)" text-as-fallback="true" />
+					</hbox>
+					<GitHistoryTreeView id="git_history_tree" lw="mp" lh="0" lw8="1" />
+				</vbox>
 			</StackWidget>
 		</vbox>
 		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false" text='@string(git_no_git_repo, "Current folder is not a Git repository.")' margin="8dp" text-align="center" />
@@ -2408,7 +2856,7 @@ void GitPlugin::buildSidePanelTab() {
 			: std::string{ DEFAULT_HIGHLIGHT_COLOR };
 
 	mTabContents = getUISceneNode()->loadLayoutFromString(
-		String::format( STYLE, color, color ), nullptr, String::hash( "git_plugin_style" ) );
+		String::format( STYLE, color, color, color ), nullptr, String::hash( "git_plugin_style" ) );
 
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
@@ -2419,6 +2867,8 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->bind( "git_panel_stack", mStackWidget );
 	mTabContents->bind( "git_branches_tree", mBranchesTree );
 	mTabContents->bind( "git_status_tree", mStatusTree );
+	mTabContents->bind( "git_history_tree", mHistoryTree );
+	mTabContents->bind( "git_history_ref", mHistoryRefText );
 	mTabContents->bind( "git_content", mGitContentView );
 	mTabContents->bind( "git_no_content", mGitNoContentView );
 	mTabContents->bind( "git_conflict_state", mConflictStateBar );
@@ -2429,6 +2879,8 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->find( "branch_pull" )->onClick( [this]( auto ) { pull( repoSelected() ); } );
 	mTabContents->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
 	mTabContents->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
+	mTabContents->find( "git_history_refresh" )->onClick( [this]( auto ) { reloadHistory(); } );
+	updateHistoryHeader();
 	mTabContents->find( "git_conflict_continue" )->onClick( [this]( auto ) {
 		continueConflictOperation();
 	} );
@@ -2493,16 +2945,44 @@ void GitPlugin::buildSidePanelTab() {
 	} );
 
 	auto listBox = mPanelSwicher->getListBox();
-	listBox->addListBoxItems( { i18n( "branches", "Branches" ), i18n( "status", "Status" ) } );
-	mStackMap.resize( 2 );
+	listBox->addListBoxItems( { i18n( "branches", "Branches" ), i18n( "status", "Status" ),
+								i18n( "git_history", "History" ) } );
+	mStackMap.resize( 3 );
 	mStackMap[0] = mTabContents->find<UIWidget>( "git_branches" );
 	mStackMap[1] = mTabContents->find<UIWidget>( "git_status" );
+	mStackMap[2] = mTabContents->find<UIWidget>( "git_history" );
 
 	mPanelSwicher->on( Event::OnItemSelected, [this, listBox]( const Event* ) {
 		mStackWidget->setActiveWidget( mStackMap[listBox->getItemSelectedIndex()] );
+		if ( listBox->getItemSelectedIndex() == 2 )
+			ensureHistoryLoaded();
 	} );
 	listBox->setSelected( 0 );
 	mStackWidget->setActiveWidget( mStackMap[0] );
+
+	mHistoryTree->setAutoExpandOnSingleColumn( true );
+	mHistoryTree->setFitAllColumnsToWidget( true );
+	mHistoryTree->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	mHistoryTree->setAutoColumnsWidth( true );
+	mHistoryTree->setRowHeight( PixelDensity::dpToPx( 36 ) );
+	mHistoryTree->setHeadersVisible( false );
+	mHistoryTree->setExpandersAsIcons( true );
+	mHistoryTree->setScrollViewType( ScrollViewType::Overlay );
+	mHistoryTree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
+	mHistoryTree->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const auto* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::OpenTree )
+			activateHistoryIndex( modelEvent->getModelIndex(), true );
+		else if ( modelEvent->getModelEventType() == ModelEventType::Open )
+			activateHistoryIndex( modelEvent->getModelIndex(), false );
+	} );
+	mHistoryTree->setOnSelection( [this]( const ModelIndex& index ) {
+		if ( !mHistoryModel )
+			return;
+		const auto* node = mHistoryModel->node( index );
+		if ( node && node->type == GitHistoryModel::NodeType::Commit )
+			openCommitDetails( node->commit );
+	} );
 
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
@@ -2698,6 +3178,7 @@ void GitPlugin::buildSidePanelTab() {
 					Lock l( mRepoMutex );
 					mRepoSelected = repo.first;
 				}
+				invalidateHistory();
 				updateBranches( true );
 				updateStatus( true );
 				break;
@@ -2875,17 +3356,20 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 
 void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, bool _updateBranches,
 						  bool displaySuccessMsg, bool updateBranchesOnError,
-						  bool updateStatusOnError ) {
+						  bool updateStatusOnError, bool historyChanged ) {
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
 	const auto lifetime = mLifetime.weakHandle();
 	runAsyncTask( [lifetime, fn, _updateStatus, _updateBranches, displaySuccessMsg,
-				   updateBranchesOnError, updateStatusOnError] {
+				   updateBranchesOnError, updateStatusOnError, historyChanged] {
 		auto res = fn();
 		lifetime.run( [res = std::move( res ), _updateStatus, _updateBranches, displaySuccessMsg,
-					   updateBranchesOnError, updateStatusOnError]( GitPlugin* plugin ) mutable {
+					   updateBranchesOnError, updateStatusOnError,
+					   historyChanged]( GitPlugin* plugin ) mutable {
 			plugin->mLoader->setVisible( false );
+			if ( res.success() && historyChanged )
+				plugin->invalidateHistory();
 			if ( res.fail() || displaySuccessMsg ) {
 				plugin->showMessage( LSPMessageType::Warning, res.result );
 				if ( _updateBranches && updateBranchesOnError )
@@ -2917,6 +3401,8 @@ void GitPlugin::runMergeLikeAsync( std::function<Git::Result( Git& )> fn,
 		lifetime.run( [result = std::move( result ),
 					   conflicts = std::move( conflicts )]( GitPlugin* plugin ) mutable {
 			plugin->mLoader->setVisible( false );
+			if ( result.success() )
+				plugin->invalidateHistory();
 			plugin->updateBranches();
 			plugin->updateStatus( true );
 			if ( result.fail() && !conflicts.hasConflicts() )

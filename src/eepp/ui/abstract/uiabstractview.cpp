@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -141,6 +142,19 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 		getSelection().removeAllMatching(
 			[this]( auto& index ) { return !getModel()->isValid( index ); } );
 	}
+}
+
+void UIAbstractView::onModelIndexDeleted( const void* internalData ) {
+	auto indexes = getSelection().indexes();
+	auto firstRemoved =
+		std::remove_if( indexes.begin(), indexes.end(), [internalData]( const ModelIndex& index ) {
+			return index.internalData() == internalData;
+		} );
+	if ( firstRemoved == indexes.end() )
+		return;
+	indexes.erase( firstRemoved, indexes.end() );
+	// Model-driven deletion must not invoke user selection callbacks re-entrantly.
+	getSelection().set( indexes, false );
 }
 
 void UIAbstractView::onModelUpdate( unsigned flags ) {

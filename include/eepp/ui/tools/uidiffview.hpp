@@ -36,6 +36,12 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	static bool isMultiFileDiff( const std::string& diff );
 
+	static std::vector<UIDiffView*> multiFileDiffViews( UIScrollView* multiDiff );
+
+	static void setMultiFileViewMode( UIScrollView* multiDiff, ViewMode mode );
+
+	static void setMultiFileCollapsed( UIScrollView* multiDiff, bool collapsed );
+
 	virtual ~UIDiffView();
 
 	virtual Uint32 getType() const override;
@@ -84,6 +90,9 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	void setHeadersVisible( bool visible );
 
+	void setCollapsed( bool collapsed );
+	bool isCollapsed() const { return mCollapsed; }
+
 	bool areHeadersVisible() const { return mHeadersVisible; }
 
 	const String& getFileName() const { return mFileName; }
@@ -115,6 +124,7 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	bool mHeadersVisible{ false };
 	bool mIsImageDiff{ false };
 	bool mAutoDeleteOldTempImage{ false };
+	bool mCollapsed{ false };
 	std::shared_ptr<SyntaxDefinition> mSyntaxDef;
 	String mFileName;
 	std::string mImageDiffOldPath;

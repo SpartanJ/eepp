@@ -863,7 +863,7 @@ Float Text::getOutlineThickness() const {
 	return mFontStyleConfig.OutlineThickness;
 }
 
-Vector2f Text::findCharacterPos( std::size_t index ) const {
+Vector2f Text::findCharacterPos( std::size_t index, LigatureCaretMode ligatureCaretMode ) const {
 	// Make sure that we have a valid font
 	if ( !mFontStyleConfig.Font || mString.empty() )
 		return Vector2f();
@@ -873,19 +873,20 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 		index = mString.size();
 
 	if ( mLineWrapMode == LineWrapMode::NoWrap || mMaxWrapWidth <= 0 ) {
-		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-									   mString, mFontStyleConfig.Style, mTabWidth,
-									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-									   TextDirection::Unspecified, mInitialOffset );
+		return Text::findCharacterPos(
+			index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
+			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
+			mTextHints, TextDirection::Unspecified, mInitialOffset, ligatureCaretMode );
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
-		return Text::findCharacterPos(
-			index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
-			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
-			mTextHints, TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth, mInitialOffset );
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   mString, mFontStyleConfig.Style, mTabWidth,
+									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
+									   TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth,
+									   mInitialOffset, ligatureCaretMode );
 	}
 #endif
 
@@ -933,7 +934,8 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	Vector2f pos = Text::findCharacterPos(
 		index - startIdx, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
 		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero );
+		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero,
+		ligatureCaretMode );
 
 	return Vector2f( pos.x + centerDiffX, y );
 }
@@ -1184,10 +1186,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 								 const String& string, const Uint32& style, const Uint32& tabWidth,
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 bool allowNewLine, Uint32 textDrawHints, TextDirection direction,
-								 const Vector2f& initialOffset ) {
+								 const Vector2f& initialOffset,
+								 LigatureCaretMode ligatureCaretMode ) {
 	return findCharacterPos( index, font, fontSize, string, style, tabWidth, outlineThickness,
 							 tabOffset, allowNewLine, textDrawHints, direction,
-							 LineWrapMode::NoWrap, 0.f, initialOffset );
+							 LineWrapMode::NoWrap, 0.f, initialOffset, ligatureCaretMode );
 }
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
@@ -1195,7 +1198,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 bool allowNewLine, Uint32 textDrawHints, TextDirection direction,
 								 LineWrapMode lineWrapMode, Float maxWrapWidth,
-								 const Vector2f& initialOffset ) {
+								 const Vector2f& initialOffset,
+								 LigatureCaretMode ligatureCaretMode ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -1268,8 +1272,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				i = j;
 			}
 		}
-		if ( caretCluster && !hasExactCluster && index < clusterEnd &&
-			 string.isGraphemeBoundary( index ) ) {
+		if ( ligatureCaretMode == LigatureCaretMode::Interpolate && caretCluster &&
+			 !hasExactCluster && index < clusterEnd && string.isGraphemeBoundary( index ) ) {
 			std::size_t boundaryCount = 0;
 			std::size_t boundaryIndex = 0;
 			for ( std::size_t boundary = clusterStart + 1; boundary <= clusterEnd; ++boundary ) {

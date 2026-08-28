@@ -1238,4 +1238,15 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="default_diff_view_desc">Choose the initial layout used when opening text diffs.</string>
 	<string name="diff_view_side_by_side">Side by Side</string>
 	<string name="diff_view_unified">Unified</string>
+	<string name="git_history">Historique</string>
+	<string name="git_history_subject">Sujet</string>
+	<string name="git_history_author">Auteur</string>
+	<string name="git_history_date">Date</string>
+	<string name="git_history_hash">Hash</string>
+	<string name="git_history_loading">Chargement...</string>
+	<string name="git_history_refresh">Actualiser</string>
+	<string name="git_history_load_older">Charger les commits précédents</string>
+	<string name="git_history_empty">Aucun commit pour le moment</string>
+	<string name="git_history_error">Impossible de charger l’historique Git</string>
+	<string name="git_history_retry">Réessayer</string>
 </resources>

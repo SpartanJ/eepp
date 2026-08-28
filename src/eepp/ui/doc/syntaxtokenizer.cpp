@@ -51,7 +51,7 @@ static int isInMultiByteCodePoint( const char* text, const size_t& textSize, con
 }
 
 template <typename T>
-static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
+static void pushToken( SmallVector<T, 4>& tokens, const SyntaxStyleType& type,
 					   const std::string_view& text ) {
 	if ( text.empty() )
 		return;
@@ -275,7 +275,7 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 template <typename T>
 static inline void
 pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPattern* subsyntaxInfo,
-								const NonEscapedMatch& rangeSubsyntax, std::vector<T>& tokens,
+								const NonEscapedMatch& rangeSubsyntax, SmallVector<T, 4>& tokens,
 								std::vector<size_t>& priorityMap, bool isClose = false ) {
 	const auto& types = isClose && !subsyntaxInfo->endTypes.empty() ? subsyntaxInfo->endTypes
 																	: subsyntaxInfo->types;
@@ -388,10 +388,10 @@ pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPatte
 }
 
 template <typename T>
-static inline std::pair<std::vector<T>, SyntaxState>
+static inline std::pair<SmallVector<T, 4>, SyntaxState>
 _tokenize( const SyntaxDefinition& syntax, const std::string& text, const SyntaxState& state,
 		   const size_t& startIndex, bool skipSubSyntaxSeparator ) {
-	std::vector<T> tokens;
+	SmallVector<T, 4> tokens;
 
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, SyntaxStyleTypes::Normal, text );
@@ -987,14 +987,14 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	return std::make_pair( std::move( tokens ), retState );
 }
 
-std::pair<std::vector<SyntaxToken>, SyntaxState>
+std::pair<SmallVector<SyntaxToken, 4>, SyntaxState>
 SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& text,
 						   const SyntaxState& state, const size_t& startIndex,
 						   bool skipSubSyntaxSeparator ) {
 	return _tokenize<SyntaxToken>( syntax, text, state, startIndex, skipSubSyntaxSeparator );
 }
 
-std::pair<std::vector<SyntaxTokenPosition>, SyntaxState>
+std::pair<SmallVector<SyntaxTokenPosition, 4>, SyntaxState>
 SyntaxTokenizer::tokenizePosition( const SyntaxDefinition& syntax, const std::string& text,
 								   const SyntaxState& state, const size_t& startIndex,
 								   bool skipSubSyntaxSeparator ) {
@@ -1002,7 +1002,7 @@ SyntaxTokenizer::tokenizePosition( const SyntaxDefinition& syntax, const std::st
 										   skipSubSyntaxSeparator );
 }
 
-std::pair<std::vector<SyntaxTokenComplete>, SyntaxState>
+std::pair<SmallVector<SyntaxTokenComplete, 4>, SyntaxState>
 SyntaxTokenizer::tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text,
 								   const SyntaxState& state, const size_t& startIndex,
 								   bool skipSubSyntaxSeparator ) {

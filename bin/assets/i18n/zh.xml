@@ -1043,4 +1043,15 @@ file in the directory tree.</string>
 	<string name="default_diff_view_desc">Choose the initial layout used when opening text diffs.</string>
 	<string name="diff_view_side_by_side">Side by Side</string>
 	<string name="diff_view_unified">Unified</string>
+	<string name="git_history">历史</string>
+	<string name="git_history_subject">主题</string>
+	<string name="git_history_author">作者</string>
+	<string name="git_history_date">日期</string>
+	<string name="git_history_hash">哈希</string>
+	<string name="git_history_loading">正在加载...</string>
+	<string name="git_history_refresh">刷新</string>
+	<string name="git_history_load_older">加载更早的提交</string>
+	<string name="git_history_empty">尚无提交</string>
+	<string name="git_history_error">无法加载 Git 历史记录</string>
+	<string name="git_history_retry">重试</string>
 </resources>

@@ -71,6 +71,13 @@ class MoveTestModel : public Model {
 		return {};
 	}
 
+	void deleteRootAt( int row ) {
+		if ( beginDeleteRows( {}, row, row ) ) {
+			root.children.erase( root.children.begin() + row );
+			endDeleteRows();
+		}
+	}
+
 	void moveA1ToB() {
 		beginMoveRows( indexFor( a ), 1, 1, indexFor( b ), 1 );
 		a1->parent = b;
@@ -213,6 +220,50 @@ UTEST( ModelInsert, persistentIndexesPreserveInternalIds ) {
 	ModelIndex index = tracked;
 	ASSERT_EQ( tracked.row(), 3 );
 	ASSERT_EQ( index.internalId(), 30 );
+}
+
+UTEST( ModelDelete, selectedTreeIndexIsRemovedBeforeNodeFree ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Model selection deletion test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	initTreeViewTestScene();
+
+	auto model = std::make_shared<MoveTestModel>();
+	UITreeView* treeView = UITreeView::New();
+	treeView->setModel( model );
+	treeView->getSelection().set( model->indexFor( model->b ) );
+	ASSERT_EQ( 1, treeView->getSelection().size() );
+	int selectionCallbacks = 0;
+	treeView->setOnSelectionChange( [&selectionCallbacks] { ++selectionCallbacks; } );
+
+	model->deleteRootAt( 1 );
+	// This is the same non-index-invalidating refresh used after History pagination.
+	model->invalidate( Model::DontInvalidateIndexes );
+
+	EXPECT_TRUE( treeView->getSelection().isEmpty() );
+	EXPECT_EQ( 0, selectionCallbacks );
+}
+
+UTEST( TableView, fitSingleColumnUsesViewportWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Single-column fit test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	initTreeViewTestScene();
+
+	auto model = std::make_shared<MoveTestModel>();
+	model->a->name.assign( 1024, 'x' );
+	UITreeView* treeView = UITreeView::New();
+	treeView->setPixelsSize( 220, 300 );
+	treeView->setModel( model );
+	treeView->setAutoExpandOnSingleColumn( true );
+	treeView->setFitAllColumnsToWidget( true );
+	treeView->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	treeView->recalculateColumnsWidth();
+
+	EXPECT_TRUE( treeView->getColumnWidth( 0 ) <= treeView->getContentSpaceWidth() );
+	EXPECT_EQ( ScrollBarMode::AlwaysOff, treeView->getHorizontalScrollMode() );
 }
 
 UTEST( ModelDelete, persistentIndexesExpireOrShiftWithoutIdentityCollisions ) {

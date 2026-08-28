@@ -83,16 +83,16 @@ struct SyntaxState {
 
 class EE_API SyntaxTokenizer {
   public:
-	static std::pair<std::vector<SyntaxToken>, SyntaxState>
+	static std::pair<SmallVector<SyntaxToken, 4>, SyntaxState>
 	tokenize( const SyntaxDefinition& syntax, const std::string& text, const SyntaxState& state,
 			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
 
-	static std::pair<std::vector<SyntaxTokenPosition>, SyntaxState>
+	static std::pair<SmallVector<SyntaxTokenPosition, 4>, SyntaxState>
 	tokenizePosition( const SyntaxDefinition& syntax, const std::string& text,
 					  const SyntaxState& state, const size_t& startIndex = 0,
 					  bool skipSubSyntaxSeparator = false );
 
-	static std::pair<std::vector<SyntaxTokenComplete>, SyntaxState>
+	static std::pair<SmallVector<SyntaxTokenComplete, 4>, SyntaxState>
 	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text,
 					  const SyntaxState& state, const size_t& startIndex = 0,
 					  bool skipSubSyntaxSeparator = false );

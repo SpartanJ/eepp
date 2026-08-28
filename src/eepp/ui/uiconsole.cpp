@@ -524,11 +524,13 @@ void UIConsole::draw() {
 
 	Primitives p;
 	p.setColor( Color( mFontStyleConfig.FontSelectionBackColor ).blendAlpha( (Uint8)mAlpha ) );
-	const auto characterPos = [this]( const String& string, std::size_t index ) {
+	const auto characterPos = [this]( const String& string, std::size_t index,
+									  Text::LigatureCaretMode ligatureCaretMode =
+										  Text::LigatureCaretMode::Interpolate ) {
 		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
 									   string, mFontStyleConfig.Style, 4,
-									   mFontStyleConfig.OutlineThickness, {}, false,
-									   getTextHints() )
+									   mFontStyleConfig.OutlineThickness, {}, false, getTextHints(),
+									   TextDirection::Unspecified, {}, ligatureCaretMode )
 			.x;
 	};
 	auto to = eemax( mCon.min - mCon.modif, 0 );
@@ -618,7 +620,8 @@ void UIConsole::draw() {
 
 	if ( mCursorVisible ) {
 		Float cursorPos =
-			editCharWidth + characterPos( inputLine, mDoc.getSelection().start().column() );
+			editCharWidth + characterPos( inputLine, mDoc.getSelection().start().column(),
+										  Text::LigatureCaretMode::ClosestGlyph );
 		Rectf r( { mScreenPos.x + mPaddingPx.Left + cursorPos, curY }, { cursorPos, lineHeight } );
 		updateIMELocation( r );
 		if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {

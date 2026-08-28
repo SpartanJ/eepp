@@ -46,6 +46,7 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 }
 
 void UITreeView::onModelIndexDeleted( const void* internalData ) {
+	UIAbstractTableView::onModelIndexDeleted( internalData );
 	mViewMetadata.erase( const_cast<void*>( internalData ) );
 }
 
@@ -728,6 +729,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( !metadata.open ) {
 					metadata.open = true;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, true );
 					return 0;
 				}
 				getSelection().set( getModel()->index( 0, getModel()->treeColumn(), curIndex ) );
@@ -740,6 +742,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( metadata.open ) {
 					metadata.open = false;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, false );
 					return 0;
 				}
 			}
@@ -756,6 +759,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					auto& metadata = getIndexMetadata( curIndex );
 					metadata.open = !metadata.open;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, metadata.open );
 				} else {
 					onOpenModelIndex( curIndex, &event );
 				}

@@ -627,7 +627,9 @@ void UIAbstractTableView::updateColumnsWidth() {
 	if ( mAutoExpandOnSingleColumn || mAutoColumnsWidth ) {
 		int col = 0;
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
-			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
+			Float width = mFitAllColumnsToWidget ? getContentSpaceWidth()
+												 : eemax( getContentSpaceWidth(),
+														  getMaxColumnContentWidth( col, true ) );
 			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
 			const bool verticalScrollConsumesWidth =
 				mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f;

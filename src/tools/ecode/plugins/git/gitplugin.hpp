@@ -4,9 +4,11 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include "githistorymodel.hpp"
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <optional>
@@ -122,6 +124,9 @@ class GitPlugin : public PluginBase {
 	UIPushButton* mStatusButton{ nullptr };
 	UITreeView* mBranchesTree{ nullptr };
 	UITreeView* mStatusTree{ nullptr };
+	UITreeView* mHistoryTree{ nullptr };
+	UITextView* mHistoryRefText{ nullptr };
+	std::shared_ptr<GitHistoryModel> mHistoryModel;
 	UIDropDownList* mPanelSwicher{ nullptr };
 	UIDropDownList* mRepoDropDown{ nullptr };
 	UIStackWidget* mStackWidget{ nullptr };
@@ -132,6 +137,31 @@ class GitPlugin : public PluginBase {
 	UITextView* mConflictStateText{ nullptr };
 	UILoader* mLoader{ nullptr };
 	std::atomic<int> mRunningUpdateBranches{ 0 };
+	std::atomic<int> mRunningHistoryRequests{ 0 };
+	std::atomic<Uint64> mHistoryGeneration{ 0 };
+	std::string mHistoryRepo;
+	bool mHistoryLoaded{ false };
+	UIWidget* mCommitDetailsView{ nullptr };
+	UITextView* mCommitDetailsSubject{ nullptr };
+	UITextView* mCommitDetailsMetadata{ nullptr };
+	UITextView* mCommitDetailsMessage{ nullptr };
+	UITextView* mCommitDetailsParents{ nullptr };
+	UITextView* mCommitDetailsStatus{ nullptr };
+	UIPushButton* mCommitDetailsMessageToggle{ nullptr };
+	UIPushButton* mCommitDetailsFilesToggle{ nullptr };
+	UIPushButton* mCommitDetailsModeToggle{ nullptr };
+	UIPushButton* mCommitDetailsGitHub{ nullptr };
+	UIWidget* mCommitDetailsDiffContainer{ nullptr };
+	UIScrollView* mCommitDetailsDiff{ nullptr };
+	std::string mCommitDetailsMessageBody;
+	std::string mCommitDetailsURL;
+	bool mCommitDetailsMessageExpanded{ false };
+	bool mCommitDetailsFilesCollapsed{ false };
+	Tools::UIDiffView::ViewMode mCommitDetailsViewMode{ Tools::UIDiffView::ViewMode::Unified };
+	Git::Commit mCommitDetailsCommit;
+	std::string mCommitDetailsRepo;
+	std::atomic<Uint64> mCommitDetailsGeneration{ 0 };
+	EventConnection mCommitDetailsCloseConnection;
 	std::atomic<int> mRunningUpdateStatus{ 0 };
 	std::atomic<bool> mPendingForcedStatusUpdate{ false };
 	std::shared_ptr<std::atomic<int>> mRunningAsyncTasks{ std::make_shared<std::atomic<int>>( 0 ) };
@@ -152,7 +182,7 @@ class GitPlugin : public PluginBase {
 	UnorderedMap<std::string, std::unique_ptr<GitConflictSession>> mConflictSessions;
 	std::string mActiveConflictRepo;
 	Tools::UIMergeView* mConflictView{ nullptr };
-	EE::Scene::EventConnection mConflictViewCloseConnection;
+	EventConnection mConflictViewCloseConnection;
 	Uint64 mConflictGeneration{ 0 };
 	Uint32 mRepositionCbId{ 0 };
 
@@ -252,6 +282,22 @@ class GitPlugin : public PluginBase {
 
 	void updateBranches( bool force = false );
 
+	void ensureHistoryLoaded();
+
+	void updateHistoryHeader();
+
+	void reloadHistory();
+
+	void invalidateHistory();
+
+	void loadHistoryPage( GitHistoryModel::Node* node, Git::HistoryQuery query, bool append );
+
+	void activateHistoryIndex( const ModelIndex& index, bool expand );
+
+	void openCommitDetails( const Git::Commit& commit );
+
+	void loadCommitFiles();
+
 	void buildSidePanelTab();
 
 	void updateBranchesUI( std::shared_ptr<GitBranchModel> );
@@ -268,7 +314,7 @@ class GitPlugin : public PluginBase {
 
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
 				   bool displaySuccessMsg = false, bool updateBranchesOnError = false,
-				   bool updateStatusOnError = false );
+				   bool updateStatusOnError = false, bool historyChanged = false );
 	void runMergeLikeAsync( std::function<Git::Result( Git& )> fn, const std::string& repoPath );
 
 	GitConflictSession* conflictSession( const std::string& repoPath );

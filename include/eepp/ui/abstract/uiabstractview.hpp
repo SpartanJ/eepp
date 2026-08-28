@@ -137,7 +137,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	virtual void onModelSelectionChange();
 
-	virtual void onModelIndexDeleted( const void* ) {}
+	virtual void onModelIndexDeleted( const void* internalData );
 
 	void modelUpdate( unsigned flags );
 

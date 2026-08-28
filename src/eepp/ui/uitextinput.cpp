@@ -230,7 +230,9 @@ void UITextInput::alignFix() {
 	UITextView::alignFix();
 
 	if ( mAllowEditing /* && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT */ ) {
-		Float tW = getVisibleTextCache().findCharacterPos( selCurInit() ).x;
+		Float tW = getVisibleTextCache()
+					   .findCharacterPos( selCurInit(), Text::LigatureCaretMode::ClosestGlyph )
+					   .x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
 

@@ -201,6 +201,47 @@ class Git {
 		bool fail() const { return !success(); }
 	};
 
+	struct Commit {
+		std::string hash;
+		std::string shortHash;
+		std::vector<std::string> parents;
+		std::string subject;
+		std::string authorName;
+		std::string authorEmail;
+		int64_t authorTime{ 0 };
+		int64_t commitTime{ 0 };
+
+		bool isMerge() const { return parents.size() > 1; }
+	};
+
+	struct HistoryQuery {
+		std::string revision{ "HEAD" };
+		std::vector<std::string> exclusions;
+		std::string continuation;
+		size_t limit{ 200 };
+	};
+
+	struct HistoryPage : public Result {
+		std::vector<Commit> commits;
+		bool hasMore{ false };
+	};
+
+	struct CommitFile {
+		std::string status;
+		int inserts{ 0 };
+		int deletes{ 0 };
+		bool isBinary{ false };
+		std::string path;
+		std::string oldPath;
+	};
+
+	struct CommitFiles : public Result {
+		std::vector<CommitFile> files;
+		std::string message;
+		std::string patch;
+		std::string commitURL;
+	};
+
 	struct CheckoutResult : public Result {
 		std::string branch;
 	};
@@ -421,6 +462,13 @@ class Git {
 					   const std::string& projectDir = "" );
 
 	Result stashDrop( const std::string& stashId, const std::string& projectDir = "" );
+
+	HistoryPage history( const HistoryQuery& query, const std::string& projectDir = "" ) const;
+
+	CommitFiles commitFiles( const Commit& commit, const std::string& projectDir = "" ) const;
+
+	Result commitDiff( const Commit& commit, const CommitFile& file,
+					   const std::string& projectDir = "" ) const;
 
   protected:
 	std::string mGitPath;

@@ -41,6 +41,8 @@ class EE_API Text {
 		Shadow = 1 << 4			///< Draw a shadow below the text
 	};
 
+	enum class LigatureCaretMode : Uint8 { ClosestGlyph, Interpolate };
+
 	static inline bool canSkipShaping( Uint32 textDrawHints ) {
 		return Text::TextShaperOptimizations && !( textDrawHints & TextHints::OpenTypeFeatures ) &&
 			   ( textDrawHints & ( TextHints::AllLatin1 | TextHints::AllAscii ) ) != 0;
@@ -134,7 +136,8 @@ class EE_API Text {
 		std::size_t index, Font* font, const Uint32& fontSize, const String& string,
 		const Uint32& style, const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
 		std::optional<Float> tabOffset = {}, bool allowNewLine = true, Uint32 textHints = 0,
-		TextDirection direction = TextDirection::Unspecified, const Vector2f& initialOffset = {} );
+		TextDirection direction = TextDirection::Unspecified, const Vector2f& initialOffset = {},
+		LigatureCaretMode ligatureCaretMode = LigatureCaretMode::Interpolate );
 
 	static std::size_t
 	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const String& string,
@@ -239,7 +242,9 @@ class EE_API Text {
 
 	Float getOutlineThickness() const;
 
-	Vector2f findCharacterPos( std::size_t index ) const;
+	Vector2f
+	findCharacterPos( std::size_t index,
+					  LigatureCaretMode ligatureCaretMode = LigatureCaretMode::Interpolate ) const;
 
 	/** @return The current text local bounds. */
 	Rectf getLocalBounds();
@@ -497,13 +502,13 @@ class EE_API Text {
 	/** Ensures visual line info is up to date. */
 	void ensureVisualLinesUpdate();
 
-	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
-									  const String& string, const Uint32& style,
-									  const Uint32& tabWidth, const Float& outlineThickness,
-									  std::optional<Float> tabOffset, bool allowNewLine,
-									  Uint32 textHints, TextDirection direction,
-									  LineWrapMode lineWrapMode, Float maxWrapWidth,
-									  const Vector2f& initialOffset = {} );
+	static Vector2f
+	findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize, const String& string,
+					  const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness,
+					  std::optional<Float> tabOffset, bool allowNewLine, Uint32 textHints,
+					  TextDirection direction, LineWrapMode lineWrapMode, Float maxWrapWidth,
+					  const Vector2f& initialOffset = {},
+					  LigatureCaretMode ligatureCaretMode = LigatureCaretMode::Interpolate );
 
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,

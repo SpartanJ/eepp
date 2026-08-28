@@ -461,8 +461,13 @@ UTEST( FontRendering, latinOpenTypeFeaturesAreExplicitAndCachedByTextHints ) {
 															4, 0, {}, false, ligatureHints );
 	const Vector2f afterLigature = Text::findCharacterPos( 2, font.get(), 24, text, Text::Regular,
 														   4, 0, {}, false, ligatureHints );
+	const Vector2f closestGlyph = Text::findCharacterPos(
+		1, font.get(), 24, text, Text::Regular, 4, 0, {}, false, ligatureHints,
+		TextDirection::Unspecified, {}, Text::LigatureCaretMode::ClosestGlyph );
 	EXPECT_LT( beforeLigature.x, insideLigature.x );
 	EXPECT_LT( insideLigature.x, afterLigature.x );
+	EXPECT_LE( beforeLigature.x, closestGlyph.x );
+	EXPECT_LE( closestGlyph.x, afterLigature.x );
 	EXPECT_EQ( 1, Text::findCharacterFromPos( insideLigature.asInt(), true, font.get(), 24, text,
 											  Text::Regular, 4, 0, {}, ligatureHints ) );
 }

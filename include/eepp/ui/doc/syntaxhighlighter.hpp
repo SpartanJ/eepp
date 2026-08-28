@@ -10,13 +10,13 @@ namespace EE { namespace UI { namespace Doc {
 struct EE_API TokenizedLine {
 	SyntaxState initState;
 	String::HashType hash{ 0 };
-	std::vector<SyntaxTokenPosition> tokens;
+	SmallVector<SyntaxTokenPosition, 4> tokens;
 	SyntaxState state;
 	Uint64 signature{ 0 };
 
 	void updateSignature();
 
-	static Uint64 calcSignature( const std::vector<SyntaxTokenPosition>& tokens );
+	static Uint64 calcSignature( const SmallVector<SyntaxTokenPosition, 4>& tokens );
 };
 
 class EE_API SyntaxHighlighter {
@@ -31,10 +31,10 @@ class EE_API SyntaxHighlighter {
 
 	void invalidate( Int64 lineIndex );
 
-	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index,
-													 bool mustTokenize = true );
+	const SmallVector<SyntaxTokenPosition, 4>& getLine( const size_t& index,
+														bool mustTokenize = true );
 
-	void copyLineToBuffer( const size_t& index, std::vector<SyntaxTokenPosition>& buffer,
+	void copyLineToBuffer( const size_t& index, SmallVector<SyntaxTokenPosition, 4>& buffer,
 						   bool mustTokenize = true );
 
 	Int64 getFirstInvalidLine() const;

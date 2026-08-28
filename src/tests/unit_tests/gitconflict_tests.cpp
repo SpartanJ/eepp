@@ -102,3 +102,208 @@ UTEST( GitConflict, KeepsMergeOperationAfterAllConflictsAreStaged ) {
 	EXPECT_FALSE( state.hasConflicts() );
 	EXPECT_EQ( Git::GitOperation::Merge, state.operation );
 }
+
+UTEST( GitHistory, PaginatesFirstParentWithoutDuplicates ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "History Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "history@example.invalid" } ) );
+	for ( int i = 0; i < 5; ++i )
+		ASSERT_EQ( EXIT_SUCCESS,
+				   run( { "commit", "--allow-empty", "-m", "commit " + std::to_string( i ) } ) );
+	Git::HistoryQuery query;
+	query.limit = 2;
+	auto first = git.history( query, temp.path.string() );
+	ASSERT_TRUE( first.success() );
+	ASSERT_EQ( 2u, first.commits.size() );
+	ASSERT_TRUE( first.hasMore );
+	query.continuation = first.commits.back().parents.front();
+	auto second = git.history( query, temp.path.string() );
+	ASSERT_TRUE( second.success() );
+	ASSERT_EQ( 2u, second.commits.size() );
+	EXPECT_FALSE( first.commits.back().hash == second.commits.front().hash );
+	query.continuation = second.commits.back().parents.front();
+	auto third = git.history( query, temp.path.string() );
+	ASSERT_TRUE( third.success() );
+	ASSERT_EQ( 1u, third.commits.size() );
+	EXPECT_FALSE( third.hasMore );
+}
+
+UTEST( GitHistory, PropagatedExclusionsHideAlreadyRepresentedMainline ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "History Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "history@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "-c", "feature" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "feature one" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "main one" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "feature" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "merge", "--no-ff", "main", "-m", "merge main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "feature two" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "merge", "--no-ff", "feature", "-m", "merge feature" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "branch", "-D", "feature" } ) );
+
+	Git::HistoryQuery rootQuery;
+	auto root = git.history( rootQuery, temp.path.string() );
+	ASSERT_TRUE( root.success() );
+	ASSERT_TRUE( root.commits.front().isMerge() );
+	Git::HistoryQuery featureQuery;
+	featureQuery.revision = root.commits.front().parents[1];
+	featureQuery.exclusions.emplace_back( root.commits.front().parents[0] );
+	auto feature = git.history( featureQuery, temp.path.string() );
+	ASSERT_TRUE( feature.success() );
+	ASSERT_EQ( 3u, feature.commits.size() );
+	ASSERT_TRUE( feature.commits[1].isMerge() );
+	Git::HistoryQuery nestedQuery;
+	nestedQuery.revision = feature.commits[1].parents[1];
+	nestedQuery.exclusions = featureQuery.exclusions;
+	nestedQuery.exclusions.emplace_back( feature.commits[1].parents[0] );
+	auto nested = git.history( nestedQuery, temp.path.string() );
+	ASSERT_TRUE( nested.success() );
+	EXPECT_TRUE( nested.commits.empty() );
+}
+
+UTEST( GitHistory, HandlesEmptyRepositoryUnicodeAndHardLimit ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	Git::HistoryQuery query;
+	auto empty = git.history( query, temp.path.string() );
+	ASSERT_TRUE( empty.success() );
+	EXPECT_TRUE( empty.commits.empty() );
+	query.limit = 1001;
+	EXPECT_TRUE( git.history( query, temp.path.string() ).fail() );
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Tést 🚀" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "unicode@example.invalid" } ) );
+	const std::string subject = "unicode 🚀 | quote \" and tab\tend";
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", subject } ) );
+	query.limit = 200;
+	auto page = git.history( query, temp.path.string() );
+	ASSERT_TRUE( page.success() );
+	ASSERT_EQ( 1u, page.commits.size() );
+	EXPECT_STREQ( subject.c_str(), page.commits.front().subject.c_str() );
+	EXPECT_STREQ( "Tést 🚀", page.commits.front().authorName.c_str() );
+}
+
+UTEST( GitHistory, PaginatesMergedFirstParentLevelIndependently ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "History Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "history@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "-c", "feature" } ) );
+	for ( int i = 0; i < 5; ++i )
+		ASSERT_EQ( EXIT_SUCCESS,
+				   run( { "commit", "--allow-empty", "-m", "feature " + std::to_string( i ) } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "switch", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "merge", "--no-ff", "feature", "-m", "merge feature" } ) );
+
+	Git::HistoryQuery rootQuery;
+	auto root = git.history( rootQuery, temp.path.string() );
+	ASSERT_TRUE( root.success() );
+	ASSERT_TRUE( root.commits.front().isMerge() );
+	Git::HistoryQuery childQuery;
+	childQuery.revision = root.commits.front().parents[1];
+	childQuery.exclusions.emplace_back( root.commits.front().parents[0] );
+	childQuery.limit = 2;
+	auto first = git.history( childQuery, temp.path.string() );
+	ASSERT_TRUE( first.success() );
+	ASSERT_EQ( 2u, first.commits.size() );
+	ASSERT_TRUE( first.hasMore );
+	childQuery.continuation = first.commits.back().parents.front();
+	auto second = git.history( childQuery, temp.path.string() );
+	ASSERT_TRUE( second.success() );
+	ASSERT_EQ( 2u, second.commits.size() );
+	ASSERT_TRUE( second.hasMore );
+	childQuery.continuation = second.commits.back().parents.front();
+	auto third = git.history( childQuery, temp.path.string() );
+	ASSERT_TRUE( third.success() );
+	ASSERT_EQ( 1u, third.commits.size() );
+	EXPECT_FALSE( third.hasMore );
+}
+
+UTEST( GitHistory, ListsChangedFilesAndLoadsFirstParentDiff ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "History Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "history@example.invalid" } ) );
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "old name.txt" ).string(),
+										"same line one\nbefore\nsame line three\n" ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "old name.txt" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "old name.txt", "new name.txt" } ) );
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "new name.txt" ).string(),
+										"same line one\nafter\nsame line three\n" ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "new name.txt" } ) );
+	ASSERT_EQ( EXIT_SUCCESS,
+			   run( { "commit", "-m", "rename and modify", "-m", "Detailed body line." } ) );
+	ASSERT_EQ( EXIT_SUCCESS,
+			   run( { "remote", "add", "origin", "git@github.com:SpartanJ/eepp.git" } ) );
+
+	auto history = git.history( {}, temp.path.string() );
+	ASSERT_TRUE( history.success() );
+	ASSERT_FALSE( history.commits.empty() );
+	auto files = git.commitFiles( history.commits.front(), temp.path.string() );
+	ASSERT_TRUE( files.success() );
+	ASSERT_EQ( 1u, files.files.size() );
+	EXPECT_STREQ( "new name.txt", files.files.front().path.c_str() );
+	EXPECT_STREQ( "old name.txt", files.files.front().oldPath.c_str() );
+	EXPECT_EQ( 1, files.files.front().inserts );
+	EXPECT_EQ( 1, files.files.front().deletes );
+	EXPECT_FALSE( files.files.front().isBinary );
+	EXPECT_NE( std::string::npos, files.message.find( "Detailed body line." ) );
+	const std::string expectedCommitURL =
+		"https://github.com/SpartanJ/eepp/commit/" + history.commits.front().hash;
+	EXPECT_STREQ( expectedCommitURL.c_str(), files.commitURL.c_str() );
+	auto diff = git.commitDiff( history.commits.front(), files.files.front(), temp.path.string() );
+	ASSERT_TRUE( diff.success() );
+	EXPECT_NE( std::string::npos, diff.result.find( "-before" ) );
+	EXPECT_NE( std::string::npos, diff.result.find( "+after" ) );
+}

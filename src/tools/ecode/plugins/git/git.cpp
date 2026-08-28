@@ -9,6 +9,7 @@
 #include <eepp/system/sys.hpp>
 
 #include <algorithm>
+#include <charconv>
 #include <cstdio>
 
 using namespace EE;
@@ -17,6 +18,290 @@ using namespace EE::System;
 using namespace std::literals;
 
 namespace ecode {
+
+static bool parseHistoryTimestamp( std::string_view value, int64_t& timestamp ) {
+	const char* end = value.data() + value.size();
+	auto result = std::from_chars( value.data(), end, timestamp );
+	return result.ec == std::errc{} && result.ptr == end;
+}
+
+Git::HistoryPage Git::history( const HistoryQuery& query, const std::string& projectDir ) const {
+	HistoryPage page;
+	if ( query.limit == 0 || query.limit > 1000 ||
+		 ( query.revision.empty() && query.continuation.empty() ) ) {
+		page.returnCode = EXIT_FAILURE;
+		page.result = "Invalid Git history query";
+		return page;
+	}
+	std::vector<std::string> args{ "log",
+								   "--first-parent",
+								   String::format( "--max-count=%zu", query.limit + 1 ),
+								   "-z",
+								   "--format=%H%x00%h%x00%P%x00%an%x00%ae%x00%at%x00%ct%x00%s",
+								   query.continuation.empty() ? query.revision
+															  : query.continuation };
+	if ( !query.exclusions.empty() ) {
+		args.emplace_back( "--not" );
+		args.insert( args.end(), query.exclusions.begin(), query.exclusions.end() );
+	}
+	page.returnCode = git( args, projectDir, page.result );
+	if ( page.fail() ) {
+		std::string head;
+		if ( query.revision == "HEAD" && query.continuation.empty() &&
+			 git( { "rev-parse", "--verify", "HEAD" }, projectDir, head ) != EXIT_SUCCESS ) {
+			page.returnCode = EXIT_SUCCESS;
+			page.result.clear();
+		}
+		return page;
+	}
+	constexpr size_t FieldCount = 8;
+	size_t offset = 0;
+	while ( offset < page.result.size() ) {
+		std::string_view fields[FieldCount];
+		for ( size_t field = 0; field < FieldCount; ++field ) {
+			const size_t end = page.result.find( '\0', offset );
+			if ( end == std::string::npos ) {
+				page.returnCode = EXIT_FAILURE;
+				page.commits.clear();
+				page.result = "Invalid NUL-framed git log output";
+				return page;
+			}
+			fields[field] = std::string_view( page.result ).substr( offset, end - offset );
+			offset = end + 1;
+		}
+		if ( offset < page.result.size() && page.result[offset] == '\0' )
+			++offset;
+		Commit commit;
+		commit.hash = fields[0];
+		commit.shortHash = fields[1];
+		size_t parentOffset = 0;
+		while ( parentOffset < fields[2].size() ) {
+			const size_t separator = fields[2].find( ' ', parentOffset );
+			commit.parents.emplace_back( fields[2].substr(
+				parentOffset, separator == std::string_view::npos ? fields[2].size() - parentOffset
+																  : separator - parentOffset ) );
+			if ( separator == std::string_view::npos )
+				break;
+			parentOffset = separator + 1;
+		}
+		commit.authorName = fields[3];
+		commit.authorEmail = fields[4];
+		commit.subject = fields[7];
+		if ( !parseHistoryTimestamp( fields[5], commit.authorTime ) ||
+			 !parseHistoryTimestamp( fields[6], commit.commitTime ) ) {
+			page.returnCode = EXIT_FAILURE;
+			page.commits.clear();
+			page.result = "Invalid timestamp in git log output";
+			return page;
+		}
+		page.commits.emplace_back( std::move( commit ) );
+	}
+	page.result.clear();
+	page.hasMore = page.commits.size() > query.limit;
+	if ( page.hasMore )
+		page.commits.resize( query.limit );
+	return page;
+}
+
+Git::CommitFiles Git::commitFiles( const Commit& commit, const std::string& projectDir ) const {
+	CommitFiles result;
+	if ( commit.hash.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		result.result = "Invalid commit";
+		return result;
+	}
+	std::vector<std::string> args;
+	if ( commit.parents.empty() ) {
+		args = { "diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-z", "-M",
+				 commit.hash, "--" };
+	} else {
+		args = { "diff", "--name-status", "-z", "-M", commit.parents[0], commit.hash, "--" };
+	}
+	result.returnCode = git( args, projectDir, result.result );
+	if ( result.fail() )
+		return result;
+
+	size_t offset = 0;
+	auto nextField = [&result, &offset]( std::string_view& field ) {
+		if ( offset >= result.result.size() )
+			return false;
+		const size_t end = result.result.find( '\0', offset );
+		if ( end == std::string::npos )
+			return false;
+		field = std::string_view( result.result ).substr( offset, end - offset );
+		offset = end + 1;
+		return true;
+	};
+	while ( offset < result.result.size() ) {
+		std::string_view status;
+		std::string_view path;
+		if ( !nextField( status ) || !nextField( path ) || status.empty() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.files.clear();
+			result.result = "Invalid NUL-framed git diff output";
+			return result;
+		}
+		CommitFile file;
+		file.status = status;
+		if ( status[0] == 'R' || status[0] == 'C' ) {
+			std::string_view newPath;
+			if ( !nextField( newPath ) ) {
+				result.returnCode = EXIT_FAILURE;
+				result.files.clear();
+				result.result = "Invalid renamed path in git diff output";
+				return result;
+			}
+			file.oldPath = path;
+			file.path = newPath;
+		} else {
+			file.path = path;
+		}
+		result.files.emplace_back( std::move( file ) );
+	}
+	std::string numstat;
+	if ( commit.parents.empty() ) {
+		args = { "diff-tree", "--root", "--no-commit-id", "--numstat", "-r",
+				 "-z",		  "-M",		commit.hash,	  "--" };
+	} else {
+		args = { "diff", "--numstat", "-z", "-M", commit.parents[0], commit.hash, "--" };
+	}
+	result.returnCode = git( args, projectDir, numstat );
+	if ( result.fail() ) {
+		result.result = std::move( numstat );
+		result.files.clear();
+		return result;
+	}
+	offset = 0;
+	while ( offset < numstat.size() ) {
+		const size_t end = numstat.find( '\0', offset );
+		if ( end == std::string::npos ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid NUL-framed git numstat output";
+			result.files.clear();
+			return result;
+		}
+		const std::string_view record( numstat.data() + offset, end - offset );
+		offset = end + 1;
+		const size_t firstTab = record.find( '\t' );
+		const size_t secondTab =
+			firstTab == std::string_view::npos ? firstTab : record.find( '\t', firstTab + 1 );
+		if ( firstTab == std::string_view::npos || secondTab == std::string_view::npos ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid git numstat record";
+			result.files.clear();
+			return result;
+		}
+		std::string_view path = record.substr( secondTab + 1 );
+		std::string_view oldPath;
+		if ( path.empty() ) {
+			const size_t oldEnd = numstat.find( '\0', offset );
+			if ( oldEnd == std::string::npos ) {
+				result.returnCode = EXIT_FAILURE;
+				result.result = "Invalid renamed path in git numstat output";
+				result.files.clear();
+				return result;
+			}
+			oldPath = std::string_view( numstat ).substr( offset, oldEnd - offset );
+			offset = oldEnd + 1;
+			const size_t newEnd = numstat.find( '\0', offset );
+			if ( newEnd == std::string::npos ) {
+				result.returnCode = EXIT_FAILURE;
+				result.result = "Invalid renamed path in git numstat output";
+				result.files.clear();
+				return result;
+			}
+			path = std::string_view( numstat ).substr( offset, newEnd - offset );
+			offset = newEnd + 1;
+		}
+		auto file = std::find_if( result.files.begin(), result.files.end(),
+								  [path, oldPath]( const CommitFile& candidate ) {
+									  return candidate.path == path &&
+											 ( oldPath.empty() || candidate.oldPath == oldPath );
+								  } );
+		if ( file == result.files.end() )
+			continue;
+		const std::string_view inserted = record.substr( 0, firstTab );
+		const std::string_view deleted = record.substr( firstTab + 1, secondTab - firstTab - 1 );
+		file->isBinary = inserted == "-" || deleted == "-";
+		auto parseCount = []( std::string_view value, int& count ) {
+			const char* end = value.data() + value.size();
+			auto parsed = std::from_chars( value.data(), end, count );
+			return parsed.ec == std::errc{} && parsed.ptr == end;
+		};
+		if ( !file->isBinary &&
+			 ( !parseCount( inserted, file->inserts ) || !parseCount( deleted, file->deletes ) ) ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid line count in git numstat output";
+			result.files.clear();
+			return result;
+		}
+	}
+	std::string message;
+	result.returnCode = git( { "show", "-s", "--format=%B", commit.hash }, projectDir, message );
+	if ( result.fail() ) {
+		result.result = std::move( message );
+		result.files.clear();
+		return result;
+	}
+	while ( !message.empty() && ( message.back() == '\n' || message.back() == '\r' ) )
+		message.pop_back();
+	result.message = std::move( message );
+	std::string patch;
+	if ( commit.parents.empty() ) {
+		args = { "show", "--format=", "--no-ext-diff", "--no-color", "-M", commit.hash };
+	} else {
+		args = { "diff", "--no-ext-diff", "--no-color", "-M", commit.parents[0], commit.hash };
+	}
+	result.returnCode = git( args, projectDir, patch );
+	if ( result.fail() ) {
+		result.result = std::move( patch );
+		result.files.clear();
+		return result;
+	}
+	result.patch = std::move( patch );
+	std::string remote;
+	if ( git( { "remote", "get-url", "origin" }, projectDir, remote ) == EXIT_SUCCESS ) {
+		String::trimInPlace( remote, " \t\r\n" );
+		const size_t host = remote.find( "github.com" );
+		if ( host != std::string::npos ) {
+			size_t pathStart = host + std::string_view( "github.com" ).size();
+			while ( pathStart < remote.size() &&
+					( remote[pathStart] == '/' || remote[pathStart] == ':' ) )
+				++pathStart;
+			std::string path = remote.substr( pathStart );
+			while ( !path.empty() && path.back() == '/' )
+				path.pop_back();
+			if ( String::endsWith( path, ".git" ) )
+				path.resize( path.size() - 4 );
+			if ( !path.empty() )
+				result.commitURL = "https://github.com/" + path + "/commit/" + commit.hash;
+		}
+	}
+	result.result.clear();
+	return result;
+}
+
+Git::Result Git::commitDiff( const Commit& commit, const CommitFile& file,
+							 const std::string& projectDir ) const {
+	Result result;
+	if ( commit.hash.empty() || file.path.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		result.result = "Invalid commit diff query";
+		return result;
+	}
+	std::vector<std::string> args;
+	if ( commit.parents.empty() ) {
+		args = { "show", "--format=", "--no-ext-diff", "--no-color", "-M", commit.hash, "--" };
+	} else {
+		args = { "diff", "--no-ext-diff", "--no-color", "-M", commit.parents[0], commit.hash,
+				 "--" };
+	}
+	if ( !file.oldPath.empty() )
+		args.emplace_back( file.oldPath );
+	args.emplace_back( file.path );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
 
 static constexpr auto sNotCommittedYetHash = "0000000000000000000000000000000000000000";
 static constexpr std::string_view sAsciiWhitespace = " \t\r\n";

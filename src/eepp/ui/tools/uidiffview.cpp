@@ -91,10 +91,27 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		diffView->setParent( vbox );
 		diffView->setHeadersVisible( true );
+		diffView->setViewModeToggleVisible( false );
+		diffView->setCompleteViewToggleVisible( false );
 		diffView->loadFromPatch( diff, "", "", repoPath );
 	}
 
 	return scrollView;
+}
+
+std::vector<UIDiffView*> UIDiffView::multiFileDiffViews( UIScrollView* multiDiff ) {
+	return multiDiff ? multiDiff->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW )
+					 : std::vector<UIDiffView*>{};
+}
+
+void UIDiffView::setMultiFileViewMode( UIScrollView* multiDiff, ViewMode mode ) {
+	for ( auto* diff : multiFileDiffViews( multiDiff ) )
+		diff->setViewMode( mode );
+}
+
+void UIDiffView::setMultiFileCollapsed( UIScrollView* multiDiff, bool collapsed ) {
+	for ( auto* diff : multiFileDiffViews( multiDiff ) )
+		diff->setCollapsed( collapsed );
 }
 
 class UIDiffEditorPlugin : public UICodeEditorPlugin {
@@ -692,6 +709,8 @@ void UIDiffView::updateEditorsText() {
 	mViewLines.clear();
 
 	for ( size_t i = 0; i < mLines.size(); ++i ) {
+		if ( mCollapsed )
+			continue;
 		bool showLine = mShowCompleteView;
 
 		if ( !showLine ) {
@@ -1318,6 +1337,14 @@ void UIDiffView::setSyntaxColorScheme( const SyntaxColorScheme& colorScheme ) {
 	mEditor->setColorScheme( colorScheme );
 	mLeftEditor->setColorScheme( colorScheme );
 	mRightEditor->setColorScheme( colorScheme );
+}
+
+void UIDiffView::setCollapsed( bool collapsed ) {
+	if ( mCollapsed == collapsed )
+		return;
+	mCollapsed = collapsed;
+	updateEditorsText();
+	onSizeChange();
 }
 
 void UIDiffView::setHeadersVisible( bool visible ) {
