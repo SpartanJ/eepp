@@ -340,7 +340,8 @@ void App::setAppTitle( const std::string& title ) {
 		if ( Engine::isMainThread() ) {
 			mWindow->setTitle( fullTitle );
 		} else {
-			mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
+			mLifetime.weakHandle().run(
+				[fullTitle]( App* app ) { app->mWindow->setTitle( fullTitle ); } );
 		}
 	}
 }
@@ -729,8 +730,9 @@ void App::initPluginManager() {
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
 			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
-				mUISceneNode->runOnMainThread(
-					[this, plugin]() { onPluginEnabled( static_cast<Plugin*>( plugin ) ); } );
+				mLifetime.weakHandle().run( [plugin]( App* app ) {
+					app->onPluginEnabled( static_cast<Plugin*>( plugin ) );
+				} );
 				plugin->removeReadyCallback( cbId );
 			} );
 		}
@@ -1041,6 +1043,7 @@ void App::onTextDropped( String text ) {
 
 App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mArgs( args ),
+	mLifetime( this, nullptr ),
 	mThreadPool(
 		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 4, Sys::getCPUCount() ) ) ),
 	mDateTimeController( std::make_unique<DateTimeController>( this ) ),
@@ -1051,6 +1054,7 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 }
 
 App::~App() {
+	mLifetime.invalidate();
 	appInstance = nullptr;
 	mDestroyingApp = true;
 
@@ -3588,10 +3592,10 @@ void App::loadDirTree( const std::string& path ) {
 			Log::info( "DirTree read in: %s. Found %ld files.", clock.getElapsedTime().toString(),
 					   dirTree.getFilesCount() );
 			mDirTreeReady = true;
-			mUISceneNode->runOnMainThread( [this] {
-				mUniversalLocator->updateFilesTable();
-				if ( mSplitter->curEditorExistsAndFocused() )
-					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
+			mLifetime.weakHandle().run( []( App* app ) {
+				app->mUniversalLocator->updateFilesTable();
+				if ( app->mSplitter->curEditorExistsAndFocused() )
+					app->syncProjectTreeWithEditor( app->mSplitter->getCurEditor() );
 			} );
 			removeFolderWatches();
 			if ( mFileWatcher ) {
@@ -3772,11 +3776,11 @@ void App::newFile( const FileInfo& file ) {
 				errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
 			} else if ( mProjectTreeView ) {
 				// We wait 100 ms to get the notification from the file system
-				mUISceneNode->runOnMainThread(
-					[this, newFilePath] {
-						if ( !mFileSystemModel || !mProjectTreeView )
+				mLifetime.weakHandle().run(
+					[newFilePath]( App* app ) {
+						if ( !app->mFileSystemModel || !app->mProjectTreeView )
 							return;
-						loadFileFromPathOrFocus( newFilePath );
+						app->loadFileFromPathOrFocus( newFilePath );
 					},
 					Milliseconds( 100 ) );
 			}
@@ -3799,13 +3803,14 @@ void App::newFolder( const FileInfo& file ) {
 				errorMsgBox( i18n( "couldnt_create_directory", "Couldn't create directory." ) );
 			} else if ( mProjectTreeView ) {
 				// We wait 100 ms to get the notification from the file system
-				mUISceneNode->runOnMainThread(
-					[this, newFolderPath] {
-						if ( !mFileSystemModel || !mProjectTreeView )
+				mLifetime.weakHandle().run(
+					[newFolderPath]( App* app ) {
+						if ( !app->mFileSystemModel || !app->mProjectTreeView )
 							return;
 						std::string nfp( newFolderPath );
-						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
-						mProjectTreeView->openRowWithPath( nfp );
+						FileSystem::filePathRemoveBasePath( app->mFileSystemModel->getRootPath(),
+															nfp );
+						app->mProjectTreeView->openRowWithPath( nfp );
 					},
 					Milliseconds( 100 ) );
 			}
@@ -4929,6 +4934,7 @@ void App::init( InitParameters& params ) {
 			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
+		mLifetime.setDispatcher( mUISceneNode );
 		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
 

@@ -283,7 +283,7 @@ Plugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
-	Plugin( pluginManager ) {
+	Plugin( pluginManager ), mLifetime( this, getUISceneNode() ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -292,6 +292,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
+	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
@@ -408,9 +409,11 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 
 	auto ret = server.server->documentFormatting(
 		server.uri, msg.asJSON()["options"],
-		[this, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
-			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
-				[this, server, edits] { processDocumentFormattingResponse( server.uri, edits ); } );
+		[lifetime = mLifetime.weakHandle(), server]( const PluginIDType&,
+													 const std::vector<LSPTextEdit>& edits ) {
+			lifetime.run( [server, edits]( LSPClientPlugin* plugin ) {
+				plugin->processDocumentFormattingResponse( server.uri, edits );
+			} );
 		} );
 
 	return ret;
@@ -922,6 +925,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			mLifetime.setDispatcher( getUISceneNode() );
 			if ( mBrokenUserConfigFile )
 				displayBrokenUserConfigFileWarning();
 			break;

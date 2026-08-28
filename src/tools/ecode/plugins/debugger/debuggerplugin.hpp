@@ -6,6 +6,7 @@
 #include "config.hpp"
 #include "debuggerclientlistener.hpp"
 #include "models/breakpointsmodel.hpp"
+#include <eepp/scene/mainthreadlifetime.hpp>
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
@@ -90,6 +91,7 @@ class DebuggerPlugin : public PluginBase {
 
   protected:
 	friend class DebuggerClientListener;
+	MainThreadLifetime<DebuggerPlugin> mLifetime;
 
 	bool mInitialized{ false };
 	bool mFetchRegisters{ false };

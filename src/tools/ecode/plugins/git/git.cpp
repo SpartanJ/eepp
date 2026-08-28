@@ -37,7 +37,7 @@ Git::HistoryPage Git::history( const HistoryQuery& query, const std::string& pro
 								   "--first-parent",
 								   String::format( "--max-count=%zu", query.limit + 1 ),
 								   "-z",
-								   "--format=%H%x00%h%x00%P%x00%an%x00%ae%x00%at%x00%ct%x00%s",
+								   "--format=%H%x00%h%x00%P%x00%an%x00%ae%x00%at%x00%ct%x00%B",
 								   query.continuation.empty() ? query.revision
 															  : query.continuation };
 	if ( !query.exclusions.empty() ) {
@@ -86,7 +86,12 @@ Git::HistoryPage Git::history( const HistoryQuery& query, const std::string& pro
 		}
 		commit.authorName = fields[3];
 		commit.authorEmail = fields[4];
-		commit.subject = fields[7];
+		commit.message = fields[7];
+		while ( !commit.message.empty() &&
+				( commit.message.back() == '\n' || commit.message.back() == '\r' ) )
+			commit.message.pop_back();
+		const size_t subjectEnd = commit.message.find_first_of( "\r\n" );
+		commit.subject = commit.message.substr( 0, subjectEnd );
 		if ( !parseHistoryTimestamp( fields[5], commit.authorTime ) ||
 			 !parseHistoryTimestamp( fields[6], commit.commitTime ) ) {
 			page.returnCode = EXIT_FAILURE;

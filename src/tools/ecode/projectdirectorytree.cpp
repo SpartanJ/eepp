@@ -19,11 +19,13 @@ ProjectDirectoryTree::ProjectDirectoryTree(
 	mClosing( false ),
 	mIgnoreMatcher( path ),
 	mPluginManager( pluginManager ),
-	mLoadFileFromPathOrFocusFn( std::move( loadFileFromPathOrFocusFn ) ) {
+	mLoadFileFromPathOrFocusFn( std::move( loadFileFromPathOrFocusFn ) ),
+	mLifetime( this, pluginManager ? pluginManager->getUISceneNode() : nullptr ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
+	mLifetime.invalidate();
 	mClosing = true;
 	if ( mPluginManager )
 		mPluginManager->unsubscribeMessages( "ProjectDirectoryTree" );
@@ -691,8 +693,9 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	if ( !matchesMap.empty() ) {
 		if ( mPluginManager && mLoadFileFromPathOrFocusFn ) {
 			std::string filePath( matchesMap.begin()->second );
-			mPluginManager->getUISceneNode()->runOnMainThread(
-				[this, filePath]() { mLoadFileFromPathOrFocusFn( filePath ); } );
+			mLifetime.weakHandle().run( [filePath]( ProjectDirectoryTree* tree ) {
+				tree->mLoadFileFromPathOrFocusFn( filePath );
+			} );
 		}
 	}
 

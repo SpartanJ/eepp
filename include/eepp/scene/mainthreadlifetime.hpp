@@ -30,7 +30,8 @@ template <typename T> class MainThreadLifetime {
 	  public:
 		WeakHandle() = default;
 
-		void run( std::function<void( T* )> callback ) const {
+		void run( std::function<void( T* )> callback, const Time& delay = Time::Zero,
+				  Action::UniqueID tag = 0 ) const {
 			auto state = mState.lock();
 			if ( !state )
 				return;
@@ -49,7 +50,8 @@ template <typename T> class MainThreadLifetime {
 					}
 					if ( object )
 						callback( object );
-				} );
+				},
+				delay, tag );
 		}
 
 		explicit operator bool() const { return !mState.expired(); }

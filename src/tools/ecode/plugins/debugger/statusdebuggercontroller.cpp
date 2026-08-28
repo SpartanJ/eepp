@@ -141,11 +141,12 @@ StatusDebuggerController::getLocalDefaultKeybindings() {
 StatusDebuggerController::StatusDebuggerController( UISplitter* mainSplitter,
 													UISceneNode* uiSceneNode,
 													PluginContextProvider* pluginContext ) :
-	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {
+	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ), mLifetime( this, uiSceneNode ) {
 	mSerializedLayout = mContext->getConfig().iniState.getValue( "debugger", "panel_layout" );
 }
 
 StatusDebuggerController::~StatusDebuggerController() {
+	mLifetime.invalidate();
 	mEventConnections.clear();
 	mTabWidgetEventConnections.clear();
 	if ( mContainer )
@@ -232,20 +233,20 @@ void StatusDebuggerController::setDebuggingState( State state ) {
 	if ( !mContainer )
 		return;
 
-	mUISceneNode->runOnMainThread( [this, state] {
-		mUIButStart->setVisible( state == State::NotStarted )
+	mLifetime.weakHandle().run( [state]( StatusDebuggerController* controller ) {
+		controller->mUIButStart->setVisible( state == State::NotStarted )
 			->setEnabled( state == State::NotStarted );
-		mUIButStop->setVisible( state != State::NotStarted )
+		controller->mUIButStop->setVisible( state != State::NotStarted )
 			->setEnabled( state != State::NotStarted );
-		mUIButContinue->setVisible( state != State::NotStarted )
+		controller->mUIButContinue->setVisible( state != State::NotStarted )
 			->setEnabled( state == State::Paused );
-		mUIButPause->setVisible( state != State::NotStarted )
+		controller->mUIButPause->setVisible( state != State::NotStarted )
 			->setEnabled( state == State::Running );
-		mUIButStepOver->setVisible( state != State::NotStarted )
+		controller->mUIButStepOver->setVisible( state != State::NotStarted )
 			->setEnabled( state == State::Paused );
-		mUIButStepInto->setVisible( state != State::NotStarted )
+		controller->mUIButStepInto->setVisible( state != State::NotStarted )
 			->setEnabled( state == State::Paused );
-		mUIButStepOut->setVisible( state != State::NotStarted )
+		controller->mUIButStepOut->setVisible( state != State::NotStarted )
 			->setEnabled( state == State::Paused );
 	} );
 }

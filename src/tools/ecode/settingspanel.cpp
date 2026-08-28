@@ -308,7 +308,8 @@ static void disableTabFocusTree( Node* node ) {
 		disableTabFocusTree( child );
 }
 
-SettingsPanel::SettingsPanel( App* app ) : mApp( app ) {}
+SettingsPanel::SettingsPanel( App* app ) :
+	mApp( app ), mLifetime( this, app ? app->getUISceneNode() : nullptr ) {}
 
 SettingsPanel::PanelState& SettingsPanel::state( Scope scope ) {
 	return scope == Scope::User ? mUser : mProject;
@@ -2107,8 +2108,9 @@ void SettingsPanel::addPluginSettings( PanelState& panel ) {
 					   auto* window = panel.window;
 					   window->runOnMainThread( [this, window, path] {
 						   window->closeWindow();
-						   mApp->getUISceneNode()->runOnMainThread(
-							   [this, path] { mApp->focusOrLoadFile( path ); } );
+						   mLifetime.weakHandle().run( [path]( SettingsPanel* panel ) {
+							   panel->mApp->focusOrLoadFile( path );
+						   } );
 					   } );
 				   } );
 		panel.documents.emplace_back( std::move( document ) );

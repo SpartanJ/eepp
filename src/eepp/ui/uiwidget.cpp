@@ -415,6 +415,7 @@ UITooltip* UIWidget::createTooltip() {
 	mTooltip->setTooltipOf( this );
 	if ( !mTooltipText.empty() )
 		mTooltip->setText( mTooltipText );
+	sendCommonEvent( Event::OnTooltipCreated );
 	return mTooltip;
 }
 

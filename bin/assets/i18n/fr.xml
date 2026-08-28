@@ -1247,6 +1247,10 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="git_history_refresh">Actualiser</string>
 	<string name="git_history_load_older">Charger les commits précédents</string>
 	<string name="git_history_empty">Aucun commit pour le moment</string>
+	<string name="git_history_no_additional_commits">Aucun commit supplémentaire</string>
 	<string name="git_history_error">Impossible de charger l’historique Git</string>
 	<string name="git_history_retry">Réessayer</string>
+	<string name="git_local_branch">Locale</string>
+	<string name="git_remote_branch">Distante</string>
+	<string name="git_tag">Tag</string>
 </resources>

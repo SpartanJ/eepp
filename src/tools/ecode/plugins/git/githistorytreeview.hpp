@@ -33,6 +33,9 @@ class GitHistoryTreeView : public UITreeView {
 
   protected:
 	GitHistoryTreeView() = default;
+
+	UIWidget* updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
+						  const size_t& indentLevel, const Float& yOffset ) override;
 };
 
 } // namespace ecode

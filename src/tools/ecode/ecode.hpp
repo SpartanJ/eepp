@@ -19,6 +19,7 @@
 #include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/uinodelink.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -672,6 +673,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
+	MainThreadLifetime<App> mLifetime;
 	UIConsole* mConsole{ nullptr };
 	std::string mCurWindowTitle;
 	std::string mWindowTitle{ "ecode" };

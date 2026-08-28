@@ -189,7 +189,7 @@ void DebuggerClientListener::initUI() {
 
 void DebuggerClientListener::stateChanged( DebuggerClient::State state, const SessionId& ) {
 	if ( state == DebuggerClient::State::Initializing ) {
-		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] { initUI(); } );
+		mPlugin->mLifetime.weakHandle().run( [this]( DebuggerPlugin* ) { initUI(); } );
 	}
 }
 
@@ -345,9 +345,9 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 		auto buffer = output.output;
 		auto sdc = getStatusDebuggerController();
 		if ( sdc == nullptr || sdc->getUIConsole() == nullptr ) {
-			mPlugin->getUISceneNode()->runOnMainThread(
-				[this, buffer = std::move( buffer )]() mutable {
-					mPlugin->initStatusDebuggerController();
+			mPlugin->mLifetime.weakHandle().run(
+				[this, buffer = std::move( buffer )]( DebuggerPlugin* plugin ) mutable {
+					plugin->initStatusDebuggerController();
 					auto sdc = getStatusDebuggerController();
 					sdc->insertConsoleBuffer( std::move( buffer ) );
 				} );
@@ -407,8 +407,9 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	TextRange range{ { f.line - 1, f.column - 1 }, { f.line - 1, f.column - 1 } };
 	std::string path( f.source->path );
 
-	mPlugin->getUISceneNode()->runOnMainThread(
-		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
+	mPlugin->mLifetime.weakHandle().run( [path, range]( DebuggerPlugin* plugin ) {
+		plugin->getPluginContext()->focusOrLoadFile( path, range );
+	} );
 
 	auto sdc = getStatusDebuggerController();
 	if ( sdc && sdc->getUIStack() )

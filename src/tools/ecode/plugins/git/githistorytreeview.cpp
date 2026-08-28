@@ -1,6 +1,7 @@
 #include "githistorytreeview.hpp"
 #include "githistorymodel.hpp"
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitooltip.hpp>
 
 namespace ecode {
 
@@ -9,6 +10,12 @@ GitHistoryTreeViewCell::GitHistoryTreeViewCell() :
 	mHintColor( Color::fromString(
 		mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() ) ) {
 	mTextBox->setTextOverflow( "ellipsis" );
+	on( Event::OnTooltipCreated, []( const Event* event ) {
+		auto* tooltip = event->getNode()->asType<UIWidget>()->getTooltip();
+		tooltip->setMaxWidthEq( "60%" );
+		tooltip->setWordWrap( true );
+		tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+	} );
 }
 
 Sizef GitHistoryTreeViewCell::updateLayout() {
@@ -56,6 +63,15 @@ UIWidget* GitHistoryTreeView::createCell( UIWidget* rowWidget, const ModelIndex&
 							  ? GitHistoryTreeViewCell::New()
 							  : UITableCell::New( mTag + "::cell" );
 	return setupCell( widget, rowWidget, index );
+}
+
+UIWidget* GitHistoryTreeView::updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
+										  const size_t& indentLevel, const Float& yOffset ) {
+	UIWidget* widget = UITreeView::updateCell( posIndex, index, indentLevel, yOffset );
+	if ( index.isValid() && index.column() == static_cast<Int64>( getModel()->treeColumn() ) &&
+		 getExpandersAsIcons() && getModel()->hasChildren( index ) )
+		static_cast<GitHistoryTreeViewCell*>( widget )->updateCell( getModel() );
+	return widget;
 }
 
 } // namespace ecode

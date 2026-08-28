@@ -608,6 +608,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	UILinearLayout(),
 	WidgetCommandExecuter( getInput() ),
 	mManager( manager ),
+	mLifetime( this, getUISceneNode() ),
 	mDisplayReasoning( getPlugin() && getPlugin()->displayReasoning() ) {
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -1171,6 +1172,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 }
 
 LLMChatUI::~LLMChatUI() {
+	mLifetime.invalidate();
 	if ( mRequest ) {
 		mRequest->cancelCb = nullptr;
 		mRequest->doneCb = nullptr;
@@ -3343,11 +3345,12 @@ void LLMChatUI::showAttachFile() {
 		ctx->getDirTree()->asyncMatchTree(
 			ProjectDirectoryTree::MatchType::Fuzzy, text, 100,
 			[this, text]( auto res ) {
-				mUISceneNode->runOnMainThread( [this, res] {
-					mLocateTable->setModel( res );
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-					mLocateTable->scrollToTop();
-					updateLocateBarColumns();
+				mLifetime.weakHandle().run( [res]( LLMChatUI* chat ) {
+					chat->mLocateTable->setModel( res );
+					chat->mLocateTable->getSelection().set(
+						chat->mLocateTable->getModel()->index( 0 ) );
+					chat->mLocateTable->scrollToTop();
+					chat->updateLocateBarColumns();
 				} );
 			},
 			ctx->getCurrentProject() );

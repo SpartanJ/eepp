@@ -20,6 +20,7 @@ using namespace EE::Scene;
 namespace EE::UI {
 class UITreeView;
 class UIDropDownList;
+class UIDropDownModelList;
 class UIStackWidget;
 class UIListBoxItem;
 class UIMenu;
@@ -30,6 +31,28 @@ namespace ecode {
 
 class Git;
 class GitBranchModel;
+
+class GitHistoryRefModel : public Model {
+  public:
+	explicit GitHistoryRefModel( std::shared_ptr<GitBranchModel> source, String headLabel );
+
+	size_t rowCount( const ModelIndex& = {} ) const override { return mSourceIndexes.size() + 1; }
+
+	size_t columnCount( const ModelIndex& = {} ) const override { return 1; }
+
+	ModelIndex index( int row, int column, const ModelIndex& parent = {} ) const override;
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override;
+
+	std::string revision( size_t index ) const;
+
+	bool isRevision( size_t index, std::string_view revision ) const;
+
+  private:
+	std::shared_ptr<GitBranchModel> mSource;
+	std::vector<ModelIndex> mSourceIndexes;
+	String mHeadLabel;
+};
 
 static constexpr const char* GIT_EMPTY = "";
 static constexpr const char* GIT_SUCCESS = "success";
@@ -125,7 +148,8 @@ class GitPlugin : public PluginBase {
 	UITreeView* mBranchesTree{ nullptr };
 	UITreeView* mStatusTree{ nullptr };
 	UITreeView* mHistoryTree{ nullptr };
-	UITextView* mHistoryRefText{ nullptr };
+	UIDropDownModelList* mHistoryRefDropDown{ nullptr };
+	std::shared_ptr<GitHistoryRefModel> mHistoryRefModel;
 	std::shared_ptr<GitHistoryModel> mHistoryModel;
 	UIDropDownList* mPanelSwicher{ nullptr };
 	UIDropDownList* mRepoDropDown{ nullptr };
@@ -140,6 +164,8 @@ class GitPlugin : public PluginBase {
 	std::atomic<int> mRunningHistoryRequests{ 0 };
 	std::atomic<Uint64> mHistoryGeneration{ 0 };
 	std::string mHistoryRepo;
+	std::string mHistoryRevision{ "HEAD" };
+	bool mUpdatingHistoryRefs{ false };
 	bool mHistoryLoaded{ false };
 	UIWidget* mCommitDetailsView{ nullptr };
 	UITextView* mCommitDetailsSubject{ nullptr };
@@ -285,6 +311,8 @@ class GitPlugin : public PluginBase {
 	void ensureHistoryLoaded();
 
 	void updateHistoryHeader();
+
+	void updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model );
 
 	void reloadHistory();
 

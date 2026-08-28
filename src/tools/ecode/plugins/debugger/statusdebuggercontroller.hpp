@@ -5,6 +5,7 @@
 #include "models/breakpointsmodel.hpp"
 #include <eepp/core/containers.hpp>
 #include <eepp/scene/eventconnection.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
@@ -113,6 +114,7 @@ class StatusDebuggerController : public StatusBarElement, public UITabWidgetSpli
 	bool mRestoringLayout{ false };
 	bool mRightPanelDropPreview{ false };
 	std::string mSerializedLayout;
+	MainThreadLifetime<StatusDebuggerController> mLifetime;
 
 	void createContainer();
 

@@ -2,6 +2,7 @@
 #define SETTINGSACTIONS_HPP
 
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 
 namespace ecode {
 
@@ -9,7 +10,7 @@ class App;
 
 class SettingsActions {
   public:
-	explicit SettingsActions( App* app ) : mApp( app ) {}
+	explicit SettingsActions( App* app );
 
 	void checkForUpdates( bool fromStartup = false );
 
@@ -29,6 +30,7 @@ class SettingsActions {
 
   private:
 	App* mApp{ nullptr };
+	MainThreadLifetime<SettingsActions> mLifetime;
 
 	String i18n( const std::string& key, const String& def );
 

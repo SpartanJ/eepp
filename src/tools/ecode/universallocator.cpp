@@ -185,6 +185,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 									App* app ) :
 	mSplitter( editorSplitter ),
 	mUISceneNode( sceneNode ),
+	mLifetime( this, sceneNode ),
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
 
@@ -466,11 +467,12 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 					: ProjectDirectoryTree::MatchType::Fuzzy,
 			text, LOCATEBAR_MAX_RESULTS,
 			[this, text]( auto res ) {
-				mUISceneNode->runOnMainThread( [this, res] {
-					mLocateTable->setModel( res );
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-					mLocateTable->scrollToTop();
-					updateLocateBarSync();
+				mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+					locator->mLocateTable->setModel( res );
+					locator->mLocateTable->getSelection().set(
+						locator->mLocateTable->getModel()->index( 0 ) );
+					locator->mLocateTable->scrollToTop();
+					locator->updateLocateBarSync();
 				} );
 			},
 			mApp->getCurrentProject() );
@@ -500,11 +502,12 @@ void UniversalLocator::updateCommandPaletteTable() {
 
 	if ( txt.size() > 1 ) {
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
-			mUISceneNode->runOnMainThread( [this, res] {
-				mLocateTable->setModel( res );
-				if ( mLocateTable->getModel()->hasChildren() )
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-				mLocateTable->scrollToTop();
+			mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+				locator->mLocateTable->setModel( res );
+				if ( locator->mLocateTable->getModel()->hasChildren() )
+					locator->mLocateTable->getSelection().set(
+						locator->mLocateTable->getModel()->index( 0 ) );
+				locator->mLocateTable->scrollToTop();
 			} );
 		} );
 	} else if ( mCommandPalette.getCurModel() ) {
@@ -575,15 +578,17 @@ bool UniversalLocator::tryLocator( const String& txt ) {
 			query.trim();
 			const Uint64 generation = ++mLocatorModelGeneration;
 			locator->modelFn( query, [this, generation]( std::shared_ptr<Model> model ) {
-				mUISceneNode->runOnMainThread( [this, generation, model = std::move( model )] {
-					if ( generation != mLocatorModelGeneration || !mLocateBarLayout->isVisible() )
-						return;
-					mLocateTable->setModel( model );
-					if ( model && model->hasChildren() )
-						mLocateTable->getSelection().set( model->index( 0 ) );
-					mLocateTable->scrollToTop();
-					updateLocateBarSync();
-				} );
+				mLifetime.weakHandle().run(
+					[generation, model = std::move( model )]( UniversalLocator* locator ) {
+						if ( generation != locator->mLocatorModelGeneration ||
+							 !locator->mLocateBarLayout->isVisible() )
+							return;
+						locator->mLocateTable->setModel( model );
+						if ( model && model->hasChildren() )
+							locator->mLocateTable->getSelection().set( model->index( 0 ) );
+						locator->mLocateTable->scrollToTop();
+						locator->updateLocateBarSync();
+					} );
 			} );
 			return true;
 		}
@@ -1232,17 +1237,17 @@ void UniversalLocator::requestWorkspaceSymbol() {
 }
 
 void UniversalLocator::updateWorkspaceSymbol( const LSPSymbolInformationList& res ) {
-	mUISceneNode->runOnMainThread( [this, res] {
-		if ( !mWorkspaceSymbolModel ) {
-			mWorkspaceSymbolModel =
-				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, res );
+	mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+		if ( !locator->mWorkspaceSymbolModel ) {
+			locator->mWorkspaceSymbolModel = LSPSymbolInfoModel::create(
+				locator->mApp->getUISceneNode(), locator->mWorkspaceSymbolQuery, res );
 		} else {
-			mWorkspaceSymbolModel->setQuery( mWorkspaceSymbolQuery );
-			mWorkspaceSymbolModel->append( res );
+			locator->mWorkspaceSymbolModel->setQuery( locator->mWorkspaceSymbolQuery );
+			locator->mWorkspaceSymbolModel->append( res );
 		}
-		mLocateTable->setModel( mWorkspaceSymbolModel );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
+		locator->mLocateTable->setModel( locator->mWorkspaceSymbolModel );
+		locator->mLocateTable->getSelection().set( locator->mLocateTable->getModel()->index( 0 ) );
+		locator->mLocateTable->scrollToTop();
 	} );
 }
 
@@ -1293,10 +1298,11 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 	} else {
 		asyncFuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100, [this]( const auto model ) {
 			mTextDocumentSymbolModel = model;
-			mUISceneNode->runOnMainThread( [this] {
-				mLocateTable->setModel( mTextDocumentSymbolModel );
-				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-				mLocateTable->scrollToTop();
+			mLifetime.weakHandle().run( []( UniversalLocator* locator ) {
+				locator->mLocateTable->setModel( locator->mTextDocumentSymbolModel );
+				locator->mLocateTable->getSelection().set(
+					locator->mLocateTable->getModel()->index( 0 ) );
+				locator->mLocateTable->scrollToTop();
 			} );
 		} );
 	}

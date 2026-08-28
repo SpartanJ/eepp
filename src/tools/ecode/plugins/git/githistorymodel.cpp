@@ -111,7 +111,7 @@ GitHistoryModel::commitNode( Git::Commit commit, Node* parent,
 	item->date = Sys::epochToString( item->commit.commitTime );
 	item->hash = String::fromUtf8( item->commit.shortHash );
 	item->tooltip = String::format( "%s\n%s <%s>\n%s", item->commit.hash, item->commit.authorName,
-									item->commit.authorEmail, item->commit.subject );
+									item->commit.authorEmail, item->commit.message );
 	item->message = item->date + String{ " · " } + item->author + String{ " · " } + item->hash;
 	if ( item->commit.parents.size() == 2 ) {
 		item->query = query;
@@ -207,6 +207,14 @@ void GitHistoryModel::setChildrenPage( Node* item, Git::HistoryPage page,
 		return;
 	Nodes children;
 	fillPage( children, item, std::move( page ), query );
+	if ( children.empty() ) {
+		auto child = std::make_unique<Node>();
+		child->type = NodeType::Empty;
+		child->parent = item;
+		child->message =
+			mPlugin->i18n( "git_history_no_additional_commits", "No additional commits" );
+		children.emplace_back( std::move( child ) );
+	}
 	item->childrenLoading = false;
 	item->childrenLoaded = true;
 	replaceChildren( item, std::move( children ) );

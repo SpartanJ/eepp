@@ -3,6 +3,7 @@
 
 #include "settingsmodel.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <functional>
 #include <string>
 #include <vector>
@@ -59,6 +60,7 @@ class SettingsPanel {
 	};
 
 	App* mApp{ nullptr };
+	MainThreadLifetime<SettingsPanel> mLifetime;
 	PanelState mUser;
 	PanelState mProject;
 

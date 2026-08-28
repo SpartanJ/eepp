@@ -6,6 +6,7 @@
 #include "projectdirectorytree.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <tuple>
 #include <unordered_map>
 
@@ -110,6 +111,7 @@ class UniversalLocator {
 	UITextInput* mLocateInput{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
+	MainThreadLifetime<UniversalLocator> mLifetime;
 	std::shared_ptr<LSPSymbolInfoModel> mWorkspaceSymbolModel{ nullptr };
 	std::string mWorkspaceSymbolQuery;
 	App* mApp{ nullptr };

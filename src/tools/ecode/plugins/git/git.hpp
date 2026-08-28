@@ -206,6 +206,7 @@ class Git {
 		std::string shortHash;
 		std::vector<std::string> parents;
 		std::string subject;
+		std::string message;
 		std::string authorName;
 		std::string authorEmail;
 		int64_t authorTime{ 0 };

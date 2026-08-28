@@ -203,7 +203,7 @@ void LSPClientServerManager::executeCommand( const std::shared_ptr<TextDocument>
 void LSPClientServerManager::applyWorkspaceEdit(
 	const LSPWorkspaceEdit& edit,
 	const std::function<void( const LSPApplyWorkspaceEditResponse& res )>& resCb ) {
-	mPluginManager->getSplitter()->getUISceneNode()->runOnMainThread( [this, edit, resCb] {
+	mPlugin->mLifetime.weakHandle().run( [this, edit, resCb]( LSPClientPlugin* ) {
 		bool allDone = true;
 
 		for ( const auto& ed : edit.changes ) {
@@ -279,10 +279,9 @@ void LSPClientServerManager::rangeFormatting( std::shared_ptr<TextDocument> doc 
 			server->documentRangeFormatting(
 				uri, doc->getSelection(), getURIJSON( doc ),
 				[this, uri]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
-					mPluginManager->getSplitter()->getUISceneNode()->runOnMainThread(
-						[this, edits, uri] {
-							mPlugin->processDocumentFormattingResponse( uri, edits );
-						} );
+					mPlugin->mLifetime.weakHandle().run( [edits, uri]( LSPClientPlugin* plugin ) {
+						plugin->processDocumentFormattingResponse( uri, edits );
+					} );
 				} );
 		}
 	} );

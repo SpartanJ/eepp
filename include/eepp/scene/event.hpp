@@ -134,6 +134,7 @@ class EE_API Event {
 		OnApply,
 		OnShowFindReplace,
 		OnHideFindReplace,
+		OnTooltipCreated,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

@@ -16,6 +16,7 @@
 #include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -38,6 +39,73 @@ using namespace std::literals;
 using json = nlohmann::json;
 
 namespace ecode {
+
+GitHistoryRefModel::GitHistoryRefModel( std::shared_ptr<GitBranchModel> source, String headLabel ) :
+	mSource( std::move( source ) ), mHeadLabel( std::move( headLabel ) ) {
+	if ( !mSource )
+		return;
+	for ( size_t groupRow = 0; groupRow < mSource->rowCount( {} ); ++groupRow ) {
+		const ModelIndex group = mSource->index( groupRow, GitBranchModel::Name, {} );
+		for ( size_t row = 0; row < mSource->rowCount( group ); ++row ) {
+			const ModelIndex index = mSource->index( row, GitBranchModel::HistoryDisplay, group );
+			if ( mSource->branchRef( index ).type != Git::RefType::Stash )
+				mSourceIndexes.emplace_back( index );
+		}
+	}
+}
+
+ModelIndex GitHistoryRefModel::index( int row, int column, const ModelIndex& parent ) const {
+	if ( parent.isValid() || row < 0 || static_cast<size_t>( row ) >= rowCount() || column != 0 )
+		return {};
+	return createIndex( row, column );
+}
+
+Variant GitHistoryRefModel::data( const ModelIndex& index, ModelRole role ) const {
+	if ( role != ModelRole::Display || !index.isValid() || index.row() < 0 ||
+		 static_cast<size_t>( index.row() ) >= rowCount() )
+		return {};
+	if ( index.row() == 0 )
+		return Variant( &mHeadLabel );
+	return mSource->data( mSourceIndexes[index.row() - 1], role );
+}
+
+std::string GitHistoryRefModel::revision( size_t index ) const {
+	if ( index == 0 || index > mSourceIndexes.size() )
+		return "HEAD";
+	const auto& branch = mSource->branchRef( mSourceIndexes[index - 1] );
+	switch ( branch.type ) {
+		case Git::RefType::Head:
+			return "refs/heads/" + branch.name;
+		case Git::RefType::Remote:
+			return "refs/remotes/" + branch.name;
+		case Git::RefType::Tag:
+			return "refs/tags/" + branch.name;
+		default:
+			return "HEAD";
+	}
+}
+
+bool GitHistoryRefModel::isRevision( size_t index, std::string_view revision ) const {
+	if ( index == 0 || index > mSourceIndexes.size() )
+		return revision == "HEAD";
+	const auto& branch = mSource->branchRef( mSourceIndexes[index - 1] );
+	std::string_view prefix;
+	switch ( branch.type ) {
+		case Git::RefType::Head:
+			prefix = "refs/heads/";
+			break;
+		case Git::RefType::Remote:
+			prefix = "refs/remotes/";
+			break;
+		case Git::RefType::Tag:
+			prefix = "refs/tags/";
+			break;
+		default:
+			return false;
+	}
+	return revision.size() == prefix.size() + branch.name.size() &&
+		   revision.starts_with( prefix ) && revision.substr( prefix.size() ) == branch.name;
+}
 
 void GitPlugin::registerSettings( SettingsPage& page ) {
 	page.addGroup( i18n( "general", "General" ) );
@@ -376,10 +444,8 @@ void GitPlugin::endModelStyler() {
 void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
-	mLifetime.setDispatcher( getUISceneNode() );
-
 	if ( !mProjectPath.empty() )
-		getUISceneNode()->runOnMainThread( [this] { buildSidePanelTab(); } );
+		mLifetime.weakHandle().run( []( GitPlugin* plugin ) { plugin->buildSidePanelTab(); } );
 
 	updateStatus( force );
 	updateBranches();
@@ -389,7 +455,10 @@ void GitPlugin::updateUI() {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
-	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq, GIT_STATUS_UPDATE_TAG );
+	const auto lifetime = mLifetime.weakHandle();
+	getUISceneNode()->debounce(
+		[lifetime] { lifetime.run( []( GitPlugin* plugin ) { plugin->updateUINow(); } ); },
+		mRefreshFreq, GIT_STATUS_UPDATE_TAG );
 }
 
 void GitPlugin::updateStatusBarSync() {
@@ -658,8 +727,6 @@ void GitPlugin::updateStatus( bool force ) {
 }
 
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
-	if ( getUISceneNode() )
-		mLifetime.setDispatcher( getUISceneNode() );
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
 			if ( mGit ) {
@@ -701,9 +768,9 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 				}
 
 				if ( getUISceneNode() && mSidePanel ) {
-					getUISceneNode()->runOnMainThread( [this] {
-						if ( mProjectPath.empty() ) {
-							hideSidePanel();
+					mLifetime.weakHandle().run( []( GitPlugin* plugin ) {
+						if ( plugin->mProjectPath.empty() ) {
+							plugin->hideSidePanel();
 						}
 					} );
 				}
@@ -717,6 +784,7 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			mLifetime.setDispatcher( getUISceneNode() );
 			if ( !mInitialized )
 				updateUINow();
 			if ( mModelStylerId == 0 )
@@ -895,32 +963,34 @@ void GitPlugin::checkout( Git::Branch branch ) {
 	if ( !mGit )
 		return;
 
-	const auto checkOutFn = [this, branch]( bool createLocal ) {
+	const auto lifetime = mLifetime.weakHandle();
+	const auto git = mGit;
+	const std::string repo = repoSelected();
+	const auto checkOutFn = [this, branch, lifetime, git, repo]( bool createLocal ) {
 		mLoader->setVisible( true );
-		mThreadPool->run( [this, branch, createLocal] {
-			auto result =
-				createLocal ? mGit->checkoutAndCreateLocalBranch( branch.name, "", repoSelected() )
-							: mGit->checkout( branch.name, repoSelected() );
-			if ( result.success() ) {
-				{
-					std::string repoSel = repoSelected();
-					Lock l( mGitBranchMutex );
-					mGitBranches[repoSel] = branch.name;
-				}
-				if ( mBranchesTree->getModel() ) {
-					if ( createLocal )
-						updateBranches();
-					else
-						mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
-				}
-			} else {
-				showMessage( LSPMessageType::Warning, result.result );
-			}
-			getUISceneNode()->runOnMainThread( [this, success = result.success()] {
-				if ( success )
-					invalidateHistory();
-				mLoader->setVisible( false );
-			} );
+		mThreadPool->run( [branch, createLocal, lifetime, git, repo] {
+			auto result = createLocal ? git->checkoutAndCreateLocalBranch( branch.name, "", repo )
+									  : git->checkout( branch.name, repo );
+			lifetime.run(
+				[branch, createLocal, repo, result = std::move( result )]( GitPlugin* plugin ) {
+					if ( result.success() ) {
+						{
+							Lock l( plugin->mGitBranchMutex );
+							plugin->mGitBranches[repo] = branch.name;
+						}
+						if ( plugin->mBranchesTree->getModel() ) {
+							if ( createLocal )
+								plugin->updateBranches();
+							else
+								plugin->mBranchesTree->getModel()->invalidate(
+									Model::DontInvalidateIndexes );
+						}
+						plugin->invalidateHistory();
+					} else {
+						plugin->showMessage( LSPMessageType::Warning, result.result );
+					}
+					plugin->mLoader->setVisible( false );
+				} );
 		} );
 	};
 
@@ -1352,8 +1422,9 @@ void GitPlugin::discard( const std::string& file ) {
 }
 
 void GitPlugin::openFile( const std::string& file ) {
-	getUISceneNode()->runOnMainThread( [this, file] {
-		mManager->getLoadFileFn()( mGit->getProjectPath() + file, []( auto, auto ) {} );
+	mLifetime.weakHandle().run( [file]( GitPlugin* plugin ) {
+		plugin->mManager->getLoadFileFn()( plugin->mGit->getProjectPath() + file,
+										   []( auto, auto ) {} );
 	} );
 }
 
@@ -1956,13 +2027,13 @@ void GitPlugin::abortConflictOperation() {
 }
 
 void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
-	mThreadPool->run( [this, mode, repoPath] {
+	const auto lifetime = mLifetime.weakHandle();
+	mThreadPool->run( [this, mode, repoPath, lifetime] {
 		auto res = mGit->diff( mode, repoPath );
 		if ( res.fail() )
 			return;
 
-		std::string repoName = this->repoName( repoPath );
-		getUISceneNode()->runOnMainThread( [this, mode, res, repoName, repoPath] {
+		lifetime.run( [mode, res = std::move( res ), repoPath]( GitPlugin* plugin ) {
 			std::string modeName;
 			switch ( mode ) {
 				case Git::DiffHead: {
@@ -1973,7 +2044,7 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					modeName = "staged";
 					break;
 			}
-			getPluginContext()->loadDiffFromMemory(
+			plugin->getPluginContext()->loadDiffFromMemory(
 				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "", "",
 				repoPath );
 		} );
@@ -1981,11 +2052,12 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 }
 
 void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
-	mThreadPool->run( [this, file, status] {
+	const auto lifetime = mLifetime.weakHandle();
+	mThreadPool->run( [this, file, status, lifetime] {
 		auto filePath = fixFilePath( file );
 		if ( status == Git::GitStatusType::Untracked ) {
-			getUISceneNode()->runOnMainThread( [this, filePath = std::move( filePath )] {
-				getPluginContext()->loadDiffFromPaths( "", filePath );
+			lifetime.run( [filePath = std::move( filePath )]( GitPlugin* plugin ) {
+				plugin->getPluginContext()->loadDiffFromPaths( "", filePath );
 			} );
 			return;
 		}
@@ -2011,19 +2083,20 @@ void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
 			}
 		}
 
-		getUISceneNode()->runOnMainThread(
-			[this, result = std::move( result ), filePath = std::move( filePath ),
-			 oldImagePath = std::move( oldImagePath ), newImagePath = std::move( newImagePath )] {
-				getPluginContext()->loadDiffFromMemory(
-					result, newImagePath.empty() ? filePath : newImagePath, oldImagePath );
-			} );
+		lifetime.run( [result = std::move( result ), filePath = std::move( filePath ),
+					   oldImagePath = std::move( oldImagePath ),
+					   newImagePath = std::move( newImagePath )]( GitPlugin* plugin ) {
+			plugin->getPluginContext()->loadDiffFromMemory(
+				result, newImagePath.empty() ? filePath : newImagePath, oldImagePath );
+		} );
 	} );
 }
 
 void GitPlugin::diff( std::vector<Git::DiffFile> files ) {
 	if ( files.empty() )
 		return;
-	mThreadPool->run( [this, files = std::move( files )] {
+	const auto lifetime = mLifetime.weakHandle();
+	mThreadPool->run( [this, files = std::move( files ), lifetime] {
 		std::string patch;
 		std::string repoPath;
 		for ( const auto& file : files ) {
@@ -2042,10 +2115,10 @@ void GitPlugin::diff( std::vector<Git::DiffFile> files ) {
 			if ( !patch.empty() && patch.back() != '\n' )
 				patch += '\n';
 		}
-		getUISceneNode()->runOnMainThread(
-			[this, patch = std::move( patch ), repoPath = std::move( repoPath )] {
-				getPluginContext()->loadDiffFromMemory( patch, "selected files", "", repoPath );
-			} );
+		lifetime.run( [patch = std::move( patch ),
+					   repoPath = std::move( repoPath )]( GitPlugin* plugin ) {
+			plugin->getPluginContext()->loadDiffFromMemory( patch, "selected files", "", repoPath );
+		} );
 	} );
 }
 
@@ -2253,17 +2326,55 @@ void GitPlugin::invalidateHistory() {
 }
 
 void GitPlugin::updateHistoryHeader() {
-	if ( !mHistoryRefText )
+	if ( !mHistoryRefDropDown || !mHistoryRefModel )
 		return;
-	std::string branch;
+	auto rowCount = mHistoryRefModel->rowCount();
+	for ( size_t i = 0; i < rowCount; ++i ) {
+		if ( mHistoryRefModel->isRevision( i, mHistoryRevision ) ) {
+			mUpdatingHistoryRefs = true;
+			mHistoryRefDropDown->getListView()->getSelection().set(
+				mHistoryRefModel->index( i, 0 ) );
+			mUpdatingHistoryRefs = false;
+			return;
+		}
+	}
+}
+
+void GitPlugin::updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model ) {
+	if ( !mHistoryRefDropDown )
+		return;
+	std::string currentBranch;
 	{
 		const std::string repo = repoSelected();
 		Lock l( mGitBranchMutex );
 		auto it = mGitBranches.find( repo );
 		if ( it != mGitBranches.end() )
-			branch = it->second;
+			currentBranch = it->second;
 	}
-	mHistoryRefText->setText( branch.empty() ? "HEAD" : branch );
+	String headLabel{ "HEAD" };
+	if ( !currentBranch.empty() )
+		headLabel = String::fromUtf8( String::format( "HEAD · %s", currentBranch ) );
+	auto historyRefModel = std::make_shared<GitHistoryRefModel>( model, std::move( headLabel ) );
+	size_t selected = 0;
+	bool found = false;
+	for ( size_t i = 0; i < historyRefModel->rowCount(); ++i ) {
+		if ( historyRefModel->isRevision( i, mHistoryRevision ) ) {
+			selected = i;
+			found = true;
+			break;
+		}
+	}
+	const bool revisionChanged = !found && mHistoryRevision != "HEAD";
+	if ( !found )
+		mHistoryRevision = "HEAD";
+	mUpdatingHistoryRefs = true;
+	mHistoryRefModel = std::move( historyRefModel );
+	mHistoryRefDropDown->setModel( mHistoryRefModel );
+	mHistoryRefDropDown->getListView()->getSelection().set(
+		mHistoryRefModel->index( selected, 0 ) );
+	mUpdatingHistoryRefs = false;
+	if ( revisionChanged )
+		invalidateHistory();
 }
 
 void GitPlugin::ensureHistoryLoaded() {
@@ -2288,6 +2399,7 @@ void GitPlugin::reloadHistory() {
 	mHistoryTree->clearViewMetadata();
 	mHistoryModel->setRootLoading();
 	Git::HistoryQuery query;
+	query.revision = mHistoryRevision;
 	auto git = mGit;
 	const auto lifetime = mLifetime.weakHandle();
 	++mRunningHistoryRequests;
@@ -2401,7 +2513,8 @@ void GitPlugin::openCommitDetails( const Git::Commit& commit ) {
 					</hbox>
 					<hbox lw="mp" lh="wc" margin-top="8dp">
 						<TextView id="git_commit_subject" lw="0" lw8="1" lh="wc"
-								  font-size="14dp" word-wrap="true" focusable="false" />
+								  font-size="14dp" word-wrap="false" text-overflow="ellipsis"
+								  focusable="false" />
 						<PushButton id="git_commit_message_toggle"
 									text="@string(git_expand_commit_description, Expand Commit Description)"
 									icon="icon(unfold, 12dp)" text-as-fallback="true"
@@ -2579,11 +2692,19 @@ void GitPlugin::loadCommitFiles() {
 					( result.result.empty() ? "" : ": " + result.result ) );
 				return;
 			}
-			std::string body = std::move( result.message );
-			if ( body.compare( 0, commit.subject.size(), commit.subject ) == 0 ) {
-				body.erase( 0, commit.subject.size() );
-				while ( !body.empty() && ( body.front() == '\n' || body.front() == '\r' ) )
-					body.erase( body.begin() );
+			std::string message = std::move( result.message );
+			const size_t subjectEnd = message.find_first_of( "\r\n" );
+			const std::string_view subject{
+				message.data(), subjectEnd == std::string::npos ? message.size() : subjectEnd };
+			plugin->mCommitDetailsSubject->setText(
+				String::fromUtf8( subject.empty() ? commit.subject : std::string{ subject } ) );
+			std::string body;
+			if ( subjectEnd != std::string::npos ) {
+				size_t bodyStart = subjectEnd;
+				while ( bodyStart < message.size() &&
+						( message[bodyStart] == '\n' || message[bodyStart] == '\r' ) )
+					++bodyStart;
+				body = message.substr( bodyStart );
 			}
 			plugin->mCommitDetailsMessageBody = std::move( body );
 			plugin->mCommitDetailsMessage->setText(
@@ -2638,20 +2759,26 @@ void GitPlugin::updateBranches( bool force ) {
 		return;
 
 	if ( !mGit || mGit->getGitFolder().empty() ) {
-		getUISceneNode()->runOnMainThread( [this] { updateBranchesUI( nullptr ); } );
+		mLifetime.weakHandle().run(
+			[]( GitPlugin* plugin ) { plugin->updateBranchesUI( nullptr ); } );
 		return;
 	}
 
+	const std::string requestedRepo = repoSelected();
+	const auto lifetime = mLifetime.weakHandle();
 	mRunningUpdateBranches++;
 	mThreadPool->run(
-		[this] {
+		[this, requestedRepo, lifetime] {
 			if ( !mGit || mGit->getGitFolder().empty() ) {
-				getUISceneNode()->runOnMainThread( [this] { updateBranchesUI( nullptr ); } );
+				lifetime.run( [requestedRepo]( GitPlugin* plugin ) {
+					if ( requestedRepo == plugin->repoSelected() )
+						plugin->updateBranchesUI( nullptr );
+				} );
 				return;
 			}
 
 			auto prevBranch = updateReposBranches();
-			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, repoSelected() );
+			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, requestedRepo );
 			auto hash = GitBranchModel::hashBranches( branches );
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
 
@@ -2660,23 +2787,26 @@ void GitPlugin::updateBranches( bool force ) {
 				Lock l( mGitBranchMutex );
 				branchChanged = prevBranch != mGitBranches;
 			}
-			if ( mBranchesTree && mBranchesTree->getModel() &&
-				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash ) {
-				if ( branchChanged ) {
-					getUISceneNode()->runOnMainThread( [this] {
-						if ( mBranchesTree && mBranchesTree->getModel() )
-							mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
-						updateHistoryHeader();
-						invalidateHistory();
-					} );
+			lifetime.run( [model, hash, branchChanged, requestedRepo]( GitPlugin* plugin ) {
+				if ( requestedRepo != plugin->repoSelected() )
+					return;
+				if ( plugin->mBranchesTree && plugin->mBranchesTree->getModel() &&
+					 static_cast<GitBranchModel*>( plugin->mBranchesTree->getModel() )->getHash() ==
+						 hash ) {
+					if ( plugin->mBranchesTree->getModel() ) {
+						if ( branchChanged )
+							plugin->mBranchesTree->getModel()->invalidate(
+								Model::DontInvalidateIndexes );
+						plugin->updateHistoryRefs( std::static_pointer_cast<GitBranchModel>(
+							plugin->mBranchesTree->getModelShared() ) );
+					}
+					if ( branchChanged )
+						plugin->invalidateHistory();
+				} else {
+					plugin->updateBranchesUI( model );
+					if ( branchChanged )
+						plugin->invalidateHistory();
 				}
-				return;
-			}
-
-			getUISceneNode()->runOnMainThread( [this, model, branchChanged] {
-				updateBranchesUI( model );
-				if ( branchChanged )
-					invalidateHistory();
 			} );
 		},
 		[this]( auto ) { mRunningUpdateBranches--; } );
@@ -2706,7 +2836,6 @@ void GitPlugin::updateRepos() {
 
 void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	buildSidePanelTab();
-	updateHistoryHeader();
 
 	if ( !model ) {
 		mBranchesTree->setModel( model );
@@ -2716,6 +2845,7 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 		mBranchesTree->expandAll();
 	}
 
+	updateHistoryRefs( model );
 	updateRepos();
 
 	std::vector<String> items;
@@ -2838,7 +2968,7 @@ void GitPlugin::buildSidePanelTab() {
 				</vbox>
 				<vbox id="git_history" lw="mp" lh="mp">
 					<hbox lw="mp" lh="wc" padding="4dp">
-						<TextView id="git_history_ref" text="HEAD" lw="0" lw8="1" lh="wc" layout_gravity="center_vertical" text-overflow="ellipsis" />
+						<DropDownModelList id="git_history_ref" lw="0" lw8="1" lh="wc" menu-width-mode="expand-if-needed" />
 						<PushButton id="git_history_refresh" text="@string(git_history_refresh, Refresh)" icon="icon(refresh, 12dp)" text-as-fallback="true" />
 					</hbox>
 					<GitHistoryTreeView id="git_history_tree" lw="mp" lh="0" lw8="1" />
@@ -2868,7 +2998,7 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->bind( "git_branches_tree", mBranchesTree );
 	mTabContents->bind( "git_status_tree", mStatusTree );
 	mTabContents->bind( "git_history_tree", mHistoryTree );
-	mTabContents->bind( "git_history_ref", mHistoryRefText );
+	mTabContents->bind( "git_history_ref", mHistoryRefDropDown );
 	mTabContents->bind( "git_content", mGitContentView );
 	mTabContents->bind( "git_no_content", mGitNoContentView );
 	mTabContents->bind( "git_conflict_state", mConflictStateBar );
@@ -2880,7 +3010,24 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
 	mTabContents->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
 	mTabContents->find( "git_history_refresh" )->onClick( [this]( auto ) { reloadHistory(); } );
-	updateHistoryHeader();
+	mHistoryRefDropDown->getListView()->setColumnsVisible( { 0 } );
+	mHistoryRefDropDown->getListView()->setAutoExpandOnSingleColumn( true );
+	mHistoryRefDropDown->on( Event::OnItemSelected, [this]( const Event* ) {
+		if ( mUpdatingHistoryRefs )
+			return;
+		const ModelIndex selected = mHistoryRefDropDown->getListView()->getSelection().first();
+		if ( !selected.isValid() || !mHistoryRefModel )
+			return;
+		const std::string revision = mHistoryRefModel->revision( selected.row() );
+		if ( revision == mHistoryRevision )
+			return;
+		mHistoryRevision = revision;
+		invalidateHistory();
+	} );
+	updateHistoryRefs(
+		mBranchesTree && mBranchesTree->getModel()
+			? std::static_pointer_cast<GitBranchModel>( mBranchesTree->getModelShared() )
+			: nullptr );
 	mTabContents->find( "git_conflict_continue" )->onClick( [this]( auto ) {
 		continueConflictOperation();
 	} );
@@ -2954,8 +3101,12 @@ void GitPlugin::buildSidePanelTab() {
 
 	mPanelSwicher->on( Event::OnItemSelected, [this, listBox]( const Event* ) {
 		mStackWidget->setActiveWidget( mStackMap[listBox->getItemSelectedIndex()] );
-		if ( listBox->getItemSelectedIndex() == 2 )
+		if ( listBox->getItemSelectedIndex() == 2 ) {
+			if ( mBranchesTree && mBranchesTree->getModel() )
+				updateHistoryRefs(
+					std::static_pointer_cast<GitBranchModel>( mBranchesTree->getModelShared() ) );
 			ensureHistoryLoaded();
+		}
 	} );
 	listBox->setSelected( 0 );
 	mStackWidget->setActiveWidget( mStackMap[0] );
@@ -3178,6 +3329,8 @@ void GitPlugin::buildSidePanelTab() {
 					Lock l( mRepoMutex );
 					mRepoSelected = repo.first;
 				}
+				mHistoryRevision = "HEAD";
+				updateHistoryRefs( nullptr );
 				invalidateHistory();
 				updateBranches( true );
 				updateStatus( true );

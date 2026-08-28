@@ -3,6 +3,7 @@
 
 #include "ignorematcher.hpp"
 #include "plugins/pluginmanager.hpp"
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/mutex.hpp>
@@ -189,6 +190,7 @@ class ProjectDirectoryTree {
 	IgnoreMatcherManager mIgnoreMatcher;
 	PluginManager* mPluginManager{ nullptr };
 	std::function<void( const std::string& )> mLoadFileFromPathOrFocusFn;
+	MainThreadLifetime<ProjectDirectoryTree> mLifetime;
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,

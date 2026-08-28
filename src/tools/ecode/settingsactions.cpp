@@ -4,6 +4,9 @@
 
 namespace ecode {
 
+SettingsActions::SettingsActions( App* app ) :
+	mApp( app ), mLifetime( this, app ? app->getUISceneNode() : nullptr ) {}
+
 void SettingsActions::checkForUpdatesResponse( Http::Response&& response, bool fromStartup ) {
 	auto updatesError = [this, fromStartup]() {
 		if ( fromStartup )
@@ -97,13 +100,15 @@ void SettingsActions::checkForUpdatesResponse( Http::Response&& response, bool f
 }
 
 void SettingsActions::checkForUpdates( bool fromStartup ) {
+	mLifetime.setDispatcher( mApp->getUISceneNode() );
 	Http::getAsync(
 		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
 			if ( !SceneManager::isActive() )
 				return;
-			mApp->getUISceneNode()->runOnMainThread( [this, res = response, fromStartup]() mutable {
-				checkForUpdatesResponse( std::move( res ), fromStartup );
-			} );
+			mLifetime.weakHandle().run(
+				[res = response, fromStartup]( SettingsActions* actions ) mutable {
+					actions->checkForUpdatesResponse( std::move( res ), fromStartup );
+				} );
 		},
 		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
 }

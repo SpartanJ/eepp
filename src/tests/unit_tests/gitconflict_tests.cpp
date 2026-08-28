@@ -135,6 +135,14 @@ UTEST( GitHistory, PaginatesFirstParentWithoutDuplicates ) {
 	ASSERT_TRUE( third.success() );
 	ASSERT_EQ( 1u, third.commits.size() );
 	EXPECT_FALSE( third.hasMore );
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "branch", "older", "HEAD~2" } ) );
+	Git::HistoryQuery refQuery;
+	refQuery.revision = "refs/heads/older";
+	auto selectedRef = git.history( refQuery, temp.path.string() );
+	ASSERT_TRUE( selectedRef.success() );
+	ASSERT_EQ( 3u, selectedRef.commits.size() );
+	EXPECT_STREQ( "commit 2", selectedRef.commits.front().subject.c_str() );
 }
 
 UTEST( GitHistory, PropagatedExclusionsHideAlreadyRepresentedMainline ) {
@@ -205,12 +213,14 @@ UTEST( GitHistory, HandlesEmptyRepositoryUnicodeAndHardLimit ) {
 	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Tést 🚀" } ) );
 	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "unicode@example.invalid" } ) );
 	const std::string subject = "unicode 🚀 | quote \" and tab\tend";
-	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", subject } ) );
+	const std::string message = subject + "\ncontinuation on a physical second line";
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", message } ) );
 	query.limit = 200;
 	auto page = git.history( query, temp.path.string() );
 	ASSERT_TRUE( page.success() );
 	ASSERT_EQ( 1u, page.commits.size() );
 	EXPECT_STREQ( subject.c_str(), page.commits.front().subject.c_str() );
+	EXPECT_STREQ( message.c_str(), page.commits.front().message.c_str() );
 	EXPECT_STREQ( "Tést 🚀", page.commits.front().authorName.c_str() );
 }
 

@@ -1248,6 +1248,10 @@ Restart ecode to see the changes.</string>
 	<string name="git_history_refresh">Refresh</string>
 	<string name="git_history_load_older">Load older commits</string>
 	<string name="git_history_empty">No commits yet</string>
+	<string name="git_history_no_additional_commits">No additional commits</string>
 	<string name="git_history_error">Could not load Git history</string>
 	<string name="git_history_retry">Retry</string>
+	<string name="git_local_branch">Local</string>
+	<string name="git_remote_branch">Remote</string>
+	<string name="git_tag">Tag</string>
 </resources>

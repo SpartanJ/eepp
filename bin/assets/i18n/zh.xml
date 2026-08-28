@@ -1052,6 +1052,10 @@ file in the directory tree.</string>
 	<string name="git_history_refresh">刷新</string>
 	<string name="git_history_load_older">加载更早的提交</string>
 	<string name="git_history_empty">尚无提交</string>
+	<string name="git_history_no_additional_commits">没有其他提交</string>
 	<string name="git_history_error">无法加载 Git 历史记录</string>
 	<string name="git_history_retry">重试</string>
+	<string name="git_local_branch">本地</string>
+	<string name="git_remote_branch">远程</string>
+	<string name="git_tag">标签</string>
 </resources>

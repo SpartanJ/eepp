@@ -5,6 +5,7 @@
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
@@ -102,6 +103,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::string mSummary;
 	long mTimestamp{ 0 };
 	PluginManager* mManager{ nullptr };
+	MainThreadLifetime<LLMChatUI> mLifetime;
 	UISplitter* mChatSplitter{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };

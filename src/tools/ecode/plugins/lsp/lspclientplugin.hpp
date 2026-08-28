@@ -5,6 +5,7 @@
 #include "../pluginmanager.hpp"
 #include "lspclientservermanager.hpp"
 #include <eepp/config.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/sys.hpp>
@@ -106,8 +107,10 @@ class LSPClientPlugin : public Plugin {
 				  const Float& fontSize );
 
   protected:
+	MainThreadLifetime<LSPClientPlugin> mLifetime;
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
+	friend class LSPClientServerManager;
 
 	Clock mClock;
 	Mutex mDocMutex;

@@ -449,8 +449,20 @@ void UIImageViewer::updateTextDisplay() {
 	if ( ( mDisplayOptions & DisplayOptions::DisplayDimensions ) && mImage->getDrawable() ) {
 		str += i18n( "dimensions_colon", "Dimensions:" );
 		str += " ";
-		str += String::format( "%d x %d", (int)mImage->getDrawable()->getPixelsSize().x,
-							   (int)mImage->getDrawable()->getPixelsSize().y );
+		if ( mImage->getDrawable()->getDrawableType() == Drawable::Type::SPRITE ) {
+			auto ref = mImage->getDrawable();
+			Sprite* spr = static_cast<Sprite*>( ref.get() );
+			if ( spr->getCurrentTextureRegion() ) {
+				auto tex = spr->getCurrentTextureRegion()->getTexture();
+				if ( tex ) {
+					str += String::format( "%d x %d", (int)tex->getImageWidth(),
+										   (int)tex->getImageHeight() );
+				}
+			}
+		} else {
+			str += String::format( "%d x %d", (int)mImage->getDrawable()->getPixelsSize().x,
+								   (int)mImage->getDrawable()->getPixelsSize().y );
+		}
 		str += "\n";
 	}
 
