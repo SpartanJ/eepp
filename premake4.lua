@@ -1977,6 +1977,7 @@ solution "eepp"
 		end
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/plugins/git/git.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		eepp_module_backward_add( false )

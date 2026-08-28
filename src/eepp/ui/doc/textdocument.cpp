@@ -31,6 +31,9 @@ static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
 
+TextDocument::ScopedReadLock::ScopedReadLock( const TextDocument& document ) :
+	mLinesLock( document.mLinesMutex ), mDocumentLock( *document.mDocumentMutex ) {}
+
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
 	static constexpr std::array<char, 4> NULL_SEQUENCE = { 0, 0, 0, 0 };

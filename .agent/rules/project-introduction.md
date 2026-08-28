@@ -38,3 +38,20 @@ Follow eepp's established namespace style: prefer the appropriate `using namespa
 declarations and unqualified eepp type names, such as `UISplitter`, over repeatedly spelling fully
 qualified names such as `EE::UI::UISplitter`. Keep explicit qualification only where it is required
 to resolve ambiguity or avoid importing an unusually broad namespace into an unsuitable scope.
+
+## Control-Statement Braces
+
+Use braces around the body of an `if`, `else`, `for`, `while`, or similar control statement whenever
+that body occupies more than one physical source line. A statement remains visually multi-line even
+when C++ treats it as a single statement, so a wrapped function call must be braced:
+
+```cpp
+if ( condition ) {
+	object->function(
+		argument,
+		anotherArgument );
+}
+```
+
+An unbraced body is acceptable only when the complete body fits on one physical source line. Apply
+this rule when writing or modifying code; do not add unrelated braces throughout untouched code.

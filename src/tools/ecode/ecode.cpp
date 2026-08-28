@@ -2629,7 +2629,8 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content, repoPath );
+		auto scrollView =
+			UIDiffView::NewMultiFileDiffViewer( content, repoPath, mConfig.editor.diffViewMode );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
@@ -2684,7 +2685,8 @@ void App::loadDiffFromPath( const std::string& path ) {
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
+		auto scrollView =
+			UIDiffView::NewMultiFileDiffViewer( content, "", mConfig.editor.diffViewMode );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );

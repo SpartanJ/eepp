@@ -2004,6 +2004,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/plugins/git/git.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		filter { "system:not windows", "system:not haiku" }

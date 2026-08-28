@@ -4,12 +4,16 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include <eepp/scene/eventconnection.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <optional>
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
+using namespace EE::Scene;
 
 namespace EE::UI {
 class UITreeView;
@@ -17,6 +21,7 @@ class UIDropDownList;
 class UIStackWidget;
 class UIListBoxItem;
 class UIMenu;
+class UITextView;
 } // namespace EE::UI
 
 namespace ecode {
@@ -84,7 +89,9 @@ class GitPlugin : public PluginBase {
 	bool isSilent() const { return mSilent; }
 
   protected:
-	std::unique_ptr<Git> mGit;
+	MainThreadLifetime<GitPlugin> mLifetime;
+
+	std::shared_ptr<Git> mGit;
 	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
 	std::vector<std::pair<std::string, std::string>> mRepos;
@@ -121,9 +128,13 @@ class GitPlugin : public PluginBase {
 	std::vector<UIWidget*> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
+	UIWidget* mConflictStateBar{ nullptr };
+	UITextView* mConflictStateText{ nullptr };
 	UILoader* mLoader{ nullptr };
 	std::atomic<int> mRunningUpdateBranches{ 0 };
 	std::atomic<int> mRunningUpdateStatus{ 0 };
+	std::atomic<bool> mPendingForcedStatusUpdate{ false };
+	std::shared_ptr<std::atomic<int>> mRunningAsyncTasks{ std::make_shared<std::atomic<int>>( 0 ) };
 	Clock mLastBranchesUpdate;
 	Mutex mGitBranchMutex;
 	Mutex mGitStatusMutex;
@@ -131,6 +142,18 @@ class GitPlugin : public PluginBase {
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
 	String mLastCommitMsg;
+	struct GitConflictSession {
+		std::string repoPath;
+		std::vector<std::string> files;
+		size_t currentFile{ 0 };
+		Uint64 generation{ 0 };
+		Git::GitOperation operation{ Git::GitOperation::None };
+	};
+	UnorderedMap<std::string, std::unique_ptr<GitConflictSession>> mConflictSessions;
+	std::string mActiveConflictRepo;
+	Tools::UIMergeView* mConflictView{ nullptr };
+	EE::Scene::EventConnection mConflictViewCloseConnection;
+	Uint64 mConflictGeneration{ 0 };
 	Uint32 mRepositionCbId{ 0 };
 
 	struct CustomTokenizer {
@@ -176,7 +199,7 @@ class GitPlugin : public PluginBase {
 
 	void branchCreate();
 
-	void commit( const std::string& repoPath );
+	void commit( const std::string& repoPath, bool mergeCommit = false );
 
 	void stage( const std::vector<std::string>& files );
 
@@ -197,6 +220,27 @@ class GitPlugin : public PluginBase {
 	void diff( std::vector<Git::DiffFile> files );
 
 	void openFile( const std::string& file );
+
+	void openConflictResolver( const std::string& file );
+
+	void loadConflictResolverView( std::shared_ptr<Doc::TextDocument> resultDocument,
+								   Git::ConflictFile conflict, std::string repository,
+								   std::vector<std::string> files, size_t currentFile,
+								   Git::GitOperation operation, Uint64 generation );
+
+	void recreateConflict();
+
+	void saveAndStageConflict();
+
+	void openAdjacentConflict( bool next );
+
+	void continueConflictOperation();
+
+	void abortConflictOperation();
+
+	void acceptConflictSide( const std::string& file, bool stage2 );
+
+	void runAsyncTask( std::function<void()> task );
 
 	void updateStatus( bool force = false );
 
@@ -225,6 +269,12 @@ class GitPlugin : public PluginBase {
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
 				   bool displaySuccessMsg = false, bool updateBranchesOnError = false,
 				   bool updateStatusOnError = false );
+	void runMergeLikeAsync( std::function<Git::Result( Git& )> fn, const std::string& repoPath );
+
+	GitConflictSession* conflictSession( const std::string& repoPath );
+
+	GitConflictSession* activeConflictSession();
+	bool updateConflictSessions( UnorderedMap<std::string, Git::ConflictState>& conflictStates );
 
 	void menuAdd( UIMenu* menu, const std::string& cmd, const std::string& text,
 				  const std::string& icon = "",

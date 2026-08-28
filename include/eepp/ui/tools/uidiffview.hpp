@@ -29,7 +29,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	static UIDiffView* New();
 
 	static UIScrollView* NewMultiFileDiffViewer( const std::string& patchText,
-												 const std::string& repoPath = "" );
+												 const std::string& repoPath = "",
+												 ViewMode viewMode = ViewMode::Unified );
 
 	static std::vector<std::string> splitDiff( const std::string& multiFileDiff );
 

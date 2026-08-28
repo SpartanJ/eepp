@@ -143,6 +143,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
+	mAsyncLifetime( this, this ),
 	mDocView( mDoc, mFontStyleConfig,
 			  { .textHints = TextHints::NoKerning, .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),
@@ -201,6 +202,8 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
+	mAsyncLifetime.invalidate();
+
 	if ( getUISceneNode()->hasThreadPool() ) {
 		Uint64 tag = reinterpret_cast<Uint64>( this );
 		getUISceneNode()->getThreadPool()->removeWithTag( tag );
@@ -535,32 +538,33 @@ bool UICodeEditor::loadAsyncFromFile(
 	bool wasLocked = isLocked();
 	if ( !wasLocked )
 		setLocked( true );
+	const auto lifetime = mAsyncLifetime.weakHandle();
+	auto document = mDoc;
 	bool ret = mDoc->loadAsyncFromFile(
-		path, pool, [this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-			if ( !success ) {
-				runOnMainThread( [this, onLoaded, wasLocked, success] {
-					if ( !wasLocked )
-						setLocked( false );
+		path, pool, [lifetime, document, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			lifetime.run( [lifetime, onLoaded, wasLocked, document,
+						   success]( UICodeEditor* editor ) {
+				if ( editor->mDoc != document ) {
 					if ( onLoaded )
-						onLoaded( mDoc, success );
-				} );
-				return;
-			}
-			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() ) {
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
-					runOnMainThread( [this] { invalidateDraw(); } );
-				} );
-			}
-
-			if ( mDocView.isWrapEnabled() )
-				mDocView.setPendingReconstruction( true );
-
-			runOnMainThread( [this, onLoaded, wasLocked, success] {
+						onLoaded( document, success );
+					return;
+				}
 				if ( !wasLocked )
-					setLocked( false );
-				onDocumentLoaded();
+					editor->setLocked( false );
+				if ( success ) {
+					if ( editor->mMinimapEnabled && editor->getUISceneNode()->hasThreadPool() ) {
+						editor->mDoc->getHighlighter()->tokenizeAsync(
+							editor->getUISceneNode()->getThreadPool(), [lifetime] {
+								lifetime.run(
+									[]( UICodeEditor* editor ) { editor->invalidateDraw(); } );
+							} );
+					}
+					if ( editor->mDocView.isWrapEnabled() )
+						editor->mDocView.setPendingReconstruction( true );
+					editor->onDocumentLoaded();
+				}
 				if ( onLoaded )
-					onLoaded( mDoc, success );
+					onLoaded( editor->mDoc, success );
 			} );
 		} );
 	if ( !ret && !wasLocked )
@@ -583,27 +587,36 @@ bool UICodeEditor::loadAsyncFromURL(
 	bool wasLocked = isLocked();
 	if ( !wasLocked )
 		setLocked( true );
+	const auto lifetime = mAsyncLifetime.weakHandle();
+	auto document = mDoc;
 	bool ret = mDoc->loadAsyncFromURL(
 		url, headers,
-		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
-					runOnMainThread( [this] { invalidateDraw(); } );
+		[lifetime, document, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			lifetime.run(
+				[lifetime, document, success, onLoaded, wasLocked]( UICodeEditor* editor ) {
+					if ( editor->mDoc != document ) {
+						if ( onLoaded )
+							onLoaded( document, success );
+						return;
+					}
+					if ( editor->mMinimapEnabled && editor->getUISceneNode()->hasThreadPool() )
+						editor->mDoc->getHighlighter()->tokenizeAsync(
+							editor->getUISceneNode()->getThreadPool(), [lifetime] {
+								lifetime.run(
+									[]( UICodeEditor* editor ) { editor->invalidateDraw(); } );
+							} );
+					if ( !wasLocked )
+						editor->setLocked( false );
+					editor->onDocumentLoaded();
+					if ( onLoaded )
+						onLoaded( editor->mDoc, success );
 				} );
-
-			runOnMainThread( [this, success, onLoaded, wasLocked] {
-				if ( !wasLocked )
-					setLocked( false );
-				onDocumentLoaded();
-				if ( onLoaded )
-					onLoaded( mDoc, success );
-			} );
 		},
-		[this]( const Http&, const Http::Request&, const Http::Response&,
-				const Http::Request::Status& status, size_t /*totalBytes*/,
-				size_t /*currentBytes*/ ) {
+		[lifetime]( const Http&, const Http::Request&, const Http::Response&,
+					const Http::Request::Status& status, size_t /*totalBytes*/,
+					size_t /*currentBytes*/ ) {
 			if ( status == Http::Request::ContentReceived ) {
-				runOnMainThread( [this] { invalidateDraw(); } );
+				lifetime.run( []( UICodeEditor* editor ) { editor->invalidateDraw(); } );
 			}
 			return true;
 		} );

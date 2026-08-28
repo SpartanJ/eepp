@@ -3,6 +3,7 @@
 
 #include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
@@ -15,6 +16,7 @@
 #include <unordered_set>
 
 using namespace EE::Graphics;
+using namespace EE::Scene;
 using namespace EE::UI::Doc;
 
 namespace EE { namespace Graphics {
@@ -901,6 +903,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
+	MainThreadLifetime<UICodeEditor> mAsyncLifetime;
 	bool mDirtyEditor{ false };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };

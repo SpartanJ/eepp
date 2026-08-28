@@ -6,6 +6,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 #include "../../tools/ecode/keybindingshelper.cpp"
 
@@ -14,6 +15,43 @@ using namespace EE::UI;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
+
+UTEST( MainThreadLifetime, InvalidatedCallbacksDoNotRun ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, app.getUI() );
+	auto weak = lifetime.weakHandle();
+	bool called = false;
+	weak.run( [&called]( int* ) { called = true; } );
+	lifetime.invalidate();
+	SceneManager::instance()->update();
+	EXPECT_FALSE( called );
+}
+
+UTEST( MainThreadLifetime, LiveCallbacksReceiveOwner ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, app.getUI() );
+	int value = 0;
+	lifetime.weakHandle().run( [&value]( int* object ) { value = *object; } );
+	SceneManager::instance()->update();
+	EXPECT_EQ( 42, value );
+}
+
+UTEST( MainThreadLifetime, DispatcherCanBeAttachedAfterConstruction ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - deferred dispatcher test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, nullptr );
+	bool called = false;
+	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
+	SceneManager::instance()->update();
+	EXPECT_FALSE( called );
+
+	lifetime.setDispatcher( app.getUI() );
+	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
+	SceneManager::instance()->update();
+	EXPECT_TRUE( called );
+}
 
 static const std::string userCode = R"objcpp(#import "common.h"
 #import <cmath>

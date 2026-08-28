@@ -11,6 +11,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
+#include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -94,7 +95,7 @@ std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 		case Git::GitStatusType::Untracked:
 			return i18n( "git_untracked", "Untracked" );
 		case Git::GitStatusType::Unmerged:
-			return i18n( "git_unmerged", "Unmerged" );
+			return i18n( "git_conflicts", "Conflicts" );
 		case Git::GitStatusType::Changed:
 			return i18n( "git_changed", "Changed" );
 		case Git::GitStatusType::Staged:
@@ -122,7 +123,9 @@ Plugin* GitPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
-	PluginBase( pluginManager ), mHighlightStyleColor( DEFAULT_HIGHLIGHT_COLOR ) {
+	PluginBase( pluginManager ),
+	mLifetime( this, getUISceneNode() ),
+	mHighlightStyleColor( DEFAULT_HIGHLIGHT_COLOR ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -131,8 +134,12 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 GitPlugin::~GitPlugin() {
+	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
+	mConflictViewCloseConnection.disconnect();
+	mConflictView = nullptr;
+	mConflictSessions.clear();
 	if ( mStatusButton )
 		mStatusButton->close();
 
@@ -166,6 +173,16 @@ GitPlugin::~GitPlugin() {
 
 	while ( mRunningUpdateBranches )
 		Sys::sleep( Milliseconds( 1.f ) );
+
+	while ( *mRunningAsyncTasks )
+		Sys::sleep( Milliseconds( 1.f ) );
+}
+
+void GitPlugin::runAsyncTask( std::function<void()> task ) {
+	auto runningTasks = mRunningAsyncTasks;
+	++*runningTasks;
+	mThreadPool->run( std::move( task ),
+					  [runningTasks = std::move( runningTasks )]( auto ) { --*runningTasks; } );
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {
@@ -280,12 +297,13 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
-	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
+	mGit = std::make_shared<Git>( pluginManager->getWorkspaceFolder() );
 	mGit->setSilent( mSilent );
 	mGitFound = !mGit->getGitPath().empty();
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
 
 	if ( getUISceneNode() ) {
+		mLifetime.setDispatcher( getUISceneNode() );
 		initModelStyler();
 		updateStatus();
 		updateBranches();
@@ -351,6 +369,7 @@ void GitPlugin::endModelStyler() {
 void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
+	mLifetime.setDispatcher( getUISceneNode() );
 
 	if ( !mProjectPath.empty() )
 		getUISceneNode()->runOnMainThread( [this] { buildSidePanelTab(); } );
@@ -382,6 +401,68 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusTree->expandAll();
 	} else {
 		return;
+	}
+
+	if ( mConflictStateBar && mConflictStateText ) {
+		auto* conflictSession = activeConflictSession();
+		const bool hasState =
+			conflictSession && ( !conflictSession->files.empty() ||
+								 conflictSession->operation != Git::GitOperation::None );
+		mConflictStateBar->setVisible( hasState );
+		if ( hasState ) {
+			String operation;
+			switch ( conflictSession->operation ) {
+				case Git::GitOperation::Merge:
+					operation = i18n( "git_operation_merge", "Merging" );
+					break;
+				case Git::GitOperation::Rebase:
+					operation = i18n( "git_operation_rebase", "Rebasing" );
+					break;
+				case Git::GitOperation::CherryPick:
+					operation = i18n( "git_operation_cherry_pick", "Cherry-picking" );
+					break;
+				case Git::GitOperation::Revert:
+					operation = i18n( "git_operation_revert", "Reverting" );
+					break;
+				case Git::GitOperation::StashApply:
+					operation = i18n( "git_operation_stash_apply", "Applying stash" );
+					break;
+				case Git::GitOperation::None:
+					operation = i18n( "git_conflicts", "Conflicts" );
+					break;
+			}
+			mConflictStateText->setText(
+				conflictSession->files.empty()
+					? String::format(
+						  ( conflictSession->operation == Git::GitOperation::Merge
+								? i18n( "git_operation_ready_commit", "%s · Ready to commit" )
+								: i18n( "git_operation_ready", "%s · Ready to continue" ) )
+							  .toUtf8(),
+						  operation.toUtf8().c_str() )
+					: String::format(
+						  ( conflictSession->files.size() == 1
+								? i18n( "git_operation_conflict", "%s · %d conflict" )
+								: i18n( "git_operation_conflicts", "%s · %d conflicts" ) )
+							  .toUtf8(),
+						  operation.toUtf8().c_str(),
+						  static_cast<int>( conflictSession->files.size() ) ) );
+			const bool canContinue = conflictSession->files.empty() &&
+									 conflictSession->operation != Git::GitOperation::None &&
+									 conflictSession->operation != Git::GitOperation::StashApply;
+			auto* continueButton =
+				mTabContents->find( "git_conflict_continue" )->asType<UIPushButton>();
+			continueButton->setText( conflictSession->operation == Git::GitOperation::Merge
+										 ? i18n( "git_commit_merge", "Commit" )
+										 : i18n( "git_continue_operation", "Continue" ) );
+			if ( auto* icon = getUISceneNode()->findIcon(
+					 conflictSession->operation == Git::GitOperation::Merge ? "git-commit"
+																			: "debug-continue" ) )
+				continueButton->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+			continueButton->setEnabled( canContinue );
+			mTabContents->find( "git_conflict_abort" )
+				->setEnabled( conflictSession->operation != Git::GitOperation::None &&
+							  conflictSession->operation != Git::GitOperation::StashApply );
+		}
 	}
 
 	if ( !mStatusBarDisplayBranch )
@@ -472,19 +553,30 @@ void GitPlugin::updateStatusBarSync() {
 }
 
 void GitPlugin::updateStatus( bool force ) {
-	if ( !mGit || !mGitFound || mRunningUpdateStatus )
+	if ( !mGit || !mGitFound )
 		return;
+	if ( mRunningUpdateStatus ) {
+		if ( force )
+			mPendingForcedStatusUpdate = true;
+		return;
+	}
 
 	if ( !mGit || mGit->getGitFolder().empty() ) {
-		getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+		mLifetime.weakHandle().run( []( GitPlugin* plugin ) { plugin->updateStatusBarSync(); } );
 		return;
 	}
 
 	mRunningUpdateStatus++;
+	UnorderedSet<std::string> sessionRepos;
+	for ( const auto& [repo, session] : mConflictSessions )
+		if ( session )
+			sessionRepos.insert( repo );
+	const std::string selectedRepo = repoSelected();
+	const auto lifetime = mLifetime.weakHandle();
 	mThreadPool->run(
-		[this, force] {
+		[this, lifetime, force, selectedRepo, sessionRepos = std::move( sessionRepos )] {
 			if ( !mGit || mGit->getGitFolder().empty() ) {
-				getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+				lifetime.run( []( GitPlugin* plugin ) { plugin->updateStatusBarSync(); } );
 				return;
 			}
 
@@ -495,6 +587,26 @@ void GitPlugin::updateStatus( bool force ) {
 				prevGitStatus = mGitStatus;
 			}
 			Git::Status newGitStatus = mGit->status( mStatusRecurseSubmodules );
+			UnorderedSet<std::string> conflictRepos;
+			for ( const auto& repo : newGitStatus.files ) {
+				for ( const auto& file : repo.second )
+					if ( file.report.type == Git::GitStatusType::Unmerged )
+						conflictRepos.insert( mGit->repoPath( file.file ) );
+			}
+			if ( !selectedRepo.empty() )
+				conflictRepos.insert( selectedRepo );
+			conflictRepos.insert( sessionRepos.begin(), sessionRepos.end() );
+			UnorderedMap<std::string, Git::ConflictState> conflictStates;
+			for ( const auto& repo : conflictRepos )
+				conflictStates.emplace( repo, mGit->conflictState( repo, false ) );
+			for ( auto state = conflictStates.begin(); state != conflictStates.end(); ) {
+				if ( !state->second.hasConflicts() &&
+					 state->second.operation == Git::GitOperation::None &&
+					 sessionRepos.find( state->first ) == sessionRepos.end() )
+					state = conflictStates.erase( state );
+				else
+					++state;
+			}
 			UnorderedSet<std::string> cache;
 
 			for ( const auto& status : newGitStatus.files ) {
@@ -518,19 +630,52 @@ void GitPlugin::updateStatus( bool force ) {
 			{
 				Lock l( mGitStatusMutex );
 				mGitStatus = std::move( newGitStatus );
-				if ( !force && mGitBranches == prevBranch && mGitStatus == prevGitStatus )
+				if ( !force && conflictStates.empty() && mGitBranches == prevBranch &&
+					 mGitStatus == prevGitStatus )
 					return;
 			}
 
-			getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+			lifetime.run(
+				[conflictStates = std::move( conflictStates )]( GitPlugin* plugin ) mutable {
+					const bool selectStatusPanel = plugin->updateConflictSessions( conflictStates );
+					plugin->updateStatusBarSync();
+					if ( selectStatusPanel && plugin->mPanelSwicher )
+						plugin->mPanelSwicher->getListBox()->setSelected( 1 );
+				} );
 		},
-		[this]( auto ) { mRunningUpdateStatus--; } );
+		[this, lifetime]( auto ) {
+			--mRunningUpdateStatus;
+			if ( mPendingForcedStatusUpdate.exchange( false ) )
+				lifetime.run( []( GitPlugin* plugin ) { plugin->updateStatus( true ); } );
+		} );
 }
 
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
+	if ( getUISceneNode() )
+		mLifetime.setDispatcher( getUISceneNode() );
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
 			if ( mGit ) {
+				{
+					Lock l( mGitStatusMutex );
+					mGitStatus = {};
+				}
+				if ( getUISceneNode() ) {
+					mLifetime.weakHandle().run( []( GitPlugin* plugin ) {
+						plugin->mConflictViewCloseConnection.disconnect();
+						plugin->mConflictView = nullptr;
+						plugin->mConflictSessions.clear();
+						plugin->mActiveConflictRepo.clear();
+						++plugin->mConflictGeneration;
+						if ( plugin->mManager && plugin->mManager->getSplitter() )
+							plugin->mManager->getSplitter()->removeTabWithOwnedWidgetId(
+								"git_conflict_resolver" );
+						if ( plugin->mPanelSwicher )
+							plugin->mPanelSwicher->getListBox()->setSelected( 0 );
+						if ( plugin->mStackWidget && !plugin->mStackMap.empty() )
+							plugin->mStackWidget->setActiveWidget( plugin->mStackMap[0] );
+					} );
+				}
 				mGit->setProjectPath( msg.asJSON()["folder"] );
 
 				{
@@ -833,9 +978,12 @@ void GitPlugin::branchMerge( Git::Branch branch ) {
 			branch.name ) );
 
 	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
-		runAsync(
-			[this, branch]() { return mGit->mergeBranch( branch.name, false, repoSelected() ); },
-			true, true, true, true, true );
+		const std::string repoPath = repoSelected();
+		runMergeLikeAsync(
+			[branch, repoPath]( Git& git ) {
+				return git.mergeBranch( branch.name, false, repoPath );
+			},
+			repoPath );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -844,7 +992,7 @@ void GitPlugin::branchMerge( Git::Branch branch ) {
 }
 
 void GitPlugin::pull( const std::string& repoPath ) {
-	runAsync( [this, repoPath]() { return mGit->pull( repoPath ); }, true, true, true );
+	runMergeLikeAsync( [repoPath]( Git& git ) { return git.pull( repoPath ); }, repoPath );
 }
 
 void GitPlugin::push( const std::string& repoPath ) {
@@ -893,8 +1041,8 @@ void GitPlugin::branchCreate() {
 	msgBox->showWhenReady();
 }
 
-void GitPlugin::commit( const std::string& repoPath ) {
-	if ( !mGitStatus.hasStagedChanges( mGit->repoName( repoPath, true ) ) ) {
+void GitPlugin::commit( const std::string& repoPath, bool mergeCommit ) {
+	if ( !mergeCommit && !mGitStatus.hasStagedChanges( mGit->repoName( repoPath, true ) ) ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK, i18n( "git_nothing_to_commit", "Nothing to Commit" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -920,6 +1068,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		->setParent( msgBox->getLayoutCont()->getFirstChild() )
 		->setId( "git-amend" );
 	chkAmend->setText( i18n( "git_amend", "Amend last commit" ) );
+	chkAmend->setEnabled( !mergeCommit );
 	chkAmend->toPosition( 2 );
 	chkAmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
 		{ KEY_A, KeyMod::getDefaultModifier() }, true ) );
@@ -948,9 +1097,12 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	chkPush->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
 		{ KEY_P, KeyMod::getDefaultModifier() }, true ) );
 
-	txtEdit->getDocument().setCommand(
-		"commit-amend", [chkAmend] { chkAmend->setChecked( !chkAmend->isChecked() ); } );
-	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() }, "commit-amend" );
+	if ( !mergeCommit ) {
+		txtEdit->getDocument().setCommand(
+			"commit-amend", [chkAmend] { chkAmend->setChecked( !chkAmend->isChecked() ); } );
+		txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() },
+											  "commit-amend" );
+	}
 
 	txtEdit->getDocument().setCommand(
 		"commit-push", [chkPush] { chkPush->setChecked( !chkPush->isChecked() ); } );
@@ -962,30 +1114,45 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	txtEdit->getKeyBindings().addKeybind( { KEY_B, KeyMod::getDefaultModifier() },
 										  "commit-bypass-hook" );
 
-	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmend, chkBypassHook, chkPush,
-								   repoPath]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmend, chkBypassHook, chkPush, repoPath,
+								   mergeCommit]( const Event* ) {
 		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
 		if ( msg.empty() )
 			return;
 		bool amend = chkAmend->isChecked();
 		bool bypassHook = chkBypassHook->isChecked();
 		bool pushCommit = chkPush->isChecked();
+		std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
+		auto git = mGit;
+		const auto lifetime = mLifetime.weakHandle();
 
 		msgBox->closeWindow();
 		runAsync(
-			[this, msg, amend, bypassHook, pushCommit, repoPath]() {
-				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
+			[git = std::move( git ), lifetime, branch = std::move( branch ), msg, amend, bypassHook,
+			 pushCommit, repoPath, mergeCommit]() {
 				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
-				auto res = mGit->commit( msg, amend, bypassHook, repoPath );
+				auto res = git->commit( msg, amend, bypassHook, repoPath, mergeCommit );
 				if ( res.success() ) {
-					mLastCommitMsg.clear();
+					lifetime.run( [mergeCommit, repoPath]( GitPlugin* plugin ) {
+						plugin->mLastCommitMsg.clear();
+						if ( mergeCommit ) {
+							++plugin->mConflictGeneration;
+							plugin->mConflictSessions.erase( repoPath );
+							if ( plugin->mActiveConflictRepo == repoPath ) {
+								plugin->mActiveConflictRepo.clear();
+								plugin->mManager->getSplitter()->removeTabWithOwnedWidgetId(
+									"git_conflict_resolver" );
+							}
+						}
+					} );
 					if ( pushCommit ) {
 						if ( pushNewBranch )
-							return mGit->pushNewBranch( branch->name, repoPath );
-						return mGit->push( repoPath );
+							return git->pushNewBranch( branch->name, repoPath );
+						return git->push( repoPath );
 					}
-				} else
-					mLastCommitMsg = msg;
+				} else {
+					lifetime.run( [msg]( GitPlugin* plugin ) { plugin->mLastCommitMsg = msg; } );
+				}
 				return res;
 			},
 			true, true, true, true, true );
@@ -1176,6 +1343,604 @@ void GitPlugin::openFile( const std::string& file ) {
 	getUISceneNode()->runOnMainThread( [this, file] {
 		mManager->getLoadFileFn()( mGit->getProjectPath() + file, []( auto, auto ) {} );
 	} );
+}
+
+GitPlugin::GitConflictSession* GitPlugin::conflictSession( const std::string& repoPath ) {
+	auto session = mConflictSessions.find( repoPath );
+	return session != mConflictSessions.end() ? session->second.get() : nullptr;
+}
+
+GitPlugin::GitConflictSession* GitPlugin::activeConflictSession() {
+	if ( auto* session = conflictSession( mActiveConflictRepo ) )
+		return session;
+	if ( mConflictSessions.empty() )
+		return nullptr;
+	mActiveConflictRepo = mConflictSessions.begin()->first;
+	return mConflictSessions.begin()->second.get();
+}
+
+bool GitPlugin::updateConflictSessions(
+	UnorderedMap<std::string, Git::ConflictState>& conflictStates ) {
+	bool selectStatusPanel = false;
+	for ( auto& [repo, conflictState] : conflictStates ) {
+		if ( !conflictState.error.empty() )
+			continue;
+		if ( !conflictState.hasConflicts() && conflictState.operation == Git::GitOperation::None ) {
+			const bool wasActive = mActiveConflictRepo == repo;
+			++mConflictGeneration;
+			mConflictSessions.erase( repo );
+			if ( wasActive ) {
+				mActiveConflictRepo.clear();
+				mConflictViewCloseConnection.disconnect();
+				mConflictView = nullptr;
+				mManager->getSplitter()->removeTabWithOwnedWidgetId( "git_conflict_resolver" );
+			}
+			continue;
+		}
+		std::vector<std::string> files;
+		files.reserve( conflictState.files.size() );
+		for ( auto& conflict : conflictState.files )
+			files.emplace_back( std::move( conflict.path ) );
+		auto& session = mConflictSessions[repo];
+		const bool stateChanged =
+			session && ( session->files != files || session->operation != conflictState.operation );
+		if ( !session ) {
+			session = std::make_unique<GitConflictSession>();
+			selectStatusPanel = true;
+		} else if ( session->files.empty() && !files.empty() ) {
+			selectStatusPanel = true;
+		}
+		session->repoPath = repo;
+		session->files = std::move( files );
+		session->operation = conflictState.operation;
+		if ( session->generation == 0 || stateChanged )
+			session->generation = ++mConflictGeneration;
+		if ( session->currentFile >= session->files.size() )
+			session->currentFile = 0;
+		if ( mActiveConflictRepo.empty() )
+			mActiveConflictRepo = repo;
+	}
+	if ( mActiveConflictRepo.empty() && !mConflictSessions.empty() )
+		mActiveConflictRepo = mConflictSessions.begin()->first;
+	return selectStatusPanel;
+}
+
+void GitPlugin::loadConflictResolverView( std::shared_ptr<TextDocument> resultDocument,
+										  Git::ConflictFile conflict, std::string repository,
+										  std::vector<std::string> files, size_t currentFile,
+										  Git::GitOperation operation, Uint64 generation ) {
+	auto* session = conflictSession( repository );
+	if ( !resultDocument )
+		return;
+	if ( mShuttingDown || mActiveConflictRepo != repository || !session ||
+		 generation != session->generation )
+		return;
+	auto toVersion = []( const std::optional<Git::ConflictStage>& stage, String label ) {
+		MergeVersion version;
+		version.label = std::move( label );
+		if ( stage ) {
+			version.present = true;
+			version.text = String::fromUtf8( stage->contents );
+			version.objectId = stage->objectId;
+			version.mode = stage->mode;
+		}
+		return version;
+	};
+	String stage2Label;
+	String stage3Label;
+	switch ( operation ) {
+		case Git::GitOperation::Merge:
+			stage2Label = i18n( "git_merge_current_branch", "Current branch (ours)" );
+			stage3Label = i18n( "git_merge_incoming_branch", "Incoming branch (theirs)" );
+			break;
+		case Git::GitOperation::Rebase:
+			stage2Label = i18n( "git_merge_upstream", "Upstream" );
+			stage3Label = i18n( "git_merge_replayed_commit", "Replayed commit (your change)" );
+			break;
+		case Git::GitOperation::None:
+		case Git::GitOperation::CherryPick:
+		case Git::GitOperation::Revert:
+		case Git::GitOperation::StashApply:
+			stage2Label = i18n( "git_merge_ours_stage", "Ours (stage 2)" );
+			stage3Label = i18n( "git_merge_theirs_stage", "Theirs (stage 3)" );
+			break;
+	}
+	MergeInput input;
+	input.path = conflict.path;
+	input.base = toVersion( conflict.base, i18n( "git_merge_base", "Base" ) );
+	input.stage2 = toVersion( conflict.stage2, std::move( stage2Label ) );
+	input.stage3 = toVersion( conflict.stage3, std::move( stage3Label ) );
+	input.resultDocument = resultDocument;
+	input.resultLabel = i18n( "git_merge_result", "Result" );
+	input.missingVersionLabel = i18n( "git_merge_not_present", "Not present" );
+	auto* mergeView = mConflictView && mManager->getSplitter()->ownedWidgetExists( mConflictView )
+						  ? mConflictView
+						  : UIMergeView::New();
+	mergeView->load( std::move( input ) );
+	mergeView->setRecreateConflictCallback( [this] { recreateConflict(); } );
+	const String continueText = operation == Git::GitOperation::Merge
+									? i18n( "git_commit_merge", "Commit" )
+									: i18n( "git_continue_operation", "Continue" );
+	const bool newView = mergeView != mConflictView;
+	session->files = std::move( files );
+	session->currentFile = currentFile;
+	session->generation = generation;
+	session->operation = operation;
+	mConflictView = mergeView;
+	if ( newView ) {
+		const Uint32 defaultModifier = KeyMod::getDefaultModifier();
+		const Uint32 abortModifier = defaultModifier | KeyMod::getDefaultSecondaryModifier();
+		mergeView->setId( "git_conflict_resolver" );
+		mergeView->addToolbarAction( "git-conflict-save-stage",
+									 i18n( "git_save_and_stage", "Save & Stage" ),
+									 { KEY_S, defaultModifier }, "git-branch-staged-changes",
+									 [this] { saveAndStageConflict(); } );
+		mergeView->addToolbarAction(
+			"git-conflict-previous-file", i18n( "git_previous_conflict_file", "Previous File" ),
+			{ KEY_PAGEUP, KeyMod::getDefaultSecondaryModifier() }, "arrow-circle-left",
+			[this] { openAdjacentConflict( false ); } );
+		mergeView->addToolbarAction(
+			"git-conflict-next-file", i18n( "git_next_conflict_file", "Next File" ),
+			{ KEY_PAGEDOWN, KeyMod::getDefaultSecondaryModifier() }, "arrow-circle-right",
+			[this] { openAdjacentConflict( true ); } );
+		mergeView->addToolbarAction(
+			"git-conflict-continue", continueText, { KEY_RETURN, defaultModifier },
+			operation == Git::GitOperation::Merge ? "git-commit" : "debug-continue",
+			[this] { continueConflictOperation(); } );
+		mergeView->addToolbarAction( "git-conflict-abort", i18n( "git_abort_operation", "Abort" ),
+									 { KEY_A, abortModifier }, "discard",
+									 [this] { abortConflictOperation(); } );
+		mConflictViewCloseConnection =
+			mergeView->connect( Event::OnClose, [this, mergeView]( const Event* ) {
+				if ( mConflictView == mergeView ) {
+					mConflictView = nullptr;
+					if ( auto* session = activeConflictSession() )
+						session->generation = ++mConflictGeneration;
+				}
+			} );
+		mManager->getSplitter()->createWidget(
+			mergeView,
+			String::format( i18n( "git_merge_tab", "Merge: %s" ).toUtf8(),
+							resultDocument->getFilename() ),
+			true );
+	} else {
+		if ( auto* continueButton = mergeView->find<UIPushButton>( "git-conflict-continue" ) ) {
+			continueButton->setText( continueText );
+			if ( auto* icon = getUISceneNode()->findIcon(
+					 operation == Git::GitOperation::Merge ? "git-commit" : "debug-continue" ) )
+				continueButton->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+		}
+		auto tabs = mManager->getSplitter()->getTabFromOwnedWidgetId( mergeView->getId() );
+		if ( !tabs.empty() ) {
+			tabs.front().first->setText( String::format(
+				i18n( "git_merge_tab", "Merge: %s" ).toUtf8(), resultDocument->getFilename() ) );
+			tabs.front().second->setTabSelected( tabs.front().first );
+		}
+	}
+}
+
+void GitPlugin::openConflictResolver( const std::string& file ) {
+	const std::string repository = mGit->repoPath( file );
+	std::string absolutePath = mGit->getProjectPath() + file;
+	std::string relativePath = absolutePath;
+	FileSystem::filePathRemoveBasePath( repository, relativePath );
+	const Uint64 generation = ++mConflictGeneration;
+	auto& session = mConflictSessions[repository];
+	if ( !session )
+		session = std::make_unique<GitConflictSession>();
+	session->repoPath = repository;
+	session->generation = generation;
+	mActiveConflictRepo = repository;
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	const std::string stateErrorMessage =
+		i18n( "git_conflict_state_failed", "Unable to read Git's conflict state." ).toUtf8();
+	runAsyncTask( [git = std::move( git ), lifetime, repository,
+				   relativePath = std::move( relativePath ),
+				   absolutePath = std::move( absolutePath ), generation, stateErrorMessage] {
+		auto state = git->conflictState( repository );
+		if ( !state.error.empty() ) {
+			lifetime.run( [stateErrorMessage]( GitPlugin* plugin ) {
+				plugin->showMessage( LSPMessageType::Error, stateErrorMessage );
+			} );
+			return;
+		}
+		auto found = std::find_if(
+			state.files.begin(), state.files.end(),
+			[&relativePath]( const auto& conflict ) { return conflict.path == relativePath; } );
+		if ( found == state.files.end() ) {
+			lifetime.run( []( GitPlugin* plugin ) { plugin->updateStatus( true ); } );
+			return;
+		}
+		const size_t currentFile = std::distance( state.files.begin(), found );
+		std::vector<std::string> files;
+		files.reserve( state.files.size() );
+		for ( const auto& conflictFile : state.files )
+			files.emplace_back( conflictFile.path );
+		Git::ConflictFile conflict = std::move( state.files[currentFile] );
+		lifetime.run( [lifetime, conflict = std::move( conflict ),
+					   absolutePath = std::move( absolutePath ), repository,
+					   files = std::move( files ), currentFile, operation = state.operation,
+					   generation]( GitPlugin* plugin ) mutable {
+			const auto* session = plugin->conflictSession( repository );
+			if ( plugin->mShuttingDown || plugin->mActiveConflictRepo != repository || !session ||
+				 generation != session->generation )
+				return;
+			if ( !conflict.workingTreeExists ) {
+				plugin->showMessage(
+					LSPMessageType::Warning,
+					plugin
+						->i18n(
+							"git_conflict_missing_result",
+							"This conflict requires choosing whether to keep or delete the file." )
+						.toUtf8() );
+				return;
+			}
+			auto openView = [plugin, conflict = std::move( conflict ), repository,
+							 files = std::move( files ), currentFile, operation,
+							 generation]( std::shared_ptr<TextDocument> document ) mutable {
+				plugin->loadConflictResolverView( std::move( document ), std::move( conflict ),
+												  std::move( repository ), std::move( files ),
+												  currentFile, operation, generation );
+			};
+			if ( auto* tab = plugin->mManager->getSplitter()->isDocumentOpen( absolutePath, false,
+																			  true ) ) {
+				openView( tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef() );
+				return;
+			}
+			auto document = std::make_shared<TextDocument>();
+			document->loadAsyncFromFile(
+				absolutePath, plugin->mThreadPool,
+				[lifetime, document, openView = std::move( openView )]( TextDocument*,
+																		bool success ) mutable {
+					lifetime.run( [document, openView = std::move( openView ),
+								   success]( GitPlugin* ) mutable {
+						if ( success )
+							openView( std::move( document ) );
+					} );
+				} );
+		} );
+	} );
+}
+
+void GitPlugin::recreateConflict() {
+	auto* session = activeConflictSession();
+	if ( !session || !mConflictView ||
+		 !mManager->getSplitter()->ownedWidgetExists( mConflictView ) )
+		return;
+	const MergeInput& input = mConflictView->getInput();
+	Git::ConflictFile conflict;
+	conflict.path = input.path;
+	const auto toStage = []( const MergeVersion& version,
+							 Uint8 stage ) -> std::optional<Git::ConflictStage> {
+		if ( !version.present )
+			return std::nullopt;
+		return Git::ConflictStage{ version.objectId, {}, version.mode, stage };
+	};
+	conflict.base = toStage( input.base, 1 );
+	conflict.stage2 = toStage( input.stage2, 2 );
+	conflict.stage3 = toStage( input.stage3, 3 );
+	const std::string repo = session->repoPath;
+	const std::string path = conflict.path;
+	const Uint64 generation = session->generation;
+	auto* view = mConflictView;
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, repo, path, conflict = std::move( conflict ),
+				   generation, view]() mutable {
+		auto result = git->restoreConflictStages( conflict, repo );
+		auto state = git->conflictState( repo, false );
+		lifetime.run( [result = std::move( result ), state = std::move( state ), repo, path,
+					   generation, view]( GitPlugin* plugin ) mutable {
+			auto* session = plugin->conflictSession( repo );
+			if ( plugin->mShuttingDown || plugin->mActiveConflictRepo != repo || !session ||
+				 generation != session->generation || plugin->mConflictView != view ||
+				 !plugin->mManager->getSplitter()->ownedWidgetExists( view ) )
+				return;
+			auto restored = std::find_if(
+				state.files.begin(), state.files.end(),
+				[&path]( const Git::ConflictFile& file ) { return file.path == path; } );
+			if ( result.fail() || restored == state.files.end() ) {
+				plugin->showMessage(
+					LSPMessageType::Error,
+					result.result.empty()
+						? plugin
+							  ->i18n( "git_conflict_recreate_failed",
+									  "Unable to restore the conflict in Git's index." )
+							  .toUtf8()
+						: result.result );
+				return;
+			}
+			session->files.clear();
+			session->files.reserve( state.files.size() );
+			for ( const auto& file : state.files )
+				session->files.emplace_back( file.path );
+			session->currentFile =
+				static_cast<size_t>( std::distance( state.files.begin(), restored ) );
+			session->operation = state.operation;
+			view->recreateConflict();
+			if ( !view->getResultEditor()->getDocument().save() ) {
+				plugin->showMessage( LSPMessageType::Warning,
+									 plugin
+										 ->i18n( "git_conflict_recreate_save_failed",
+												 "The conflict was restored in Git's index, but "
+												 "its marker text could not "
+												 "be saved to disk." )
+										 .toUtf8() );
+			}
+			plugin->updateStatus( true );
+		} );
+	} );
+}
+
+void GitPlugin::saveAndStageConflict() {
+	auto* session = activeConflictSession();
+	if ( !session || !mConflictView || session->currentFile >= session->files.size() )
+		return;
+	auto& document = mConflictView->getResultEditor()->getDocument();
+	if ( !document.save() ) {
+		showMessage(
+			LSPMessageType::Error,
+			i18n( "git_conflict_save_failed", "Unable to save the conflict result." ).toUtf8() );
+		return;
+	}
+	if ( mConflictView->hasUnresolvedMarkerBlocks() )
+		showMessage( LSPMessageType::Warning,
+					 i18n( "git_conflict_markers_remain",
+						   "The saved result still contains recognizable conflict markers." )
+						 .toUtf8() );
+	const std::string repo = session->repoPath;
+	const std::string path = session->files[session->currentFile];
+	const Uint64 generation = session->generation;
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, repo, path, generation] {
+		auto result = git->resolveConflict( path, false, repo );
+		auto state = git->conflictState( repo );
+		lifetime.run( [result = std::move( result ), state = std::move( state ), repo, path,
+					   generation]( GitPlugin* plugin ) mutable {
+			auto* session = plugin->conflictSession( repo );
+			if ( plugin->mShuttingDown || !session || generation != session->generation )
+				return;
+			if ( !state.error.empty() ) {
+				plugin->showMessage( LSPMessageType::Error,
+									 plugin
+										 ->i18n( "git_conflict_state_failed",
+												 "Unable to read Git's conflict state." )
+										 .toUtf8() );
+				return;
+			}
+			const bool unresolved =
+				std::any_of( state.files.begin(), state.files.end(),
+							 [&path]( const auto& conflict ) { return conflict.path == path; } );
+			if ( result.fail() || unresolved ) {
+				plugin->showMessage( LSPMessageType::Error,
+									 result.result.empty()
+										 ? plugin
+											   ->i18n( "git_conflict_still_unmerged",
+													   "Git still reports this path as unmerged." )
+											   .toUtf8()
+										 : result.result );
+				return;
+			}
+			session->files.clear();
+			session->files.reserve( state.files.size() );
+			for ( const auto& conflict : state.files )
+				session->files.emplace_back( conflict.path );
+			session->currentFile = 0;
+			session->operation = state.operation;
+			session->generation = ++plugin->mConflictGeneration;
+			if ( !state.files.empty() ) {
+				std::string next = session->repoPath + state.files.front().path;
+				FileSystem::filePathRemoveBasePath( plugin->mGit->getProjectPath(), next );
+				plugin->openConflictResolver( next );
+			}
+			plugin->updateStatus( true );
+		} );
+	} );
+}
+
+void GitPlugin::openAdjacentConflict( bool next ) {
+	auto* session = activeConflictSession();
+	if ( !session || session->files.empty() )
+		return;
+	const size_t count = session->files.size();
+	const size_t index =
+		next ? ( session->currentFile + 1 ) % count : ( session->currentFile + count - 1 ) % count;
+	std::string file = session->repoPath + session->files[index];
+	FileSystem::filePathRemoveBasePath( mGit->getProjectPath(), file );
+	openConflictResolver( file );
+}
+
+void GitPlugin::acceptConflictSide( const std::string& file, bool stage2 ) {
+	const std::string repository = mGit->repoPath( file );
+	std::string path = mGit->getProjectPath() + file;
+	FileSystem::filePathRemoveBasePath( repository, path );
+	const std::string noLongerUnmerged =
+		i18n( "git_conflict_no_longer_unmerged", "Git no longer reports this path as unmerged." )
+			.toUtf8();
+	const std::string stateErrorMessage =
+		i18n( "git_conflict_state_failed", "Unable to read Git's conflict state." ).toUtf8();
+	mLoader->setVisible( true );
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, repository, path, stage2, noLongerUnmerged,
+				   stateErrorMessage] {
+		auto state = git->conflictState( repository );
+		auto found =
+			std::find_if( state.files.begin(), state.files.end(),
+						  [&path]( const auto& conflict ) { return conflict.path == path; } );
+		Git::Result result;
+		if ( !state.error.empty() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = stateErrorMessage;
+		} else if ( found == state.files.end() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = noLongerUnmerged;
+		} else {
+			const bool present = stage2 ? found->stage2.has_value() : found->stage3.has_value();
+			result = git->acceptConflictStage( path, stage2, present, repository );
+		}
+		lifetime.run( [result = std::move( result )]( GitPlugin* plugin ) mutable {
+			plugin->mLoader->setVisible( false );
+			if ( plugin->mShuttingDown )
+				return;
+			if ( result.fail() )
+				plugin->showMessage( LSPMessageType::Warning, result.result );
+			plugin->updateStatus( true );
+		} );
+	} );
+}
+
+void GitPlugin::continueConflictOperation() {
+	auto* session = activeConflictSession();
+	if ( !session )
+		return;
+	const std::string repo = session->repoPath;
+	const auto operation = session->operation;
+	const Uint64 generation = session->generation;
+	const std::string unresolvedMessage =
+		i18n( "git_resolve_before_continue", "Resolve and stage all conflicts before continuing." )
+			.toUtf8();
+	const std::string stateErrorMessage =
+		i18n( "git_conflict_state_failed", "Unable to read Git's conflict state." ).toUtf8();
+	if ( operation == Git::GitOperation::Merge ) {
+		mLoader->setVisible( true );
+		auto git = mGit;
+		const auto lifetime = mLifetime.weakHandle();
+		runAsyncTask( [git = std::move( git ), lifetime, repo, generation, unresolvedMessage,
+					   stateErrorMessage] {
+			auto state = git->conflictState( repo, false );
+			Git::Result message;
+			if ( !state.error.empty() ) {
+				message.returnCode = EXIT_FAILURE;
+				message.result = stateErrorMessage;
+			} else if ( state.hasConflicts() ) {
+				message.returnCode = EXIT_FAILURE;
+				message.result = unresolvedMessage;
+			} else if ( state.operation != Git::GitOperation::Merge ) {
+				message.returnCode = EXIT_FAILURE;
+			} else {
+				message = git->preparedMergeMessage( repo );
+			}
+			lifetime.run(
+				[message = std::move( message ), repo, generation]( GitPlugin* plugin ) mutable {
+					plugin->mLoader->setVisible( false );
+					auto* session = plugin->conflictSession( repo );
+					if ( plugin->mShuttingDown || !session || generation != session->generation )
+						return;
+					if ( message.fail() ) {
+						plugin->showMessage(
+							LSPMessageType::Warning,
+							message.result.empty()
+								? plugin
+									  ->i18n( "git_no_continuable_operation",
+											  "No continuable Git operation is active." )
+									  .toUtf8()
+								: message.result );
+						return;
+					}
+					plugin->mLastCommitMsg = String::fromUtf8( message.result );
+					plugin->commit( repo, true );
+				} );
+		} );
+		return;
+	}
+	mLoader->setVisible( true );
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, repo, operation, generation, unresolvedMessage,
+				   stateErrorMessage] {
+		auto state = git->conflictState( repo );
+		Git::Result result;
+		if ( !state.error.empty() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = stateErrorMessage;
+		} else if ( state.hasConflicts() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = unresolvedMessage;
+		} else {
+			result = git->continueOperation( operation, repo );
+		}
+		lifetime.run( [result = std::move( result ), repo,
+					   generation]( GitPlugin* plugin ) mutable {
+			plugin->mLoader->setVisible( false );
+			auto* session = plugin->conflictSession( repo );
+			if ( plugin->mShuttingDown || !session || generation != session->generation )
+				return;
+			if ( result.fail() ) {
+				plugin->showMessage( LSPMessageType::Warning,
+									 result.result.empty()
+										 ? plugin
+											   ->i18n( "git_no_continuable_operation",
+													   "No continuable Git operation is active." )
+											   .toUtf8()
+										 : result.result );
+				return;
+			}
+			++plugin->mConflictGeneration;
+			plugin->mConflictSessions.erase( repo );
+			if ( plugin->mActiveConflictRepo == repo ) {
+				plugin->mActiveConflictRepo.clear();
+				plugin->mManager->getSplitter()->removeTabWithOwnedWidgetId(
+					"git_conflict_resolver" );
+			}
+			plugin->updateBranches();
+			plugin->updateStatus( true );
+		} );
+	} );
+}
+
+void GitPlugin::abortConflictOperation() {
+	if ( !activeConflictSession() )
+		return;
+	auto* message =
+		UIMessageBox::New( UIMessageBox::OK_CANCEL, i18n( "git_confirm_abort_operation",
+														  "Abort the current Git operation?" ) );
+	message->setTitle( i18n( "git_confirm", "Confirm" ) );
+	message->on( Event::OnConfirm, [this, message]( const Event* ) {
+		message->closeWindow();
+		auto* session = activeConflictSession();
+		if ( !session )
+			return;
+		const std::string repo = session->repoPath;
+		const auto operation = session->operation;
+		const Uint64 generation = session->generation;
+		mLoader->setVisible( true );
+		auto git = mGit;
+		const auto lifetime = mLifetime.weakHandle();
+		runAsyncTask( [git = std::move( git ), lifetime, repo, operation, generation] {
+			auto result = git->abortOperation( operation, repo );
+			lifetime.run( [result = std::move( result ), repo,
+						   generation]( GitPlugin* plugin ) mutable {
+				plugin->mLoader->setVisible( false );
+				auto* session = plugin->conflictSession( repo );
+				if ( plugin->mShuttingDown || !session || generation != session->generation )
+					return;
+				if ( result.fail() ) {
+					plugin->showMessage( LSPMessageType::Warning,
+										 result.result.empty()
+											 ? plugin
+												   ->i18n( "git_no_abortable_operation",
+														   "No abortable Git operation is active." )
+												   .toUtf8()
+											 : result.result );
+					return;
+				}
+				++plugin->mConflictGeneration;
+				plugin->mConflictSessions.erase( repo );
+				if ( plugin->mActiveConflictRepo == repo ) {
+					plugin->mActiveConflictRepo.clear();
+					plugin->mManager->getSplitter()->removeTabWithOwnedWidgetId(
+						"git_conflict_resolver" );
+				}
+				plugin->updateBranches();
+				plugin->updateStatus( true );
+			} );
+		} );
+	} );
+	message->center();
+	message->showWhenReady();
 }
 
 void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
@@ -1610,6 +2375,13 @@ void GitPlugin::buildSidePanelTab() {
 	<RelativeLayout id="git_panel" lw="mp" lh="mp">
 		<vbox id="git_content" lw="mp" lh="mp">
 			<DropDownList id="git_panel_switcher" lw="mp" lh="22dp" border-type="inside" border-right-width="0" border-left-width="0" border-top-width="0" border-bottom-left-radius="0" border-bottom-right-radius="0" />
+			<vbox id="git_conflict_state" lw="mp" lh="wc" padding="4dp" visible="false">
+				<TextView id="git_conflict_state_text" lw="mp" lh="wc" text-align="left|center_vertical" />
+				<hbox lw="mp" lh="wc">
+					<PushButton lw="0" lw8="0.5" id="git_conflict_continue" text="@string(git_continue_operation, Continue)" icon="icon(debug-continue, 12dp)" />
+					<PushButton lw="0" lw8="0.5" id="git_conflict_abort" text="@string(git_abort_operation, Abort)" icon="icon(discard, 12dp)" margin-left="2dp" />
+				</hbox>
+			</vbox>
 			<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
 				<vbox id="git_branches" lw="mp" lh="wc">
 					<hbox lw="mp" lh="wc" padding="4dp">
@@ -1649,12 +2421,20 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->bind( "git_status_tree", mStatusTree );
 	mTabContents->bind( "git_content", mGitContentView );
 	mTabContents->bind( "git_no_content", mGitNoContentView );
+	mTabContents->bind( "git_conflict_state", mConflictStateBar );
+	mTabContents->bind( "git_conflict_state_text", mConflictStateText );
 	mTabContents->bind( "git_panel_loader", mLoader );
 	mTabContents->bind( "git_repo", mRepoDropDown );
 
 	mTabContents->find( "branch_pull" )->onClick( [this]( auto ) { pull( repoSelected() ); } );
 	mTabContents->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
 	mTabContents->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
+	mTabContents->find( "git_conflict_continue" )->onClick( [this]( auto ) {
+		continueConflictOperation();
+	} );
+	mTabContents->find( "git_conflict_abort" )->onClick( [this]( auto ) {
+		abortConflictOperation();
+	} );
 
 	mBranchesTree->setAutoExpandOnSingleColumn( true );
 	mBranchesTree->setHeadersVisible( false );
@@ -1717,11 +2497,12 @@ void GitPlugin::buildSidePanelTab() {
 	mStackMap.resize( 2 );
 	mStackMap[0] = mTabContents->find<UIWidget>( "git_branches" );
 	mStackMap[1] = mTabContents->find<UIWidget>( "git_status" );
-	listBox->setSelected( 0 );
 
 	mPanelSwicher->on( Event::OnItemSelected, [this, listBox]( const Event* ) {
 		mStackWidget->setActiveWidget( mStackMap[listBox->getItemSelectedIndex()] );
 	} );
+	listBox->setSelected( 0 );
+	mStackWidget->setActiveWidget( mStackMap[0] );
 
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
@@ -1763,7 +2544,10 @@ void GitPlugin::buildSidePanelTab() {
 					break;
 				}
 				case ModelEventType::Open: {
-					diff( file->file, file->report.type );
+					if ( file->report.type == Git::GitStatusType::Unmerged )
+						openConflictResolver( file->file );
+					else
+						diff( file->file, file->report.type );
 					break;
 				}
 				default:
@@ -1915,6 +2699,7 @@ void GitPlugin::buildSidePanelTab() {
 					mRepoSelected = repo.first;
 				}
 				updateBranches( true );
+				updateStatus( true );
 				break;
 			}
 		}
@@ -2005,9 +2790,28 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 	const bool multiple = files.size() > 1;
 	bool hasStaged = false;
 	bool hasUnstaged = false;
+	bool hasUnmerged = false;
 	for ( const auto& file : files ) {
 		hasStaged |= file.report.type == Git::GitStatusType::Staged;
 		hasUnstaged |= file.report.type != Git::GitStatusType::Staged;
+		hasUnmerged |= file.report.type == Git::GitStatusType::Unmerged;
+	}
+	if ( hasUnmerged && !multiple ) {
+		menuAdd( menu, "git-resolve-conflict", i18n( "git_resolve_conflict", "Resolve Conflict" ),
+				 "diff-modified" );
+		menuAdd( menu, "git-accept-ours", i18n( "git_accept_ours", "Accept Ours" ) );
+		menuAdd( menu, "git-accept-theirs", i18n( "git_accept_theirs", "Accept Theirs" ) );
+		menu->on( Event::OnItemClicked, [this, file = files.front()]( const Event* event ) {
+			const std::string id = event->getNode()->asType<UIMenuItem>()->getId();
+			if ( id == "git-resolve-conflict" )
+				openConflictResolver( file.file );
+			else if ( id == "git-accept-ours" )
+				acceptConflictSide( file.file, true );
+			else if ( id == "git-accept-theirs" )
+				acceptConflictSide( file.file, false );
+		} );
+		menu->showOverMouseCursor();
+		return;
 	}
 
 	menuAdd( menu, "git-open-file",
@@ -2075,23 +2879,49 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
-	mThreadPool->run( [this, fn, _updateStatus, _updateBranches, displaySuccessMsg,
-					   updateBranchesOnError, updateStatusOnError] {
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [lifetime, fn, _updateStatus, _updateBranches, displaySuccessMsg,
+				   updateBranchesOnError, updateStatusOnError] {
 		auto res = fn();
-		mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		if ( res.fail() || displaySuccessMsg ) {
-			showMessage( LSPMessageType::Warning, res.result );
-			if ( _updateBranches && updateBranchesOnError )
-				updateBranches();
-			if ( _updateStatus && updateStatusOnError )
-				updateStatus( true );
-			return;
-		}
-		if ( _updateBranches )
-			updateBranches();
+		lifetime.run( [res = std::move( res ), _updateStatus, _updateBranches, displaySuccessMsg,
+					   updateBranchesOnError, updateStatusOnError]( GitPlugin* plugin ) mutable {
+			plugin->mLoader->setVisible( false );
+			if ( res.fail() || displaySuccessMsg ) {
+				plugin->showMessage( LSPMessageType::Warning, res.result );
+				if ( _updateBranches && updateBranchesOnError )
+					plugin->updateBranches();
+				if ( _updateStatus && updateStatusOnError )
+					plugin->updateStatus( true );
+				return;
+			}
+			if ( _updateBranches )
+				plugin->updateBranches();
+			if ( _updateStatus )
+				plugin->updateStatus( true );
+		} );
+	} );
+}
 
-		if ( _updateStatus )
-			updateStatus( true );
+void GitPlugin::runMergeLikeAsync( std::function<Git::Result( Git& )> fn,
+								   const std::string& repoPath ) {
+	if ( !mGit )
+		return;
+	mLoader->setVisible( true );
+	auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	runAsyncTask( [git = std::move( git ), lifetime, fn = std::move( fn ), repoPath] {
+		auto result = fn( *git );
+		Git::ConflictState conflicts;
+		if ( result.fail() )
+			conflicts = git->conflictState( repoPath );
+		lifetime.run( [result = std::move( result ),
+					   conflicts = std::move( conflicts )]( GitPlugin* plugin ) mutable {
+			plugin->mLoader->setVisible( false );
+			plugin->updateBranches();
+			plugin->updateStatus( true );
+			if ( result.fail() && !conflicts.hasConflicts() )
+				plugin->showMessage( LSPMessageType::Warning, result.result );
+		} );
 	} );
 }
 

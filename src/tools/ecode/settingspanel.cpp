@@ -918,9 +918,9 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			auto mode =
 				selected == 0 ? UIDiffView::ViewMode::Unified : UIDiffView::ViewMode::SideBySide;
 			mApp->getConfig().editor.diffViewMode = mode;
-			mApp->getSplitter()->forEachWidgetType( UI_TYPE_DIFF_VIEW, [mode]( UIWidget* widget ) {
-				widget->asType<UIDiffView>()->setViewMode( mode );
-			} );
+			for ( auto* diffView :
+				  mApp->getUISceneNode()->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW ) )
+				diffView->setViewMode( mode );
 		} );
 	auto addEditorBool = [this, &panel]( std::string id, const char* nameKey, const char* name,
 										 const char* descriptionKey, const char* description,

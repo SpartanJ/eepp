@@ -38,6 +38,15 @@ struct DocumentContentChange {
 
 class EE_API TextDocument {
   public:
+	class EE_API ScopedReadLock : NonCopyable {
+	  public:
+		explicit ScopedReadLock( const TextDocument& document );
+
+	  private:
+		Lock mLinesLock;
+		Lock mDocumentLock;
+	};
+
 	static bool isTextDocumentCommand( std::string_view cmd );
 
 	static bool isTextDocumentCommand( String::HashType cmdHash );

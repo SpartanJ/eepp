@@ -77,7 +77,7 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 }
 
 UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
-												  const std::string& repoPath ) {
+												  const std::string& repoPath, ViewMode viewMode ) {
 	auto scrollView = UIScrollView::New();
 	auto vbox = UILinearLayout::NewVertical();
 	vbox->setParent( scrollView );
@@ -87,6 +87,7 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 
 	for ( const auto& diff : diffs ) {
 		auto* diffView = UIDiffView::New();
+		diffView->setViewMode( viewMode );
 		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		diffView->setParent( vbox );
 		diffView->setHeadersVisible( true );

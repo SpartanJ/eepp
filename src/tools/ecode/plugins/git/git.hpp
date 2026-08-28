@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -18,6 +20,31 @@ namespace ecode {
 
 class Git {
   public:
+	enum class GitOperation : uint8_t { None, Merge, Rebase, CherryPick, Revert, StashApply };
+
+	struct ConflictStage {
+		std::string objectId;
+		std::string contents;
+		uint32_t mode{ 0 };
+		uint8_t stage{ 0 };
+	};
+
+	struct ConflictFile {
+		std::string path;
+		std::optional<ConflictStage> base;
+		std::optional<ConflictStage> stage2;
+		std::optional<ConflictStage> stage3;
+		bool workingTreeExists{ false };
+		bool binary{ false };
+	};
+
+	struct ConflictState {
+		std::vector<ConflictFile> files;
+		GitOperation operation{ GitOperation::None };
+		std::string error;
+
+		bool hasConflicts() const { return !files.empty(); }
+	};
 	struct Blame {
 		Blame( const std::string& error );
 
@@ -243,6 +270,34 @@ class Git {
 
 	int git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
 
+	int git( const std::vector<std::string>& args, const std::string& projectDir,
+			 std::string& buf ) const;
+
+	int git( const std::vector<std::string>& args, const std::string& projectDir, std::string& buf,
+			 std::string_view input ) const;
+
+	static ConflictState parseUnmergedIndex( const std::string& output );
+
+	ConflictState conflictState( const std::string& projectDir = "",
+								 bool loadContents = true ) const;
+
+	GitOperation operation( const std::string& projectDir = "" ) const;
+
+	Result resolveConflict( const std::string& path, bool remove,
+							const std::string& projectDir = "" ) const;
+
+	Result acceptConflictStage( const std::string& path, bool stage2, bool present,
+								const std::string& projectDir = "" ) const;
+
+	Result restoreConflictStages( const ConflictFile& conflict,
+								  const std::string& projectDir = "" ) const;
+
+	Result preparedMergeMessage( const std::string& projectDir = "" ) const;
+
+	Result continueOperation( GitOperation operation, const std::string& projectDir = "" ) const;
+
+	Result abortOperation( GitOperation operation, const std::string& projectDir = "" ) const;
+
 	void gitSubmodules( const std::string& args, const std::string& projectDir, std::string& buf );
 
 	bool isGitRepo( const std::string& projectDir );
@@ -286,7 +341,7 @@ class Git {
 						const std::string& projectDir = "" );
 
 	Result commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
-				   const std::string& projectDir = "" );
+				   const std::string& projectDir = "", bool cleanupComments = false );
 
 	Result fetch( const std::string& projectDir = "" );
 

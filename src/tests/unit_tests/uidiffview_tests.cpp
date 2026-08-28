@@ -6,6 +6,7 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -101,6 +102,32 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 	EXPECT_TRUE( expectedCleanText == textUtf8 );
 
 	eeDelete( diffView );
+}
+
+UTEST( UIDiffView, MultiFileViewerUsesRequestedViewMode ) {
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	std::string patchText = R"patch(diff --git a/first.txt b/first.txt
+--- a/first.txt
++++ b/first.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/second.txt b/second.txt
+--- a/second.txt
++++ b/second.txt
+@@ -1 +1 @@
+-before
++after
+)patch";
+
+	auto* viewer =
+		UIDiffView::NewMultiFileDiffViewer( patchText, "", UIDiffView::ViewMode::SideBySide );
+	auto diffViews = viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW );
+	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
+	for ( const auto* diffView : diffViews )
+		EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffView->getViewMode() );
+
+	eeDelete( viewer );
 }
 
 UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {

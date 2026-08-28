@@ -1,6 +1,7 @@
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -247,6 +248,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["richtext"] = UIRichText::New;
 		registeredWidget["textspan"] = UITextSpan::New;
 		registeredWidget["markdownview"] = UIMarkdownView::New;
+		registeredWidget["mergeview"] = Tools::UIMergeView::New;
 
 		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
