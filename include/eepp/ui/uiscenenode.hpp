@@ -490,7 +490,8 @@ class EE_API UISceneNode : public SceneNode {
 	 * have its CSS re-applied during the next update cycle.
 	 *
 	 * @param widget Pointer to the UIWidget to invalidate.
-	 * @param tryReinsert If true, attempts to reposition the widget in the dirty set.
+	 * @param tryReinsert If true, re-evaluates the dirty-ancestor relationship for an already
+	 * queued widget after reparenting. Descendant entries are coalesced during processing.
 	 */
 	void invalidateStyle( UIWidget* widget, bool tryReinsert = false );
 
@@ -502,7 +503,9 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param widget Pointer to the UIWidget to invalidate.
 	 * @param disableCSSAnimations If true, disables CSS animations during the update.
-	 * @param tryReinsert If true, attempts to reposition the widget in the dirty set.
+	 * @param tryReinsert If true, re-evaluates the dirty-ancestor relationship and animation policy
+	 * for an already queued widget after reparenting. Descendant entries are coalesced during
+	 * processing.
 	 */
 	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false,
 							   bool tryReinsert = false );
@@ -985,7 +988,9 @@ class EE_API UISceneNode : public SceneNode {
 	UnorderedSet<UIWidget*> mDirtyStyle;
 	UnorderedSet<UIWidget*> mDirtyStyleState;
 	UnorderedMap<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
-	SmallVector<std::pair<UIWidget*, bool>, 64> mDirtyStyleStateSnapshot;
+	// Shared snapshot storage for style and style-state processing. The bool is ignored by the
+	// style pass and stores the disable-animations flag for the style-state pass.
+	SmallVector<std::pair<UIWidget*, bool>, 64> mDirtyStylesSnapshot;
 	UnorderedSet<UILayout*> mDirtyLayouts;
 	SmallVector<UILayout*, 64> mDirtyLayoutsSnapshot;
 	std::vector<std::pair<Float, std::string>> mTimes;

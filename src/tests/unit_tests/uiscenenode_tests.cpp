@@ -29,21 +29,49 @@ UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
 }
 
-static UISceneNode* init_test_scene_node() {
+static void init_test_scene_node( UISceneNode* sceneNode ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );
+}
+
+static UISceneNode* init_test_scene_node() {
+	UISceneNode* sceneNode = UISceneNode::New();
+	init_test_scene_node( sceneNode );
 	return sceneNode;
 }
+
+class InvalidationTestSceneNode : public UISceneNode {
+  public:
+	static InvalidationTestSceneNode* New() { return eeNew( InvalidationTestSceneNode, () ); }
+
+	size_t pendingStyleCount() const { return mDirtyStyle.size(); }
+
+	size_t pendingStyleStateCount() const { return mDirtyStyleState.size(); }
+
+	size_t pendingStyleStateAnimationCount() const { return mDirtyStyleStateCSSAnimations.size(); }
+
+	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
+
+	UIWidget* processedStyleRoot( size_t index ) const {
+		return mDirtyStylesSnapshot[index].first;
+	}
+
+	bool processedStyleRootDisablesAnimations( size_t index ) const {
+		return mDirtyStylesSnapshot[index].second;
+	}
+
+  protected:
+	InvalidationTestSceneNode() : UISceneNode() {}
+};
 
 UTEST( UISceneNode, ViewportMetricsAreIndependentFromSceneExtent ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Scene Viewport Metrics Test",
@@ -390,6 +418,92 @@ UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
 	sceneNode->flushDirtyStyleAndLayout();
 
 	EXPECT_TRUE( dialog->getButtonOpen() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, StyleInvalidationCoalescesAtProcessingTime ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Deferred Style Invalidation Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	auto* sceneNode = InvalidationTestSceneNode::New();
+	init_test_scene_node( sceneNode );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	UIWidget* parent = UIWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	constexpr size_t childCount = 2048;
+	UIWidget* firstChild = nullptr;
+	for ( size_t i = 0; i < childCount; ++i ) {
+		UIWidget* child = UIWidget::New();
+		child->setParent( parent );
+		if ( !firstChild )
+			firstChild = child;
+	}
+
+	EXPECT_EQ( childCount, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( childCount, sceneNode->pendingStyleStateCount() );
+
+	sceneNode->invalidateStyle( parent );
+	sceneNode->invalidateStyleState( parent, true );
+	EXPECT_EQ( childCount + 1, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( childCount + 1, sceneNode->pendingStyleStateCount() );
+
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleCount() );
+
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_TRUE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateCount() );
+
+	// The existing ancestor fast path still avoids queueing descendants when the parent arrives
+	// first, and the parent's animation policy governs the recursive state update.
+	sceneNode->invalidateStyle( parent );
+	sceneNode->invalidateStyle( firstChild );
+	sceneNode->invalidateStyleState( parent, false );
+	sceneNode->invalidateStyleState( firstChild, true );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleStateCount() );
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_FALSE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+
+	// Reparenting an already-dirty widget under a dirty parent can leave both entries queued. The
+	// current tree must decide which root gets processed.
+	UIWidget* reparentTarget = UIWidget::New();
+	reparentTarget->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateStyle( firstChild );
+	sceneNode->invalidateStyleState( firstChild );
+	sceneNode->invalidateStyle( reparentTarget );
+	sceneNode->invalidateStyleState( reparentTarget, true );
+	firstChild->setParent( reparentTarget );
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( reparentTarget, sceneNode->processedStyleRoot( 0 ) );
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( reparentTarget, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_TRUE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+
+	UIWidget* deletedWidget = UIWidget::New();
+	deletedWidget->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateStyleState( deletedWidget, true );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleStateAnimationCount() );
+	eeDelete( deletedWidget );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateCount() );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateAnimationCount() );
 
 	Engine::destroySingleton();
 }

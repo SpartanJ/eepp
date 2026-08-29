@@ -1241,6 +1241,7 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 		mDirtyStyle.erase( widget );
 
 		mDirtyStyleState.erase( widget );
+		mDirtyStyleStateCSSAnimations.erase( widget );
 	}
 }
 
@@ -1268,6 +1269,17 @@ UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
 }
 
+template <typename DirtyContainer>
+static bool hasDirtyWidgetAncestor( const UIWidget* node, const DirtyContainer& dirty ) {
+	Node* parent = node->getParent();
+	while ( parent != nullptr ) {
+		if ( parent->isWidget() && dirty.count( parent->asType<UIWidget>() ) > 0 )
+			return true;
+		parent = parent->getParent();
+	}
+	return false;
+}
+
 void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	eeASSERT( NULL != node );
 
@@ -1278,27 +1290,8 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( alreadyExists && !tryReinsert )
 		return;
 
-	// Any parent dirty?
-	Node* parent = node->getParent();
-	while ( parent != nullptr ) {
-		if ( parent->isWidget() && mDirtyStyle.count( parent->asType<UIWidget>() ) > 0 )
-			return;
-		parent = parent->getParent();
-	}
-
-	// Now that we know we aren't early-outing, handle the reinsertion erase
-	if ( alreadyExists && tryReinsert )
-		mDirtyStyle.erase( node );
-
-	SmallVector<UIWidget*> eraseList;
-
-	// Any child in list? remove it
-	for ( auto widget : mDirtyStyle )
-		if ( NULL == widget || node->isParentOf( widget ) )
-			eraseList.push_back( widget );
-
-	for ( auto widget : eraseList )
-		mDirtyStyle.erase( widget );
+	if ( hasDirtyWidgetAncestor( node, mDirtyStyle ) )
+		return;
 
 	mDirtyStyle.insert( node );
 }
@@ -1310,33 +1303,12 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
-	// Already invalidated?
-	if ( mDirtyStyleState.count( node ) > 0 ) {
-		if ( !tryReinsert )
-			return;
-		else
-			mDirtyStyleState.erase( node );
-	}
+	bool alreadyExists = mDirtyStyleState.count( node ) > 0;
+	if ( alreadyExists && !tryReinsert )
+		return;
 
-	// Any parent dirty?
-	Node* parent = node->getParent();
-	while ( parent != nullptr ) {
-		if ( parent->isWidget() && mDirtyStyleState.count( parent->asType<UIWidget>() ) > 0 )
-			return;
-		parent = parent->getParent();
-	}
-
-	SmallVector<UIWidget*> eraseList;
-
-	// Any child in list? remove it
-	for ( auto widget : mDirtyStyleState )
-		if ( NULL == widget || node->isParentOf( widget ) )
-			eraseList.push_back( widget );
-
-	for ( auto widget : eraseList ) {
-		mDirtyStyleState.erase( widget );
-		mDirtyStyleStateCSSAnimations.erase( widget );
-	}
+	if ( hasDirtyWidgetAncestor( node, mDirtyStyleState ) )
+		return;
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -1461,10 +1433,25 @@ void UISceneNode::updateDirtyLayouts() {
 void UISceneNode::updateDirtyStyles() {
 	if ( !mDirtyStyle.empty() ) {
 		Clock clock;
-		for ( auto& node : mDirtyStyle ) {
-			node->reloadStyle( true, false, false );
+
+		// Coalesce only once per pass. Eagerly searching the complete dirty set for descendants on
+		// every invalidation makes bursts quadratic and repeatedly pointer-chases unrelated widget
+		// ancestry. Retaining descendant entries until this point turns queueing into an ancestor
+		// walk plus an O(1) insertion. The current tree also naturally resolves reparented widgets.
+		//
+		// Clear the live set before applying styles: style application may create widgets or change
+		// selectors, and those invalidations must remain queued for the next invalidation-depth
+		// pass.
+		mDirtyStylesSnapshot.clear();
+		mDirtyStylesSnapshot.reserve( mDirtyStyle.size() );
+		for ( UIWidget* node : mDirtyStyle ) {
+			if ( node != nullptr && !hasDirtyWidgetAncestor( node, mDirtyStyle ) )
+				mDirtyStylesSnapshot.emplace_back( node, false );
 		}
 		mDirtyStyle.clear();
+
+		for ( const auto& dirtyStyle : mDirtyStylesSnapshot )
+			dirtyStyle.first->reloadStyle( true, false, false );
 
 		if ( mVerbose )
 			Log::info( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
@@ -1475,21 +1462,23 @@ void UISceneNode::updateDirtyStyleStates() {
 	if ( !mDirtyStyleState.empty() ) {
 		Clock clock;
 
-		// Applying a style state can create widgets (for example a button icon). Widget
-		// construction invalidates its style state, so iterating mDirtyStyleState directly would
-		// mutate and potentially reallocate its vector-backed unordered_dense storage. Snapshot the
-		// current pass and leave new invalidations queued for the outer invalidation-depth loop.
-		mDirtyStyleStateSnapshot.clear();
-		mDirtyStyleStateSnapshot.reserve( mDirtyStyleState.size() );
+		// Applying a style state can create widgets (for example a button icon). Coalesce the
+		// current roots into the shared snapshot, then leave new invalidations queued for the outer
+		// invalidation-depth loop. When both an ancestor and descendant are dirty, the ancestor's
+		// animation policy wins, matching the previous eager-coalescing behavior.
+		mDirtyStylesSnapshot.clear();
+		mDirtyStylesSnapshot.reserve( mDirtyStyleState.size() );
 		for ( UIWidget* node : mDirtyStyleState ) {
-			auto animations = mDirtyStyleStateCSSAnimations.find( node );
-			mDirtyStyleStateSnapshot.emplace_back(
-				node, animations != mDirtyStyleStateCSSAnimations.end() && animations->second );
+			if ( node != nullptr && !hasDirtyWidgetAncestor( node, mDirtyStyleState ) ) {
+				auto animations = mDirtyStyleStateCSSAnimations.find( node );
+				mDirtyStylesSnapshot.emplace_back(
+					node, animations != mDirtyStyleStateCSSAnimations.end() && animations->second );
+			}
 		}
 		mDirtyStyleState.clear();
 		mDirtyStyleStateCSSAnimations.clear();
 
-		for ( const auto& dirtyState : mDirtyStyleStateSnapshot )
+		for ( const auto& dirtyState : mDirtyStylesSnapshot )
 			dirtyState.first->reportStyleStateChangeRecursive( dirtyState.second );
 
 		if ( mVerbose )
