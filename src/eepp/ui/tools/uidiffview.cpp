@@ -4,6 +4,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -80,12 +81,16 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 
 UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 												  const std::string& repoPath, ViewMode viewMode ) {
+	auto diffs = UIDiffView::splitDiff( patchText );
+	auto* uiSceneNode = SceneManager::instance()->getUISceneNode();
+	const bool wasLoading = uiSceneNode && uiSceneNode->isLoading();
+	if ( uiSceneNode )
+		uiSceneNode->setIsLoading( true );
+
 	auto scrollView = UIScrollView::New();
 	auto vbox = UILinearLayout::NewVertical();
 	vbox->setParent( scrollView );
 	vbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
-
-	auto diffs = UIDiffView::splitDiff( patchText );
 
 	for ( const auto& diff : diffs ) {
 		auto* diffView = UIDiffView::New();
@@ -96,6 +101,18 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 		diffView->setViewModeToggleVisible( false );
 		diffView->setCompleteViewToggleVisible( false );
 		diffView->loadFromPatch( diff, "", "", repoPath );
+	}
+
+	if ( uiSceneNode ) {
+		uiSceneNode->setIsLoading( wasLoading );
+		if ( !wasLoading ) {
+			// A diff view owns several editors, scroll bars, toggles and image viewers. Queueing
+			// each intermediate widget separately makes style invalidation scan an ever-growing
+			// dirty set. One recursive invalidation of the completed tree provides the same final
+			// styling.
+			uiSceneNode->invalidateStyle( scrollView, true );
+			uiSceneNode->invalidateStyleState( scrollView, true, true );
+		}
 	}
 
 	return scrollView;

@@ -6,6 +6,7 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 
 using namespace EE;
@@ -139,6 +140,25 @@ diff --git a/second.txt b/second.txt
 		EXPECT_FALSE( diffView->isCollapsed() );
 		EXPECT_FALSE( diffView->getViewLines().empty() );
 	}
+
+	eeDelete( viewer );
+}
+
+UTEST( UIDiffView, MultiFileViewerHandlesLargePatches ) {
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	app.getUI()->flushDirtyStyleAndLayout();
+	constexpr size_t fileCount = 128;
+	std::string patchText;
+	patchText.reserve( fileCount * 160 );
+	for ( size_t i = 0; i < fileCount; ++i ) {
+		const std::string fileName( "file" + std::to_string( i ) + ".txt" );
+		patchText += "diff --git a/" + fileName + " b/" + fileName + "\n--- a/" + fileName +
+					 "\n+++ b/" + fileName + "\n@@ -1 +1 @@\n-old\n+new\n";
+	}
+
+	auto* viewer = UIDiffView::NewMultiFileDiffViewer( patchText );
+	EXPECT_EQ( fileCount, viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW ).size() );
+	EXPECT_FALSE( viewer->getUISceneNode()->isLoading() );
 
 	eeDelete( viewer );
 }
