@@ -1249,6 +1249,12 @@ Restart ecode to see the changes.</string>
 	<string name="git_history_load_older">Load older commits</string>
 	<string name="git_history_empty">No commits yet</string>
 	<string name="git_history_no_additional_commits">No additional commits</string>
+	<string name="git_show_in_history">Show in Git History</string>
+	<string name="git_commit_history_title">Git Commit History - %s</string>
+	<string name="git_commit_sha">Commit SHA</string>
+	<string name="git_copy_commit_sha">Copy Commit SHA&#10;%s</string>
+	<string name="git_switch_to_split_diff">Switch to split diff view</string>
+	<string name="git_switch_to_unified_diff">Switch to unified diff view</string>
 	<string name="git_history_error">Could not load Git history</string>
 	<string name="git_history_retry">Retry</string>
 	<string name="git_local_branch">Local</string>

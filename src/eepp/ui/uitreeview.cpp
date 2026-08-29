@@ -308,7 +308,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
 				DrawablePtr drawable =
-					icon ? icon->createDrawable( mExpanderIconSize ) : DrawablePtr{};
+					icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );

@@ -1248,6 +1248,12 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="git_history_load_older">Charger les commits précédents</string>
 	<string name="git_history_empty">Aucun commit pour le moment</string>
 	<string name="git_history_no_additional_commits">Aucun commit supplémentaire</string>
+	<string name="git_show_in_history">Afficher dans l’historique Git</string>
+	<string name="git_commit_history_title">Historique des commits Git – %s</string>
+	<string name="git_commit_sha">SHA du commit</string>
+	<string name="git_copy_commit_sha">Copier le SHA du commit&#10;%s</string>
+	<string name="git_switch_to_split_diff">Passer à la vue des différences séparée</string>
+	<string name="git_switch_to_unified_diff">Passer à la vue des différences unifiée</string>
 	<string name="git_history_error">Impossible de charger l’historique Git</string>
 	<string name="git_history_retry">Réessayer</string>
 	<string name="git_local_branch">Locale</string>

@@ -1343,6 +1343,17 @@ class EE_API UIWidget : public UINode {
 	bool hasPseudoClass( const std::string& pseudoCls ) const;
 
 	/**
+	 * @brief Checks if this widget has a specific pseudo-class.
+	 *
+	 * Determines whether this widget currently has the specified pseudo-class
+	 * (e.g., hover, focus, active).
+	 *
+	 * @param pseudoCls The pseudo-class to check.
+	 * @return True if the widget has the pseudo-class, false otherwise.
+	 */
+	bool hasPseudoClass( StyleSheetSelectorRule::PseudoClasses pseudoCls ) const;
+
+	/**
 	 * @brief Checks if the tooltip is enabled for this widget.
 	 *
 	 * Determines whether tooltips are enabled for this widget.

@@ -1053,6 +1053,12 @@ file in the directory tree.</string>
 	<string name="git_history_load_older">加载更早的提交</string>
 	<string name="git_history_empty">尚无提交</string>
 	<string name="git_history_no_additional_commits">没有其他提交</string>
+	<string name="git_show_in_history">在 Git 历史记录中显示</string>
+	<string name="git_commit_history_title">Git 提交历史记录 - %s</string>
+	<string name="git_commit_sha">提交 SHA</string>
+	<string name="git_copy_commit_sha">复制提交 SHA&#10;%s</string>
+	<string name="git_switch_to_split_diff">切换到拆分差异视图</string>
+	<string name="git_switch_to_unified_diff">切换到统一差异视图</string>
 	<string name="git_history_error">无法加载 Git 历史记录</string>
 	<string name="git_history_retry">重试</string>
 	<string name="git_local_branch">本地</string>

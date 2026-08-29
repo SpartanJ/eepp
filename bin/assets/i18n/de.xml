@@ -1264,6 +1264,12 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="git_history_load_older">Ältere Commits laden</string>
 	<string name="git_history_empty">Noch keine Commits</string>
 	<string name="git_history_no_additional_commits">Keine weiteren Commits</string>
+	<string name="git_show_in_history">Im Git-Verlauf anzeigen</string>
+	<string name="git_commit_history_title">Git-Commit-Verlauf – %s</string>
+	<string name="git_commit_sha">Commit-SHA</string>
+	<string name="git_copy_commit_sha">Commit-SHA kopieren&#10;%s</string>
+	<string name="git_switch_to_split_diff">Zur geteilten Diff-Ansicht wechseln</string>
+	<string name="git_switch_to_unified_diff">Zur vereinheitlichten Diff-Ansicht wechseln</string>
 	<string name="git_history_error">Git-Verlauf konnte nicht geladen werden</string>
 	<string name="git_history_retry">Wiederholen</string>
 	<string name="git_local_branch">Lokal</string>

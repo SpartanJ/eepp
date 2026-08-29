@@ -50,8 +50,8 @@ void GitHistoryTreeViewCell::draw() {
 	if ( mMetadataText.getString().empty() )
 		return;
 
-	const bool selected = getParent() && ( getParent()->asType<UIWidget>()->getStyleState() &
-										   UIState::StateFlagSelected );
+	const bool selected = getParent() && ( getParent()->asType<UIWidget>()->hasPseudoClass(
+											 StyleSheetSelectorRule::PseudoClasses::Selected ) );
 
 	mMetadataText.setFillColor( selected ? mTextBox->getFontColor() : mHintColor );
 	mMetadataText.draw( std::floor( mScreenPos.x + mTextBox->getPixelsPosition().x ),

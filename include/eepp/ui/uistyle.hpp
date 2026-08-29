@@ -141,7 +141,7 @@ class EE_API UIStyle : public UIState {
 	/** Lazily allocated for styles that use substitutions. The common, non-reentrant resolution
 	 * needs no container allocation; nested slots are retained for later reuse. */
 	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
-	std::vector<std::unique_ptr<CSS::StyleSheetProperty>> mNestedPropertyResolutionSlots;
+	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;

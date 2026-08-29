@@ -1333,6 +1333,10 @@ bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
 	return ( mPseudoClasses & StyleSheetSelectorRule::toPseudoClass( pseudoCls ) ) != 0;
 }
 
+bool UIWidget::hasPseudoClass( StyleSheetSelectorRule::PseudoClasses pseudoCls ) const {
+	return ( mPseudoClasses & static_cast<Uint32>( pseudoCls ) ) != 0;
+}
+
 bool UIWidget::isTooltipEnabled() const {
 	return ( mFlags & UI_TOOLTIP_ENABLED ) != 0;
 }

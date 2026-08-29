@@ -14,7 +14,7 @@ class GitPlugin;
 class GitHistoryModel : public Model {
   public:
 	enum class NodeType : uint8_t { Commit, LoadMore, Loading, Error, Empty };
-	enum Column { Subject, Author, Date, Hash };
+	enum Column { Subject, Date, Author, Hash };
 	struct Node {
 		Git::Commit commit;
 		Git::HistoryQuery query;
@@ -43,7 +43,7 @@ class GitHistoryModel : public Model {
 
 	size_t rowCount( const ModelIndex& index = {} ) const;
 
-	size_t columnCount( const ModelIndex& = {} ) const { return 1; }
+	size_t columnCount( const ModelIndex& = {} ) const { return 4; }
 
 	std::string columnName( const size_t& column ) const;
 
@@ -60,6 +60,8 @@ class GitHistoryModel : public Model {
 	Node* node( const ModelIndex& index ) const;
 
 	ModelIndex indexForNode( const Node* node, int column = 0 ) const;
+
+	ModelIndex indexForCommit( std::string_view hash, int column = Subject ) const;
 
 	void setRootLoading();
 

@@ -735,6 +735,11 @@ void UITextView::onAlignChange() {
 }
 
 void UITextView::onSelectionChange() {
+	if ( mUsingCustomStyling ) {
+		invalidateDraw();
+		return;
+	}
+
 	mTextCache.invalidateColors();
 
 	if ( selCurInit() != selCurEnd() ) {

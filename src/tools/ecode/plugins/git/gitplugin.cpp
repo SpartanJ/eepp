@@ -1,4 +1,5 @@
 #include "gitplugin.hpp"
+#include "../../appconfig.hpp"
 #include "../../settingspage.hpp"
 #include "gitbranchmodel.hpp"
 #include "githistorymodel.hpp"
@@ -22,6 +23,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -628,6 +630,28 @@ void GitPlugin::updateStatusBarSync() {
 	mStatusButton->invalidateDraw();
 }
 
+void GitPlugin::styleCommitFilesStatus( UITextView* status ) {
+	if ( !status )
+		return;
+	status->setUsingCustomStyling( true );
+	if ( !mCommitStatusCustomTokenizer.has_value() ) {
+		std::vector<SyntaxPattern> patterns;
+		patterns.emplace_back( SyntaxPattern( { ".*%((%d+)%)%s+(%+%d+)%s+(%-%d+)" },
+											  { "normal", "warning", "keyword", "type" } ) );
+		SyntaxDefinition syntaxDef( "git_commit_files_status", {}, std::move( patterns ) );
+		SyntaxColorScheme scheme( "git_commit_files_status",
+								  { { "normal"_sst, { getVarColor( "--font" ) } },
+									{ "warning"_sst, { getVarColor( "--theme-warning" ) } },
+									{ "keyword"_sst, { getVarColor( "--theme-success" ) } },
+									{ "type"_sst, { getVarColor( "--theme-error" ) } } },
+								  {} );
+		mCommitStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
+	}
+	SyntaxTokenizer::tokenizeText( mCommitStatusCustomTokenizer->def,
+								   mCommitStatusCustomTokenizer->scheme, status->getTextCache() );
+	status->invalidateDraw();
+}
+
 void GitPlugin::updateStatus( bool force ) {
 	if ( !mGit || !mGitFound )
 		return;
@@ -793,6 +817,9 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
 			mStatusCustomTokenizer.reset();
+			mCommitStatusCustomTokenizer.reset();
+			styleCommitFilesStatus( mCommitDetails.status );
+			styleCommitFilesStatus( mDetachedHistory.details.status );
 			updateUINow( true );
 			break;
 		}
@@ -2245,6 +2272,7 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 	doc.setCommand( "git-push", [this] { push( projectPath() ); } );
 	doc.setCommand( "git-fetch", [this] { fetch( projectPath() ); } );
 	doc.setCommand( "git-commit", [this] { commit( projectPath() ); } );
+	doc.setCommand( "git-show-history", [this] { showGitHistory(); } );
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
@@ -2373,6 +2401,7 @@ void GitPlugin::updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model 
 	mHistoryRefDropDown->getListView()->getSelection().set(
 		mHistoryRefModel->index( selected, 0 ) );
 	mUpdatingHistoryRefs = false;
+	updateDetachedHistoryTitle();
 	if ( revisionChanged )
 		invalidateHistory();
 }
@@ -2397,6 +2426,8 @@ void GitPlugin::reloadHistory() {
 		mHistoryTree->setColumnsVisible( { GitHistoryModel::Subject } );
 	}
 	mHistoryTree->clearViewMetadata();
+	if ( mDetachedHistory.tree )
+		mDetachedHistory.tree->clearViewMetadata();
 	mHistoryModel->setRootLoading();
 	Git::HistoryQuery query;
 	query.revision = mHistoryRevision;
@@ -2416,6 +2447,7 @@ void GitPlugin::reloadHistory() {
 						plugin->mHistoryModel->setRootPage( std::move( page ), query );
 					else
 						plugin->mHistoryModel->setRootError( std::move( page.result ) );
+					plugin->focusDetachedHistory();
 				} );
 		},
 		[this]( auto ) { --mRunningHistoryRequests; } );
@@ -2460,6 +2492,8 @@ void GitPlugin::loadHistoryPage( GitHistoryModel::Node* node, Git::HistoryQuery 
 				else
 					plugin->mHistoryModel->setChildrenPage( node, std::move( page ), query );
 				plugin->mHistoryTree->recalculateColumnsWidth();
+				if ( plugin->mDetachedHistory.tree )
+					plugin->mDetachedHistory.tree->recalculateColumnsWidth();
 			} );
 		},
 		[this]( auto ) { --mRunningHistoryRequests; } );
@@ -2491,212 +2525,368 @@ void GitPlugin::activateHistoryIndex( const ModelIndex& index, bool expand ) {
 	}
 }
 
+void GitPlugin::openHistoryMenu( const ModelIndex& index ) {
+	if ( !mHistoryModel )
+		return;
+	const auto* node = mHistoryModel->node( index );
+	if ( !node || node->type != GitHistoryModel::NodeType::Commit )
+		return;
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menuAdd( menu, "git-show-history", i18n( "git_show_in_history", "Show in Git History" ),
+			 "history" );
+	const Git::Commit commit = node->commit;
+	menu->on( Event::OnItemClicked, [this, commit]( const Event* event ) {
+		if ( event->getNode()->asType<UIMenuItem>()->getId() == "git-show-history" )
+			showGitHistory( &commit );
+	} );
+	menu->showOverMouseCursor();
+}
+
+std::string GitPlugin::detachedHistoryTitle() {
+	String state = String::fromUtf8( mHistoryRevision );
+	if ( mHistoryRefDropDown && mHistoryRefModel ) {
+		const ModelIndex selected = mHistoryRefDropDown->getListView()->getSelection().first();
+		if ( selected.isValid() ) {
+			Variant display = mHistoryRefModel->data( selected );
+			if ( display.is( Variant::Type::StringPtr ) )
+				state = display.asStringPtr();
+			else if ( display.isValid() )
+				state = display.toString();
+		}
+	}
+	return String::format( i18n( "git_commit_history_title", "Git Commit History - %s" ).toUtf8(),
+						   state.toUtf8() );
+}
+
+void GitPlugin::updateDetachedHistoryTitle() {
+	if ( !mDetachedHistory.view )
+		return;
+	auto tabs = mManager->getSplitter()->getTabFromOwnedWidgetId( mDetachedHistory.view->getId() );
+	if ( !tabs.empty() )
+		tabs.front().first->setText( detachedHistoryTitle() );
+}
+
+void GitPlugin::showGitHistory( const Git::Commit* commit ) {
+	if ( !mHistoryTree )
+		return;
+	ensureHistoryLoaded();
+	if ( commit )
+		mDetachedHistory.focusHash = commit->hash;
+	else
+		mDetachedHistory.focusHash.clear();
+
+	if ( !mDetachedHistory.view ||
+		 !mManager->getSplitter()->ownedWidgetExists( mDetachedHistory.view ) ) {
+		mDetachedHistory.view = getUISceneNode()
+									->loadLayoutFromString( R"xml(
+			<Splitter id="git_history_detached" lw="mp" lh="mp" orientation="horizontal"
+					  splitter-partition="55%">
+				<vbox lw="0" lw8="1" lh="mp">
+					<TreeView id="git_history_detached_tree" lw="mp" lh="mp" />
+				</vbox>
+			</Splitter>
+		)xml" )
+									->asType<UISplitter>();
+		mDetachedHistory.view->setAlwaysShowSplitter( false );
+		mDetachedHistory.view->setHideSplitterOnEdge( true );
+		mDetachedHistory.view->setSplitPartition( StyleSheetLength( "100%" ) );
+		mDetachedHistory.tree =
+			mDetachedHistory.view->find<UITreeView>( "git_history_detached_tree" );
+		mDetachedHistory.tree->setModel( mHistoryModel );
+		mDetachedHistory.tree->setHeadersVisible( true );
+		mDetachedHistory.tree->setRowHeight( PixelDensity::dpToPx( 24 ) );
+		mDetachedHistory.tree->setMainColumn( GitHistoryModel::Subject );
+		mDetachedHistory.tree->setFitAllColumnsToWidget( true );
+		mDetachedHistory.tree->setColumnWidthMode(
+			UIAbstractTableView::ColumnWidthMode::Percentage );
+		mDetachedHistory.tree->setColumnsWidthPercentage( { 0.55f, 0.15f, 0.2f, 0.1f } );
+		const std::string savedColumns = getPluginContext()->getConfig().iniState.getValue(
+			"git", "commit_history_columns", "" );
+		if ( !savedColumns.empty() ) {
+			auto columns = nlohmann::json::parse( savedColumns, nullptr, false );
+			if ( !columns.is_discarded() )
+				mDetachedHistory.tree->unserializeColumnWidths( columns );
+		}
+		mDetachedHistory.tree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
+		mDetachedHistory.tree->setSetupCellCb( []( UITableCell* cell ) {
+			cell->on( Event::OnTooltipCreated, []( const Event* event ) {
+				auto* tooltip = event->getNode()->asType<UIWidget>()->getTooltip();
+				tooltip->setMaxWidthEq( "60%" );
+				tooltip->setWordWrap( true );
+				tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+			} );
+		} );
+		mDetachedHistory.tree->on( Event::OnModelEvent, [this]( const Event* event ) {
+			const auto* modelEvent = static_cast<const ModelEvent*>( event );
+			if ( modelEvent->getModelEventType() == ModelEventType::OpenTree )
+				activateHistoryIndex( modelEvent->getModelIndex(), true );
+			else if ( modelEvent->getModelEventType() == ModelEventType::Open )
+				activateHistoryIndex( modelEvent->getModelIndex(), false );
+			else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu )
+				openHistoryMenu( modelEvent->getModelIndex() );
+		} );
+		mDetachedHistory.tree->setOnSelection( [this]( const ModelIndex& index ) {
+			if ( const auto* node = mHistoryModel ? mHistoryModel->node( index ) : nullptr;
+				 node && node->type == GitHistoryModel::NodeType::Commit )
+				openDetachedCommitDetails( node->commit );
+		} );
+		auto* view = mDetachedHistory.view;
+		mDetachedHistory.closeConnection =
+			view->connect( Event::OnClose, [this, view]( const Event* ) {
+				if ( mDetachedHistory.view != view )
+					return;
+				getPluginContext()->getConfig().iniState.setValue(
+					"git", "commit_history_columns",
+					mDetachedHistory.tree->serializeColumnWidths().dump() );
+				mDetachedHistory.reset();
+			} );
+		auto* tab = mManager->getSplitter()
+						->createWidget( mDetachedHistory.view, detachedHistoryTitle(), true )
+						.first;
+		if ( tab )
+			tab->setIcon( iconDrawable( "history", 12 ) );
+	} else {
+		auto tabs =
+			mManager->getSplitter()->getTabFromOwnedWidgetId( mDetachedHistory.view->getId() );
+		if ( !tabs.empty() )
+			tabs.front().second->setTabSelected( tabs.front().first );
+	}
+
+	focusDetachedHistory();
+}
+
+void GitPlugin::focusDetachedHistory() {
+	if ( !mDetachedHistory.tree || !mHistoryModel || !mHistoryLoaded )
+		return;
+	ModelIndex index;
+	if ( mDetachedHistory.focusHash.empty() )
+		index = mHistoryModel->index( 0, GitHistoryModel::Subject );
+	else
+		index = mHistoryModel->indexForCommit( mDetachedHistory.focusHash );
+	if ( !index.isValid() )
+		return;
+	mDetachedHistory.tree->setSelection( index, true, true );
+	if ( const auto* node = mHistoryModel->node( index );
+		 node && node->type == GitHistoryModel::NodeType::Commit &&
+		 ( !mDetachedHistory.details.view ||
+		   mDetachedHistory.details.commit.hash != node->commit.hash ) )
+		openDetachedCommitDetails( node->commit );
+}
+
+void GitPlugin::openDetachedCommitDetails( const Git::Commit& commit ) {
+	if ( commit.hash.empty() || !mDetachedHistory.view )
+		return;
+	if ( !mDetachedHistory.detailsHost ) {
+		mDetachedHistory.detailsHost = UILinearLayout::NewVertical();
+		mDetachedHistory.detailsHost->setId( "git_history_detached_details" );
+		mDetachedHistory.detailsHost->setLayoutSizePolicy( SizePolicy::MatchParent,
+														   SizePolicy::MatchParent );
+		mDetachedHistory.detailsHost->setParent( mDetachedHistory.view );
+		mDetachedHistory.view->setSplitPartition( StyleSheetLength( "55%" ) );
+	}
+	mDetachedHistory.details.openCommitDetails( *this, commit, true );
+}
+
 void GitPlugin::openCommitDetails( const Git::Commit& commit ) {
+	mCommitDetails.openCommitDetails( *this, commit, false );
+}
+
+void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const Git::Commit& commit,
+													   bool detached ) {
 	if ( commit.hash.empty() )
 		return;
-	const std::string repo = repoSelected();
-	const Uint64 generation = ++mCommitDetailsGeneration;
-	mCommitDetailsCommit = commit;
-	mCommitDetailsRepo = repo;
+	const std::string selectedRepo = plugin.repoSelected();
+	const Uint64 requestGeneration = ++generation;
+	this->commit = commit;
+	repo = selectedRepo;
 
-	const bool newView =
-		!mCommitDetailsView || !mManager->getSplitter()->ownedWidgetExists( mCommitDetailsView );
-	if ( newView ) {
-		mCommitDetailsView = getUISceneNode()->loadLayoutFromString( R"xml(
+	const bool createView = !view;
+	if ( createView ) {
+		view = plugin.getUISceneNode()->loadLayoutFromString( R"xml(
 			<vbox id="git_commit_details" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="12dp">
 					<hbox lw="mp" lh="wc">
-						<TextView id="git_commit_metadata" lw="0" lw8="1" lh="wc"
-								  word-wrap="true" focusable="false" />
-						<PushButton id="git_commit_sha" text="Commit SHA"
-									text-as-fallback="true" margin-left="8dp" />
-					</hbox>
-					<hbox lw="mp" lh="wc" margin-top="8dp">
-						<TextView id="git_commit_subject" lw="0" lw8="1" lh="wc"
-								  font-size="14dp" word-wrap="false" text-overflow="ellipsis"
+						<TextView id="git_commit_author" lw="wc" lh="wc" word-wrap="true"
 								  focusable="false" />
 						<PushButton id="git_commit_message_toggle"
 									text="@string(git_expand_commit_description, Expand Commit Description)"
 									icon="icon(unfold, 12dp)" text-as-fallback="true"
-									margin-left="8dp" visible="false" />
+									margin-left="8dp" visible="false" class="git_commit_btn" />
+						<widget lw="0" lw8="1" lh="wc" />
+						<PushButton id="git_commit_show_history"
+									tooltip="@string(git_show_in_history, Show in Git History)"
+									icon="icon(history, 12dp)" margin-left="8dp" class="git_commit_btn" />
+						<PushButton id="git_commit_github"
+									text="@string(git_view_on_github, View on GitHub)"
+									tooltip="@string(git_view_on_github, View on GitHub)"
+									icon="icon(github, 12dp)" text-as-fallback="true"
+									margin-left="8dp" visible="false" class="git_commit_btn" />
+						<PushButton id="git_commit_sha"
+									text="@string(git_commit_sha, Commit SHA)" icon="icon(copy, 12dp)"
+									margin-left="8dp" class="git_commit_btn" />
 					</hbox>
-					<TextView id="git_commit_message" lw="mp" lh="wc" margin-top="8dp"
-							  word-wrap="true" focusable="false" visible="false" />
-					<TextView id="git_commit_parents" lw="mp" lh="wc" margin-top="4dp"
-							  word-wrap="true" focusable="false" />
+					<TextView id="git_commit_date_email" lw="mp" lh="wc" word-wrap="true"
+							  focusable="false" />
+					<TextView id="git_commit_subject" lw="mp" lh="wc" margin-top="8dp"
+							  focusable="false" />
+					<TextView id="git_commit_message" lw="mp" lh="wc" word-wrap="true"
+							  focusable="false" visible="false" />
 				</vbox>
 				<hbox lw="mp" lh="wc" padding-left="8dp" padding-right="8dp"
 					  padding-top="4dp" padding-bottom="4dp">
 					<PushButton id="git_commit_files_toggle"
 								tooltip="@string(git_collapse_all_files, Collapse All Files)"
-								icon="icon(collapse-all, 12dp)" />
+								icon="icon(collapse-all, 12dp)" class="git_commit_btn" />
 					<PushButton id="git_commit_mode_toggle"
 								text="@string(git_split_diff, Split)"
+								tooltip="@string(git_switch_to_split_diff, Switch to split diff view)"
 								icon="icon(split-horizontal, 12dp)" text-as-fallback="true"
-								margin-left="4dp" />
+								margin-left="4dp" class="git_commit_btn" />
 					<TextView id="git_commit_files_status" lw="0" lw8="1" lh="wc"
 							  margin-left="8dp" layout_gravity="center_vertical" focusable="false" />
-					<PushButton id="git_commit_github"
-								text="@string(git_view_on_github, View on GitHub)"
-								icon="icon(github, 12dp)" text-as-fallback="true"
-								visible="false" />
 				</hbox>
 				<vbox id="git_commit_diff" lw="mp" lh="0" lw8="1" />
 			</vbox>
 		)xml" );
-		mCommitDetailsSubject = mCommitDetailsView->find<UITextView>( "git_commit_subject" );
-		mCommitDetailsMetadata = mCommitDetailsView->find<UITextView>( "git_commit_metadata" );
-		mCommitDetailsParents = mCommitDetailsView->find<UITextView>( "git_commit_parents" );
-		mCommitDetailsMessage = mCommitDetailsView->find<UITextView>( "git_commit_message" );
-		mCommitDetailsStatus = mCommitDetailsView->find<UITextView>( "git_commit_files_status" );
-		mCommitDetailsMessageToggle =
-			mCommitDetailsView->find<UIPushButton>( "git_commit_message_toggle" );
-		mCommitDetailsFilesToggle =
-			mCommitDetailsView->find<UIPushButton>( "git_commit_files_toggle" );
-		mCommitDetailsModeToggle =
-			mCommitDetailsView->find<UIPushButton>( "git_commit_mode_toggle" );
-		mCommitDetailsGitHub = mCommitDetailsView->find<UIPushButton>( "git_commit_github" );
-		mCommitDetailsDiffContainer = mCommitDetailsView->find<UIWidget>( "git_commit_diff" );
-		mCommitDetailsMessageToggle->onClick( [this]( const Event* ) {
-			mCommitDetailsMessageExpanded = !mCommitDetailsMessageExpanded;
-			mCommitDetailsMessage->setVisible( mCommitDetailsMessageExpanded );
-			mCommitDetailsMessageToggle->setText(
-				mCommitDetailsMessageExpanded
-					? i18n( "git_collapse_commit_description", "Collapse Commit Description" )
-					: i18n( "git_expand_commit_description", "Expand Commit Description" ) );
+		if ( detached )
+			view->setParent( plugin.mDetachedHistory.detailsHost );
+		auto* state = this;
+		auto* owner = &plugin;
+		view->bind( "git_commit_subject", subject );
+		view->bind( "git_commit_author", author );
+		view->bind( "git_commit_date_email", dateEmail );
+		view->bind( "git_commit_message", message );
+		view->bind( "git_commit_files_status", status );
+		view->bind( "git_commit_message_toggle", messageToggle );
+		view->bind( "git_commit_files_toggle", filesToggle );
+		view->bind( "git_commit_mode_toggle", modeToggle );
+		view->bind( "git_commit_github", gitHub );
+		view->bind( "git_commit_diff", diffContainer );
+		messageToggle->onClick( [owner, state]( const Event* ) {
+			state->messageExpanded = !state->messageExpanded;
+			state->message->setVisible( state->messageExpanded );
+			state->messageToggle->setText(
+				state->messageExpanded
+					? owner->i18n( "git_collapse_commit_description",
+								   "Collapse Commit Description" )
+					: owner->i18n( "git_expand_commit_description", "Expand Commit Description" ) );
 		} );
-		mCommitDetailsFilesToggle->onClick( [this]( const Event* ) {
-			mCommitDetailsFilesCollapsed = !mCommitDetailsFilesCollapsed;
-			UIDiffView::setMultiFileCollapsed( mCommitDetailsDiff, mCommitDetailsFilesCollapsed );
-			mCommitDetailsFilesToggle->setTooltipText(
-				mCommitDetailsFilesCollapsed
-					? i18n( "git_expand_all_files", "Expand All Files" )
-					: i18n( "git_collapse_all_files", "Collapse All Files" ) );
+		filesToggle->onClick( [owner, state]( const Event* ) {
+			state->filesCollapsed = !state->filesCollapsed;
+			UIDiffView::setMultiFileCollapsed( state->diff, state->filesCollapsed );
+			state->filesToggle->setTooltipText(
+				state->filesCollapsed
+					? owner->i18n( "git_expand_all_files", "Expand All Files" )
+					: owner->i18n( "git_collapse_all_files", "Collapse All Files" ) );
 			if ( auto* icon =
-					 findIcon( mCommitDetailsFilesCollapsed ? "expand-all" : "collapse-all" ) )
-				mCommitDetailsFilesToggle->setIcon(
-					icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+					 owner->findIcon( state->filesCollapsed ? "expand-all" : "collapse-all" ) )
+				state->filesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 		} );
-		mCommitDetailsModeToggle->onClick( [this]( const Event* ) {
-			mCommitDetailsViewMode = mCommitDetailsViewMode == UIDiffView::ViewMode::Unified
-										 ? UIDiffView::ViewMode::SideBySide
-										 : UIDiffView::ViewMode::Unified;
-			UIDiffView::setMultiFileViewMode( mCommitDetailsDiff, mCommitDetailsViewMode );
-			mCommitDetailsModeToggle->setText( mCommitDetailsViewMode ==
-													   UIDiffView::ViewMode::Unified
-												   ? i18n( "git_split_diff", "Split" )
-												   : i18n( "git_unified_diff", "Unified" ) );
-			if ( auto* icon = findIcon( mCommitDetailsViewMode == UIDiffView::ViewMode::Unified
-											? "split-horizontal"
-											: "layout" ) )
-				mCommitDetailsModeToggle->setIcon(
-					icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+		modeToggle->onClick( [owner, state]( const Event* ) {
+			state->viewMode = state->viewMode == UIDiffView::ViewMode::Unified
+								  ? UIDiffView::ViewMode::SideBySide
+								  : UIDiffView::ViewMode::Unified;
+			UIDiffView::setMultiFileViewMode( state->diff, state->viewMode );
+			state->modeToggle->setText( state->viewMode == UIDiffView::ViewMode::Unified
+											? owner->i18n( "git_split_diff", "Split" )
+											: owner->i18n( "git_unified_diff", "Unified" ) );
+			state->modeToggle->setTooltipText(
+				state->viewMode == UIDiffView::ViewMode::Unified
+					? owner->i18n( "git_switch_to_split_diff", "Switch to split diff view" )
+					: owner->i18n( "git_switch_to_unified_diff", "Switch to unified diff view" ) );
+			if ( auto* icon = owner->findIcon( state->viewMode == UIDiffView::ViewMode::Unified
+												   ? "split-horizontal"
+												   : "layout" ) )
+				state->modeToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 		} );
-		mCommitDetailsGitHub->onClick( [this]( const Event* ) {
-			if ( !mCommitDetailsURL.empty() )
-				Engine::instance()->openURI( mCommitDetailsURL );
+		gitHub->onClick( [state]( const Event* ) {
+			if ( !state->url.empty() )
+				Engine::instance()->openURI( state->url );
 		} );
-		mCommitDetailsView->find<UIPushButton>( "git_commit_sha" )
-			->onClick( [this]( const Event* ) {
-				getUISceneNode()->getWindow()->getClipboard()->setText( mCommitDetailsCommit.hash );
+		view->find<UIPushButton>( "git_commit_show_history" )
+			->onClick(
+				[owner, state]( const Event* ) { owner->showGitHistory( &state->commit ); } );
+		view->find<UIPushButton>( "git_commit_sha" )->onClick( [owner, state]( const Event* ) {
+			owner->getUISceneNode()->getWindow()->getClipboard()->setText( state->commit.hash );
+		} );
+		if ( !detached ) {
+			auto* view = this->view;
+			closeConnection = view->connect( Event::OnClose, [state, view]( const Event* ) {
+				if ( state->view == view )
+					state->reset();
 			} );
-		auto* view = mCommitDetailsView;
-		mCommitDetailsCloseConnection =
-			view->connect( Event::OnClose, [this, view]( const Event* ) {
-				if ( mCommitDetailsView != view )
-					return;
-				++mCommitDetailsGeneration;
-				mCommitDetailsView = nullptr;
-				mCommitDetailsSubject = nullptr;
-				mCommitDetailsMetadata = nullptr;
-				mCommitDetailsParents = nullptr;
-				mCommitDetailsMessage = nullptr;
-				mCommitDetailsStatus = nullptr;
-				mCommitDetailsMessageToggle = nullptr;
-				mCommitDetailsFilesToggle = nullptr;
-				mCommitDetailsModeToggle = nullptr;
-				mCommitDetailsGitHub = nullptr;
-				mCommitDetailsDiffContainer = nullptr;
-				mCommitDetailsDiff = nullptr;
-				mCommitDetailsMessageBody.clear();
-				mCommitDetailsURL.clear();
-				mCommitDetailsRepo.clear();
-			} );
+		}
 	}
 
-	mCommitDetailsSubject->setText( String::fromUtf8( commit.subject ) );
-	String metadata = String::fromUtf8( commit.authorName ) + "\n" +
-					  Sys::epochToString( commit.commitTime ) + " - " +
-					  String::fromUtf8( commit.authorEmail );
-	mCommitDetailsMetadata->setText( metadata );
-	String parents;
-	for ( size_t i = 0; i < commit.parents.size(); ++i ) {
-		if ( i )
-			parents += ", ";
-		parents += String::fromUtf8( commit.parents[i] );
-	}
-	mCommitDetailsMessageBody.clear();
-	mCommitDetailsMessageExpanded = false;
-	mCommitDetailsMessage->setText( "" );
-	mCommitDetailsMessage->setVisible( false );
-	mCommitDetailsMessageToggle->setVisible( false );
-	mCommitDetailsParents->setVisible( !parents.empty() );
-	mCommitDetailsParents->setText( i18n( "git_parents", "Parents" ) + ": " + parents );
-	mCommitDetailsStatus->setText(
-		i18n( "git_loading_changed_files", "Loading changed files..." ) );
-	mCommitDetailsFilesCollapsed = false;
-	mCommitDetailsFilesToggle->setTooltipText(
-		i18n( "git_collapse_all_files", "Collapse All Files" ) );
-	if ( auto* icon = findIcon( "collapse-all" ) )
-		mCommitDetailsFilesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
-	mCommitDetailsURL.clear();
-	mCommitDetailsGitHub->setVisible( false );
-	mCommitDetailsDiff = nullptr;
-	mCommitDetailsDiffContainer->closeAllChildren();
-	auto* shaButton = mCommitDetailsView->find<UIPushButton>( "git_commit_sha" );
-	shaButton->setText( String::fromUtf8( commit.shortHash ) );
-	shaButton->setTooltipText( String::fromUtf8( commit.hash ) );
+	subject->setText( String::fromUtf8( commit.subject ) );
+	author->setText( String::fromUtf8( commit.authorName ) );
+	dateEmail->setText( Sys::epochToString( commit.commitTime ) + " - " +
+						String::fromUtf8( commit.authorEmail ) );
+	messageBody.clear();
+	messageExpanded = false;
+	message->setText( "" );
+	message->setVisible( false );
+	messageToggle->setVisible( false );
+	status->setText( plugin.i18n( "git_loading_changed_files", "Loading changed files..." ) );
+	plugin.styleCommitFilesStatus( status );
+	filesCollapsed = false;
+	filesToggle->setTooltipText( plugin.i18n( "git_collapse_all_files", "Collapse All Files" ) );
+	if ( auto* icon = plugin.findIcon( "collapse-all" ) )
+		filesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	url.clear();
+	gitHub->setVisible( false );
+	diff = nullptr;
+	diffContainer->closeAllChildren();
+	auto* shaButton = view->find<UIPushButton>( "git_commit_sha" );
+	shaButton->setTooltipText( String::format(
+		plugin.i18n( "git_copy_commit_sha", "Copy Commit SHA\n%s" ).toUtf8(), commit.hash ) );
 
 	const std::string tabName = commit.shortHash + " " + commit.subject;
-	if ( newView ) {
-		mManager->getSplitter()->createWidget( mCommitDetailsView, tabName, true );
-	} else {
-		auto tabs = mManager->getSplitter()->getTabFromOwnedWidgetId( mCommitDetailsView->getId() );
+	if ( !detached && !plugin.mManager->getSplitter()->ownedWidgetExists( view ) ) {
+		auto tab = plugin.mManager->getSplitter()->createWidget( view, tabName, true ).first;
+		if ( tab )
+			tab->setIcon( plugin.iconDrawable( "git-commit", 12 ) );
+	} else if ( !detached ) {
+		auto tabs = plugin.mManager->getSplitter()->getTabFromOwnedWidgetId( view->getId() );
 		if ( !tabs.empty() ) {
 			tabs.front().first->setText( tabName );
 			tabs.front().second->setTabSelected( tabs.front().first );
 		}
 	}
-	if ( generation == mCommitDetailsGeneration )
-		loadCommitFiles();
+	if ( requestGeneration == generation )
+		loadCommitFiles( plugin, detached );
 }
 
-void GitPlugin::loadCommitFiles() {
-	const Uint64 generation = mCommitDetailsGeneration;
-	const std::string repo = mCommitDetailsRepo;
-	const Git::Commit commit = mCommitDetailsCommit;
-	auto git = mGit;
-	const auto lifetime = mLifetime.weakHandle();
-	runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit] {
+void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool detached ) {
+	const Uint64 generation = this->generation;
+	const std::string repo = this->repo;
+	const Git::Commit commit = this->commit;
+	auto git = plugin.mGit;
+	const auto lifetime = plugin.mLifetime.weakHandle();
+	plugin.runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit, detached] {
 		auto result = git->commitFiles( commit, repo );
-		lifetime.run( [generation, repo, commit,
+		lifetime.run( [generation, repo, commit, detached,
 					   result = std::move( result )]( GitPlugin* plugin ) mutable {
-			if ( plugin->mShuttingDown || generation != plugin->mCommitDetailsGeneration ||
-				 repo != plugin->mCommitDetailsRepo || repo != plugin->repoSelected() ||
-				 commit.hash != plugin->mCommitDetailsCommit.hash || !plugin->mCommitDetailsView ||
-				 !plugin->mManager->getSplitter()->ownedWidgetExists( plugin->mCommitDetailsView ) )
+			auto& details = detached ? plugin->mDetachedHistory.details : plugin->mCommitDetails;
+			if ( plugin->mShuttingDown || generation != details.generation ||
+				 repo != details.repo || repo != plugin->repoSelected() ||
+				 commit.hash != details.commit.hash || !details.view ||
+				 ( detached
+					   ? !plugin->mDetachedHistory.view
+					   : !plugin->mManager->getSplitter()->ownedWidgetExists( details.view ) ) )
 				return;
 			if ( result.fail() ) {
-				plugin->mCommitDetailsStatus->setText(
+				details.status->setText(
 					plugin->i18n( "git_changed_files_error", "Could not load changed files" ) +
 					( result.result.empty() ? "" : ": " + result.result ) );
+				plugin->styleCommitFilesStatus( details.status );
 				return;
 			}
 			std::string message = std::move( result.message );
 			const size_t subjectEnd = message.find_first_of( "\r\n" );
 			const std::string_view subject{
 				message.data(), subjectEnd == std::string::npos ? message.size() : subjectEnd };
-			plugin->mCommitDetailsSubject->setText(
+			details.subject->setText(
 				String::fromUtf8( subject.empty() ? commit.subject : std::string{ subject } ) );
 			std::string body;
 			if ( subjectEnd != std::string::npos ) {
@@ -2706,14 +2896,12 @@ void GitPlugin::loadCommitFiles() {
 					++bodyStart;
 				body = message.substr( bodyStart );
 			}
-			plugin->mCommitDetailsMessageBody = std::move( body );
-			plugin->mCommitDetailsMessage->setText(
-				String::fromUtf8( plugin->mCommitDetailsMessageBody ) );
-			plugin->mCommitDetailsMessage->setVisible( false );
-			plugin->mCommitDetailsMessageExpanded = false;
-			plugin->mCommitDetailsMessageToggle->setVisible(
-				!plugin->mCommitDetailsMessageBody.empty() );
-			plugin->mCommitDetailsMessageToggle->setText(
+			details.messageBody = std::move( body );
+			details.message->setText( String::fromUtf8( details.messageBody ) );
+			details.message->setVisible( false );
+			details.messageExpanded = false;
+			details.messageToggle->setVisible( !details.messageBody.empty() );
+			details.messageToggle->setText(
 				plugin->i18n( "git_expand_commit_description", "Expand Commit Description" ) );
 
 			int totalInserts = 0;
@@ -2723,33 +2911,34 @@ void GitPlugin::loadCommitFiles() {
 				totalDeletes += file.deletes;
 			}
 			if ( result.files.empty() ) {
-				plugin->mCommitDetailsStatus->setText(
+				details.status->setText(
 					plugin->i18n( "git_no_changed_files", "No changed files" ) );
 			} else {
-				plugin->mCommitDetailsStatus->setText( String::format(
+				details.status->setText( String::format(
 					plugin->i18n( "git_changed_files_summary", "Changed files (%zu)  +%d -%d" )
 						.toUtf8(),
 					result.files.size(), totalInserts, totalDeletes ) );
 			}
+			plugin->styleCommitFilesStatus( details.status );
 
-			plugin->mCommitDetailsURL = std::move( result.commitURL );
-			plugin->mCommitDetailsGitHub->setVisible( !plugin->mCommitDetailsURL.empty() );
-			plugin->mCommitDetailsDiffContainer->closeAllChildren();
-			plugin->mCommitDetailsDiff = nullptr;
+			details.url = std::move( result.commitURL );
+			details.gitHub->setVisible( !details.url.empty() );
+			details.diffContainer->closeAllChildren();
+			details.diff = nullptr;
 			if ( !result.patch.empty() ) {
-				plugin->mCommitDetailsDiff = UIDiffView::NewMultiFileDiffViewer(
-					result.patch, repo, plugin->mCommitDetailsViewMode );
-				plugin->mCommitDetailsDiff->setLayoutSizePolicy( SizePolicy::MatchParent,
-																 SizePolicy::MatchParent );
-				plugin->mCommitDetailsDiff->setParent( plugin->mCommitDetailsDiffContainer );
-				for ( auto* diff : UIDiffView::multiFileDiffViews( plugin->mCommitDetailsDiff ) ) {
+				details.diff =
+					UIDiffView::NewMultiFileDiffViewer( result.patch, repo, details.viewMode );
+				details.diff->setLayoutSizePolicy( SizePolicy::MatchParent,
+												   SizePolicy::MatchParent );
+				details.diff->setParent( details.diffContainer );
+				for ( auto* diff : UIDiffView::multiFileDiffViews( details.diff ) ) {
 					if ( const auto* scheme = plugin->getPluginContext()->getCurrentColorScheme() )
 						diff->setSyntaxColorScheme( *scheme );
 				}
 			}
-			const bool hasDiff = plugin->mCommitDetailsDiff != nullptr;
-			plugin->mCommitDetailsFilesToggle->setVisible( hasDiff );
-			plugin->mCommitDetailsModeToggle->setVisible( hasDiff );
+			const bool hasDiff = details.diff != nullptr;
+			details.filesToggle->setVisible( hasDiff );
+			details.modeToggle->setVisible( hasDiff );
 		} );
 	} );
 }
@@ -2942,6 +3131,34 @@ void GitPlugin::buildSidePanelTab() {
 	treeview::cell.git_highlight_style_clear > treeview::cell::icon {
 		foreground-image: none, none;
 	}
+	#git_commit_details .git_commit_btn {
+		lw: 20dp;
+		lh: 20dp;
+		padding: 0;
+		background-color: var(--list-back);
+		border-color: transparent;
+	}
+	#git_commit_details .git_commit_btn:hover {
+		border-color: var(--primary);
+	}
+	#git_commit_details #git_commit_author {
+		font-size: 11dp;
+		text-stroke-width: 1dp;
+		text-stroke-color: var(--list-back);
+		layout-gravity: center_vertical;
+	}
+	#git_commit_details #git_commit_date_email {
+		color: var(--font-hint);
+	}
+	#git_commit_details #git_commit_subject {
+		font-size: 13dp;
+		text-overflow: ellipsis;
+		word-wrap: true;
+	}
+	#git_commit_details #git_commit_sha {
+		lw: wc;
+		padding: 0dp 4dp;
+	}
 	</style>
 	<RelativeLayout id="git_panel" lw="mp" lh="mp">
 		<vbox id="git_content" lw="mp" lh="mp">
@@ -3022,6 +3239,7 @@ void GitPlugin::buildSidePanelTab() {
 		if ( revision == mHistoryRevision )
 			return;
 		mHistoryRevision = revision;
+		updateDetachedHistoryTitle();
 		invalidateHistory();
 	} );
 	updateHistoryRefs(
@@ -3124,8 +3342,13 @@ void GitPlugin::buildSidePanelTab() {
 		const auto* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::OpenTree )
 			activateHistoryIndex( modelEvent->getModelIndex(), true );
-		else if ( modelEvent->getModelEventType() == ModelEventType::Open )
+		else if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			activateHistoryIndex( modelEvent->getModelIndex(), false );
+			if ( const auto* node = mHistoryModel->node( modelEvent->getModelIndex() );
+				 node && node->type == GitHistoryModel::NodeType::Commit )
+				openCommitDetails( node->commit );
+		} else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu )
+			openHistoryMenu( modelEvent->getModelIndex() );
 	} );
 	mHistoryTree->setOnSelection( [this]( const ModelIndex& index ) {
 		if ( !mHistoryModel )

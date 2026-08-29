@@ -25,6 +25,7 @@ class UIStackWidget;
 class UIListBoxItem;
 class UIMenu;
 class UITextView;
+class UISplitter;
 } // namespace EE::UI
 
 namespace ecode {
@@ -167,27 +168,74 @@ class GitPlugin : public PluginBase {
 	std::string mHistoryRevision{ "HEAD" };
 	bool mUpdatingHistoryRefs{ false };
 	bool mHistoryLoaded{ false };
-	UIWidget* mCommitDetailsView{ nullptr };
-	UITextView* mCommitDetailsSubject{ nullptr };
-	UITextView* mCommitDetailsMetadata{ nullptr };
-	UITextView* mCommitDetailsMessage{ nullptr };
-	UITextView* mCommitDetailsParents{ nullptr };
-	UITextView* mCommitDetailsStatus{ nullptr };
-	UIPushButton* mCommitDetailsMessageToggle{ nullptr };
-	UIPushButton* mCommitDetailsFilesToggle{ nullptr };
-	UIPushButton* mCommitDetailsModeToggle{ nullptr };
-	UIPushButton* mCommitDetailsGitHub{ nullptr };
-	UIWidget* mCommitDetailsDiffContainer{ nullptr };
-	UIScrollView* mCommitDetailsDiff{ nullptr };
-	std::string mCommitDetailsMessageBody;
-	std::string mCommitDetailsURL;
-	bool mCommitDetailsMessageExpanded{ false };
-	bool mCommitDetailsFilesCollapsed{ false };
-	Tools::UIDiffView::ViewMode mCommitDetailsViewMode{ Tools::UIDiffView::ViewMode::Unified };
-	Git::Commit mCommitDetailsCommit;
-	std::string mCommitDetailsRepo;
-	std::atomic<Uint64> mCommitDetailsGeneration{ 0 };
-	EventConnection mCommitDetailsCloseConnection;
+	struct CommitDetailsState {
+		UIWidget* view{ nullptr };
+		UITextView* subject{ nullptr };
+		UITextView* author{ nullptr };
+		UITextView* dateEmail{ nullptr };
+		UITextView* message{ nullptr };
+		UITextView* status{ nullptr };
+		UIPushButton* messageToggle{ nullptr };
+		UIPushButton* filesToggle{ nullptr };
+		UIPushButton* modeToggle{ nullptr };
+		UIPushButton* gitHub{ nullptr };
+		UIWidget* diffContainer{ nullptr };
+		UIScrollView* diff{ nullptr };
+		std::string messageBody;
+		std::string url;
+		Git::Commit commit;
+		std::string repo;
+		std::atomic<Uint64> generation{ 0 };
+		EventConnection closeConnection;
+		Tools::UIDiffView::ViewMode viewMode{ Tools::UIDiffView::ViewMode::Unified };
+		bool messageExpanded{ false };
+		bool filesCollapsed{ false };
+
+		void openCommitDetails( GitPlugin& plugin, const Git::Commit& commit, bool detached );
+
+		void loadCommitFiles( GitPlugin& plugin, bool detached );
+
+		void reset() {
+			++generation;
+			view = nullptr;
+			subject = nullptr;
+			author = nullptr;
+			dateEmail = nullptr;
+			message = nullptr;
+			status = nullptr;
+			messageToggle = nullptr;
+			filesToggle = nullptr;
+			modeToggle = nullptr;
+			gitHub = nullptr;
+			diffContainer = nullptr;
+			diff = nullptr;
+			messageBody.clear();
+			url.clear();
+			commit = {};
+			repo.clear();
+			viewMode = Tools::UIDiffView::ViewMode::Unified;
+			messageExpanded = false;
+			filesCollapsed = false;
+		}
+	};
+	struct DetachedHistoryState {
+		UISplitter* view{ nullptr };
+		UITreeView* tree{ nullptr };
+		UIWidget* detailsHost{ nullptr };
+		EventConnection closeConnection;
+		std::string focusHash;
+		CommitDetailsState details;
+
+		void reset() {
+			view = nullptr;
+			tree = nullptr;
+			detailsHost = nullptr;
+			focusHash.clear();
+			details.reset();
+		}
+	};
+	CommitDetailsState mCommitDetails;
+	DetachedHistoryState mDetachedHistory;
 	std::atomic<int> mRunningUpdateStatus{ 0 };
 	std::atomic<bool> mPendingForcedStatusUpdate{ false };
 	std::shared_ptr<std::atomic<int>> mRunningAsyncTasks{ std::make_shared<std::atomic<int>>( 0 ) };
@@ -217,6 +265,7 @@ class GitPlugin : public PluginBase {
 		SyntaxColorScheme scheme;
 	};
 	std::optional<CustomTokenizer> mStatusCustomTokenizer;
+	std::optional<CustomTokenizer> mCommitStatusCustomTokenizer;
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
 	Uint32 mModelChangedId{ 0 };
 	Uint32 mModelStylerId{ 0 };
@@ -302,6 +351,8 @@ class GitPlugin : public PluginBase {
 
 	void updateStatusBarSync();
 
+	void styleCommitFilesStatus( UITextView* status );
+
 	void updateUI();
 
 	void updateUINow( bool force = false );
@@ -324,7 +375,17 @@ class GitPlugin : public PluginBase {
 
 	void openCommitDetails( const Git::Commit& commit );
 
-	void loadCommitFiles();
+	void showGitHistory( const Git::Commit* commit = nullptr );
+
+	void focusDetachedHistory();
+
+	void openHistoryMenu( const ModelIndex& index );
+
+	void openDetachedCommitDetails( const Git::Commit& commit );
+
+	std::string detachedHistoryTitle();
+
+	void updateDetachedHistoryTitle();
 
 	void buildSidePanelTab();
 

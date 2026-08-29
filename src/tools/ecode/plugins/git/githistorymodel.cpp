@@ -2,6 +2,7 @@
 #include "gitplugin.hpp"
 #include <algorithm>
 #include <eepp/system/sys.hpp>
+#include <functional>
 #include <iterator>
 
 namespace ecode {
@@ -47,6 +48,19 @@ ModelIndex GitHistoryModel::indexForNode( const Node* item, int column ) const {
 		if ( items[row].get() == item )
 			return createIndex( row, column, item );
 	return {};
+}
+
+ModelIndex GitHistoryModel::indexForCommit( std::string_view hash, int column ) const {
+	std::function<const Node*( const Nodes& )> find = [&]( const Nodes& nodes ) -> const Node* {
+		for ( const auto& item : nodes ) {
+			if ( item->type == NodeType::Commit && item->commit.hash == hash )
+				return item.get();
+			if ( const Node* found = find( item->children ) )
+				return found;
+		}
+		return nullptr;
+	};
+	return indexForNode( find( mRoots ), column );
 }
 
 ModelIndex GitHistoryModel::parentIndex( const ModelIndex& index ) const {
@@ -241,7 +255,8 @@ void GitHistoryModel::setPageLoading( Node* item ) {
 	if ( !item || item->childrenLoading )
 		return;
 	item->childrenLoading = true;
-	item->type = NodeType::Loading;
+	// Keep the semantic node type intact: appendPage() must still identify this row as the
+	// pagination cursor when the asynchronous request completes.
 	item->message = mPlugin->i18n( "git_history_loading", "Loading..." );
 	item->error.clear();
 	invalidate( Model::DontInvalidateIndexes );
