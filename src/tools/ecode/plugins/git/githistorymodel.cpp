@@ -82,9 +82,11 @@ Variant GitHistoryModel::data( const ModelIndex& index, ModelRole role ) const {
 	if ( !item )
 		return {};
 	if ( role == ModelRole::Class ) {
+		if ( item->type == NodeType::WorkingTree )
+			return Variant( "git_history_working_tree" );
 		if ( item->type == NodeType::LoadMore || item->type == NodeType::Error )
 			return Variant( "git_history_action" );
-		if ( item->type != NodeType::Commit )
+		if ( item->type != NodeType::Commit && item->type != NodeType::WorkingTree )
 			return Variant( "git_history_secondary" );
 		if ( item->commit.isMerge() )
 			return Variant( "git_history_merge" );
@@ -99,7 +101,7 @@ Variant GitHistoryModel::data( const ModelIndex& index, ModelRole role ) const {
 	}
 	if ( role != ModelRole::Display )
 		return {};
-	if ( item->type != NodeType::Commit )
+	if ( item->type != NodeType::Commit && item->type != NodeType::WorkingTree )
 		return index.column() == Subject ? Variant( &item->message ) : Variant( "" );
 	switch ( index.column() ) {
 		case Subject:
@@ -135,6 +137,29 @@ GitHistoryModel::commitNode( Git::Commit commit, Node* parent,
 		loading->message = mPlugin->i18n( "git_history_loading", "Loading..." );
 		item->children.emplace_back( std::move( loading ) );
 	}
+	return item;
+}
+
+std::unique_ptr<GitHistoryModel::Node>
+GitHistoryModel::workingTreeNode( const Git::Status& status, const std::string& repoName ) const {
+	auto repo = status.files.find( repoName );
+	if ( repo == status.files.end() || repo->second.empty() )
+		return {};
+	size_t changed = 0;
+	size_t staged = 0;
+	for ( const auto& file : repo->second ) {
+		if ( file.report.type == Git::GitStatusType::Staged )
+			++staged;
+		else
+			++changed;
+	}
+	auto item = std::make_unique<Node>();
+	item->type = NodeType::WorkingTree;
+	item->subject = mPlugin->i18n( "git_working_tree_index", "Working Tree / Index" );
+	item->message = String::format(
+		mPlugin->i18n( "git_working_tree_summary", "%zu changed, %zu staged" ).toUtf8(), changed,
+		staged );
+	item->tooltip = item->subject + String{ "\n" } + item->message;
 	return item;
 }
 
@@ -179,8 +204,11 @@ void GitHistoryModel::setRootLoading() {
 	invalidate();
 }
 
-void GitHistoryModel::setRootPage( Git::HistoryPage page, const Git::HistoryQuery& query ) {
+void GitHistoryModel::setRootPage( Git::HistoryPage page, const Git::HistoryQuery& query,
+								   const Git::Status& status, const std::string& repoName ) {
 	mRoots.clear();
+	if ( auto item = workingTreeNode( status, repoName ) )
+		mRoots.emplace_back( std::move( item ) );
 	fillPage( mRoots, nullptr, std::move( page ), query );
 	if ( mRoots.empty() ) {
 		auto item = std::make_unique<Node>();
@@ -189,6 +217,25 @@ void GitHistoryModel::setRootPage( Git::HistoryPage page, const Git::HistoryQuer
 		mRoots.emplace_back( std::move( item ) );
 	}
 	invalidate();
+}
+
+void GitHistoryModel::setWorkingTreeStatus( const Git::Status& status,
+											const std::string& repoName ) {
+	auto item = workingTreeNode( status, repoName );
+	const bool hasItem = !mRoots.empty() && mRoots.front()->type == NodeType::WorkingTree;
+	if ( hasItem && !item ) {
+		beginDeleteRows( {}, 0, 0 );
+		mRoots.erase( mRoots.begin() );
+		endDeleteRows();
+	} else if ( !hasItem && item ) {
+		beginInsertRows( {}, 0, 0 );
+		mRoots.insert( mRoots.begin(), std::move( item ) );
+		endInsertRows();
+	} else if ( hasItem && item ) {
+		mRoots.front()->message = std::move( item->message );
+		mRoots.front()->tooltip = std::move( item->tooltip );
+	}
+	invalidate( Model::DontInvalidateIndexes );
 }
 
 void GitHistoryModel::setRootError( std::string error ) {

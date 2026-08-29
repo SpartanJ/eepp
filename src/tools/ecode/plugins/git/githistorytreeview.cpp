@@ -29,7 +29,8 @@ Sizef GitHistoryTreeViewCell::updateLayout() {
 void GitHistoryTreeViewCell::updateCell( Model* model ) {
 	auto* historyModel = static_cast<GitHistoryModel*>( model );
 	const auto* item = historyModel->node( getCurIndex() );
-	if ( !item || item->type != GitHistoryModel::NodeType::Commit ) {
+	if ( !item || ( item->type != GitHistoryModel::NodeType::Commit &&
+					item->type != GitHistoryModel::NodeType::WorkingTree ) ) {
 		mMetadataText.setString( "" );
 		mTextBox->setTextAlign( UI_HALIGN_LEFT | UI_VALIGN_CENTER );
 		return;

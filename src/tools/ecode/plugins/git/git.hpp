@@ -468,6 +468,8 @@ class Git {
 
 	CommitFiles commitFiles( const Commit& commit, const std::string& projectDir = "" ) const;
 
+	CommitFiles workingTreeFiles( const std::string& projectDir = "" );
+
 	Result commitDiff( const Commit& commit, const CommitFile& file,
 					   const std::string& projectDir = "" ) const;
 

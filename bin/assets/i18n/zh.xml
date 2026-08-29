@@ -1052,6 +1052,9 @@ file in the directory tree.</string>
 	<string name="git_history_refresh">刷新</string>
 	<string name="git_history_load_older">加载更早的提交</string>
 	<string name="git_history_empty">尚无提交</string>
+	<string name="git_working_tree_index">工作树 / 索引</string>
+	<string name="git_working_tree_summary">%zu 个更改，%zu 个已暂存</string>
+	<string name="git_uncommitted_changes">未提交的更改</string>
 	<string name="git_history_no_additional_commits">没有其他提交</string>
 	<string name="git_show_in_history">在 Git 历史记录中显示</string>
 	<string name="git_commit_history_title">Git 提交历史记录 - %s</string>

@@ -11,10 +11,12 @@
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/window.hpp>
 
@@ -152,6 +154,20 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		if ( mView->areHeadersVisible() ) {
 			editor->registerTopSpace( this, mPluginTopSpace, 0 );
 		}
+
+		if ( mView->isInteractiveFileHeader() ) {
+			mHeaderIconWidth = 0;
+			const int iconSize = PixelDensity::dpToPxI( 14 );
+			if ( auto* icon = editor->getUISceneNode()->findIcon( "chevron-down" ) )
+				mExpandedIcon = icon->createDrawable( iconSize );
+			if ( auto* icon = editor->getUISceneNode()->findIcon( "chevron-right" ) )
+				mCollapsedIcon = icon->createDrawable( iconSize );
+			if ( mExpandedIcon )
+				mHeaderIconWidth = mExpandedIcon->getPixelsSize().getWidth();
+			if ( mCollapsedIcon )
+				mHeaderIconWidth =
+					std::max( mHeaderIconWidth, mCollapsedIcon->getPixelsSize().getWidth() );
+		}
 	}
 
 	Float getPluginTopSpace() const { return mPluginTopSpace; }
@@ -188,13 +204,88 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		Float fontSize = editor->getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
 		Float textOffsetY =
 			eefloor( ( size.getHeight() - font->getLineSpacing( fontSize ) ) * 0.5f );
-		Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
-		Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
-					  screenStart.y + textOffsetY );
+		const Uint32 textHints = mView->getFileName().getTextHints() | mView->getDefaultTextHints();
+		Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Text ) );
+		Color hintColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
+		FontStyleConfig textConfig;
+		textConfig.Font = font;
+		textConfig.CharacterSize = fontSize;
+		textConfig.FontColor = textColor;
+		Float left = screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) );
+		const Float gap = eefloor( PixelDensity::dpToPx( 6 ) );
 
-		Text::draw( mView->getFileName(), pos, font, fontSize, textColor, 0, 0.f, Color::Black,
-					Color::Black, { 1, 1 }, 4,
-					mView->getFileName().getTextHints() | mView->getDefaultTextHints() );
+		if ( mView->isInteractiveFileHeader() ) {
+			auto& icon = mView->isCollapsed() ? mCollapsedIcon : mExpandedIcon;
+			if ( icon ) {
+				icon->setColor( textColor );
+				const Sizef iconSize = icon->getPixelsSize();
+				icon->draw(
+					{ left + eefloor( ( mHeaderIconWidth - iconSize.x ) * 0.5f ),
+					  screenStart.y + eefloor( ( size.getHeight() - iconSize.y ) * 0.5f ) } );
+			}
+			left += mHeaderIconWidth + gap;
+		}
+
+		Vector2f pos( left, screenStart.y + textOffsetY );
+		const String& fileName = mView->getFileDisplayName().empty() ? mView->getFileName()
+																	 : mView->getFileDisplayName();
+		Text::draw( fileName, pos, font, fontSize, textColor, 0, 0.f, Color::Black, Color::Black,
+					{ 1, 1 }, 4, textHints );
+		pos.x += Text::getTextWidth( fileName, textConfig, 4, textHints ) + gap;
+		if ( !mView->getFileDisplayPath().empty() )
+			Text::draw( mView->getFileDisplayPath(), pos, font, fontSize, hintColor, 0, 0.f,
+						Color::Black, Color::Black, { 1, 1 }, 4, textHints );
+
+		if ( mView->isInteractiveFileHeader() ) {
+			const auto variableColor = [editor]( const char* variable, Color fallback ) {
+				auto value =
+					editor->getUISceneNode()->getRoot()->getUIStyle()->getVariable( variable );
+				return value.isEmpty() ? fallback : Color::fromString( value.getValue() );
+			};
+			const Color addedColor = variableColor( "--theme-success", Color( 0, 180, 60 ) );
+			const Color removedColor = variableColor( "--theme-error", Color( 220, 50, 70 ) );
+			FontStyleConfig addedConfig( textConfig );
+			addedConfig.FontColor = addedColor;
+			FontStyleConfig removedConfig( textConfig );
+			removedConfig.FontColor = removedColor;
+			const Float removedWidth =
+				Text::getTextWidth( mView->getRemovedLinesText(), removedConfig, 4, textHints );
+			const Float addedWidth =
+				Text::getTextWidth( mView->getAddedLinesText(), addedConfig, 4, textHints );
+			Float right = screenStart.x + width - eefloor( PixelDensity::dpToPx( 8 ) );
+			right -= removedWidth;
+			Text::draw( mView->getRemovedLinesText(), { right, screenStart.y + textOffsetY }, font,
+						fontSize, removedColor, 0, 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+						textHints );
+			right -= gap + addedWidth;
+			Text::draw( mView->getAddedLinesText(), { right, screenStart.y + textOffsetY }, font,
+						fontSize, addedColor, 0, 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+						textHints );
+		}
+	}
+
+	bool onMouseClick( UICodeEditor* editor, const Vector2i& position,
+					   const Uint32& flags ) override {
+		if ( !mView->isInteractiveFileHeader() || !( flags & EE_BUTTON_LMASK ) )
+			return false;
+		const Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.x >= 0 && localPos.x < editor->getTopAreaWidth() && localPos.y >= 0 &&
+			 localPos.y < mPluginTopSpace ) {
+			mView->setCollapsed( !mView->isCollapsed() );
+			return true;
+		}
+		return false;
+	}
+
+	bool onMouseMove( UICodeEditor* editor, const Vector2i& position,
+					  const Uint32& /*flags*/ ) override {
+		if ( !mView->isInteractiveFileHeader() )
+			return false;
+		const Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.x >= 0 && localPos.x < editor->getTopAreaWidth() && localPos.y >= 0 &&
+			 localPos.y < mPluginTopSpace )
+			editor->getUISceneNode()->setCursor( Cursor::Hand );
+		return false;
 	}
 
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
@@ -321,6 +412,9 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 	UIDiffView* mView;
 	Float mGutterWidth{ 0 };
 	Float mPluginTopSpace{ 0 };
+	Float mHeaderIconWidth{ 0 };
+	DrawablePtr mExpandedIcon;
+	DrawablePtr mCollapsedIcon;
 };
 
 UIDiffView* UIDiffView::New() {
@@ -1119,6 +1213,7 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
 			if ( !imagePatch.fileName.empty() )
 				mFileName = std::move( imagePatch.fileName );
+			updateFileHeaderInfo();
 			return;
 		}
 	}
@@ -1230,6 +1325,7 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
 		mFileName = std::move( filename );
 	}
+	updateFileHeaderInfo();
 
 	updateEditorsText();
 	updateButtonsText();
@@ -1282,6 +1378,7 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
 		mFileName = FileSystem::fileNameFromPath( originalFilePath );
 	}
+	updateFileHeaderInfo();
 
 	updateEditorsText();
 	updateButtonsText();
@@ -1355,6 +1452,33 @@ void UIDiffView::setHeadersVisible( bool visible ) {
 	mLeftPlugin->registerUpdate( mLeftEditor );
 	mRightPlugin->registerUpdate( mRightEditor );
 	updateModeButton();
+}
+
+void UIDiffView::setInteractiveFileHeader( bool enabled ) {
+	if ( enabled == mInteractiveFileHeader )
+		return;
+	mInteractiveFileHeader = enabled;
+	mPlugin->registerUpdate( mEditor );
+	mLeftPlugin->registerUpdate( mLeftEditor );
+	mRightPlugin->registerUpdate( mRightEditor );
+	mEditor->invalidateDraw();
+	mLeftEditor->invalidateDraw();
+	mRightEditor->invalidateDraw();
+}
+
+void UIDiffView::updateFileHeaderInfo() {
+	const std::string fileName( mFileName.toUtf8() );
+	mFileDisplayName = String::fromUtf8( FileSystem::fileNameFromPath( fileName ) );
+	mFileDisplayPath = String::fromUtf8( FileSystem::fileRemoveFileName( fileName ) );
+
+	std::size_t added = 0;
+	std::size_t removed = 0;
+	for ( const auto& line : mLines ) {
+		added += line.type == DiffLineType::Added;
+		removed += line.type == DiffLineType::Removed;
+	}
+	mAddedLinesText = String::format( "+ %zu", added );
+	mRemovedLinesText = String::format( "- %zu", removed );
 }
 
 Uint32 UIDiffView::onKeyDown( const KeyEvent& event ) {

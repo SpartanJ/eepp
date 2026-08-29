@@ -739,6 +739,16 @@ void GitPlugin::updateStatus( bool force ) {
 				[conflictStates = std::move( conflictStates )]( GitPlugin* plugin ) mutable {
 					const bool selectStatusPanel = plugin->updateConflictSessions( conflictStates );
 					plugin->updateStatusBarSync();
+					if ( plugin->mHistoryLoaded && plugin->mHistoryModel ) {
+						Git::Status status;
+						{
+							Lock l( plugin->mGitStatusMutex );
+							status = plugin->mGitStatus;
+						}
+						const std::string repo = plugin->repoSelected();
+						plugin->mHistoryModel->setWorkingTreeStatus(
+							status, plugin->mGit->repoName( repo, true, repo ) );
+					}
 					if ( selectStatusPanel && plugin->mPanelSwicher )
 						plugin->mPanelSwicher->getListBox()->setSelected( 1 );
 				} );
@@ -2437,18 +2447,22 @@ void GitPlugin::reloadHistory() {
 	mThreadPool->run(
 		[git = std::move( git ), lifetime, repo, generation, query]() mutable {
 			auto page = git->history( query, repo );
-			lifetime.run(
-				[repo, generation, query, page = std::move( page )]( GitPlugin* plugin ) mutable {
-					if ( plugin->mShuttingDown || generation != plugin->mHistoryGeneration ||
-						 repo != plugin->repoSelected() )
-						return;
-					plugin->mHistoryLoaded = true;
-					if ( page.success() )
-						plugin->mHistoryModel->setRootPage( std::move( page ), query );
-					else
-						plugin->mHistoryModel->setRootError( std::move( page.result ) );
-					plugin->focusDetachedHistory();
-				} );
+			auto status = git->status( false, repo );
+			auto repoName = git->repoName( repo, true, repo );
+			lifetime.run( [repo, generation, query, page = std::move( page ),
+						   status = std::move( status ),
+						   repoName = std::move( repoName )]( GitPlugin* plugin ) mutable {
+				if ( plugin->mShuttingDown || generation != plugin->mHistoryGeneration ||
+					 repo != plugin->repoSelected() )
+					return;
+				plugin->mHistoryLoaded = true;
+				if ( page.success() )
+					plugin->mHistoryModel->setRootPage( std::move( page ), query, status,
+														repoName );
+				else
+					plugin->mHistoryModel->setRootError( std::move( page.result ) );
+				plugin->focusDetachedHistory();
+			} );
 		},
 		[this]( auto ) { --mRunningHistoryRequests; } );
 }
@@ -2626,9 +2640,12 @@ void GitPlugin::showGitHistory( const Git::Commit* commit ) {
 				openHistoryMenu( modelEvent->getModelIndex() );
 		} );
 		mDetachedHistory.tree->setOnSelection( [this]( const ModelIndex& index ) {
-			if ( const auto* node = mHistoryModel ? mHistoryModel->node( index ) : nullptr;
-				 node && node->type == GitHistoryModel::NodeType::Commit )
-				openDetachedCommitDetails( node->commit );
+			if ( const auto* node = mHistoryModel ? mHistoryModel->node( index ) : nullptr; node ) {
+				if ( node->type == GitHistoryModel::NodeType::WorkingTree )
+					openWorkingTreeDetails( true );
+				else if ( node->type == GitHistoryModel::NodeType::Commit )
+					openDetachedCommitDetails( node->commit );
+			}
 		} );
 		auto* view = mDetachedHistory.view;
 		mDetachedHistory.closeConnection =
@@ -2666,16 +2683,24 @@ void GitPlugin::focusDetachedHistory() {
 	if ( !index.isValid() )
 		return;
 	mDetachedHistory.tree->setSelection( index, true, true );
-	if ( const auto* node = mHistoryModel->node( index );
-		 node && node->type == GitHistoryModel::NodeType::Commit &&
-		 ( !mDetachedHistory.details.view ||
-		   mDetachedHistory.details.commit.hash != node->commit.hash ) )
-		openDetachedCommitDetails( node->commit );
+	if ( const auto* node = mHistoryModel->node( index ); node ) {
+		if ( node->type == GitHistoryModel::NodeType::WorkingTree )
+			openWorkingTreeDetails( true );
+		else if ( node->type == GitHistoryModel::NodeType::Commit &&
+				  ( !mDetachedHistory.details.view ||
+					mDetachedHistory.details.commit.hash != node->commit.hash ) )
+			openDetachedCommitDetails( node->commit );
+	}
 }
 
 void GitPlugin::openDetachedCommitDetails( const Git::Commit& commit ) {
 	if ( commit.hash.empty() || !mDetachedHistory.view )
 		return;
+	ensureDetachedCommitDetailsHost();
+	mDetachedHistory.details.openCommitDetails( *this, commit, true );
+}
+
+void GitPlugin::ensureDetachedCommitDetailsHost() {
 	if ( !mDetachedHistory.detailsHost ) {
 		mDetachedHistory.detailsHost = UILinearLayout::NewVertical();
 		mDetachedHistory.detailsHost->setId( "git_history_detached_details" );
@@ -2684,30 +2709,38 @@ void GitPlugin::openDetachedCommitDetails( const Git::Commit& commit ) {
 		mDetachedHistory.detailsHost->setParent( mDetachedHistory.view );
 		mDetachedHistory.view->setSplitPartition( StyleSheetLength( "55%" ) );
 	}
-	mDetachedHistory.details.openCommitDetails( *this, commit, true );
 }
 
 void GitPlugin::openCommitDetails( const Git::Commit& commit ) {
 	mCommitDetails.openCommitDetails( *this, commit, false );
 }
 
+void GitPlugin::openWorkingTreeDetails( bool detached ) {
+	Git::Commit commit;
+	commit.subject = i18n( "git_working_tree_index", "Working Tree / Index" );
+	if ( detached )
+		ensureDetachedCommitDetailsHost();
+	( detached ? mDetachedHistory.details : mCommitDetails )
+		.openCommitDetails( *this, commit, detached, true );
+}
+
 void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const Git::Commit& commit,
-													   bool detached ) {
-	if ( commit.hash.empty() )
+													   bool detached, bool isWorkingTree ) {
+	if ( commit.hash.empty() && !isWorkingTree )
 		return;
 	const std::string selectedRepo = plugin.repoSelected();
 	const Uint64 requestGeneration = ++generation;
 	this->commit = commit;
+	workingTree = isWorkingTree;
 	repo = selectedRepo;
 
 	const bool createView = !view;
 	if ( createView ) {
 		view = plugin.getUISceneNode()->loadLayoutFromString( R"xml(
 			<vbox id="git_commit_details" lw="mp" lh="mp">
-				<vbox lw="mp" lh="wc" padding="12dp">
+				<vbox lw="mp" lh="wc" padding="4dp">
 					<hbox lw="mp" lh="wc">
-						<TextView id="git_commit_author" lw="wc" lh="wc" word-wrap="true"
-								  focusable="false" />
+						<TextView id="git_commit_author" lw="wc" lh="wc" focusable="false" />
 						<PushButton id="git_commit_message_toggle"
 									text="@string(git_expand_commit_description, Expand Commit Description)"
 									icon="icon(unfold, 12dp)" text-as-fallback="true"
@@ -2819,9 +2852,11 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 	}
 
 	subject->setText( String::fromUtf8( commit.subject ) );
-	author->setText( String::fromUtf8( commit.authorName ) );
-	dateEmail->setText( Sys::epochToString( commit.commitTime ) + " - " +
-						String::fromUtf8( commit.authorEmail ) );
+	author->setText( isWorkingTree ? plugin.i18n( "git_uncommitted_changes", "Uncommitted changes" )
+								   : String::fromUtf8( commit.authorName ) );
+	dateEmail->setText( isWorkingTree ? String{}
+									  : Sys::epochToString( commit.commitTime ) + " - " +
+											String::fromUtf8( commit.authorEmail ) );
 	messageBody.clear();
 	messageExpanded = false;
 	message->setText( "" );
@@ -2835,13 +2870,16 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 		filesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	url.clear();
 	gitHub->setVisible( false );
+	view->find( "git_commit_sha" )->setVisible( !isWorkingTree );
+	view->find( "git_commit_show_history" )->setVisible( !isWorkingTree );
 	diff = nullptr;
 	diffContainer->closeAllChildren();
 	auto* shaButton = view->find<UIPushButton>( "git_commit_sha" );
 	shaButton->setTooltipText( String::format(
 		plugin.i18n( "git_copy_commit_sha", "Copy Commit SHA\n%s" ).toUtf8(), commit.hash ) );
 
-	const std::string tabName = commit.shortHash + " " + commit.subject;
+	const std::string tabName =
+		isWorkingTree ? commit.subject : commit.shortHash + " " + commit.subject;
 	if ( !detached && !plugin.mManager->getSplitter()->ownedWidgetExists( view ) ) {
 		auto tab = plugin.mManager->getSplitter()->createWidget( view, tabName, true ).first;
 		if ( tab )
@@ -2861,16 +2899,20 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 	const Uint64 generation = this->generation;
 	const std::string repo = this->repo;
 	const Git::Commit commit = this->commit;
+	const bool workingTree = this->workingTree;
 	auto git = plugin.mGit;
 	const auto lifetime = plugin.mLifetime.weakHandle();
-	plugin.runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit, detached] {
-		auto result = git->commitFiles( commit, repo );
-		lifetime.run( [generation, repo, commit, detached,
+	plugin.runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit, detached,
+						  workingTree] {
+		auto result =
+			workingTree ? git->workingTreeFiles( repo ) : git->commitFiles( commit, repo );
+		lifetime.run( [generation, repo, commit, detached, workingTree,
 					   result = std::move( result )]( GitPlugin* plugin ) mutable {
 			auto& details = detached ? plugin->mDetachedHistory.details : plugin->mCommitDetails;
 			if ( plugin->mShuttingDown || generation != details.generation ||
 				 repo != details.repo || repo != plugin->repoSelected() ||
-				 commit.hash != details.commit.hash || !details.view ||
+				 commit.hash != details.commit.hash || workingTree != details.workingTree ||
+				 !details.view ||
 				 ( detached
 					   ? !plugin->mDetachedHistory.view
 					   : !plugin->mManager->getSplitter()->ownedWidgetExists( details.view ) ) )
@@ -2932,6 +2974,7 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 												   SizePolicy::MatchParent );
 				details.diff->setParent( details.diffContainer );
 				for ( auto* diff : UIDiffView::multiFileDiffViews( details.diff ) ) {
+					diff->setInteractiveFileHeader( true );
 					if ( const auto* scheme = plugin->getPluginContext()->getCurrentColorScheme() )
 						diff->setSyntaxColorScheme( *scheme );
 				}
@@ -3185,8 +3228,9 @@ void GitPlugin::buildSidePanelTab() {
 				</vbox>
 				<vbox id="git_history" lw="mp" lh="mp">
 					<hbox lw="mp" lh="wc" padding="4dp">
-						<DropDownModelList id="git_history_ref" lw="0" lw8="1" lh="wc" menu-width-mode="expand-if-needed" />
-						<PushButton id="git_history_refresh" text="@string(git_history_refresh, Refresh)" icon="icon(refresh, 12dp)" text-as-fallback="true" />
+						<DropDownModelList id="git_history_ref" lw="0" lw8="1" lh="wc" margin-right="2dp" menu-width-mode="expand-if-needed" />
+						<PushButton id="git_history_refresh" text="@string(git_history_refresh, Refresh)" icon="icon(refresh, 12dp)" text-as-fallback="true" margin-right="2dp" />
+						<PushButton id="git_history_open" tooltip="@string(git_show_in_history, Show in Git History)" icon="icon(history, 12dp)" />
 					</hbox>
 					<GitHistoryTreeView id="git_history_tree" lw="mp" lh="0" lw8="1" />
 				</vbox>
@@ -3227,6 +3271,7 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
 	mTabContents->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
 	mTabContents->find( "git_history_refresh" )->onClick( [this]( auto ) { reloadHistory(); } );
+	mTabContents->find( "git_history_open" )->onClick( [this]( auto ) { showGitHistory(); } );
 	mHistoryRefDropDown->getListView()->setColumnsVisible( { 0 } );
 	mHistoryRefDropDown->getListView()->setAutoExpandOnSingleColumn( true );
 	mHistoryRefDropDown->on( Event::OnItemSelected, [this]( const Event* ) {
@@ -3344,9 +3389,12 @@ void GitPlugin::buildSidePanelTab() {
 			activateHistoryIndex( modelEvent->getModelIndex(), true );
 		else if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			activateHistoryIndex( modelEvent->getModelIndex(), false );
-			if ( const auto* node = mHistoryModel->node( modelEvent->getModelIndex() );
-				 node && node->type == GitHistoryModel::NodeType::Commit )
-				openCommitDetails( node->commit );
+			if ( const auto* node = mHistoryModel->node( modelEvent->getModelIndex() ); node ) {
+				if ( node->type == GitHistoryModel::NodeType::WorkingTree )
+					openWorkingTreeDetails( false );
+				else if ( node->type == GitHistoryModel::NodeType::Commit )
+					openCommitDetails( node->commit );
+			}
 		} else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu )
 			openHistoryMenu( modelEvent->getModelIndex() );
 	} );
@@ -3354,7 +3402,9 @@ void GitPlugin::buildSidePanelTab() {
 		if ( !mHistoryModel )
 			return;
 		const auto* node = mHistoryModel->node( index );
-		if ( node && node->type == GitHistoryModel::NodeType::Commit )
+		if ( node && node->type == GitHistoryModel::NodeType::WorkingTree )
+			openWorkingTreeDetails( false );
+		else if ( node && node->type == GitHistoryModel::NodeType::Commit )
 			openCommitDetails( node->commit );
 	} );
 

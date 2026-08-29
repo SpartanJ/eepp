@@ -13,7 +13,7 @@ class GitPlugin;
 
 class GitHistoryModel : public Model {
   public:
-	enum class NodeType : uint8_t { Commit, LoadMore, Loading, Error, Empty };
+	enum class NodeType : uint8_t { WorkingTree, Commit, LoadMore, Loading, Error, Empty };
 	enum Column { Subject, Date, Author, Hash };
 	struct Node {
 		Git::Commit commit;
@@ -65,7 +65,10 @@ class GitHistoryModel : public Model {
 
 	void setRootLoading();
 
-	void setRootPage( Git::HistoryPage page, const Git::HistoryQuery& query );
+	void setRootPage( Git::HistoryPage page, const Git::HistoryQuery& query,
+					  const Git::Status& status, const std::string& repoName );
+
+	void setWorkingTreeStatus( const Git::Status& status, const std::string& repoName );
 
 	void setRootError( std::string error );
 
@@ -94,6 +97,8 @@ class GitHistoryModel : public Model {
 
 	std::unique_ptr<Node> commitNode( Git::Commit commit, Node* parent,
 									  const Git::HistoryQuery& query ) const;
+	std::unique_ptr<Node> workingTreeNode( const Git::Status& status,
+										   const std::string& repoName ) const;
 
 	void fillPage( Nodes& nodes, Node* parent, Git::HistoryPage page,
 				   const Git::HistoryQuery& query );

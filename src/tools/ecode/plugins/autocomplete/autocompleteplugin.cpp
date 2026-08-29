@@ -747,8 +747,11 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 		mDirty = true;
-		mDocs.insert( editor->getDocumentRef().get() );
-		mEditorDocs[editor] = editor->getDocumentRef().get();
+		{
+			Lock l( mDocMutex );
+			mDocs.insert( editor->getDocumentRef().get() );
+			mEditorDocs[editor] = editor->getDocumentRef().get();
+		}
 		tryRequestCapabilities( editor );
 	} ) );
 
@@ -2587,8 +2590,11 @@ AutoCompletePlugin::getDocumentSymbols( const std::shared_ptr<TextDocument>& doc
 							   } ) )
 				symbols.push_back( std::move( matchStr ) );
 		}
-		if ( mShuttingDown || mDocs.find( doc ) == mDocs.end() )
-			break;
+		{
+			Lock l( mDocMutex );
+			if ( mShuttingDown || mDocs.find( doc ) == mDocs.end() )
+				break;
+		}
 	}
 	return symbols;
 }

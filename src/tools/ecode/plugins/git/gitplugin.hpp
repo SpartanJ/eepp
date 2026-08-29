@@ -190,8 +190,10 @@ class GitPlugin : public PluginBase {
 		Tools::UIDiffView::ViewMode viewMode{ Tools::UIDiffView::ViewMode::Unified };
 		bool messageExpanded{ false };
 		bool filesCollapsed{ false };
+		bool workingTree{ false };
 
-		void openCommitDetails( GitPlugin& plugin, const Git::Commit& commit, bool detached );
+		void openCommitDetails( GitPlugin& plugin, const Git::Commit& commit, bool detached,
+								bool workingTree = false );
 
 		void loadCommitFiles( GitPlugin& plugin, bool detached );
 
@@ -216,6 +218,7 @@ class GitPlugin : public PluginBase {
 			viewMode = Tools::UIDiffView::ViewMode::Unified;
 			messageExpanded = false;
 			filesCollapsed = false;
+			workingTree = false;
 		}
 	};
 	struct DetachedHistoryState {
@@ -374,6 +377,7 @@ class GitPlugin : public PluginBase {
 	void activateHistoryIndex( const ModelIndex& index, bool expand );
 
 	void openCommitDetails( const Git::Commit& commit );
+	void openWorkingTreeDetails( bool detached );
 
 	void showGitHistory( const Git::Commit* commit = nullptr );
 
@@ -382,6 +386,7 @@ class GitPlugin : public PluginBase {
 	void openHistoryMenu( const ModelIndex& index );
 
 	void openDetachedCommitDetails( const Git::Commit& commit );
+	void ensureDetachedCommitDetailsHost();
 
 	std::string detachedHistoryTitle();
 

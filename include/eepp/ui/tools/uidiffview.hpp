@@ -45,21 +45,29 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	virtual ~UIDiffView();
 
 	virtual Uint32 getType() const override;
+
 	virtual bool isType( const Uint32& type ) const override;
 
 	void loadFromPatch( const std::string& patchText, const std::string& originalFilePath = "",
 						const std::string& oldFilePath = "", const std::string& repoPath = "" );
+
 	void loadFromStrings( const std::string& oldText, const std::string& newText,
 						  const std::string& originalFilePath = "" );
+
 	void loadFromFile( const std::string& oldFilePath, const std::string& newFilePath );
 
 	UICodeEditor* getEditor() const { return mEditor; }
+
 	UICodeEditor* getLeftEditor() const { return mLeftEditor; }
+
 	UICodeEditor* getRightEditor() const { return mRightEditor; }
+
 	UIImageViewer* getLeftImageViewer() const { return mLeftImageViewer; }
+
 	UIImageViewer* getRightImageViewer() const { return mRightImageViewer; }
 
 	enum class DiffLineType { Common, Added, Removed, Header };
+
 	struct DiffLine {
 		DiffLineType type{ DiffLineType::Common };
 		String text;
@@ -69,26 +77,36 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	};
 
 	const std::vector<DiffLine>& getDiffLines() const { return mLines; }
+
 	const std::vector<size_t>& getViewLines() const { return mViewLines; }
 
 	void setViewMode( ViewMode mode );
+
 	ViewMode getViewMode() const { return mViewMode; }
 
 	void setViewModeToggleVisible( bool visible );
+
 	bool isViewModeToggleVisible() const { return mViewModeToggleVisible; }
 
 	void setCompleteView( bool complete );
+
 	bool isCompleteView() const { return mShowCompleteView; }
 
 	void setCompleteViewToggleVisible( bool visible );
+
 	bool isCompleteViewToggleVisible() const { return mCompleteViewToggleVisible; }
 
 	void setSubLineDiffAlgorithm( SubLineDiffAlgorithm algo );
+
 	SubLineDiffAlgorithm getSubLineDiffAlgorithm() const { return mSubLineDiffAlgorithm; }
 
 	void setSyntaxColorScheme( const SyntaxColorScheme& colorScheme );
 
 	void setHeadersVisible( bool visible );
+
+	void setInteractiveFileHeader( bool enabled );
+
+	bool isInteractiveFileHeader() const { return mInteractiveFileHeader; }
 
 	void setCollapsed( bool collapsed );
 	bool isCollapsed() const { return mCollapsed; }
@@ -96,6 +114,14 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	bool areHeadersVisible() const { return mHeadersVisible; }
 
 	const String& getFileName() const { return mFileName; }
+
+	const String& getFileDisplayName() const { return mFileDisplayName; }
+
+	const String& getFileDisplayPath() const { return mFileDisplayPath; }
+
+	const String& getAddedLinesText() const { return mAddedLinesText; }
+
+	const String& getRemovedLinesText() const { return mRemovedLinesText; }
 
 	bool isImageDiff() const { return mIsImageDiff; }
 
@@ -125,8 +151,13 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	bool mIsImageDiff{ false };
 	bool mAutoDeleteOldTempImage{ false };
 	bool mCollapsed{ false };
+	bool mInteractiveFileHeader{ false };
 	std::shared_ptr<SyntaxDefinition> mSyntaxDef;
 	String mFileName;
+	String mFileDisplayName;
+	String mFileDisplayPath;
+	String mAddedLinesText;
+	String mRemovedLinesText;
 	std::string mImageDiffOldPath;
 	std::string mImageDiffNewPath;
 
@@ -141,18 +172,32 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	virtual Uint32 onKeyDown( const KeyEvent& event ) override;
 
 	void createEditor( UICodeEditor*& editor, std::unique_ptr<UIDiffEditorPlugin>& plugin );
+
 	void syncScroll( UICodeEditor* source, UICodeEditor* target, bool emitEvent = false );
+
 	void updateModeButton();
+
 	void computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine );
+
 	void updateEditorsText();
+
 	void updateButtonsText();
+
 	void updateButtonsVisibility();
+
 	void createImageViewers();
+
 	bool loadImageDiffFromPaths( const std::string& oldFilePath, const std::string& newFilePath );
+
 	void updateImageDiffView();
+
 	void resetToTextDiffView();
+
 	void imageDisplayState( bool& displayDiffImage, bool& displayLeftImage );
+
 	void updateImagesPosAndSize();
+
+	void updateFileHeaderInfo();
 };
 
 } // namespace Tools

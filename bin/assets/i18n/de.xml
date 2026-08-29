@@ -1263,6 +1263,9 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="git_history_refresh">Aktualisieren</string>
 	<string name="git_history_load_older">Ältere Commits laden</string>
 	<string name="git_history_empty">Noch keine Commits</string>
+	<string name="git_working_tree_index">Arbeitsbaum / Index</string>
+	<string name="git_working_tree_summary">%zu geändert, %zu vorgemerkt</string>
+	<string name="git_uncommitted_changes">Nicht übernommene Änderungen</string>
 	<string name="git_history_no_additional_commits">Keine weiteren Commits</string>
 	<string name="git_show_in_history">Im Git-Verlauf anzeigen</string>
 	<string name="git_commit_history_title">Git-Commit-Verlauf – %s</string>

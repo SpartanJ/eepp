@@ -286,6 +286,64 @@ Git::CommitFiles Git::commitFiles( const Commit& commit, const std::string& proj
 	return result;
 }
 
+Git::CommitFiles Git::workingTreeFiles( const std::string& projectDir ) {
+	CommitFiles result;
+	Status current = status( false, projectDir );
+	for ( const auto& [_, files] : current.files ) {
+		for ( const auto& file : files ) {
+			auto found = std::find_if(
+				result.files.begin(), result.files.end(),
+				[&file]( const CommitFile& item ) { return item.path == file.file; } );
+			if ( found == result.files.end() ) {
+				CommitFile item;
+				item.path = file.file;
+				item.status = std::string( 1, static_cast<char>( file.report.symbol ) );
+				item.inserts = file.inserts;
+				item.deletes = file.deletes;
+				item.isBinary = file.isBinary;
+				result.files.emplace_back( std::move( item ) );
+			} else {
+				found->inserts += file.inserts;
+				found->deletes += file.deletes;
+				found->isBinary |= file.isBinary;
+			}
+		}
+	}
+
+	result.returnCode = git( { "diff", "--no-ext-diff", "--no-color", "-M", "HEAD", "--" },
+							 projectDir, result.patch );
+	if ( result.fail() ) {
+		result.patch.clear();
+		result.returnCode =
+			git( { "diff", "--no-ext-diff", "--no-color", "-M", "--" }, projectDir, result.patch );
+	}
+	if ( result.fail() ) {
+		result.result = std::move( result.patch );
+		return result;
+	}
+
+	for ( const auto& file : result.files ) {
+		auto statusFile =
+			std::find_if( current.files.begin(), current.files.end(), [&file]( const auto& repo ) {
+				return std::any_of( repo.second.begin(), repo.second.end(),
+									[&]( const DiffFile& item ) {
+										return item.file == file.path &&
+											   item.report.type == GitStatusType::Untracked;
+									} );
+			} );
+		if ( statusFile == current.files.end() )
+			continue;
+		auto patch = diffUntracked( file.path, projectDir );
+		if ( patch.success() ) {
+			if ( !result.patch.empty() && result.patch.back() != '\n' )
+				result.patch += '\n';
+			result.patch += patch.result;
+		}
+	}
+	result.result.clear();
+	return result;
+}
+
 Git::Result Git::commitDiff( const Commit& commit, const CommitFile& file,
 							 const std::string& projectDir ) const {
 	Result result;
