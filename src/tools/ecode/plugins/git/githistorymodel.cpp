@@ -155,6 +155,8 @@ GitHistoryModel::workingTreeNode( const Git::Status& status, const std::string& 
 	}
 	auto item = std::make_unique<Node>();
 	item->type = NodeType::WorkingTree;
+	item->hasWorkingTreeChanges = changed > 0;
+	item->hasStagedChanges = staged > 0;
 	item->subject = mPlugin->i18n( "git_working_tree_index", "Working Tree / Index" );
 	item->message = String::format(
 		mPlugin->i18n( "git_working_tree_summary", "%zu changed, %zu staged" ).toUtf8(), changed,
@@ -234,6 +236,8 @@ void GitHistoryModel::setWorkingTreeStatus( const Git::Status& status,
 	} else if ( hasItem && item ) {
 		mRoots.front()->message = std::move( item->message );
 		mRoots.front()->tooltip = std::move( item->tooltip );
+		mRoots.front()->hasWorkingTreeChanges = item->hasWorkingTreeChanges;
+		mRoots.front()->hasStagedChanges = item->hasStagedChanges;
 	}
 	invalidate( Model::DontInvalidateIndexes );
 }

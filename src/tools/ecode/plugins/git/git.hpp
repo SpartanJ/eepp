@@ -374,6 +374,21 @@ class Git {
 	Result createBranch( const std::string& branchName, bool checkout = false,
 						 const std::string& projectDir = "" );
 
+	Result createBranchAt( const std::string& branchName, const std::string& revision,
+						   const std::string& projectDir = "" );
+
+	Result createTag( const std::string& name, const std::string& revision,
+					  const std::string& message = "", const std::string& projectDir = "" );
+
+	Result deleteTag( const std::string& name, const std::string& projectDir = "" );
+
+	Result deleteRemoteBranch( const std::string& remote, const std::string& branch,
+							   const std::string& projectDir = "" );
+
+	Result cherryPick( const std::string& revision, const std::string& projectDir = "" );
+
+	Result revert( const std::string& revision, bool commit, const std::string& projectDir = "" );
+
 	Result renameBranch( const std::string& branch, const std::string& newName,
 						 const std::string& projectDir = "" );
 

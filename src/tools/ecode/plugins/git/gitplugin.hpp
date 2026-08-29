@@ -377,15 +377,25 @@ class GitPlugin : public PluginBase {
 	void activateHistoryIndex( const ModelIndex& index, bool expand );
 
 	void openCommitDetails( const Git::Commit& commit );
+
 	void openWorkingTreeDetails( bool detached );
 
 	void showGitHistory( const Git::Commit* commit = nullptr );
 
 	void focusDetachedHistory();
 
-	void openHistoryMenu( const ModelIndex& index );
+	void openHistoryMenu( const ModelIndex& index, bool showHistoryAction );
+
+	void addTag( const Git::Commit& commit );
+
+	void createBranchAtCommit( const Git::Commit& commit );
+
+	void revertCommit( const Git::Commit& commit );
+
+	bool canStartGitOperation();
 
 	void openDetachedCommitDetails( const Git::Commit& commit );
+
 	void ensureDetachedCommitDetailsHost();
 
 	std::string detachedHistoryTitle();
@@ -414,6 +424,7 @@ class GitPlugin : public PluginBase {
 	GitConflictSession* conflictSession( const std::string& repoPath );
 
 	GitConflictSession* activeConflictSession();
+
 	bool updateConflictSessions( UnorderedMap<std::string, Git::ConflictState>& conflictStates );
 
 	void menuAdd( UIMenu* menu, const std::string& cmd, const std::string& text,

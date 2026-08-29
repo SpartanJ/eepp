@@ -929,6 +929,56 @@ Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
 	return res;
 }
 
+Git::Result Git::createBranchAt( const std::string& branchName, const std::string& revision,
+								 const std::string& projectDir ) {
+	return gitSimple( String::format( "branch --no-track %s %s", branchName, revision ),
+					  projectDir );
+}
+
+Git::Result Git::createTag( const std::string& name, const std::string& revision,
+							const std::string& message, const std::string& projectDir ) {
+	std::vector<std::string> args{ "tag" };
+	if ( !message.empty() ) {
+		args.emplace_back( "-a" );
+		args.emplace_back( "-m" );
+		args.emplace_back( message );
+	}
+	args.emplace_back( name );
+	args.emplace_back( revision );
+	Result result;
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::deleteTag( const std::string& name, const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "tag", "-d", name }, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::deleteRemoteBranch( const std::string& remote, const std::string& branch,
+									 const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "push", remote, "--delete", branch }, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::cherryPick( const std::string& revision, const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "cherry-pick", revision }, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::revert( const std::string& revision, bool commit, const std::string& projectDir ) {
+	Result result;
+	std::vector<std::string> args{ "revert" };
+	if ( !commit )
+		args.emplace_back( "--no-commit" );
+	args.emplace_back( revision );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::renameBranch( const std::string& branch, const std::string& newName,
 							   const std::string& projectDir ) {
 	return gitSimple( String::format( "branch -M %s %s", branch, newName ), projectDir );

@@ -1070,6 +1070,46 @@ void GitPlugin::branchRename( Git::Branch branch ) {
 }
 
 void GitPlugin::branchDelete( Git::Branch branch ) {
+	if ( branch.type == Git::RefType::Tag ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			String::format( i18n( "git_confirm_tag_delete", "Delete tag '%s'?" ).toUtf8(),
+							branch.name ) );
+		msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
+			runAsync( [this, branch] { return mGit->deleteTag( branch.name, repoSelected() ); },
+					  false, true );
+		} );
+		msgBox->setTitle( i18n( "git_delete", "Delete" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+		msgBox->showWhenReady();
+		return;
+	}
+
+	auto remoteParts = []( const std::string& remoteBranch ) {
+		const size_t separator = remoteBranch.find( '/' );
+		return std::pair{
+			separator == std::string::npos ? std::string{} : remoteBranch.substr( 0, separator ),
+			separator == std::string::npos ? remoteBranch : remoteBranch.substr( separator + 1 ) };
+	};
+	if ( branch.type == Git::RefType::Remote ) {
+		auto [remote, name] = remoteParts( branch.name );
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL, String::format( i18n( "git_confirm_remote_branch_delete",
+														   "Delete remote branch '%s' from '%s'?" )
+														 .toUtf8(),
+													 name, remote ) );
+		msgBox->on( Event::OnConfirm, [this, remote = std::move( remote ),
+									   name = std::move( name )]( auto ) {
+			runAsync( [this, remote,
+					   name] { return mGit->deleteRemoteBranch( remote, name, repoSelected() ); },
+					  true, true );
+		} );
+		msgBox->setTitle( i18n( "git_delete", "Delete" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+		msgBox->showWhenReady();
+		return;
+	}
+
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		String::format( i18n( "git_confirm_branch_delete",
@@ -1077,9 +1117,28 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 							.toUtf8(),
 						branch.name ) );
 
-	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
-		runAsync( [this, branch]() { return mGit->deleteBranch( branch.name, repoSelected() ); },
-				  false, true );
+	UICheckBox* deleteRemote = nullptr;
+	if ( !branch.remote.empty() ) {
+		deleteRemote = UICheckBox::New();
+		deleteRemote
+			->setText(
+				i18n( "git_delete_tracking_remote", "Also delete the tracked remote branch" ) )
+			->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+			->setLayoutMarginTop( 8 )
+			->setParent( msgBox->getTextBox()->getParent() );
+		deleteRemote->toPosition( 1 );
+	}
+	msgBox->on( Event::OnConfirm, [this, branch, deleteRemote, remoteParts]( auto ) {
+		const bool removeRemote = deleteRemote && deleteRemote->isChecked();
+		runAsync(
+			[this, branch, removeRemote, remoteParts]() {
+				auto result = mGit->deleteBranch( branch.name, repoSelected() );
+				if ( result.fail() || !removeRemote )
+					return result;
+				auto [remote, name] = remoteParts( branch.remote );
+				return mGit->deleteRemoteBranch( remote, name, repoSelected() );
+			},
+			false, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -2539,21 +2598,178 @@ void GitPlugin::activateHistoryIndex( const ModelIndex& index, bool expand ) {
 	}
 }
 
-void GitPlugin::openHistoryMenu( const ModelIndex& index ) {
+void GitPlugin::openHistoryMenu( const ModelIndex& index, bool showHistoryAction ) {
 	if ( !mHistoryModel )
 		return;
 	const auto* node = mHistoryModel->node( index );
-	if ( !node || node->type != GitHistoryModel::NodeType::Commit )
+	if ( !node )
+		return;
+	if ( node->type == GitHistoryModel::NodeType::WorkingTree ) {
+		if ( !canStartGitOperation() )
+			return;
+		UIPopUpMenu* menu = UIPopUpMenu::New();
+		if ( node->hasStagedChanges ) {
+			menuAdd( menu, "git-commit", i18n( "git_commit_ellipsis", "Commit..." ), "git-commit" );
+		}
+		if ( node->hasWorkingTreeChanges )
+			menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ), "diff-added" );
+		const std::string repo = repoSelected();
+		menu->on( Event::OnItemClicked, [this, repo]( const Event* event ) {
+			const std::string id = event->getNode()->asType<UIMenuItem>()->getId();
+			if ( id == "git-commit" ) {
+				commit( repo );
+			} else if ( id == "git-stage" ) {
+				std::vector<std::string> files;
+				{
+					Lock l( mGitStatusMutex );
+					const auto found = mGitStatus.files.find( mGit->repoName( repo, true, repo ) );
+					if ( found != mGitStatus.files.end() ) {
+						for ( const auto& file : found->second ) {
+							if ( file.report.type != Git::GitStatusType::Staged )
+								files.emplace_back( file.file );
+						}
+					}
+				}
+				stage( files );
+			}
+		} );
+		menu->showOverMouseCursor();
+		return;
+	}
+	if ( node->type != GitHistoryModel::NodeType::Commit )
 		return;
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menuAdd( menu, "git-show-history", i18n( "git_show_in_history", "Show in Git History" ),
-			 "history" );
+	if ( showHistoryAction ) {
+		menuAdd( menu, "git-show-history", i18n( "git_show_in_history", "Show in Git History" ),
+				 "history" );
+		menu->addSeparator();
+	}
+	if ( canStartGitOperation() ) {
+		menuAdd( menu, "git-checkout", i18n( "git_checkout_ellipsis", "Check Out..." ),
+				 "git-fetch" );
+		menuAdd( menu, "git-merge-commit", i18n( "git_merge_ellipsis", "Merge..." ), "git-merge" );
+		menuAdd( menu, "git-fast-forward-commit",
+				 i18n( "git_fast_forward_merge", "Fast Forward Merge" ), "git-merge" );
+		menuAdd( menu, "git-cherry-pick", i18n( "git_cherry_pick_ellipsis", "Cherry-Pick..." ),
+				 "git-cherry-pick" );
+		menuAdd( menu, "git-revert-commit", i18n( "git_revert_ellipsis", "Revert..." ), "discard" );
+		menu->addSeparator();
+	}
+	menuAdd( menu, "git-create-branch", i18n( "git_create_branch_ellipsis", "Add Branch..." ),
+			 "repo-forked" );
+	menuAdd( menu, "git-add-tag", i18n( "git_add_tag_ellipsis", "Add Tag..." ), "tag" );
+	menu->addSeparator();
+	menuAdd( menu, "git-copy-message", i18n( "git_copy_message", "Copy Message" ), "copy" );
+	menuAdd( menu, "git-copy-id", i18n( "git_copy_id", "Copy ID" ), "copy" );
 	const Git::Commit commit = node->commit;
 	menu->on( Event::OnItemClicked, [this, commit]( const Event* event ) {
-		if ( event->getNode()->asType<UIMenuItem>()->getId() == "git-show-history" )
+		const std::string id = event->getNode()->asType<UIMenuItem>()->getId();
+		if ( id == "git-show-history" )
 			showGitHistory( &commit );
+		else if ( id == "git-copy-id" )
+			getUISceneNode()->getWindow()->getClipboard()->setText( commit.hash );
+		else if ( id == "git-copy-message" ) {
+			getUISceneNode()->getWindow()->getClipboard()->setText(
+				commit.subject + ( commit.message.empty() ? "" : "\n\n" + commit.message ) );
+		} else if ( id == "git-create-branch" )
+			createBranchAtCommit( commit );
+		else if ( id == "git-add-tag" )
+			addTag( commit );
+		else if ( id == "git-checkout" )
+			runAsync( [this, commit] { return mGit->checkout( commit.hash, repoSelected() ); },
+					  true, true, false, false, false, true );
+		else if ( id == "git-merge-commit" ) {
+			std::string repo = repoSelected();
+			runMergeLikeAsync(
+				[commit, repo = std::move( repo )]( Git& git ) {
+					return git.mergeBranch( commit.hash, false, repo );
+				},
+				repoSelected() );
+		} else if ( id == "git-fast-forward-commit" ) {
+			std::string repo = repoSelected();
+			runMergeLikeAsync(
+				[commit, repo = std::move( repo )]( Git& git ) {
+					return git.mergeBranch( commit.hash, true, repo );
+				},
+				repoSelected() );
+		} else if ( id == "git-cherry-pick" ) {
+			std::string repo = repoSelected();
+			runMergeLikeAsync( [commit, repo = std::move( repo )](
+								   Git& git ) { return git.cherryPick( commit.hash, repo ); },
+							   repoSelected() );
+		} else if ( id == "git-revert-commit" )
+			revertCommit( commit );
 	} );
 	menu->showOverMouseCursor();
+}
+
+bool GitPlugin::canStartGitOperation() {
+	return mGit && mGit->operation( repoSelected() ) == Git::GitOperation::None;
+}
+
+void GitPlugin::createBranchAtCommit( const Git::Commit& commit ) {
+	UIMessageBox* box = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		String::format(
+			i18n( "git_create_branch_at_commit", "Create a branch at commit %s." ).toUtf8(),
+			commit.shortHash ) );
+	box->on( Event::OnConfirm, [this, box, commit]( const Event* ) {
+		const std::string name = box->getTextInput()->getText().toUtf8();
+		if ( name.empty() )
+			return;
+		box->closeWindow();
+		runAsync( [this, name,
+				   commit] { return mGit->createBranchAt( name, commit.hash, repoSelected() ); },
+				  false, true );
+	} );
+	box->setTitle( i18n( "git_add_branch", "Add Branch" ) );
+	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+	box->showWhenReady();
+}
+
+void GitPlugin::addTag( const Git::Commit& commit ) {
+	UIMessageBox* box = UIMessageBox::New(
+		UIMessageBox::TEXT_EDIT,
+		String::format( i18n( "git_add_tag_to_commit", "Add tag to commit %s" ).toUtf8(),
+						commit.shortHash ) );
+	auto* name = UITextInput::New();
+	name->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+		->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+		->setParent( box->getTextEdit()->getParent() );
+	name->toPosition( 1 );
+	box->getTextEdit()->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	box->getButtonOK()->setText( i18n( "git_add_tag", "Add Tag" ) );
+	box->on( Event::OnConfirm, [this, box, name, commit]( const Event* ) {
+		const std::string tag = name->getText().toUtf8();
+		if ( tag.empty() )
+			return;
+		const std::string message = box->getTextEdit()->getText().toUtf8();
+		box->closeWindow();
+		runAsync( [this, tag, message,
+				   commit] { return mGit->createTag( tag, commit.hash, message, repoSelected() ); },
+				  false, true );
+	} );
+	box->setTitle( i18n( "git_add_tag", "Add Tag" ) );
+	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+	box->showWhenReady();
+	name->setFocus();
+}
+
+void GitPlugin::revertCommit( const Git::Commit& commit ) {
+	UIMessageBox* box = UIMessageBox::New(
+		UIMessageBox::YES_NO,
+		i18n( "git_confirm_revert_commit", "Do you want to revert the selected commit?\nThis will "
+										   "create a commit that undoes its changes." ) );
+	box->getButtonOK()->setText( i18n( "git_revert_and_commit", "Revert & Commit" ) );
+	box->on( Event::OnConfirm, [this, commit]( const Event* ) {
+		std::string repo = repoSelected();
+		runMergeLikeAsync( [commit, repo = std::move( repo )](
+							   Git& git ) { return git.revert( commit.hash, true, repo ); },
+						   repoSelected() );
+	} );
+	box->setTitle( i18n( "git_revert", "Revert" ) );
+	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+	box->showWhenReady();
 }
 
 std::string GitPlugin::detachedHistoryTitle() {
@@ -2637,7 +2853,7 @@ void GitPlugin::showGitHistory( const Git::Commit* commit ) {
 			else if ( modelEvent->getModelEventType() == ModelEventType::Open )
 				activateHistoryIndex( modelEvent->getModelIndex(), false );
 			else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu )
-				openHistoryMenu( modelEvent->getModelIndex() );
+				openHistoryMenu( modelEvent->getModelIndex(), false );
 		} );
 		mDetachedHistory.tree->setOnSelection( [this]( const ModelIndex& index ) {
 			if ( const auto* node = mHistoryModel ? mHistoryModel->node( index ) : nullptr; node ) {
@@ -3396,7 +3612,7 @@ void GitPlugin::buildSidePanelTab() {
 					openCommitDetails( node->commit );
 			}
 		} else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu )
-			openHistoryMenu( modelEvent->getModelIndex() );
+			openHistoryMenu( modelEvent->getModelIndex(), true );
 	} );
 	mHistoryTree->setOnSelection( [this]( const ModelIndex& index ) {
 		if ( !mHistoryModel )
@@ -3640,12 +3856,19 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			if ( branch.behind )
 				menuAdd( menu, "git-fast-forward-merge",
 						 i18n( "git_fast_forward_merge", "Fast Forward Merge" ) );
+		}
+		if ( branch.type == Git::RefType::Head || branch.type == Git::RefType::Remote ||
+			 branch.type == Git::RefType::Tag ) {
 			menu->addSeparator();
-			menuAdd( menu, "git-branch-delete", i18n( "git_delete_branch", "Delete" ), "remove" );
+			menuAdd( menu, "git-branch-delete",
+					 branch.type == Git::RefType::Tag ? i18n( "git_delete_tag", "Delete Tag" )
+													  : i18n( "git_delete_branch", "Delete" ),
+					 "remove" );
 		}
 
-		menuAdd( menu, "git-merge-branch", i18n( "git_merge_branch", "Merge Branch" ),
-				 "git-merge" );
+		if ( branch.type != Git::RefType::Tag )
+			menuAdd( menu, "git-merge-branch", i18n( "git_merge_branch", "Merge Branch" ),
+					 "git-merge" );
 		menuAdd( menu, "git-create-branch", i18n( "git_create_branch", "Create Branch" ),
 				 "repo-forked", { KEY_F7 } );
 	} else {

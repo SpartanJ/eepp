@@ -31,6 +31,8 @@ class GitHistoryModel : public Model {
 		bool childrenLoaded{ false };
 		bool childrenLoading{ false };
 		bool retryAppend{ false };
+		bool hasWorkingTreeChanges{ false };
+		bool hasStagedChanges{ false };
 	};
 
 	static std::shared_ptr<GitHistoryModel> asModel( GitPlugin* plugin ) {

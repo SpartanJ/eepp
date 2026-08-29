@@ -3,14 +3,17 @@
 This repository contains two primary components: a core framework (`eepp`) and an application built on top of it (`ecode`).
 
 ## 1. eepp (Core Framework)
+
 [eepp](https://github.com/SpartanJ/eepp/) is an open-source, cross-platform game and application development framework. It is heavily focused on providing robust technology for rich, hardware-accelerated Graphical User Interfaces (GUIs).
 
 ## 2. ecode (Application)
+
 [ecode](https://github.com/SpartanJ/ecode/) is a lightweight, multi-platform code editor designed for responsiveness and performance.
 *   **Relationship:** `ecode` is built *using* the `eepp` GUI framework. It acts as the primary real-world consumer of `eepp`.
 *   **Goal:** Development on `ecode` is often used to test, improve, and drive new features in the underlying `eepp` library.
 
 ## Documentation & Code References
+
 When working on this project, rely on the following resources to understand existing implementations:
 *   **C++ Headers (Primary Reference):** Rely heavily on Doxygen documentation found directly inside the class headers located at `include/eepp/`.
 *   **Basic Documentation:** Found in `docs/articles/`.
@@ -26,6 +29,7 @@ in the source. Keep all locale files structurally valid and verify that every su
 contains the new or renamed key.
 
 ## C++ Virtual Method Style
+
 Follow the convention already used by the class being edited. In particular, when a class declares
 virtual methods without the `override` specifier, do not introduce `override` on new methods in that
 class. Mixing the styles can enable Clang's inconsistent-missing-override warnings for the existing
