@@ -1255,8 +1255,11 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="git_copy_message">Copier le message</string>
 	<string name="git_create_branch_ellipsis">Ajouter une branche...</string>
 	<string name="git_add_tag">Ajouter une étiquette</string>
+	<string name="git_add_tag_and_push">Ajouter et pousser l’étiquette</string>
 	<string name="git_add_tag_ellipsis">Ajouter une étiquette...</string>
 	<string name="git_add_tag_to_commit">Ajouter une étiquette au commit %s</string>
+	<string name="git_tag_name_hint">Nom de l’étiquette</string>
+	<string name="git_tag_message_hint">Message de l’étiquette annotée (facultatif)</string>
 	<string name="git_create_branch_at_commit">Créer une branche au commit %s.</string>
 	<string name="git_merge_ellipsis">Fusionner...</string>
 	<string name="git_cherry_pick_ellipsis">Cherry-pick...</string>

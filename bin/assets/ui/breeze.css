@@ -467,6 +467,7 @@ TextArea {
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
 	padding-bottom: var(--base-vertical-padding);
+	hint-color: var(--font-hint);
 	transition: all 0.15;
 }
 

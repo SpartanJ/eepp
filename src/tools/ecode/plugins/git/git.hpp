@@ -380,6 +380,9 @@ class Git {
 	Result createTag( const std::string& name, const std::string& revision,
 					  const std::string& message = "", const std::string& projectDir = "" );
 
+	Result pushTag( const std::string& name, const std::string& remote,
+					const std::string& projectDir = "" );
+
 	Result deleteTag( const std::string& name, const std::string& projectDir = "" );
 
 	Result deleteRemoteBranch( const std::string& remote, const std::string& branch,

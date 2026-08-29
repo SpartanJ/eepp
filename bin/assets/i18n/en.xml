@@ -1256,8 +1256,11 @@ Restart ecode to see the changes.</string>
 	<string name="git_copy_message">Copy Message</string>
 	<string name="git_create_branch_ellipsis">Add Branch...</string>
 	<string name="git_add_tag">Add Tag</string>
+	<string name="git_add_tag_and_push">Add Tag &amp; Push</string>
 	<string name="git_add_tag_ellipsis">Add Tag...</string>
 	<string name="git_add_tag_to_commit">Add tag to commit %s</string>
+	<string name="git_tag_name_hint">Tag name</string>
+	<string name="git_tag_message_hint">Annotated tag message (optional)</string>
 	<string name="git_create_branch_at_commit">Create a branch at commit %s.</string>
 	<string name="git_merge_ellipsis">Merge...</string>
 	<string name="git_cherry_pick_ellipsis">Cherry-Pick...</string>

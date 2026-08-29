@@ -950,6 +950,14 @@ Git::Result Git::createTag( const std::string& name, const std::string& revision
 	return result;
 }
 
+Git::Result Git::pushTag( const std::string& name, const std::string& remote,
+						  const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "push", remote, "refs/tags/" + name + ":refs/tags/" + name },
+							 projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::deleteTag( const std::string& name, const std::string& projectDir ) {
 	Result result;
 	result.returnCode = git( { "tag", "-d", name }, projectDir, result.result );

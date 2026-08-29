@@ -1271,8 +1271,11 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="git_copy_message">Nachricht kopieren</string>
 	<string name="git_create_branch_ellipsis">Branch hinzufügen...</string>
 	<string name="git_add_tag">Tag hinzufügen</string>
+	<string name="git_add_tag_and_push">Tag hinzufügen &amp; pushen</string>
 	<string name="git_add_tag_ellipsis">Tag hinzufügen...</string>
 	<string name="git_add_tag_to_commit">Tag zu Commit %s hinzufügen</string>
+	<string name="git_tag_name_hint">Tag-Name</string>
+	<string name="git_tag_message_hint">Nachricht für annotiertes Tag (optional)</string>
 	<string name="git_create_branch_at_commit">Branch bei Commit %s erstellen.</string>
 	<string name="git_merge_ellipsis">Zusammenführen...</string>
 	<string name="git_cherry_pick_ellipsis">Cherry-Pick...</string>

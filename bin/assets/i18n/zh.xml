@@ -1060,8 +1060,11 @@ file in the directory tree.</string>
 	<string name="git_copy_message">复制提交消息</string>
 	<string name="git_create_branch_ellipsis">添加分支...</string>
 	<string name="git_add_tag">添加标签</string>
+	<string name="git_add_tag_and_push">添加并推送标签</string>
 	<string name="git_add_tag_ellipsis">添加标签...</string>
 	<string name="git_add_tag_to_commit">为提交 %s 添加标签</string>
+	<string name="git_tag_name_hint">标签名称</string>
+	<string name="git_tag_message_hint">附注标签消息（可选）</string>
 	<string name="git_create_branch_at_commit">在提交 %s 创建分支。</string>
 	<string name="git_merge_ellipsis">合并...</string>
 	<string name="git_cherry_pick_ellipsis">拣选提交...</string>

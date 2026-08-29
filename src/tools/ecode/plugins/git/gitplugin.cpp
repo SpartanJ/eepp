@@ -2736,19 +2736,53 @@ void GitPlugin::addTag( const Git::Commit& commit ) {
 	name->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 		->setParent( box->getTextEdit()->getParent() );
+	name->setHint( i18n( "git_tag_name_hint", "Tag name" ) );
 	name->toPosition( 1 );
-	box->getTextEdit()->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
-	box->getButtonOK()->setText( i18n( "git_add_tag", "Add Tag" ) );
-	box->on( Event::OnConfirm, [this, box, name, commit]( const Event* ) {
-		const std::string tag = name->getText().toUtf8();
+	auto* message = box->getTextEdit();
+	message->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	message->setHint( i18n( "git_tag_message_hint", "Annotated tag message (optional)" ) );
+	auto addTagBtn = box->getButtonOK();
+	addTagBtn->setText( i18n( "git_add_tag", "Add Tag" ) );
+	auto* addTagAndPushBtn = UIPushButton::New();
+	addTagAndPushBtn->setText( i18n( "git_add_tag_and_push", "Add Tag & Push" ) )
+		->setLayoutMargin( Rectf( 8, 0, 0, 0 ) )
+		->setParent( addTagBtn->getParent() );
+	box->getButtonCancel()->setLayoutMargin( {} )->toPosition( 0 );
+	addTagBtn->setLayoutMargin( Rectf( 8, 0, 0, 0 ) )->toPosition( 1 );
+	addTagAndPushBtn->toPosition( 2 );
+	addTagBtn->setEnabled( false );
+	addTagAndPushBtn->setEnabled( false );
+	name->on( Event::OnTextChanged, [name, addTagBtn, addTagAndPushBtn]( const Event* ) {
+		const bool enabled = !name->getText().empty();
+		addTagBtn->setEnabled( enabled );
+		addTagAndPushBtn->setEnabled( enabled );
+	} );
+	auto createTag = [this, box, name, message, commit]( bool push ) {
+		std::string tag = name->getText().toUtf8();
 		if ( tag.empty() )
 			return;
-		const std::string message = box->getTextEdit()->getText().toUtf8();
+		std::string tagMessage = message->getText().toUtf8();
+		std::string repo = repoSelected();
+		std::string remote{ "origin" };
+		if ( const auto branch = getBranchFromRepoPath( repo );
+			 branch && !branch->remote.empty() ) {
+			const size_t separator = branch->remote.find( '/' );
+			if ( separator != std::string::npos )
+				remote = branch->remote.substr( 0, separator );
+		}
 		box->closeWindow();
-		runAsync( [this, tag, message,
-				   commit] { return mGit->createTag( tag, commit.hash, message, repoSelected() ); },
-				  false, true );
-	} );
+		runAsync(
+			[git = mGit, tag = std::move( tag ), tagMessage = std::move( tagMessage ),
+			 repo = std::move( repo ), remote = std::move( remote ), hash = commit.hash, push]() {
+				auto result = git->createTag( tag, hash, tagMessage, repo );
+				if ( result.success() && push )
+					return git->pushTag( tag, remote, repo );
+				return result;
+			},
+			false, true );
+	};
+	box->on( Event::OnConfirm, [createTag]( const Event* ) mutable { createTag( false ); } );
+	addTagAndPushBtn->onClick( [createTag]( const Event* ) mutable { createTag( true ); } );
 	box->setTitle( i18n( "git_add_tag", "Add Tag" ) );
 	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
 	box->showWhenReady();
