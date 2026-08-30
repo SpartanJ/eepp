@@ -275,7 +275,7 @@ SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 	mStorage( std::make_shared<Storage>( Storage{ name, syntaxColors, editorColors } ) ) {}
 
 void SyntaxColorScheme::ensureUniqueStorage() {
-	if ( !mStorage.unique() )
+	if ( mStorage.use_count() != 1 )
 		mStorage = std::make_shared<Storage>( *mStorage );
 	mStyleCache.clear();
 }

@@ -45,7 +45,7 @@ void KeyBindings::setKeybinds( const KeyBindings& bindings ) {
 }
 
 void KeyBindings::ensureUniqueStorage() {
-	if ( !mStorage.unique() )
+	if ( mStorage.use_count() != 1 )
 		mStorage = std::make_shared<Storage>( *mStorage );
 }
 
