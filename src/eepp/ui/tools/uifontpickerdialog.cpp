@@ -1064,7 +1064,7 @@ void UIFontPickerDialog::onWindowReady() {
 }
 
 Uint32 UIFontPickerDialog::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		sendCommonEvent( Event::OnDiscard );
 		sendCommonEvent( Event::OnCancel );

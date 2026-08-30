@@ -206,7 +206,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 }
 
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		sendCommonEvent( Event::OnDiscard );
 		closeWindow();
