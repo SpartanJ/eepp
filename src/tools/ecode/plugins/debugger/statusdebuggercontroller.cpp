@@ -124,7 +124,7 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 	return UITableView::createCell( rowWidget, index );
 }
 
-const std::map<KeyBindings::Shortcut, std::string>
+const KeyBindings::ShortcutMap
 StatusDebuggerController::getLocalDefaultKeybindings() {
 	return {
 		{ { KEY_TAB, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "next-tab" },

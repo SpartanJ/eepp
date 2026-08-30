@@ -373,6 +373,7 @@ Zweignamen eingeben:</string>
 	<string name="git_create_local_branch">Lokalen Zweig erstellen?</string>
 	<string name="git_delete_branch">Löschen</string>
 	<string name="git_diff_head">HEAD-Diff</string>
+	<string name="git_diff_changed">Änderungs-Diff</string>
 	<string name="git_diff_staged">Stage-Diff</string>
 	<string name="git_discard">Verwerfen</string>
 	<string name="git_discard_all">Alles verwerfen</string>

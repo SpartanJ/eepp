@@ -201,7 +201,7 @@ int testTextRendering() {
 }
 
 EE_MAIN_FUNC int main( int, char*[] ) {
-	return testTextRendering();
+	// return testTextRendering();
 
 	win = Engine::instance()->createWindow( WindowSettings( 1366, 768, "eepp - UI Perf Test" ) );
 

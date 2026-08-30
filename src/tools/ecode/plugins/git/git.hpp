@@ -306,7 +306,7 @@ class Git {
 		bool isEmpty() const { return name.empty(); }
 	};
 
-	enum DiffMode { DiffHead, DiffStaged };
+	enum DiffMode { DiffHead, DiffStaged, DiffChanged };
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 

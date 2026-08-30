@@ -1,10 +1,33 @@
 #include "utest.hpp"
+#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
 using namespace EE::UI::Doc;
 using namespace EE::System;
+
+UTEST( TextDocument, BuiltinCommandsRemainAvailableWithoutPerDocumentClosures ) {
+	TextDocument doc;
+	doc.textInput( "content" );
+	EXPECT_TRUE( doc.hasCommand( "select-all" ) );
+	EXPECT_TRUE( doc.hasCommand( "delete-selection" ) );
+
+	doc.execute( "select-all" );
+	doc.execute( "delete-selection" );
+	EXPECT_TRUE( doc.isEmpty() );
+
+	auto commands = doc.getCommandList();
+	EXPECT_TRUE( std::find( commands.begin(), commands.end(), "undo" ) != commands.end() );
+}
+
+UTEST( TextDocument, RemovingBuiltinCommandIsLocalToDocument ) {
+	TextDocument first;
+	TextDocument second;
+	EXPECT_TRUE( first.removeCommand( "undo" ) );
+	EXPECT_FALSE( first.hasCommand( "undo" ) );
+	EXPECT_TRUE( second.hasCommand( "undo" ) );
+}
 
 UTEST( TextRanges, keepsCommonSelectionsInline ) {
 	TextRanges ranges;

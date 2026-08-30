@@ -188,6 +188,7 @@ class GitPlugin : public PluginBase {
 		Git::Commit commit;
 		std::string repo;
 		std::atomic<Uint64> generation{ 0 };
+		std::shared_ptr<std::atomic_bool> diffPreparationCancelled;
 		EventConnection closeConnection;
 		Tools::UIDiffView::ViewMode viewMode{ Tools::UIDiffView::ViewMode::Unified };
 		bool messageExpanded{ false };
@@ -199,7 +200,14 @@ class GitPlugin : public PluginBase {
 
 		void loadCommitFiles( GitPlugin& plugin, bool detached );
 
+		void cancelDiffPreparation() {
+			if ( diffPreparationCancelled )
+				diffPreparationCancelled->store( true, std::memory_order_relaxed );
+			diffPreparationCancelled.reset();
+		}
+
 		void reset() {
+			cancelDiffPreparation();
 			++generation;
 			view = nullptr;
 			subject = nullptr;

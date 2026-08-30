@@ -10,7 +10,7 @@
 
 namespace ecode {
 
-static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings() {
+static const KeyBindings::ShortcutMap getDefaultKeybindings() {
 	return {
 		{ { KEY_C, KeyMod::getDefaultModifier() }, "copy" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },

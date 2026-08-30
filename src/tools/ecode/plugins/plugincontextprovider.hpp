@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <optional>
 #include <string>
@@ -170,7 +171,8 @@ class PluginContextProvider {
 	virtual void loadDiffFromMemory( const std::string& content,
 									 const std::string& originalFilePath = "",
 									 const std::string& oldFilePath = "",
-									 const std::string& repoPath = "" ) = 0;
+									 const std::string& repoPath = "",
+									 bool interactiveFileHeaders = false ) = 0;
 
 	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
 

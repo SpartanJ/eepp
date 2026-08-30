@@ -11,10 +11,11 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Tools {
 
-const std::map<KeyBindings::Shortcut, std::string> UICodeEditorSplitter::getDefaultKeybindings() {
+const KeyBindings::ShortcutMap UICodeEditorSplitter::getDefaultKeybindings() {
 	auto keybindings = UICodeEditor::getDefaultKeybindings();
 	auto localKeybindings = getLocalDefaultKeybindings();
-	localKeybindings.insert( keybindings.begin(), keybindings.end() );
+	for ( const auto& [shortcut, command] : keybindings->getShortcutMap() )
+		localKeybindings.emplace( shortcut, command );
 	return localKeybindings;
 }
 
@@ -28,7 +29,7 @@ Uint32 UICodeEditorSplitter::getDefaultSwitchToTabModifier() {
 	return DefaultSwitchToTabModifier;
 }
 
-const std::map<KeyBindings::Shortcut, std::string>
+const KeyBindings::ShortcutMap
 UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
 		{ { KEY_S, KeyMod::getDefaultModifier() }, "save-doc" },

@@ -412,7 +412,7 @@ void UITerminal::addKeyBindsString( const std::map<std::string, std::string>& bi
 	mKeyBindings.addKeybindsString( binds );
 }
 
-void UITerminal::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+void UITerminal::addKeyBinds( const KeyBindings::ShortcutMap& binds ) {
 	mKeyBindings.addKeybinds( binds );
 }
 

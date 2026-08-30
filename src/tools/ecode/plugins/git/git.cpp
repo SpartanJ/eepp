@@ -877,6 +877,8 @@ Git::Result Git::diff( DiffMode mode, const std::string& projectDir ) {
 			modeTxt = "--staged";
 			break;
 		}
+		case DiffChanged:
+			break;
 	}
 	return gitSimple( String::format( "diff %s", modeTxt ), projectDir );
 }

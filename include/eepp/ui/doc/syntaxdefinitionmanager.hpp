@@ -2,12 +2,14 @@
 #define EE_UI_DOC_SYNTAXSTYLEMANAGER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singletondeclarations.hpp>
 #include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace EE { namespace System {
@@ -127,6 +129,7 @@ class EE_API SyntaxDefinitionManager {
 	std::vector<std::shared_ptr<SyntaxDefinition>> mDefinitions;
 	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
+	mutable UnorderedMap<std::string, bool> mExtensionManyLanguagesCache;
 	FileAssociations mFileAssociations;
 	mutable Mutex mMutex;
 	mutable Mutex mFileAssociationsMutex;

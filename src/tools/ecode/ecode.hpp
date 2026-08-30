@@ -179,11 +179,11 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	DrawablePtr findIcon( const std::string& name, const size_t iconSize );
 
-	const std::map<KeyBindings::Shortcut, std::string>& getRealDefaultKeybindings();
+	const KeyBindings::ShortcutMap& getRealDefaultKeybindings();
 
-	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+	KeyBindings::ShortcutMap getDefaultKeybindings();
 
-	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
+	KeyBindings::ShortcutMap getLocalKeybindings();
 
 	std::map<std::string, std::string> getMigrateKeybindings();
 
@@ -581,8 +581,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
 
 	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "",
-							 const std::string& oldFilePath = "",
-							 const std::string& repoPath = "" );
+							 const std::string& oldFilePath = "", const std::string& repoPath = "",
+							 bool interactiveFileHeaders = false );
 
 	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
 	void configureDiffView( UIDiffView* diffView );
@@ -619,11 +619,11 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	UITabWidget* getSidePanel() const;
 
-	const std::map<KeyBindings::Shortcut, std::string>& getRealLocalKeybindings() const;
+	const KeyBindings::ShortcutMap& getRealLocalKeybindings() const;
 
-	const std::map<KeyBindings::Shortcut, std::string>& getRealSplitterKeybindings() const;
+	const KeyBindings::ShortcutMap& getRealSplitterKeybindings() const;
 
-	const std::map<KeyBindings::Shortcut, std::string>& getRealTerminalKeybindings() const;
+	const KeyBindings::ShortcutMap& getRealTerminalKeybindings() const;
 
 	const std::string& getFileToOpen() const;
 
@@ -699,10 +699,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
 	std::unordered_map<std::string, std::string> mStatusBarKeybindings;
-	std::map<KeyBindings::Shortcut, std::string> mRealLocalKeybindings;
-	std::map<KeyBindings::Shortcut, std::string> mRealSplitterKeybindings;
-	std::map<KeyBindings::Shortcut, std::string> mRealTerminalKeybindings;
-	std::map<KeyBindings::Shortcut, std::string> mRealDefaultKeybindings;
+	KeyBindings::ShortcutMap mRealLocalKeybindings;
+	KeyBindings::ShortcutMap mRealSplitterKeybindings;
+	KeyBindings::ShortcutMap mRealTerminalKeybindings;
+	KeyBindings::ShortcutMap mRealDefaultKeybindings;
 	std::unordered_map<std::string, std::string> mMousebindings;
 	std::unordered_map<std::string, std::string> mMousebindingsInvert;
 	std::string mConfigPath;

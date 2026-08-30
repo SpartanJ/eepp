@@ -49,9 +49,7 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
-using CodeEditorKeyBindingMap = std::map<KeyBindings::Shortcut, std::string>;
-
-static CodeEditorKeyBindingMap createDefaultCodeEditorKeybindings() {
+static KeyBindings::ShortcutMap createDefaultCodeEditorKeybindings() {
 	return {
 		{ { KEY_BACKSPACE, KeyMod::getDefaultModifier() }, "delete-to-previous-word" },
 		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
@@ -132,12 +130,12 @@ static CodeEditorKeyBindingMap createDefaultCodeEditorKeybindings() {
 	};
 }
 
-static std::shared_ptr<const CodeEditorKeyBindingMap> getCachedDefaultCodeEditorKeybindings() {
+std::shared_ptr<const KeyBindings> UICodeEditor::getDefaultKeybindings() {
 	struct Cache {
 		Mutex mutex;
 		Uint32 defaultModifier{ 0 };
 		Uint32 secondaryModifier{ 0 };
-		std::shared_ptr<const CodeEditorKeyBindingMap> bindings;
+		std::shared_ptr<const KeyBindings> bindings;
 	};
 	static Cache cache;
 
@@ -146,16 +144,13 @@ static std::shared_ptr<const CodeEditorKeyBindingMap> getCachedDefaultCodeEditor
 	Lock lock( cache.mutex );
 	if ( !cache.bindings || cache.defaultModifier != defaultModifier ||
 		 cache.secondaryModifier != secondaryModifier ) {
-		cache.bindings =
-			std::make_shared<const CodeEditorKeyBindingMap>( createDefaultCodeEditorKeybindings() );
+		auto bindings = std::make_shared<KeyBindings>( nullptr );
+		bindings->addKeybinds( createDefaultCodeEditorKeybindings() );
+		cache.bindings = std::move( bindings );
 		cache.defaultModifier = defaultModifier;
 		cache.secondaryModifier = secondaryModifier;
 	}
 	return cache.bindings;
-}
-
-const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
-	return *getCachedDefaultCodeEditorKeybindings();
 }
 
 const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
@@ -2914,7 +2909,7 @@ void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& 
 	}
 }
 
-void UICodeEditor::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
+void UICodeEditor::addKeyBinds( const KeyBindings::ShortcutMap& binds,
 								const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
 	for ( const auto& bind : binds ) {
@@ -4853,129 +4848,81 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 	}
 }
 
-void UICodeEditor::registerCommands() {
-	mUnlockedCmd.reserve( 8 );
-	mDoc->setCommand( "move-to-previous-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToPreviousLine();
-	} );
-	mDoc->setCommand( "move-to-next-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToNextLine();
-	} );
-	mDoc->setCommand( "move-to-previous-page", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToPreviousPage();
-	} );
-	mDoc->setCommand( "move-to-next-page", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToNextPage();
-	} );
-	mDoc->setCommand( "move-to-start-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToStartOfLine();
-	} );
-	mDoc->setCommand( "move-to-end-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToEndOfLine();
-	} );
-	mDoc->setCommand( "move-to-start-of-content", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToStartOfContent();
-	} );
-	mDoc->setCommand( "select-to-previous-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToPreviousLine();
-	} );
-	mDoc->setCommand( "select-to-next-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToNextLine();
-	} );
-	mDoc->setCommand( "select-to-start-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToStartOfLine();
-	} );
-	mDoc->setCommand( "select-to-end-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToEndOfLine();
-	} );
-	mDoc->setCommand( "select-to-start-of-content", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToStartOfContent();
-	} );
-	mDoc->setCommand( "move-scroll-up", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveScrollUp();
-	} );
-	mDoc->setCommand( "move-scroll-down", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveScrollDown();
-	} );
-	mDoc->setCommand( "jump-lines-up", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->jumpLinesUp();
-	} );
-	mDoc->setCommand( "jump-lines-down", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->jumpLinesDown();
-	} );
-	mDoc->setCommand( "indent",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->indent(); } );
-	mDoc->setCommand( "unindent",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unindent(); } );
-	mDoc->setCommand( "copy",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->copy(); } );
-	mDoc->setCommand( "cut",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->cut(); } );
-	mDoc->setCommand( "paste",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->paste(); } );
-	mDoc->setCommand( "font-size-grow", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->fontSizeGrow();
-	} );
-	mDoc->setCommand( "font-size-shrink", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->fontSizeShrink();
-	} );
-	mDoc->setCommand( "font-size-reset", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->fontSizeReset();
-	} );
-	mDoc->setCommand(
-		"lock", []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( true ); } );
-	mDoc->setCommand( "unlock", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->setLocked( false );
-	} );
-	mDoc->setCommand( "lock-toggle", []( Client* client ) {
-		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
-		editor->setLocked( !editor->isLocked() );
-	} );
-	mDoc->setCommand( "open-containing-folder", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->openContainingFolder();
-	} );
-	mDoc->setCommand( "copy-containing-folder-path", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->copyContainingFolderPath();
-	} );
-	mDoc->setCommand( "copy-file-path", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->copyFilePath();
-	} );
-	mDoc->setCommand( "copy-file-path-and-position", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->copyFilePath( true );
-	} );
-	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
-	mDoc->setCommand( "open-context-menu", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->createContextMenu();
-	} );
-	mDoc->setCommand( "add-cursor-at-mouse-position", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorAtMousePosition();
-	} );
-	mDoc->setCommand( "add-cursors-from-current-to-mouse-position", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorsFromCurrentToMousePosition();
-	} );
-	mDoc->setCommand( "toggle-fold", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->toggleFoldUnfold();
-	} );
-	mDoc->setCommand( "fold-all",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->foldAll(); } );
-	mDoc->setCommand( "unfold-all",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfoldAll(); } );
-	mDoc->setCommand( "fold",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->fold(); } );
-	mDoc->setCommand( "unfold",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfold(); } );
-	mDoc->setCommand( "open-hover-url", []( Client* client ) {
-		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
-		if ( !editor->mLink.empty() )
-			Engine::instance()->openURI( editor->mLink );
-	} );
-	mDoc->setCommand( "add-cursor-above", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorAbove();
-	} );
-	mDoc->setCommand( "add-cursor-below", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorBelow();
-	} );
+std::shared_ptr<const TextDocument::DocumentRefCommands> UICodeEditor::getDefaultEditorCommands() {
+#define EE_CODE_EDITOR_COMMAND( Name, Method )                                         \
+	{                                                                                  \
+		Name, []( Client* client ) { static_cast<UICodeEditor*>( client )->Method(); } \
+	}
+	static const auto commands = std::make_shared<const TextDocument::DocumentRefCommands>(
+		TextDocument::DocumentRefCommands{
+			EE_CODE_EDITOR_COMMAND( "move-to-previous-line", moveToPreviousLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-next-line", moveToNextLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-previous-page", moveToPreviousPage ),
+			EE_CODE_EDITOR_COMMAND( "move-to-next-page", moveToNextPage ),
+			EE_CODE_EDITOR_COMMAND( "move-to-start-of-line", moveToStartOfLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-end-of-line", moveToEndOfLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-start-of-content", moveToStartOfContent ),
+			EE_CODE_EDITOR_COMMAND( "select-to-previous-line", selectToPreviousLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-next-line", selectToNextLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-start-of-line", selectToStartOfLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-end-of-line", selectToEndOfLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-start-of-content", selectToStartOfContent ),
+			EE_CODE_EDITOR_COMMAND( "move-scroll-up", moveScrollUp ),
+			EE_CODE_EDITOR_COMMAND( "move-scroll-down", moveScrollDown ),
+			EE_CODE_EDITOR_COMMAND( "jump-lines-up", jumpLinesUp ),
+			EE_CODE_EDITOR_COMMAND( "jump-lines-down", jumpLinesDown ),
+			EE_CODE_EDITOR_COMMAND( "indent", indent ),
+			EE_CODE_EDITOR_COMMAND( "unindent", unindent ),
+			EE_CODE_EDITOR_COMMAND( "copy", copy ),
+			EE_CODE_EDITOR_COMMAND( "cut", cut ),
+			EE_CODE_EDITOR_COMMAND( "paste", paste ),
+			EE_CODE_EDITOR_COMMAND( "font-size-grow", fontSizeGrow ),
+			EE_CODE_EDITOR_COMMAND( "font-size-shrink", fontSizeShrink ),
+			EE_CODE_EDITOR_COMMAND( "font-size-reset", fontSizeReset ),
+			{ "lock",
+			  []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( true ); } },
+			{ "unlock",
+			  []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( false ); } },
+			{ "lock-toggle",
+			  []( Client* client ) {
+				  auto* editor = static_cast<UICodeEditor*>( client );
+				  editor->setLocked( !editor->isLocked() );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "open-containing-folder", openContainingFolder ),
+			EE_CODE_EDITOR_COMMAND( "copy-containing-folder-path", copyContainingFolderPath ),
+			EE_CODE_EDITOR_COMMAND( "copy-file-path", copyFilePath ),
+			{ "copy-file-path-and-position",
+			  []( Client* client ) {
+				  static_cast<UICodeEditor*>( client )->copyFilePath( true );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "open-context-menu", createContextMenu ),
+			EE_CODE_EDITOR_COMMAND( "add-cursor-at-mouse-position", addCursorAtMousePosition ),
+			EE_CODE_EDITOR_COMMAND( "add-cursors-from-current-to-mouse-position",
+									addCursorsFromCurrentToMousePosition ),
+			EE_CODE_EDITOR_COMMAND( "toggle-fold", toggleFoldUnfold ),
+			EE_CODE_EDITOR_COMMAND( "fold-all", foldAll ),
+			EE_CODE_EDITOR_COMMAND( "unfold-all", unfoldAll ),
+			EE_CODE_EDITOR_COMMAND( "fold", fold ),
+			EE_CODE_EDITOR_COMMAND( "unfold", unfold ),
+			{ "open-hover-url",
+			  []( Client* client ) {
+				  auto* editor = static_cast<UICodeEditor*>( client );
+				  if ( !editor->mLink.empty() )
+					  Engine::instance()->openURI( editor->mLink );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "add-cursor-above", addCursorAbove ),
+			EE_CODE_EDITOR_COMMAND( "add-cursor-below", addCursorBelow ),
+		} );
+#undef EE_CODE_EDITOR_COMMAND
+	return commands;
+}
 
+void UICodeEditor::registerCommands() {
+	mDoc->setSharedRefCommands( getDefaultEditorCommands() );
+	// This is the only default editor command bound to a specific editor instance.
+	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
+
+	mUnlockedCmd.reserve( 8 );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
@@ -5007,9 +4954,9 @@ Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {
 }
 
 void UICodeEditor::registerKeybindings() {
-	// Editors keep mutable bindings, but the immutable defaults only need to be constructed once
-	// for each configured default-modifier pair.
-	mKeyBindings.addKeybinds( *getCachedDefaultCodeEditorKeybindings() );
+	// Bindings use copy-on-write storage, so unmodified editors share both lookup maps and only
+	// allocate their own copy if an editor-specific binding is changed.
+	mKeyBindings.setKeybinds( *getDefaultKeybindings() );
 	mMouseBindings.addMousebinds( getDefaultMousebindings() );
 }
 

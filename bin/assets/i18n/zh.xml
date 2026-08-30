@@ -277,6 +277,7 @@
 Enter the name for the branch:</string>
 	<string name="git_create_local_branch">新建本地分支？</string>
 	<string name="git_delete_branch">删除</string>
+	<string name="git_diff_changed">更改差异</string>
 	<string name="git_discard">Discard</string>
 	<string name="git_drop_stash">Drop Stash</string>
 	<string name="git_drop_stash_title">Drop Stash</string>

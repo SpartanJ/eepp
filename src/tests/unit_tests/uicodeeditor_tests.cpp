@@ -25,6 +25,43 @@ class TestableCodeEditor : public UICodeEditor {
 	void clearLongestLineWidthDirtyForTest() { mLongestLineWidthDirty = false; }
 };
 
+UTEST( SyntaxColorScheme, CopiesShareStorageAndDetachOnMutation ) {
+	auto defaults = SyntaxColorScheme::getDefaultDark();
+	auto copy = defaults;
+	EXPECT_TRUE( &defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ) ==
+				 &copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ) );
+
+	const auto defaultKeyword = defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color;
+	copy.setSyntaxStyle( SyntaxStyleTypes::Keyword, SyntaxColorScheme::Style{ Color::Red } );
+	EXPECT_TRUE( copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color == Color::Red );
+	EXPECT_TRUE( defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color == defaultKeyword );
+	EXPECT_TRUE( &defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ) !=
+				 &copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ) );
+}
+
+UTEST( SyntaxDefinitionManager, ManyLanguageExtensionCacheInvalidatesOnAdd ) {
+	auto* manager = SyntaxDefinitionManager::instance();
+	const std::string extension( ".eepp-many-languages-cache-test" );
+	const std::string preDefinitionExtension( ".eepp-many-languages-predefinition-cache-test" );
+
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( extension ) );
+	manager->add( { "EEPP Cache Test A", { extension }, {} } );
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( extension ) );
+	manager->add( { "EEPP Cache Test B", { extension }, {} } );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( extension ) );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( extension ) );
+
+	manager->add( { "EEPP Cache Test C", { preDefinitionExtension }, {} } );
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( preDefinitionExtension ) );
+	manager->addPreDefinition( { "EEPP Cache Test PreDefinition",
+								 []() -> SyntaxDefinition& {
+									 return SyntaxDefinitionManager::instance()->add(
+										 { "EEPP Cache Test PreDefinition", {}, {} } );
+								 },
+								 { preDefinitionExtension } } );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( preDefinitionExtension ) );
+}
+
 UTEST( MainThreadLifetime, InvalidatedCallbacksDoNotRun ) {
 	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
 	int owner = 42;
@@ -101,25 +138,28 @@ UTEST( UICodeEditor, DefaultKeybindingCacheTracksConfiguredModifiers ) {
 	const Uint32 originalSecondaryModifier = KeyMod::getDefaultSecondaryModifier();
 
 	auto defaultBindings = UICodeEditor::getDefaultKeybindings();
-	auto copy = defaultBindings.find( { KEY_C, originalDefaultModifier } );
-	EXPECT_TRUE( copy != defaultBindings.end() );
-	if ( copy != defaultBindings.end() )
+	const auto& defaultShortcutMap = defaultBindings->getShortcutMap();
+	auto copy = defaultShortcutMap.find( KeyBindings::Shortcut{ KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != defaultShortcutMap.end() );
+	if ( copy != defaultShortcutMap.end() )
 		EXPECT_STREQ( "copy", copy->second.c_str() );
 
 	KeyMod::setDefaultModifier( KEYMOD_LALT );
 	KeyMod::setDefaultSecondaryModifier( KEYMOD_META );
 	auto reconfiguredBindings = UICodeEditor::getDefaultKeybindings();
-	copy = reconfiguredBindings.find( { KEY_C, KEYMOD_LALT } );
-	EXPECT_TRUE( copy != reconfiguredBindings.end() );
-	if ( copy != reconfiguredBindings.end() )
+	const auto& reconfiguredShortcutMap = reconfiguredBindings->getShortcutMap();
+	copy = reconfiguredShortcutMap.find( KeyBindings::Shortcut{ KEY_C, KEYMOD_LALT } );
+	EXPECT_TRUE( copy != reconfiguredShortcutMap.end() );
+	if ( copy != reconfiguredShortcutMap.end() )
 		EXPECT_STREQ( "copy", copy->second.c_str() );
 
 	KeyMod::setDefaultModifier( originalDefaultModifier );
 	KeyMod::setDefaultSecondaryModifier( originalSecondaryModifier );
 	auto restoredBindings = UICodeEditor::getDefaultKeybindings();
-	copy = restoredBindings.find( { KEY_C, originalDefaultModifier } );
-	EXPECT_TRUE( copy != restoredBindings.end() );
-	if ( copy != restoredBindings.end() )
+	const auto& restoredShortcutMap = restoredBindings->getShortcutMap();
+	copy = restoredShortcutMap.find( KeyBindings::Shortcut{ KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != restoredShortcutMap.end() );
+	if ( copy != restoredShortcutMap.end() )
 		EXPECT_STREQ( "copy", copy->second.c_str() );
 }
 
@@ -236,7 +276,7 @@ UTEST( KeybindingsHelper, PreservesUserShortcutWhenAddingBinding ) {
 
 	std::unordered_map<std::string, std::string> keybindings;
 	std::unordered_map<std::string, std::string> invertedKeybindings;
-	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+	const KeyBindings::ShortcutMap defaultKeybindings{
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
 	};
@@ -275,7 +315,7 @@ UTEST( KeybindingsHelper, RestoresMissingCommandWhenShortcutIsFree ) {
 
 	std::unordered_map<std::string, std::string> keybindings;
 	std::unordered_map<std::string, std::string> invertedKeybindings;
-	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+	const KeyBindings::ShortcutMap defaultKeybindings{
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
 	};

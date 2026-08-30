@@ -356,6 +356,7 @@ Entrez le nom de la branche :</string>
 	<string name="git_create_local_branch">Créer une branche locale ?</string>
 	<string name="git_delete_branch">Supprimer</string>
 	<string name="git_diff_head">Diff HEAD</string>
+	<string name="git_diff_changed">Diff des modifications</string>
 	<string name="git_diff_staged">Diff Staged</string>
 	<string name="git_discard">Annuler</string>
 	<string name="git_discard_all">Tout annuler</string>

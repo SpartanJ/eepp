@@ -42,7 +42,7 @@ class StatusDebuggerController : public StatusBarElement, public UITabWidgetSpli
   public:
 	enum class State { NotStarted, Running, Paused };
 
-	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
+	static const KeyBindings::ShortcutMap getLocalDefaultKeybindings();
 
 	StatusDebuggerController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 							  PluginContextProvider* pluginContext );

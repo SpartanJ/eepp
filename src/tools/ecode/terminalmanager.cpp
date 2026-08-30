@@ -131,7 +131,7 @@ void TerminalManager::loadTerminalColorSchemes() {
 		mTerminalCurrentColorScheme = mTerminalColorSchemes.begin()->first;
 }
 
-std::map<KeyBindings::Shortcut, std::string> TerminalManager::getTerminalKeybindings() {
+KeyBindings::ShortcutMap TerminalManager::getTerminalKeybindings() {
 	return {
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
 		{ { KEY_E,

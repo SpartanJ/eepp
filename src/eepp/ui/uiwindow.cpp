@@ -1804,7 +1804,7 @@ void UIWindow::addKeyBindsString( const std::map<std::string, std::string>& bind
 	mKeyBindings.addKeybindsString( binds );
 }
 
-void UIWindow::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+void UIWindow::addKeyBinds( const KeyBindings::ShortcutMap& binds ) {
 	mKeyBindings.addKeybinds( binds );
 }
 

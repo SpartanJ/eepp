@@ -17,9 +17,9 @@ namespace EE { namespace UI { namespace Tools {
 
 class EE_API UICodeEditorSplitter {
   public:
-	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+	static const KeyBindings::ShortcutMap getDefaultKeybindings();
 
-	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
+	static const KeyBindings::ShortcutMap getLocalDefaultKeybindings();
 
 	static Uint32 getDefaultSwitchToTabModifier();
 

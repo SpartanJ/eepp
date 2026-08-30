@@ -22,6 +22,7 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
 #include <functional>
+#include <memory>
 #include <vector>
 
 using namespace EE::System;
@@ -132,6 +133,7 @@ class EE_API TextDocument {
 
 	typedef std::function<void()> DocumentCommand;
 	typedef std::function<void( Client* )> DocumentRefCommand;
+	typedef UnorderedMap<std::string, DocumentRefCommand> DocumentRefCommands;
 
 	TextDocument( bool verbose = true );
 
@@ -449,6 +451,9 @@ class EE_API TextDocument {
 	void setCommand( const std::string& command, const DocumentCommand& func );
 
 	void setCommand( const std::string& command, const DocumentRefCommand& func );
+
+	/** Installs an immutable command table shared by documents with the same client type. */
+	void setSharedRefCommands( std::shared_ptr<const DocumentRefCommands> commands );
 
 	bool hasCommand( const std::string& command );
 
@@ -818,6 +823,8 @@ class EE_API TextDocument {
 	Uint32 mPageSize{ 10 };
 	UnorderedMap<std::string, DocumentCommand> mCommands;
 	UnorderedMap<std::string, DocumentRefCommand> mRefCommands;
+	std::shared_ptr<const DocumentRefCommands> mSharedRefCommands;
+	std::unique_ptr<UnorderedSet<std::string>> mRemovedDefaultCommands;
 	String mNonWordChars;
 	Client* mActiveClient{ nullptr };
 	mutable Mutex mLoadingMutex;
@@ -830,6 +837,12 @@ class EE_API TextDocument {
 	FoldRangeService mFoldRangeService;
 
 	void initializeCommands();
+
+	using BuiltinDocumentCommand = void ( * )( TextDocument* );
+
+	static const UnorderedMap<std::string, BuiltinDocumentCommand>& getBuiltinCommands();
+
+	bool isDefaultCommandRemoved( const std::string& command ) const;
 
 	void cleanChangeId();
 

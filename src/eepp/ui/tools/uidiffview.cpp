@@ -25,6 +25,21 @@
 
 namespace EE { namespace UI { namespace Tools {
 
+struct UIDiffView::PreparedPatch {
+	std::vector<DiffLine> lines;
+	std::string filename;
+	std::string binaryOldPath;
+	std::string binaryNewPath;
+	std::string binaryFileName;
+	bool hasCompleteFile{ false };
+	bool isBinaryImage{ false };
+};
+
+class UIDiffView::PreparedMultiFileDiff {
+  public:
+	std::vector<PreparedPatch> patches;
+};
+
 static bool imagesHaveSameDimensions( const std::string& oldFilePath,
 									  const std::string& newFilePath ) {
 	int oldWidth = 0;
@@ -80,8 +95,19 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 }
 
 UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
-												  const std::string& repoPath, ViewMode viewMode ) {
-	auto diffs = UIDiffView::splitDiff( patchText );
+												  const std::string& repoPath, ViewMode viewMode,
+												  bool interactiveFileHeaders ) {
+	return NewMultiFileDiffViewer( prepareMultiFileDiff( patchText ), repoPath, viewMode,
+								   interactiveFileHeaders );
+}
+
+UIScrollView*
+UIDiffView::NewMultiFileDiffViewer( std::shared_ptr<PreparedMultiFileDiff> preparedDiff,
+									const std::string& repoPath, ViewMode viewMode,
+									bool interactiveFileHeaders ) {
+	if ( !preparedDiff )
+		return nullptr;
+
 	auto* uiSceneNode = SceneManager::instance()->getUISceneNode();
 	const bool wasLoading = uiSceneNode && uiSceneNode->isLoading();
 	if ( uiSceneNode )
@@ -92,7 +118,7 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 	vbox->setParent( scrollView );
 	vbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 
-	for ( const auto& diff : diffs ) {
+	for ( auto& patch : preparedDiff->patches ) {
 		auto* diffView = UIDiffView::New();
 		diffView->setViewMode( viewMode );
 		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
@@ -100,7 +126,8 @@ UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
 		diffView->setHeadersVisible( true );
 		diffView->setViewModeToggleVisible( false );
 		diffView->setCompleteViewToggleVisible( false );
-		diffView->loadFromPatch( diff, "", "", repoPath );
+		diffView->setInteractiveFileHeader( interactiveFileHeaders );
+		diffView->loadPreparedPatch( std::move( patch ), "", "", repoPath );
 	}
 
 	if ( uiSceneNode ) {
@@ -506,9 +533,8 @@ UIDiffView::UIDiffView() :
 		mLeftEditor->setFontSize( mRightEditor->getFontSize() );
 		mLeftPlugin->registerUpdate( mLeftEditor );
 	} );
-	mRightEditor->getVScrollBar()->on( Event::OnSizeChange, [this] ( auto ) {
-		updateModeButton();
-	} );
+	mRightEditor->getVScrollBar()->on( Event::OnSizeChange,
+									   [this]( auto ) { updateModeButton(); } );
 
 	for ( auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
 		editor->on( Event::OnSizeChange, [this]( auto ) { onAutoSize(); } );
@@ -993,12 +1019,13 @@ void UIDiffView::updateImageDiffView() {
 	}
 }
 
-void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
+static void computeSubLineDiffImpl( UIDiffView::DiffLine& oldLine, UIDiffView::DiffLine& newLine,
+									UIDiffView::SubLineDiffAlgorithm algorithm ) {
 	dtl::Diff<String::StringBaseType, String::View> diff( oldLine.text.view(),
 														  newLine.text.view() );
 	diff.compose();
 
-	if ( mSubLineDiffAlgorithm == SubLineDiffAlgorithm::SES ) {
+	if ( algorithm == UIDiffView::SubLineDiffAlgorithm::SES ) {
 		auto ses = diff.getSes().getSequence();
 		Int64 oldIdx = 0;
 		Int64 newIdx = 0;
@@ -1068,11 +1095,18 @@ void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
 	}
 }
 
-static void applySubLineDiff(
+void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
+	computeSubLineDiffImpl( oldLine, newLine, mSubLineDiffAlgorithm );
+}
+
+static bool applySubLineDiff(
 	std::vector<UIDiffView::DiffLine>& lines,
-	std::function<void( UIDiffView::DiffLine&, UIDiffView::DiffLine& )> computeSubLineDiff ) {
+	std::function<void( UIDiffView::DiffLine&, UIDiffView::DiffLine& )> computeSubLineDiff,
+	const std::shared_ptr<std::atomic_bool>& cancelled = {} ) {
 	size_t i = 0;
 	while ( i < lines.size() ) {
+		if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return false;
 		if ( lines[i].type == UIDiffView::DiffLineType::Removed ) {
 			size_t j = i;
 			while ( j < lines.size() && lines[j].type == UIDiffView::DiffLineType::Removed )
@@ -1085,6 +1119,8 @@ static void applySubLineDiff(
 			size_t numAdded = k - j;
 			size_t numToCompare = std::min( numRemoved, numAdded );
 			for ( size_t m = 0; m < numToCompare; m++ ) {
+				if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+					return false;
 				computeSubLineDiff( lines[i + m], lines[j + m] );
 			}
 			i = k;
@@ -1092,6 +1128,7 @@ static void applySubLineDiff(
 			i++;
 		}
 	}
+	return true;
 }
 
 struct BinaryImagePatch {
@@ -1212,19 +1249,21 @@ static BinaryImagePatch parseBinaryImagePatch( const std::vector<std::string>& l
 	return patch;
 }
 
-void UIDiffView::loadFromPatch( const std::string& patchText, const std::string& originalFilePath,
-								const std::string& oldFilePath, const std::string& repoPath ) {
-	resetToTextDiffView();
-	mLines.clear();
+UIDiffView::PreparedPatch
+UIDiffView::preparePatch( const std::string& patchText, const std::string& originalFilePath,
+						  SubLineDiffAlgorithm algorithm,
+						  const std::shared_ptr<std::atomic_bool>& cancelled ) {
+	PreparedPatch prepared;
 	auto lines = String::split( patchText, '\n', true );
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return prepared;
 
 	std::string fileText;
-	bool hasCompleteFile = false;
 	std::vector<std::string> fileLines;
 	if ( !originalFilePath.empty() && FileSystem::fileExists( originalFilePath ) ) {
 		FileSystem::fileGet( originalFilePath, fileText );
 		fileLines = String::split( fileText, '\n', true );
-		hasCompleteFile = true;
+		prepared.hasCompleteFile = true;
 	}
 
 	Int64 oldLineNum = 0;
@@ -1234,27 +1273,16 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 	std::string filename;
 
 	auto imagePatch = parseBinaryImagePatch( lines, originalFilePath );
-	if ( imagePatch.isBinary ) {
-		std::string oldImagePath( oldFilePath );
-		if ( oldImagePath.empty() ) {
-			oldImagePath =
-				resolveImagePatchPath( imagePatch.oldPath, originalFilePath, false, repoPath );
-		}
-		std::string newImagePath(
-			resolveImagePatchPath( imagePatch.newPath, originalFilePath, true, repoPath ) );
+	prepared.isBinaryImage = imagePatch.isBinary;
+	prepared.binaryOldPath = std::move( imagePatch.oldPath );
+	prepared.binaryNewPath = std::move( imagePatch.newPath );
+	prepared.binaryFileName = std::move( imagePatch.fileName );
+	prepared.lines.reserve( lines.size() + fileLines.size() );
 
-		if ( oldImagePath == newImagePath )
-			oldImagePath.clear();
-
-		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
-			if ( !imagePatch.fileName.empty() )
-				mFileName = std::move( imagePatch.fileName );
-			updateFileHeaderInfo();
-			return;
-		}
-	}
-
-	for ( const auto& line : lines ) {
+	for ( size_t lineIdx = 0; lineIdx < lines.size(); ++lineIdx ) {
+		if ( ( lineIdx & 0xFF ) == 0 && cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return PreparedPatch{};
+		const auto& line = lines[lineIdx];
 		if ( String::startsWith( line, "diff " ) || String::startsWith( line, "index " ) ||
 			 String::startsWith( line, "--- " ) || String::startsWith( line, "+++ " ) ) {
 			if ( String::startsWith( line, "+++ " ) ) {
@@ -1270,27 +1298,33 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 			size_t minusPos = line.find( "-" );
 			size_t plusPos = line.find( "+" );
 			if ( minusPos != std::string::npos && plusPos != std::string::npos ) {
+				auto parseLineNumber = [&line]( size_t start, size_t end, Int64& lineNumber ) {
+					if ( end == std::string::npos || end <= start )
+						return false;
+					Int64 parsedLineNumber;
+					if ( !String::fromString( parsedLineNumber, std::string_view{ line }.substr(
+																	start, end - start ) ) )
+						return false;
+					lineNumber = parsedLineNumber - 1;
+					return true;
+				};
 				size_t commaPos = line.find( ",", minusPos );
 				size_t spacePos = line.find( " ", minusPos );
 				if ( commaPos != std::string::npos && commaPos < spacePos ) {
-					oldLineNum =
-						std::stoll( line.substr( minusPos + 1, commaPos - minusPos - 1 ) ) - 1;
+					parseLineNumber( minusPos + 1, commaPos, oldLineNum );
 				} else if ( spacePos != std::string::npos ) {
-					oldLineNum =
-						std::stoll( line.substr( minusPos + 1, spacePos - minusPos - 1 ) ) - 1;
+					parseLineNumber( minusPos + 1, spacePos, oldLineNum );
 				}
 
 				commaPos = line.find( ",", plusPos );
 				spacePos = line.find( " ", plusPos );
 				if ( commaPos != std::string::npos && commaPos < spacePos ) {
-					newLineNum =
-						std::stoll( line.substr( plusPos + 1, commaPos - plusPos - 1 ) ) - 1;
+					parseLineNumber( plusPos + 1, commaPos, newLineNum );
 				} else if ( spacePos != std::string::npos ) {
-					newLineNum =
-						std::stoll( line.substr( plusPos + 1, spacePos - plusPos - 1 ) ) - 1;
+					parseLineNumber( plusPos + 1, spacePos, newLineNum );
 				}
 
-				if ( hasCompleteFile ) {
+				if ( prepared.hasCompleteFile ) {
 					while ( expectedNewLineNum < newLineNum + 1 &&
 							expectedNewLineNum <= (Int64)fileLines.size() ) {
 						DiffLine dline;
@@ -1298,7 +1332,7 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 						dline.text = fileLines[expectedNewLineNum - 1];
 						dline.oldLineNum = expectedOldLineNum++;
 						dline.newLineNum = expectedNewLineNum++;
-						mLines.push_back( dline );
+						prepared.lines.push_back( std::move( dline ) );
 					}
 				}
 				expectedOldLineNum = oldLineNum + 1;
@@ -1335,37 +1369,100 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 			expectedNewLineNum = newLineNum + 1;
 		}
 
-		mLines.push_back( dline );
+		prepared.lines.push_back( std::move( dline ) );
 	}
 
-	if ( hasCompleteFile ) {
+	if ( prepared.hasCompleteFile ) {
 		while ( expectedNewLineNum <= (Int64)fileLines.size() ) {
+			if ( ( expectedNewLineNum & 0xFF ) == 0 && cancelled &&
+				 cancelled->load( std::memory_order_relaxed ) )
+				return PreparedPatch{};
 			DiffLine dline;
 			dline.type = DiffLineType::Common;
 			dline.text = fileLines[expectedNewLineNum - 1];
 			dline.oldLineNum = expectedOldLineNum++;
 			dline.newLineNum = expectedNewLineNum++;
-			mLines.push_back( dline );
+			prepared.lines.push_back( std::move( dline ) );
 		}
 	}
 
-	applySubLineDiff( mLines, [this]( DiffLine& oldLine, DiffLine& newLine ) {
-		computeSubLineDiff( oldLine, newLine );
-	} );
+	if ( !applySubLineDiff(
+			 prepared.lines,
+			 [algorithm]( DiffLine& oldLine, DiffLine& newLine ) {
+				 computeSubLineDiffImpl( oldLine, newLine, algorithm );
+			 },
+			 cancelled ) )
+		return PreparedPatch{};
 
-	setCompleteViewToggleVisible( hasCompleteFile );
+	prepared.filename = std::move( filename );
+	return prepared;
+}
 
-	if ( !filename.empty() ) {
-		auto def = SyntaxDefinitionManager::instance()->getByExtension( filename );
+std::shared_ptr<UIDiffView::PreparedMultiFileDiff>
+UIDiffView::prepareMultiFileDiff( const std::string& patchText,
+								  const std::shared_ptr<std::atomic_bool>& cancelled ) {
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return {};
+
+	auto diffs = splitDiff( patchText );
+	auto prepared = std::make_shared<PreparedMultiFileDiff>();
+	prepared->patches.reserve( diffs.size() );
+	for ( const auto& diff : diffs ) {
+		if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return {};
+		prepared->patches.emplace_back(
+			preparePatch( diff, "", SubLineDiffAlgorithm::LCS, cancelled ) );
+	}
+
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return {};
+	return prepared;
+}
+
+void UIDiffView::loadPreparedPatch( PreparedPatch&& patch, const std::string& originalFilePath,
+									const std::string& oldFilePath, const std::string& repoPath ) {
+	resetToTextDiffView();
+	mLines.clear();
+
+	if ( patch.isBinaryImage ) {
+		std::string oldImagePath( oldFilePath );
+		if ( oldImagePath.empty() ) {
+			oldImagePath =
+				resolveImagePatchPath( patch.binaryOldPath, originalFilePath, false, repoPath );
+		}
+		std::string newImagePath(
+			resolveImagePatchPath( patch.binaryNewPath, originalFilePath, true, repoPath ) );
+		if ( oldImagePath == newImagePath )
+			oldImagePath.clear();
+
+		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
+			if ( !patch.binaryFileName.empty() )
+				mFileName = String::fromUtf8( patch.binaryFileName );
+			updateFileHeaderInfo();
+			return;
+		}
+	}
+
+	mLines = std::move( patch.lines );
+	setCompleteViewToggleVisible( patch.hasCompleteFile );
+
+	if ( !patch.filename.empty() ) {
+		auto def = SyntaxDefinitionManager::instance()->getByExtension( patch.filename );
 		mSyntaxDef =
 			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
-		mFileName = std::move( filename );
+		mFileName = String::fromUtf8( patch.filename );
 	}
 	updateFileHeaderInfo();
 
 	updateEditorsText();
 	updateButtonsText();
 	onSizeChange();
+}
+
+void UIDiffView::loadFromPatch( const std::string& patchText, const std::string& originalFilePath,
+								const std::string& oldFilePath, const std::string& repoPath ) {
+	loadPreparedPatch( preparePatch( patchText, originalFilePath, mSubLineDiffAlgorithm, {} ),
+					   originalFilePath, oldFilePath, repoPath );
 }
 
 void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText,

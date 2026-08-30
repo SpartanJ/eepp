@@ -668,7 +668,7 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param binds Map of KeyBindings::Shortcut to command strings.
 	 */
-	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds );
 
 	typedef std::function<void()> KeyBindingCommand;
 

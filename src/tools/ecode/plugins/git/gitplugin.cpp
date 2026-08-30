@@ -212,6 +212,8 @@ GitPlugin::~GitPlugin() {
 	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
+	mCommitDetails.cancelDiffPreparation();
+	mDetachedHistory.details.cancelDiffPreparation();
 	mConflictViewCloseConnection.disconnect();
 	mConflictView = nullptr;
 	mConflictSessions.clear();
@@ -2152,10 +2154,13 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 				case Git::DiffStaged:
 					modeName = "staged";
 					break;
+				case Git::DiffChanged:
+					modeName = "changed";
+					break;
 			}
 			plugin->getPluginContext()->loadDiffFromMemory(
-				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "", "",
-				repoPath );
+				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "", "", repoPath,
+				true );
 		} );
 	} );
 }
@@ -2992,6 +2997,8 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 	if ( commit.hash.empty() && !isWorkingTree )
 		return;
 	const std::string selectedRepo = plugin.repoSelected();
+	cancelDiffPreparation();
+	diffPreparationCancelled = std::make_shared<std::atomic_bool>( false );
 	const Uint64 requestGeneration = ++generation;
 	this->commit = commit;
 	workingTree = isWorkingTree;
@@ -3163,14 +3170,31 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 	const std::string repo = this->repo;
 	const Git::Commit commit = this->commit;
 	const bool workingTree = this->workingTree;
+	const auto diffPreparationCancelled = this->diffPreparationCancelled;
 	auto git = plugin.mGit;
 	const auto lifetime = plugin.mLifetime.weakHandle();
 	plugin.runAsyncTask( [git = std::move( git ), lifetime, generation, repo, commit, detached,
-						  workingTree] {
+						  workingTree, diffPreparationCancelled] {
+		if ( diffPreparationCancelled &&
+			 diffPreparationCancelled->load( std::memory_order_relaxed ) )
+			return;
 		auto result =
 			workingTree ? git->workingTreeFiles( repo ) : git->commitFiles( commit, repo );
+		if ( diffPreparationCancelled &&
+			 diffPreparationCancelled->load( std::memory_order_relaxed ) )
+			return;
+		std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff;
+		if ( result.success() && !result.patch.empty() ) {
+			preparedDiff =
+				UIDiffView::prepareMultiFileDiff( result.patch, diffPreparationCancelled );
+			if ( diffPreparationCancelled &&
+				 diffPreparationCancelled->load( std::memory_order_relaxed ) )
+				return;
+			std::string{}.swap( result.patch );
+		}
 		lifetime.run( [generation, repo, commit, detached, workingTree,
-					   result = std::move( result )]( GitPlugin* plugin ) mutable {
+					   result = std::move( result ),
+					   preparedDiff = std::move( preparedDiff )]( GitPlugin* plugin ) mutable {
 			auto& details = detached ? plugin->mDetachedHistory.details : plugin->mCommitDetails;
 			if ( plugin->mShuttingDown || generation != details.generation ||
 				 repo != details.repo || repo != plugin->repoSelected() ||
@@ -3230,9 +3254,9 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 			details.gitHub->setVisible( !details.url.empty() );
 			details.diffContainer->closeAllChildren();
 			details.diff = nullptr;
-			if ( !result.patch.empty() ) {
-				details.diff =
-					UIDiffView::NewMultiFileDiffViewer( result.patch, repo, details.viewMode );
+			if ( preparedDiff ) {
+				details.diff = UIDiffView::NewMultiFileDiffViewer( std::move( preparedDiff ), repo,
+																   details.viewMode );
 				details.diff->setLayoutSizePolicy( SizePolicy::MatchParent,
 												   SizePolicy::MatchParent );
 				details.diff->setParent( details.diffContainer );
@@ -3750,6 +3774,8 @@ void GitPlugin::buildSidePanelTab() {
 									 "diff-added" );
 
 						if ( type == Git::GitStatusType::Changed ) {
+							menuAdd( menu, "git-diff-changed",
+									 i18n( "git_diff_changed", "Diff Changed" ), "diff-multiple" );
 							menu->addSeparator();
 							menuAdd( menu, "git-discard-all",
 									 i18n( "git_discard_all", "Discard All" ) );
@@ -3775,6 +3801,8 @@ void GitPlugin::buildSidePanelTab() {
 														  (Uint32)Git::GitStatusType::Changed ) );
 							} else if ( id == "git-diff-staged" ) {
 								diff( Git::DiffMode::DiffStaged, repoPath );
+							} else if ( id == "git-diff-changed" ) {
+								diff( Git::DiffMode::DiffChanged, repoPath );
 							}
 						} );
 

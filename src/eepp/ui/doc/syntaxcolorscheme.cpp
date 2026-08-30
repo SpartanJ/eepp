@@ -37,7 +37,7 @@ namespace EE { namespace UI { namespace Doc {
 // "minimap_highlight" (Minimap text highlight color)
 // "minimap_visible_area" (Minimap visible area marker color)
 
-SyntaxColorScheme SyntaxColorScheme::getDefaultDark() {
+static SyntaxColorScheme createDefaultDarkSyntaxColorScheme() {
 	return {
 		"eepp",
 		{
@@ -86,7 +86,12 @@ SyntaxColorScheme SyntaxColorScheme::getDefaultDark() {
 		  { "minimap_visible_area"_sst, Color( "#FFFFFF0A" ) } } };
 }
 
-SyntaxColorScheme SyntaxColorScheme::getDefaultLight() {
+SyntaxColorScheme SyntaxColorScheme::getDefaultDark() {
+	static const SyntaxColorScheme colorScheme = createDefaultDarkSyntaxColorScheme();
+	return colorScheme;
+}
+
+static SyntaxColorScheme createDefaultLightSyntaxColorScheme() {
 	return {
 		"github",
 		{
@@ -133,6 +138,11 @@ SyntaxColorScheme SyntaxColorScheme::getDefaultLight() {
 		  { "minimap_selection"_sst, Color( "#b7dce880" ) },
 		  { "minimap_highlight"_sst, Color( "#FF00FFFF" ) },
 		  { "minimap_visible_area"_sst, Color( "#00000011" ) } } };
+}
+
+SyntaxColorScheme SyntaxColorScheme::getDefaultLight() {
+	static const SyntaxColorScheme colorScheme = createDefaultLightSyntaxColorScheme();
+	return colorScheme;
 }
 
 SyntaxColorScheme::Style parseStyle(
@@ -212,11 +222,11 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 			std::string value( ini.getValue( keyIdx, valueIdx ) );
 			if ( !value.empty() ) {
 				SyntaxColorScheme::Style style = parseStyle( value );
-				if ( refColorScheme.mSyntaxColors.find( toSyntaxStyleType( valueName ) ) !=
-					 refColorScheme.mSyntaxColors.end() ) {
+				if ( refColorScheme.mStorage->syntaxColors.find( toSyntaxStyleType( valueName ) ) !=
+					 refColorScheme.mStorage->syntaxColors.end() ) {
 					colorScheme.setSyntaxStyle( toSyntaxStyleType( valueName ), style );
-				} else if ( refColorScheme.mEditorColors.find( toSyntaxStyleType( valueName ) ) !=
-							refColorScheme.mEditorColors.end() ) {
+				} else if ( refColorScheme.mStorage->editorColors.find( toSyntaxStyleType(
+								valueName ) ) != refColorScheme.mStorage->editorColors.end() ) {
 					colorScheme.setEditorSyntaxStyle( toSyntaxStyleType( valueName ), style );
 				}
 			}
@@ -257,20 +267,26 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromPack( Pack* pack,
 	return {};
 }
 
-SyntaxColorScheme::SyntaxColorScheme() {}
+SyntaxColorScheme::SyntaxColorScheme() : mStorage( std::make_shared<Storage>() ) {}
 
 SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 									  const UnorderedMap<SyntaxStyleType, Style>& syntaxColors,
 									  const UnorderedMap<SyntaxStyleType, Style>& editorColors ) :
-	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
+	mStorage( std::make_shared<Storage>( Storage{ name, syntaxColors, editorColors } ) ) {}
+
+void SyntaxColorScheme::ensureUniqueStorage() {
+	if ( !mStorage.unique() )
+		mStorage = std::make_shared<Storage>( *mStorage );
+	mStyleCache.clear();
+}
 
 static const SyntaxColorScheme::Style StyleEmpty = { Color::Transparent };
 static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefaultDark();
 
 const SyntaxColorScheme::Style&
 SyntaxColorScheme::getSyntaxStyle( const SyntaxStyleType& type ) const {
-	auto it = mSyntaxColors.find( type );
-	if ( it != mSyntaxColors.end() )
+	auto it = mStorage->syntaxColors.find( type );
+	if ( it != mStorage->syntaxColors.end() )
 		return it->second;
 	else if ( type == "keyword2"_sst )
 		return getSyntaxStyle( "type"_sst );
@@ -292,22 +308,24 @@ SyntaxColorScheme::getSyntaxStyle( const SyntaxStyleType& type ) const {
 }
 
 bool SyntaxColorScheme::hasSyntaxStyle( const SyntaxStyleType& type ) const {
-	return mSyntaxColors.find( type ) != mSyntaxColors.end();
+	return mStorage->syntaxColors.find( type ) != mStorage->syntaxColors.end();
 }
 
 void SyntaxColorScheme::setSyntaxStyles( const UnorderedMap<SyntaxStyleType, Style>& styles ) {
-	mSyntaxColors.insert( styles.begin(), styles.end() );
+	ensureUniqueStorage();
+	mStorage->syntaxColors.insert( styles.begin(), styles.end() );
 }
 
 void SyntaxColorScheme::setSyntaxStyle( const SyntaxStyleType& type,
 										const SyntaxColorScheme::Style& style ) {
-	mSyntaxColors[type] = style;
+	ensureUniqueStorage();
+	mStorage->syntaxColors[type] = style;
 }
 
 const SyntaxColorScheme::Style&
 SyntaxColorScheme::getEditorSyntaxStyle( const SyntaxStyleType& type ) const {
-	auto it = mEditorColors.find( type );
-	if ( it != mEditorColors.end() )
+	auto it = mStorage->editorColors.find( type );
+	if ( it != mStorage->editorColors.end() )
 		return it->second;
 	if ( type == "widget_background"_sst )
 		return getEditorSyntaxStyle( "gutter_background"_sst );
@@ -348,20 +366,23 @@ const Color& SyntaxColorScheme::getEditorColor( const SyntaxStyleType& type ) co
 
 void SyntaxColorScheme::setEditorSyntaxStyles(
 	const EE::UnorderedMap<SyntaxStyleType, SyntaxColorScheme::Style>& styles ) {
-	mEditorColors.insert( styles.begin(), styles.end() );
+	ensureUniqueStorage();
+	mStorage->editorColors.insert( styles.begin(), styles.end() );
 }
 
 void SyntaxColorScheme::setEditorSyntaxStyle( const SyntaxStyleType& type,
 											  const SyntaxColorScheme::Style& style ) {
-	mEditorColors[type] = style;
+	ensureUniqueStorage();
+	mStorage->editorColors[type] = style;
 }
 
 const std::string& SyntaxColorScheme::getName() const {
-	return mName;
+	return mStorage->name;
 }
 
 void SyntaxColorScheme::setName( const std::string& name ) {
-	mName = name;
+	ensureUniqueStorage();
+	mStorage->name = name;
 }
 
 template <typename SyntaxStyleType>
@@ -369,18 +390,18 @@ const SyntaxColorScheme::Style&
 SyntaxColorScheme::getSyntaxStyleFromCache( const SyntaxStyleType& type ) const {
 	bool colorWasSet = false;
 	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> )
-		mStyleCache[type] = parseStyle( type, &colorWasSet, &mSyntaxColors );
+		mStyleCache[type] = parseStyle( type, &colorWasSet, &mStorage->syntaxColors );
 	else {
 		auto cache = SyntaxPattern::SyntaxStyleTypeCache.find( type );
 		if ( cache != SyntaxPattern::SyntaxStyleTypeCache.end() ) {
-			mStyleCache[type] = parseStyle( cache->second, &colorWasSet, &mSyntaxColors );
+			mStyleCache[type] = parseStyle( cache->second, &colorWasSet, &mStorage->syntaxColors );
 		} else {
 			return StyleEmpty;
 		}
 	}
 	if ( !colorWasSet ) {
-		auto normalStyle = mSyntaxColors.find( "normal"_sst );
-		if ( normalStyle != mSyntaxColors.end() )
+		auto normalStyle = mStorage->syntaxColors.find( "normal"_sst );
+		if ( normalStyle != mStorage->syntaxColors.end() )
 			mStyleCache[type].color = normalStyle->second.color;
 	}
 	return mStyleCache[type];

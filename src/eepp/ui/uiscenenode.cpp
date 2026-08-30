@@ -2071,7 +2071,7 @@ void UISceneNode::addKeyBindsString( const std::map<std::string, std::string>& b
 	mKeyBindings.addKeybindsString( binds );
 }
 
-void UISceneNode::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+void UISceneNode::addKeyBinds( const KeyBindings::ShortcutMap& binds ) {
 	mKeyBindings.addKeybinds( binds );
 }
 

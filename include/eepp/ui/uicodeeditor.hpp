@@ -219,7 +219,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
-	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+	static std::shared_ptr<const KeyBindings> getDefaultKeybindings();
 
 	static const MouseBindings::ShortcutMap getDefaultMousebindings();
 
@@ -407,7 +407,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addKeyBindsString( const std::map<std::string, std::string>& binds,
 							const bool& allowLocked = false );
 
-	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds,
 					  const bool& allowLocked = false );
 
 	const bool& getHighlightCurrentLine() const;
@@ -896,6 +896,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const Tools::UIDocFindReplace* getFindReplace() const { return mFindReplace; }
 
   protected:
+	static std::shared_ptr<const TextDocument::DocumentRefCommands> getDefaultEditorCommands();
+
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };

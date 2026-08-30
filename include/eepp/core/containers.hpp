@@ -3,7 +3,8 @@
 
 #include <eepp/config.hpp>
 
-#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || ( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
+#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || \
+	( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
 #include <unordered_map>
 #include <unordered_set>
 #else
@@ -13,9 +14,12 @@
 
 namespace EE {
 
-#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || ( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
+#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || \
+	( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
 
-template <typename Key, typename Value> using UnorderedMap = std::unordered_map<Key, Value>;
+template <typename Key, typename Value, typename Hash = std::hash<Key>,
+		  typename KeyEqual = std::equal_to<Key>>
+using UnorderedMap = std::unordered_map<Key, Value, Hash, KeyEqual>;
 
 template <typename Key> using UnorderedSet = std::unordered_set<Key>;
 
@@ -28,8 +32,9 @@ using SmallUnorderedSet = std::unordered_set<Key>;
 
 #else
 
-template <typename Key, typename Value>
-using UnorderedMap = ankerl::unordered_dense::map<Key, Value>;
+template <typename Key, typename Value, typename Hash = ankerl::unordered_dense::hash<Key>,
+		  typename KeyEqual = std::equal_to<Key>>
+using UnorderedMap = ankerl::unordered_dense::map<Key, Value, Hash, KeyEqual>;
 
 template <typename Key> using UnorderedSet = ankerl::unordered_dense::set<Key>;
 

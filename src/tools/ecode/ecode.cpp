@@ -1231,15 +1231,15 @@ UITabWidget* App::getSidePanel() const {
 	return mSidePanel;
 }
 
-const std::map<KeyBindings::Shortcut, std::string>& App::getRealLocalKeybindings() const {
+const KeyBindings::ShortcutMap& App::getRealLocalKeybindings() const {
 	return mRealLocalKeybindings;
 }
 
-const std::map<KeyBindings::Shortcut, std::string>& App::getRealSplitterKeybindings() const {
+const KeyBindings::ShortcutMap& App::getRealSplitterKeybindings() const {
 	return mRealSplitterKeybindings;
 }
 
-const std::map<KeyBindings::Shortcut, std::string>& App::getRealTerminalKeybindings() const {
+const KeyBindings::ShortcutMap& App::getRealTerminalKeybindings() const {
 	return mRealTerminalKeybindings;
 }
 
@@ -1510,32 +1510,35 @@ void App::loadKeybindings() {
 										  getMigrateKeybindings(), mConfig.iniState );
 
 	auto localKeybindings = getLocalKeybindings();
-	for ( const auto& kb : localKeybindings ) {
-		auto found = mKeybindingsInvert.find( kb.second );
+	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localKeybindings ) ) {
+		const auto& command = localKeybindings.find( shortcut )->second;
+		auto found = mKeybindingsInvert.find( command );
 		if ( found != mKeybindingsInvert.end() ) {
-			mRealLocalKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+			mRealLocalKeybindings[bindings.getShortcutFromString( found->second )] = command;
 		} else {
-			mRealLocalKeybindings[kb.first] = kb.second;
+			mRealLocalKeybindings[shortcut] = command;
 		}
 	}
 
 	auto localSplitterKeybindings = UICodeEditorSplitter::getLocalDefaultKeybindings();
-	for ( const auto& kb : localSplitterKeybindings ) {
-		auto found = mKeybindingsInvert.find( kb.second );
+	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localSplitterKeybindings ) ) {
+		const auto& command = localSplitterKeybindings.find( shortcut )->second;
+		auto found = mKeybindingsInvert.find( command );
 		if ( found != mKeybindingsInvert.end() ) {
-			mRealSplitterKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+			mRealSplitterKeybindings[bindings.getShortcutFromString( found->second )] = command;
 		} else {
-			mRealSplitterKeybindings[kb.first] = kb.second;
+			mRealSplitterKeybindings[shortcut] = command;
 		}
 	}
 
 	auto localTerminalKeybindings = TerminalManager::getTerminalKeybindings();
-	for ( const auto& kb : localTerminalKeybindings ) {
-		auto found = mKeybindingsInvert.find( kb.second );
+	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localTerminalKeybindings ) ) {
+		const auto& command = localTerminalKeybindings.find( shortcut )->second;
+		auto found = mKeybindingsInvert.find( command );
 		if ( found != mKeybindingsInvert.end() ) {
-			mRealTerminalKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+			mRealTerminalKeybindings[bindings.getShortcutFromString( found->second )] = command;
 		} else {
-			mRealTerminalKeybindings[kb.first] = kb.second;
+			mRealTerminalKeybindings[shortcut] = command;
 		}
 	}
 }
@@ -2100,7 +2103,7 @@ const AppConfig& App::getConfig() const {
 	return mConfig;
 }
 
-const std::map<KeyBindings::Shortcut, std::string>& App::getRealDefaultKeybindings() {
+const KeyBindings::ShortcutMap& App::getRealDefaultKeybindings() {
 	if ( mRealDefaultKeybindings.empty() ) {
 		mRealDefaultKeybindings.insert( mRealLocalKeybindings.begin(),
 										mRealLocalKeybindings.end() );
@@ -2112,7 +2115,7 @@ const std::map<KeyBindings::Shortcut, std::string>& App::getRealDefaultKeybindin
 	return mRealDefaultKeybindings;
 }
 
-std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
+KeyBindings::ShortcutMap App::getDefaultKeybindings() {
 	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
 	auto local = getLocalKeybindings();
 	auto app = TerminalManager::getTerminalKeybindings();
@@ -2127,7 +2130,7 @@ static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
 static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryModifier();
 #endif
 
-std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
+KeyBindings::ShortcutMap App::getLocalKeybindings() {
 	return {
 		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
 		{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
@@ -2626,15 +2629,16 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 }
 
 void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath,
-							  const std::string& oldFilePath, const std::string& repoPath ) {
+							  const std::string& oldFilePath, const std::string& repoPath,
+							  bool interactiveFileHeaders ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" ) + ": " + originalFilePath;
 		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView =
-			UIDiffView::NewMultiFileDiffViewer( content, repoPath, mConfig.editor.diffViewMode );
+		auto scrollView = UIDiffView::NewMultiFileDiffViewer(
+			content, repoPath, mConfig.editor.diffViewMode, interactiveFileHeaders );
 		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );

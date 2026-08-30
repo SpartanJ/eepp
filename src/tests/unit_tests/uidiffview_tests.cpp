@@ -1,4 +1,5 @@
 #include "utest.h"
+#include <atomic>
 #include <eepp/graphics/image.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -8,6 +9,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <thread>
 
 using namespace EE;
 using namespace EE::UI;
@@ -124,11 +126,15 @@ diff --git a/second.txt b/second.txt
 )patch";
 
 	auto* viewer =
-		UIDiffView::NewMultiFileDiffViewer( patchText, "", UIDiffView::ViewMode::SideBySide );
+		UIDiffView::NewMultiFileDiffViewer( patchText, "", UIDiffView::ViewMode::SideBySide, true );
 	auto diffViews = viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW );
 	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
-	for ( const auto* diffView : diffViews )
+	for ( const auto* diffView : diffViews ) {
 		EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffView->getViewMode() );
+		EXPECT_FALSE( diffView->isViewModeToggleVisible() );
+		EXPECT_FALSE( diffView->isCompleteViewToggleVisible() );
+		EXPECT_TRUE( diffView->isInteractiveFileHeader() );
+	}
 
 	UIDiffView::setMultiFileViewMode( viewer, UIDiffView::ViewMode::Unified );
 	UIDiffView::setMultiFileCollapsed( viewer, true );
@@ -144,6 +150,44 @@ diff --git a/second.txt b/second.txt
 	}
 
 	eeDelete( viewer );
+}
+
+UTEST( UIDiffView, PreparedMultiFileDiffBuildsViewer ) {
+	std::string patchText = R"patch(diff --git a/first.txt b/first.txt
+--- a/first.txt
++++ b/first.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/second.txt b/second.txt
+--- a/second.txt
++++ b/second.txt
+@@ -1 +1 @@
+-before
++after
+)patch";
+
+	std::shared_ptr<UIDiffView::PreparedMultiFileDiff> prepared;
+	std::thread worker(
+		[&prepared, &patchText] { prepared = UIDiffView::prepareMultiFileDiff( patchText ); } );
+	worker.join();
+	ASSERT_TRUE( prepared );
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	auto* viewer = UIDiffView::NewMultiFileDiffViewer( std::move( prepared ), "",
+													   UIDiffView::ViewMode::SideBySide );
+	ASSERT_TRUE( viewer );
+	auto diffViews = viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW );
+	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
+	EXPECT_TRUE( diffViews[0]->getFileName().toUtf8() == "first.txt" );
+	EXPECT_TRUE( diffViews[1]->getFileName().toUtf8() == "second.txt" );
+	EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffViews[0]->getViewMode() );
+
+	eeDelete( viewer );
+}
+
+UTEST( UIDiffView, PreparedMultiFileDiffHonorsCancellation ) {
+	auto cancelled = std::make_shared<std::atomic_bool>( true );
+	EXPECT_FALSE( UIDiffView::prepareMultiFileDiff( "diff --git a/a b/a\n", cancelled ) );
 }
 
 UTEST( UIDiffView, MultiFileViewerHandlesLargePatches ) {

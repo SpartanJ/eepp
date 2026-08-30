@@ -8,6 +8,41 @@ using namespace EE;
 using namespace EE::UI;
 using namespace EE::Window;
 
+UTEST( KeyboardShortcut, BulkBindingsPreserveLegacyOrderedReverseLookup ) {
+	const KeyBindings::Shortcut first{ KEY_A, KEYMOD_NONE };
+	const KeyBindings::Shortcut second{ KEY_B, KEYMOD_CTRL };
+	const KeyBindings::Shortcut third{ KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT };
+	KeyBindings::ShortcutMap defaults;
+	defaults.emplace( third, "duplicate-command" );
+	defaults.emplace( first, "duplicate-command" );
+	defaults.emplace( second, "duplicate-command" );
+
+	auto ordered = KeyBindings::getOrderedShortcuts( defaults );
+	EXPECT_EQ( first.toUint64(), ordered.front().toUint64() );
+	EXPECT_EQ( third.toUint64(), ordered.back().toUint64() );
+
+	KeyBindings bindings( nullptr );
+	bindings.addKeybinds( defaults );
+	EXPECT_EQ( third.toUint64(),
+			   bindings.getShortcutFromCommand( "duplicate-command" ).toUint64() );
+}
+
+UTEST( KeyboardShortcut, SharedBindingsDetachOnMutation ) {
+	KeyBindings defaults( nullptr );
+	defaults.addKeybind( { KEY_A, KEYMOD_CTRL }, "select-all" );
+
+	KeyBindings bindings( nullptr );
+	bindings.setKeybinds( defaults );
+	EXPECT_TRUE( &bindings.getShortcutMap() == &defaults.getShortcutMap() );
+	EXPECT_TRUE( bindings.getCommandFromKeyBind( { KEY_A, KEYMOD_CTRL } ) == "select-all" );
+
+	bindings.addKeybind( { KEY_C, KEYMOD_CTRL }, "copy" );
+	EXPECT_TRUE( &bindings.getShortcutMap() != &defaults.getShortcutMap() );
+	EXPECT_TRUE( bindings.getCommandFromKeyBind( { KEY_C, KEYMOD_CTRL } ) == "copy" );
+	EXPECT_TRUE( defaults.getCommandFromKeyBind( { KEY_C, KEYMOD_CTRL } ).empty() );
+	EXPECT_TRUE( defaults.getCommandFromKeyBind( { KEY_A, KEYMOD_CTRL } ) == "select-all" );
+}
+
 UTEST( KeyboardShortcut, AggregateAltUsesPrimaryAltAndKeepsAltGrDistinct ) {
 	UIApplication app( WindowSettings{ 320, 240, "eepp - keyboard shortcut tests" } );
 	auto& bindings = app.getUI()->getKeyBindings();

@@ -567,12 +567,14 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	syntaxStyle.mLanguageIndex = mDefinitions.size();
 	syntaxStyle.compile();
 	mDefinitions.emplace_back( std::make_shared<SyntaxDefinition>( std::move( syntaxStyle ) ) );
+	mExtensionManyLanguagesCache.clear();
 	return *mDefinitions.back().get();
 }
 
 void SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
 	Lock l( mMutex );
 	mPreDefinitions.emplace_back( std::move( preDefinition ) );
+	mExtensionManyLanguagesCache.clear();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
@@ -1104,6 +1106,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 						Lock l( mMutex );
 						mDefinitions[pos.value()] =
 							std::make_shared<SyntaxDefinition>( std::move( res ) );
+						mExtensionManyLanguagesCache.clear();
 					} else {
 						if ( addedLangs )
 							addedLangs->push_back( res.getLanguageName() );
@@ -1111,6 +1114,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 						res.mLanguageIndex = mDefinitions.size();
 						mDefinitions.emplace_back(
 							std::make_shared<SyntaxDefinition>( std::move( res ) ) );
+						mExtensionManyLanguagesCache.clear();
 					}
 				}
 			}
@@ -1125,6 +1129,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					Lock l( mMutex );
 					mDefinitions[pos.value()] =
 						std::make_shared<SyntaxDefinition>( std::move( res ) );
+					mExtensionManyLanguagesCache.clear();
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
@@ -1132,6 +1137,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back(
 						std::make_shared<SyntaxDefinition>( std::move( res ) ) );
+					mExtensionManyLanguagesCache.clear();
 				}
 			}
 		}
@@ -1259,55 +1265,52 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 	if ( extension[0] != '.' )
 		extension = '.' + extension;
 
-	std::unordered_set<std::string> count;
-	{
-		Lock l( mMutex );
-		for ( const auto& definition : mDefinitions ) {
-			for ( const auto& ext : definition->getFiles() ) {
-				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-					 String::endsWith( ext, "$" ) ) {
-					LuaPattern words( ext );
-					int start, end;
-					if ( words.find( extension, start, end ) ) {
-						count.insert( definition->getLanguageName() );
-						if ( count.size() > 1 )
-							return true;
-						break;
-					}
-				} else if ( extension == ext ) {
-					count.insert( definition->getLanguageName() );
-					if ( count.size() > 1 )
-						return true;
-					break;
-				}
+	Lock l( mMutex );
+	if ( auto it = mExtensionManyLanguagesCache.find( extension );
+		 it != mExtensionManyLanguagesCache.end() )
+		return it->second;
+
+	auto supportsExtension = [&extension]( const std::vector<std::string>& files ) {
+		for ( const auto& ext : files ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern pattern( ext );
+				int start, end;
+				if ( pattern.find( extension, start, end ) )
+					return true;
+			} else if ( extension == ext ) {
+				return true;
 			}
+		}
+		return false;
+	};
+
+	const std::string* matchedLanguage = nullptr;
+	auto foundDifferentLanguage = [&matchedLanguage]( const std::string& language ) {
+		if ( !matchedLanguage ) {
+			matchedLanguage = &language;
+			return false;
+		}
+		return *matchedLanguage != language;
+	};
+
+	for ( const auto& definition : mDefinitions ) {
+		if ( supportsExtension( definition->getFiles() ) &&
+			 foundDifferentLanguage( definition->getLanguageName() ) ) {
+			mExtensionManyLanguagesCache.emplace( extension, true );
+			return true;
 		}
 	}
 
-	{
-		Lock l( mMutex );
-		for ( const auto& preDefinition : mPreDefinitions ) {
-			for ( const auto& ext : preDefinition.getFiles() ) {
-				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-					 String::endsWith( ext, "$" ) ) {
-					LuaPattern words( ext );
-					int start, end;
-					if ( words.find( extension, start, end ) ) {
-						count.insert( preDefinition.getLanguageName() );
-						if ( count.size() > 1 )
-							return true;
-						break;
-					}
-				} else if ( extension == ext ) {
-					count.insert( preDefinition.getLanguageName() );
-					if ( count.size() > 1 )
-						return true;
-					break;
-				}
-			}
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( supportsExtension( preDefinition.getFiles() ) &&
+			 foundDifferentLanguage( preDefinition.getLanguageName() ) ) {
+			mExtensionManyLanguagesCache.emplace( extension, true );
+			return true;
 		}
 	}
 
+	mExtensionManyLanguagesCache.emplace( std::move( extension ), false );
 	return false;
 }
 

@@ -1,10 +1,12 @@
 #ifndef EE_UI_TOOLS_UIDIFFVIEW_HPP
 #define EE_UI_TOOLS_UIDIFFVIEW_HPP
 
+#include <atomic>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
+#include <memory>
 
 namespace EE {
 
@@ -23,6 +25,8 @@ class UIDiffEditorPlugin;
 
 class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
   public:
+	class PreparedMultiFileDiff;
+
 	enum class ViewMode { Unified, SideBySide };
 	enum class SubLineDiffAlgorithm { LCS, SES };
 
@@ -30,7 +34,21 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	static UIScrollView* NewMultiFileDiffViewer( const std::string& patchText,
 												 const std::string& repoPath = "",
-												 ViewMode viewMode = ViewMode::Unified );
+												 ViewMode viewMode = ViewMode::Unified,
+												 bool interactiveFileHeaders = false );
+
+	static UIScrollView*
+	NewMultiFileDiffViewer( std::shared_ptr<PreparedMultiFileDiff> preparedDiff,
+							const std::string& repoPath = "", ViewMode viewMode = ViewMode::Unified,
+							bool interactiveFileHeaders = false );
+
+	/**
+	 * Parses patches and computes sub-line changes without touching UI, documents, or syntax
+	 * definitions. This is safe to run on a worker thread. Returns null when cancelled.
+	 */
+	static std::shared_ptr<PreparedMultiFileDiff>
+	prepareMultiFileDiff( const std::string& patchText,
+						  const std::shared_ptr<std::atomic_bool>& cancelled = {} );
 
 	static std::vector<std::string> splitDiff( const std::string& multiFileDiff );
 
@@ -109,6 +127,7 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	bool isInteractiveFileHeader() const { return mInteractiveFileHeader; }
 
 	void setCollapsed( bool collapsed );
+
 	bool isCollapsed() const { return mCollapsed; }
 
 	bool areHeadersVisible() const { return mHeadersVisible; }
@@ -128,6 +147,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	void setAutoDeleteOldTempImage( bool set ) { mAutoDeleteOldTempImage = set; }
 
   protected:
+	struct PreparedPatch;
+
 	UICodeEditor* mEditor{ nullptr };
 	UICodeEditor* mLeftEditor{ nullptr };
 	UICodeEditor* mRightEditor{ nullptr };
@@ -178,6 +199,14 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	void updateModeButton();
 
 	void computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine );
+
+	static PreparedPatch preparePatch( const std::string& patchText,
+									   const std::string& originalFilePath,
+									   SubLineDiffAlgorithm algorithm,
+									   const std::shared_ptr<std::atomic_bool>& cancelled );
+
+	void loadPreparedPatch( PreparedPatch&& patch, const std::string& originalFilePath,
+							const std::string& oldFilePath, const std::string& repoPath );
 
 	void updateEditorsText();
 
