@@ -49,7 +49,9 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
-const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
+using CodeEditorKeyBindingMap = std::map<KeyBindings::Shortcut, std::string>;
+
+static CodeEditorKeyBindingMap createDefaultCodeEditorKeybindings() {
 	return {
 		{ { KEY_BACKSPACE, KeyMod::getDefaultModifier() }, "delete-to-previous-word" },
 		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
@@ -128,6 +130,32 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_A, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-matches" },
 		{ { KEY_APPLICATION }, "open-context-menu" },
 	};
+}
+
+static std::shared_ptr<const CodeEditorKeyBindingMap> getCachedDefaultCodeEditorKeybindings() {
+	struct Cache {
+		Mutex mutex;
+		Uint32 defaultModifier{ 0 };
+		Uint32 secondaryModifier{ 0 };
+		std::shared_ptr<const CodeEditorKeyBindingMap> bindings;
+	};
+	static Cache cache;
+
+	const Uint32 defaultModifier = KeyMod::getDefaultModifier();
+	const Uint32 secondaryModifier = KeyMod::getDefaultSecondaryModifier();
+	Lock lock( cache.mutex );
+	if ( !cache.bindings || cache.defaultModifier != defaultModifier ||
+		 cache.secondaryModifier != secondaryModifier ) {
+		cache.bindings =
+			std::make_shared<const CodeEditorKeyBindingMap>( createDefaultCodeEditorKeybindings() );
+		cache.defaultModifier = defaultModifier;
+		cache.secondaryModifier = secondaryModifier;
+	}
+	return cache.bindings;
+}
+
+const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
+	return *getCachedDefaultCodeEditorKeybindings();
 }
 
 const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
@@ -2311,10 +2339,41 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	mDocView.updateCache( change.range.start().line(), change.range.start().line(), 0 );
 
 	if ( !change.text.empty() && !mDocView.isWrapEnabled() ) {
-		auto range = findLongestLineInRange( change.range );
-		if ( range.second > mLongestLineWidth ) {
-			mLongestLineIndex = range.first;
-			mLongestLineWidth = range.second;
+		static constexpr Int64 MAX_SYNCHRONOUS_LONGEST_LINE_SCAN = 64;
+		static constexpr std::size_t MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH = 4096;
+		bool largeChange = change.text.size() > MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH ||
+						   change.range.end().line() - change.range.start().line() + 1 >
+							   MAX_SYNCHRONOUS_LONGEST_LINE_SCAN;
+		if ( !largeChange ) {
+			for ( Int64 line = change.range.start().line(); line <= change.range.end().line();
+				  ++line ) {
+				if ( mDoc->getLineLength( line ) > MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH ) {
+					largeChange = true;
+					break;
+				}
+			}
+		}
+		if ( !largeChange ) {
+			Int64 insertedLines = 1;
+			for ( auto chr : change.text ) {
+				if ( chr == '\n' && ++insertedLines > MAX_SYNCHRONOUS_LONGEST_LINE_SCAN ) {
+					largeChange = true;
+					break;
+				}
+			}
+		}
+		if ( !largeChange ) {
+			auto range = findLongestLineInRange( change.range );
+			if ( range.second > mLongestLineWidth ) {
+				mLongestLineIndex = range.first;
+				mLongestLineWidth = range.second;
+			}
+		} else {
+			// Unbounded synchronous measurement makes large pastes and document loads block on
+			// too many lines or one extremely long line, including in editors that are currently
+			// hidden. Reuse the existing debounced full-document update; visible editors will
+			// measure once after the change.
+			invalidateLongestLineWidth();
 		}
 	} else {
 		invalidateLongestLineWidth();
@@ -4795,6 +4854,7 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 }
 
 void UICodeEditor::registerCommands() {
+	mUnlockedCmd.reserve( 8 );
 	mDoc->setCommand( "move-to-previous-line", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->moveToPreviousLine();
 	} );
@@ -4947,7 +5007,9 @@ Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {
 }
 
 void UICodeEditor::registerKeybindings() {
-	mKeyBindings.addKeybinds( getDefaultKeybindings() );
+	// Editors keep mutable bindings, but the immutable defaults only need to be constructed once
+	// for each configured default-modifier pair.
+	mKeyBindings.addKeybinds( *getCachedDefaultCodeEditorKeybindings() );
 	mMouseBindings.addMousebinds( getDefaultMousebindings() );
 }
 

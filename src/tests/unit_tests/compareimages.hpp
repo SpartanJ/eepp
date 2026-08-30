@@ -22,7 +22,8 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 						   int allowedNumDifferentPixels = 0 ) {
 	auto saveType = Image::SaveType::WEBP;
 	auto saveExt( Image::saveTypeToExtension( saveType ) );
-	std::string expectedImagePath( "assets/" + imagesFolder + "/" + imageName + "." + saveExt );
+	std::string expectedImagePath( Sys::getProcessPath() + "assets/" + imagesFolder + "/" +
+								   imageName + "." + saveExt );
 
 	Image::FormatConfiguration fconf;
 	fconf.webpSaveLossless( true );

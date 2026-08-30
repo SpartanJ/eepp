@@ -185,7 +185,9 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 
 	void updateButtonsVisibility();
 
-	void createImageViewers();
+	UIImageViewer* createImageViewer();
+
+	void resetImageViewers();
 
 	bool loadImageDiffFromPaths( const std::string& oldFilePath, const std::string& newFilePath );
 

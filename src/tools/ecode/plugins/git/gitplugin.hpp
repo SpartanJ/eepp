@@ -87,6 +87,8 @@ class GitPlugin : public PluginBase {
 
 	void registerSettings( SettingsPage& page ) override;
 
+	void onSaveState( IniFile* state ) override;
+
 	void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
 
 	FileSystemListenerOptions getFileSystemListenerOptions() const override;

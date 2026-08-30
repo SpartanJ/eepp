@@ -317,3 +317,42 @@ UTEST( GitHistory, ListsChangedFilesAndLoadsFirstParentDiff ) {
 	EXPECT_NE( std::string::npos, diff.result.find( "-before" ) );
 	EXPECT_NE( std::string::npos, diff.result.find( "+after" ) );
 }
+
+UTEST( GitStatus, PreservesSuffixOfRenamedDirectoryNumstatPaths ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Status Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "status@example.invalid" } ) );
+	ASSERT_TRUE( FileSystem::makeDir( ( temp.path / "bin/assets/fontrendering" ).string(), true ) );
+	ASSERT_TRUE( FileSystem::fileWrite(
+		( temp.path / "bin/assets/fontrendering/image.webp" ).string(), "image contents" ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "bin/assets/fontrendering/image.webp" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "-m", "base" } ) );
+	ASSERT_TRUE( FileSystem::makeDir( ( temp.path / "bin/unit_tests" ).string(), true ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "bin/assets", "bin/unit_tests/assets" } ) );
+
+	auto status = git.status( false, temp.path.string() );
+	size_t staged = 0;
+	size_t untracked = 0;
+	for ( const auto& [_, files] : status.files ) {
+		for ( const auto& file : files ) {
+			if ( file.report.type == Git::GitStatusType::Staged ) {
+				++staged;
+				EXPECT_STREQ( "bin/unit_tests/assets/fontrendering/image.webp", file.file.c_str() );
+			} else if ( file.report.type == Git::GitStatusType::Untracked ) {
+				++untracked;
+			}
+		}
+	}
+	EXPECT_EQ( 1u, staged );
+	EXPECT_EQ( 0u, untracked );
+}

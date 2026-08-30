@@ -148,6 +148,60 @@ UTEST( TextDocument, insertLargeMultilineBlock ) {
 	EXPECT_STRINGEQ( "tail\n", doc.line( insertedLineCount + 2 ).getText() );
 }
 
+UTEST( TextDocument, multilineInsertCursorEndsBeforeExistingSuffix ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "prefix-suffix" );
+
+	TextPosition cursor =
+		doc.insert( 0, { 0, 7 }, String::fromUtf8( std::string_view{ "alpha\nβeta\n" } ) );
+
+	EXPECT_EQ( 2, cursor.line() );
+	EXPECT_EQ( 0, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-alpha\nβeta\nsuffix", doc.getText() );
+
+	cursor = doc.insert( 0, cursor, String::fromUtf8( std::string_view{ "γ\nδ" } ) );
+	EXPECT_EQ( 3, cursor.line() );
+	EXPECT_EQ( 1, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-alpha\nβeta\nγ\nδsuffix", doc.getText() );
+
+	TextDocument graphemeDoc;
+	graphemeDoc.insert( 0, { 0, 0 },
+						String::fromUtf8( std::string_view{ "prefix-\u0301suffix" } ) );
+	cursor = graphemeDoc.insert( 0, { 0, 7 }, "line\nA" );
+	EXPECT_EQ( 1, cursor.line() );
+	EXPECT_EQ( 2, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-line\nA\u0301suffix", graphemeDoc.getText() );
+}
+
+UTEST( TextDocument, lineHashRemainsStableAndTracksMutations ) {
+	TextDocumentLine emptyLine( "", nullptr );
+	EXPECT_EQ( String( "" ).getHash(), emptyLine.getHash() );
+
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, String::fromUtf8( std::string_view{ "alpha\nβeta" } ) );
+
+	String firstLine( "alpha\n" );
+	String secondLine( String::fromUtf8( std::string_view{ "βeta\n" } ) );
+	EXPECT_EQ( firstLine.getHash(), doc.getLineHash( 0 ) );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+
+	doc.insert( 0, { 1, 1 }, "!" );
+	secondLine.insert( 1, "!" );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+
+	auto lines = doc.getLines();
+	ASSERT_EQ( size_t{ 2 }, lines.size() );
+	EXPECT_EQ( doc.getLineHash( 0 ), lines[0].getHash() );
+	EXPECT_EQ( doc.getLineHash( 1 ), lines[1].getHash() );
+	TextDocumentLine assigned( "", nullptr );
+	assigned = lines[0];
+	EXPECT_EQ( firstLine.getHash(), assigned.getHash() );
+
+	TextDocumentLine moved( std::move( lines[1] ) );
+	EXPECT_EQ( secondLine.getHash(), moved.getHash() );
+}
+
 UTEST( TextDocument, insertEmptyTextDoesNothing ) {
 	TextDocument doc;
 	doc.insert( 0, { 0, 0 }, "content" );

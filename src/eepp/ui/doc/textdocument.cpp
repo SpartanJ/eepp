@@ -1572,6 +1572,7 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	position = sanitizePosition( position );
 	size_t lineCount = linesCount();
 	Int64 linesAdd = 0;
+	Int64 lastInsertedLineLength = 0;
 	bool multiline = text.find( '\n' ) != String::InvalidPos;
 
 	{
@@ -1596,6 +1597,8 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 				for ( Int64 i = 0; i <= linesAdd; ++i ) {
 					size_t newLine = textView.find( '\n', lineStart );
 					size_t lineEnd = newLine == String::InvalidPos ? textView.size() : newLine + 1;
+					if ( i == linesAdd )
+						lastInsertedLineLength = static_cast<Int64>( lineEnd - lineStart );
 					String line( textView.substr( lineStart, lineEnd - lineStart ) );
 					if ( i == 0 )
 						line.insert( 0, before );
@@ -1616,7 +1619,12 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 		}
 	}
 
-	TextPosition cursor = positionOffset( position, text.size() );
+	// The multiline construction above already knows the final line and column. Start from that
+	// line instead of walking every inserted line again, while still letting positionOffset() move
+	// the endpoint to a grapheme boundary when the inserted text joins the existing suffix.
+	TextPosition cursor =
+		multiline ? positionOffset( { position.line() + linesAdd, 0 }, lastInsertedLineLength )
+				  : positionOffset( position, text.size() );
 
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
@@ -4878,6 +4886,9 @@ void TextDocument::clearIndentation() {
 }
 
 void TextDocument::initializeCommands() {
+	// The built-in document commands and editor-specific commands share this table. Reserve their
+	// known steady-state capacity so every new editor does not repeatedly grow and rehash it.
+	mCommands.reserve( 128 );
 	mCommands["reset-document"] = [this] { reset(); };
 	mCommands["save-doc"] = [this] { save(); };
 	mCommands["delete-to-previous-word"] = [this] { deleteToPreviousWord(); };

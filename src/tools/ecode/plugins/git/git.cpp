@@ -1424,11 +1424,12 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				}
 
 				if ( isBinary || ( inserts || deletes ) ) {
-					std::string rptrn( "(.*)%{.*%s->%s(.*)%}" );
+					std::string rptrn( "(.*)%{.*%s->%s(.*)%}(.*)" );
 					LuaPattern pattern( rptrn );
 					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
 						file = file.substr( matches[1].start, matches[1].end - matches[1].start ) +
-							   file.substr( matches[2].start, matches[2].end - matches[2].start );
+							   file.substr( matches[2].start, matches[2].end - matches[2].start ) +
+							   file.substr( matches[3].start, matches[3].end - matches[3].start );
 					}
 
 					auto filePath = subModulePath + file;

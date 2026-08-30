@@ -29,6 +29,24 @@ UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
 }
 
+UTEST( Node, DescendantWorldBoundsRefreshAfterDirtyAncestorMoves ) {
+	Node* parent = Node::New();
+	Node* child = Node::New();
+	Node* descendant = Node::New();
+	child->setParent( parent );
+	descendant->setParent( child );
+	child->setPosition( 10.f, 0.f );
+	descendant->setPosition( 5.f, 0.f );
+	descendant->setSize( 10.f, 10.f );
+
+	EXPECT_EQ( 15.f, descendant->getWorldBounds().Left );
+	child->setPosition( 20.f, 0.f );
+	EXPECT_EQ( 25.f, descendant->getScreenRect().Left );
+	EXPECT_EQ( 25.f, descendant->getWorldBounds().Left );
+
+	eeDelete( parent );
+}
+
 static void init_test_scene_node( UISceneNode* sceneNode ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();

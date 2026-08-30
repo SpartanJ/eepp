@@ -16,6 +16,15 @@ using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
 
+class TestableCodeEditor : public UICodeEditor {
+  public:
+	TestableCodeEditor() : UICodeEditor() {}
+
+	bool isLongestLineWidthDirtyForTest() const { return mLongestLineWidthDirty; }
+
+	void clearLongestLineWidthDirtyForTest() { mLongestLineWidthDirty = false; }
+};
+
 UTEST( MainThreadLifetime, InvalidatedCallbacksDoNotRun ) {
 	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
 	int owner = 42;
@@ -51,6 +60,67 @@ UTEST( MainThreadLifetime, DispatcherCanBeAttachedAfterConstruction ) {
 	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
 	SceneManager::instance()->update();
 	EXPECT_TRUE( called );
+}
+
+UTEST( UICodeEditor, DefersLongestLineMeasurementForLargeChanges ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - deferred longest line test" } );
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setPixelsSize( 160, 80 );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->setFindLongestLineWidthUpdateFrequency( Time::Zero );
+	app.getUI()->flushDirtyStyleAndLayout();
+	editor->setLineWrapMode( LineWrapMode::NoWrap );
+	EXPECT_EQ( LineWrapMode::NoWrap, editor->getLineWrapMode() );
+	editor->clearLongestLineWidthDirtyForTest();
+
+	String text;
+	for ( size_t i = 0; i < 64; ++i )
+		text += i == 32 ? String( 256, 'x' ) + "\n" : "short\n";
+	editor->getDocument().textInput( text );
+
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().insert( 0, { 0, 0 }, "!" );
+	EXPECT_FALSE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->getDocument().reset();
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().textInput( String( 4097, 'x' ) );
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().insert( 0, { 0, 0 }, "!" );
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	eeDelete( editor );
+}
+
+UTEST( UICodeEditor, DefaultKeybindingCacheTracksConfiguredModifiers ) {
+	const Uint32 originalDefaultModifier = KeyMod::getDefaultModifier();
+	const Uint32 originalSecondaryModifier = KeyMod::getDefaultSecondaryModifier();
+
+	auto defaultBindings = UICodeEditor::getDefaultKeybindings();
+	auto copy = defaultBindings.find( { KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != defaultBindings.end() );
+	if ( copy != defaultBindings.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
+
+	KeyMod::setDefaultModifier( KEYMOD_LALT );
+	KeyMod::setDefaultSecondaryModifier( KEYMOD_META );
+	auto reconfiguredBindings = UICodeEditor::getDefaultKeybindings();
+	copy = reconfiguredBindings.find( { KEY_C, KEYMOD_LALT } );
+	EXPECT_TRUE( copy != reconfiguredBindings.end() );
+	if ( copy != reconfiguredBindings.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
+
+	KeyMod::setDefaultModifier( originalDefaultModifier );
+	KeyMod::setDefaultSecondaryModifier( originalSecondaryModifier );
+	auto restoredBindings = UICodeEditor::getDefaultKeybindings();
+	copy = restoredBindings.find( { KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != restoredBindings.end() );
+	if ( copy != restoredBindings.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
 }
 
 static const std::string userCode = R"objcpp(#import "common.h"

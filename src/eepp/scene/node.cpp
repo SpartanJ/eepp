@@ -533,6 +533,8 @@ Uint32 Node::forceTextInput( const TextInputEvent& event ) {
 }
 
 const Vector2f& Node::getScreenPos() const {
+	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
+		const_cast<Node*>( this )->updateScreenPos();
 	return mScreenPos;
 }
 
@@ -1194,6 +1196,12 @@ void Node::onParentChange() {
 void Node::updateScreenPos() {
 	if ( !( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) )
 		return;
+
+	// Keep the dirty-tree invariant intact when a descendant is queried before its ancestors are
+	// drawn. Once this node becomes position-clean, every ancestor must also be position-clean;
+	// otherwise a later ancestor move can early-out in setDirty() without reaching this node.
+	if ( mParentNode && ( mParentNode->mNodeFlags & NODE_FLAG_POSITION_DIRTY ) )
+		mParentNode->updateScreenPos();
 
 	Vector2f Pos( mPosition );
 

@@ -8,6 +8,7 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -255,6 +256,12 @@ GitPlugin::~GitPlugin() {
 		Sys::sleep( Milliseconds( 1.f ) );
 }
 
+void GitPlugin::onSaveState( IniFile* state ) {
+	std::string commitMessage;
+	Base64::encode( mLastCommitMsg.toUtf8(), commitMessage );
+	state->setValue( "git", "commit_message", commitMessage );
+}
+
 void GitPlugin::runAsyncTask( std::function<void()> task ) {
 	auto runningTasks = mRunningAsyncTasks;
 	++*runningTasks;
@@ -347,6 +354,12 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			updateConfigFile = true;
 		}
 	}
+
+	std::string commitMessage;
+	Base64::decode(
+		getPluginContext()->getConfig().iniState.getValue( "git", "commit_message", "" ),
+		commitMessage );
+	mLastCommitMsg = String::fromUtf8( commitMessage );
 
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["git-blame"] = "alt+shift+b";

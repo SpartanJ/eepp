@@ -494,7 +494,6 @@ UIDiffView::UIDiffView() :
 	createEditor( mEditor, mPlugin );
 	createEditor( mLeftEditor, mLeftPlugin );
 	createEditor( mRightEditor, mRightPlugin );
-	createImageViewers();
 
 	mEditor->on( Event::OnFontChanged, [this]( auto ) { mPlugin->registerUpdate( mEditor ); } );
 	mLeftEditor->on( Event::OnFontChanged, [this]( auto ) {
@@ -506,6 +505,9 @@ UIDiffView::UIDiffView() :
 		mRightPlugin->registerUpdate( mRightEditor );
 		mLeftEditor->setFontSize( mRightEditor->getFontSize() );
 		mLeftPlugin->registerUpdate( mLeftEditor );
+	} );
+	mRightEditor->getVScrollBar()->on( Event::OnSizeChange, [this] ( auto ) {
+		updateModeButton();
 	} );
 
 	for ( auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
@@ -552,7 +554,6 @@ UIDiffView::UIDiffView() :
 	mCompleteViewToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
 
 	updateButtonsText();
-	updateImagesPosAndSize();
 }
 
 UIDiffView::~UIDiffView() {
@@ -589,33 +590,31 @@ void UIDiffView::createEditor( UICodeEditor*& editor,
 	editor->registerPlugin( plugin.get() );
 }
 
-void UIDiffView::createImageViewers() {
-	const auto initImageView = [this] {
-		auto iv = UIImageViewer::New();
-		iv->setParent( this );
-		iv->setVisible( false );
-		iv->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-		iv->setDisplayOptions( UIImageViewer::DisplayDimensions );
-		iv->setUseNativeImageSize( true );
-		return iv;
-	};
-	mLeftImageViewer = initImageView();
-	mRightImageViewer = initImageView();
-	mDiffImageViewer = initImageView();
+UIImageViewer* UIDiffView::createImageViewer() {
+	auto* imageViewer = UIImageViewer::New();
+	imageViewer->setParent( this );
+	imageViewer->setVisible( false );
+	imageViewer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	imageViewer->setDisplayOptions( UIImageViewer::DisplayDimensions );
+	imageViewer->setUseNativeImageSize( true );
+	return imageViewer;
+}
+
+void UIDiffView::resetImageViewers() {
+	for ( auto* imageViewer : { mLeftImageViewer, mRightImageViewer, mDiffImageViewer } ) {
+		if ( imageViewer ) {
+			imageViewer->reset();
+			imageViewer->setVisible( false );
+		}
+	}
+	mSprite = nullptr;
 }
 
 void UIDiffView::resetToTextDiffView() {
 	mIsImageDiff = false;
 	mImageDiffOldPath.clear();
 	mImageDiffNewPath.clear();
-	if ( mLeftImageViewer ) {
-		mLeftImageViewer->reset();
-		mLeftImageViewer->setVisible( false );
-	}
-	if ( mRightImageViewer ) {
-		mRightImageViewer->reset();
-		mRightImageViewer->setVisible( false );
-	}
+	resetImageViewers();
 	mEditor->setVisible( mViewMode == ViewMode::Unified );
 	mLeftEditor->setVisible( mViewMode == ViewMode::SideBySide );
 	mRightEditor->setVisible( mViewMode == ViewMode::SideBySide );
@@ -628,8 +627,8 @@ void UIDiffView::setViewMode( ViewMode mode ) {
 	mViewMode = mode;
 
 	if ( mIsImageDiff ) {
-		onSizeChange();
 		updateImageDiffView();
+		onSizeChange();
 		updateButtonsText();
 		return;
 	}
@@ -668,6 +667,7 @@ void UIDiffView::setCompleteView( bool complete ) {
 	updateButtonsText();
 	if ( mIsImageDiff ) {
 		updateImageDiffView();
+		onSizeChange();
 		return;
 	}
 	updateEditorsText();
@@ -696,7 +696,8 @@ void UIDiffView::updateModeButton() {
 	auto vmargin = mHeadersVisible ? emptySpace * 0.5f : margin;
 
 	Float currentX = getPixelsSize().getWidth() - margin;
-	currentX -= mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
+	Float vScrollWidth = mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
+	currentX -= vScrollWidth;
 
 	if ( mViewModeToggleVisible && mModeToggle ) {
 		currentX -= mModeToggle->getPixelsSize().getWidth();
@@ -734,7 +735,7 @@ void UIDiffView::onAutoSize() {
 									  : mLeftEditor->getPixelsSize().getHeight() ) );
 	}
 
-	if ( mIsImageDiff && mLeftImageViewer && mRightImageViewer && mDiffImageViewer ) {
+	if ( mIsImageDiff ) {
 		bool displayDiffImage;
 		bool displayLeftImage;
 		imageDisplayState( displayDiffImage, displayLeftImage );
@@ -745,39 +746,47 @@ void UIDiffView::onAutoSize() {
 			return 0;
 		};
 
-		height = std::max( height, viewImageHeight( mLeftImageViewer ) );
-		height = std::max( height, viewImageHeight( mRightImageViewer ) );
-
-		if ( displayDiffImage )
+		if ( displayDiffImage ) {
 			height = std::ceil( std::max( height, viewImageHeight( mDiffImageViewer ) ) );
+		} else {
+			if ( displayLeftImage )
+				height = std::max( height, viewImageHeight( mLeftImageViewer ) );
+			height = std::max( height, viewImageHeight( mRightImageViewer ) );
+		}
 
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
 }
 
 void UIDiffView::updateImagesPosAndSize() {
+	if ( !mIsImageDiff )
+		return;
+
 	const Sizef size( getPixelsSize() );
 
 	bool displayDiffImage;
 	bool displayLeftImage;
 	imageDisplayState( displayDiffImage, displayLeftImage );
 
-	mLeftImageViewer->setVisible( true );
-	mLeftImageViewer->setPixelsPosition( 0, 0 );
-	mLeftImageViewer->setPixelsSize( { size.getWidth() * 0.5f, size.getHeight() } );
-	setImageViewerImageSize( mLeftImageViewer );
+	if ( mLeftImageViewer ) {
+		mLeftImageViewer->setPixelsPosition( 0, 0 );
+		mLeftImageViewer->setPixelsSize( { size.getWidth() * 0.5f, size.getHeight() } );
+		setImageViewerImageSize( mLeftImageViewer );
+	}
 
-	mRightImageViewer->setVisible( true );
-	mRightImageViewer->setPixelsSize(
-		displayLeftImage ? Sizef{ size.getWidth() * 0.5f, size.getHeight() } : size );
-	mRightImageViewer->setPixelsPosition(
-		displayLeftImage ? std::floor( size.getWidth() * 0.5f ) : 0.f, 0.f );
-	setImageViewerImageSize( mRightImageViewer );
+	if ( mRightImageViewer ) {
+		mRightImageViewer->setPixelsSize(
+			displayLeftImage ? Sizef{ size.getWidth() * 0.5f, size.getHeight() } : size );
+		mRightImageViewer->setPixelsPosition(
+			displayLeftImage ? std::floor( size.getWidth() * 0.5f ) : 0.f, 0.f );
+		setImageViewerImageSize( mRightImageViewer );
+	}
 
-	mDiffImageViewer->setVisible( true );
-	mDiffImageViewer->setPixelsPosition( 0, 0 );
-	mDiffImageViewer->setPixelsSize( size );
-	setImageViewerImageSize( mDiffImageViewer );
+	if ( mDiffImageViewer ) {
+		mDiffImageViewer->setPixelsPosition( 0, 0 );
+		mDiffImageViewer->setPixelsSize( size );
+		setImageViewerImageSize( mDiffImageViewer );
+	}
 
 	onAutoSize();
 	updateModeButton();
@@ -879,6 +888,7 @@ bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
 	if ( !hasOldImage && !hasNewImage )
 		return false;
 
+	resetImageViewers();
 	mLines.clear();
 	mViewLines.clear();
 	mSyntaxDef.reset();
@@ -902,8 +912,8 @@ bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
 
 	setCompleteViewToggleVisible( !mImageDiffOldPath.empty() && !mImageDiffNewPath.empty() );
 	updateButtonsText();
-	onSizeChange();
 	updateImageDiffView();
+	onSizeChange();
 	return true;
 }
 
@@ -933,18 +943,23 @@ void UIDiffView::updateImageDiffView() {
 	mLeftEditor->setVisible( false );
 	mRightEditor->setVisible( false );
 
-	mDiffImageViewer->setVisible( false );
+	if ( mDiffImageViewer )
+		mDiffImageViewer->setVisible( false );
 
 	if ( displayLeftImage ) {
+		if ( !mLeftImageViewer )
+			mLeftImageViewer = createImageViewer();
 		mLeftImageViewer->setVisible( true );
 		if ( !mLeftImageViewer->hasImage() )
 			mLeftImageViewer->loadImageAsync( mImageDiffOldPath, false, false );
-	} else {
+	} else if ( mLeftImageViewer ) {
 		mLeftImageViewer->reset();
 		mLeftImageViewer->setVisible( false );
 	}
 
 	if ( displayDiffImage ) {
+		if ( !mDiffImageViewer )
+			mDiffImageViewer = createImageViewer();
 		if ( nullptr == mSprite ) {
 			Image oldImage( mImageDiffOldPath, 4 );
 			Image newImage( mImageDiffNewPath, 4 );
@@ -955,8 +970,10 @@ void UIDiffView::updateImageDiffView() {
 			}
 		}
 
-		mLeftImageViewer->setVisible( false );
-		mRightImageViewer->setVisible( false );
+		if ( mLeftImageViewer )
+			mLeftImageViewer->setVisible( false );
+		if ( mRightImageViewer )
+			mRightImageViewer->setVisible( false );
 		mDiffImageViewer->setVisible( true );
 		return;
 	}
@@ -965,10 +982,12 @@ void UIDiffView::updateImageDiffView() {
 		mImageDiffNewPath.empty() ? mImageDiffOldPath : mImageDiffNewPath;
 
 	if ( !displayPath.empty() ) {
+		if ( !mRightImageViewer )
+			mRightImageViewer = createImageViewer();
 		mRightImageViewer->setVisible( true );
 		if ( !mRightImageViewer->hasImage() )
 			mRightImageViewer->loadImageAsync( displayPath, false, false );
-	} else {
+	} else if ( mRightImageViewer ) {
 		mRightImageViewer->reset();
 		mRightImageViewer->setVisible( false );
 	}

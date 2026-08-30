@@ -16,11 +16,13 @@ using namespace EE::UI::Tools;
 UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
 	UIDiffView* diffView = UIDiffView::New();
+	EXPECT_TRUE( diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 
 	std::string oldText = "line 1\nline 2\nline 3\nline 4";
 	std::string newText = "line 1\nline 2 changed\nline 3\nline 4 added\nline 5";
 
 	diffView->loadFromStrings( oldText, newText );
+	EXPECT_TRUE( diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 
 	const auto& lines = diffView->getDiffLines();
 
@@ -158,6 +160,7 @@ UTEST( UIDiffView, MultiFileViewerHandlesLargePatches ) {
 
 	auto* viewer = UIDiffView::NewMultiFileDiffViewer( patchText );
 	EXPECT_EQ( fileCount, viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW ).size() );
+	EXPECT_TRUE( viewer->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 	EXPECT_FALSE( viewer->getUISceneNode()->isLoading() );
 
 	eeDelete( viewer );
@@ -180,6 +183,7 @@ UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {
 	EXPECT_TRUE( diffView->isImageDiff() );
 	EXPECT_TRUE( diffView->getLeftImageViewer()->isVisible() );
 	EXPECT_TRUE( diffView->getRightImageViewer()->isVisible() );
+	EXPECT_EQ( size_t{ 2 }, diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).size() );
 	EXPECT_FALSE( diffView->getEditor()->isVisible() );
 	EXPECT_FALSE( diffView->getLeftEditor()->isVisible() );
 	EXPECT_FALSE( diffView->getRightEditor()->isVisible() );
