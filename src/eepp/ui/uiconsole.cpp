@@ -1051,7 +1051,7 @@ Uint32 UIConsole::onTextEditing( const TextEditingEvent& event ) {
 }
 
 void UIConsole::updateIMELocation( const Rectf& loc ) {
-	if ( mDoc.getActiveClient() != this )
+	if ( !hasFocus() || mDoc.getActiveClient() != this )
 		return;
 	getUISceneNode()->getWindow()->getIME().setLocation( loc.asInt() );
 }

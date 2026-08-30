@@ -16,6 +16,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <algorithm>
+#include <iterator>
 #include <set>
 
 using namespace std::literals;
@@ -1570,30 +1572,47 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	position = sanitizePosition( position );
 	size_t lineCount = linesCount();
 	Int64 linesAdd = 0;
+	bool multiline = text.find( '\n' ) != String::InvalidPos;
 
 	{
 		Lock l( mLinesMutex );
-		if ( text.find( '\n' ) == String::InvalidPos ) {
+		if ( !multiline ) {
 			mLines[position.line()].insert( position.column(), text );
 			notifyLineChanged( position.line() );
 		} else {
-			String before = mLines[position.line()].substr( 0, position.column() );
-			String after = mLines[position.line()].substr( position.column() );
-			std::vector<String> lines = text.split( '\n', true );
-			linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
-			for ( auto i = 0; i < linesAdd; i++ )
-				lines[i] = lines[i] + "\n";
-			lines[0] = before + lines[0];
-			lines[lines.size() - 1] = lines[lines.size() - 1] + after;
+			{
+				Lock l2( *mDocumentMutex );
+				String before = mLines[position.line()].substr( 0, position.column() );
+				String after = mLines[position.line()].substr( position.column() );
+				String::View textView = text.view();
+				linesAdd =
+					static_cast<Int64>( std::count( textView.begin(), textView.end(), '\n' ) );
+				// Build the new document lines once and insert the complete range. Inserting each
+				// line separately repeatedly grows the vector and shifts its trailing elements.
+				SmallVector<TextDocumentLine, 8> lines;
+				lines.reserve( static_cast<size_t>( linesAdd ) );
 
-			mLines[position.line()] = TextDocumentLine( lines[0], mDocumentMutex );
-			notifyLineChanged( position.line() );
+				size_t lineStart = 0;
+				for ( Int64 i = 0; i <= linesAdd; ++i ) {
+					size_t newLine = textView.find( '\n', lineStart );
+					size_t lineEnd = newLine == String::InvalidPos ? textView.size() : newLine + 1;
+					String line( textView.substr( lineStart, lineEnd - lineStart ) );
+					if ( i == 0 )
+						line.insert( 0, before );
+					if ( i == linesAdd )
+						line.append( after );
+					if ( i == 0 )
+						mLines[position.line()].setText( std::move( line ) );
+					else
+						lines.emplace_back( std::move( line ), mDocumentMutex );
+					lineStart = lineEnd;
+				}
 
-			for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
-				mLines.insert( mLines.begin() + position.line() + i,
-							   TextDocumentLine( lines[i], mDocumentMutex ) );
-				notifyLineChanged( position.line() + i );
+				mLines.insert( mLines.begin() + position.line() + 1,
+							   std::make_move_iterator( lines.begin() ),
+							   std::make_move_iterator( lines.end() ) );
 			}
+			notifyLinesChanged( position.line(), position.line() + linesAdd );
 		}
 	}
 
@@ -4395,6 +4414,14 @@ void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentLineChanged( lineIndex );
+	}
+}
+
+void TextDocument::notifyLinesChanged( const Int64& firstLine, const Int64& lastLine ) {
+	Lock l( mClientsMutex );
+	for ( Int64 lineIndex = firstLine; lineIndex <= lastLine; ++lineIndex ) {
+		for ( auto& client : mClients )
+			client->onDocumentLineChanged( lineIndex );
 	}
 }
 

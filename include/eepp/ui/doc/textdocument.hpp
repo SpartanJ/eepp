@@ -853,6 +853,8 @@ class EE_API TextDocument {
 
 	void notifyLineChanged( const Int64& lineIndex );
 
+	void notifyLinesChanged( const Int64& firstLine, const Int64& lastLine );
+
 	void notifyUndoRedo( const UndoRedo& eventType );
 
 	void notifyDirtyOnFileSystem();

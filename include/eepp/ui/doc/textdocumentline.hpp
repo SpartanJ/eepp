@@ -17,6 +17,23 @@ class EE_API TextDocumentLine {
 		updateState();
 	}
 
+	TextDocumentLine( String&& text, std::shared_ptr<Mutex> docMutex ) :
+		mText( std::move( text ) ), mDocMutex( std::move( docMutex ) ) {
+		updateState();
+	}
+
+	TextDocumentLine( const TextDocumentLine& ) = default;
+
+	TextDocumentLine( TextDocumentLine&& other ) noexcept : mDocMutex( other.mDocMutex ) {
+		ConditionalLock lock( mDocMutex != nullptr, mDocMutex.get() );
+		mText = std::move( other.mText );
+		mHash = other.mHash;
+		mFlags = other.mFlags;
+		other.mDocMutex.reset();
+	}
+
+	TextDocumentLine& operator=( const TextDocumentLine& ) = default;
+
 	~TextDocumentLine() {
 		if ( mDocMutex ) {
 			// Wait for any readers to finish before destruction

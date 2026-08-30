@@ -23,6 +23,12 @@ class EE_API InputMethod {
 		Int32 length{ 0 };
 	};
 
+	/**
+	 * Queues the text-input candidate location. Backend updates are coalesced globally and limited
+	 * to one every 50 ms by default. Set EEPP_IME_LOCATION_UPDATE_INTERVAL_MS to a non-negative
+	 * integer to override the interval (values are capped at 65535 ms); 0 applies the latest
+	 * location once per rendered frame.
+	 */
 	void setLocation( Rect rect );
 
 	bool isEditing() const;
@@ -51,11 +57,15 @@ class EE_API InputMethod {
 	EE::Window::Window* mWindow{ nullptr };
 	InputMethod::State mState;
 	bool mEditing{ false };
+	bool mLocationDirty{ false };
+	Uint16 mLocationUpdateCooldown{ 0 };
 	Rect mLastLocation;
 	Uint32 mLastCb{ 0 };
 	std::map<Uint32, TextEditingCb> mEditingCbs;
 
 	void sendTextEditing( const String& txt, Int32 start, Int32 length );
+
+	void updateLocation();
 };
 
 }} // namespace EE::Window

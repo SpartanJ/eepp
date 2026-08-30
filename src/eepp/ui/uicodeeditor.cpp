@@ -1156,8 +1156,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->isLoading() || mDoc->getActiveClient() != this || !Engine::isMainThread() ||
-		 mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
+	if ( !hasFocus() || mDoc->isLoading() || mDoc->getActiveClient() != this ||
+		 !Engine::isMainThread() || mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
 		return;
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );

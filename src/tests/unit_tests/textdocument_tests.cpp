@@ -127,6 +127,27 @@ UTEST( TextDocument, insertIntoExistingLines ) {
 	EXPECT_STRINGEQ( "Yond\n", doc.line( 3 ).getText() );
 }
 
+UTEST( TextDocument, insertLargeMultilineBlock ) {
+	constexpr size_t insertedLineCount = 8192;
+	String text;
+	text.reserve( insertedLineCount * 4 + 4 );
+	for ( size_t i = 0; i < insertedLineCount; ++i )
+		text.append( "row\n" );
+	text.append( "last" );
+
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "head\nmiddle\ntail" );
+	TextPosition cursor = doc.insert( 0, { 1, 3 }, text );
+
+	EXPECT_EQ( insertedLineCount + 1, static_cast<size_t>( cursor.line() ) );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_EQ( insertedLineCount + 3, doc.linesCount() );
+	EXPECT_STRINGEQ( "midrow\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "row\n", doc.line( insertedLineCount ).getText() );
+	EXPECT_STRINGEQ( "lastdle\n", doc.line( insertedLineCount + 1 ).getText() );
+	EXPECT_STRINGEQ( "tail\n", doc.line( insertedLineCount + 2 ).getText() );
+}
+
 UTEST( TextDocument, insertEmptyTextDoesNothing ) {
 	TextDocument doc;
 	doc.insert( 0, { 0, 0 }, "content" );
