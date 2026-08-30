@@ -128,10 +128,13 @@ class UITerminal : public UIWidget {
 	ScrollViewType mViewType{ ScrollViewType::Overlay };
 	ScrollBarMode mVScrollMode{ ScrollBarMode::Auto };
 	UIScrollBar* mVScroll{ nullptr };
-	int mScrollOffset;
+	int mScrollOffset{ 0 };
 	bool mScrollByBar{ false };
+	bool mPendingContentSizeChange{ false };
+	Uint64 mPendingScrollCommand{ 0 };
 	Clock mMouseClock;
 	std::shared_ptr<TerminalDisplay> mTerm;
+	Uint32 mTerminalEventCallbackId{ 0 };
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 

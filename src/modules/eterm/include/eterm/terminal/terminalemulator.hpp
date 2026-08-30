@@ -155,6 +155,9 @@ class TerminalEmulator final {
 
 	void redraw();
 
+	/** Worker-owned terminal state reset (RIS semantics without replacing the PTY/process). */
+	void reset();
+
 	void logError( const char* err );
 
 	/** @return If the tty read was completed or there's still buffer to read (true completed) */
@@ -245,6 +248,9 @@ class TerminalEmulator final {
 
 	void setAllowMemoryTrimnming( bool allowMemoryTrimnming );
 
+	/** Worker-only maximum interval between snapshots while PTY reads remain saturated. */
+	void setPresentationInterval( Time interval );
+
 	Vector2i getSize() const;
 
 	System::IProcess* getProcess() const;
@@ -277,8 +283,8 @@ class TerminalEmulator final {
 
 	bool mDirty{ true };
 	bool mAllDirty{ true };
-	uint8_t mDeferredPresentationBatches{ 0 };
 	Clock mPresentationClock;
+	Time mPresentationInterval{ Microseconds( 1000000.0 / 60.0 ) };
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
 
@@ -301,6 +307,7 @@ class TerminalEmulator final {
 	int mAllowWindowOps;
 
 	std::string mCurrentWorkingDirectory;
+	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 	DataCb mDataCb;

@@ -1928,6 +1928,20 @@ solution "eepp"
 		end
 		build_link_configuration( "eterm", false )
 
+	project "eterm-tabs"
+		set_kind()
+		language "C++"
+		files { "src/tools/eterm_tabs/**.cpp" }
+		links { "eterm-static" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
+		if os.is_real("linux") then
+			links { "util" }
+		end
+		if os.is("haiku") then
+			links { "bsd" }
+		end
+		build_link_configuration( "eterm-tabs", false )
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"

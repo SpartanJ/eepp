@@ -149,8 +149,7 @@ void inputCallback( InputEvent* event ) {
 }
 
 bool onCloseRequestCallback( EE::Window::Window* ) {
-	if ( warnBeforeClose &&
-		 Sys::processHasChildren( terminal->getTerminal()->getProcess()->pid() ) ) {
+	if ( warnBeforeClose && Sys::processHasChildren( terminal->getProcessId() ) ) {
 		displayingWarnBeforeClose = true;
 		needsRedraw = true;
 		return false;
@@ -366,7 +365,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		terminal->setFontHinting( fontHinting.Get() );
 		terminal->setFontAntialiasing( fontAntialiasing.Get() );
 
-		terminal->getTerminal()->setAllowMemoryTrimnming( true );
+		terminal->setAllowMemoryTrimming( true );
 		terminal->setCursorMode( cursorStyle.Get() );
 		terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
 			if ( event.type == TerminalDisplay::EventType::TITLE ) {

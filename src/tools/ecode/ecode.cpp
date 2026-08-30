@@ -77,7 +77,7 @@ App* App::instance() {
 bool App::isAnyTerminalDirty() const {
 	bool dirty = false;
 	mSplitter->forEachWidgetTypeStoppable( UI_TYPE_TERMINAL, [&dirty]( UIWidget* widget ) -> bool {
-		ProcessID pid = widget->asType<UITerminal>()->getTerm()->getTerminal()->getProcess()->pid();
+		ProcessID pid = widget->asType<UITerminal>()->getTerm()->getProcessId();
 		if ( Sys::processHasChildren( pid ) ) {
 			dirty = true;
 			return true;
@@ -5063,7 +5063,7 @@ void App::init( InitParameters& params ) {
 													  focusTabBehavior, onMsgBoxCloseCb );
 			} else if ( mConfig.term.warnBeforeClosingTab && widget->isType( UI_TYPE_TERMINAL ) ) {
 				UITerminal* term = widget->asType<UITerminal>();
-				ProcessID pid = term->getTerm()->getTerminal()->getProcess()->pid();
+				ProcessID pid = term->getTerm()->getProcessId();
 				std::string msgBoxId = String::format( "msgbox_%p", this );
 				if ( Sys::processHasChildren( pid ) ) {
 					if ( nullptr != getUISceneNode()->find( msgBoxId ) )

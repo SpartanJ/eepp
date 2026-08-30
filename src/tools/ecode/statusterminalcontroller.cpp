@@ -27,7 +27,7 @@ bool StatusTerminalController::tryTabClose( UITab* tab ) {
 
 	if ( mContext->getConfig().term.warnBeforeClosingTab && widget->isType( UI_TYPE_TERMINAL ) ) {
 		UITerminal* term = widget->asType<UITerminal>();
-		ProcessID pid = term->getTerm()->getTerminal()->getProcess()->pid();
+		ProcessID pid = term->getTerm()->getProcessId();
 		if ( Sys::processHasChildren( pid ) ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::OK_CANCEL,
@@ -141,8 +141,7 @@ UITerminal* StatusTerminalController::createTerminal(
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
 		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
 		initialSize, program, args, env,
-		!workingDir.empty() ? workingDir
-							: mContext->getTerminalManager()->getSelectedWorkingDir(),
+		!workingDir.empty() ? workingDir : mContext->getTerminalManager()->getSelectedWorkingDir(),
 		10000, nullptr, false );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
@@ -154,7 +153,7 @@ UITerminal* StatusTerminalController::createTerminal(
 	const auto& currentTerminalColorScheme =
 		mContext->getTerminalManager()->getTerminalCurrentColorScheme();
 	auto csIt = terminalColorSchemes.find( currentTerminalColorScheme );
-	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setAllowMemoryTrimming( true );
 	term->getTerm()->setCursorMode( mContext->termConfig().cursorStyle );
 	term->setExclusiveMode( mContext->termConfig().exclusiveMode );
 	term->setScrollViewType( mContext->termConfig().scrollBarType );
@@ -242,7 +241,8 @@ UITerminal* StatusTerminalController::createTerminal(
 
 	UIIcon* icon = mUISceneNode->findIcon( "terminal" );
 	auto tab = mTabWidget->add(
-		program, term, icon != nullptr ? icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) : nullptr );
+		program, term,
+		icon != nullptr ? icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) : nullptr );
 
 	term->setData( (UintPtr)tab );
 	term->on( Event::OnTitleChange, [tab, term]( auto ) { tab->setText( term->getTitle() ); } );

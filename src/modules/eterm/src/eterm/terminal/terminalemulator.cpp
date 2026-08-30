@@ -844,6 +844,10 @@ void TerminalEmulator::setAllowMemoryTrimnming( bool allowMemoryTrimnming ) {
 	mAllowMemoryTrimnming = allowMemoryTrimnming;
 }
 
+void TerminalEmulator::setPresentationInterval( Time interval ) {
+	mPresentationInterval = interval > Time::Zero ? interval : Microseconds( 1000000.0 / 60.0 );
+}
+
 Vector2i TerminalEmulator::getSize() const {
 	return { mTerm.col, mTerm.row };
 }
@@ -3232,7 +3236,6 @@ void TerminalEmulator::draw() {
 		mTerm.ocy = mTerm.c.y;
 
 		dpy->drawEnd();
-		mDeferredPresentationBatches = 0;
 		mPresentationClock.restart();
 	}
 
@@ -3243,6 +3246,11 @@ void TerminalEmulator::draw() {
 void TerminalEmulator::redraw() {
 	tfulldirt();
 	draw();
+}
+
+void TerminalEmulator::reset() {
+	treset();
+	redraw();
 }
 
 int TerminalEmulator::xsetcolorname( int x, const char* name ) {
@@ -3316,8 +3324,6 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 
 	int len, btn, code;
 	char buf[40];
-	static int ox, oy;
-
 	for ( btn = 1; btn <= 31 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
 		;
 
@@ -3343,7 +3349,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 	}
 
 	if ( type == TerminalMouseEventType::MouseMotion ) {
-		if ( pos.x == ox && pos.y == oy )
+		if ( pos == mLastMousePosition )
 			return;
 		if ( !xgetmode( MODE_MOUSEMOTION ) && !xgetmode( MODE_MOUSEMANY ) )
 			return;
@@ -3371,8 +3377,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		code = 0;
 	}
 
-	ox = pos.x;
-	oy = pos.y;
+	mLastMousePosition = pos;
 
 	/* Encode btn into code. If no button is pressed for a motion event in
 	 * MODE_MOUSEMANY, then encode it as a release. */
@@ -3598,23 +3603,23 @@ bool TerminalEmulator::update() {
 
 	int reads = 0;
 	Clock readBudgetClock;
+	bool presentationDeadlineReached = false;
 	while ( reads < MAX_TTY_READS && ttyread() > 0 ) {
 		++reads;
+		if ( mPresentationClock.getElapsedTime() >= mPresentationInterval ) {
+			presentationDeadlineReached = true;
+			break;
+		}
 		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
 			break;
 	}
 	bool readBudgetSaturated =
-		reads == MAX_TTY_READS ||
+		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
 
-	/* Keep presentation decoupled from every PTY read batch, but bound the
-	 * deferral so sustained output remains visibly live. The time limit handles
-	 * expensive batches; the batch limit guarantees progress when updates are
-	 * individually very fast. */
-	if ( readBudgetSaturated )
-		++mDeferredPresentationBatches;
-	bool presentationDue = !readBudgetSaturated || mDeferredPresentationBatches >= 32 ||
-						   mPresentationClock.getElapsedTime() >= Milliseconds( 75 );
+	/* Keep presentation decoupled from every PTY read batch. Sustained output publishes on the
+	 * host frame deadline, while a drained/idle burst still publishes immediately. */
+	bool presentationDue = !readBudgetSaturated || presentationDeadlineReached;
 	if ( presentationDue && ( reads > 0 || mDirty ) )
 		draw();
 
@@ -3626,6 +3631,9 @@ bool TerminalEmulator::update() {
 	if ( mProcess->hasExited() && !readBudgetSaturated ) {
 		mExitCode = mProcess->getExitCode();
 		mStatus = TERMINATED;
+		// Publish process state together with the final drained frame before the ordered exit
+		// event.
+		redraw();
 		onProcessExit( mExitCode );
 	}
 

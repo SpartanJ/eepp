@@ -1958,6 +1958,18 @@ workspace "eepp"
 		filter "system:haiku"
 			links { "bsd" }
 
+	project "eterm-tabs"
+		set_kind()
+		language "C++"
+		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
+		files { "src/tools/eterm_tabs/**.cpp" }
+		links { "eterm-static" }
+		build_link_configuration( "eterm-tabs", false )
+		filter "system:linux or system:bsd"
+			links { "util" }
+		filter "system:haiku"
+			links { "bsd" }
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"
