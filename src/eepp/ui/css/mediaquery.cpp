@@ -448,8 +448,4 @@ MediaQueryList::MediaQueryList() {
 	mUsed = false;
 }
 
-bool MediaQueryList::isUsed() const {
-	return mUsed;
-}
-
 }}} // namespace EE::UI::CSS

@@ -155,7 +155,7 @@ class EE_API Image {
 
 	/** @return The save type from a given extension ( example: "png" => SaveType::SAVE_TYPE_PNG )
 	 */
-	static SaveType extensionToSaveType( const std::string& Extension );
+	static SaveType extensionToSaveType( std::string_view extension );
 
 	/** @return Convert the number of channels to a pixel format */
 	static PixelFormat channelsToPixelFormat( const Uint32& channels );

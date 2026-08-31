@@ -57,7 +57,7 @@ class EE_API StyleSheetStyle {
 
 	void setVariable( const StyleSheetVariable& variable, bool setSelectorSpecificity = true );
 
-	bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
+	inline bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
 
 	const MediaQueryList::ptr& getMediaQueryList() const;
 

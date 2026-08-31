@@ -324,9 +324,9 @@ class EE_API Renderer {
 
 	void getCompressedTexImage( unsigned int target, int level, void* pixels );
 
-	const bool& quadsSupported() const;
+	inline bool quadsSupported() const { return mQuadsSupported; }
 
-	const int& quadVertex() const;
+	inline int quadVertex() const { return mQuadVertex; }
 
 	ClippingMask* getClippingMask() const;
 

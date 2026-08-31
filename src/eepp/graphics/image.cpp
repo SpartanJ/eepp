@@ -485,22 +485,23 @@ std::string Image::saveTypeToExtension( Image::SaveType Format ) {
 	return "";
 }
 
-Image::SaveType Image::extensionToSaveType( const std::string& Extension ) {
+Image::SaveType Image::extensionToSaveType( std::string_view extension ) {
 	SaveType saveType = SaveType::Unknown;
 
-	if ( Extension == "tga" )
+	if ( String::iequals( extension, "tga" ) )
 		saveType = SaveType::TGA;
-	else if ( Extension == "bmp" )
+	else if ( String::iequals( extension, "bmp" ) )
 		saveType = SaveType::BMP;
-	else if ( Extension == "png" )
+	else if ( String::iequals( extension, "png" ) )
 		saveType = SaveType::PNG;
-	else if ( Extension == "dds" )
+	else if ( String::iequals( extension, "dds" ) )
 		saveType = SaveType::DDS;
-	else if ( Extension == "jpg" || Extension == "jpeg" )
+	else if ( String::iequals( extension, "jpg" ) || String::iequals( extension, "jpeg" ) ||
+			  String::iequals( extension, "jfif" ) )
 		saveType = SaveType::JPG;
-	else if ( Extension == "qoi" )
+	else if ( String::iequals( extension, "qoi" ) )
 		saveType = SaveType::QOI;
-	else if ( Extension == "webp" )
+	else if ( String::iequals( extension, "webp" ) )
 		saveType = SaveType::WEBP;
 
 	return saveType;
@@ -654,14 +655,15 @@ Image::Format Image::getFormat( IOStream& stream ) {
 bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
-			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
-			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" || ext == "webp" ||
-			 ext == "jpe" || ext == "astc" );
+			 ext == "jpeg" || ext == "jfif" || ext == "dds" || ext == "psd" || ext == "hdr" ||
+			 ext == "pic" || ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" ||
+			 ext == "webp" || ext == "jpe" || ext == "astc" );
 }
 
 std::vector<std::string> Image::getImageExtensionsSupported() {
-	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds", "psd", "hdr",
-									 "pic", "pvr", "pkm", "svg", "qoi", "webp", "jpe", "astc" };
+	return std::vector<std::string>{ "png", "tga", "bmp",  "jpg", "gif",  "jpeg",
+									 "dds", "psd", "hdr",  "pic", "pvr",  "pkm",
+									 "svg", "qoi", "webp", "jpe", "astc", "jfif" };
 }
 
 std::string Image::getLastFailureReason() {

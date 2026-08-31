@@ -61,18 +61,6 @@ std::string Text::fontFeaturesToString( Uint32 features ) {
 	return value;
 }
 
-Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
-	Float advance = hspace * tabWidth;
-	if ( tabOffset ) {
-		Float offset = fmodf( *tabOffset, advance );
-		advance = advance - offset;
-		// If there is not enough space until the next stop, skip it
-		if ( advance < hspace )
-			advance += hspace * tabWidth;
-	}
-	return advance;
-}
-
 std::string Text::styleFlagToString( const Uint32& flags ) {
 	std::string str;
 
@@ -270,19 +258,20 @@ static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector
 							  const Color& color, bool isItalic ) {
 	BR->setSubpixelText( gd->getGlyphRenderMode() == GlyphRenderMode::Subpixel );
 	BR->quadsSetColor( color );
-	BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
-						  gd->getSrcRect().Left + gd->getSrcRect().Right,
-						  gd->getSrcRect().Top + gd->getSrcRect().Bottom );
+	const auto& srcRect = gd->getSrcRect();
+	const auto& offset = gd->getGlyphOffset();
+	const auto& destSize = gd->getDestSize();
+	BR->quadsSetTexCoord( srcRect.Left, srcRect.Top, srcRect.Left + srcRect.Right,
+						  srcRect.Top + srcRect.Bottom );
 	if ( isItalic && !gd->isItalic() ) {
-		Float x = position.x + gd->getGlyphOffset().x;
-		Float y = position.y + gd->getGlyphOffset().y;
-		Float italic = 0.208f * gd->getDestSize().getWidth(); // 12 degrees
-		BR->batchQuadFree( x + italic, y, x, y + gd->getDestSize().getHeight(),
-						   x + gd->getDestSize().getWidth(), y + gd->getDestSize().getHeight(),
-						   x + gd->getDestSize().getWidth() + italic, y );
+		Float x = position.x + offset.x;
+		Float y = position.y + offset.y;
+		Float italic = 0.208f * destSize.getWidth(); // 12 degrees
+		BR->batchQuadFree( x + italic, y, x, y + destSize.getHeight(), x + destSize.getWidth(),
+						   y + destSize.getHeight(), x + destSize.getWidth() + italic, y );
 	} else {
-		BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
-					   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
+		BR->batchQuad( position.x + offset.x, position.y + offset.y, destSize.getWidth(),
+					   destSize.getHeight() );
 	}
 }
 
@@ -1074,7 +1063,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
 								   canSkipShaping( textDrawHints ) ) );
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 	if ( isMonospace ) {
 		size_t len = string.length();
@@ -1139,7 +1128,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
@@ -1212,7 +1201,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Italic ) != 0;
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
 
 	// Compute the position, starting from initialOffset
@@ -1463,7 +1452,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	Vector2f fpos( adjX, adjY );
 
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&

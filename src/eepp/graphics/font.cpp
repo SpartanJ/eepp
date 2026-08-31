@@ -87,11 +87,6 @@ const FontType& Font::getType() const {
 	return mType;
 }
 
-Float Font::getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-							 Float outlineThickness ) const {
-	return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
-}
-
 const std::string& Font::getName() const {
 	return mFontName;
 }

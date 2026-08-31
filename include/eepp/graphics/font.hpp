@@ -140,7 +140,9 @@ class EE_API Font {
 
 	/** Returns the horizontal advance without requiring a renderable glyph texture. */
 	virtual Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
-								   bool italic = false, Float outlineThickness = 0 ) const;
+								   bool italic = false, Float outlineThickness = 0 ) const {
+		return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
+	}
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */

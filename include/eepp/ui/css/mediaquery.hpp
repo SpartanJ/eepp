@@ -157,7 +157,7 @@ class EE_API MediaQueryList {
 
 	static MediaQueryList::ptr parse( const std::string& str );
 
-	bool isUsed() const;
+	inline bool isUsed() const { return mUsed; }
 
 	bool applyMediaFeatures( const MediaFeatures& features ); // returns true if the isUsed changed
 
