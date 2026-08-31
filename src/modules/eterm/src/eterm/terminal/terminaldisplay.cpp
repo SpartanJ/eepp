@@ -450,15 +450,15 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 
-	terminal->mController =
-		TerminalController::create( std::move( pseudoTerminal ), std::move( process ), historySize,
-									terminal->makeColorPalette() );
-	if ( !terminal->mController ) {
+	terminal->mSession =
+		TerminalSession::create( std::move( pseudoTerminal ), std::move( process ), historySize,
+								 terminal->makeColorPalette() );
+	if ( !terminal->mSession ) {
 		if ( freeProcessFactory )
 			eeSAFE_DELETE( processFactory );
 		return nullptr;
 	}
-	terminal->mController->setPresentationRate( presentationRateForWindow( window ) );
+	terminal->mSession->setPresentationRate( presentationRateForWindow( window ) );
 	terminal->mProgram = program;
 	terminal->mArgs = args;
 	terminal->mEnv = env;
@@ -473,8 +473,8 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 }
 
 TerminalDisplay::~TerminalDisplay() {
-	if ( mController )
-		mController->shutdown();
+	if ( mSession )
+		mSession->shutdown();
 }
 
 TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
@@ -621,8 +621,8 @@ void TerminalDisplay::setPadding( const Rectf& padding ) {
 	}
 }
 
-const std::shared_ptr<TerminalController>& TerminalDisplay::getController() const {
-	return mController;
+const std::shared_ptr<TerminalSession>& TerminalDisplay::getSession() const {
+	return mSession;
 }
 
 int TerminalDisplay::scrollSize() const {
@@ -638,7 +638,7 @@ int TerminalDisplay::scrollPosition() const {
 }
 
 Uint64 TerminalDisplay::scrollTo( int position ) {
-	return mController ? mController->scrollTo( position ) : 0;
+	return mSession ? mSession->scrollTo( position ) : 0;
 }
 
 Uint64 TerminalDisplay::lastAppliedScrollCommand() const {
@@ -679,13 +679,13 @@ const TerminalColorScheme& TerminalDisplay::getColorScheme() const {
 void TerminalDisplay::setColorScheme( const TerminalColorScheme& colorScheme ) {
 	mColorScheme = colorScheme;
 	resetColors();
-	if ( mController )
-		mController->setColorPalette( makeColorPalette() );
+	if ( mSession )
+		mSession->setColorPalette( makeColorPalette() );
 	invalidateLines();
 }
 
 bool TerminalDisplay::isAppCapturingMouse() const {
-	return mController &&
+	return mSession &&
 		   ( mMode & ( MODE_MOUSEX10 | MODE_MOUSEBTN | MODE_MOUSEMOTION | MODE_MOUSEMANY ) );
 }
 
@@ -711,7 +711,7 @@ void TerminalDisplay::setKeepAlive( bool keepAlive ) {
 
 bool TerminalDisplay::update( bool isMouseOverMe ) {
 	consumeSnapshot();
-	drainControllerEvents();
+	drainSessionEvents();
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
@@ -730,9 +730,9 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 }
 
 void TerminalDisplay::consumeSnapshot() {
-	if ( !mController )
+	if ( !mSession )
 		return;
-	auto snapshot = mController->snapshot();
+	auto snapshot = mSession->snapshot();
 	if ( !snapshot || snapshot->generation == mSnapshotGeneration )
 		return;
 
@@ -781,56 +781,56 @@ void TerminalDisplay::consumeSnapshot() {
 	mDirty = true;
 }
 
-void TerminalDisplay::drainControllerEvents() {
-	if ( !mController )
+void TerminalDisplay::drainSessionEvents() {
+	if ( !mSession )
 		return;
-	for ( auto& event : mController->drainEvents() ) {
+	for ( auto& event : mSession->drainEvents() ) {
 		switch ( event.type ) {
-			case TerminalController::EventType::Title:
+			case TerminalSession::EventType::Title:
 				sendEvent( { EventType::TITLE, std::move( event.data ) } );
 				break;
-			case TerminalController::EventType::IconTitle:
+			case TerminalSession::EventType::IconTitle:
 				sendEvent( { EventType::ICON_TITLE, std::move( event.data ) } );
 				break;
-			case TerminalController::EventType::ScrollPosition:
+			case TerminalSession::EventType::ScrollPosition:
 				sendEvent( { EventType::SCROLL_HISTORY } );
 				break;
-			case TerminalController::EventType::Bell:
+			case TerminalSession::EventType::Bell:
 				sendEvent( { EventType::BELL } );
 				break;
-			case TerminalController::EventType::Clipboard:
+			case TerminalSession::EventType::Clipboard:
 				setClipboard( event.data.c_str() );
 				sendEvent( { EventType::CLIPBOARD } );
 				break;
-			case TerminalController::EventType::ProcessExit:
+			case TerminalSession::EventType::ProcessExit:
 				onProcessExit( event.value );
 				break;
-			case TerminalController::EventType::RestartFailure:
+			case TerminalSession::EventType::RestartFailure:
 				sendEvent( { EventType::RESTART_FAILURE, std::move( event.data ) } );
 				break;
-			case TerminalController::EventType::Data:
+			case TerminalSession::EventType::Data:
 				if ( mDataCallback )
 					mDataCallback( event.data.data(), event.data.size() );
 				break;
-			case TerminalController::EventType::PromptState:
+			case TerminalSession::EventType::PromptState:
 				if ( mPromptStateChangedCallback )
 					mPromptStateChangedCallback( event.promptState, event.data );
 				break;
-			case TerminalController::EventType::Color:
+			case TerminalSession::EventType::Color:
 				if ( event.value < 0 )
 					resetColors();
 				else
 					resetColor( event.value, event.data.empty() ? nullptr : event.data.c_str() );
 				invalidateLines();
 				break;
-			case TerminalController::EventType::Error:
+			case TerminalSession::EventType::Error:
 				Log::error( "Terminal worker error: %s", event.data.c_str() );
 				sendEvent( { EventType::WORKER_ERROR, std::move( event.data ) } );
 				break;
-			case TerminalController::EventType::HistoryLength:
+			case TerminalSession::EventType::HistoryLength:
 				sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
 				break;
-			case TerminalController::EventType::SnapshotReady:
+			case TerminalSession::EventType::SnapshotReady:
 				break;
 		}
 	}
@@ -848,8 +848,8 @@ TerminalColorPalette TerminalDisplay::makeColorPalette() const {
 }
 
 std::string TerminalDisplay::getSelection() {
-	if ( mController ) {
-		if ( auto selection = mController->requestSelection() )
+	if ( mSession ) {
+		if ( auto selection = mSession->requestSelection() )
 			return std::move( *selection );
 	}
 	return mSnapshot ? mSnapshot->selection : std::string{};
@@ -872,33 +872,33 @@ int TerminalDisplay::getExitCode() const {
 }
 
 void TerminalDisplay::terminate() {
-	if ( mController )
-		mController->terminate();
+	if ( mSession )
+		mSession->terminate();
 }
 
 void TerminalDisplay::setAllowMemoryTrimming( bool allow ) {
-	if ( mController )
-		mController->setAllowMemoryTrimming( allow );
+	if ( mSession )
+		mSession->setAllowMemoryTrimming( allow );
 }
 
 void TerminalDisplay::setDataCallback( DataFunc callback ) {
 	mDataCallback = std::move( callback );
-	if ( mController )
-		mController->setDataEventsEnabled( static_cast<bool>( mDataCallback ) );
+	if ( mSession )
+		mSession->setDataEventsEnabled( static_cast<bool>( mDataCallback ) );
 }
 
 void TerminalDisplay::setPromptStateChangedCallback( PromptStateChangedFunc callback ) {
 	mPromptStateChangedCallback = std::move( callback );
-	if ( mController )
-		mController->setPromptEventsEnabled( static_cast<bool>( mPromptStateChangedCallback ) );
+	if ( mSession )
+		mSession->setPromptEventsEnabled( static_cast<bool>( mPromptStateChangedCallback ) );
 }
 
 void TerminalDisplay::setCursorMode( TerminalCursorMode mode ) {
 	if ( mCursorMode == mode )
 		return;
 	mCursorMode = mode;
-	if ( mController )
-		mController->setCursorMode( mode );
+	if ( mSession )
+		mSession->setCursorMode( mode );
 	invalidateCursor();
 }
 
@@ -907,29 +907,29 @@ TerminalCursorMode TerminalDisplay::getCursorMode() const {
 }
 
 void TerminalDisplay::executeFile( const std::string& cmd ) {
-	if ( mController ) {
+	if ( mSession ) {
 		std::string rcmd;
 #if EE_PLATFORM != EE_PLATFORM_WIN
 		rcmd.push_back( 0x15 );
 #endif
 		rcmd.append( cmd ).push_back( '\r' );
-		mController->write( std::move( rcmd ) );
+		mSession->write( std::move( rcmd ) );
 	}
 }
 
 void TerminalDisplay::executeBinary( const std::string& binaryPath, const std::string& args ) {
-	if ( mController ) {
+	if ( mSession ) {
 		std::string rcmd;
 #if EE_PLATFORM != EE_PLATFORM_WIN
 		rcmd.push_back( 0x15 );
 #endif
 		rcmd.append( "\"" ).append( binaryPath ).append( "\" " ).append( args ).push_back( '\r' );
-		mController->write( std::move( rcmd ) );
+		mSession->write( std::move( rcmd ) );
 	}
 }
 
 void TerminalDisplay::action( TerminalShortcutAction action ) {
-	if ( !mController && action != TerminalShortcutAction::FONTSIZE_GROW &&
+	if ( !mSession && action != TerminalShortcutAction::FONTSIZE_GROW &&
 		 action != TerminalShortcutAction::FONTSIZE_SHRINK )
 		return;
 	switch ( action ) {
@@ -937,11 +937,11 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			getClipboard();
 			if ( !mClipboardUtf8.empty() ) {
 				if ( mMode & MODE_BRCKTPASTE ) {
-					mController->writeRaw( "\033[200~" );
-					mController->writeRaw( std::move( mClipboardUtf8 ) );
-					mController->writeRaw( "\033[201~" );
+					mSession->writeRaw( "\033[200~" );
+					mSession->writeRaw( std::move( mClipboardUtf8 ) );
+					mSession->writeRaw( "\033[201~" );
 				} else {
-					mController->writeRaw( std::move( mClipboardUtf8 ) );
+					mSession->writeRaw( std::move( mClipboardUtf8 ) );
 				}
 			}
 			break;
@@ -955,11 +955,11 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			sanitizeInput( selection );
 			if ( !selection.empty() ) {
 				if ( mMode & MODE_BRCKTPASTE ) {
-					mController->writeRaw( "\033[200~" );
-					mController->writeRaw( std::move( selection ) );
-					mController->writeRaw( "\033[201~" );
+					mSession->writeRaw( "\033[200~" );
+					mSession->writeRaw( std::move( selection ) );
+					mSession->writeRaw( "\033[201~" );
 				} else {
-					mController->writeRaw( std::move( selection ) );
+					mSession->writeRaw( std::move( selection ) );
 				}
 			}
 			break;
@@ -971,27 +971,27 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_SCREEN: {
-			mController->scrollUp( -(int)mClickStep );
+			mSession->scrollUp( -(int)mClickStep );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_SCREEN: {
-			mController->scrollDown( -(int)mClickStep );
+			mSession->scrollDown( -(int)mClickStep );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_ROW: {
-			mController->scrollUp( mClickStep );
+			mSession->scrollUp( mClickStep );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_ROW: {
-			mController->scrollDown( mClickStep );
+			mSession->scrollDown( mClickStep );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_HISTORY: {
-			mController->scrollUp( INT_MAX );
+			mSession->scrollUp( INT_MAX );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_HISTORY: {
-			mController->scrollDown( INT_MAX );
+			mSession->scrollDown( INT_MAX );
 			break;
 		}
 		case TerminalShortcutAction::FONTSIZE_GROW: {
@@ -1055,7 +1055,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 	if ( !isAppCapturingMouse() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( getSelectionMode() == SEL_EMPTY || getSelectionMode() == SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
-		mController->selectionStart( gridPos.x, gridPos.y, SNAP_WORD );
+		mSession->selectionStart( gridPos.x, gridPos.y, SNAP_WORD );
 	}
 }
 
@@ -1083,13 +1083,13 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mDraggingSel || getSelectionMode() == SEL_EMPTY || getSelectionMode() == SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
-		mController->selectionExtend(
+		mSession->selectionExtend(
 			gridPos.x, gridPos.y,
 			mWindow->getInput()->getModState() & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR,
 			false );
 	}
-	mController->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
-							  mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
+						   mWindow->getInput()->getModState() );
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
@@ -1103,10 +1103,10 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 
 	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
-		mController->selectionStart( gridPos.x, gridPos.y, SNAP_LINE );
+		mSession->selectionStart( gridPos.x, gridPos.y, SNAP_LINE );
 	} else if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mDraggingSel ) {
-			mController->selectionStart( gridPos.x, gridPos.y, 0 );
+			mSession->selectionStart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
 			invalidateLines();
 			mWindow->getInput()->captureMouse( true );
@@ -1129,8 +1129,8 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mController->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
-							  mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
+						   mWindow->getInput()->getModState() );
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
@@ -1176,8 +1176,8 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mController->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
-							  flags, mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ), flags,
+						   mWindow->getInput()->getModState() );
 }
 
 static inline Color termColor( unsigned int terminalColor, const std::vector<Color>& colors ) {
@@ -1713,7 +1713,7 @@ void TerminalDisplay::drawBg( bool toFBO ) {
 }
 
 void TerminalDisplay::draw( const Vector2f& pos ) {
-	if ( !mController || !mSnapshot )
+	if ( !mSession || !mSnapshot )
 		return;
 
 	mDrawing = true;
@@ -1777,9 +1777,9 @@ void TerminalDisplay::onSizeChange() {
 		mFont, mFontSize,
 		mSize - Vector2f( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) ) );
 
-	if ( mController && ( !mSnapshot || gridSize.getWidth() != mSnapshot->columns ||
-						  gridSize.getHeight() != mSnapshot->rows ) ) {
-		mController->resize( gridSize.getWidth(), gridSize.getHeight() );
+	if ( mSession && ( !mSnapshot || gridSize.getWidth() != mSnapshot->columns ||
+					   gridSize.getHeight() != mSnapshot->rows ) ) {
+		mSession->resize( gridSize.getWidth(), gridSize.getHeight() );
 		mDirtyLines.resize( gridSize.getHeight(), 1 );
 	}
 
@@ -1798,7 +1798,7 @@ void TerminalDisplay::onSizeChange() {
 void TerminalDisplay::onProcessExit( int exitCode ) {
 	sendEvent( { EventType::PROCESS_EXIT, String::toString( exitCode ) } );
 
-	if ( !mController || mProgram.empty() || exitCode != 0 || !mKeepAlive )
+	if ( !mSession || mProgram.empty() || exitCode != 0 || !mKeepAlive )
 		return;
 
 	auto processFactory = eeNew( ProcessFactory, () );
@@ -1824,23 +1824,23 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 		return;
 	}
 
-	mController->restart( std::move( pseudoTerminal ), std::move( process ) );
+	mSession->restart( std::move( pseudoTerminal ), std::move( process ) );
 
 	eeSAFE_DELETE( processFactory );
 }
 
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
-	if ( !mController )
+	if ( !mSession )
 		return;
 	String input;
 	input.push_back( chr );
 	std::string utf8Input( input.toUtf8() );
-	mController->write( std::move( utf8Input ) );
+	mSession->write( std::move( utf8Input ) );
 	mDirty = true;
 }
 
 void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& ) {
-	if ( !mController )
+	if ( !mSession )
 		return;
 	invalidateCursor();
 	updateIMELocation();
@@ -1910,7 +1910,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 				}
 			}
 
-			mController->write( std::string( 1, tmp ) );
+			mSession->write( std::string( 1, tmp ) );
 			return;
 		}
 	}
@@ -1929,7 +1929,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 					continue;
 
 				if ( k.string.size() > 0 ) {
-					mController->write( k.string );
+					mSession->write( k.string );
 					return;
 				}
 				break;
@@ -1951,7 +1951,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 					continue;
 
 				if ( k.string.size() > 0 ) {
-					mController->write( k.string );
+					mSession->write( k.string );
 					return;
 				}
 				break;
@@ -2069,8 +2069,8 @@ void TerminalDisplay::setFocus( bool focus ) {
 	} else {
 		mMode &= ~MODE_FOCUSED;
 	}
-	if ( mController )
-		mController->setFocus( focus );
+	if ( mSession )
+		mSession->setFocus( focus );
 	invalidateCursor();
 }
 

@@ -12,7 +12,7 @@
 #include <eepp/window/window.hpp>
 #include <eterm/system/iprocessfactory.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>
-#include <eterm/terminal/terminalcontroller.hpp>
+#include <eterm/terminal/terminalsession.hpp>
 
 #include <memory>
 #include <unordered_map>
@@ -242,7 +242,7 @@ class TerminalDisplay {
 
 	void setPadding( const Rectf& padding );
 
-	const std::shared_ptr<TerminalController>& getController() const;
+	const std::shared_ptr<TerminalSession>& getSession() const;
 
 	std::string getSelection();
 
@@ -313,7 +313,7 @@ class TerminalDisplay {
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<Color> mColors;
-	std::shared_ptr<TerminalController> mController;
+	std::shared_ptr<TerminalSession> mSession;
 	std::shared_ptr<const TerminalSnapshot> mSnapshot;
 	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks{ 0 };
@@ -382,7 +382,7 @@ class TerminalDisplay {
 
 	void consumeSnapshot();
 
-	void drainControllerEvents();
+	void drainSessionEvents();
 
 	TerminalColorPalette makeColorPalette() const;
 

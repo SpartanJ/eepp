@@ -1,4 +1,4 @@
-#include <eterm/terminal/terminalcontroller.hpp>
+#include <eterm/terminal/terminalsession.hpp>
 
 #include <eepp/system/color.hpp>
 #include <eepp/system/log.hpp>
@@ -10,19 +10,17 @@ using namespace EE::System;
 
 namespace eterm { namespace Terminal {
 
-struct TerminalController::SelectionResponse {
+struct TerminalSession::SelectionResponse {
 	std::mutex mutex;
 	std::condition_variable condition;
 	std::string selection;
 	bool ready{ false };
 };
 
-class TerminalController::WorkerDisplay final : public ITerminalDisplay {
+class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
   public:
-	WorkerDisplay( TerminalController& controller, TerminalColorPalette palette ) :
-		mController( controller ),
-		mInitialPalette( std::move( palette ) ),
-		mPalette( mInitialPalette ) {
+	WorkerDisplay( TerminalSession& session, TerminalColorPalette palette ) :
+		mSession( session ), mInitialPalette( std::move( palette ) ), mPalette( mInitialPalette ) {
 		mMode |= MODE_FOCUSED;
 	}
 
@@ -96,18 +94,18 @@ class TerminalController::WorkerDisplay final : public ITerminalDisplay {
 			mLastHistoryLength = snapshot->historyLength;
 			Event event{ EventType::HistoryLength };
 			event.value = mLastHistoryLength;
-			mController.enqueueEvent( std::move( event ), true );
+			mSession.enqueueEvent( std::move( event ), true );
 		}
-		mController.publishSnapshot( std::move( snapshot ) );
+		mSession.publishSnapshot( std::move( snapshot ) );
 	}
 
-	void bell() { mController.enqueueEvent( { EventType::Bell }, false ); }
+	void bell() { mSession.enqueueEvent( { EventType::Bell }, false ); }
 
 	void resetColors() {
 		mPalette = mInitialPalette;
 		Event event{ EventType::Color };
 		event.value = -1;
-		mController.enqueueEvent( std::move( event ), false );
+		mSession.enqueueEvent( std::move( event ), false );
 	}
 
 	int resetColor( const Uint32& index, const char* name ) {
@@ -149,7 +147,7 @@ class TerminalController::WorkerDisplay final : public ITerminalDisplay {
 		Event event{ EventType::Color };
 		event.data = name ? name : "";
 		event.value = static_cast<int>( index );
-		mController.enqueueEvent( std::move( event ), false );
+		mSession.enqueueEvent( std::move( event ), false );
 		return 0;
 	}
 
@@ -174,27 +172,25 @@ class TerminalController::WorkerDisplay final : public ITerminalDisplay {
 
 	void setTitle( const char* title ) {
 		mTitle = title ? title : "";
-		mController.enqueueEvent( { EventType::Title, mTitle }, true );
+		mSession.enqueueEvent( { EventType::Title, mTitle }, true );
 	}
 
 	void setIconTitle( const char* title ) {
-		mController.enqueueEvent( { EventType::IconTitle, title ? title : "" }, true );
+		mSession.enqueueEvent( { EventType::IconTitle, title ? title : "" }, true );
 	}
 
 	void setClipboard( const char* text ) {
 		if ( text )
-			mController.enqueueEvent( { EventType::Clipboard, text }, false );
+			mSession.enqueueEvent( { EventType::Clipboard, text }, false );
 	}
 
 	void onProcessExit( int exitCode ) {
 		Event event{ EventType::ProcessExit };
 		event.value = exitCode;
-		mController.enqueueEvent( std::move( event ), false );
+		mSession.enqueueEvent( std::move( event ), false );
 	}
 
-	void onScrollPositionChange() {
-		mController.enqueueEvent( { EventType::ScrollPosition }, true );
-	}
+	void onScrollPositionChange() { mSession.enqueueEvent( { EventType::ScrollPosition }, true ); }
 
 	void setPalette( TerminalColorPalette palette ) {
 		mInitialPalette = palette;
@@ -224,7 +220,7 @@ class TerminalController::WorkerDisplay final : public ITerminalDisplay {
 			mPalette.background = color;
 	}
 
-	TerminalController& mController;
+	TerminalSession& mSession;
 	TerminalColorPalette mInitialPalette;
 	TerminalColorPalette mPalette;
 	std::vector<TerminalGlyph> mCells;
@@ -241,35 +237,35 @@ class TerminalController::WorkerDisplay final : public ITerminalDisplay {
 	bool mCursorVisible{ false };
 };
 
-std::shared_ptr<TerminalController> TerminalController::create( PtyPtr&& pty, ProcPtr&& process,
-																size_t historySize,
-																TerminalColorPalette palette ) {
+std::shared_ptr<TerminalSession> TerminalSession::create( PtyPtr&& pty, ProcPtr&& process,
+														  size_t historySize,
+														  TerminalColorPalette palette ) {
 	if ( !pty || !process )
 		return nullptr;
-	auto controller = std::shared_ptr<TerminalController>( new TerminalController(
+	auto session = std::shared_ptr<TerminalSession>( new TerminalSession(
 		std::move( pty ), std::move( process ), historySize, std::move( palette ) ) );
-	controller->start();
-	return controller;
+	session->start();
+	return session;
 }
 
-TerminalController::TerminalController( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
-										TerminalColorPalette palette ) {
+TerminalSession::TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
+								  TerminalColorPalette palette ) {
 	mWorkerDisplay = std::make_shared<WorkerDisplay>( *this, std::move( palette ) );
 	mEmulator = TerminalEmulator::create( std::move( pty ), std::move( process ), mWorkerDisplay,
 										  historySize );
-	// Establish a complete generation before the controller becomes concurrently visible.
+	// Establish a complete generation before the session becomes concurrently visible.
 	mEmulator->redraw();
 }
 
-TerminalController::~TerminalController() {
+TerminalSession::~TerminalSession() {
 	shutdown();
 }
 
-void TerminalController::start() {
+void TerminalSession::start() {
 	mWorker = std::thread( [this] { workerLoop(); } );
 }
 
-void TerminalController::shutdown() {
+void TerminalSession::shutdown() {
 	std::lock_guard<std::mutex> shutdownLock( mShutdownMutex );
 	if ( !mShutdownRequested.exchange( true, std::memory_order_acq_rel ) )
 		mCommandCondition.notify_all();
@@ -277,7 +273,7 @@ void TerminalController::shutdown() {
 		mWorker.join();
 }
 
-bool TerminalController::enqueue( Command&& command ) {
+bool TerminalSession::enqueue( Command&& command ) {
 	{
 		std::lock_guard<std::mutex> lock( mCommandMutex );
 
@@ -291,27 +287,27 @@ bool TerminalController::enqueue( Command&& command ) {
 	return true;
 }
 
-void TerminalController::write( std::string data, bool mayEcho ) {
+void TerminalSession::write( std::string data, bool mayEcho ) {
 	enqueue( WriteCommand{ std::move( data ), mayEcho } );
 }
 
-void TerminalController::writeRaw( std::string data ) {
+void TerminalSession::writeRaw( std::string data ) {
 	enqueue( WriteRawCommand{ std::move( data ) } );
 }
 
-void TerminalController::resize( int columns, int rows ) {
+void TerminalSession::resize( int columns, int rows ) {
 	enqueue( ResizeCommand{ columns, rows } );
 }
 
-void TerminalController::scrollUp( int amount ) {
+void TerminalSession::scrollUp( int amount ) {
 	enqueue( ScrollCommand{ amount, -1 } );
 }
 
-void TerminalController::scrollDown( int amount ) {
+void TerminalSession::scrollDown( int amount ) {
 	enqueue( ScrollCommand{ amount, 1 } );
 }
 
-Uint64 TerminalController::scrollTo( int position ) {
+Uint64 TerminalSession::scrollTo( int position ) {
 	const Uint64 commandId = mNextScrollCommand.fetch_add( 1, std::memory_order_relaxed ) + 1;
 
 	if ( !enqueue( ScrollCommand{ position, 0, commandId } ) )
@@ -320,60 +316,60 @@ Uint64 TerminalController::scrollTo( int position ) {
 	return commandId;
 }
 
-void TerminalController::selectionStart( int column, int row, int snap ) {
+void TerminalSession::selectionStart( int column, int row, int snap ) {
 	enqueue( SelectionStartCommand{ column, row, snap } );
 }
 
-void TerminalController::selectionExtend( int column, int row, int type, bool done ) {
+void TerminalSession::selectionExtend( int column, int row, int type, bool done ) {
 	enqueue( SelectionExtendCommand{ column, row, type, done } );
 }
 
-void TerminalController::selectionClear() {
+void TerminalSession::selectionClear() {
 	enqueue( SelectionClearCommand{} );
 }
 
-void TerminalController::mouseReport( TerminalMouseEventType type, Vector2i position, Uint32 flags,
-									  Uint32 modifiers ) {
+void TerminalSession::mouseReport( TerminalMouseEventType type, Vector2i position, Uint32 flags,
+								   Uint32 modifiers ) {
 	enqueue( MouseCommand{ type, position, flags, modifiers } );
 }
 
-void TerminalController::setFocus( bool focus ) {
+void TerminalSession::setFocus( bool focus ) {
 	enqueue( FocusCommand{ { focus } } );
 }
 
-void TerminalController::setCursorMode( TerminalCursorMode mode ) {
+void TerminalSession::setCursorMode( TerminalCursorMode mode ) {
 	enqueue( CursorModeCommand{ mode } );
 }
 
-void TerminalController::setColorPalette( TerminalColorPalette palette ) {
+void TerminalSession::setColorPalette( TerminalColorPalette palette ) {
 	enqueue( PaletteCommand{ std::move( palette ) } );
 }
 
-void TerminalController::setAllowMemoryTrimming( bool allow ) {
+void TerminalSession::setAllowMemoryTrimming( bool allow ) {
 	enqueue( AllowTrimCommand{ { allow } } );
 }
 
-void TerminalController::setPresentationRate( Uint32 framesPerSecond ) {
+void TerminalSession::setPresentationRate( Uint32 framesPerSecond ) {
 	enqueue( PresentationRateCommand{ framesPerSecond } );
 }
 
-void TerminalController::setDataEventsEnabled( bool enabled ) {
+void TerminalSession::setDataEventsEnabled( bool enabled ) {
 	enqueue( DataEventsCommand{ { enabled } } );
 }
 
-void TerminalController::setPromptEventsEnabled( bool enabled ) {
+void TerminalSession::setPromptEventsEnabled( bool enabled ) {
 	enqueue( PromptEventsCommand{ { enabled } } );
 }
 
-void TerminalController::reset() {
+void TerminalSession::reset() {
 	enqueue( ResetCommand{} );
 }
 
-void TerminalController::terminate() {
+void TerminalSession::terminate() {
 	enqueue( TerminateCommand{} );
 }
 
-void TerminalController::restart( PtyPtr&& pty, ProcPtr&& process ) {
+void TerminalSession::restart( PtyPtr&& pty, ProcPtr&& process ) {
 	if ( !pty || !process ) {
 		enqueueEvent( { EventType::RestartFailure, "Invalid PTY or process" }, false );
 		return;
@@ -381,13 +377,12 @@ void TerminalController::restart( PtyPtr&& pty, ProcPtr&& process ) {
 	enqueue( RestartCommand{ std::move( pty ), std::move( process ) } );
 }
 
-std::shared_ptr<const TerminalSnapshot> TerminalController::snapshot() const {
+std::shared_ptr<const TerminalSnapshot> TerminalSession::snapshot() const {
 	std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
 	return mPublishedSnapshot;
 }
 
-std::optional<std::string>
-TerminalController::requestSelection( std::chrono::milliseconds timeout ) {
+std::optional<std::string> TerminalSession::requestSelection( std::chrono::milliseconds timeout ) {
 	if ( mShutdownRequested.load( std::memory_order_acquire ) )
 		return std::nullopt;
 	auto response = std::make_shared<SelectionResponse>();
@@ -398,7 +393,7 @@ TerminalController::requestSelection( std::chrono::milliseconds timeout ) {
 	return std::move( response->selection );
 }
 
-std::vector<TerminalController::Event> TerminalController::drainEvents() {
+std::vector<TerminalSession::Event> TerminalSession::drainEvents() {
 	std::vector<Event> events;
 	std::lock_guard<std::mutex> lock( mEventMutex );
 	events.reserve( mEvents.size() );
@@ -409,7 +404,7 @@ std::vector<TerminalController::Event> TerminalController::drainEvents() {
 	return events;
 }
 
-void TerminalController::enqueueEvent( Event event, bool coalescable ) {
+void TerminalSession::enqueueEvent( Event event, bool coalescable ) {
 	std::lock_guard<std::mutex> lock( mEventMutex );
 	if ( coalescable ) {
 		for ( auto it = mEvents.rbegin(); it != mEvents.rend(); ++it ) {
@@ -428,7 +423,7 @@ void TerminalController::enqueueEvent( Event event, bool coalescable ) {
 	mEvents.emplace_back( std::move( event ) );
 }
 
-void TerminalController::publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot ) {
+void TerminalSession::publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot ) {
 	const Uint64 generation = snapshot->generation;
 	{
 		std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
@@ -439,7 +434,7 @@ void TerminalController::publishSnapshot( std::shared_ptr<const TerminalSnapshot
 	enqueueEvent( std::move( event ), true );
 }
 
-void TerminalController::workerLoop() {
+void TerminalSession::workerLoop() {
 	while ( !mShutdownRequested.load( std::memory_order_acquire ) ) {
 		processCommands();
 		if ( mShutdownRequested.load( std::memory_order_acquire ) )
@@ -458,7 +453,7 @@ void TerminalController::workerLoop() {
 	mWorkerDisplay.reset();
 }
 
-void TerminalController::processCommands() {
+void TerminalSession::processCommands() {
 	std::deque<Command> commands;
 	{
 		std::lock_guard<std::mutex> lock( mCommandMutex );
@@ -470,7 +465,7 @@ void TerminalController::processCommands() {
 	}
 }
 
-void TerminalController::processCommand( Command&& command ) {
+void TerminalSession::processCommand( Command&& command ) {
 	std::visit(
 		[this]( auto&& value ) {
 			using T = std::decay_t<decltype( value )>;

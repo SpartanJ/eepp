@@ -145,8 +145,8 @@ void queueExitedTabs() {
 		auto* terminal = terminalFromTab( tab );
 		if ( !terminal || !terminal->getTerm() )
 			return;
-		const auto& controller = terminal->getTerm()->getController();
-		auto snapshot = controller ? controller->snapshot() : nullptr;
+		const auto& session = terminal->getTerm()->getSession();
+		auto snapshot = session ? session->snapshot() : nullptr;
 		if ( snapshot && snapshot->processExited )
 			queueExitCloseTab( tab );
 	} );

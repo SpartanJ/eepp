@@ -4,8 +4,8 @@
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
-#include <eterm/terminal/terminalcontroller.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
+#include <eterm/terminal/terminalsession.hpp>
 #include <limits>
 #include <thread>
 
@@ -59,12 +59,12 @@ class MockProcess : public IProcess {
 };
 
 static std::shared_ptr<const TerminalSnapshot>
-waitForSnapshot( const std::shared_ptr<TerminalController>& controller,
+waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 				 const std::function<bool( const TerminalSnapshot& )>& predicate,
 				 std::chrono::milliseconds timeout = std::chrono::milliseconds( 1000 ) ) {
 	const auto deadline = std::chrono::steady_clock::now() + timeout;
 	while ( std::chrono::steady_clock::now() < deadline ) {
-		auto snapshot = controller->snapshot();
+		auto snapshot = session->snapshot();
 		if ( snapshot && predicate( *snapshot ) )
 			return snapshot;
 		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
@@ -72,60 +72,59 @@ waitForSnapshot( const std::shared_ptr<TerminalController>& controller,
 	return nullptr;
 }
 
-UTEST( eterm_controller, command_wakeup_and_snapshot_immutability ) {
+UTEST( eterm_session, command_wakeup_and_snapshot_immutability ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	ASSERT_TRUE( controller != nullptr );
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( session != nullptr );
 
-	controller->writeRaw( "ABC" );
-	auto first = waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	session->writeRaw( "ABC" );
+	auto first = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 		return snapshot.cells.size() >= 3 && snapshot.cells[0].u == 'A' &&
 			   snapshot.cells[1].u == 'B' && snapshot.cells[2].u == 'C';
 	} );
 	ASSERT_TRUE( first != nullptr );
 	const Uint64 firstGeneration = first->generation;
 
-	controller->writeRaw( "\rXYZ" );
-	auto second =
-		waitForSnapshot( controller, [firstGeneration]( const TerminalSnapshot& snapshot ) {
-			return snapshot.generation > firstGeneration && snapshot.cells[0].u == 'X';
-		} );
+	session->writeRaw( "\rXYZ" );
+	auto second = waitForSnapshot( session, [firstGeneration]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > firstGeneration && snapshot.cells[0].u == 'X';
+	} );
 	ASSERT_TRUE( second != nullptr );
 	EXPECT_EQ( static_cast<Rune>( 'A' ), first->cells[0].u );
 	EXPECT_TRUE( second->generation > first->generation );
 }
 
-UTEST( eterm_controller, skipped_snapshot_generation_requires_full_redraw ) {
+UTEST( eterm_session, skipped_snapshot_generation_requires_full_redraw ) {
 	TerminalSnapshot snapshot;
 	snapshot.generation = 42;
 	EXPECT_TRUE( snapshot.dirtyRowsFollow( 41 ) );
 	EXPECT_FALSE( snapshot.dirtyRowsFollow( 40 ) );
 }
 
-UTEST( eterm_controller, ordered_selection_request ) {
+UTEST( eterm_session, ordered_selection_request ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "ordered selection";
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	ASSERT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return !snapshot.cells.empty() && snapshot.cells[0].u == 'o';
 				 } ) != nullptr );
 
-	controller->selectionStart( 0, 0, 0 );
-	controller->selectionExtend( 6, 0, SEL_REGULAR, false );
-	auto selection = controller->requestSelection();
+	session->selectionStart( 0, 0, 0 );
+	session->selectionExtend( 6, 0, SEL_REGULAR, false );
+	auto selection = session->requestSelection();
 	ASSERT_TRUE( selection.has_value() );
 	EXPECT_STDSTREQ( "ordered", *selection );
 }
 
-UTEST( eterm_controller, loaded_command_latency_stays_bounded ) {
+UTEST( eterm_session, loaded_command_latency_stays_bounded ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer.assign( 32 * 1024 * 1024, 'L' );
 	pty->mMaxRead = 64;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
 	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
 	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
 			std::chrono::steady_clock::now() < readDeadline )
@@ -133,19 +132,19 @@ UTEST( eterm_controller, loaded_command_latency_stays_bounded ) {
 	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
 
 	const auto start = std::chrono::steady_clock::now();
-	auto selection = controller->requestSelection();
+	auto selection = session->requestSelection();
 	const auto latency = std::chrono::steady_clock::now() - start;
 	EXPECT_TRUE( selection.has_value() );
 	EXPECT_TRUE( latency < std::chrono::milliseconds( 50 ) );
 }
 
-UTEST( eterm_controller, resize_and_output_are_serialized ) {
+UTEST( eterm_session, resize_and_output_are_serialized ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	controller->resize( 40, 12 );
-	controller->writeRaw( "after resize" );
-	auto snapshot = waitForSnapshot( controller, []( const TerminalSnapshot& value ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->resize( 40, 12 );
+	session->writeRaw( "after resize" );
+	auto snapshot = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
 		return value.columns == 40 && value.rows == 12 && !value.cells.empty() &&
 			   value.cells[0].u == 'a';
 	} );
@@ -153,59 +152,59 @@ UTEST( eterm_controller, resize_and_output_are_serialized ) {
 	EXPECT_EQ( static_cast<size_t>( 40 * 12 ), snapshot->cells.size() );
 }
 
-UTEST( eterm_controller, scroll_snapshots_acknowledge_the_latest_ordered_command ) {
+UTEST( eterm_session, scroll_snapshots_acknowledge_the_latest_ordered_command ) {
 	auto pty = std::make_unique<MockPty>();
 	for ( int line = 0; line < 80; ++line )
 		pty->mBuffer += "history " + std::to_string( line ) + "\r\n";
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	ASSERT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.historyLength >= 25;
 				 } ) != nullptr );
 
-	const Uint64 firstCommand = controller->scrollTo( 10 );
-	const Uint64 secondCommand = controller->scrollTo( 25 );
+	const Uint64 firstCommand = session->scrollTo( 10 );
+	const Uint64 secondCommand = session->scrollTo( 25 );
 	EXPECT_EQ( firstCommand + 1, secondCommand );
 	auto acknowledged =
-		waitForSnapshot( controller, [secondCommand]( const TerminalSnapshot& snapshot ) {
+		waitForSnapshot( session, [secondCommand]( const TerminalSnapshot& snapshot ) {
 			return snapshot.lastAppliedScrollCommand == secondCommand;
 		} );
 	ASSERT_TRUE( acknowledged != nullptr );
 	EXPECT_EQ( 25, acknowledged->scrollPosition );
 }
 
-UTEST( eterm_controller, presentation_rate_is_applied_on_the_worker ) {
+UTEST( eterm_session, presentation_rate_is_applied_on_the_worker ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	controller->setPresentationRate( 120 );
-	ASSERT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->setPresentationRate( 120 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.presentationRate == 120;
 				 } ) != nullptr );
 }
 
-UTEST( eterm_controller, focus_reporting_is_ordered_on_worker ) {
+UTEST( eterm_session, focus_reporting_is_ordered_on_worker ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[?1004h";
 	pty->mLoopWrites = false;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	auto enabled = waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	auto enabled = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 		return snapshot.windowMode & MODE_FOCUS;
 	} );
 	ASSERT_TRUE( enabled != nullptr );
 
-	controller->setFocus( false );
-	auto unfocused = waitForSnapshot( controller, [enabled]( const TerminalSnapshot& snapshot ) {
+	session->setFocus( false );
+	auto unfocused = waitForSnapshot( session, [enabled]( const TerminalSnapshot& snapshot ) {
 		return snapshot.generation > enabled->generation && !( snapshot.windowMode & MODE_FOCUSED );
 	} );
 	ASSERT_TRUE( unfocused != nullptr );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
 	EXPECT_STDSTREQ( "\033[O", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 
-	controller->setFocus( true );
-	ASSERT_TRUE( waitForSnapshot( controller, [unfocused]( const TerminalSnapshot& snapshot ) {
+	session->setFocus( true );
+	ASSERT_TRUE( waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
 					 return snapshot.generation > unfocused->generation &&
 							snapshot.windowMode & MODE_FOCUSED;
 				 } ) != nullptr );
@@ -213,20 +212,20 @@ UTEST( eterm_controller, focus_reporting_is_ordered_on_worker ) {
 	EXPECT_STDSTREQ( "\033[I", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 }
 
-UTEST( eterm_controller, replaceable_events_coalesce_without_losing_ordered_events ) {
+UTEST( eterm_session, replaceable_events_coalesce_without_losing_ordered_events ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	controller->drainEvents();
-	controller->writeRaw( "\033]0;first\a\033]0;second\a" );
-	ASSERT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->drainEvents();
+	session->writeRaw( "\033]0;first\a\033]0;second\a" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.title == "second";
 				 } ) != nullptr );
 
 	int titleEvents = 0;
 	std::string title;
-	for ( auto& event : controller->drainEvents() ) {
-		if ( event.type == TerminalController::EventType::Title ) {
+	for ( auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Title ) {
 			++titleEvents;
 			title = std::move( event.data );
 		}
@@ -235,54 +234,54 @@ UTEST( eterm_controller, replaceable_events_coalesce_without_losing_ordered_even
 	EXPECT_STDSTREQ( "second", title );
 }
 
-UTEST( eterm_controller, ordered_events_are_coalescing_barriers ) {
+UTEST( eterm_session, ordered_events_are_coalescing_barriers ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	controller->drainEvents();
-	controller->writeRaw( "\033]0;before\a\a\033]0;after\a" );
-	ASSERT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->drainEvents();
+	session->writeRaw( "\033]0;before\a\a\033]0;after\a" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.title == "after";
 				 } ) != nullptr );
 
-	std::vector<TerminalController::EventType> semanticEvents;
-	for ( const auto& event : controller->drainEvents() ) {
-		if ( event.type == TerminalController::EventType::Title ||
-			 event.type == TerminalController::EventType::Bell )
+	std::vector<TerminalSession::EventType> semanticEvents;
+	for ( const auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Title ||
+			 event.type == TerminalSession::EventType::Bell )
 			semanticEvents.emplace_back( event.type );
 	}
 	ASSERT_EQ( static_cast<size_t>( 3 ), semanticEvents.size() );
-	EXPECT_EQ( TerminalController::EventType::Title, semanticEvents[0] );
-	EXPECT_EQ( TerminalController::EventType::Bell, semanticEvents[1] );
-	EXPECT_EQ( TerminalController::EventType::Title, semanticEvents[2] );
+	EXPECT_EQ( TerminalSession::EventType::Title, semanticEvents[0] );
+	EXPECT_EQ( TerminalSession::EventType::Bell, semanticEvents[1] );
+	EXPECT_EQ( TerminalSession::EventType::Title, semanticEvents[2] );
 }
 
-UTEST( eterm_controller, reset_is_ordered_and_publishes_immediately ) {
+UTEST( eterm_session, reset_is_ordered_and_publishes_immediately ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "content";
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	auto populated = waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	auto populated = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 		return !snapshot.cells.empty() && snapshot.cells[0].u == 'c';
 	} );
 	ASSERT_TRUE( populated != nullptr );
-	controller->reset();
-	auto reset = waitForSnapshot( controller, [populated]( const TerminalSnapshot& snapshot ) {
+	session->reset();
+	auto reset = waitForSnapshot( session, [populated]( const TerminalSnapshot& snapshot ) {
 		return snapshot.generation > populated->generation && !snapshot.cells.empty() &&
 			   snapshot.cells[0].u == ' ';
 	} );
 	ASSERT_TRUE( reset != nullptr );
 }
 
-UTEST( eterm_controller, process_exit_follows_buffered_output_and_final_snapshot ) {
+UTEST( eterm_session, process_exit_follows_buffered_output_and_final_snapshot ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mMaxRead = 1;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
 	MockProcess* processPtr = process.get();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
-	controller->setDataEventsEnabled( true );
-	controller->writeRaw( std::string( 3 * 1024, 'Q' ) );
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->setDataEventsEnabled( true );
+	session->writeRaw( std::string( 3 * 1024, 'Q' ) );
 	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
 	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
 			std::chrono::steady_clock::now() < readDeadline )
@@ -291,51 +290,50 @@ UTEST( eterm_controller, process_exit_follows_buffered_output_and_final_snapshot
 	processPtr->mExited.store( true );
 
 	auto finalSnapshot = waitForSnapshot(
-		controller, []( const TerminalSnapshot& snapshot ) { return snapshot.processExited; } );
+		session, []( const TerminalSnapshot& snapshot ) { return snapshot.processExited; } );
 	ASSERT_TRUE( finalSnapshot != nullptr );
 	EXPECT_EQ( 0, finalSnapshot->exitCode );
 
 	size_t bytesRead = 0;
 	bool sawExit = false;
-	for ( auto& event : controller->drainEvents() ) {
-		if ( event.type == TerminalController::EventType::Data )
+	for ( auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Data )
 			bytesRead += event.data.size();
-		else if ( event.type == TerminalController::EventType::ProcessExit )
+		else if ( event.type == TerminalSession::EventType::ProcessExit )
 			sawExit = true;
 	}
 	EXPECT_EQ( static_cast<size_t>( 3 * 1024 ), bytesRead );
 	EXPECT_TRUE( sawExit );
 }
 
-UTEST( eterm_controller, repeated_create_destroy_and_concurrent_workers ) {
+UTEST( eterm_session, repeated_create_destroy_and_concurrent_workers ) {
 	for ( int iteration = 0; iteration < 16; ++iteration ) {
-		std::vector<std::shared_ptr<TerminalController>> controllers;
+		std::vector<std::shared_ptr<TerminalSession>> sessions;
 		for ( int terminal = 0; terminal < 4; ++terminal ) {
 			auto pty = std::make_unique<MockPty>();
 			auto process = std::make_unique<MockProcess>();
-			auto controller =
-				TerminalController::create( std::move( pty ), std::move( process ), 100 );
-			controller->writeRaw( "worker" + std::to_string( terminal ) );
-			controllers.emplace_back( std::move( controller ) );
+			auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+			session->writeRaw( "worker" + std::to_string( terminal ) );
+			sessions.emplace_back( std::move( session ) );
 		}
-		for ( const auto& controller : controllers ) {
-			EXPECT_TRUE( waitForSnapshot( controller, []( const TerminalSnapshot& snapshot ) {
+		for ( const auto& session : sessions ) {
+			EXPECT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 							 return !snapshot.cells.empty() && snapshot.cells[0].u == 'w';
 						 } ) != nullptr );
 		}
 	}
 }
 
-UTEST( eterm_controller, concurrent_shutdown_is_idempotent ) {
+UTEST( eterm_session, concurrent_shutdown_is_idempotent ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
-	auto controller = TerminalController::create( std::move( pty ), std::move( process ), 100 );
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
 	std::vector<std::thread> shutdownThreads;
 	for ( int thread = 0; thread < 4; ++thread )
-		shutdownThreads.emplace_back( [controller] { controller->shutdown(); } );
+		shutdownThreads.emplace_back( [session] { session->shutdown(); } );
 	for ( auto& thread : shutdownThreads )
 		thread.join();
-	controller->shutdown();
+	session->shutdown();
 }
 
 class MockDisplay : public ITerminalDisplay {

@@ -1,5 +1,5 @@
-#ifndef ETERM_TERMINALCONTROLLER_HPP
-#define ETERM_TERMINALCONTROLLER_HPP
+#ifndef ETERM_TERMINALSESSION_HPP
+#define ETERM_TERMINALSESSION_HPP
 
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -69,13 +69,13 @@ struct TerminalColorPalette {
 };
 
 /**
- * Per-terminal worker/controller.
+ * Per-terminal worker/session.
  *
  * After create() returns, the worker thread exclusively owns the emulator, PTY, process, parser,
  * history, selection, and cursor. UI code may only enqueue commands, drain events, or retain an
- * immutable snapshot returned by snapshot(). No controller callback is invoked by the worker.
+ * immutable snapshot returned by snapshot(). No session callback is invoked by the worker.
  */
-class TerminalController final : public std::enable_shared_from_this<TerminalController> {
+class TerminalSession final : public std::enable_shared_from_this<TerminalSession> {
   public:
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;
 	using ProcPtr = std::unique_ptr<IProcess>;
@@ -104,16 +104,16 @@ class TerminalController final : public std::enable_shared_from_this<TerminalCon
 		PromptState promptState{ PromptState::Unknown };
 	};
 
-	static std::shared_ptr<TerminalController> create( PtyPtr&& pty, ProcPtr&& process,
-													   size_t historySize,
-													   TerminalColorPalette palette = {} );
+	static std::shared_ptr<TerminalSession> create( PtyPtr&& pty, ProcPtr&& process,
+													size_t historySize,
+													TerminalColorPalette palette = {} );
 
-	~TerminalController();
+	~TerminalSession();
 
-	TerminalController( const TerminalController& ) = delete;
-	TerminalController( TerminalController&& ) = delete;
-	TerminalController& operator=( const TerminalController& ) = delete;
-	TerminalController& operator=( TerminalController&& ) = delete;
+	TerminalSession( const TerminalSession& ) = delete;
+	TerminalSession( TerminalSession&& ) = delete;
+	TerminalSession& operator=( const TerminalSession& ) = delete;
+	TerminalSession& operator=( TerminalSession&& ) = delete;
 
 	void write( std::string data, bool mayEcho = true );
 	void writeRaw( std::string data );
@@ -218,8 +218,8 @@ class TerminalController final : public std::enable_shared_from_this<TerminalCon
 					 PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
 					 SelectionRequestCommand>;
 
-	TerminalController( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
-						TerminalColorPalette palette );
+	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
+					 TerminalColorPalette palette );
 
 	void start();
 	bool enqueue( Command&& command );
