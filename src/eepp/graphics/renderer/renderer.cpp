@@ -836,10 +836,6 @@ void Renderer::getColorMask( Uint8 mask[4] ) const {
 	std::copy( std::begin( mColorMask ), std::end( mColorMask ), mask );
 }
 
-const int& Renderer::quadVertex() const {
-	return mQuadVertex;
-}
-
 ClippingMask* Renderer::getClippingMask() const {
 	return mClippingMask;
 }
@@ -1260,9 +1256,6 @@ void Renderer::genVertexArrays( int n, unsigned int* arrays ) {
 #endif
 }
 
-const bool& Renderer::quadsSupported() const {
-	return mQuadsSupported;
-}
 
 void Renderer::waitForIdle() {
 	glFinish();

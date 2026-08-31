@@ -235,7 +235,7 @@ void ConsoleCommands::cmdImgResize( const std::vector<String>& params ) {
 			myPath = params[3].toUtf8();
 
 			if ( params.size() > 4 ) {
-				saveType = Image::extensionToSaveType( params[4] );
+				saveType = Image::extensionToSaveType( params[4].toUtf8() );
 			}
 
 			if ( params.size() > 5 ) {
@@ -274,7 +274,7 @@ void ConsoleCommands::cmdImgThumbnail( const std::vector<String>& params ) {
 			myPath = params[3].toUtf8();
 
 			if ( params.size() > 4 ) {
-				saveType = Image::extensionToSaveType( params[4] );
+				saveType = Image::extensionToSaveType( params[4].toUtf8() );
 			}
 		} else {
 			myPath = mApp->getFilePath();
@@ -306,7 +306,7 @@ void ConsoleCommands::cmdImgCenterCrop( const std::vector<String>& params ) {
 			myPath = params[3].toUtf8();
 
 			if ( params.size() > 4 ) {
-				saveType = Image::extensionToSaveType( params[4] );
+				saveType = Image::extensionToSaveType( params[4].toUtf8() );
 			}
 		} else {
 			myPath = mApp->getFilePath();
@@ -336,7 +336,7 @@ void ConsoleCommands::cmdImgScale( const std::vector<String>& params ) {
 			myPath = params[2].toUtf8();
 
 			if ( params.size() > 3 ) {
-				saveType = Image::extensionToSaveType( params[3] );
+				saveType = Image::extensionToSaveType( params[3].toUtf8() );
 			}
 
 			if ( params.size() > 4 ) {

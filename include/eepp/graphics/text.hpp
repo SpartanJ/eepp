@@ -48,8 +48,18 @@ class EE_API Text {
 			   ( textDrawHints & ( TextHints::AllLatin1 | TextHints::AllAscii ) ) != 0;
 	}
 
-	static Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
-							 std::optional<Float> tabOffset );
+	static inline Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
+							 std::optional<Float> tabOffset ) {
+		Float advance = spaceHorizontalAdvance * tabLength;
+		if ( tabOffset ) {
+			Float offset = fmodf( *tabOffset, advance );
+			advance = advance - offset;
+			// If there is not enough space until the next stop, skip it
+			if ( advance < spaceHorizontalAdvance )
+				advance += spaceHorizontalAdvance * tabLength;
+		}
+		return advance;
+	}
 
 	static std::string styleFlagToString( const Uint32& flags );
 

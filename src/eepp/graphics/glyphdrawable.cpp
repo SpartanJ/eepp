@@ -98,14 +98,6 @@ const TexturePtr& GlyphDrawable::getTexture() const {
 	return mTexture;
 }
 
-const Rectf& GlyphDrawable::getSrcRect() const {
-	return mSrcRect;
-}
-
-const Sizef& GlyphDrawable::getDestSize() const {
-	return mDestSize;
-}
-
 Sizef GlyphDrawable::getSize() {
 	if ( mDestSize != Sizef::Zero )
 		return Sizef( mDestSize.getWidth() / mPixelDensity, mDestSize.getHeight() / mPixelDensity );
@@ -118,16 +110,8 @@ Sizef GlyphDrawable::getPixelsSize() {
 	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
 }
 
-const Float& GlyphDrawable::getPixelDensity() const {
-	return mPixelDensity;
-}
-
 void GlyphDrawable::setPixelDensity( const Float& pixelDensity ) {
 	mPixelDensity = pixelDensity;
-}
-
-const Vector2f& GlyphDrawable::getGlyphOffset() const {
-	return mGlyphOffset;
 }
 
 void GlyphDrawable::setGlyphOffset( const Vector2f& glyphOffset ) {
@@ -144,10 +128,6 @@ void GlyphDrawable::setDrawMode( const DrawMode& drawMode ) {
 
 void GlyphDrawable::setIsItalic( bool isItalic ) {
 	mIsItalic = isItalic;
-}
-
-const Float& GlyphDrawable::getAdvance() const {
-	return mAdvance;
 }
 
 void GlyphDrawable::setAdvance( Float advance ) {

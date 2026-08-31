@@ -5206,6 +5206,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	Float lineY = rect.Top;
 
 	const auto* batchSyntaxType = &SYNTAX_NORMAL;
+	auto colorSyntaxType = *batchSyntaxType;
 	Color color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
 	color.a *= 0.5f;
 	Float batchWidth = 0;
@@ -5213,22 +5214,24 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	Float widthScale = charSpacing / getGlyphWidth();
 	Int64 maxVisibleColumn = eeceil( rect.getWidth() / charSpacing );
-	auto flushBatch = [this, &color, &batchSyntaxType, &batchStart, &batchWidth, &lineY, &BR,
-					   &charHeight]( const SyntaxStyleType& type ) {
-		Color oldColor = color;
-		color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
-		if ( color != Color::Transparent ) {
-			color.a *= 0.5f;
-		} else {
-			color = oldColor;
+	auto flushBatch = [&]() {
+		if ( colorSyntaxType != *batchSyntaxType ) {
+			Color newColor = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
+
+			if ( newColor != Color::Transparent ) {
+				newColor.a *= 0.5f;
+				color = newColor;
+			}
+
+			colorSyntaxType = *batchSyntaxType;
 		}
 
-		if ( batchWidth > 0 ) {
-			BR->quadsSetColor( color.blendAlpha( mAlpha ) );
-			BR->batchQuad( { { batchStart, lineY }, { batchWidth, charHeight } } );
-		}
+		if ( batchWidth <= 0 )
+			return;
 
-		batchSyntaxType = &type;
+		BR->quadsSetColor( color.blendAlpha( mAlpha ) );
+		BR->batchQuad( { { batchStart, lineY }, { batchWidth, charHeight } } );
+
 		batchStart += batchWidth;
 		batchWidth = 0;
 	};
@@ -5397,7 +5400,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 					continue;
 
 				if ( *batchSyntaxType != token.type ) {
-					flushBatch( *batchSyntaxType );
+					flushBatch();
 					batchSyntaxType = &token.type;
 				}
 
@@ -5412,10 +5415,17 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 						for ( auto i = pos; i < maxPos; i++ ) {
 							String::StringBaseType ch = text[i];
 							if ( ch == ' ' || ch == '\n' ) {
-								flushBatch( token.type );
+								flushBatch();
+								batchSyntaxType = &token.type;
 								batchStart += charSpacing;
+								while ( i + 1 < maxPos &&
+										( text[i + 1] == ' ' || text[i + 1] == '\n' ) ) {
+									++i;
+									batchStart += charSpacing;
+								}
 							} else if ( ch == '\t' ) {
-								flushBatch( token.type );
+								flushBatch();
+								batchSyntaxType = &token.type;
 								batchStart += charSpacing * mMinimapConfig.tabWidth;
 							} else {
 								batchWidth += charSpacing;
@@ -5429,7 +5439,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 					if ( pos == nextLineCol ) {
 
 						if ( curVisualIndex >= minimapStartLine ) {
-							flushBatch( token.type );
+							flushBatch();
+							batchSyntaxType = &token.type;
 							lineY += lineSpacing;
 						}
 
@@ -5460,7 +5471,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			Int64 tokenPos = 0;
 			for ( const auto& token : tokens ) {
 				if ( *batchSyntaxType != token.type ) {
-					flushBatch( *batchSyntaxType );
+					flushBatch();
 					batchSyntaxType = &token.type;
 				}
 
@@ -5469,26 +5480,40 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 
 				while ( pos < end ) {
 					String::StringBaseType ch = text[pos];
+
 					if ( ch == ' ' || ch == '\n' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing;
-					} else if ( ch == '\t' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing * mMinimapConfig.tabWidth;
-					} else if ( batchStart + batchWidth > minimapCutoffX ) {
-						flushBatch( token.type );
-						break;
-					} else {
-						batchWidth += charSpacing;
+						flushBatch();
+
+						do {
+							batchStart += charSpacing;
+							++pos;
+						} while ( pos < end && ( text[pos] == ' ' || text[pos] == '\n' ) );
+
+						continue;
 					}
-					pos++;
-				};
+
+					if ( ch == '\t' ) {
+						flushBatch();
+						batchStart += charSpacing * mMinimapConfig.tabWidth;
+						++pos;
+						continue;
+					}
+
+					if ( batchStart + batchWidth > minimapCutoffX ) {
+						flushBatch();
+						break;
+					}
+
+					batchWidth += charSpacing;
+					++pos;
+				}
 
 				tokenPos += token.len;
 			}
 		}
 
-		flushBatch( SYNTAX_NORMAL );
+		flushBatch();
+		batchSyntaxType = &SYNTAX_NORMAL;
 
 		if ( !wrappedLine )
 			lineY += lineSpacing;
