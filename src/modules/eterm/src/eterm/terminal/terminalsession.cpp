@@ -103,6 +103,8 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 
 	void resetColors() {
 		mPalette = mInitialPalette;
+		if ( mEmulator )
+			mEmulator->notifyColorSchemeChanged();
 		Event event{ EventType::Color };
 		event.value = -1;
 		mSession.enqueueEvent( std::move( event ), false );
@@ -144,6 +146,8 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		if ( !parsed )
 			return 1;
 		setPaletteColor( index, color );
+		if ( mEmulator )
+			mEmulator->notifyColorSchemeChanged();
 		Event event{ EventType::Color };
 		event.data = name ? name : "";
 		event.value = static_cast<int>( index );
@@ -195,6 +199,8 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 	void setPalette( TerminalColorPalette palette ) {
 		mInitialPalette = palette;
 		mPalette = std::move( palette );
+		if ( mEmulator )
+			mEmulator->notifyColorSchemeChanged();
 	}
 
 	void setFocused( bool focused ) {
@@ -503,6 +509,7 @@ void TerminalSession::processCommand( Command&& command ) {
 				mWorkerDisplay->setFocused( value.value );
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, CursorModeCommand> ) {
+				mEmulator->setDefaultCursorMode( value.mode );
 				mWorkerDisplay->setCursorMode( value.mode );
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, PaletteCommand> ) {

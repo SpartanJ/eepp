@@ -450,9 +450,8 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 
-	terminal->mSession =
-		TerminalSession::create( std::move( pseudoTerminal ), std::move( process ), historySize,
-								 terminal->makeColorPalette() );
+	terminal->mSession = TerminalSession::create( std::move( pseudoTerminal ), std::move( process ),
+												  historySize, terminal->makeColorPalette() );
 	if ( !terminal->mSession ) {
 		if ( freeProcessFactory )
 			eeSAFE_DELETE( processFactory );
@@ -484,7 +483,8 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	mFontSize( fontSize ),
 	mSize( pixelsSize ),
 	mUseFrameBuffer( useFrameBuffer ),
-	mColorScheme( TerminalColorScheme::getDefault() ) {
+	mColorScheme( TerminalColorScheme::getDefault() ),
+	mInitialColorScheme( mColorScheme ) {
 	TerminalGlyph defaultGlyph;
 	defaultGlyph.mode = ATTR_INVISIBLE;
 	mCursorGlyph = defaultGlyph;
@@ -504,26 +504,33 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 }
 
 void TerminalDisplay::resetColors() {
+	mColorScheme = mInitialColorScheme;
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( colormapped ); i++ )
-		resetColor( i, i < mColorScheme.getPaletteSize()
-						   ? mColorScheme.getPaletteIndex( i ).toHexString().c_str()
+		resetColor( i, i < mInitialColorScheme.getPaletteSize()
+						   ? mInitialColorScheme.getPaletteIndex( i ).toHexString().c_str()
 						   : nullptr );
 }
 
 int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 	if ( !name ) {
 		if ( index < mColors.size() ) {
-			Color col = 0x000000FF;
-
-			if ( index < 256 )
-				col = colormapped[index];
+			const Color col = index < mInitialColorScheme.getPaletteSize()
+								  ? mInitialColorScheme.getPaletteIndex( index )
+								  : colormapped[index];
 
 			mColors[index] = col;
 			mColorScheme.setPaletteIndex( index, col );
 			return 0;
+		} else if ( index == 256 || index == 257 ) {
+			mColorScheme.setCursor( mInitialColorScheme.getCursor() );
+			return 0;
+		} else if ( index == 258 ) {
+			mColorScheme.setForeground( mInitialColorScheme.getForeground() );
+			return 0;
+		} else if ( index == 259 ) {
+			mColorScheme.setBackground( mInitialColorScheme.getBackground() );
+			return 0;
 		}
-		// Reset to default for 256, 257, 258, 259 is not well defined here without original
-		// defaults
 		return 1;
 	}
 
@@ -549,10 +556,7 @@ int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 			}
 		}
 	} else if ( String::iequals( "default", name ) ) {
-		unsigned char r, g, b;
-		getColor( index, &r, &g, &b );
-		col = Color( r, g, b, 255 );
-		colorParsed = true;
+		return resetColor( index, nullptr );
 	} else if ( Color::isColorString( std::string_view{ name }, true ) ) {
 		col = Color::fromString( name );
 		colorParsed = true;
@@ -677,6 +681,7 @@ const TerminalColorScheme& TerminalDisplay::getColorScheme() const {
 }
 
 void TerminalDisplay::setColorScheme( const TerminalColorScheme& colorScheme ) {
+	mInitialColorScheme = colorScheme;
 	mColorScheme = colorScheme;
 	resetColors();
 	if ( mSession )

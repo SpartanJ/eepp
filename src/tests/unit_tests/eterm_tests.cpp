@@ -339,17 +339,149 @@ UTEST( eterm_session, concurrent_shutdown_is_idempotent ) {
 class MockDisplay : public ITerminalDisplay {
   public:
 	int mDrawLines{ 0 };
+	int mDrawEnds{ 0 };
 	uint32_t mFirstMode{ 0 };
 	uint32_t mSecondMode{ 0 };
+	TerminalGlyph mFirstGlyph;
+	TerminalGlyph mSecondGlyph;
+	std::vector<Uint32> mResetColorIndices;
+	int mResetColorsCount{ 0 };
+	Uint32 mBackground{ 0x101010FF };
 	bool drawBegin( Uint32, Uint32 ) override { return true; }
-	void drawLine( Line line, int, int, int ) override {
+	void drawLine( Line line, int, int y, int ) override {
 		++mDrawLines;
-		mFirstMode = line[0].mode;
-		mSecondMode = line[1].mode;
+		if ( y == 0 ) {
+			mFirstMode = line[0].mode;
+			mSecondMode = line[1].mode;
+			mFirstGlyph = line[0];
+			mSecondGlyph = line[1];
+		}
 	}
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
-	void drawEnd() override {}
+	void drawEnd() override { ++mDrawEnds; }
+	void resetColors() override { ++mResetColorsCount; }
+	int resetColor( const Uint32& index, const char* ) override {
+		mResetColorIndices.emplace_back( index );
+		return 0;
+	}
+	bool getColor( const Uint32& index, unsigned char* r, unsigned char* g,
+				   unsigned char* b ) override {
+		if ( index == 259 ) {
+			*r = static_cast<unsigned char>( mBackground >> 24 );
+			*g = static_cast<unsigned char>( mBackground >> 16 );
+			*b = static_cast<unsigned char>( mBackground >> 8 );
+			return true;
+		}
+		if ( index > 1 )
+			return false;
+		*r = static_cast<unsigned char>( 1 + index * 3 );
+		*g = static_cast<unsigned char>( 2 + index * 3 );
+		*b = static_cast<unsigned char>( 3 + index * 3 );
+		return true;
+	}
 };
+
+UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?u\033[>7u\033[<1u\033[<u\033[=3u";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+}
+
+UTEST( eterm, cursor_style_and_xterm_version_queries ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[0 q\033[6 q\033[>0q";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_EQ( TerminalCursorMode::SteadyBar, display->getCursorMode() );
+	EXPECT_EQ( static_cast<size_t>( 0 ), ptyPtr->mWrites.find( "\033P>|eterm " ) );
+	ASSERT_TRUE( ptyPtr->mWrites.size() >= 2 );
+	EXPECT_STDSTREQ( "\033\\", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 2 ) );
+}
+
+UTEST( eterm, cursor_style_zero_uses_blinking_configured_shape ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[2 q\033[0 q";
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->setDefaultCursorMode( TerminalCursorMode::SteadyUnderline );
+
+	term->update();
+
+	EXPECT_EQ( TerminalCursorMode::BlinkUnderline, display->getCursorMode() );
+}
+
+UTEST( eterm, osc_hyperlink_markers_are_recognized ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;id=codex;https://example.com/\033\\OK\033]8;;\033\\";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+}
+
+UTEST( eterm, alternate_scroll_mode_controls_wheel_key_translation ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1049h\033[?1007l";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+
+	ptyPtr->mBuffer += "\033[?1007h";
+	term->update();
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	EXPECT_STDSTREQ( "\033[A", ptyPtr->mWrites );
+}
+
+UTEST( eterm, color_scheme_query_and_change_notification ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?996n\033[?2031h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	EXPECT_STDSTREQ( "\033[?997;1n", ptyPtr->mWrites );
+
+	display->mBackground = 0xF0F0F0FF;
+	term->notifyColorSchemeChanged();
+	EXPECT_STDSTREQ( "\033[?997;1n\033[?997;2n", ptyPtr->mWrites );
+
+	ptyPtr->mBuffer += "\033[?2031l";
+	term->update();
+	display->mBackground = 0x101010FF;
+	term->notifyColorSchemeChanged();
+	EXPECT_STDSTREQ( "\033[?997;1n\033[?997;2n", ptyPtr->mWrites );
+}
 
 UTEST( eterm, basic_write ) {
 	auto pty = std::make_unique<MockPty>();
@@ -364,6 +496,93 @@ UTEST( eterm, basic_write ) {
 	term->selextend( 2, 0, 1, 0 );
 	EXPECT_TRUE( term->hasSelection() );
 	EXPECT_STDSTREQ( "ABC", term->getSelection() );
+}
+
+UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	display->mDrawEnds = 0;
+	const char partialFrame[] = "\033[?2026h\033[2Jpartial";
+	term->write( partialFrame, sizeof( partialFrame ) - 1 );
+	term->update();
+
+	EXPECT_EQ( 0, display->mDrawEnds );
+
+	const char completeFrame[] = "\033[Hcomplete\033[?2026l";
+	term->write( completeFrame, sizeof( completeFrame ) - 1 );
+	term->update();
+
+	EXPECT_TRUE( display->mDrawEnds > 0 );
+	term->selstart( 0, 0, 0 );
+	term->selextend( 7, 0, SEL_REGULAR, false );
+	EXPECT_STDSTREQ( "complete", term->getSelection() );
+}
+
+UTEST( eterm, sgr_colon_subparameters_preserve_groups_and_optional_color_space ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	const char sequence[] = "\033[58:2::255:192:185;59;1;38:2::12:34:56;48:5:42mX";
+	term->write( sequence, sizeof( sequence ) - 1 );
+	term->update();
+
+	EXPECT_TRUE( display->mFirstGlyph.mode & ATTR_BOLD );
+	EXPECT_EQ( 0x010C2238u, display->mFirstGlyph.fg );
+	EXPECT_EQ( 42u, display->mFirstGlyph.bg );
+}
+
+UTEST( eterm, invalid_indexed_color_keeps_the_previous_color ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	const char sequence[] = "\033[31mA\033[38;5;283mB";
+	term->write( sequence, sizeof( sequence ) - 1 );
+	term->update();
+
+	EXPECT_EQ( 1u, display->mFirstGlyph.fg );
+	EXPECT_EQ( 1u, display->mSecondGlyph.fg );
+}
+
+UTEST( eterm, osc_palette_queries_return_each_requested_color ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]4;0;?;1;?\a";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_STDSTREQ( "\033]4;0;rgb:0101/0202/0303\a\033]4;1;rgb:0404/0505/0606\a",
+					 ptyPtr->mWrites );
+}
+
+UTEST( eterm, osc_color_resets_reach_palette_and_dynamic_defaults ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]104;1;2\a\033]110\a\033]111\a\033]112\a\033]104\a";
+	pty->mLoopWrites = false;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	ASSERT_EQ( static_cast<size_t>( 5 ), display->mResetColorIndices.size() );
+	EXPECT_EQ( 1u, display->mResetColorIndices[0] );
+	EXPECT_EQ( 2u, display->mResetColorIndices[1] );
+	EXPECT_EQ( 258u, display->mResetColorIndices[2] );
+	EXPECT_EQ( 259u, display->mResetColorIndices[3] );
+	EXPECT_EQ( 256u, display->mResetColorIndices[4] );
+	EXPECT_EQ( 2, display->mResetColorsCount );
 }
 
 UTEST( eterm, selection_redraw_while_idle ) {

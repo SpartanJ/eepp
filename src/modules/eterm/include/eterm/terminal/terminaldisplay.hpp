@@ -356,6 +356,7 @@ class TerminalDisplay {
 	VertexBufferUniquePtr mVBForeground;
 	std::vector<VertexBufferUniquePtr> mVBStyles;
 	TerminalColorScheme mColorScheme;
+	TerminalColorScheme mInitialColorScheme;
 	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
