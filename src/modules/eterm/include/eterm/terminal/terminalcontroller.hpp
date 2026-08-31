@@ -222,7 +222,7 @@ class TerminalController final : public std::enable_shared_from_this<TerminalCon
 						TerminalColorPalette palette );
 
 	void start();
-	void enqueue( Command&& command );
+	bool enqueue( Command&& command );
 	void workerLoop();
 	void processCommands();
 	void processCommand( Command&& command );
@@ -238,7 +238,8 @@ class TerminalController final : public std::enable_shared_from_this<TerminalCon
 	std::deque<Command> mCommands;
 	std::mutex mEventMutex;
 	std::deque<Event> mEvents;
-	std::atomic<std::shared_ptr<const TerminalSnapshot>> mPublishedSnapshot;
+	mutable std::mutex mPublishedSnapshotMutex;
+	std::shared_ptr<const TerminalSnapshot> mPublishedSnapshot;
 	std::atomic<bool> mShutdownRequested{ false };
 	std::atomic<Uint64> mNextScrollCommand{ 0 };
 };

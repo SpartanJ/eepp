@@ -277,16 +277,18 @@ void TerminalController::shutdown() {
 		mWorker.join();
 }
 
-void TerminalController::enqueue( Command&& command ) {
-	if ( mShutdownRequested.load( std::memory_order_acquire ) )
-		return;
+bool TerminalController::enqueue( Command&& command ) {
 	{
 		std::lock_guard<std::mutex> lock( mCommandMutex );
+
 		if ( mShutdownRequested.load( std::memory_order_relaxed ) )
-			return;
+			return false;
+
 		mCommands.emplace_back( std::move( command ) );
 	}
+
 	mCommandCondition.notify_one();
+	return true;
 }
 
 void TerminalController::write( std::string data, bool mayEcho ) {
@@ -310,10 +312,11 @@ void TerminalController::scrollDown( int amount ) {
 }
 
 Uint64 TerminalController::scrollTo( int position ) {
-	if ( mShutdownRequested.load( std::memory_order_acquire ) )
-		return 0;
 	const Uint64 commandId = mNextScrollCommand.fetch_add( 1, std::memory_order_relaxed ) + 1;
-	enqueue( ScrollCommand{ position, 0, commandId } );
+
+	if ( !enqueue( ScrollCommand{ position, 0, commandId } ) )
+		return 0;
+
 	return commandId;
 }
 
@@ -379,7 +382,8 @@ void TerminalController::restart( PtyPtr&& pty, ProcPtr&& process ) {
 }
 
 std::shared_ptr<const TerminalSnapshot> TerminalController::snapshot() const {
-	return mPublishedSnapshot.load( std::memory_order_acquire );
+	std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
+	return mPublishedSnapshot;
 }
 
 std::optional<std::string>
@@ -426,7 +430,10 @@ void TerminalController::enqueueEvent( Event event, bool coalescable ) {
 
 void TerminalController::publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot ) {
 	const Uint64 generation = snapshot->generation;
-	mPublishedSnapshot.store( std::move( snapshot ), std::memory_order_release );
+	{
+		std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
+		mPublishedSnapshot = std::move( snapshot );
+	}
 	Event event{ EventType::SnapshotReady };
 	event.generation = generation;
 	enqueueEvent( std::move( event ), true );
