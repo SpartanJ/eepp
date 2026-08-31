@@ -167,6 +167,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
 	mAsyncLifetime( this, this ),
+	mAutoRegisterBaseCommands( autoRegisterBaseCommands ),
 	mDocView( mDoc, mFontStyleConfig,
 			  { .textHints = TextHints::NoKerning, .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),
@@ -214,7 +215,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mDoc->registerClient( this );
 	subscribeScheduledUpdate();
 
-	if ( autoRegisterBaseCommands )
+	if ( mAutoRegisterBaseCommands )
 		registerCommands();
 	if ( autoRegisterBaseKeybindings )
 		registerKeybindings();
@@ -1066,6 +1067,8 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 		if ( clientsOfTypeCount == 1 || useCount == 1 )
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
+		if ( mAutoRegisterBaseCommands )
+			mDoc->setSharedRefCommands( getDefaultEditorCommands() );
 		mDoc->registerClient( this );
 		mDocView.setDocument( doc );
 		onDocumentChanged( oldDocURI );
@@ -2909,8 +2912,7 @@ void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& 
 	}
 }
 
-void UICodeEditor::addKeyBinds( const KeyBindings::ShortcutMap& binds,
-								const bool& allowLocked ) {
+void UICodeEditor::addKeyBinds( const KeyBindings::ShortcutMap& binds, const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
 	for ( const auto& bind : binds ) {
 		if ( allowLocked ) {

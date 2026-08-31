@@ -46,6 +46,8 @@ Run this **after** all edits and **before** attempting to compile.
 ## Step 2: Compile the Project
 To compile the project in debug mode, execute the `make` command, ensuring you point to the correct directory for your current Operating System.
 
+### Build Parallelism
+
 Always use all processors reported by the platform when selecting the parallel job count. On Linux
 and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
 such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.

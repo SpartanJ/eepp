@@ -101,6 +101,17 @@ UTEST( GitConflict, KeepsMergeOperationAfterAllConflictsAreStaged ) {
 	EXPECT_TRUE( state.error.empty() );
 	EXPECT_FALSE( state.hasConflicts() );
 	EXPECT_EQ( Git::GitOperation::Merge, state.operation );
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "merge", "--abort" } ) );
+	EXPECT_NE( EXIT_SUCCESS, run( { "merge", "incoming" } ) );
+	state = git.conflictState( temp.path.string(), false );
+	EXPECT_TRUE( state.hasConflicts() );
+	ASSERT_EQ( EXIT_SUCCESS, git.restoreHead( { "conflict.txt" }, temp.path.string() ).returnCode );
+	state = git.conflictState( temp.path.string(), false );
+	EXPECT_FALSE( state.hasConflicts() );
+	std::string restored;
+	ASSERT_TRUE( FileSystem::fileGet( file, restored ) );
+	EXPECT_TRUE( restored == "current\n" );
 }
 
 UTEST( GitHistory, PaginatesFirstParentWithoutDuplicates ) {

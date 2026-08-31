@@ -323,11 +323,12 @@ class GitPlugin : public PluginBase {
 
 	void unstage( const std::vector<std::string>& files );
 
-	enum class FileOperation { Stage, Unstage, Discard };
+	enum class FileOperation { Stage, Unstage, Discard, RestoreHead };
 
 	void runFileOperation( std::vector<std::string> files, FileOperation operation );
 
 	void discard( const std::vector<std::string>& files );
+	void discardConflicts( const std::vector<std::string>& files );
 
 	void discard( const std::string& file );
 
