@@ -43,6 +43,12 @@ declarations and unqualified eepp type names, such as `UISplitter`, over repeate
 qualified names such as `EE::UI::UISplitter`. Keep explicit qualification only where it is required
 to resolve ambiguity or avoid importing an unusually broad namespace into an unsuitable scope.
 
+## Function Spacing
+
+Always leave one blank line between consecutive function declarations in headers and between
+consecutive function definitions in implementation files. This is a project-wide stylistic
+constraint, including short inline functions.
+
 ## Control-Statement Braces
 
 Use braces around the body of an `if`, `else`, `for`, `while`, or similar control statement whenever

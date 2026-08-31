@@ -1488,6 +1488,9 @@ void GitPlugin::runFileOperation( std::vector<std::string> files, FileOperation 
 					case FileOperation::Discard:
 						result = mGit->restore( paths, repoPath );
 						break;
+					case FileOperation::RestoreHead:
+						result = mGit->restoreHead( paths, repoPath );
+						break;
 				}
 				if ( result.fail() )
 					return result;
@@ -1507,6 +1510,27 @@ void GitPlugin::discard( const std::vector<std::string>& files ) {
 
 	msgBox->on( Event::OnConfirm,
 				[this, files]( auto ) { runFileOperation( files, FileOperation::Discard ); } );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
+void GitPlugin::discardConflicts( const std::vector<std::string>& files ) {
+	if ( files.empty() )
+		return;
+	String message =
+		files.size() == 1
+			? String::fromUtf8( String::format(
+				  i18n( "git_confirm_discard_changes",
+						"Are you sure you want to discard the changes in file: \"%s\"?" )
+					  .toUtf8(),
+				  files.front() ) )
+			: i18n( "git_confirm_discard_changes",
+					"Are you sure you want to discard all file changes?" );
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, message );
+	msgBox->on( Event::OnConfirm,
+				[this, files]( auto ) { runFileOperation( files, FileOperation::RestoreHead ); } );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
 	msgBox->center();
@@ -3751,7 +3775,8 @@ void GitPlugin::buildSidePanelTab() {
 					auto type = status->type;
 					if ( type == Git::GitStatusType::Staged ||
 						 type == Git::GitStatusType::Untracked ||
-						 type == Git::GitStatusType::Changed ) {
+						 type == Git::GitStatusType::Changed ||
+						 type == Git::GitStatusType::Unmerged ) {
 						std::string repoPath;
 						if ( !status->files.empty() )
 							repoPath = mGit->repoPath( status->files.front().file );
@@ -3780,6 +3805,9 @@ void GitPlugin::buildSidePanelTab() {
 							menuAdd( menu, "git-discard-all",
 									 i18n( "git_discard_all", "Discard All" ) );
 						}
+						if ( type == Git::GitStatusType::Unmerged )
+							menuAdd( menu, "git-discard-all",
+									 i18n( "git_discard_all", "Discard All" ) );
 
 						menu->on( Event::OnItemClicked, [this, modelShared, repoPath,
 														 type]( const Event* event ) {
@@ -3797,8 +3825,12 @@ void GitPlugin::buildSidePanelTab() {
 								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
 							} else if ( id == "git-discard-all" ) {
-								discard( model->getFiles( repoFullName( repoPath ),
-														  (Uint32)Git::GitStatusType::Changed ) );
+								auto discardFiles = model->getFiles( repoFullName( repoPath ),
+																	 static_cast<Uint32>( type ) );
+								if ( type == Git::GitStatusType::Unmerged )
+									discardConflicts( discardFiles );
+								else
+									discard( discardFiles );
 							} else if ( id == "git-diff-staged" ) {
 								diff( Git::DiffMode::DiffStaged, repoPath );
 							} else if ( id == "git-diff-changed" ) {
@@ -4001,19 +4033,31 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 		hasUnstaged |= file.report.type != Git::GitStatusType::Staged;
 		hasUnmerged |= file.report.type == Git::GitStatusType::Unmerged;
 	}
-	if ( hasUnmerged && !multiple ) {
-		menuAdd( menu, "git-resolve-conflict", i18n( "git_resolve_conflict", "Resolve Conflict" ),
-				 "diff-modified" );
-		menuAdd( menu, "git-accept-ours", i18n( "git_accept_ours", "Accept Ours" ) );
-		menuAdd( menu, "git-accept-theirs", i18n( "git_accept_theirs", "Accept Theirs" ) );
-		menu->on( Event::OnItemClicked, [this, file = files.front()]( const Event* event ) {
+	if ( hasUnmerged ) {
+		if ( !multiple ) {
+			menuAdd( menu, "git-resolve-conflict",
+					 i18n( "git_resolve_conflict", "Resolve Conflict" ), "diff-modified" );
+			menuAdd( menu, "git-accept-ours", i18n( "git_accept_ours", "Accept Ours" ) );
+			menuAdd( menu, "git-accept-theirs", i18n( "git_accept_theirs", "Accept Theirs" ) );
+		}
+		menu->addSeparator();
+		menuAdd( menu, "git-discard", i18n( "git_discard", "Discard" ) );
+		menu->on( Event::OnItemClicked, [this, files = std::move( files )]( const Event* event ) {
 			const std::string id = event->getNode()->asType<UIMenuItem>()->getId();
 			if ( id == "git-resolve-conflict" )
-				openConflictResolver( file.file );
+				openConflictResolver( files.front().file );
 			else if ( id == "git-accept-ours" )
-				acceptConflictSide( file.file, true );
+				acceptConflictSide( files.front().file, true );
 			else if ( id == "git-accept-theirs" )
-				acceptConflictSide( file.file, false );
+				acceptConflictSide( files.front().file, false );
+			else if ( id == "git-discard" ) {
+				std::vector<std::string> paths;
+				paths.reserve( files.size() );
+				for ( const auto& file : files )
+					if ( file.report.type == Git::GitStatusType::Unmerged )
+						paths.emplace_back( file.file );
+				discardConflicts( paths );
+			}
 		} );
 		menu->showOverMouseCursor();
 		return;
@@ -4035,7 +4079,10 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 
 	menu->addSeparator();
 
-	if ( hasUnstaged )
+	const bool hasDiscardable = std::any_of( files.begin(), files.end(), []( const auto& file ) {
+		return file.report.type == Git::GitStatusType::Changed;
+	} );
+	if ( hasDiscardable )
 		menuAdd( menu, "git-discard", i18n( "git_discard", "Discard" ) );
 
 	menu->on( Event::OnItemClicked,
@@ -4058,7 +4105,7 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 					  unstage( paths );
 				  } else if ( id == "git-discard" ) {
 					  for ( const auto& file : files )
-						  if ( file.report.type != Git::GitStatusType::Staged )
+						  if ( file.report.type == Git::GitStatusType::Changed )
 							  paths.emplace_back( file.file );
 					  if ( paths.size() == 1 )
 						  discard( paths.front() );

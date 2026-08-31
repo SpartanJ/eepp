@@ -862,6 +862,15 @@ Git::Result Git::restore( const std::string& file, const std::string& projectDir
 	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }
 
+Git::Result Git::restoreHead( const std::vector<std::string>& files,
+							  const std::string& projectDir ) {
+	Result result;
+	std::vector<std::string> args{ "restore", "--source=HEAD", "--staged", "--worktree", "--" };
+	args.insert( args.end(), files.begin(), files.end() );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::reset( std::vector<std::string> files, const std::string& projectDir ) {
 	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
 }

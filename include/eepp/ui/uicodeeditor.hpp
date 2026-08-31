@@ -407,8 +407,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addKeyBindsString( const std::map<std::string, std::string>& binds,
 							const bool& allowLocked = false );
 
-	void addKeyBinds( const KeyBindings::ShortcutMap& binds,
-					  const bool& allowLocked = false );
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds, const bool& allowLocked = false );
 
 	const bool& getHighlightCurrentLine() const;
 
@@ -907,6 +906,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::shared_ptr<Doc::TextDocument> mDoc;
 	MainThreadLifetime<UICodeEditor> mAsyncLifetime;
 	bool mDirtyEditor{ false };
+	bool mAutoRegisterBaseCommands{ true };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };

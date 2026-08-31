@@ -359,6 +359,7 @@ class Git {
 	Result restore( std::vector<std::string> files, const std::string& projectDir = "" );
 
 	Result restore( const std::string& file, const std::string& projectDir = "" );
+	Result restoreHead( const std::vector<std::string>& files, const std::string& projectDir = "" );
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
 
