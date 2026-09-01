@@ -934,7 +934,7 @@ function set_ios_config()
 	end
 end
 
-function backend_is( name, libname )
+function initialize_backends()
 	if not _OPTIONS["with-backend"] then
 		_OPTIONS["with-backend"] = "SDL2"
 	end
@@ -942,6 +942,10 @@ function backend_is( name, libname )
 	if next(backends) == nil then
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
+end
+
+function backend_is( name, libname )
+	initialize_backends()
 
 	local backend_sel = table.contains( backends, name )
 
@@ -1170,6 +1174,7 @@ solution "eepp"
 
 	generate_os_links()
 	parse_args()
+	initialize_backends()
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }
