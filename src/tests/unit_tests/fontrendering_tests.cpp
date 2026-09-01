@@ -84,7 +84,8 @@ UTEST( FontRendering, glyphAdvanceDoesNotCreateTexturePages ) {
 UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
 	UIApplication app(
 		WindowSettings( 360, 220, "eepp - Subpixel Text Test", WindowStyle::Default,
-						WindowBackend::Default, 32 ),
+						WindowBackend::Default, 32, std::string(), 1, EE_SCREEN_KEYBOARD_ENABLED,
+						true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 	ResourceScope& scope = *app.getUI()->getResourceScope();
 	FontTrueTypePtr font = FontTrueType::New( "SubpixelText-Regular", scope );
@@ -228,7 +229,8 @@ UTEST( FontRendering, subpixelCoverageAllRenderers ) {
 UTEST( FontRendering, scaledSubpixelGlyphAtlas ) {
 	UIApplication app(
 		WindowSettings( 256, 64, "eepp - Scaled Subpixel Glyph Atlas", VisualTestWindowStyle,
-						WindowBackend::Default, 32 ),
+						WindowBackend::Default, 32, std::string(), 1, EE_SCREEN_KEYBOARD_ENABLED,
+						true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 	ResourceScope& scope = *app.getUI()->getResourceScope();
 	FontTrueTypePtr font = FontTrueType::New( "ScaledSubpixelNonicons", scope );
