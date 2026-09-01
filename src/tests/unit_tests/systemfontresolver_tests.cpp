@@ -70,15 +70,53 @@ UTEST( SystemFontResolver, workerWarmUp ) {
 	warmUpThread.wait();
 
 	EXPECT_FALSE( resolver->isLoading() );
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_HAIKU
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+	EXPECT_FALSE( resolver->resolveGeneric( GenericFamily::SansSerif, FontWeight::Normal, false )
+					  .path.empty() );
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	EXPECT_FALSE( resolver->enumerate().empty() );
 #endif
 
 	SystemFontResolver::setEnabled( false );
 	SystemFontResolver::destroySingleton();
 }
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+UTEST( SystemFontResolver, nativeRenderingDoesNotEnumerate ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+	resolver->invalidateCache();
+
+	resolver->warmUp();
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+
+	FontDesc sans = resolver->resolveGeneric( GenericFamily::SansSerif, FontWeight::Normal, false );
+	EXPECT_FALSE( sans.path.empty() );
+	FontQuery query;
+	query.family = sans.family;
+	EXPECT_FALSE( resolver->resolve( query ).path.empty() );
+	EXPECT_FALSE( resolver->resolveGeneric( GenericFamily::Monospace, FontWeight::Normal, false )
+					  .path.empty() );
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	EXPECT_FALSE(
+		resolver->getFallbackForCodepoint( 0x65E5, FontWeight::Normal, false ).path.empty() );
+#else
+	resolver->getFallbackForCodepoint( 0x65E5, FontWeight::Normal, false );
+#endif
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+
+	EXPECT_FALSE( resolver->enumerate().empty() );
+	EXPECT_TRUE( resolver->isFontListPopulated() );
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
+}
+#endif
 
 UTEST( SystemFontResolver, fallbackWaitsForConcurrentWarmUp ) {
 	SystemFontResolver::setEnabled( true );

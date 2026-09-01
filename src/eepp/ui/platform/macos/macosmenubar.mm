@@ -495,6 +495,13 @@ struct NativeMenuSource {
 
 - (void)menuItemActivated:(NSMenuItem*)sender {
 	eeASSERT( [NSThread isMainThread] );
+	// Shortcut text on UIMenuItem is presentation-only; applications register the actual shortcut
+	// with their KeyBindings target. AppKit also invokes this action for native key equivalents,
+	// while SDL still forwards the same key-down event to eepp. Let the normal keybinding dispatch
+	// own keyboard activation so commands are not executed twice, while preserving menu clicks.
+	NSEvent* event = [NSApp currentEvent];
+	if ( nil != event && event.type == NSEventTypeKeyDown )
+		return;
 	auto found = _itemMap.find( sender );
 	if ( found != _itemMap.end() && nullptr != found->second )
 		found->second->activate();

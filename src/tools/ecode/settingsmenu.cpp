@@ -245,7 +245,8 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	const auto onMenuShowEvent = [this, menuHint]( UIPopUpMenu* menu, UIWidget* menuButton,
 												   Uint32 menuBarIndex ) {
 		menu->on( Event::OnMenuShow, [this, menuButton, menuBarIndex, menu, menuHint]( auto ) {
-			if ( menuBarIndex == 0 && !mApp->isAnyStatusBarSectionVisible() )
+			if ( menuBarIndex == 0 && !mMenuBar->isGlobalMenuBarEnabled() &&
+				 !mApp->isAnyStatusBarSectionVisible() )
 				menuHint->setVisible( true );
 			menu->setOwnerNode( mApp->getConfig().ui.showMenuBar
 									? mMenuBar->getButton( menuBarIndex )->asType<UIWidget>()

@@ -43,6 +43,10 @@ function newclangtoolchain(toolchain)
 	}
 end
 
+function is_clang()
+	return _OPTIONS.platform == "clang" or os.is_real("macosx") or os.is_real("ios")
+end
+
 newplatform {
 	name = "clang",
 	description = "Clang",
@@ -182,6 +186,7 @@ newoption {
     description = "Set the shared data directory (default: /usr/share/ecode)",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function explode(div,str)
 	if (div=='') then return false end
@@ -747,6 +752,23 @@ function parse_args()
 	if _OPTIONS["time-trace"] then
 		buildoptions { "-ftime-trace" }
 	end
+
+	if _OPTIONS["with-lto"] and not os.is_real("emscripten") then
+		configuration "release"
+
+		if is_vs() then
+			buildoptions { "/GL" }
+			linkoptions { "/LTCG" }
+		elseif is_clang() then
+			buildoptions { "-flto=thin" }
+			linkoptions { "-flto=thin" }
+		else
+			buildoptions { "-flto=auto" }
+			linkoptions { "-flto=auto" }
+		end
+
+		configuration {}
+	end
 end
 
 function add_static_links()
@@ -912,7 +934,7 @@ function set_ios_config()
 	end
 end
 
-function backend_is( name, libname )
+function initialize_backends()
 	if not _OPTIONS["with-backend"] then
 		_OPTIONS["with-backend"] = "SDL2"
 	end
@@ -920,6 +942,10 @@ function backend_is( name, libname )
 	if next(backends) == nil then
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
+end
+
+function backend_is( name, libname )
+	initialize_backends()
 
 	local backend_sel = table.contains( backends, name )
 
@@ -1148,6 +1174,7 @@ solution "eepp"
 
 	generate_os_links()
 	parse_args()
+	initialize_backends()
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }

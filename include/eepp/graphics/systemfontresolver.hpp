@@ -110,17 +110,21 @@ class EE_API SystemFontResolver {
 
 	FontDesc getFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic );
 
-	/** Populate and cache the system font database without copying the resulting font list.
-	 * Safe to call from a worker thread after enabling the resolver. */
+	/** Pre-resolve the native fonts needed by normal rendering. Full system-font enumeration
+	 * remains lazy until enumerate() or enumerateFamily() is called. */
 	void warmUp() const;
 
-	bool fontContainsCodepoint( const std::string& path, Uint32 codepoint );
+	bool fontContainsCodepoint( const std::string& path, Uint32 codepoint, Uint32 faceIndex = 0 );
 
 	void invalidateCache();
 
 	void ensureFontListPopulated() const;
 
 	bool isLoading() const { return mFontListLoading; }
+
+	bool isFontListPopulated() const {
+		return mFontListPopulated.load( std::memory_order_acquire );
+	}
 
 	std::vector<FontDesc> enumerate();
 
@@ -148,6 +152,12 @@ class EE_API SystemFontResolver {
 
 	void populateGenericFallbacks() const;
 
+	FontDesc matchFont( const FontQuery& query ) const;
+
+	FontDesc matchGenericFont( GenericFamily generic, FontWeight weight, bool italic ) const;
+
+	FontDesc resolveGenericCached( GenericFamily generic, FontWeight weight, bool italic ) const;
+
 	FontDesc matchFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic ) const;
 
 	static int scoreMatch( const FontQuery& query, const FontDesc& candidate );
@@ -164,7 +174,7 @@ class EE_API SystemFontResolver {
 
 	mutable UnorderedMap<Uint32, FontDesc> mGenericCache;
 
-	mutable UnorderedMap<Uint32, std::string> mCodepointFallbackCache;
+	mutable UnorderedMap<Uint32, FontDesc> mCodepointFallbackCache;
 
 	struct GenericEntry {
 		GenericFamily generic;

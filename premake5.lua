@@ -51,6 +51,7 @@ newoption {
     description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function is_arm64_arch()
 	local arch = _OPTIONS["arch"]
@@ -713,6 +714,21 @@ function parse_args()
 
 	if _OPTIONS["time-trace"] then
 		buildoptions { "-ftime-trace" }
+	end
+
+	if _OPTIONS["with-lto"] then
+		filter { "configurations:release*", "toolset:gcc", "not system:emscripten" }
+			buildoptions { "-flto=auto" }
+			linkoptions { "-flto=auto" }
+
+		filter { "configurations:release*", "toolset:clang", "not system:emscripten" }
+			buildoptions { "-flto=thin" }
+			linkoptions { "-flto=thin" }
+
+		filter { "configurations:release*", "toolset:msc" }
+			linktimeoptimization "On"
+
+		filter {}
 	end
 end
 

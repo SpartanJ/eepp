@@ -46,6 +46,17 @@
 
 using namespace EE::System;
 
+// EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG allows the dynamically loaded Fontconfig backend to be
+// compiled and exercised on another POSIX host (notably macOS CI/developer machines).
+#if defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG ) || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS ||                    \
+	EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD ||                    \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+#define EE_SYSTEM_FONT_NATIVE_MATCHING 1
+#else
+#define EE_SYSTEM_FONT_NATIVE_MATCHING 0
+#endif
+
 namespace EE::Graphics::SystemFontResolverDetail {
 
 enum class FontProbeKind : Uint8 { Codepoint, SfntTable };
@@ -53,10 +64,12 @@ enum class FontProbeKind : Uint8 { Codepoint, SfntTable };
 struct FontProbeKey {
 	std::string path;
 	FT_ULong value;
+	EE::Uint32 faceIndex;
 	FontProbeKind kind;
 
 	bool operator==( const FontProbeKey& other ) const {
-		return value == other.value && kind == other.kind && path == other.path;
+		return value == other.value && faceIndex == other.faceIndex && kind == other.kind &&
+			   path == other.path;
 	}
 };
 
@@ -67,9 +80,9 @@ namespace std {
 template <> struct hash<EE::Graphics::SystemFontResolverDetail::FontProbeKey> {
 	std::size_t
 	operator()( const EE::Graphics::SystemFontResolverDetail::FontProbeKey& key ) const noexcept {
-		return hashCombine( std::hash<std::string>{}( key.path ),
-							std::hash<FT_ULong>{}( key.value ),
-							static_cast<std::size_t>( key.kind ) );
+		return hashCombine(
+			std::hash<std::string>{}( key.path ), std::hash<FT_ULong>{}( key.value ),
+			std::hash<EE::Uint32>{}( key.faceIndex ), static_cast<std::size_t>( key.kind ) );
 	}
 };
 
@@ -82,10 +95,15 @@ using FontProbeKind = EE::Graphics::SystemFontResolverDetail::FontProbeKind;
 
 struct FreeTypeState {
 	static constexpr std::size_t MaxCachedProbes = 4096;
+	struct FaceIndexCacheEntry {
+		FT_Long numFaces{ -1 };
+		std::vector<std::pair<std::string, EE::Uint32>> postScriptNames;
+	};
 
 	FT_Library library{ nullptr };
 	Mutex mutex;
 	EE::LRUCache<MaxCachedProbes, FontProbeKey, bool> probeCache;
+	EE::UnorderedMap<std::string, FaceIndexCacheEntry> faceIndexCache;
 
 	FreeTypeState() { FT_Init_FreeType( &library ); }
 
@@ -95,15 +113,15 @@ struct FreeTypeState {
 			FT_Done_FreeType( library );
 	}
 
-	bool containsCodepoint( const std::string& path, EE::Uint32 codepoint ) {
+	bool containsCodepoint( const std::string& path, EE::Uint32 codepoint, EE::Uint32 faceIndex ) {
 		Lock lock( mutex );
-		FontProbeKey key{ path, codepoint, FontProbeKind::Codepoint };
+		FontProbeKey key{ path, codepoint, faceIndex, FontProbeKind::Codepoint };
 		if ( auto cached = probeCache.get( key ) )
 			return *cached;
 
 		FT_Face face{ nullptr };
 		bool contains = false;
-		if ( library && FT_New_Face( library, path.c_str(), 0, &face ) == 0 ) {
+		if ( library && FT_New_Face( library, path.c_str(), faceIndex, &face ) == 0 ) {
 			contains = FT_Get_Char_Index( face, codepoint ) != 0;
 			FT_Done_Face( face );
 		}
@@ -112,15 +130,15 @@ struct FreeTypeState {
 		return contains;
 	}
 
-	bool hasSfntTable( const std::string& path, FT_ULong tag ) {
+	bool hasSfntTable( const std::string& path, FT_ULong tag, EE::Uint32 faceIndex ) {
 		Lock lock( mutex );
-		FontProbeKey key{ path, tag, FontProbeKind::SfntTable };
+		FontProbeKey key{ path, tag, faceIndex, FontProbeKind::SfntTable };
 		if ( auto cached = probeCache.get( key ) )
 			return *cached;
 
 		FT_Face face{ nullptr };
 		bool found = false;
-		if ( library && FT_New_Face( library, path.c_str(), 0, &face ) == 0 ) {
+		if ( library && FT_New_Face( library, path.c_str(), faceIndex, &face ) == 0 ) {
 			FT_ULong length = 0;
 			found = FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length ) == 0 && length > 0;
 			FT_Done_Face( face );
@@ -133,26 +151,46 @@ struct FreeTypeState {
 	bool findFaceIndex( const std::string& path, const std::string& postScriptName,
 						EE::Uint32& faceIndex ) {
 		Lock lock( mutex );
-		FT_Face face{ nullptr };
-		if ( !library || FT_New_Face( library, path.c_str(), -1, &face ) != 0 )
-			return false;
+		auto cached = faceIndexCache.find( path );
+		if ( cached == faceIndexCache.end() ) {
+			FaceIndexCacheEntry entry;
+			FT_Face face{ nullptr };
+			if ( library && FT_New_Face( library, path.c_str(), -1, &face ) == 0 ) {
+				entry.numFaces = face->num_faces;
+				FT_Done_Face( face );
+				if ( entry.numFaces > 1 ) {
+					entry.postScriptNames.reserve( static_cast<std::size_t>( entry.numFaces ) );
+					for ( FT_Long i = 0; i < entry.numFaces; ++i ) {
+						if ( FT_New_Face( library, path.c_str(), i, &face ) != 0 ) {
+							// Some CoreText-only virtual collections expose a face count but no
+							// face FreeType can open. Do not repeat the same failure for every
+							// advertised face.
+							if ( i == 0 ) {
+								entry.numFaces = -1;
+								break;
+							}
+							continue;
+						}
+						const char* facePostScriptName = FT_Get_Postscript_Name( face );
+						if ( facePostScriptName )
+							entry.postScriptNames.emplace_back( facePostScriptName,
+																static_cast<EE::Uint32>( i ) );
+						FT_Done_Face( face );
+					}
+				}
+			}
+			cached = faceIndexCache.emplace( path, std::move( entry ) ).first;
+		}
 
-		const FT_Long numFaces = face->num_faces;
-		FT_Done_Face( face );
-		if ( numFaces == 1 ) {
+		if ( cached->second.numFaces == 1 ) {
 			faceIndex = 0;
 			return true;
 		}
 		if ( postScriptName.empty() )
 			return false;
-		for ( FT_Long i = 0; i < numFaces; ++i ) {
-			if ( FT_New_Face( library, path.c_str(), i, &face ) != 0 )
-				continue;
-			const char* facePostScriptName = FT_Get_Postscript_Name( face );
-			const bool matches = facePostScriptName && postScriptName == facePostScriptName;
-			FT_Done_Face( face );
-			if ( matches ) {
-				faceIndex = static_cast<EE::Uint32>( i );
+		for ( const auto& face : cached->second.postScriptNames ) {
+			if ( postScriptName == face.first ) {
+				faceIndex = face.second;
 				return true;
 			}
 		}
@@ -162,6 +200,7 @@ struct FreeTypeState {
 	void clearProbeCache() {
 		Lock lock( mutex );
 		probeCache.clear();
+		faceIndexCache.clear();
 	}
 };
 
@@ -190,13 +229,13 @@ void clearFTProbeCache() {
 		state->clearProbeCache();
 }
 
-bool fontHasSfntTable( const std::string& path, FT_ULong tag ) {
+bool fontHasSfntTable( const std::string& path, FT_ULong tag, EE::Uint32 faceIndex ) {
 	std::shared_ptr<FreeTypeState> state = getFTState();
-	return state && state->hasSfntTable( path, tag );
+	return state && state->hasSfntTable( path, tag, faceIndex );
 }
 
-bool fontHasSvgTable( const std::string& path ) {
-	return fontHasSfntTable( path, FT_MAKE_TAG( 'S', 'V', 'G', ' ' ) );
+bool fontHasSvgTable( const std::string& path, EE::Uint32 faceIndex ) {
+	return fontHasSfntTable( path, FT_MAKE_TAG( 'S', 'V', 'G', ' ' ), faceIndex );
 }
 
 } // namespace
@@ -273,7 +312,20 @@ void SystemFontResolver::ensureFontListPopulated() const {
 
 void SystemFontResolver::warmUp() const {
 	Clock c;
+#if EE_SYSTEM_FONT_NATIVE_MATCHING
+	// Rendering uses native, on-demand matching. Prime the small generic set used by UI/CSS without
+	// flattening every installed font into mFontList; enumeration is reserved for font-picking
+	// APIs.
+	resolveGenericCached( GenericFamily::Serif, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::SansSerif, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::Monospace, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::Cursive, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::Fantasy, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::SystemUi, FontWeight::Normal, false );
+	resolveGenericCached( GenericFamily::Emoji, FontWeight::Normal, false );
+#else
 	ensureFontListPopulated();
+#endif
 	Log::info( "SystemFontResolver::warmUp took: %s", c.getElapsedTime().toString() );
 }
 
@@ -352,24 +404,36 @@ FontDesc SystemFontResolver::resolve( const FontQuery& query ) {
 	if ( query.family.empty() )
 		return FontDesc();
 
-	ensureFontListPopulated();
-
 	std::string normFamily = normalizeFamily( query.family );
-
-	Lock lock( mMutex );
-
 	Uint64 key = makeCacheKey( normFamily, query.weight, query.stretch, query.italic );
-
-	auto cacheIt = mResolveCache.find( key );
-	if ( cacheIt != mResolveCache.end() )
-		return cacheIt->second;
+	{
+		Lock lock( mMutex );
+		auto cacheIt = mResolveCache.find( key );
+		if ( cacheIt != mResolveCache.end() )
+			return cacheIt->second;
+	}
 
 	GenericFamily generic = genericFamilyFromName( query.family );
 	if ( generic != GenericFamily::None ) {
-		FontDesc result = resolveGeneric( generic, query.weight, query.italic );
+		FontDesc result = resolveGenericCached( generic, query.weight, query.italic );
+		Lock lock( mMutex );
 		mResolveCache[key] = result;
 		return result;
 	}
+
+#if EE_SYSTEM_FONT_NATIVE_MATCHING
+	FontDesc nativeMatch = matchFont( query );
+	{
+		Lock lock( mMutex );
+		mResolveCache[key] = nativeMatch;
+	}
+	return nativeMatch;
+#else
+	ensureFontListPopulated();
+	Lock lock( mMutex );
+	auto cacheIt = mResolveCache.find( key );
+	if ( cacheIt != mResolveCache.end() )
+		return cacheIt->second;
 
 	FontDesc best;
 	int bestScore = 100000;
@@ -387,12 +451,11 @@ FontDesc SystemFontResolver::resolve( const FontQuery& query ) {
 	else
 		mResolveCache[key] = best;
 	return mResolveCache[key];
+#endif
 }
 
 FontDesc SystemFontResolver::resolveFromNamesList( const std::string& namesList, FontWeight weight,
 												   bool italic ) {
-	ensureFontListPopulated();
-
 	FontDesc result;
 	String::readBySeparatorStoppable(
 		namesList,
@@ -414,102 +477,106 @@ FontDesc SystemFontResolver::resolveFromNamesList( const std::string& namesList,
 
 FontDesc SystemFontResolver::resolveGeneric( GenericFamily generic, FontWeight weight,
 											 bool italic ) {
-	ensureFontListPopulated();
+	return resolveGenericCached( generic, weight, italic );
+}
 
-	Lock lock( mMutex );
+FontDesc SystemFontResolver::resolveGenericCached( GenericFamily generic, FontWeight weight,
+												   bool italic ) const {
+	if ( generic == GenericFamily::None )
+		return {};
 
 	Uint32 cacheKey = ( static_cast<Uint32>( generic ) << 16 ) |
 					  ( static_cast<Uint32>( weight ) << 1 ) | ( italic ? 1 : 0 );
-
-	auto it = mGenericCache.find( cacheKey );
-	if ( it != mGenericCache.end() )
-		return it->second;
+	{
+		Lock lock( mMutex );
+		auto it = mGenericCache.find( cacheKey );
+		if ( it != mGenericCache.end() )
+			return it->second;
+	}
 
 	FontDesc result;
 
-	for ( const auto& entry : mGenericFallbacks ) {
-		if ( entry.generic == generic ) {
-			int entryWeight = static_cast<int>( entry.desc.weight );
-			int queryWeight = static_cast<int>( weight );
-			int weightDiff = eeabs( entryWeight - queryWeight );
-			bool styleMatch = entry.desc.italic == italic;
-			int bestWeightDiff =
-				result.path.empty()
-					? 100000
-					: eeabs( static_cast<int>( result.weight ) - static_cast<int>( weight ) );
-			bool bestStyleMatch = result.path.empty() ? false : ( result.italic == italic );
+#if EE_SYSTEM_FONT_NATIVE_MATCHING
+	result = matchGenericFont( generic, weight, italic );
+#else
+	ensureFontListPopulated();
+	{
+		Lock listLock( mMutex );
+		auto cached = mGenericCache.find( cacheKey );
+		if ( cached != mGenericCache.end() )
+			return cached->second;
 
-			if ( styleMatch && !bestStyleMatch ) {
-				result = entry.desc;
-			} else if ( styleMatch == bestStyleMatch &&
-						( result.path.empty() || weightDiff < bestWeightDiff ) ) {
-				result = entry.desc;
+		for ( const auto& entry : mGenericFallbacks ) {
+			if ( entry.generic == generic ) {
+				int entryWeight = static_cast<int>( entry.desc.weight );
+				int queryWeight = static_cast<int>( weight );
+				int weightDiff = eeabs( entryWeight - queryWeight );
+				bool styleMatch = entry.desc.italic == italic;
+				int bestWeightDiff =
+					result.path.empty()
+						? 100000
+						: eeabs( static_cast<int>( result.weight ) - static_cast<int>( weight ) );
+				bool bestStyleMatch = result.path.empty() ? false : ( result.italic == italic );
+
+				if ( styleMatch && !bestStyleMatch ) {
+					result = entry.desc;
+				} else if ( styleMatch == bestStyleMatch &&
+							( result.path.empty() || weightDiff < bestWeightDiff ) ) {
+					result = entry.desc;
+				}
 			}
 		}
 	}
+#endif
 
+	Lock lock( mMutex );
 	mGenericCache[cacheKey] = result;
 	return result;
 }
 
 FontDesc SystemFontResolver::getSystemFont() const {
-	ensureFontListPopulated();
-	Lock lock( mMutex );
-	if ( !mGenericFallbacks.empty() ) {
-		for ( const auto& entry : mGenericFallbacks ) {
-			if ( entry.generic == GenericFamily::SystemUi )
-				return entry.desc;
-		}
-	}
-	return FontDesc();
+	return resolveGenericCached( GenericFamily::SystemUi, FontWeight::Normal, false );
 }
 
 FontDesc SystemFontResolver::getSystemMonospaceFont() const {
-	ensureFontListPopulated();
-	Lock lock( mMutex );
-	if ( !mGenericFallbacks.empty() ) {
-		for ( const auto& entry : mGenericFallbacks ) {
-			if ( entry.generic == GenericFamily::Monospace )
-				return entry.desc;
-		}
-	}
-	return FontDesc();
+	return resolveGenericCached( GenericFamily::Monospace, FontWeight::Normal, false );
 }
 
 FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeight weight,
 													  bool italic ) {
-	ensureFontListPopulated();
 	const bool isEmoji = Font::isEmojiCodePoint( codepoint );
 
 	{
 		Lock lock( mMutex );
-
-		Uint32 cacheKey = codepoint;
-		auto it = mCodepointFallbackCache.find( cacheKey );
+		auto it = mCodepointFallbackCache.find( codepoint );
 		if ( it != mCodepointFallbackCache.end() ) {
-			const std::string& path = it->second;
-			if ( path.empty() )
+			if ( it->second.path.empty() )
 				return FontDesc();
-			for ( const auto& desc : mFontList ) {
-				if ( desc.path == path ) {
-					if ( isEmoji && fontHasSvgTable( desc.path ) )
-						break;
-					FontDesc result = desc;
-					result.weight = weight;
-					result.italic = italic;
-					return result;
-				}
-			}
+			FontDesc result = it->second;
+			result.weight = weight;
+			result.italic = italic;
+			return result;
 		}
 	}
 
 	FontDesc nativeMatch = matchFallbackForCodepoint( codepoint, weight, italic );
-	if ( !nativeMatch.path.empty() && fontContainsCodepoint( nativeMatch.path, codepoint ) &&
-		 !( isEmoji && fontHasSvgTable( nativeMatch.path ) ) ) {
+	if ( !nativeMatch.path.empty() &&
+		 fontContainsCodepoint( nativeMatch.path, codepoint, nativeMatch.faceIndex ) &&
+		 !( isEmoji && fontHasSvgTable( nativeMatch.path, nativeMatch.faceIndex ) ) ) {
 		Lock lock( mMutex );
-		mCodepointFallbackCache[codepoint] = nativeMatch.path;
+		mCodepointFallbackCache[codepoint] = nativeMatch;
 		return nativeMatch;
 	}
+
+#if EE_SYSTEM_FONT_NATIVE_MATCHING
+	if ( !mFontListPopulated.load( std::memory_order_acquire ) ) {
+		Lock lock( mMutex );
+		mCodepointFallbackCache[codepoint] = {};
+		return {};
+	}
+#else
+	ensureFontListPopulated();
+#endif
 
 	static thread_local std::vector<FontDesc> snapshot;
 	{
@@ -518,29 +585,30 @@ FontDesc SystemFontResolver::getFallbackForCodepoint( Uint32 codepoint, FontWeig
 	}
 
 	for ( const auto& desc : snapshot ) {
-		if ( fontContainsCodepoint( desc.path, codepoint ) ) {
-			if ( isEmoji && fontHasSvgTable( desc.path ) )
+		if ( fontContainsCodepoint( desc.path, codepoint, desc.faceIndex ) ) {
+			if ( isEmoji && fontHasSvgTable( desc.path, desc.faceIndex ) )
 				continue;
 
 			Lock lock( mMutex );
-			mCodepointFallbackCache[codepoint] = desc.path;
 			FontDesc result = desc;
 			result.weight = weight;
 			result.italic = italic;
+			mCodepointFallbackCache[codepoint] = result;
 			return result;
 		}
 	}
 
 	{
 		Lock lock( mMutex );
-		mCodepointFallbackCache[codepoint] = "";
+		mCodepointFallbackCache[codepoint] = {};
 	}
 	return FontDesc();
 }
 
-bool SystemFontResolver::fontContainsCodepoint( const std::string& path, Uint32 codepoint ) {
+bool SystemFontResolver::fontContainsCodepoint( const std::string& path, Uint32 codepoint,
+												Uint32 faceIndex ) {
 	std::shared_ptr<FreeTypeState> state = getFTState();
-	return state && state->containsCodepoint( path, codepoint );
+	return state && state->containsCodepoint( path, codepoint, faceIndex );
 }
 
 void SystemFontResolver::populateGenericFallbacks() const {
@@ -614,8 +682,21 @@ static std::string wideToUtf8( const WCHAR* wstr ) {
 	int len = WideCharToMultiByte( CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr );
 	if ( len <= 0 )
 		return {};
-	std::string result( len - 1, '\0' );
+	std::string result( len, '\0' );
 	WideCharToMultiByte( CP_UTF8, 0, wstr, -1, &result[0], len, nullptr, nullptr );
+	result.resize( len - 1 );
+	return result;
+}
+
+static std::wstring utf8ToWide( const std::string& str ) {
+	if ( str.empty() )
+		return {};
+	int len = MultiByteToWideChar( CP_UTF8, 0, str.c_str(), -1, nullptr, 0 );
+	if ( len <= 0 )
+		return {};
+	std::wstring result( len, L'\0' );
+	MultiByteToWideChar( CP_UTF8, 0, str.c_str(), -1, &result[0], len );
+	result.resize( len - 1 );
 	return result;
 }
 
@@ -780,6 +861,71 @@ static FontDesc fontDescFromDWriteFont( IDWriteFont* font, FontWeight weight, bo
 	return desc;
 }
 
+FontDesc SystemFontResolver::matchFont( const FontQuery& query ) const {
+	using Microsoft::WRL::ComPtr;
+	IDWriteFactory* factory = getDWriteFactory();
+	if ( !factory )
+		return {};
+
+	std::wstring familyName = utf8ToWide( query.family );
+	if ( familyName.empty() )
+		return {};
+
+	ComPtr<IDWriteFontCollection> collection;
+	if ( FAILED( factory->GetSystemFontCollection( &collection, FALSE ) ) || !collection )
+		return {};
+	UINT32 familyIndex = 0;
+	BOOL familyExists = FALSE;
+	if ( FAILED( collection->FindFamilyName( familyName.c_str(), &familyIndex, &familyExists ) ) ||
+		 !familyExists )
+		return {};
+
+	ComPtr<IDWriteFontFamily> family;
+	if ( FAILED( collection->GetFontFamily( familyIndex, &family ) ) || !family )
+		return {};
+	ComPtr<IDWriteFont> font;
+	if ( FAILED( family->GetFirstMatchingFont(
+			 static_cast<DWRITE_FONT_WEIGHT>( static_cast<Uint16>( query.weight ) ),
+			 static_cast<DWRITE_FONT_STRETCH>( static_cast<Uint8>( query.stretch ) ),
+			 query.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, &font ) ) ||
+		 !font )
+		return {};
+	return fontDescFromDWriteFont( font.Get(), query.weight, query.italic );
+}
+
+FontDesc SystemFontResolver::matchGenericFont( GenericFamily generic, FontWeight weight,
+											   bool italic ) const {
+	static const char* serif[] = { "Times New Roman", "Georgia", nullptr };
+	static const char* sansSerif[] = { "Segoe UI", "Arial", nullptr };
+	static const char* monospace[] = { "Cascadia Mono", "Consolas", nullptr };
+	static const char* cursive[] = { "Comic Sans MS", nullptr };
+	static const char* fantasy[] = { "Impact", nullptr };
+	static const char* systemUi[] = { "Segoe UI", nullptr };
+	static const char* emoji[] = { "Segoe UI Emoji", "Segoe UI Symbol", nullptr };
+	const char* const* families = nullptr;
+	if ( generic == GenericFamily::Serif )
+		families = serif;
+	else if ( generic == GenericFamily::SansSerif )
+		families = sansSerif;
+	else if ( generic == GenericFamily::Monospace )
+		families = monospace;
+	else if ( generic == GenericFamily::Cursive )
+		families = cursive;
+	else if ( generic == GenericFamily::Fantasy )
+		families = fantasy;
+	else if ( generic == GenericFamily::SystemUi )
+		families = systemUi;
+	else if ( generic == GenericFamily::Emoji )
+		families = emoji;
+
+	for ( std::size_t i = 0; families && families[i]; ++i ) {
+		FontDesc match = matchFont( { families[i], weight, FontStretch::Normal, italic } );
+		if ( !match.path.empty() )
+			return match;
+	}
+	return {};
+}
+
 void SystemFontResolver::populateFontList() const {
 	using Microsoft::WRL::ComPtr;
 
@@ -915,7 +1061,8 @@ void SystemFontResolver::populateFontList() const {
 // =====================================================================
 // Platform: macOS / iOS (Core Text)
 // =====================================================================
-#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#elif ( EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS ) && \
+	!defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG )
 
 static std::string cfStringToStd( CFStringRef str ) {
 	if ( !str )
@@ -968,6 +1115,54 @@ static FontStretch ctWidthToFontStretch( CGFloat width ) {
 	return FontStretch::UltraExpanded;
 }
 
+static CGFloat fontWeightToCTWeight( FontWeight weight ) {
+	switch ( weight ) {
+		case FontWeight::Thin:
+			return -0.8;
+		case FontWeight::ExtraLight:
+			return -0.6;
+		case FontWeight::Light:
+			return -0.4;
+		case FontWeight::Normal:
+			return 0.0;
+		case FontWeight::Medium:
+			return 0.2;
+		case FontWeight::SemiBold:
+			return 0.3;
+		case FontWeight::Bold:
+			return 0.4;
+		case FontWeight::ExtraBold:
+			return 0.6;
+		case FontWeight::Black:
+			return 0.8;
+	}
+	return 0.0;
+}
+
+static CGFloat fontStretchToCTWidth( FontStretch stretch ) {
+	switch ( stretch ) {
+		case FontStretch::UltraCondensed:
+			return -0.8;
+		case FontStretch::ExtraCondensed:
+			return -0.6;
+		case FontStretch::Condensed:
+			return -0.4;
+		case FontStretch::SemiCondensed:
+			return -0.2;
+		case FontStretch::Normal:
+			return 0.0;
+		case FontStretch::SemiExpanded:
+			return 0.4;
+		case FontStretch::Expanded:
+			return 0.6;
+		case FontStretch::ExtraExpanded:
+			return 0.8;
+		case FontStretch::UltraExpanded:
+			return 1.0;
+	}
+	return 0.0;
+}
+
 static FontDesc fontDescFromCTFont( CTFontRef font, FontWeight weight, bool italic ) {
 	FontDesc desc;
 	if ( !font )
@@ -987,6 +1182,10 @@ static FontDesc fontDescFromCTFont( CTFontRef font, FontWeight weight, bool ital
 	if ( pathRef )
 		CFRelease( pathRef );
 	if ( desc.path.empty() )
+		return {};
+	// These are virtual CoreText resources rather than normal sfnt files. Attempting to open one
+	// with FreeType is both unsuccessful and expensive (some are tens of megabytes).
+	if ( desc.path.find( "/FontServices.framework/Resources/Reserved/" ) != std::string::npos )
 		return {};
 
 	CFStringRef familyRef = CTFontCopyFamilyName( font );
@@ -1018,8 +1217,110 @@ static FontDesc fontDescFromCTFont( CTFontRef font, FontWeight weight, bool ital
 	return desc;
 }
 
+FontDesc SystemFontResolver::matchFont( const FontQuery& query ) const {
+	CFStringRef family = CFStringCreateWithCString( kCFAllocatorDefault, query.family.c_str(),
+													kCFStringEncodingUTF8 );
+	if ( !family )
+		return {};
+
+	CGFloat weightValue = fontWeightToCTWeight( query.weight );
+	CGFloat widthValue = fontStretchToCTWidth( query.stretch );
+	int symbolicValue = query.italic ? kCTFontItalicTrait : 0;
+	CFNumberRef weight = CFNumberCreate( kCFAllocatorDefault, kCFNumberCGFloatType, &weightValue );
+	CFNumberRef width = CFNumberCreate( kCFAllocatorDefault, kCFNumberCGFloatType, &widthValue );
+	CFNumberRef symbolic = CFNumberCreate( kCFAllocatorDefault, kCFNumberIntType, &symbolicValue );
+	const void* traitKeys[] = { kCTFontWeightTrait, kCTFontWidthTrait, kCTFontSymbolicTrait };
+	const void* traitValues[] = { weight, width, symbolic };
+	CFDictionaryRef traits =
+		CFDictionaryCreate( kCFAllocatorDefault, traitKeys, traitValues, 3,
+							&kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks );
+	CFRelease( weight );
+	CFRelease( width );
+	CFRelease( symbolic );
+
+	const void* descriptorKeys[] = { kCTFontFamilyNameAttribute, kCTFontTraitsAttribute };
+	const void* descriptorValues[] = { family, traits };
+	CFDictionaryRef attributes =
+		CFDictionaryCreate( kCFAllocatorDefault, descriptorKeys, descriptorValues, 2,
+							&kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks );
+	CFRelease( traits );
+	CTFontDescriptorRef queryDescriptor = CTFontDescriptorCreateWithAttributes( attributes );
+	CFRelease( attributes );
+
+	const void* mandatoryValue = kCTFontFamilyNameAttribute;
+	CFSetRef mandatoryFamily =
+		CFSetCreate( kCFAllocatorDefault, &mandatoryValue, 1, &kCFTypeSetCallBacks );
+	CTFontDescriptorRef matchedDescriptor =
+		queryDescriptor
+			? CTFontDescriptorCreateMatchingFontDescriptor( queryDescriptor, mandatoryFamily )
+			: nullptr;
+	CFRelease( mandatoryFamily );
+	if ( queryDescriptor )
+		CFRelease( queryDescriptor );
+	CFRelease( family );
+	if ( !matchedDescriptor )
+		return {};
+
+	CTFontRef font = CTFontCreateWithFontDescriptor( matchedDescriptor, 12.0, nullptr );
+	CFRelease( matchedDescriptor );
+	FontDesc desc = fontDescFromCTFont( font, query.weight, query.italic );
+	if ( font )
+		CFRelease( font );
+	return desc;
+}
+
+FontDesc SystemFontResolver::matchGenericFont( GenericFamily generic, FontWeight weight,
+											   bool italic ) const {
+	if ( generic == GenericFamily::None )
+		return {};
+
+	if ( generic == GenericFamily::SystemUi ) {
+		CTFontRef systemFont = CTFontCreateUIFontForLanguage( kCTFontUIFontSystem, 12.0, nullptr );
+		if ( !systemFont )
+			return {};
+		CFStringRef familyRef = CTFontCopyFamilyName( systemFont );
+		CFRelease( systemFont );
+		std::string family = cfStringToStd( familyRef );
+		if ( familyRef )
+			CFRelease( familyRef );
+		if ( family.empty() )
+			return {};
+		return matchFont( { family, weight, FontStretch::Normal, italic } );
+	}
+
+	const char* family = nullptr;
+	switch ( generic ) {
+		case GenericFamily::Serif:
+			family = "Times";
+			break;
+		case GenericFamily::SansSerif:
+			family = "Helvetica";
+			break;
+		case GenericFamily::Monospace:
+			family = "Menlo";
+			break;
+		case GenericFamily::Cursive:
+			family = "Apple Chancery";
+			break;
+		case GenericFamily::Fantasy:
+			family = "Papyrus";
+			break;
+		case GenericFamily::Emoji:
+			family = "Apple Color Emoji";
+			break;
+		case GenericFamily::None:
+		case GenericFamily::SystemUi:
+			break;
+	}
+	return family ? matchFont( { family, weight, FontStretch::Normal, italic } ) : FontDesc{};
+}
+
 void SystemFontResolver::populateFontList() const {
-	CFArrayRef descriptors = CTFontManagerCopyAvailableFontFamilyNames();
+	CTFontCollectionRef collection = CTFontCollectionCreateFromAvailableFonts( nullptr );
+	if ( !collection )
+		return;
+	CFArrayRef descriptors = CTFontCollectionCreateMatchingFontDescriptors( collection );
+	CFRelease( collection );
 	if ( !descriptors )
 		return;
 
@@ -1029,119 +1330,89 @@ void SystemFontResolver::populateFontList() const {
 		CFRelease( descriptors );
 		return;
 	}
+	mFontList.reserve( mFontList.size() + static_cast<std::size_t>( count ) );
 
 	for ( CFIndex i = 0; i < count; ++i ) {
-		CFStringRef familyNameRef = (CFStringRef)CFArrayGetValueAtIndex( descriptors, i );
-		std::string familyName = cfStringToStd( familyNameRef );
-		if ( familyName.empty() )
+		CTFontDescriptorRef desc =
+			static_cast<CTFontDescriptorRef>( CFArrayGetValueAtIndex( descriptors, i ) );
+
+		CFURLRef url =
+			static_cast<CFURLRef>( CTFontDescriptorCopyAttribute( desc, kCTFontURLAttribute ) );
+		if ( !url )
 			continue;
 
-		CFMutableDictionaryRef queryDict =
-			CFDictionaryCreateMutable( kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
-									   &kCFTypeDictionaryValueCallBacks );
-		CFDictionaryAddValue( queryDict, kCTFontFamilyNameAttribute, familyNameRef );
+		CFStringRef pathRef = CFURLCopyFileSystemPath( url, kCFURLPOSIXPathStyle );
+		CFRelease( url );
 
-		CTFontDescriptorRef familyDesc = CTFontDescriptorCreateWithAttributes( queryDict );
-		CFRelease( queryDict );
-
-		// mandatoryAttributes describes which query attributes must match; it is not a list of
-		// attributes to return. Requiring the URL (which is absent from the query) lets CoreText
-		// substitute Helvetica for families such as Verdana.
-		CFSetRef mandatoryAttrs =
-			CFSetCreate( kCFAllocatorDefault, (const void**)&kCTFontFamilyNameAttribute, 1,
-						 &kCFTypeSetCallBacks );
-
-		CFArrayRef matchingDescs =
-			CTFontDescriptorCreateMatchingFontDescriptors( familyDesc, mandatoryAttrs );
-		CFRelease( mandatoryAttrs );
-		CFRelease( familyDesc );
-
-		if ( !matchingDescs )
-			continue;
-
-		CFIndex matchCount = CFArrayGetCount( matchingDescs );
-
-		for ( CFIndex j = 0; j < matchCount; ++j ) {
-			CTFontDescriptorRef desc =
-				(CTFontDescriptorRef)CFArrayGetValueAtIndex( matchingDescs, j );
-
-			CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute( desc, kCTFontURLAttribute );
-			if ( !url )
-				continue;
-
-			CFStringRef pathRef = CFURLCopyFileSystemPath( url, kCFURLPOSIXPathStyle );
-			CFRelease( url );
-
-			std::string fontPath = cfStringToStd( pathRef );
+		std::string fontPath = cfStringToStd( pathRef );
+		if ( pathRef )
 			CFRelease( pathRef );
 
-			if ( fontPath.empty() )
-				continue;
+		if ( fontPath.empty() )
+			continue;
 
-			CFStringRef postScriptNameRef =
-				(CFStringRef)CTFontDescriptorCopyAttribute( desc, kCTFontNameAttribute );
-			std::string postScriptName = cfStringToStd( postScriptNameRef );
-			if ( postScriptNameRef )
-				CFRelease( postScriptNameRef );
+		CFStringRef postScriptNameRef =
+			static_cast<CFStringRef>( CTFontDescriptorCopyAttribute( desc, kCTFontNameAttribute ) );
+		std::string postScriptName = cfStringToStd( postScriptNameRef );
+		if ( postScriptNameRef )
+			CFRelease( postScriptNameRef );
 
-			CFStringRef matchedFamilyRef =
-				(CFStringRef)CTFontDescriptorCopyAttribute( desc, kCTFontFamilyNameAttribute );
-			std::string matchedFamily = cfStringToStd( matchedFamilyRef );
-			if ( matchedFamilyRef )
-				CFRelease( matchedFamilyRef );
-			if ( normalizeFamily( matchedFamily ) != normalizeFamily( familyName ) )
-				continue;
+		CFStringRef familyRef = static_cast<CFStringRef>(
+			CTFontDescriptorCopyAttribute( desc, kCTFontFamilyNameAttribute ) );
+		std::string family = cfStringToStd( familyRef );
+		if ( familyRef )
+			CFRelease( familyRef );
+		if ( family.empty() )
+			continue;
 
-			CFDictionaryRef traits =
-				(CFDictionaryRef)CTFontDescriptorCopyAttribute( desc, kCTFontTraitsAttribute );
-			CGFloat weightVal = 0.0;
-			CGFloat widthVal = 0.0;
-			CGFloat slantVal = 0.0;
-			int isMono = 0;
+		CFDictionaryRef traits = static_cast<CFDictionaryRef>(
+			CTFontDescriptorCopyAttribute( desc, kCTFontTraitsAttribute ) );
+		CGFloat weightVal = 0.0;
+		CGFloat widthVal = 0.0;
+		CGFloat slantVal = 0.0;
+		int isMono = 0;
 
-			if ( traits ) {
-				CFNumberRef weightNum =
-					(CFNumberRef)CFDictionaryGetValue( traits, kCTFontWeightTrait );
-				if ( weightNum )
-					CFNumberGetValue( weightNum, kCFNumberCGFloatType, &weightVal );
+		if ( traits ) {
+			CFNumberRef weightNum =
+				static_cast<CFNumberRef>( CFDictionaryGetValue( traits, kCTFontWeightTrait ) );
+			if ( weightNum )
+				CFNumberGetValue( weightNum, kCFNumberCGFloatType, &weightVal );
 
-				CFNumberRef widthNum =
-					(CFNumberRef)CFDictionaryGetValue( traits, kCTFontWidthTrait );
-				if ( widthNum )
-					CFNumberGetValue( widthNum, kCFNumberCGFloatType, &widthVal );
+			CFNumberRef widthNum =
+				static_cast<CFNumberRef>( CFDictionaryGetValue( traits, kCTFontWidthTrait ) );
+			if ( widthNum )
+				CFNumberGetValue( widthNum, kCFNumberCGFloatType, &widthVal );
 
-				CFNumberRef slantNum =
-					(CFNumberRef)CFDictionaryGetValue( traits, kCTFontSlantTrait );
-				if ( slantNum )
-					CFNumberGetValue( slantNum, kCFNumberCGFloatType, &slantVal );
+			CFNumberRef slantNum =
+				static_cast<CFNumberRef>( CFDictionaryGetValue( traits, kCTFontSlantTrait ) );
+			if ( slantNum )
+				CFNumberGetValue( slantNum, kCFNumberCGFloatType, &slantVal );
 
-				CFNumberRef symbolicTraitsNum =
-					(CFNumberRef)CFDictionaryGetValue( traits, kCTFontSymbolicTrait );
-				if ( symbolicTraitsNum ) {
-					int symbolicTraits = 0;
-					CFNumberGetValue( symbolicTraitsNum, kCFNumberIntType, &symbolicTraits );
-					isMono = ( symbolicTraits & kCTFontMonoSpaceTrait ) != 0;
-				}
-
-				CFRelease( traits );
+			CFNumberRef symbolicTraitsNum =
+				static_cast<CFNumberRef>( CFDictionaryGetValue( traits, kCTFontSymbolicTrait ) );
+			if ( symbolicTraitsNum ) {
+				int symbolicTraits = 0;
+				CFNumberGetValue( symbolicTraitsNum, kCFNumberIntType, &symbolicTraits );
+				isMono = ( symbolicTraits & kCTFontMonoSpaceTrait ) != 0;
 			}
 
-			FontDesc fontDesc;
-			fontDesc.family = matchedFamily;
-			fontDesc.path = fontPath;
-			// j is only the descriptor's position in matchingDescs and is unrelated to the face's
-			// index inside a TTC. Match CoreText's PostScript name against the actual file faces.
-			if ( !ftState->findFaceIndex( fontPath, postScriptName, fontDesc.faceIndex ) )
-				continue;
-			fontDesc.weight = ctWeightToFontWeight( weightVal );
-			fontDesc.stretch = ctWidthToFontStretch( widthVal );
-			fontDesc.italic = ( slantVal > 0.0 );
-			fontDesc.monospace = ( isMono != 0 );
-
-			mFontList.push_back( fontDesc );
+			CFRelease( traits );
 		}
 
-		CFRelease( matchingDescs );
+		FontDesc fontDesc;
+		fontDesc.family = std::move( family );
+		fontDesc.path = std::move( fontPath );
+		// A descriptor's position in the CoreText collection is unrelated to its face index inside
+		// a TTC. Match the PostScript name against the actual file faces; each collection file is
+		// scanned once.
+		if ( !ftState->findFaceIndex( fontDesc.path, postScriptName, fontDesc.faceIndex ) )
+			continue;
+		fontDesc.weight = ctWeightToFontWeight( weightVal );
+		fontDesc.stretch = ctWidthToFontStretch( widthVal );
+		fontDesc.italic = ( slantVal > 0.0 );
+		fontDesc.monospace = ( isMono != 0 );
+
+		mFontList.push_back( std::move( fontDesc ) );
 	}
 
 	CFRelease( descriptors );
@@ -1150,8 +1421,8 @@ void SystemFontResolver::populateFontList() const {
 // =====================================================================
 // Platform: Linux / FreeBSD / Haiku (Fontconfig — dynamically loaded)
 // =====================================================================
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_HAIKU
+#elif defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG ) || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
 
 struct FcLib {
 	void* handle{ nullptr };
@@ -1210,6 +1481,8 @@ struct FcLib {
 	void ( *FontSetDestroy )( FcFontSet* );
 	FcResult ( *PatternGetString )( const FcPattern*, const char*, int, FcChar8** );
 	FcResult ( *PatternGetInteger )( const FcPattern*, const char*, int, int* );
+	FcBool ( *PatternAddString )( FcPattern*, const char*, const FcChar8* );
+	FcBool ( *PatternAddInteger )( FcPattern*, const char*, int );
 	FcCharSet* ( *CharSetCreate )( void );
 	void ( *CharSetDestroy )( FcCharSet* );
 	FcBool ( *CharSetAddChar )( FcCharSet*, Uint32 );
@@ -1222,6 +1495,15 @@ struct FcLib {
 		handle = Sys::loadObject( "libfontconfig.so.1" );
 		if ( !handle )
 			handle = Sys::loadObject( "libfontconfig.so" );
+#if defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG ) && \
+	( EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS )
+		if ( !handle )
+			handle = Sys::loadObject( "libfontconfig.1.dylib" );
+		if ( !handle )
+			handle = Sys::loadObject( "/opt/homebrew/lib/libfontconfig.1.dylib" );
+		if ( !handle )
+			handle = Sys::loadObject( "/usr/local/lib/libfontconfig.1.dylib" );
+#endif
 		if ( !handle )
 			return false;
 
@@ -1244,6 +1526,10 @@ struct FcLib {
 			(decltype( PatternGetString ))Sys::loadFunction( handle, "FcPatternGetString" );
 		PatternGetInteger =
 			(decltype( PatternGetInteger ))Sys::loadFunction( handle, "FcPatternGetInteger" );
+		PatternAddString =
+			(decltype( PatternAddString ))Sys::loadFunction( handle, "FcPatternAddString" );
+		PatternAddInteger =
+			(decltype( PatternAddInteger ))Sys::loadFunction( handle, "FcPatternAddInteger" );
 		CharSetCreate = (decltype( CharSetCreate ))Sys::loadFunction( handle, "FcCharSetCreate" );
 		CharSetDestroy =
 			(decltype( CharSetDestroy ))Sys::loadFunction( handle, "FcCharSetDestroy" );
@@ -1259,9 +1545,9 @@ struct FcLib {
 
 		return InitLoadConfigAndFonts && ConfigDestroy && Fini && PatternCreate &&
 			   ObjectSetCreate && ObjectSetAdd && FontList && PatternDestroy && ObjectSetDestroy &&
-			   FontSetDestroy && PatternGetString && PatternGetInteger && CharSetCreate &&
-			   CharSetDestroy && CharSetAddChar && PatternAddCharSet && ConfigSubstitute &&
-			   DefaultSubstitute && FontMatch;
+			   FontSetDestroy && PatternGetString && PatternGetInteger && PatternAddString &&
+			   PatternAddInteger && CharSetCreate && CharSetDestroy && CharSetAddChar &&
+			   PatternAddCharSet && ConfigSubstitute && DefaultSubstitute && FontMatch;
 	}
 
 	void finish( FcConfig* config ) {
@@ -1353,6 +1639,156 @@ static FontStretch fcWidthToFontStretch( int fcWidth ) {
 	return FontStretch::UltraExpanded;
 }
 
+static int fontWeightToFcWeight( FontWeight weight ) {
+	switch ( weight ) {
+		case FontWeight::Thin:
+			return FC_W( THIN );
+		case FontWeight::ExtraLight:
+			return FC_W( EXTRALIGHT );
+		case FontWeight::Light:
+			return FC_W( LIGHT );
+		case FontWeight::Normal:
+			return FC_W( REGULAR );
+		case FontWeight::Medium:
+			return FC_W( MEDIUM );
+		case FontWeight::SemiBold:
+			return FC_W( SEMIBOLD );
+		case FontWeight::Bold:
+			return FC_W( BOLD );
+		case FontWeight::ExtraBold:
+			return FC_W( EXTRABOLD );
+		case FontWeight::Black:
+			return FC_W( BLACK );
+	}
+	return FC_W( REGULAR );
+}
+
+static int fontStretchToFcWidth( FontStretch stretch ) {
+	switch ( stretch ) {
+		case FontStretch::UltraCondensed:
+			return FC_WI( ULTRACONDENSED );
+		case FontStretch::ExtraCondensed:
+			return FC_WI( EXTRACONDENSED );
+		case FontStretch::Condensed:
+			return FC_WI( CONDENSED );
+		case FontStretch::SemiCondensed:
+			return FC_WI( SEMICONDENSED );
+		case FontStretch::Normal:
+			return FC_WI( NORMAL );
+		case FontStretch::SemiExpanded:
+			return FC_WI( SEMIEXPANDED );
+		case FontStretch::Expanded:
+			return FC_WI( EXPANDED );
+		case FontStretch::ExtraExpanded:
+			return FC_WI( EXTRAEXPANDED );
+		case FontStretch::UltraExpanded:
+			return 200;
+	}
+	return FC_WI( NORMAL );
+}
+
+static FontDesc fontDescFromFcPattern( FcLib& fc, FcLib::FcPattern* pattern ) {
+	FontDesc desc;
+	FcLib::FcChar8* family = nullptr;
+	FcLib::FcChar8* file = nullptr;
+	if ( !pattern || fc.PatternGetString( pattern, "family", 0, &family ) != FcLib::FcResultMatch ||
+		 !family || fc.PatternGetString( pattern, "file", 0, &file ) != FcLib::FcResultMatch ||
+		 !file )
+		return desc;
+
+	int fcIndex = 0;
+	int fcWeight = FC_W( REGULAR );
+	int fcWidth = FC_WI( NORMAL );
+	int fcSlant = FC_S( ROMAN );
+	int fcSpacing = FcLib::FC_PROPORTIONAL;
+	fc.PatternGetInteger( pattern, "index", 0, &fcIndex );
+	fc.PatternGetInteger( pattern, "weight", 0, &fcWeight );
+	fc.PatternGetInteger( pattern, "width", 0, &fcWidth );
+	fc.PatternGetInteger( pattern, "slant", 0, &fcSlant );
+	fc.PatternGetInteger( pattern, "spacing", 0, &fcSpacing );
+
+	desc.family = reinterpret_cast<const char*>( family );
+	desc.path = reinterpret_cast<const char*>( file );
+	desc.faceIndex = fcIndex >= 0 ? static_cast<Uint32>( fcIndex & 0xFFFF ) : 0;
+	desc.weight = fcWeightToFontWeight( fcWeight );
+	desc.stretch = fcWidthToFontStretch( fcWidth );
+	desc.italic = fcSlant == FC_S( ITALIC ) || fcSlant == FC_S( OBLIQUE );
+	desc.monospace = fcSpacing == FcLib::FC_MONO;
+	return desc;
+}
+
+static FontDesc matchFontconfig( const FontQuery& query, bool requireExactFamily ) {
+	std::shared_ptr<FontconfigState> state = getFontconfigState();
+	if ( !state || !state->ready() )
+		return {};
+	Lock stateLock( state->mutex );
+	FcLib& fc = state->fc;
+	FcLib::FcPattern* pattern = fc.PatternCreate();
+	if ( !pattern )
+		return {};
+
+	bool validPattern =
+		fc.PatternAddString( pattern, "family",
+							 reinterpret_cast<const FcLib::FcChar8*>( query.family.c_str() ) ) &&
+		fc.PatternAddInteger( pattern, "weight", fontWeightToFcWeight( query.weight ) ) &&
+		fc.PatternAddInteger( pattern, "width", fontStretchToFcWidth( query.stretch ) ) &&
+		fc.PatternAddInteger( pattern, "slant", query.italic ? FC_S( ITALIC ) : FC_S( ROMAN ) ) &&
+		fc.ConfigSubstitute( state->config, pattern, 0 );
+	if ( validPattern )
+		fc.DefaultSubstitute( pattern );
+
+	FcLib::FcPattern* match = nullptr;
+	FcLib::FcResult matchResult{};
+	if ( validPattern )
+		match = fc.FontMatch( state->config, pattern, &matchResult );
+	FontDesc desc;
+	if ( match && matchResult == FcLib::FcResultMatch )
+		desc = fontDescFromFcPattern( fc, match );
+	if ( requireExactFamily && normalizeFamily( desc.family ) != normalizeFamily( query.family ) )
+		desc = {};
+
+	if ( match )
+		fc.PatternDestroy( match );
+	fc.PatternDestroy( pattern );
+	return desc;
+}
+
+FontDesc SystemFontResolver::matchFont( const FontQuery& query ) const {
+	return matchFontconfig( query, true );
+}
+
+FontDesc SystemFontResolver::matchGenericFont( GenericFamily generic, FontWeight weight,
+											   bool italic ) const {
+	const char* family = nullptr;
+	switch ( generic ) {
+		case GenericFamily::Serif:
+			family = "serif";
+			break;
+		case GenericFamily::SansSerif:
+			family = "sans-serif";
+			break;
+		case GenericFamily::Monospace:
+			family = "monospace";
+			break;
+		case GenericFamily::Cursive:
+			family = "cursive";
+			break;
+		case GenericFamily::Fantasy:
+			family = "fantasy";
+			break;
+		case GenericFamily::SystemUi:
+			family = "system-ui";
+			break;
+		case GenericFamily::Emoji:
+			family = "emoji";
+			break;
+		case GenericFamily::None:
+			break;
+	}
+	return family ? matchFontconfig( { family, weight, FontStretch::Normal, italic }, false )
+				  : FontDesc{};
+}
+
 void SystemFontResolver::populateFontList() const {
 	std::shared_ptr<FontconfigState> state = getFontconfigState();
 	if ( !state || !state->ready() ) {
@@ -1396,41 +1832,9 @@ void SystemFontResolver::populateFontList() const {
 	}
 
 	for ( int i = 0; i < fontSet->nfont; ++i ) {
-		FcLib::FcPattern* font = fontSet->fonts[i];
-
-		FcLib::FcChar8* family = nullptr;
-		if ( fc.PatternGetString( font, "family", 0, &family ) != FcLib::FcResultMatch || !family )
-			continue;
-
-		FcLib::FcChar8* file = nullptr;
-		if ( fc.PatternGetString( font, "file", 0, &file ) != FcLib::FcResultMatch || !file )
-			continue;
-
-		int fcIndex = 0;
-		fc.PatternGetInteger( font, "index", 0, &fcIndex );
-
-		int fcWeight = FC_W( REGULAR );
-		fc.PatternGetInteger( font, "weight", 0, &fcWeight );
-
-		int fcWidth = FC_WI( NORMAL );
-		fc.PatternGetInteger( font, "width", 0, &fcWidth );
-
-		int fcSlant = FC_S( ROMAN );
-		fc.PatternGetInteger( font, "slant", 0, &fcSlant );
-
-		int fcSpacing = FcLib::FC_PROPORTIONAL;
-		fc.PatternGetInteger( font, "spacing", 0, &fcSpacing );
-
-		FontDesc desc;
-		desc.family = reinterpret_cast<const char*>( family );
-		desc.path = reinterpret_cast<const char*>( file );
-		desc.faceIndex = fcIndex >= 0 ? static_cast<Uint32>( fcIndex & 0xFFFF ) : 0;
-		desc.weight = fcWeightToFontWeight( fcWeight );
-		desc.stretch = fcWidthToFontStretch( fcWidth );
-		desc.italic = ( fcSlant == FC_S( ITALIC ) || fcSlant == FC_S( OBLIQUE ) );
-		desc.monospace = ( fcSpacing == FcLib::FC_MONO );
-
-		mFontList.push_back( desc );
+		FontDesc desc = fontDescFromFcPattern( fc, fontSet->fonts[i] );
+		if ( !desc.path.empty() )
+			mFontList.push_back( std::move( desc ) );
 	}
 
 	fc.FontSetDestroy( fontSet );
@@ -1542,7 +1946,8 @@ FontDesc SystemFontResolver::matchFallbackForCodepoint( Uint32 codepoint, FontWe
 	if ( FAILED( result ) || !mappedFont || mappedLength < source.length() )
 		return {};
 	return fontDescFromDWriteFont( mappedFont.Get(), weight, italic );
-#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#elif ( EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS ) && \
+	!defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG )
 	if ( codepoint > 0x10FFFF || ( codepoint >= 0xD800 && codepoint <= 0xDFFF ) )
 		return {};
 	UniChar characters[2];
@@ -1564,28 +1969,41 @@ FontDesc SystemFontResolver::matchFallbackForCodepoint( Uint32 codepoint, FontWe
 		CFRelease( text );
 		return {};
 	}
-	CTFontSymbolicTraits desiredTraits = 0;
-	if ( weight >= FontWeight::Bold )
-		desiredTraits |= kCTFontBoldTrait;
-	if ( italic )
-		desiredTraits |= kCTFontItalicTrait;
-	CTFontRef styledFont = CTFontCreateCopyWithSymbolicTraits(
-		baseFont, 0.0, nullptr, desiredTraits, kCTFontBoldTrait | kCTFontItalicTrait );
-	CTFontRef fallbackFont =
-		CTFontCreateForString( styledFont ? styledFont : baseFont, text, CFRangeMake( 0, length ) );
+	// Styling the base first can select private virtual fonts (for example PingFangUI.ttc) that
+	// CoreText can render but FreeType cannot open. Select coverage from the unstyled base so the
+	// descriptor points to a public, renderable font asset. The requested style remains in desc.
+	CTFontRef fallbackFont = CTFontCreateForString( baseFont, text, CFRangeMake( 0, length ) );
 	FontDesc desc = fontDescFromCTFont( fallbackFont, weight, italic );
 	if ( fallbackFont )
 		CFRelease( fallbackFont );
-	if ( styledFont )
-		CFRelease( styledFont );
+
+	// CoreText can return private virtual fonts that FreeType cannot open. Continue through the
+	// native cascade and select the first covering font backed by a FreeType-readable file.
+	if ( desc.path.empty() ) {
+		CFArrayRef cascade = CTFontCopyDefaultCascadeListForLanguages( baseFont, nullptr );
+		if ( cascade ) {
+			const CFIndex count = CFArrayGetCount( cascade );
+			for ( CFIndex i = 0; i < count && desc.path.empty(); ++i ) {
+				CTFontDescriptorRef descriptor =
+					static_cast<CTFontDescriptorRef>( CFArrayGetValueAtIndex( cascade, i ) );
+				CTFontRef candidate = CTFontCreateWithFontDescriptor( descriptor, 12.0, nullptr );
+				CGGlyph glyphs[2]{};
+				if ( candidate &&
+					 CTFontGetGlyphsForCharacters( candidate, characters, glyphs, length ) )
+					desc = fontDescFromCTFont( candidate, weight, italic );
+				if ( candidate )
+					CFRelease( candidate );
+			}
+			CFRelease( cascade );
+		}
+	}
 	CFRelease( baseFont );
 	CFRelease( text );
 	return desc;
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_HAIKU
+#elif defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG ) || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
 	// Fontconfig caches charset coverage, so ask it to match the codepoint instead of opening every
 	// font file with FreeType. Its dynamically loaded API uses process-global internals.
-	Lock lock( mMutex );
 	std::shared_ptr<FontconfigState> state = getFontconfigState();
 	if ( !state || !state->ready() )
 		return {};
@@ -1595,33 +2013,27 @@ FontDesc SystemFontResolver::matchFallbackForCodepoint( Uint32 codepoint, FontWe
 	FcLib::FcPattern* pattern = fc.PatternCreate();
 	FcLib::FcCharSet* charset = pattern ? fc.CharSetCreate() : nullptr;
 	FontDesc desc;
+	const bool familyAdded =
+		!Font::isEmojiCodePoint( codepoint ) ||
+		( pattern && fc.PatternAddString( pattern, "family",
+										  reinterpret_cast<const FcLib::FcChar8*>( "emoji" ) ) );
 
-	if ( charset && fc.CharSetAddChar( charset, codepoint ) &&
+	if ( familyAdded && charset && fc.CharSetAddChar( charset, codepoint ) &&
 		 fc.PatternAddCharSet( pattern, "charset", charset ) &&
+		 fc.PatternAddInteger( pattern, "weight", fontWeightToFcWeight( weight ) ) &&
+		 fc.PatternAddInteger( pattern, "slant", italic ? FC_S( ITALIC ) : FC_S( ROMAN ) ) &&
 		 fc.ConfigSubstitute( config, pattern, 0 ) ) {
 		fc.DefaultSubstitute( pattern );
 		FcLib::FcResult matchResult{};
 		FcLib::FcPattern* match = fc.FontMatch( config, pattern, &matchResult );
-		if ( match && matchResult == FcLib::FcResultMatch ) {
-			FcLib::FcChar8* family = nullptr;
-			FcLib::FcChar8* file = nullptr;
-			if ( fc.PatternGetString( match, "family", 0, &family ) == FcLib::FcResultMatch &&
-				 family && fc.PatternGetString( match, "file", 0, &file ) == FcLib::FcResultMatch &&
-				 file ) {
-				int fcIndex = 0;
-				int fcWidth = FC_WI( NORMAL );
-				int fcSpacing = FcLib::FC_PROPORTIONAL;
-				fc.PatternGetInteger( match, "index", 0, &fcIndex );
-				fc.PatternGetInteger( match, "width", 0, &fcWidth );
-				fc.PatternGetInteger( match, "spacing", 0, &fcSpacing );
-				desc.family = reinterpret_cast<const char*>( family );
-				desc.path = reinterpret_cast<const char*>( file );
-				desc.faceIndex = fcIndex >= 0 ? static_cast<Uint32>( fcIndex & 0xFFFF ) : 0;
-				desc.weight = weight;
-				desc.stretch = fcWidthToFontStretch( fcWidth );
-				desc.italic = italic;
-				desc.monospace = fcSpacing == FcLib::FC_MONO;
-			}
+		if ( match && matchResult == FcLib::FcResultMatch )
+			desc = fontDescFromFcPattern( fc, match );
+		if ( !desc.path.empty() ) {
+			// Fontconfig may return a nearby style while satisfying the charset query.
+			// Preserve the requested style so callers can apply the same policy on every
+			// native backend.
+			desc.weight = weight;
+			desc.italic = italic;
 		}
 		if ( match )
 			fc.PatternDestroy( match );
@@ -1641,8 +2053,8 @@ FontDesc SystemFontResolver::matchFallbackForCodepoint( Uint32 codepoint, FontWe
 }
 
 static void destroyNativeFontResolverState() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_HAIKU
+#if defined( EE_SYSTEM_FONT_RESOLVER_FORCE_FONTCONFIG ) || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
 	std::shared_ptr<FontconfigState> state;
 	{
 		Lock lock( sFontconfigStateMutex );
@@ -1654,15 +2066,17 @@ static void destroyNativeFontResolverState() {
 
 void SystemFontResolver::populateFontListFallback() const {
 	// Added Haiku font paths so testing this fallback on Haiku actually finds files
-	static const char* fontDirs[] = { "/usr/share/fonts",
-									  "/usr/share/fonts/truetype",
-									  "/usr/local/share/fonts",
+	static const char* fontDirs[] = {
+		"/usr/share/fonts",
+		"/usr/share/fonts/truetype",
+		"/usr/local/share/fonts",
 #if EE_PLATFORM == EE_PLATFORM_HAIKU
-									  "/system/data/fonts/ttfonts",
-									  "/system/data/fonts/otfonts",
-									  "/system/non-packaged/data/fonts",
+		"/system/data/fonts/ttfonts",
+		"/system/data/fonts/otfonts",
+		"/system/non-packaged/data/fonts",
 #endif
-									  nullptr };
+		nullptr
+	};
 
 	FT_Library ftLibrary;
 	if ( FT_Init_FreeType( &ftLibrary ) != 0 )

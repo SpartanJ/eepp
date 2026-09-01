@@ -311,7 +311,11 @@ jobs:
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
-          brew install bash sdl2 create-dmg premake
+          brew install bash create-dmg premake
+          curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.dmg
+          hdiutil attach SDL2-2.32.10.dmg
+          sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+          hdiutil detach /Volumes/SDL2
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
