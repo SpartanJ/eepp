@@ -2,7 +2,6 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uiapplication.hpp>
-#include <eepp/window/clipboard.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -82,9 +81,12 @@ UTEST( UIMergeView, UsesSharedResultDocumentAndAcceptIsUndoable ) {
 	EXPECT_TRUE( view->isToolbarVisible() );
 	EXPECT_TRUE( view->hasCommand( "merge-accept-left" ) );
 	auto* leftEditor = view->getLeftEditor();
-	leftEditor->getDocument().setSelection( { { 0, 0 }, { 0, 4 } } );
-	leftEditor->getDocument().execute( "copy", leftEditor );
-	EXPECT_STREQ( "left", app.getWindow()->getClipboard()->getText().c_str() );
+	auto& leftDocument = leftEditor->getDocument();
+	// Keep this hermetic: the Windows system clipboard can be temporarily owned by another
+	// process. The regression is that replacement side documents must retain the copy command.
+	EXPECT_TRUE( leftDocument.hasCommand( "copy" ) );
+	leftDocument.setSelection( { { 0, 0 }, { 0, 4 } } );
+	EXPECT_TRUE( leftDocument.getAllSelectedText() == "left" );
 	view->setToolbarVisible( false );
 	EXPECT_FALSE( view->isToolbarVisible() );
 	view->setToolbarVisible( true );
