@@ -178,6 +178,14 @@ bool endpointOwned( const wchar_t* ownershipName ) {
 	return true;
 }
 
+void cancelSynchronousIO( HANDLE thread ) {
+	using CancelSynchronousIOFn = BOOL( WINAPI* )( HANDLE );
+	static const auto cancel = reinterpret_cast<CancelSynchronousIOFn>(
+		GetProcAddress( GetModuleHandleW( L"kernel32.dll" ), "CancelSynchronousIo" ) );
+	if ( cancel != nullptr )
+		cancel( thread );
+}
+
 IPC::Status windowsErrorStatus( DWORD error ) {
 	if ( error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND )
 		return IPC::Status::NotFound;
@@ -491,7 +499,7 @@ void IPC::close() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	{
 		std::lock_guard<std::mutex> lock( mImpl->handlesMutex );
-		CancelSynchronousIo( reinterpret_cast<HANDLE>( mImpl->worker.native_handle() ) );
+		cancelSynchronousIO( reinterpret_cast<HANDLE>( mImpl->worker.native_handle() ) );
 		HANDLE wake = CreateFileW( mImpl->nativeName.data(), GENERIC_WRITE, 0, nullptr,
 								   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
 		if ( wake != INVALID_HANDLE_VALUE )
@@ -555,7 +563,7 @@ IPC::Status IPC::send( std::string_view endpoint, const void* data, std::size_t 
 	const NativeName name = nativeName( L"\\\\.\\pipe\\eepp-", hash );
 	const NativeName ownership = nativeName( L"Local\\eepp-ipc-owner-", hash );
 	const Uint64 timeoutMs = static_cast<Uint64>( eemax<double>( 0, timeout.asMilliseconds() ) );
-	const Uint64 deadline = GetTickCount64() + timeoutMs;
+	const Uint64 startTime = Sys::getTicks();
 	HANDLE pipe;
 	while ( true ) {
 		pipe = CreateFileW( name.data(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING,
@@ -567,7 +575,7 @@ IPC::Status IPC::send( std::string_view endpoint, const void* data, std::size_t 
 			error == ERROR_FILE_NOT_FOUND && endpointOwned( ownership.data() );
 		if ( error != ERROR_PIPE_BUSY && error != ERROR_SEM_TIMEOUT && !transitioning )
 			return windowsErrorStatus( error );
-		if ( GetTickCount64() >= deadline )
+		if ( Sys::getTicks() - startTime >= timeoutMs )
 			return Status::Timeout;
 		Sleep( 1 );
 	}
