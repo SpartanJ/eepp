@@ -18,6 +18,9 @@
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <array>
+#include <charconv>
+#include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
@@ -65,6 +68,33 @@ App* appInstance = nullptr;
 
 static const Uint32 APP_LAYOUT_STYLE_MARKER = String::hash( "app_layout_style" );
 static const auto NOT_UNIQUE_FILENAME = "not_unique";
+
+struct IPCEndpoint {
+	operator std::string_view() const { return { value.data(), size }; }
+
+	std::array<char, 80> value{};
+	Uint8 size{ 0 };
+};
+
+static_assert( sizeof( IPCEndpoint ) == 81 );
+
+static IPCEndpoint ipcEndpoint( const std::string& profileId, Uint64 pid ) {
+	IPCEndpoint endpoint;
+	constexpr std::string_view Prefix = "ecode.";
+	constexpr std::size_t MaxPidDigits = 20;
+	if ( Prefix.size() + profileId.size() + 1 + MaxPidDigits > endpoint.value.size() )
+		return endpoint;
+	std::memcpy( endpoint.value.data(), Prefix.data(), Prefix.size() );
+	endpoint.size = static_cast<Uint8>( Prefix.size() );
+	std::memcpy( endpoint.value.data() + endpoint.size, profileId.data(), profileId.size() );
+	endpoint.size += profileId.size();
+	endpoint.value[endpoint.size++] = '.';
+	const auto result = std::to_chars( endpoint.value.data() + endpoint.size,
+									   endpoint.value.data() + endpoint.value.size(), pid );
+	endpoint.size =
+		result.ec == std::errc{} ? static_cast<Uint8>( result.ptr - endpoint.value.data() ) : 0;
+	return endpoint;
+}
 
 void appLoop() {
 	appInstance->mainLoop();
@@ -802,7 +832,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	mThemesPath = mConfigPath + "themes";
 	mScriptsPath = mConfigPath + "scripts";
 	mPlaygroundPath = mConfigPath + "playground";
-	mIpcPath = mConfigPath + "ipc";
+	mProfileId = MD5::fromString( FileSystem::getRealPath( mConfigPath ) ).toHexString();
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -830,16 +860,6 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	if ( !FileSystem::fileExists( mPlaygroundPath ) )
 		FileSystem::makeDir( mPlaygroundPath );
 	FileSystem::dirAddSlashAtEnd( mPlaygroundPath );
-
-	if ( !FileSystem::fileExists( mIpcPath ) )
-		FileSystem::makeDir( mIpcPath );
-	FileSystem::dirAddSlashAtEnd( mIpcPath );
-
-	Uint64 pid = Sys::getProcessID();
-	mPidPath = mIpcPath + String::toString( pid );
-	FileSystem::dirAddSlashAtEnd( mPidPath );
-	if ( !FileSystem::fileExists( mPidPath ) )
-		FileSystem::makeDir( mPidPath );
 
 	mLogsPath = mConfigPath + "ecode.log";
 
@@ -1057,6 +1077,7 @@ App::~App() {
 	mLifetime.invalidate();
 	appInstance = nullptr;
 	mDestroyingApp = true;
+	mIPC.close();
 
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
@@ -1075,15 +1096,10 @@ App::~App() {
 	eeSAFE_DELETE( mSplitter );
 
 	if ( mFileSystemListener ) {
-		if ( mIpcListenerId )
-			mFileSystemListener->removeListener( mIpcListenerId );
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
-
-	if ( !FileSystem::dirRemoveAll( mPidPath ) )
-		Log::warning( "Failed to remove directory \"%s\"", mPidPath );
 
 	if ( mFirstInstance )
 		FileSystem::fileRemove( firstInstanceIndicatorPath() );
@@ -4463,35 +4479,34 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 
 	bool useFirstInstance = FileSystem::fileExists( firstInstanceIndicatorPath() );
 	Uint64 processPid = Sys::getProcessID();
-	Uint64 selectedPid = processPid;
-	Uint64 selCreationTime = useFirstInstance ? std::numeric_limits<Uint64>::max() : 0;
-
+	SmallVector<std::pair<Uint64, Uint64>, 4> candidates;
+	candidates.reserve( pids.size() );
 	for ( const auto pid : pids ) {
 		if ( pid == processPid )
 			continue;
+		candidates.emplace_back( Sys::getProcessCreationTime( pid ), pid );
+	}
+	std::sort( candidates.begin(), candidates.end(),
+			   [useFirstInstance]( const auto& left, const auto& right ) {
+				   return useFirstInstance ? left.first < right.first : left.first > right.first;
+			   } );
 
-		Uint64 creationTime = Sys::getProcessCreationTime( pid );
-
-		bool shouldUpdate = ( useFirstInstance && creationTime <= selCreationTime ) ||
-							( !useFirstInstance && creationTime >= selCreationTime );
-
-		if ( shouldUpdate ) {
-			selectedPid = pid;
-			selCreationTime = creationTime;
+	json message{ { "type", "open" }, { "path", finfo.getFilepath() } };
+	if ( position.isValid() ) {
+		message["line"] = position.line();
+		message["column"] = position.column();
+	}
+	const std::string payload = message.dump();
+	for ( const auto& candidate : candidates ) {
+		const auto status = IPC::send( ipcEndpoint( mProfileId, candidate.second ), payload );
+		if ( status == IPC::Status::Done )
+			return true;
+		if ( status != IPC::Status::NotFound ) {
+			Log::warning( "Failed to send IPC message to process %llu",
+						  static_cast<unsigned long long>( candidate.second ) );
 		}
 	}
-
-	if ( selectedPid == processPid )
-		return false;
-
-	std::string pidPath = mIpcPath + String::toString( selectedPid );
-	if ( !FileSystem::isDirectory( pidPath ) )
-		return false;
-	FileSystem::dirAddSlashAtEnd( pidPath );
-	FileSystem::fileWrite( pidPath + MD5::fromString( finfo.getFilepath() ).toHexString(),
-						   finfo.getFilepath() +
-							   ( position.isValid() ? position.toPositionString() : "" ) );
-	return true;
+	return false;
 }
 
 void App::tintTitleBar() {
@@ -5114,47 +5129,37 @@ void App::init( InitParameters& params ) {
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel, { mLogsPath } );
 		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
-		mFileWatcher->addWatch( mPidPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
-		FileSystemListener::ListenerOptions ipcListenerOptions;
-		FileSystemListenerFilter ipcListenerFilter;
-		ipcListenerFilter.eventTypes =
-			FileSystemListener::eventTypeMask( FileSystemEventType::Add ) |
-			FileSystemListener::eventTypeMask( FileSystemEventType::Modified );
-		ipcListenerFilter.path = mPidPath;
-		ipcListenerOptions.filters.emplace_back( std::move( ipcListenerFilter ) );
-		ipcListenerOptions.affinity = FileSystemListener::ThreadAffinity::Worker;
-		mIpcListenerId = mFileSystemListener->addListener(
-			[this]( const FileEvent&, const FileInfo& fi ) {
-				std::string path;
-				FileSystem::fileGet( fi.getFilepath(), path );
-				String::trimInPlace( path, ' ' );
-				String::trimInPlace( path, '\n' );
-
-				bool hasPosition = pathHasPosition( path );
+		const auto ipcStatus = mIPC.listen(
+			ipcEndpoint( mProfileId, Sys::getProcessID() ),
+			[this]( const void* data, std::size_t size ) {
+				json message = json::parse(
+					std::string_view( static_cast<const char*>( data ), size ), nullptr, false );
+				if ( message.is_discarded() || message.value( "type", "" ) != "open" ||
+					 !message.contains( "path" ) || !message["path"].is_string() )
+					return;
+				std::string path = message["path"].get<std::string>();
 				TextPosition initialPosition;
-				if ( hasPosition ) {
-					auto pathAndPosition = getPathAndPosition( path );
-					path = pathAndPosition.first;
-					initialPosition = pathAndPosition.second;
+				if ( message.contains( "line" ) && message["line"].is_number_integer() ) {
+					initialPosition = TextPosition( message["line"].get<Int64>(),
+													message.value<Int64>( "column", 0 ) );
 				}
-
 				if ( FileSystem::fileExists( path ) ) {
-					mUISceneNode->runOnMainThread( [path, initialPosition, this] {
-						loadFileFromPathOrFocus( path, true, nullptr,
-												 getForcePositionFn( initialPosition ) );
-
-						if ( !mWindow->hasFocus() ) {
-							if ( mWindow->isMinimized() )
-								mWindow->restore();
-							mWindow->raise();
-						}
-					} );
+					mUISceneNode->runOnMainThread(
+						[this, path = std::move( path ), initialPosition] {
+							loadFileFromPathOrFocus( path, true, nullptr,
+													 getForcePositionFn( initialPosition ) );
+							if ( !mWindow->hasFocus() ) {
+								if ( mWindow->isMinimized() )
+									mWindow->restore();
+								mWindow->raise();
+							}
+						} );
 				}
-				FileSystem::fileRemove( fi.getFilepath() );
-			},
-			std::move( ipcListenerOptions ) );
+			} );
+		if ( ipcStatus != IPC::Status::Done )
+			Log::warning( "Failed to initialize IPC listener" );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(

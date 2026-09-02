@@ -24,6 +24,7 @@
 #include <eepp/system/iostreampak.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/iostreamzip.hpp>
+#include <eepp/system/ipc.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>

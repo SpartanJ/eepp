@@ -716,8 +716,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::string mi18nPath;
 	std::string mScriptsPath;
 	std::string mPlaygroundPath;
-	std::string mIpcPath;
-	std::string mPidPath;
+	std::string mProfileId;
+	IPC mIPC;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -782,7 +782,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;
 	std::vector<std::string> mPathsToLoad;
-	Uint64 mIpcListenerId{ 0 };
 	std::mutex mAsyncResourcesLoadMutex;
 	std::condition_variable mAsyncResourcesLoadCond;
 	std::vector<SyntaxColorScheme> mColorSchemes;
