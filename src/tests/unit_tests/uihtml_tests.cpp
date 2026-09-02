@@ -244,7 +244,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	if ( !FileSystem::fileExists( "assets/html/reddit_old_thread_files/reddit.ETA_etA2z5U.css" ) ) {
+	if ( !FileSystem::fileExists( Sys::getProcessPath() +
+								  "assets/html/reddit_old_thread_files/reddit.ETA_etA2z5U.css" ) ) {
 
 		Engine::destroySingleton();
 		UTEST_SKIP( "old Reddit fixture CSS asset is not readable" );
@@ -411,125 +412,6 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	Vector2f commentContentPolicyPos =
 		commentContentPolicy->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f commentEditPos = commentEdit->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-
-/*	Vector2f sidePos = side->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f entryPos = entry->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f contentPos = content->convertToWorldSpace( { 0, 0 } );
-	Vector2f redesignButtonPos =
-		redesignButton->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f dropChoicesPos = dropChoices->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f selftextMdPos = selftextMd->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f selftextFirstPPos =
-		selftextFirstP->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postTitlePos = postTitle->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postTaglinePos = postTagline->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postExpandoPos = postExpando->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postUsertextPos = postUsertext->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentAreaPos = commentArea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentFormPos = commentForm->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentTextareaPos =
-		commentTextarea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-
-	auto fontSizeOf = []( Node* node ) -> Uint32 {
-		return node->isType( UI_TYPE_RICHTEXT ) ? node->asType<UIRichText>()->getFontSize() : 0;
-	};
-
-	std::cerr << "old reddit rects: "
-			  << "side=(" << sidePos.x << "," << sidePos.y << " "
-			  << side->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << side->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "content=(" << contentPos.x << "," << contentPos.y << " "
-			  << content->getPixelsSize().getWidth() << "x" << content->getPixelsSize().getHeight()
-			  << ") "
-			  << "midcol=(" << midcolPos.x << "," << midcolPos.y << " "
-			  << midcol->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << midcol->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "entry=(" << entryPos.x << "," << entryPos.y << " "
-			  << entry->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << entry->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "arrow=(" << arrowPos.x << "," << arrowPos.y << " "
-			  << arrow->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << arrow->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "srHeader=(" << srHeaderPos.x << "," << srHeaderPos.y << " "
-			  << srHeader->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srHeader->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "redesignButton=(" << redesignButtonPos.x << "," << redesignButtonPos.y << " "
-			  << redesignButton->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << redesignButton->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "srDrop=(" << srDropPos.x << "," << srDropPos.y << " "
-			  << srDrop->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srDrop->asType<UIWidget>()->getPixelsSize().getHeight() << " float="
-			  << CSSFloatHelper::toString( srDrop->asType<UIHTMLWidget>()->getCSSFloat() ) << ") "
-			  << "srList=(" << srListPos.x << "," << srListPos.y << " "
-			  << srList->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srList->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " lines=" << srList->asType<UIRichText>()->getRichTextPtr()->getLines().size()
-			  << " wrap=" << srList->asType<UIRichText>()->getLineWrap() << ") "
-			  << "headerBottomLeft=(" << headerBottomLeftPos.x << "," << headerBottomLeftPos.y
-			  << " " << headerBottomLeft->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << headerBottomLeft->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "headerBottomRight=(" << headerBottomRightPos.x << "," << headerBottomRightPos.y
-			  << " " << headerBottomRight->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << headerBottomRight->asType<UIWidget>()->getPixelsSize().getHeight() << " position="
-			  << CSSPositionHelper::toString(
-					 headerBottomRight->asType<UIHTMLWidget>()->getCSSPosition() )
-			  << ") "
-			  << "header=(" << headerPos.x << "," << headerPos.y << " "
-			  << header->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << header->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " offset=" << header->asType<UIWidget>()->getPixelsContentOffset().Left << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Top << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Right << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Bottom << ") "
-			  << "dropChoices=(" << dropChoicesPos.x << "," << dropChoicesPos.y << " "
-			  << dropChoices->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << dropChoices->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " visible=" << dropChoices->asType<UIWidget>()->isVisible() << " display="
-			  << CSSDisplayHelper::toString( dropChoices->asType<UIHTMLWidget>()->getDisplay() )
-			  << ") "
-			  << "selftextMd=(" << selftextMdPos.x << "," << selftextMdPos.y << " "
-			  << selftextMd->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << selftextMd->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( selftextMd ) << ") "
-			  << "selftextFirstP=(" << selftextFirstPPos.x << "," << selftextFirstPPos.y << " "
-			  << selftextFirstP->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << selftextFirstP->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( selftextFirstP ) << ") "
-			  << "postTitle=(" << postTitlePos.x << "," << postTitlePos.y << " "
-			  << postTitle->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postTitle->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( postTitle ) << ") "
-			  << "postTagline=(" << postTaglinePos.x << "," << postTaglinePos.y << " "
-			  << postTagline->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postTagline->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( postTagline ) << ") "
-			  << "postExpando=(" << postExpandoPos.x << "," << postExpandoPos.y << " "
-			  << postExpando->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postExpando->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "postUsertext=(" << postUsertextPos.x << "," << postUsertextPos.y << " "
-			  << postUsertext->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postUsertext->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentArea=(" << commentAreaPos.x << "," << commentAreaPos.y << " "
-			  << commentArea->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentArea->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentForm=(" << commentFormPos.x << "," << commentFormPos.y << " "
-			  << commentForm->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentForm->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentEdit=(" << commentEditPos.x << "," << commentEditPos.y << " "
-			  << commentEdit->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentEdit->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentTextarea=(" << commentTextareaPos.x << "," << commentTextareaPos.y << " "
-			  << commentTextarea->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentTextarea->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentContentPolicy=(" << commentContentPolicyPos.x << ","
-			  << commentContentPolicyPos.y << " "
-			  << commentContentPolicy->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentContentPolicy->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentHelpToggle=(" << commentHelpTogglePos.x << "," << commentHelpTogglePos.y
-			  << " " << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getHeight() << ")"
-			  << std::endl;
- */
 	const Float midcolCenter =
 		midcolPos.x + midcol->asType<UIWidget>()->getPixelsSize().getWidth() / 2.f;
 	const Float arrowCenter =
