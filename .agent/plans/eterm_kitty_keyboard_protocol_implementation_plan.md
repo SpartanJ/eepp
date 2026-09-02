@@ -7,7 +7,13 @@
 - **Primary module:** `src/modules/eterm`
 - **Primary goal:** Implement Kitty keyboard protocol progressive enhancement in eTerm so modern terminal applications can distinguish key combinations that legacy terminal encoding collapses, especially `Ctrl+Enter`, `Shift+Enter`, modified Escape, modified Tab, modified Backspace, and modified printable keys.
 - **Initial motivating application:** OpenAI Codex CLI, which uses Crossterm keyboard enhancement flags.
-- **Expected result for the motivating case:** When Codex enables the Kitty keyboard protocol and the user presses `Ctrl+Enter`, eTerm must send `CSI 13;5u` (`ESC [ 1 3 ; 5 u`) instead of the same carriage-return byte sent for plain Enter.
+- **Expected result for the motivating case:** When an application enables
+  `REPORT_ALL_KEYS_AS_ESCAPE_CODES` and the user presses `Ctrl+Enter`, eTerm must send
+  `CSI 13;5u` (`ESC [ 1 3 ; 5 u`) instead of the same carriage-return byte sent for plain Enter.
+  `DISAMBIGUATE_ESCAPE_CODES` alone deliberately preserves legacy Enter, Tab, and Backspace
+  encodings. If Codex continues requesting only flags `7`, distinguishable `Ctrl+Enter` cannot be
+  promised without a documented protocol deviation or an application-side change to request bit
+  `8`.
 - **Compatibility requirement:** When no application has enabled the protocol, eTerm must preserve its existing legacy key behavior byte-for-byte.
 
 ---
@@ -26,7 +32,7 @@ The proper fix is not an unconditional special case for Codex. eTerm must implem
 
 1. Parse requests from the child application to query, push, set, or pop keyboard enhancement flags.
 2. Store enhancement state per terminal screen, with stack behavior.
-3. Reply to support queries.
+3. Reply to current-state queries only once enhanced key encoding is operational.
 4. Encode keyboard events according to the active flags.
 5. Continue using existing legacy mappings when the protocol is inactive.
 6. Support press, repeat, and release events when requested.
@@ -38,8 +44,9 @@ The implementation should be split into four logical pieces:
 
 - **Protocol/state model** in `TerminalEmulator`
 - **CSI command parsing and responses** in `TerminalEmulator::csihandle()`
-- **Key event encoding** in a focused encoder class/helper used by `TerminalDisplay`
-- **Input event plumbing** in `UITerminal` / `TerminalDisplay`, including key-up and repeat support
+- **Key event encoding** in a focused encoder class/helper invoked on the terminal worker
+- **Input event plumbing** from `UITerminal` / `TerminalDisplay` into typed `TerminalSession`
+  commands, including key-up and repeat support
 
 Do not mix the new protocol rules into the existing large `keys[]` table. Keep the legacy table intact as a fallback and add a separate enhanced encoder that runs before it when active.
 
@@ -178,30 +185,42 @@ Codex has used a combination including disambiguation, event types, and alternat
 
 ## 4.1 Event flow
 
-The current flow is approximately:
+eTerm now has a dedicated `TerminalSession` worker. The worker exclusively owns the emulator,
+PTY, process, parser, terminal modes, history, and cursor. UI code may enqueue commands, drain
+events, and retain immutable snapshots, but it must never read mutable emulator state.
+
+The current keyboard path still pre-encodes legacy bytes on the UI thread:
 
 ```text
 EEPP Window/Input backend
     -> UI event dispatcher
-        -> UITerminal::onKeyDown(KeyEvent)
-            -> TerminalDisplay::onKeyDown(keyCode, char, mod, scancode)
-                -> terminal shortcuts
-                -> Ctrl-letter handling
-                -> legacy TerminalKeyMap
-                -> PTY ttywrite()
+        -> UITerminal / TerminalDisplay
+            -> terminal-local shortcuts
+            -> Ctrl-letter and legacy TerminalKeyMap encoding
+            -> TerminalSession::write(encoded bytes)
+                -> ordered worker command
+                    -> PTY ttywrite()
 ```
 
-Text input follows a separate path:
+The Kitty implementation must change the child-input portion to:
 
 ```text
-EEPP text input event
-    -> UITerminal::onTextInput(TextInputEvent)
-        -> TerminalDisplay::onTextInput(codepoint)
-            -> UTF-8 conversion
-            -> PTY ttywrite()
+EEPP Window/Input backend
+    -> UI event dispatcher
+        -> UITerminal / TerminalDisplay
+            -> consume terminal-local shortcuts
+            -> enqueue semantic KeyDown / KeyUp / TextInput command
+                -> TerminalSession worker
+                    -> read authoritative Kitty state and terminal modes
+                    -> correlate key and committed-text events
+                    -> enhanced or legacy encoding
+                    -> PTY ttywrite()
 ```
 
-This split is important. Printable characters are normally emitted by `onTextInput()`, while special/control keys are emitted by `onKeyDown()`. Kitty’s `REPORT_ALL_KEYS_AS_ESCAPE_CODES` changes this assumption: printable keys may need to be emitted from the key-event path as CSI-u events, and the later text-input event must then be suppressed to prevent duplicate characters.
+Printable characters currently arrive through a separate text-input event. Kitty's
+`REPORT_ALL_KEYS_AS_ESCAPE_CODES` requires key/text correlation to avoid duplicate input. That
+correlation belongs on the worker because the ordered command queue preserves UI event order and
+the worker owns the negotiated state.
 
 ## 4.2 Existing legacy keyboard map
 
@@ -236,16 +255,18 @@ This is why modified Enter collapses to carriage return.
 
 ## 4.3 Existing parser support placeholder
 
-`TerminalEmulator::csihandle()` already has a branch similar to:
+The CSI parser has now been characterized and updated. It stores `<`, `=`, `>`, or `?` in
+`CSIEscape::priv`, preserves `;`/`:` separators in `CSIEscape::sep`, and places the final byte in
+`mode[0]`. Therefore Kitty controls are represented as a prefixed final `u`, for example:
 
-```cpp
-case '=': /* Progressive enhancement sequences */
-    /* Keyboard protocol ESC[=Nu */
-    /* Do nothing for the moment */
-    break;
+```text
+ESC [ > 7 u  -> priv='>', arg[0]=7, mode[0]='u'
+ESC [ ? u    -> priv='?', arg[0]=0, mode[0]='u'
 ```
 
-This is a strong signal that progressive enhancement belongs in `TerminalEmulator`, not in the UI widget.
+`TerminalEmulator::csihandle()` currently recognizes all four prefixed `u` variants and silently
+ignores them. It intentionally does not answer `CSI ? u`, because a response would claim support
+before enhanced input encoding exists. Bare `CSI u` continues to mean DECRC cursor restore.
 
 The CSI parser stores:
 
@@ -260,7 +281,7 @@ struct CSIEscape {
 };
 ```
 
-Before implementation, verify exactly how these sequences are represented after `csiparse()`:
+The existing parser regression test covers these exact byte strings:
 
 ```text
 ESC [ ? u
@@ -273,7 +294,10 @@ ESC [ = 7 ; 2 u
 ESC [ = 7 ; 3 u
 ```
 
-Do not assume that `?`, `>`, `<`, and `=` always land in the same field. The current `csihandle()` switch structure suggests some private/intermediate bytes may be placed into `mode[0]` or `priv`. Add parser tests first and adjust the handler according to observed representation.
+Extend that test into state/response assertions when negotiation is implemented. One remaining
+detail is that the parser currently represents an omitted numeric parameter as zero. If exact
+semantics require distinguishing omitted `CSI < u` from explicit `CSI < 0 u`, add argument-presence
+metadata rather than inferring presence from `narg`.
 
 ## 4.4 Screen swapping
 
@@ -304,10 +328,10 @@ src/modules/eterm/include/eterm/terminal/kittykeyboardprotocol.hpp
 src/modules/eterm/src/eterm/terminal/kittykeyboardprotocol.cpp
 ```
 
-Possible test file:
+Use the repository's existing unit-test file:
 
 ```text
-src/modules/eterm/tests/kittykeyboardprotocol_test.cpp
+src/tests/unit_tests/eterm_tests.cpp
 ```
 
 Adapt to the repository’s actual test layout and build system.
@@ -420,7 +444,7 @@ Names may be adjusted to project style, but maintain clear separation between:
 - output bytes,
 - duplicate-text suppression.
 
-## 5.2 Keep protocol state owned by `TerminalEmulator`
+## 5.2 Keep protocol state and encoding on the worker
 
 `TerminalEmulator` receives application output and therefore owns negotiation state.
 
@@ -431,14 +455,7 @@ KittyKeyboardState mPrimaryKeyboardState;
 KittyKeyboardState mAlternateKeyboardState;
 ```
 
-Add public read-only accessors and event-state operations:
-
-```cpp
-std::uint32_t getKeyboardEnhancementFlags() const;
-bool hasKeyboardEnhancementFlag( KittyKeyboardFlag flag ) const;
-```
-
-Potentially add:
+Potentially add private worker-only helpers:
 
 ```cpp
 const KittyKeyboardState& getKeyboardState() const;
@@ -447,7 +464,11 @@ KittyKeyboardState& getKeyboardState();
 
 Keep mutating access private if possible.
 
-`TerminalDisplay` should only query active flags. It must not parse application control sequences or mutate protocol stacks directly.
+Do not add a UI-facing `getKeyboardEnhancementFlags()` accessor. `TerminalDisplay` must not read
+the emulator or use snapshot flags to decide how to encode input: snapshots can lag negotiation.
+Instead add typed key and text commands to `TerminalSession`; their worker-side handlers query the
+active state and invoke the encoder. Active flags may be copied into `TerminalSnapshot` for
+diagnostics only.
 
 ## 5.3 Consider moving `sanitizeMod()`
 
@@ -485,7 +506,10 @@ DisambiguateEscapeCodes
 
 Add `ReportAlternateKeys` only if EEPP can reliably supply shifted/base-layout key values. Add `ReportAssociatedText` only when the implementation can correlate committed text with the originating key event without duplication or loss.
 
-However, for Codex compatibility, determine whether Crossterm requires the terminal to echo all requested bits or merely accepts the subset returned by the query. The preferred behavior is standards-compliant subset support, not falsely claiming unsupported features.
+When an application sets or pushes flags, mask the request to features eTerm can honor. A later
+current-state query reports the effective active subset, allowing applications to observe which
+requested bits took effect. Do not treat the initial query as capability advertisement and do not
+retain unsupported bits as active.
 
 A safe first complete target is to implement all five flags to the degree required by the spec, with documented backend limitations.
 
@@ -497,7 +521,8 @@ When the child sends:
 CSI ? u
 ```
 
-eTerm must respond through the PTY input channel with:
+eTerm must respond through the PTY input channel with the current effective flags for the active
+screen:
 
 ```text
 CSI ? <flags> u
@@ -509,24 +534,29 @@ For example:
 ESC [ ? 31 u
 ```
 
-if all five flags are supported.
+if all five flags are currently active. A newly initialized terminal responds with `CSI ? 0 u`
+even if it implements every enhancement. This is a state query, not a supported-capability mask.
 
 Use `ttywrite()` or the appropriate low-level response method with echo disabled. Follow existing device-status response patterns.
 
-Suggested helper:
+Suggested worker-only helper:
 
 ```cpp
-void TerminalEmulator::replyKeyboardEnhancementFlags() {
+void TerminalEmulator::replyKeyboardEnhancementState() {
     char buf[32];
     const int len = std::snprintf(
         buf, sizeof( buf ), "\033[?%uu",
-        KITTY_KEYBOARD_SUPPORTED_FLAGS
+        activeKeyboardState().flags
     );
     ttywrite( buf, static_cast<std::size_t>( len ), 0 );
 }
 ```
 
-Important: verify from the official spec whether the query response reports **supported flags** or **currently active flags**. Implement exactly the current spec. Do not infer from naming. Add a test matching Kitty and Crossterm behavior.
+Applications detect protocol support by sending the state query followed by primary device
+attributes. No Kitty response before DA means unsupported. To discover whether requested bits took
+effect, an application sets/pushes them and then queries the resulting current state. Keep a
+supported mask internally for safe flag application, but never return that mask in place of the
+active state.
 
 ## 6.3 Push semantics
 
@@ -602,15 +632,11 @@ The protocol includes:
 CSI = flags ; mode u
 ```
 
-The `mode` controls how `flags` affects current state. Implement all standardized modes exactly.
+The optional `mode` defaults to `1` and has these standardized meanings:
 
-Expected conceptual operations are generally:
-
-- replace/set absolute flags,
-- set/add bits,
-- clear/remove bits.
-
-Do not hardcode these assumptions without checking the current official table.
+- `1`: replace the current state; set specified bits and reset all unspecified bits,
+- `2`: set the specified bits and leave unspecified bits unchanged,
+- `3`: reset the specified bits and leave unspecified bits unchanged.
 
 Implement through one function:
 
@@ -623,13 +649,13 @@ void KittyKeyboardState::set(
         requestedFlags & KITTY_KEYBOARD_SUPPORTED_FLAGS;
 
     switch ( mode ) {
-        case /* set */:
+        case 1:
             flags = supported;
             break;
-        case /* OR */:
+        case 2:
             flags |= supported;
             break;
-        case /* clear */:
+        case 3:
             flags &= ~supported;
             break;
         default:
@@ -685,9 +711,12 @@ Do not leave enhancement flags active when a new shell is spawned in the same te
 
 # 7. CSI parser implementation
 
-## 7.1 Add parser characterization tests first
+## 7.1 Extend the existing parser characterization test
 
-Before modifying `csihandle()`, create tests that feed these exact byte strings into `TerminalEmulator`:
+The existing `modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol` test already feeds
+the representative query/push/pop/set strings into `TerminalEmulator` and verifies that the
+unsupported implementation stays silent. Preserve it until negotiation and encoding land
+together, then extend it to assert state changes and responses:
 
 ```cpp
 "\033[?u"
@@ -701,7 +730,7 @@ Before modifying `csihandle()`, create tests that feed these exact byte strings 
 "\033[=1;3u"
 ```
 
-Expose or instrument parsed `CSIEscape` only in tests if needed. Capture:
+The established parser representation is:
 
 - `priv`
 - `arg[]`
@@ -710,7 +739,7 @@ Expose or instrument parsed `CSIEscape` only in tests if needed. Capture:
 - `mode[1]`
 - raw buffer
 
-This prevents implementing against an incorrect mental model of the inherited `st` parser.
+Do not add test-only parser exposure unless a future parser change requires it.
 
 ## 7.2 Add a dedicated handler
 
@@ -798,7 +827,8 @@ constexpr unsigned int MAX_POP_COUNT = 64;
 
 The control sequence is application output; the response must be terminal input.
 
-Use the same response path as device status reports. Ensure:
+Handle and answer the query on the `TerminalSession` worker, using the same response path as device
+status reports. Ensure:
 
 - no local echo,
 - no screen rendering,
@@ -807,7 +837,9 @@ Use the same response path as device status reports. Ensure:
 
 ## 7.6 Debug tracing
 
-Add optional protocol tracing controlled by a compile-time flag or existing logger level:
+Use the existing `ETERM_LOG_ERRORS` diagnostics switch for malformed protocol diagnostics. If
+verbose per-key tracing is later needed, give it a distinct trace-level switch so
+`ETERM_LOG_ERRORS=1` does not log every key:
 
 ```text
 eterm kitty-kbd: query -> response flags=31
@@ -822,6 +854,12 @@ Do not log every key at normal log levels.
 
 # 8. Key event model and EEPP plumbing
 
+The UI thread may identify terminal-local shortcuts and normalize EEPP event data, but it must
+enqueue semantic events rather than encoded bytes. Add `KeyDownCommand`, `KeyUpCommand`, and
+`TextInputCommand` to `TerminalSession`. The worker performs event correlation, reads the active
+screen's Kitty state and terminal modes, chooses enhanced versus legacy encoding, and writes to
+the PTY.
+
 ## 8.1 Add key-up forwarding
 
 Current `UITerminal::onKeyUp()` returns `1` without forwarding:
@@ -832,7 +870,7 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 }
 ```
 
-To implement release reporting:
+To implement release reporting, forward a semantic release event into `TerminalSession`:
 
 ```cpp
 Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
@@ -850,7 +888,7 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
 
 Add `TerminalDisplay::onKeyUp()`.
 
-Only emit a release sequence when:
+The worker only emits a release sequence when:
 
 ```cpp
 activeFlags & REPORT_EVENT_TYPES
@@ -1078,11 +1116,11 @@ Do not invent code values. Copy them from the official key-code table and add a 
 
 ## 10.3 Enter special case
 
-With `DISAMBIGUATE_ESCAPE_CODES` enabled:
+With only `DISAMBIGUATE_ESCAPE_CODES` enabled, Enter remains a legacy exception regardless of
+modifiers. The same exception applies to Tab and Backspace, allowing a user to type `reset` if an
+application crashes without restoring modes.
 
-- Plain Enter may retain legacy `\r` unless another active flag requires CSI-u.
-- Modified Enter must be encoded as CSI-u.
-- Ctrl+Enter must become:
+With `REPORT_ALL_KEYS_AS_ESCAPE_CODES` enabled, Enter is encoded as CSI-u. Ctrl+Enter becomes:
 
 ```text
 CSI 13 ; 5 u
@@ -1108,7 +1146,9 @@ Ctrl+Shift+Enter:
 CSI 13 ; 6 u
 ```
 
-When `REPORT_ALL_KEYS_AS_ESCAPE_CODES` is active, plain Enter should also use the protocol form required by the spec.
+Plain Enter also uses the protocol form when report-all is active. Event-type fields are included
+only when requested. Tests and acceptance criteria must not expect `CSI 13;5u` from disambiguation
+alone.
 
 ## 10.4 Legacy cursor/function-key forms under enhancement
 
@@ -1205,7 +1245,8 @@ This feature should be implemented only after input-event correlation is sound.
 
 # 12. Progressive enhancement decision algorithm
 
-Implement one deterministic function that decides enhanced versus legacy output.
+Implement one deterministic function that decides enhanced versus legacy output. It is invoked by
+the `TerminalSession` worker, never by rendering/UI code.
 
 Pseudo-code:
 
@@ -1254,7 +1295,9 @@ KittyEncodedKey KittyKeyboardEncoder::encode(
 }
 ```
 
-The exact `mustEncode` rules must match the spec. The above is architecture, not a substitute for the official rules.
+The exact `mustEncode` rules must match the spec. In particular, Enter, Tab, and Backspace remain
+legacy under disambiguation alone. The above is architecture, not a substitute for the official
+rules.
 
 ---
 
@@ -1273,9 +1316,10 @@ TextInput("a")
 
 If Kitty `REPORT_ALL_KEYS_AS_ESCAPE_CODES` causes `KeyDown(A)` to emit a CSI-u sequence and `TextInput("a")` still emits `a`, the child receives the key twice.
 
-## 13.2 Preferred solution: correlated suppression queue
+## 13.2 Preferred solution: worker-side correlated suppression queue
 
-Add a small queue of expected text-input codepoints after an enhanced keydown consumed the event:
+Add a small queue of expected text-input codepoints after an enhanced keydown consumed the event.
+Keep this queue beside the worker-side encoder, not in `TerminalDisplay`:
 
 ```cpp
 struct SuppressedTextInput {
@@ -1308,7 +1352,7 @@ For printable keys under `REPORT_ALL_KEYS_AS_ESCAPE_CODES`:
 
 This is more correct for keyboard layouts and IME but requires careful event ordering and latency handling.
 
-Recommended architecture:
+Recommended worker-side architecture:
 
 ```cpp
 std::optional<PendingKittyTextKey> mPendingTextKey;
@@ -1357,16 +1401,11 @@ Do not ship an implementation that duplicates printable characters.
 
 # 14. Changes to `TerminalDisplay`
 
-## 14.1 Add active flag accessor
+## 14.1 Do not expose active flags to the display
 
-Use:
-
-```cpp
-const auto flags =
-    mTerminal->getKeyboardEnhancementFlags();
-```
-
-Do not cache flags in `TerminalDisplay`; application output may change them at any moment.
+`TerminalDisplay` must not query `TerminalEmulator`, and a flag value copied through
+`TerminalSnapshot` is not authoritative enough for input encoding. The display handles local UI
+shortcuts and forwards the remaining semantic event to `TerminalSession`.
 
 ## 14.2 Refactor `onKeyDown()`
 
@@ -1388,7 +1427,7 @@ void TerminalDisplay::onKeyDown(
     if ( handleTerminalShortcut( keyCode, smod ) )
         return;
 
-    const KittyKeyEvent event{
+    const TerminalKeyEvent event{
         keyCode,
         scancode,
         chr,
@@ -1398,33 +1437,17 @@ void TerminalDisplay::onKeyDown(
             : KittyKeyEventType::Press
     };
 
-    const auto enhanced = KittyKeyboardEncoder::encode(
-        event,
-        mTerminal->getKeyboardEnhancementFlags()
-    );
-
-    if ( enhanced.handled ) {
-        mTerminal->ttywrite(
-            enhanced.bytes.data(),
-            enhanced.bytes.size(),
-            1
-        );
-
-        if ( enhanced.suppressTextInput )
-            registerTextInputSuppression( event );
-
-        return;
-    }
-
-    handleLegacyKeyDown( keyCode, chr, mod, scancode );
+    mSession->keyDown( std::move( event ) );
 }
 ```
 
-Extract current shortcut and legacy map logic into helpers to make tests possible:
+Extract current shortcut logic into a helper. Move the child-facing Ctrl conversion and legacy
+key map into a worker-side encoder/fallback so both legacy and enhanced output use authoritative
+terminal modes:
 
 ```cpp
 bool handleTerminalShortcut(...);
-void handleLegacyKeyDown(...);
+KittyEncodedKey encodeChildKeyEvent(...); // worker only
 ```
 
 ## 14.3 Add `onKeyUp()`
@@ -1436,33 +1459,20 @@ void TerminalDisplay::onKeyUp(
     const Uint32& mod,
     const Scancode& scancode
 ) {
-    const auto flags =
-        mTerminal->getKeyboardEnhancementFlags();
-
-    if ( !( flags & REPORT_EVENT_TYPES ) )
-        return;
-
-    KittyKeyEvent event{
+    TerminalKeyEvent event{
         keyCode,
         scancode,
         chr,
         mod,
         KittyKeyEventType::Release
     };
-
-    const auto encoded =
-        KittyKeyboardEncoder::encode( event, flags );
-
-    if ( encoded.handled )
-        mTerminal->ttywrite(
-            encoded.bytes.data(),
-            encoded.bytes.size(),
-            1
-        );
+    mSession->keyUp( std::move( event ) );
 }
 ```
 
-Terminal shortcuts consumed on keydown should generally not emit release events to the child. Track consumed physical keys until key-up if necessary:
+The worker emits a release only if the negotiated flags require it. Terminal shortcuts consumed
+on keydown should generally not emit release events to the child. Track consumed physical keys on
+the UI side until key-up if necessary:
 
 ```cpp
 std::unordered_set<Scancode> mLocallyConsumedKeys;
@@ -1474,17 +1484,15 @@ Refactor:
 
 ```cpp
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
-    if ( !mTerminal )
+    if ( !mSession )
         return;
-
-    if ( handlePendingKittyTextInput( chr ) )
-        return;
-
-    // Existing UTF-8 legacy behavior.
+    mSession->textInput( chr );
 }
 ```
 
-Ensure a multi-codepoint text-input event is handled correctly. Current API appears to pass one `Uint32`; inspect whether EEPP emits one event per codepoint.
+The worker correlates this command with pending key events and chooses enhanced versus legacy
+output. Ensure a multi-codepoint text-input event is handled correctly. Current API appears to
+pass one `Uint32`; inspect whether EEPP emits one event per codepoint.
 
 ---
 
@@ -1494,6 +1502,7 @@ Required changes:
 
 - Forward key-up.
 - Forward repeat status if `KeyEvent` exposes it.
+- Forward semantic key/text data through `TerminalSession`; never read emulator state.
 - Preserve focus checks.
 - Preserve custom keybinding command interception.
 - Clear pending Kitty input state on focus loss if there is an existing focus callback.
@@ -1525,8 +1534,8 @@ Update interfaces and all callers.
 
 When active flags are zero:
 
-- `TerminalDisplay::onKeyDown()` must execute the old code path.
-- `onTextInput()` must behave exactly as before.
+- semantic key/text commands must produce the same bytes as the old `TerminalDisplay` path,
+- worker-side legacy text input must behave exactly as before,
 - `onKeyUp()` must emit nothing.
 - Existing `Ctrl+A` through control-code conversion must remain unchanged.
 - Alt+Enter must retain `ESC CR`.
@@ -1540,7 +1549,9 @@ Add regression tests comparing old expected output bytes.
 
 # 17. Handling Ctrl-letter logic
 
-Current code manually maps Ctrl plus certain scancodes to bytes `0x01` etc. This block must occur **after** enhanced protocol encoding.
+Current code manually maps Ctrl plus certain scancodes to bytes `0x01` etc. Move this child-facing
+logic from `TerminalDisplay` into the worker-side encoder/fallback, after enhanced protocol
+encoding.
 
 Reason:
 
@@ -1564,10 +1575,12 @@ Do not leave the Ctrl block before the enhanced encoder.
 Distinguish:
 
 - Child output is parsed by `TerminalEmulator`.
-- Terminal responses and user input are written to the PTY.
+- Terminal responses and semantic input commands are encoded on the worker and written to the PTY.
 - Renderer output must never contain protocol responses.
 - `ttywrite(..., may_echo=0)` is likely correct for terminal-generated responses.
 - User key input should maintain current `may_echo` semantics, likely `1`.
+- UI code must never call `TerminalEmulator::ttywrite()` directly or base encoding on a potentially
+  stale snapshot.
 
 Audit current uses:
 
@@ -1703,20 +1716,23 @@ Enter       -> 0d
 Ctrl+Enter  -> 0d  // current legacy behavior retained
 ```
 
-With disambiguation:
+With disambiguation but without report-all:
 
 ```text
-Enter             -> legacy CR, unless spec requires encoded form
-Ctrl+Enter        -> 1b 5b 31 33 3b 35 75
-Shift+Enter       -> 1b 5b 31 33 3b 32 75
-Alt+Enter         -> protocol form required by spec
-Ctrl+Shift+Enter  -> protocol form with modifier 6
+Enter             -> legacy CR
+Ctrl+Enter        -> legacy CR
+Shift+Enter       -> legacy CR
+Alt+Enter         -> legacy ESC CR
+Ctrl+Shift+Enter  -> legacy CR
 ```
 
 With report-all:
 
 ```text
-Enter -> enhanced form
+Enter             -> enhanced form
+Ctrl+Enter        -> 1b 5b 31 33 3b 35 75
+Shift+Enter       -> 1b 5b 31 33 3b 32 75
+Ctrl+Shift+Enter  -> protocol form with modifier 6
 ```
 
 With event types:
@@ -1817,10 +1833,10 @@ Enter       -> 0d
 Ctrl+Enter  -> 0d
 ```
 
-Use a helper to activate flags:
+Use a helper to activate report-all (which implies disambiguation):
 
 ```bash
-printf '\033[>1u'
+printf '\033[>8u'
 ```
 
 Then press Ctrl+Enter and verify:
@@ -1850,23 +1866,26 @@ ESC [ ? u
 and read:
 
 ```text
-ESC [ ? <supported-mask> u
+ESC [ ? <current-flags> u
 ```
 
 ## 21.3 Codex CLI
 
 1. Build and run eTerm from the modified `develop` branch.
-2. Start current Codex CLI.
-3. Configure Codex:
+2. Start current Codex CLI and capture its push/set sequence.
+3. Verify Codex requests `REPORT_ALL_KEYS_AS_ESCAPE_CODES` (bit `8`). If it requests only flags
+   `7`, record that standards-compliant `Ctrl+Enter` disambiguation is unavailable and do not make
+   the terminal silently deviate from Kitty.
+4. Configure Codex:
    - Enter inserts newline.
    - Ctrl+Enter submits.
-4. Type a multiline prompt.
-5. Press Enter: newline appears.
-6. Press Ctrl+Enter: message submits.
-7. Hold/repeat keys to ensure no duplicate or stuck events.
-8. Exit Codex normally.
-9. Verify shell input returns to legacy behavior.
-10. Kill Codex abruptly and verify a restarted shell/process does not inherit stale flags.
+5. Type a multiline prompt.
+6. Press Enter: newline appears.
+7. Press Ctrl+Enter: message submits when report-all is active.
+8. Hold/repeat keys to ensure no duplicate or stuck events.
+9. Exit Codex normally.
+10. Verify shell input returns to legacy behavior.
+11. Kill Codex abruptly and verify a restarted shell/process does not inherit stale flags.
 
 ## 21.4 Other TUIs
 
@@ -1921,25 +1940,23 @@ Use constants and comments.
 
 # 23. Threading and lifetime
 
-Determine which thread:
+The thread model is established:
 
-- parses PTY output,
-- handles UI input,
-- reads active flags.
+- the `TerminalSession` worker exclusively owns `TerminalEmulator`, PTY reads/writes, parser state,
+  terminal modes, Kitty flags/stacks, pending key/text correlation, and child-input encoding;
+- the UI thread handles terminal-local shortcuts and enqueues semantic commands;
+- immutable snapshots are presentation-only and must not drive input encoding;
+- no emulator accessor, atomic flag mirror, or mutex-protected stack is needed.
 
-If parser updates and UI reads can occur on different threads, `flags` access is a data race.
+Typed key and text commands participate in the existing ordered command queue. Add deterministic
+tests for negotiation and key commands arriving close together. The worker must give already
+available PTY negotiation a fair bounded parsing opportunity without allowing heavy output to
+starve input commands. Query/response capability detection is also an ordering barrier: an
+application cannot observe the Kitty query response before the worker has applied the state that
+produced it.
 
-Options:
-
-1. Confirm all terminal update/input operations run on the main thread.
-2. If not, use:
-   - atomic active flags,
-   - mutex around stack mutation,
-   - or message passing.
-
-Stacks are modified rarely; a mutex is acceptable. Do not add atomics without protecting the vectors.
-
-Document the threading guarantee in code.
+Reset both screen states in full reset and explicitly in `RestartCommand` so a replacement process
+cannot inherit flags or pending input correlation from the old child.
 
 ---
 
@@ -2019,12 +2036,13 @@ allowing modern TUIs to distinguish modified Enter and other keys.
 
 Deliverables:
 
-- Parser tests for private CSI prefixes
+- Parser tests for private CSI prefixes (**completed**; prefixed Kitty sequences are currently
+  recognized and deliberately ignored without a response)
 - Legacy byte snapshots
 - Confirm keydown/textinput ordering
 - Confirm repeat exposure
 - Confirm modifier constants
-- Confirm thread model
+- Confirm thread model (**completed**; emulator and protocol state are worker-owned)
 
 No functional change.
 
@@ -2038,6 +2056,7 @@ Deliverables:
 - Push/pop/set
 - Reset behavior
 - Unit tests
+- Typed semantic key/text `TerminalSession` commands, initially using legacy worker-side encoding
 
 Still no enhanced key emission.
 
@@ -2048,7 +2067,8 @@ Deliverables:
 - Encoder framework
 - Enter, Tab, Escape, Backspace
 - Modified key CSI-u emission
-- Ctrl+Enter works in Crossterm/Codex
+- Modified ASCII/Escape disambiguation works in Crossterm
+- Ctrl+Enter remains legacy unless report-all is active
 - Legacy fallback intact
 
 This phase can be merged independently if desired.
@@ -2121,9 +2141,10 @@ The implementation is complete only when all of the following are true.
 ## Encoding
 
 - [ ] Plain legacy behavior is unchanged with flags zero.
-- [ ] Ctrl+Enter is `CSI 13;5u` when disambiguation is active.
-- [ ] Shift+Enter is distinguishable.
-- [ ] Modified Escape, Tab, and Backspace are distinguishable.
+- [ ] Ctrl+Enter is `CSI 13;5u` when report-all is active.
+- [ ] Shift+Enter is distinguishable when report-all is active.
+- [ ] Modified Escape is distinguishable under disambiguation; modified Tab and Backspace are
+      distinguishable when report-all is active.
 - [ ] Special/function keys follow official Kitty encoding.
 - [ ] Printable Unicode keys work in report-all mode.
 - [ ] No duplicate text-input events occur.
@@ -2133,7 +2154,8 @@ The implementation is complete only when all of the following are true.
 ## Integration
 
 - [ ] Crossterm decodes the events with correct code/modifier/kind.
-- [ ] Codex can bind Ctrl+Enter separately from Enter.
+- [ ] Codex can bind Ctrl+Enter separately from Enter when it requests report-all, or any deliberate
+      compatibility deviation is separately designed and documented.
 - [ ] Shell, Vim/Neovim, and existing terminal use remain unaffected when protocol is inactive.
 - [ ] Abrupt child termination does not leave stale protocol state for a replacement process.
 
@@ -2191,15 +2213,32 @@ KittyKeyboardState& activeKeyboardState();
 const KittyKeyboardState& activeKeyboardState() const;
 
 bool handleKittyKeyboardProtocol();
-void replyKittyKeyboardProtocolSupport();
+void replyKittyKeyboardProtocolState();
 void resetKittyKeyboardProtocol();
 ```
 
-Public:
+No public emulator accessor is added. State and stack access remain worker-only.
+
+## `src/modules/eterm/include/eterm/terminal/terminalsession.hpp`
+
+Add semantic event data and typed commands:
 
 ```cpp
-std::uint32_t getKeyboardEnhancementFlags() const;
+void keyDown( TerminalKeyEvent event );
+void keyUp( TerminalKeyEvent event );
+void textInput( TerminalTextInput event );
+
+struct KeyDownCommand { TerminalKeyEvent event; };
+struct KeyUpCommand { TerminalKeyEvent event; };
+struct TextInputCommand { TerminalTextInput event; };
 ```
+
+Add them to the ordered command variant.
+
+## `src/modules/eterm/src/eterm/terminal/terminalsession.cpp`
+
+Handle semantic input on the worker. Read the active Kitty state and current emulator modes there,
+perform key/text correlation, encode either Kitty or legacy bytes, and call `ttywrite()`.
 
 ## `src/modules/eterm/src/eterm/terminal/terminalemulator.cpp`
 
@@ -2213,7 +2252,8 @@ Modify:
 - terminal-generated query response
 - optional debug tracing
 
-Remove the current no-op placeholder only after replacing it with real handling.
+Replace the current prefixed-`u` no-op only after negotiation state and enhanced input encoding are
+implemented together.
 
 ## `src/modules/eterm/include/eterm/terminal/terminaldisplay.hpp`
 
@@ -2221,20 +2261,18 @@ Add:
 
 - `onKeyUp`
 - repeat parameter or event kind
-- pending/suppressed text state
 - locally consumed key tracking
-- helper declarations for enhanced and legacy paths
+- helper declarations for terminal-local shortcuts
 
 ## `src/modules/eterm/src/eterm/terminal/terminaldisplay.cpp`
 
 Modify:
 
-- place enhanced encoding before Ctrl-letter legacy handling
 - retain terminal shortcut priority
 - add key-up behavior
 - add repeat behavior
-- add text-input correlation
-- preserve legacy map unchanged as fallback
+- enqueue semantic key/text commands instead of encoded bytes
+- move child-facing Ctrl conversion and the legacy map into the worker-side fallback
 
 ## `src/modules/eterm/src/eterm/ui/uiterminal.cpp`
 
@@ -2264,12 +2302,12 @@ Before submitting:
 8. Verify release events for locally consumed shortcuts are suppressed.
 9. Verify stack depth and pop count are bounded.
 10. Verify unsupported bits are masked.
-11. Verify query response mask matches actual implementation.
+11. Verify the query returns current effective flags, not the supported mask.
 12. Verify Unicode scalar validation.
 13. Verify AltGr/IME behavior.
 14. Verify legacy snapshots with flags zero.
 15. Verify Crossterm key dump.
-16. Verify Codex Ctrl+Enter.
+16. Verify Codex's requested flags before expecting Ctrl+Enter to be distinct.
 17. Verify process restart clears stale state.
 18. Run formatter and full test suite.
 
@@ -2280,7 +2318,7 @@ Before submitting:
 A very small patch can solve only the immediate issue:
 
 ```cpp
-if ( flags & DISAMBIGUATE_ESCAPE_CODES &&
+if ( flags & REPORT_ALL_KEYS_AS_ESCAPE_CODES &&
      keyCode == KEY_RETURN &&
      mod & KEYMOD_CTRL ) {
     ttywrite( "\033[13;5u", 7, 1 );
@@ -2288,7 +2326,9 @@ if ( flags & DISAMBIGUATE_ESCAPE_CODES &&
 }
 ```
 
-This is **not** the requested final implementation. It may be useful as a temporary proof of concept, but it is incomplete because it omits:
+This is **not** the requested final implementation. It is shown only as an illustration of the
+report-all requirement and must not be added on the UI thread. A production implementation also
+cannot omit:
 
 - capability query,
 - push/pop stack,
@@ -2316,13 +2356,13 @@ ESC [ ? u
 eTerm replies:
 
 ```text
-ESC [ ? 31 u
+ESC [ ? 0 u
 ```
 
 Application sends:
 
 ```text
-ESC [ > 7 u
+ESC [ > 15 u
 ```
 
 eTerm stores prior flags on the current screen’s stack and activates:
@@ -2331,6 +2371,7 @@ eTerm stores prior flags on the current screen’s stack and activates:
 DISAMBIGUATE_ESCAPE_CODES
 REPORT_EVENT_TYPES
 REPORT_ALTERNATE_KEYS
+REPORT_ALL_KEYS_AS_ESCAPE_CODES
 ```
 
 User presses Ctrl+Enter.
@@ -2364,7 +2405,8 @@ KeyModifiers::CONTROL
 KeyEventKind::Press
 ```
 
-Codex matches its Ctrl+Enter submit binding.
+An application such as Codex can match its Ctrl+Enter submit binding when it requests report-all.
+If it pushes only flags `7`, Enter remains in its legacy form by design.
 
 Application exits cleanly and sends:
 

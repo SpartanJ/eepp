@@ -55,7 +55,7 @@ using namespace eterm::System;
 namespace eterm { namespace Terminal {
 
 constexpr int ESC_BUF_SIZ = 512;
-constexpr int ESC_ARG_SIZ = 16;
+constexpr int ESC_ARG_SIZ = 32;
 constexpr int STR_BUF_SIZ = ESC_BUF_SIZ;
 constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
 
@@ -104,6 +104,9 @@ struct CSIEscape {
 	size_t len;			   /* raw string length */
 	char priv;
 	int arg[ESC_ARG_SIZ];
+	/* Separator following each argument. ECMA-48 uses ';' between parameters and ':'
+	 * between subparameters, so preserving it is required for modern SGR colors. */
+	char sep[ESC_ARG_SIZ];
 	int narg; /* nb of args */
 	char mode[2];
 };
@@ -154,6 +157,9 @@ class TerminalEmulator final {
 	void resize( int columns, int rows );
 
 	void redraw();
+
+	/** Worker-owned terminal state reset (RIS semantics without replacing the PTY/process). */
+	void reset();
 
 	void logError( const char* err );
 
@@ -245,6 +251,15 @@ class TerminalEmulator final {
 
 	void setAllowMemoryTrimnming( bool allowMemoryTrimnming );
 
+	/** Worker-only maximum interval between snapshots while PTY reads remain saturated. */
+	void setPresentationInterval( Time interval );
+
+	/** Set the user-configured cursor style restored by DECSCUSR parameter 7. */
+	void setDefaultCursorMode( TerminalCursorMode mode );
+
+	/** Worker-only notification that the display palette changed. */
+	void notifyColorSchemeChanged();
+
 	Vector2i getSize() const;
 
 	System::IProcess* getProcess() const;
@@ -277,8 +292,9 @@ class TerminalEmulator final {
 
 	bool mDirty{ true };
 	bool mAllDirty{ true };
-	uint8_t mDeferredPresentationBatches{ 0 };
 	Clock mPresentationClock;
+	Time mPresentationInterval{ Microseconds( 1000000.0 / 60.0 ) };
+	Clock mSynchronizedUpdateClock;
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
 
@@ -299,8 +315,12 @@ class TerminalEmulator final {
 
 	int mAllowAltScreen;
 	int mAllowWindowOps;
+	TerminalCursorMode mDefaultCursorMode{ SteadyUnderline };
+	bool mColorSchemeNotifications{ false };
+	int mColorScheme{ 0 };
 
 	std::string mCurrentWorkingDirectory;
+	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 	DataCb mDataCb;
@@ -355,7 +375,7 @@ class TerminalEmulator final {
 	void historyStealPush( Line* lineSlot, int col );
 	void historyReflow( int old_col, int new_col );
 	void historyPopToScreen( int loaded, int col );
-	void tsetattr( int*, int );
+	void tsetattr( int*, int, const char* );
 	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );
 	void tsetscroll( int, int );
@@ -366,7 +386,7 @@ class TerminalEmulator final {
 	void tcontrolcode( uchar );
 	void tdectest( char );
 	void tdefutf8( char );
-	int32_t tdefcolor( int*, int*, int );
+	int32_t tdefcolor( int*, const char*, int*, int );
 	void tdeftran( char );
 	void tstrsequence( uchar );
 
@@ -406,6 +426,8 @@ class TerminalEmulator final {
 	int xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b );
 	void osc_color_response( int num, int index, int is_osc4 );
 	void handleDeviceAttributes();
+	int colorScheme();
+	void reportColorScheme();
 
 	void trimMemory();
 

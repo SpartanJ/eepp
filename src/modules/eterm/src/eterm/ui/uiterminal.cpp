@@ -31,7 +31,10 @@ UITerminal* UITerminal::New( const std::shared_ptr<TerminalDisplay>& terminalDis
 	return eeNew( UITerminal, ( terminalDisplay ) );
 }
 
-UITerminal::~UITerminal() {}
+UITerminal::~UITerminal() {
+	if ( mTerm && mTerminalEventCallbackId )
+		mTerm->popEventCallback( mTerminalEventCallbackId );
+}
 
 Uint32 UITerminal::getType() const {
 	return UI_TYPE_TERMINAL;
@@ -51,28 +54,29 @@ void UITerminal::draw() {
 void UITerminal::registerNewTerminal() {
 	if ( !mTerm )
 		return;
-	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
-		switch ( event.type ) {
-			case TerminalDisplay::EventType::TITLE: {
-				if ( !mIsCustomTitle && mTitle != event.eventData ) {
-					mTitle = event.eventData;
-					sendTextEvent( Event::OnTitleChange, mTitle );
+	mTerminalEventCallbackId =
+		mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
+			switch ( event.type ) {
+				case TerminalDisplay::EventType::TITLE: {
+					if ( !mIsCustomTitle && mTitle != event.eventData ) {
+						mTitle = event.eventData;
+						sendTextEvent( Event::OnTitleChange, mTitle );
+					}
+					break;
 				}
-				break;
+				case TerminalDisplay::EventType::HISTORY_LENGTH_CHANGE: {
+					if ( !mTerm->isAltScr() )
+						onContentSizeChange();
+					break;
+				}
+				case TerminalDisplay::EventType::SCROLL_HISTORY: {
+					updateScrollPosition();
+					break;
+				}
+				default: {
+				}
 			}
-			case TerminalDisplay::EventType::HISTORY_LENGTH_CHANGE: {
-				if ( !mTerm->getTerminal()->tisaltscr() )
-					onContentSizeChange();
-				break;
-			}
-			case TerminalDisplay::EventType::SCROLL_HISTORY: {
-				updateScrollPosition();
-				break;
-			}
-			default: {
-			}
-		}
-	} );
+		} );
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
@@ -109,13 +113,13 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-open-link",
-				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
+				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
 	subscribeScheduledUpdate();
 }
 
 int UITerminal::getContentSize() const {
-	if ( mTerm && mTerm->getTerminal() )
-		return mTerm->getTerminal()->getHistorySize() + mTerm->getTerminal()->getNumRows();
+	if ( mTerm )
+		return mTerm->scrollSize() + mTerm->rowCount();
 	return 0;
 }
 
@@ -139,6 +143,13 @@ void UITerminal::onContentSizeChange() {
 	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
 							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
+	// Changing the page step resizes the thumb and therefore changes the mouse-to-value mapping.
+	// Keep both the thumb and its range stable while an asynchronous drag scroll is in flight.
+	if ( mVScroll->isDragging() || mScrollByBar ) {
+		mPendingContentSizeChange = true;
+		return;
+	}
+	mPendingContentSizeChange = false;
 	updateScrollPosition();
 	mVScroll->setPageStep( contentSize > 0 ? ( visibleArea / (Float)contentSize ) : 1.f );
 	updateScroll();
@@ -179,17 +190,22 @@ void UITerminal::onPaddingChange() {
 }
 
 int UITerminal::getVisibleArea() const {
-	return ( mTerm && mTerm->getTerminal() ) ? mTerm->getTerminal()->getNumRows() : 0;
+	return mTerm ? mTerm->rowCount() : 0;
 }
 
 void UITerminal::updateScrollPosition() {
-	if ( mTerm && mTerm->getTerminal() ) {
-		int historySize = mTerm->getTerminal()->getHistorySize();
-		Float val = historySize > 0
-						? ( 1.f - mTerm->getTerminal()->scrollPos() / (Float)historySize )
-						: 1.f;
-		mVScroll->setValue( val, false );
+	if ( !mTerm || mVScroll->isDragging() )
+		return;
+	if ( mScrollByBar ) {
+		if ( mPendingScrollCommand != 0 &&
+			 mTerm->lastAppliedScrollCommand() < mPendingScrollCommand )
+			return;
+		mScrollByBar = false;
+		mPendingScrollCommand = 0;
 	}
+	int historySize = mTerm->scrollSize();
+	Float val = historySize > 0 ? ( 1.f - mTerm->scrollPosition() / (Float)historySize ) : 1.f;
+	mVScroll->setValue( val, false );
 }
 
 int UITerminal::getScrollableArea() const {
@@ -211,11 +227,11 @@ void UITerminal::updateScroll() {
 }
 
 void UITerminal::onScrollChange() {
-	if ( !mTerm || !mTerm->getTerminal() )
+	if ( !mTerm )
 		return;
 	int scrollTo = ( getScrollableArea() - mScrollOffset );
-	TerminalArg arg( scrollTo );
-	mTerm->getTerminal()->kscrollto( &arg );
+	mPendingScrollCommand = mTerm->scrollTo( scrollTo );
+	mScrollByBar = mPendingScrollCommand != 0;
 }
 
 void UITerminal::setVerticalScrollMode( const ScrollBarMode& Mode ) {
@@ -321,18 +337,23 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 void UITerminal::scheduledUpdate( const Time& ) {
 	if ( !mTerm )
 		return;
+	auto terminal = mTerm;
 
 	auto mousePos = getInput()->getRelativeMousePos();
 	bool mouseOutsideBounds =
 		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
-	mTerm->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	terminal->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	if ( !mVScroll->isDragging() && ( mScrollByBar || mPendingContentSizeChange ) ) {
+		updateScrollPosition();
+		if ( !mScrollByBar && mPendingContentSizeChange )
+			onContentSizeChange();
+	}
 
-	if ( mTerm->isDirty() && isVisible() )
+	if ( terminal->isDirty() && isVisible() )
 		invalidateDraw();
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
-		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
-			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
+		mVScroll->setVisible( !terminal->isAltScr() )->setEnabled( !terminal->isAltScr() );
 	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
 		if ( mViewType == ScrollViewType::Overlay && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
 			 !mVScroll->isDragging() )
@@ -493,8 +514,8 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
-		bool visible = !mTerm->getTerminal()->tisaltscr() && getContentSize() > getVisibleArea() &&
-					   !mTerm->getTerminal()->hasSelection();
+		bool visible =
+			!mTerm->isAltScr() && getContentSize() > getVisibleArea() && !mTerm->hasSelection();
 		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
@@ -563,8 +584,8 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	if ( mTerm->getTerminal()->hasSelection() ) {
-		auto sel( mTerm->getTerminal()->getSelection() );
+	if ( mTerm->hasSelection() ) {
+		auto sel( mTerm->getSelection() );
 
 		if ( LuaPattern::hasMatches( sel, LuaPattern::getURIPattern() ) ) {
 			menuAdd( menu, i18n( "uiterminal_open_link", "Open Link" ), "earth",
@@ -573,7 +594,7 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	}
 
 	menuAdd( menu, i18n( "uiterminal_copy", "Copy" ), "copy", "terminal-copy" )
-		->setEnabled( mTerm->getTerminal() && mTerm->getTerminal()->hasSelection() );
+		->setEnabled( mTerm->hasSelection() );
 	menuAdd( menu, i18n( "uiterminal_paste", "Paste" ), "paste", "terminal-paste" )
 		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
 }
@@ -628,10 +649,14 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 void UITerminal::restart() {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
+	if ( mTerm && mTerminalEventCallbackId )
+		mTerm->popEventCallback( mTerminalEventCallbackId );
 	mTerm = TerminalDisplay::create( win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
 									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
 									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
 									 mTerm->getKeepAlive(), mTerm->getEnv() );
+	mTerminalEventCallbackId = 0;
+	registerNewTerminal();
 	syncFontRenderingConfig();
 }
 

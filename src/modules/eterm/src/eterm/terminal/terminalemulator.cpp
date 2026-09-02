@@ -41,6 +41,7 @@
 #include <eepp/system/cpu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/version.hpp>
 
 using namespace EE::Network;
 using namespace EE::System;
@@ -75,6 +76,52 @@ extern "C" {
 #endif
 
 namespace eterm { namespace Terminal {
+
+namespace {
+
+bool terminalDiagnosticsEnabled() {
+#ifdef EE_DEBUG
+	return true;
+#else
+	// Release builds stay quiet unless diagnostics are explicitly requested. This is cached because
+	// malformed or unsupported sequences can otherwise hit this path for every rendered cell.
+	static const char* setting = getenv( "ETERM_LOG_ERRORS" );
+	static const bool enabled =
+		setting != nullptr && setting[0] != '\0' && strcmp( setting, "0" ) != 0;
+	return enabled;
+#endif
+}
+
+void terminalDiagnostic( const char* format, ... ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
+	va_list args;
+	va_start( args, format );
+	vfprintf( stderr, format, args );
+	va_end( args );
+}
+
+TerminalCursorMode blinkingCursorVariant( TerminalCursorMode mode ) {
+	switch ( mode ) {
+		case BlinkUnderline:
+		case SteadyUnderline:
+			return BlinkUnderline;
+		case BlinkBar:
+		case SteadyBar:
+			return BlinkBar;
+		case BlinkingBlock:
+		case BlinkingBlockDefault:
+		case SteadyBlock:
+			return BlinkingBlock;
+		case StExtension:
+			return StExtension;
+		case TerminalCursorMode::MAX_CURSOR:
+			return BlinkingBlock;
+	}
+	return BlinkingBlock;
+}
+
+} // namespace
 
 #if defined( EE_ARCH_X86_64 )
 #if defined( __GNUC__ ) || defined( __clang__ )
@@ -844,6 +891,21 @@ void TerminalEmulator::setAllowMemoryTrimnming( bool allowMemoryTrimnming ) {
 	mAllowMemoryTrimnming = allowMemoryTrimnming;
 }
 
+void TerminalEmulator::setPresentationInterval( Time interval ) {
+	mPresentationInterval = interval > Time::Zero ? interval : Microseconds( 1000000.0 / 60.0 );
+}
+
+void TerminalEmulator::setDefaultCursorMode( TerminalCursorMode mode ) {
+	mDefaultCursorMode = mode;
+}
+
+void TerminalEmulator::notifyColorSchemeChanged() {
+	const int scheme = colorScheme();
+	if ( mColorSchemeNotifications && mColorScheme != 0 && scheme != mColorScheme )
+		reportColorScheme();
+	mColorScheme = scheme;
+}
+
 Vector2i TerminalEmulator::getSize() const {
 	return { mTerm.col, mTerm.row };
 }
@@ -958,6 +1020,8 @@ void TerminalEmulator::tcursor( int mode ) {
 void TerminalEmulator::treset( void ) {
 	uint i;
 
+	mColorSchemeNotifications = false;
+	mTerm.is_syncing = false;
 	mTerm.c = TerminalCursor{};
 	mTerm.c.attr = TerminalGlyph{};
 	mTerm.c.attr.u = ' ';
@@ -986,9 +1050,13 @@ void TerminalEmulator::treset( void ) {
 
 	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_APPKEYPAD | MODE_APPCURSOR | MODE_FOCUS |
 					 MODE_BRCKTPASTE | MODE_MOUSEX10 | MODE_MOUSEMANY );
+	// Preserve eterm's established behavior and xterm's default alternateScroll resource.
+	xsetmode( 1, MODE_ALTSCRROLL );
 	auto dpy = mDpy.lock();
-	if ( dpy )
+	if ( dpy ) {
 		dpy->setMode( MODE_VISIBLE, 1 );
+		dpy->setCursorMode( mDefaultCursorMode );
+	}
 }
 
 void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
@@ -1415,27 +1483,25 @@ void TerminalEmulator::tnewline( int first_col ) {
 void TerminalEmulator::csiparse( void ) {
 	char *p = mCsiescseq.buf, *np;
 	long int v;
-	int sep = ';'; /* colon or semi-colon, but not both */
 
 	mCsiescseq.narg = 0;
-	if ( *p == '?' ) {
-		mCsiescseq.priv = 1;
+	if ( *p == '<' || *p == '=' || *p == '>' || *p == '?' ) {
+		mCsiescseq.priv = *p;
 		p++;
 	}
 
 	mCsiescseq.buf[mCsiescseq.len] = '\0';
-	while ( p < mCsiescseq.buf + mCsiescseq.len ) {
+	while ( p < mCsiescseq.buf + mCsiescseq.len && mCsiescseq.narg < ESC_ARG_SIZ ) {
 		np = NULL;
 		v = strtol( p, &np, 10 );
 		if ( np == p )
 			v = 0;
 		if ( v == LONG_MAX || v == LONG_MIN )
 			v = -1;
-		mCsiescseq.arg[mCsiescseq.narg++] = v;
+		mCsiescseq.arg[mCsiescseq.narg] = v;
 		p = np;
-		if ( sep == ';' && *p == ':' )
-			sep = ':'; /* allow override to colon once */
-		if ( *p != sep || mCsiescseq.narg == ESC_ARG_SIZ )
+		mCsiescseq.sep[mCsiescseq.narg++] = *p == ';' || *p == ':' ? *p : '\0';
+		if ( *p != ';' && *p != ':' )
 			break;
 		p++;
 	}
@@ -1592,33 +1658,63 @@ void TerminalEmulator::tdeleteline( int n ) {
 		tscrollup( mTerm.c.y, n, 0 );
 }
 
-int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
+int32_t TerminalEmulator::tdefcolor( int* attr, const char* separators, int* npar, int l ) {
 	int32_t idx = -1;
 	uint r, g, b;
+	if ( !attr || !npar || l < 0 || l > ESC_ARG_SIZ || *npar < 0 || *npar >= l ) {
+		terminalDiagnostic( "erresc(color): invalid parameter index\n" );
+		return idx;
+	}
+	const bool subparameters = separators && separators[*npar] == ':';
+	const int selector = *npar + 1;
 
-	switch ( attr[*npar + 1] ) {
+	if ( selector >= l ) {
+		terminalDiagnostic( "erresc(color): missing color type\n" );
+		return idx;
+	}
+
+	switch ( attr[selector] ) {
 		case 2: /* direct color in RGB space */
-			if ( *npar + 4 >= l ) {
-				fprintf( stderr, "erresc(38): Incorrect number of parameters (%d)\n", *npar );
+			if ( subparameters ) {
+				int end = selector;
+				while ( end < l - 1 && separators[end] == ':' )
+					++end;
+				const int componentCount = end - selector;
+				if ( componentCount != 3 && componentCount != 4 ) {
+					terminalDiagnostic( "erresc(color): invalid RGB subparameter count %d\n",
+										componentCount );
+					*npar = end;
+					break;
+				}
+				const int rgb = selector + ( componentCount == 4 ? 2 : 1 );
+				r = attr[rgb];
+				g = attr[rgb + 1];
+				b = attr[rgb + 2];
+				*npar = end;
+			} else if ( *npar + 4 < l ) {
+				r = attr[*npar + 2];
+				g = attr[*npar + 3];
+				b = attr[*npar + 4];
+				*npar += 4;
+			} else {
+				terminalDiagnostic( "erresc(color): incorrect number of RGB parameters (%d)\n",
+									*npar );
 				break;
 			}
-			r = attr[*npar + 2];
-			g = attr[*npar + 3];
-			b = attr[*npar + 4];
-			*npar += 4;
 			if ( !BETWEEN( r, 0, 255 ) || !BETWEEN( g, 0, 255 ) || !BETWEEN( b, 0, 255 ) )
-				fprintf( stderr, "erresc: bad rgb color (%u,%u,%u)\n", r, g, b );
+				terminalDiagnostic( "erresc: bad rgb color (%u,%u,%u)\n", r, g, b );
 			else
 				idx = TRUECOLOR( r, g, b );
 			break;
 		case 5: /* indexed color */
 			if ( *npar + 2 >= l ) {
-				fprintf( stderr, "erresc(38): Incorrect number of parameters (%d)\n", *npar );
+				terminalDiagnostic( "erresc(color): incorrect number of indexed parameters (%d)\n",
+									*npar );
 				break;
 			}
 			*npar += 2;
 			if ( !BETWEEN( attr[*npar], 0, 255 ) )
-				fprintf( stderr, "erresc: bad fgcolor %d\n", attr[*npar] );
+				terminalDiagnostic( "erresc: bad indexed color %d\n", attr[*npar] );
 			else
 				idx = attr[*npar];
 			break;
@@ -1627,14 +1723,18 @@ int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
 		case 3: /* direct color in CMY space */
 		case 4: /* direct color in CMYK space */
 		default:
-			fprintf( stderr, "erresc(38): gfx attr %d unknown\n", attr[*npar] );
+			terminalDiagnostic( "erresc(color): color type %d unknown\n", attr[selector] );
+			if ( subparameters ) {
+				while ( *npar < l - 1 && separators[*npar] == ':' )
+					++*npar;
+			}
 			break;
 	}
 
 	return idx;
 }
 
-void TerminalEmulator::tsetattr( int* attr, int l ) {
+void TerminalEmulator::tsetattr( int* attr, int l, const char* separators ) {
 	// Check if this is a private sequence (should be ignored for SGR)
 	// Private sequences start with '?' and should not affect text attributes
 	if ( mCsiescseq.priv ) {
@@ -1702,14 +1802,14 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				mTerm.c.attr.mode &= ~ATTR_STRUCK;
 				break;
 			case 38:
-				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
 					mTerm.c.attr.fg = idx;
 				break;
 			case 39: /* set foreground color to default */
 				mTerm.c.attr.fg = mDefaultFg;
 				break;
 			case 48:
-				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
 					mTerm.c.attr.bg = idx;
 				break;
 			case 49: /* set background color to default */
@@ -1719,7 +1819,9 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				/* This starts a sequence to change the color of
 				 * "underline" pixels. We don't support that and
 				 * instead eat up a following "5;n" or "2;r;g;b". */
-				tdefcolor( attr, &i, l );
+				tdefcolor( attr, separators, &i, l );
+				break;
+			case 59: /* reset underline color (unsupported, therefore a no-op) */
 				break;
 			default:
 				if ( BETWEEN( attr[i], 30, 37 ) ) {
@@ -1731,8 +1833,9 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				} else if ( BETWEEN( attr[i], 100, 107 ) ) {
 					mTerm.c.attr.bg = attr[i] - 100 + 8;
 				} else {
-					fprintf( stderr, "erresc(default): gfx attr %d unknown\n", attr[i] );
-					csidump();
+					terminalDiagnostic( "erresc(default): gfx attr %d unknown\n", attr[i] );
+					if ( terminalDiagnosticsEnabled() )
+						csidump();
 				}
 				break;
 		}
@@ -1813,6 +1916,9 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1006: /* 1006: extended reporting mode */
 					xsetmode( set, MODE_MOUSESGR );
 					break;
+				case 1007: /* wheel sends cursor keys on the alternate screen */
+					xsetmode( set, MODE_ALTSCRROLL );
+					break;
 				case 1034:
 					xsetmode( set, MODE_8BIT );
 					break;
@@ -1852,19 +1958,23 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1039: /* ESC to Meta (not implemented) */
 					break;
 				case 2026: {
-					// IGNORE DECSET/DECRST 2026 for sync updates?
-					// (https://codeberg.org/dnkl/foot/pulls/461/files)
-					// mTerm.is_syncing = ( set == 1 );
-					/* if ( !mTerm.is_syncing ) {
-						// When syncing ends, we must perform the deferred draw
+					if ( set ) {
+						mTerm.is_syncing = true;
+						mSynchronizedUpdateClock.restart();
+					} else if ( mTerm.is_syncing ) {
+						mTerm.is_syncing = false;
+						// Publish the complete frame immediately instead of waiting for the next
+						// presentation deadline.
 						draw();
-					} */
+					}
 					break;
 				}
+				case 2031: /* Light/dark color-scheme change notifications. */
+					mColorSchemeNotifications = set;
+					mColorScheme = colorScheme();
+					break;
 				default:
-#ifdef EE_DEBUG
-					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
-#endif
+					terminalDiagnostic( "erresc: unknown private set/reset mode %d\n", *args );
 					break;
 			}
 		} else {
@@ -1884,9 +1994,7 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					MODBIT( mTerm.mode, set, MODE_CRLF );
 					break;
 				default:
-#ifdef EE_DEBUG
-					fprintf( stderr, "erresc: unknown set/reset mode %d\n", *args );
-#endif
+					terminalDiagnostic( "erresc: unknown set/reset mode %d\n", *args );
 					break;
 			}
 		}
@@ -1894,7 +2002,13 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 }
 
 void TerminalEmulator::handleDeviceAttributes() {
-	if ( mCsiescseq.priv ) {
+	if ( mCsiescseq.priv == '>' ) {
+		char buf[64];
+		const auto version = EE::Version::getVersion();
+		const int revision = version.major * 10000 + version.minor * 100 + version.patch;
+		const int len = snprintf( buf, sizeof( buf ), "\033[>0;%d;0c", revision );
+		ttywrite( buf, len, 0 );
+	} else if ( mCsiescseq.priv == '?' ) {
 		char buf[64];
 		int len;
 		// Private Device Attributes - respond with terminal capabilities
@@ -1917,7 +2031,7 @@ void TerminalEmulator::handleDeviceAttributes() {
 				// Unknown private DA query
 				break;
 		}
-	} else {
+	} else if ( !mCsiescseq.priv ) {
 		// Standard DA - respond with VT100 identification
 		ttywrite( vtiden, strlen( vtiden ), 0 );
 	}
@@ -1932,10 +2046,8 @@ void TerminalEmulator::csihandle( void ) {
 	switch ( mCsiescseq.mode[0] ) {
 		default:
 		unknown:
-#ifdef EE_DEBUG
-			fprintf( stderr, "erresc: unknown csi " );
+			terminalDiagnostic( "erresc: unknown csi " );
 			csidump();
-#endif
 			/* die(""); */
 			break;
 		case '@': /* ICH -- Insert <n> blank char */
@@ -2072,7 +2184,9 @@ void TerminalEmulator::csihandle( void ) {
 			tinsertblankline( mCsiescseq.arg[0] );
 			break;
 		case 'l': /* RM -- Reset Mode */
-			tsetmode( mCsiescseq.priv, 0, mCsiescseq.arg, mCsiescseq.narg );
+			if ( mCsiescseq.priv && mCsiescseq.priv != '?' )
+				goto unknown;
+			tsetmode( mCsiescseq.priv == '?', 0, mCsiescseq.arg, mCsiescseq.narg );
 			break;
 		case 'M': /* DL -- Delete <n> lines */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -2095,41 +2209,19 @@ void TerminalEmulator::csihandle( void ) {
 			tmoveato( mTerm.c.x, mCsiescseq.arg[0] - 1 );
 			break;
 		case 'h': /* SM -- Set terminal mode */
-			tsetmode( mCsiescseq.priv, 1, mCsiescseq.arg, mCsiescseq.narg );
+			if ( mCsiescseq.priv && mCsiescseq.priv != '?' )
+				goto unknown;
+			tsetmode( mCsiescseq.priv == '?', 1, mCsiescseq.arg, mCsiescseq.narg );
 			break;
 		case 'm': /* SGR -- Terminal attribute (color) */
-			tsetattr( mCsiescseq.arg, mCsiescseq.narg );
-			break;
-		case '>': /* Private sequences */
-			switch ( mCsiescseq.mode[1] ) {
-				case '4': /* Extended underline styles ESC[>4;Nm */
-					// Extended underline styles - fallback to standard underline
-					/* DEFAULT( mCsiescseq.arg[0], 1 );
-					switch ( mCsiescseq.arg[0] ) {
-						case 0: // No underline - fallback to ESC[24m
-						{
-							int fallback_args[] = { 24 }; // Reset underline
-							tsetattr( fallback_args, 1 );
-						} break;
-						case 1: // Straight underline - fallback to ESC[4m
-						case 2: // Double underline
-						case 3: // Curly underline
-						case 4: // Dotted underline
-						case 5: // Dashed underline
-						{
-							int fallback_args[] = { 4 }; // Standard underline
-							tsetattr( fallback_args, 1 );
-						} break;
-						default:
-							goto unknown;
-					} */
-					break;
-				default:
-					goto unknown;
-			}
+			if ( mCsiescseq.priv == '>' )
+				break; // Extended underline styles are not rendered yet.
+			tsetattr( mCsiescseq.arg, mCsiescseq.narg, mCsiescseq.sep );
 			break;
 		case 'n': /* DSR – Device Status Report (cursor position) */
-			if ( mCsiescseq.arg[0] == 6 ) {
+			if ( mCsiescseq.priv == '?' && mCsiescseq.arg[0] == 996 ) {
+				reportColorScheme();
+			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
 				ttywrite( buf, len, 0 );
 			}
@@ -2148,7 +2240,12 @@ void TerminalEmulator::csihandle( void ) {
 			tcursor( CURSOR_SAVE );
 			break;
 		case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
-			if ( mCsiescseq.priv ) {
+			if ( mCsiescseq.priv == '?' || mCsiescseq.priv == '>' || mCsiescseq.priv == '<' ||
+				 mCsiescseq.priv == '=' ) {
+				// Kitty keyboard protocol. Remain in legacy mode and do not answer its query: a
+				// response would claim support and require encoding all subsequent key events.
+				break;
+			} else if ( mCsiescseq.priv ) {
 				goto unknown;
 			} else {
 				tcursor( CURSOR_LOAD );
@@ -2157,20 +2254,27 @@ void TerminalEmulator::csihandle( void ) {
 		case ' ':
 			switch ( mCsiescseq.mode[1] ) {
 				case 'q': /* DECSCUSR -- Set Cursor Style */
-					if ( mCsiescseq.arg[0] < 0 ||
-						 mCsiescseq.arg[0] < TerminalCursorMode::MAX_CURSOR )
+					if ( mCsiescseq.priv || mCsiescseq.arg[0] < 0 ||
+						 mCsiescseq.arg[0] >= TerminalCursorMode::StExtension )
 						goto unknown;
 					dpy = mDpy.lock();
-					if ( dpy )
-						dpy->setCursorMode( (TerminalCursorMode)mCsiescseq.arg[0] );
+					if ( dpy ) {
+						const auto mode = static_cast<TerminalCursorMode>( mCsiescseq.arg[0] );
+						dpy->setCursorMode( mode == BlinkingBlock
+												? blinkingCursorVariant( mDefaultCursorMode )
+												: mode );
+					}
 					break;
 				default:
 					goto unknown;
 			}
 			break;
-		case '=': /* Progressive enhancement sequences */
-			/* Keyboard protocol ESC[=Nu */
-			/* Do nothing for the moment */
+		case 'q': /* XTVERSION -- Report terminal name and version */
+			if ( mCsiescseq.priv != '>' || mCsiescseq.arg[0] != 0 )
+				goto unknown;
+			len = snprintf( buf, sizeof( buf ), "\033P>|eterm %s\033\\",
+							EE::Version::getVersionName( false ).c_str() );
+			ttywrite( buf, len, 0 );
 			break;
 		case 't': /* Window manipulation */
 			switch ( mCsiescseq.arg[0] ) {
@@ -2195,16 +2299,12 @@ void TerminalEmulator::csihandle( void ) {
 					goto unknown;
 			}
 			break;
-		case '?':
-			/* Private mode queries - ignore or handle appropriately */
-			/* For XTQMODKEYS and similar queries, we should either:
-			   1. Ignore completely (do nothing)
-			   2. Send a proper response if required */
-			break;
 	}
 }
 
 void TerminalEmulator::csidump( void ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
 	size_t i;
 	uint c;
 
@@ -2279,7 +2379,7 @@ void TerminalEmulator::strhandle( void ) {
 							setClipboard( dec );
 							xfree( dec );
 						} else {
-							fprintf( stderr, "erresc: invalid base64\n" );
+							terminalDiagnostic( "erresc: invalid base64\n" );
 						}
 					}
 					return;
@@ -2295,31 +2395,57 @@ void TerminalEmulator::strhandle( void ) {
 					if ( !strcmp( p, "?" ) ) {
 						osc_color_response( par, osc_table[j].idx, 0 );
 					} else if ( xsetcolorname( osc_table[j].idx, p ) ) {
-						fprintf( stderr, "erresc: invalid %s color: %s\n", osc_table[j].str, p );
+						terminalDiagnostic( "erresc: invalid %s color: %s\n", osc_table[j].str, p );
 					} else {
 						tfulldirt();
 					}
 					return;
-				case 4: /* color set */
-					if ( narg < 3 )
-						break;
-					p = mStrescseq.args[2];
-					/* FALLTHROUGH */
-				case 104: /* color reset, here p = NULL */
-					j = ( narg > 1 ) ? atoi( mStrescseq.args[1] ) : -1;
-					if ( resetColor( j, p ) ) {
-						if ( par == 104 && narg <= 1 )
-							return; /* color reset without parameter */
-						fprintf( stderr, "erresc: invalid color j=%d, p=%s\n", j,
-								 p ? p : "(null)" );
-					} else {
-						/*
-						 * TODO if defaultbg color is changed, borders
-						 * are dirty
-						 */
-						redraw();
+				case 4: { /* set or query palette colors */
+					bool changed = false;
+					for ( int arg = 1; arg + 1 < narg; arg += 2 ) {
+						p = mStrescseq.args[arg + 1];
+						if ( !String::fromString( j, std::string_view{ mStrescseq.args[arg] } ) ||
+							 j < 0 ) {
+							terminalDiagnostic( "erresc: invalid OSC 4 color index: %s\n",
+												mStrescseq.args[arg] );
+							continue;
+						}
+						if ( !strcmp( p, "?" ) ) {
+							osc_color_response( j, j, 1 );
+						} else if ( resetColor( j, p ) ) {
+							terminalDiagnostic( "erresc: invalid color j=%d, p=%s\n", j, p );
+						} else {
+							changed = true;
+						}
 					}
+					if ( changed )
+						redraw();
 					return;
+				}
+				case 104: { /* reset palette colors */
+					if ( narg <= 1 ) {
+						loadColors();
+						tfulldirt();
+						return;
+					}
+					bool changed = false;
+					for ( int arg = 1; arg < narg; ++arg ) {
+						if ( !String::fromString( j, std::string_view{ mStrescseq.args[arg] } ) ||
+							 j < 0 ) {
+							terminalDiagnostic( "erresc: invalid OSC 104 color index: %s\n",
+												mStrescseq.args[arg] );
+							continue;
+						}
+						if ( resetColor( j, nullptr ) ) {
+							terminalDiagnostic( "erresc: palette color %d not found\n", j );
+						} else {
+							changed = true;
+						}
+					}
+					if ( changed )
+						tfulldirt();
+					return;
+				}
 				case 110: /* reset dynamic VT100 text foreground color */
 				case 111: /* reset dynamic VT100 text background color */
 				case 112: /* reset dynamic text cursor color */
@@ -2328,7 +2454,7 @@ void TerminalEmulator::strhandle( void ) {
 					if ( ( j = par - 110 ) < 0 || j >= (int)LEN( osc_table ) )
 						break; /* shouldn't be possible */
 					if ( resetColor( osc_table[j].idx, NULL ) ) {
-						fprintf( stderr, "erresc: %s color not found\n", osc_table[j].str );
+						terminalDiagnostic( "erresc: %s color not found\n", osc_table[j].str );
 					} else {
 						tfulldirt();
 					}
@@ -2338,6 +2464,13 @@ void TerminalEmulator::strhandle( void ) {
 						mCurrentWorkingDirectory = URI( mStrescseq.args[1] ).getPath();
 					return;
 				}
+				case 8: /* Hyperlink: OSC 8 ; params ; URI ST */
+					// Hyperlink metadata is not stored in terminal cells yet. Recognize valid open
+					// and close markers so applications can emit OSC 8 without producing
+					// diagnostics.
+					if ( narg >= 3 )
+						return;
+					break;
 				case 133: {
 					if ( narg > 1 ) {
 						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
@@ -2384,10 +2517,8 @@ void TerminalEmulator::strhandle( void ) {
 			return;
 	}
 
-#ifdef EE_DEBUG
-	logError( "erresc: unknown str " );
+	terminalDiagnostic( "erresc: unknown str " );
 	strdump();
-#endif
 }
 
 void TerminalEmulator::strparse( void ) {
@@ -2411,6 +2542,8 @@ void TerminalEmulator::strparse( void ) {
 }
 
 void TerminalEmulator::strdump( void ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
 	size_t i;
 	uint c;
 
@@ -2527,7 +2660,7 @@ void TerminalEmulator::tdeftran( char ascii ) {
 	char* p;
 
 	if ( ( p = strchr( cs, ascii ) ) == NULL ) {
-		fprintf( stderr, "esc unhandled charset: ESC ( %c\n", ascii );
+		terminalDiagnostic( "esc unhandled charset: ESC ( %c\n", ascii );
 	} else {
 		mTerm.trantbl[mTerm.icharset] = vcs[p - cs];
 	}
@@ -2739,8 +2872,8 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 				strhandle();
 			break;
 		default:
-			fprintf( stderr, "erresc: unknown sequence ESC 0x%02X '%c'\n", (uchar)ascii,
-					 isprint( ascii ) ? ascii : '.' );
+			terminalDiagnostic( "erresc: unknown sequence ESC 0x%02X '%c'\n", (uchar)ascii,
+								isprint( ascii ) ? ascii : '.' );
 			break;
 	}
 	return 1;
@@ -2992,7 +3125,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 	bool is_alt = IS_SET( MODE_ALTSCREEN );
 
 	if ( col < 1 || row < 1 ) {
-		fprintf( stderr, "tresize: error resizing to %dx%d\n", col, row );
+		terminalDiagnostic( "tresize: error resizing to %dx%d\n", col, row );
 		return;
 	}
 
@@ -3201,9 +3334,10 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 }
 
 void TerminalEmulator::draw() {
-	// If a synchronized update is in progress, skip the physical render
-	// if ( mTerm.is_syncing )
-	// 	return;
+	// DEC private mode 2026 makes the bytes between DECSET and DECRST one presentation unit.
+	// Parsing continues normally, but no partially cleared/rebuilt frame may reach the UI.
+	if ( mTerm.is_syncing )
+		return;
 
 	int cx = mTerm.c.x /*, ocx = term.ocx, ocy = term.ocy*/;
 
@@ -3232,7 +3366,6 @@ void TerminalEmulator::draw() {
 		mTerm.ocy = mTerm.c.y;
 
 		dpy->drawEnd();
-		mDeferredPresentationBatches = 0;
 		mPresentationClock.restart();
 	}
 
@@ -3243,6 +3376,11 @@ void TerminalEmulator::draw() {
 void TerminalEmulator::redraw() {
 	tfulldirt();
 	draw();
+}
+
+void TerminalEmulator::reset() {
+	treset();
+	redraw();
 }
 
 int TerminalEmulator::xsetcolorname( int x, const char* name ) {
@@ -3276,19 +3414,38 @@ void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
 	unsigned char r, g, b;
 
 	if ( xgetcolor( is_osc4 ? num : index, &r, &g, &b ) ) {
-		fprintf( stderr, "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
-				 is_osc4 ? num : index );
+		terminalDiagnostic( "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
+							is_osc4 ? num : index );
 		return;
 	}
 
 	n = snprintf( buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
 				  is_osc4 ? "4;" : "", num, r, r, g, g, b, b );
 	if ( n < 0 || n >= (int)sizeof( buf ) ) {
-		fprintf( stderr, "error: %s while printing %s response\n",
-				 n < 0 ? "snprintf failed" : "truncation occurred", is_osc4 ? "osc4" : "osc" );
+		terminalDiagnostic( "error: %s while printing %s response\n",
+							n < 0 ? "snprintf failed" : "truncation occurred",
+							is_osc4 ? "osc4" : "osc" );
 	} else {
 		ttywrite( buf, n, 1 );
 	}
+}
+
+int TerminalEmulator::colorScheme() {
+	unsigned char red, green, blue;
+	if ( xgetcolor( 259, &red, &green, &blue ) )
+		return 0;
+	// The protocol describes the OS preference, which eterm does not store separately. The active
+	// background is the useful equivalent for applications choosing contrasting colors.
+	return red * 299 + green * 587 + blue * 114 < 128000 ? 1 : 2;
+}
+
+void TerminalEmulator::reportColorScheme() {
+	const int scheme = colorScheme();
+	if ( !scheme )
+		return;
+	char buf[16];
+	const int len = snprintf( buf, sizeof( buf ), "\033[?997;%dn", scheme );
+	ttywrite( buf, len, 0 );
 }
 
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
@@ -3297,7 +3454,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
 		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
 		/* If mouse mode is not enabled, we send arrow keys for scroll events */
-		if ( type == TerminalMouseEventType::MouseButtonDown &&
+		if ( type == TerminalMouseEventType::MouseButtonDown && xgetmode( MODE_ALTSCRROLL ) &&
 			 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) && tisaltscr() ) {
 			char buf[64];
 			int len = 0;
@@ -3316,8 +3473,6 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 
 	int len, btn, code;
 	char buf[40];
-	static int ox, oy;
-
 	for ( btn = 1; btn <= 31 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
 		;
 
@@ -3343,7 +3498,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 	}
 
 	if ( type == TerminalMouseEventType::MouseMotion ) {
-		if ( pos.x == ox && pos.y == oy )
+		if ( pos == mLastMousePosition )
 			return;
 		if ( !xgetmode( MODE_MOUSEMOTION ) && !xgetmode( MODE_MOUSEMANY ) )
 			return;
@@ -3371,8 +3526,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		code = 0;
 	}
 
-	ox = pos.x;
-	oy = pos.y;
+	mLastMousePosition = pos;
 
 	/* Encode btn into code. If no button is pressed for a motion event in
 	 * MODE_MOUSEMANY, then encode it as a release. */
@@ -3563,7 +3717,6 @@ void TerminalEmulator::resize( int columns, int rows ) {
 		return;
 	}
 
-	mTerm.is_syncing = true;
 	tresize( columns, rows );
 
 	redraw();
@@ -3583,6 +3736,11 @@ bool TerminalEmulator::update() {
 			_die( "Failed to resize pty!" );
 		}
 
+		redraw();
+	}
+
+	// A client that fails to close a synchronized update must not freeze presentation forever.
+	if ( mTerm.is_syncing && mSynchronizedUpdateClock.getElapsedTime() >= Seconds( 1 ) ) {
 		mTerm.is_syncing = false;
 		redraw();
 	}
@@ -3598,23 +3756,23 @@ bool TerminalEmulator::update() {
 
 	int reads = 0;
 	Clock readBudgetClock;
+	bool presentationDeadlineReached = false;
 	while ( reads < MAX_TTY_READS && ttyread() > 0 ) {
 		++reads;
+		if ( mPresentationClock.getElapsedTime() >= mPresentationInterval ) {
+			presentationDeadlineReached = true;
+			break;
+		}
 		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
 			break;
 	}
 	bool readBudgetSaturated =
-		reads == MAX_TTY_READS ||
+		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
 
-	/* Keep presentation decoupled from every PTY read batch, but bound the
-	 * deferral so sustained output remains visibly live. The time limit handles
-	 * expensive batches; the batch limit guarantees progress when updates are
-	 * individually very fast. */
-	if ( readBudgetSaturated )
-		++mDeferredPresentationBatches;
-	bool presentationDue = !readBudgetSaturated || mDeferredPresentationBatches >= 32 ||
-						   mPresentationClock.getElapsedTime() >= Milliseconds( 75 );
+	/* Keep presentation decoupled from every PTY read batch. Sustained output publishes on the
+	 * host frame deadline, while a drained/idle burst still publishes immediately. */
+	bool presentationDue = !readBudgetSaturated || presentationDeadlineReached;
 	if ( presentationDue && ( reads > 0 || mDirty ) )
 		draw();
 
@@ -3626,6 +3784,9 @@ bool TerminalEmulator::update() {
 	if ( mProcess->hasExited() && !readBudgetSaturated ) {
 		mExitCode = mProcess->getExitCode();
 		mStatus = TERMINATED;
+		// Publish process state together with the final drained frame before the ordered exit
+		// event.
+		redraw();
 		onProcessExit( mExitCode );
 	}
 

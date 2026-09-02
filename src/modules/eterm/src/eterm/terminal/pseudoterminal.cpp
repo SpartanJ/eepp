@@ -116,7 +116,8 @@ bool PseudoTerminal::resize( int columns, int rows ) {
 	w.ws_ypixel = 0;
 
 	bool masterResized = ioctl( (int)mMaster, TIOCSWINSZ, &w ) >= 0;
-	bool slaveResized = mSlave.handle() != -1 ? ioctl( mSlave.handle(), TIOCSWINSZ, &w ) >= 0 : false;
+	bool slaveResized =
+		mSlave.handle() != -1 ? ioctl( mSlave.handle(), TIOCSWINSZ, &w ) >= 0 : false;
 
 	if ( !masterResized && !slaveResized ) {
 		perror( "PseudoTerminal::Resize" );
@@ -226,6 +227,17 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 		return nullptr;
 	}
 
+	// The selected slave is duplicated onto standard input/output/error before exec. The original
+	// PTY descriptors must not otherwise survive exec or leak into unrelated child processes.
+	const int masterDescriptorFlags = fcntl( master, F_GETFD );
+	const int slaveDescriptorFlags = fcntl( slave, F_GETFD );
+	if ( masterDescriptorFlags < 0 || slaveDescriptorFlags < 0 ||
+		 fcntl( master, F_SETFD, masterDescriptorFlags | FD_CLOEXEC ) < 0 ||
+		 fcntl( slave, F_SETFD, slaveDescriptorFlags | FD_CLOEXEC ) < 0 ) {
+		perror( "PseudoTerminal::create(fcntl FD_CLOEXEC)" );
+		Log::error( "PseudoTerminal::create(fcntl FD_CLOEXEC)" );
+		return nullptr;
+	}
 	int flags = fcntl( master, F_GETFL, 0 );
 	fcntl( master, F_SETFL, flags | O_NONBLOCK );
 

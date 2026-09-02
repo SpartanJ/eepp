@@ -2360,10 +2360,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 					plugin->getPluginContext()->getTerminalManager()->createTerminalInSplitter(
 						cwd, cmd, args, env, false, false );
 
-				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
-								term->getTerm()->getTerminal()->getProcess()
-							? term->getTerm()->getTerminal()->getProcess()->pid()
-							: 0 );
+				doneFn( term && term->getTerm() ? term->getTerm()->getProcessId() : 0 );
 			} else {
 				std::string fcmd = cmd + ( !args.empty() ? " " : "" ) + String::join( args, ' ' );
 				doneFn( plugin->getPluginContext()->getTerminalManager()->openInExternalTerminal(

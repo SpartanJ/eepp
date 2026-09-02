@@ -1,9 +1,13 @@
 #include "utest.hpp"
+#include <atomic>
+#include <chrono>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
+#include <eterm/terminal/terminalsession.hpp>
 #include <limits>
+#include <thread>
 
 using namespace eterm::Terminal;
 using namespace eterm::System;
@@ -11,7 +15,11 @@ using namespace eterm::System;
 class MockPty : public IPseudoTerminal {
   public:
 	std::string mBuffer;
+	std::string mWrites;
+	bool mLoopWrites{ true };
 	size_t mMaxRead{ std::numeric_limits<size_t>::max() };
+	size_t mReadOffset{ 0 };
+	std::atomic<size_t> mBytesRead{ 0 };
 	int mCols = 80;
 	int mRows = 24;
 	int getNumColumns() const override { return mCols; }
@@ -23,44 +31,457 @@ class MockPty : public IPseudoTerminal {
 	}
 	bool isTTY() const override { return true; }
 	int write( const char* s, size_t n ) override {
-		mBuffer.append( s, n );
+		mWrites.append( s, n );
+		if ( mLoopWrites )
+			mBuffer.append( s, n );
 		return n;
 	}
 	int read( char* buf, size_t n, bool ) override {
-		if ( mBuffer.empty() )
+		if ( mReadOffset == mBuffer.size() )
 			return 0;
-		size_t toRead = std::min( { n, mBuffer.size(), mMaxRead } );
-		memcpy( buf, mBuffer.data(), toRead );
-		mBuffer.erase( 0, toRead );
+		size_t toRead = std::min( { n, mBuffer.size() - mReadOffset, mMaxRead } );
+		memcpy( buf, mBuffer.data() + mReadOffset, toRead );
+		mReadOffset += toRead;
+		mBytesRead.fetch_add( toRead, std::memory_order_relaxed );
 		return toRead;
 	}
 };
 
 class MockProcess : public IProcess {
   public:
-	bool mExited{ false };
+	std::atomic<bool> mExited{ false };
 	void checkExitStatus() override {}
-	bool hasExited() const override { return mExited; }
+	bool hasExited() const override { return mExited.load(); }
 	int getExitCode() const override { return 0; }
 	void terminate() override {}
 	void waitForExit() override {}
 	int pid() override { return 123; }
 };
 
+static std::shared_ptr<const TerminalSnapshot>
+waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
+				 const std::function<bool( const TerminalSnapshot& )>& predicate,
+				 std::chrono::milliseconds timeout = std::chrono::milliseconds( 1000 ) ) {
+	const auto deadline = std::chrono::steady_clock::now() + timeout;
+	while ( std::chrono::steady_clock::now() < deadline ) {
+		auto snapshot = session->snapshot();
+		if ( snapshot && predicate( *snapshot ) )
+			return snapshot;
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
+	return nullptr;
+}
+
+UTEST( eterm_session, command_wakeup_and_snapshot_immutability ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( session != nullptr );
+
+	session->writeRaw( "ABC" );
+	auto first = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return snapshot.cells.size() >= 3 && snapshot.cells[0].u == 'A' &&
+			   snapshot.cells[1].u == 'B' && snapshot.cells[2].u == 'C';
+	} );
+	ASSERT_TRUE( first != nullptr );
+	const Uint64 firstGeneration = first->generation;
+
+	session->writeRaw( "\rXYZ" );
+	auto second = waitForSnapshot( session, [firstGeneration]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > firstGeneration && snapshot.cells[0].u == 'X';
+	} );
+	ASSERT_TRUE( second != nullptr );
+	EXPECT_EQ( static_cast<Rune>( 'A' ), first->cells[0].u );
+	EXPECT_TRUE( second->generation > first->generation );
+}
+
+UTEST( eterm_session, skipped_snapshot_generation_requires_full_redraw ) {
+	TerminalSnapshot snapshot;
+	snapshot.generation = 42;
+	EXPECT_TRUE( snapshot.dirtyRowsFollow( 41 ) );
+	EXPECT_FALSE( snapshot.dirtyRowsFollow( 40 ) );
+}
+
+UTEST( eterm_session, ordered_selection_request ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "ordered selection";
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.cells.empty() && snapshot.cells[0].u == 'o';
+				 } ) != nullptr );
+
+	session->selectionStart( 0, 0, 0 );
+	session->selectionExtend( 6, 0, SEL_REGULAR, false );
+	auto selection = session->requestSelection();
+	ASSERT_TRUE( selection.has_value() );
+	EXPECT_STDSTREQ( "ordered", *selection );
+}
+
+UTEST( eterm_session, loaded_command_latency_stays_bounded ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer.assign( 32 * 1024 * 1024, 'L' );
+	pty->mMaxRead = 64;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
+			std::chrono::steady_clock::now() < readDeadline )
+		std::this_thread::yield();
+	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
+
+	const auto start = std::chrono::steady_clock::now();
+	auto selection = session->requestSelection();
+	const auto latency = std::chrono::steady_clock::now() - start;
+	EXPECT_TRUE( selection.has_value() );
+	EXPECT_TRUE( latency < std::chrono::milliseconds( 50 ) );
+}
+
+UTEST( eterm_session, resize_and_output_are_serialized ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->resize( 40, 12 );
+	session->writeRaw( "after resize" );
+	auto snapshot = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return value.columns == 40 && value.rows == 12 && !value.cells.empty() &&
+			   value.cells[0].u == 'a';
+	} );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 40 * 12 ), snapshot->cells.size() );
+}
+
+UTEST( eterm_session, scroll_snapshots_acknowledge_the_latest_ordered_command ) {
+	auto pty = std::make_unique<MockPty>();
+	for ( int line = 0; line < 80; ++line )
+		pty->mBuffer += "history " + std::to_string( line ) + "\r\n";
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.historyLength >= 25;
+				 } ) != nullptr );
+
+	const Uint64 firstCommand = session->scrollTo( 10 );
+	const Uint64 secondCommand = session->scrollTo( 25 );
+	EXPECT_EQ( firstCommand + 1, secondCommand );
+	auto acknowledged =
+		waitForSnapshot( session, [secondCommand]( const TerminalSnapshot& snapshot ) {
+			return snapshot.lastAppliedScrollCommand == secondCommand;
+		} );
+	ASSERT_TRUE( acknowledged != nullptr );
+	EXPECT_EQ( 25, acknowledged->scrollPosition );
+}
+
+UTEST( eterm_session, presentation_rate_is_applied_on_the_worker ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->setPresentationRate( 120 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.presentationRate == 120;
+				 } ) != nullptr );
+}
+
+UTEST( eterm_session, focus_reporting_is_ordered_on_worker ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1004h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	auto enabled = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return snapshot.windowMode & MODE_FOCUS;
+	} );
+	ASSERT_TRUE( enabled != nullptr );
+
+	session->setFocus( false );
+	auto unfocused = waitForSnapshot( session, [enabled]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > enabled->generation && !( snapshot.windowMode & MODE_FOCUSED );
+	} );
+	ASSERT_TRUE( unfocused != nullptr );
+	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
+	EXPECT_STDSTREQ( "\033[O", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
+
+	session->setFocus( true );
+	ASSERT_TRUE( waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
+					 return snapshot.generation > unfocused->generation &&
+							snapshot.windowMode & MODE_FOCUSED;
+				 } ) != nullptr );
+	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
+	EXPECT_STDSTREQ( "\033[I", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
+}
+
+UTEST( eterm_session, replaceable_events_coalesce_without_losing_ordered_events ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->drainEvents();
+	session->writeRaw( "\033]0;first\a\033]0;second\a" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.title == "second";
+				 } ) != nullptr );
+
+	int titleEvents = 0;
+	std::string title;
+	for ( auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Title ) {
+			++titleEvents;
+			title = std::move( event.data );
+		}
+	}
+	EXPECT_EQ( 1, titleEvents );
+	EXPECT_STDSTREQ( "second", title );
+}
+
+UTEST( eterm_session, ordered_events_are_coalescing_barriers ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->drainEvents();
+	session->writeRaw( "\033]0;before\a\a\033]0;after\a" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.title == "after";
+				 } ) != nullptr );
+
+	std::vector<TerminalSession::EventType> semanticEvents;
+	for ( const auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Title ||
+			 event.type == TerminalSession::EventType::Bell )
+			semanticEvents.emplace_back( event.type );
+	}
+	ASSERT_EQ( static_cast<size_t>( 3 ), semanticEvents.size() );
+	EXPECT_EQ( TerminalSession::EventType::Title, semanticEvents[0] );
+	EXPECT_EQ( TerminalSession::EventType::Bell, semanticEvents[1] );
+	EXPECT_EQ( TerminalSession::EventType::Title, semanticEvents[2] );
+}
+
+UTEST( eterm_session, reset_is_ordered_and_publishes_immediately ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "content";
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	auto populated = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return !snapshot.cells.empty() && snapshot.cells[0].u == 'c';
+	} );
+	ASSERT_TRUE( populated != nullptr );
+	session->reset();
+	auto reset = waitForSnapshot( session, [populated]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > populated->generation && !snapshot.cells.empty() &&
+			   snapshot.cells[0].u == ' ';
+	} );
+	ASSERT_TRUE( reset != nullptr );
+}
+
+UTEST( eterm_session, process_exit_follows_buffered_output_and_final_snapshot ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mMaxRead = 1;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	MockProcess* processPtr = process.get();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->setDataEventsEnabled( true );
+	session->writeRaw( std::string( 3 * 1024, 'Q' ) );
+	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
+			std::chrono::steady_clock::now() < readDeadline )
+		std::this_thread::yield();
+	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
+	processPtr->mExited.store( true );
+
+	auto finalSnapshot = waitForSnapshot(
+		session, []( const TerminalSnapshot& snapshot ) { return snapshot.processExited; } );
+	ASSERT_TRUE( finalSnapshot != nullptr );
+	EXPECT_EQ( 0, finalSnapshot->exitCode );
+
+	size_t bytesRead = 0;
+	bool sawExit = false;
+	for ( auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Data )
+			bytesRead += event.data.size();
+		else if ( event.type == TerminalSession::EventType::ProcessExit )
+			sawExit = true;
+	}
+	EXPECT_EQ( static_cast<size_t>( 3 * 1024 ), bytesRead );
+	EXPECT_TRUE( sawExit );
+}
+
+UTEST( eterm_session, repeated_create_destroy_and_concurrent_workers ) {
+	for ( int iteration = 0; iteration < 16; ++iteration ) {
+		std::vector<std::shared_ptr<TerminalSession>> sessions;
+		for ( int terminal = 0; terminal < 4; ++terminal ) {
+			auto pty = std::make_unique<MockPty>();
+			auto process = std::make_unique<MockProcess>();
+			auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+			session->writeRaw( "worker" + std::to_string( terminal ) );
+			sessions.emplace_back( std::move( session ) );
+		}
+		for ( const auto& session : sessions ) {
+			EXPECT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+							 return !snapshot.cells.empty() && snapshot.cells[0].u == 'w';
+						 } ) != nullptr );
+		}
+	}
+}
+
+UTEST( eterm_session, concurrent_shutdown_is_idempotent ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	std::vector<std::thread> shutdownThreads;
+	for ( int thread = 0; thread < 4; ++thread )
+		shutdownThreads.emplace_back( [session] { session->shutdown(); } );
+	for ( auto& thread : shutdownThreads )
+		thread.join();
+	session->shutdown();
+}
+
 class MockDisplay : public ITerminalDisplay {
   public:
 	int mDrawLines{ 0 };
+	int mDrawEnds{ 0 };
 	uint32_t mFirstMode{ 0 };
 	uint32_t mSecondMode{ 0 };
+	TerminalGlyph mFirstGlyph;
+	TerminalGlyph mSecondGlyph;
+	std::vector<Uint32> mResetColorIndices;
+	int mResetColorsCount{ 0 };
+	Uint32 mBackground{ 0x101010FF };
 	bool drawBegin( Uint32, Uint32 ) override { return true; }
-	void drawLine( Line line, int, int, int ) override {
+	void drawLine( Line line, int, int y, int ) override {
 		++mDrawLines;
-		mFirstMode = line[0].mode;
-		mSecondMode = line[1].mode;
+		if ( y == 0 ) {
+			mFirstMode = line[0].mode;
+			mSecondMode = line[1].mode;
+			mFirstGlyph = line[0];
+			mSecondGlyph = line[1];
+		}
 	}
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
-	void drawEnd() override {}
+	void drawEnd() override { ++mDrawEnds; }
+	void resetColors() override { ++mResetColorsCount; }
+	int resetColor( const Uint32& index, const char* ) override {
+		mResetColorIndices.emplace_back( index );
+		return 0;
+	}
+	bool getColor( const Uint32& index, unsigned char* r, unsigned char* g,
+				   unsigned char* b ) override {
+		if ( index == 259 ) {
+			*r = static_cast<unsigned char>( mBackground >> 24 );
+			*g = static_cast<unsigned char>( mBackground >> 16 );
+			*b = static_cast<unsigned char>( mBackground >> 8 );
+			return true;
+		}
+		if ( index > 1 )
+			return false;
+		*r = static_cast<unsigned char>( 1 + index * 3 );
+		*g = static_cast<unsigned char>( 2 + index * 3 );
+		*b = static_cast<unsigned char>( 3 + index * 3 );
+		return true;
+	}
 };
+
+UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?u\033[>7u\033[<1u\033[<u\033[=3u";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+}
+
+UTEST( eterm, cursor_style_and_xterm_version_queries ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[0 q\033[6 q\033[>0q";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_EQ( TerminalCursorMode::SteadyBar, display->getCursorMode() );
+	EXPECT_EQ( static_cast<size_t>( 0 ), ptyPtr->mWrites.find( "\033P>|eterm " ) );
+	ASSERT_TRUE( ptyPtr->mWrites.size() >= 2 );
+	EXPECT_STDSTREQ( "\033\\", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 2 ) );
+}
+
+UTEST( eterm, cursor_style_zero_uses_blinking_configured_shape ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[2 q\033[0 q";
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->setDefaultCursorMode( TerminalCursorMode::SteadyUnderline );
+
+	term->update();
+
+	EXPECT_EQ( TerminalCursorMode::BlinkUnderline, display->getCursorMode() );
+}
+
+UTEST( eterm, osc_hyperlink_markers_are_recognized ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;id=codex;https://example.com/\033\\OK\033]8;;\033\\";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+}
+
+UTEST( eterm, alternate_scroll_mode_controls_wheel_key_translation ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1049h\033[?1007l";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+
+	ptyPtr->mBuffer += "\033[?1007h";
+	term->update();
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	EXPECT_STDSTREQ( "\033[A", ptyPtr->mWrites );
+}
+
+UTEST( eterm, color_scheme_query_and_change_notification ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?996n\033[?2031h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	EXPECT_STDSTREQ( "\033[?997;1n", ptyPtr->mWrites );
+
+	display->mBackground = 0xF0F0F0FF;
+	term->notifyColorSchemeChanged();
+	EXPECT_STDSTREQ( "\033[?997;1n\033[?997;2n", ptyPtr->mWrites );
+
+	ptyPtr->mBuffer += "\033[?2031l";
+	term->update();
+	display->mBackground = 0x101010FF;
+	term->notifyColorSchemeChanged();
+	EXPECT_STDSTREQ( "\033[?997;1n\033[?997;2n", ptyPtr->mWrites );
+}
 
 UTEST( eterm, basic_write ) {
 	auto pty = std::make_unique<MockPty>();
@@ -75,6 +496,93 @@ UTEST( eterm, basic_write ) {
 	term->selextend( 2, 0, 1, 0 );
 	EXPECT_TRUE( term->hasSelection() );
 	EXPECT_STDSTREQ( "ABC", term->getSelection() );
+}
+
+UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	display->mDrawEnds = 0;
+	const char partialFrame[] = "\033[?2026h\033[2Jpartial";
+	term->write( partialFrame, sizeof( partialFrame ) - 1 );
+	term->update();
+
+	EXPECT_EQ( 0, display->mDrawEnds );
+
+	const char completeFrame[] = "\033[Hcomplete\033[?2026l";
+	term->write( completeFrame, sizeof( completeFrame ) - 1 );
+	term->update();
+
+	EXPECT_TRUE( display->mDrawEnds > 0 );
+	term->selstart( 0, 0, 0 );
+	term->selextend( 7, 0, SEL_REGULAR, false );
+	EXPECT_STDSTREQ( "complete", term->getSelection() );
+}
+
+UTEST( eterm, sgr_colon_subparameters_preserve_groups_and_optional_color_space ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	const char sequence[] = "\033[58:2::255:192:185;59;1;38:2::12:34:56;48:5:42mX";
+	term->write( sequence, sizeof( sequence ) - 1 );
+	term->update();
+
+	EXPECT_TRUE( display->mFirstGlyph.mode & ATTR_BOLD );
+	EXPECT_EQ( 0x010C2238u, display->mFirstGlyph.fg );
+	EXPECT_EQ( 42u, display->mFirstGlyph.bg );
+}
+
+UTEST( eterm, invalid_indexed_color_keeps_the_previous_color ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	const char sequence[] = "\033[31mA\033[38;5;283mB";
+	term->write( sequence, sizeof( sequence ) - 1 );
+	term->update();
+
+	EXPECT_EQ( 1u, display->mFirstGlyph.fg );
+	EXPECT_EQ( 1u, display->mSecondGlyph.fg );
+}
+
+UTEST( eterm, osc_palette_queries_return_each_requested_color ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]4;0;?;1;?\a";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	EXPECT_STDSTREQ( "\033]4;0;rgb:0101/0202/0303\a\033]4;1;rgb:0404/0505/0606\a",
+					 ptyPtr->mWrites );
+}
+
+UTEST( eterm, osc_color_resets_reach_palette_and_dynamic_defaults ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]104;1;2\a\033]110\a\033]111\a\033]112\a\033]104\a";
+	pty->mLoopWrites = false;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+
+	ASSERT_EQ( static_cast<size_t>( 5 ), display->mResetColorIndices.size() );
+	EXPECT_EQ( 1u, display->mResetColorIndices[0] );
+	EXPECT_EQ( 2u, display->mResetColorIndices[1] );
+	EXPECT_EQ( 258u, display->mResetColorIndices[2] );
+	EXPECT_EQ( 259u, display->mResetColorIndices[3] );
+	EXPECT_EQ( 256u, display->mResetColorIndices[4] );
+	EXPECT_EQ( 2, display->mResetColorsCount );
 }
 
 UTEST( eterm, selection_redraw_while_idle ) {
@@ -120,14 +628,12 @@ UTEST( eterm, sustained_saturated_reads_present_periodically ) {
 
 	term->update();
 	display->mDrawLines = 0;
-	std::string output( 33 * 1024, 'A' );
+	std::string output( 1024 * 1024, 'A' );
 	term->write( output.data(), output.size() );
 
-	for ( int batch = 0; batch < 31; ++batch ) {
-		EXPECT_FALSE( term->update() );
-		EXPECT_EQ( 0, display->mDrawLines );
-	}
-	EXPECT_FALSE( term->update() );
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+	while ( display->mDrawLines == 0 && std::chrono::steady_clock::now() < deadline )
+		term->update();
 	EXPECT_TRUE( display->mDrawLines > 0 );
 }
 

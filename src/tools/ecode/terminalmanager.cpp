@@ -658,7 +658,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	} );
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setAllowMemoryTrimming( true );
 	term->getTerm()->setKeepAlive( !mApp->getConfig().term.closeTerminalTabOnExit );
 	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
 		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
