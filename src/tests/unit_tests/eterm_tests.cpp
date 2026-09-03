@@ -978,6 +978,63 @@ UTEST( eterm, kitty_graphics_strict_base64_rejects_invalid_payload_bytes ) {
 	EXPECT_EQ( KittyGraphicsError::InvalidData, protocol.handle( "a=t,f=32,s=1,v=1;AB==" ).error );
 }
 
+UTEST( eterm, kitty_graphics_strict_base64_decodes_boundaries_and_large_payloads ) {
+	for ( size_t length = 1; length <= 257; ++length ) {
+		std::vector<Uint8> boundarySource( length );
+		for ( size_t i = 0; i < boundarySource.size(); ++i )
+			boundarySource[i] = static_cast<Uint8>( ( i * 197 + length ) & 0xFF );
+		std::string boundaryEncoded;
+		ASSERT_TRUE( Base64::encode(
+			std::string_view( reinterpret_cast<const char*>( boundarySource.data() ),
+							  boundarySource.size() ),
+			boundaryEncoded ) );
+		std::vector<Uint8> boundaryDecoded( Base64::decodeSafeOutLen( boundaryEncoded.size() ) );
+		const size_t boundaryDecodedSize =
+			Base64::decode( boundaryEncoded.size(), boundaryEncoded.data(), boundaryDecoded.size(),
+							boundaryDecoded.data(), Base64::DecodeMode::NoWhitespaceStrict );
+		ASSERT_EQ( boundarySource.size(), boundaryDecodedSize );
+		boundaryDecoded.resize( boundaryDecodedSize );
+		EXPECT_TRUE( boundarySource == boundaryDecoded );
+	}
+
+	std::vector<Uint8> source( 65537 );
+	for ( size_t i = 0; i < source.size(); ++i )
+		source[i] = static_cast<Uint8>( ( i * 131 + i / 7 ) & 0xFF );
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode(
+		std::string_view( reinterpret_cast<const char*>( source.data() ), source.size() ),
+		encoded ) );
+	std::vector<Uint8> decoded( Base64::decodeSafeOutLen( encoded.size() ) );
+	const size_t decodedSize =
+		Base64::decode( encoded.size(), encoded.data(), decoded.size(), decoded.data(),
+						Base64::DecodeMode::NoWhitespaceStrict );
+	ASSERT_EQ( source.size(), decodedSize );
+	decoded.resize( decodedSize );
+	EXPECT_TRUE( source == decoded );
+
+	encoded[encoded.size() / 2] = '!';
+	EXPECT_EQ( static_cast<size_t>( -1 ),
+			   Base64::decode( encoded.size(), encoded.data(), decoded.size(), decoded.data(),
+							   Base64::DecodeMode::NoWhitespaceStrict ) );
+}
+
+UTEST( eterm, kitty_graphics_reuses_unreferenced_replacement_pixel_storage ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;AQIDBAUG" ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	updates.clear();
+	const auto* storage = protocol.imagePixels( 91 );
+	ASSERT_TRUE( storage != nullptr );
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;BwgJCgsM" ).error );
+	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
+	const std::vector<Uint8> expected{ 7, 8, 9, 255, 10, 11, 12, 255 };
+	EXPECT_TRUE( expected == *protocol.imagePixels( 91 ) );
+}
+
 #if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 UTEST( eterm, kitty_graphics_reads_and_unlinks_posix_shared_memory ) {
 	// mpv uses the Linux-compatible form without the optional leading slash.

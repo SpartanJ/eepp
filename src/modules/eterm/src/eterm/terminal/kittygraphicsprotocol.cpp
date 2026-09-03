@@ -62,6 +62,12 @@ bool checkedPixelBytes( Uint32 width, Uint32 height, size_t channels, size_t& re
 	return true;
 }
 
+void recycleBuffer( std::vector<Uint8>& buffer, std::vector<Uint8>& cache ) {
+	buffer.clear();
+	if ( buffer.capacity() > cache.capacity() )
+		buffer.swap( cache );
+}
+
 bool decodeBase64( std::string_view input, bool finalChunk, std::vector<Uint8>& output ) {
 	if ( !finalChunk && input.size() % 4 != 0 )
 		return false;
@@ -442,6 +448,8 @@ KittyGraphicsProtocol::handleTransmit( const KittyGraphicsCommandData& data, boo
 	transfer.query = query;
 	transfer.frame = frame;
 	transfer.active = true;
+	transfer.decodedData = std::move( mDecodedScratch );
+	transfer.decodedData.clear();
 	const Uint32 format = data.format.value_or( 32 );
 	if ( format == 24 || format == 32 ) {
 		size_t expectedBytes = 0;
@@ -473,7 +481,8 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	Uint32 height = data.height.value_or( 0 );
 	std::vector<Uint8> pixels;
 	if ( format == 100 ) {
-		std::vector<Uint8> encoded;
+		std::vector<Uint8> encoded = std::move( mEncodedScratch );
+		encoded.clear();
 		if ( data.compression == 'z' ) {
 			if ( !data.dataSize || *data.dataSize == 0 || *data.dataSize > 64 * 1024 * 1024 )
 				return { response( data, KittyGraphicsError::TooLarge ),
@@ -488,6 +497,8 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 						 KittyGraphicsError::DecodeFailed, false };
 			}
 		} else if ( data.compression == 0 ) {
+			mEncodedScratch = std::move( encoded );
+			mEncodedScratch.clear();
 			encoded = std::move( transfer.decodedData );
 		} else {
 			return { response( data, KittyGraphicsError::Unsupported ),
@@ -516,6 +527,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 			return { response( data, KittyGraphicsError::DecodeFailed ),
 					 KittyGraphicsError::DecodeFailed, false };
 		pixels.assign( decoded.getPixelsPtr(), decoded.getPixelsPtr() + rgbaBytes );
+		recycleBuffer( encoded, mEncodedScratch );
 	} else {
 		if ( width == 0 || height == 0 )
 			return { response( data, KittyGraphicsError::InvalidArgument ),
@@ -548,7 +560,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	}
 
 	if ( format == 24 ) {
-		std::vector<Uint8> rgba;
+		std::vector<Uint8> rgba = std::move( mPixelScratch );
 		rgba.resize( static_cast<size_t>( width ) * height * 4 );
 		for ( size_t sourceOffset = 0, destinationOffset = 0; sourceOffset < pixels.size();
 			  sourceOffset += 3, destinationOffset += 4 ) {
@@ -557,6 +569,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 			rgba[destinationOffset + 2] = pixels[sourceOffset + 2];
 			rgba[destinationOffset + 3] = 255;
 		}
+		recycleBuffer( pixels, mDecodedScratch );
 		pixels = std::move( rgba );
 	}
 	if ( transfer.frame ) {
@@ -684,6 +697,10 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 			mUpdates.emplace_back( std::move( update ) );
 		++mStats.rectangleUpdates;
 		mPresentationDirty = true;
+		if ( format == 24 )
+			recycleBuffer( pixels, mPixelScratch );
+		else if ( format == 32 )
+			recycleBuffer( pixels, mDecodedScratch );
 		return { response( data, KittyGraphicsError::None, imageId ), KittyGraphicsError::None,
 				 true };
 	}
@@ -731,13 +748,24 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 												  } ),
 								  mPrimaryPlacements.end() );
 	}
+	std::shared_ptr<std::vector<Uint8>> pixelStorage;
+	if ( existing != mImages.end() && existing->second.rgba.unique() ) {
+		pixelStorage = existing->second.rgba;
+		pixelStorage->assign( pixels.begin(), pixels.end() );
+		if ( format == 24 )
+			recycleBuffer( pixels, mPixelScratch );
+		else if ( format == 32 )
+			recycleBuffer( pixels, mDecodedScratch );
+	} else {
+		pixelStorage = std::make_shared<std::vector<Uint8>>( std::move( pixels ) );
+	}
 	Image image;
 	image.size = Sizei( width, height );
 	image.imageNumber = data.imageNumber.value_or( 0 );
 	image.usageHint = data.usageHint.value_or( 0 );
 	image.anonymous = anonymous;
 	image.creationSerial = ++mCreationSerial;
-	image.rgba = std::make_shared<std::vector<Uint8>>( std::move( pixels ) );
+	image.rgba = std::move( pixelStorage );
 	mStorageBytes = mStorageBytes - oldBytes + image.rgba->size();
 	const bool replaced = existing != mImages.end();
 	auto inserted = mImages.insert_or_assign( imageId, std::move( image ) ).first;
@@ -1244,7 +1272,8 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 		return { response( data, KittyGraphicsError::InvalidArgument ),
 				 KittyGraphicsError::InvalidArgument, false };
 
-	std::vector<Uint8> sourceCopy( static_cast<size_t>( width ) * height * 4 );
+	std::vector<Uint8> sourceCopy = std::move( mComposeSourceScratch );
+	sourceCopy.resize( static_cast<size_t>( width ) * height * 4 );
 	std::vector<Uint8> result( sourceCopy.size() );
 	const size_t imageStride = static_cast<size_t>( imageWidth ) * 4;
 	const size_t rowBytes = static_cast<size_t>( width ) * 4;
@@ -1281,6 +1310,7 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 			std::memcpy( published + offset, target + offset, 4 );
 		}
 	}
+	recycleBuffer( sourceCopy, mComposeSourceScratch );
 	TerminalGraphicsUpdate update;
 	update.type = destinationFrame == 1 ? TerminalGraphicsUpdateType::UpdateRegion
 										: TerminalGraphicsUpdateType::UpdateFrameRegion;

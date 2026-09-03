@@ -221,6 +221,10 @@ class KittyGraphicsProtocol {
 	std::vector<TerminalGraphicsPlaceholderCell> mPlaceholderCells;
 	std::vector<TerminalGraphicsUpdate> mUpdates;
 	PendingTransfer mPending;
+	std::vector<Uint8> mDecodedScratch;
+	std::vector<Uint8> mPixelScratch;
+	std::vector<Uint8> mEncodedScratch;
+	std::vector<Uint8> mComposeSourceScratch;
 	size_t mStorageBytes{ 0 };
 	size_t mFrameStorageBytes{ 0 };
 	Uint64 mCreationSerial{ 0 };
