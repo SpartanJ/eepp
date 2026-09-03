@@ -41,6 +41,7 @@
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/kittygraphicsprotocol.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
 #include <stdint.h>
@@ -58,6 +59,10 @@ constexpr int ESC_BUF_SIZ = 512;
 constexpr int ESC_ARG_SIZ = 32;
 constexpr int STR_BUF_SIZ = ESC_BUF_SIZ;
 constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
+// Kitty recommends small chunks, but unchunked direct transmissions are valid and common in
+// simple clients. Keep this independently bounded while allowing useful image-sized APCs.
+constexpr size_t MAX_KITTY_GRAPHICS_APC_SIZE = 16 * 1024 * 1024;
+constexpr size_t MAX_GENERIC_STRING_SEQUENCE_SIZE = 1024 * 1024;
 
 /* Internal representation of the screen */
 struct Term {
@@ -119,7 +124,8 @@ struct STREscape {
 	size_t siz; /* allocation size */
 	size_t len; /* raw string length */
 	char* args[STR_ARG_SIZ];
-	int narg; /* nb of args */
+	int narg;		/* nb of args */
+	bool discarded; /* oversized sequence: consume input through its terminator without storing */
 };
 
 enum class PromptState {
@@ -155,6 +161,8 @@ class TerminalEmulator final {
 			const size_t& historySize = 1000 );
 
 	void resize( int columns, int rows );
+
+	void resize( int columns, int rows, int pixelWidth, int pixelHeight );
 
 	void redraw();
 
@@ -220,8 +228,8 @@ class TerminalEmulator final {
 
 	std::string getSelection() const;
 
-	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,
-					  const Uint32& mod );
+	void mousereport( const TerminalMouseEventType& type, const Vector2i& cellPosition,
+					  const Vector2i& pixelPosition, const Uint32& flags, const Uint32& mod );
 
 	const bool& isDirty() const { return mDirty; }
 
@@ -260,6 +268,8 @@ class TerminalEmulator final {
 	/** Worker-only notification that the display palette changed. */
 	void notifyColorSchemeChanged();
 
+	void requestGraphicsResync();
+
 	Vector2i getSize() const;
 
 	System::IProcess* getProcess() const;
@@ -288,6 +298,10 @@ class TerminalEmulator final {
 	bool mPendingPtyResize{ false };
 	int mPendingPtyColumns{ 0 };
 	int mPendingPtyRows{ 0 };
+	int mPendingPtyPixelWidth{ 0 };
+	int mPendingPtyPixelHeight{ 0 };
+	int mPixelWidth{ 0 };
+	int mPixelHeight{ 0 };
 	Clock mPendingPtyResizeClock;
 
 	bool mDirty{ true };
@@ -307,6 +321,7 @@ class TerminalEmulator final {
 	TerminalSelection mSel;
 	CSIEscape mCsiescseq;
 	STREscape mStrescseq;
+	KittyGraphicsProtocol mKittyGraphics;
 
 	uint32_t mDefaultFg;
 	uint32_t mDefaultBg;
@@ -324,6 +339,16 @@ class TerminalEmulator final {
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 	DataCb mDataCb;
+	Vector2i mKittyPlaceholderCell{ -1, -1 };
+	struct KittyPlaceholderMetadata {
+		Uint32 placementId{ 0 };
+		Uint16 row{ UINT16_MAX };
+		Uint16 column{ UINT16_MAX };
+		Uint8 imageIdMsb{ 0 };
+		Uint8 diacriticCount{ 0 };
+	};
+	std::unordered_map<const TerminalGlyph*, KittyPlaceholderMetadata> mKittyPlaceholderMetadata;
+	Uint32 mKittyUnderlineColor{ 0 };
 
 	void setClipboard( const char* str );
 

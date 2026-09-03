@@ -44,7 +44,9 @@ class IPseudoTerminal : public eterm::System::IPipe {
 
 	virtual int getNumRows() const = 0;
 
-	virtual bool resize( int columns, int rows ) = 0;
+	virtual bool resize( int columns, int rows, int pixelWidth, int pixelHeight ) = 0;
+
+	bool resize( int columns, int rows ) { return resize( columns, rows, 0, 0 ); }
 };
 
 }} // namespace eterm::Terminal

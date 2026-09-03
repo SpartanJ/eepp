@@ -6,6 +6,7 @@
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
+#include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
 #include <atomic>
@@ -29,6 +30,7 @@ namespace eterm { namespace Terminal {
 
 /** Immutable worker-to-UI presentation state. Cell selection is already applied as ATTR_REVERSE. */
 struct TerminalSnapshot {
+	std::shared_ptr<const TerminalGraphicsPresentation> graphics;
 	std::vector<TerminalGlyph> cells;
 	std::vector<Uint8> dirtyRows;
 	std::string title;
@@ -118,6 +120,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void write( std::string data, bool mayEcho = true );
 	void writeRaw( std::string data );
 	void resize( int columns, int rows );
+	void resize( int columns, int rows, int pixelWidth, int pixelHeight );
 	void scrollUp( int amount );
 	void scrollDown( int amount );
 	/** Returns an ordered command id that is copied into snapshots after the scroll is applied. */
@@ -125,8 +128,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void selectionStart( int column, int row, int snap );
 	void selectionExtend( int column, int row, int type, bool done );
 	void selectionClear();
-	void mouseReport( TerminalMouseEventType type, Vector2i position, Uint32 flags,
-					  Uint32 modifiers );
+	void mouseReport( TerminalMouseEventType type, Vector2i cellPosition, Vector2i pixelPosition,
+					  Uint32 flags, Uint32 modifiers );
 	void setFocus( bool focus );
 	void setCursorMode( TerminalCursorMode mode );
 	void setColorPalette( TerminalColorPalette palette );
@@ -141,6 +144,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 
 	std::shared_ptr<const TerminalSnapshot> snapshot() const;
 	std::vector<Event> drainEvents();
+	std::vector<TerminalGraphicsUpdate> drainGraphicsUpdates();
+	void requestGraphicsResync();
 
 	/** Bounded exact-selection request. Returns no value on timeout or during shutdown. */
 	std::optional<std::string>
@@ -160,6 +165,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct ResizeCommand {
 		int columns{ 0 };
 		int rows{ 0 };
+		int pixelWidth{ 0 };
+		int pixelHeight{ 0 };
 	};
 	struct ScrollCommand {
 		int amount{ 0 };
@@ -179,7 +186,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	};
 	struct MouseCommand {
 		TerminalMouseEventType type{ TerminalMouseEventType::MouseMotion };
-		Vector2i position;
+		Vector2i cellPosition;
+		Vector2i pixelPosition;
 		Uint32 flags{ 0 };
 		Uint32 modifiers{ 0 };
 	};
@@ -203,6 +211,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 		std::shared_ptr<SelectionResponse> response;
 	};
 	struct SelectionClearCommand {};
+	struct GraphicsResyncCommand {};
 	struct ResetCommand {};
 	struct TerminateCommand {};
 	struct AllowTrimCommand : BoolCommand {};
@@ -216,7 +225,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 					 MouseCommand, FocusCommand, CursorModeCommand, PaletteCommand,
 					 PresentationRateCommand, AllowTrimCommand, DataEventsCommand,
 					 PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
-					 SelectionRequestCommand>;
+					 SelectionRequestCommand, GraphicsResyncCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
 					 TerminalColorPalette palette );
@@ -228,6 +237,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void processCommand( Command&& command );
 	void enqueueEvent( Event event, bool coalescable );
 	void publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot );
+	Uint64 enqueueGraphicsUpdate( TerminalGraphicsUpdate update );
 
 	std::shared_ptr<WorkerDisplay> mWorkerDisplay;
 	std::unique_ptr<TerminalEmulator> mEmulator;
@@ -238,6 +248,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	std::deque<Command> mCommands;
 	std::mutex mEventMutex;
 	std::deque<Event> mEvents;
+	TerminalGraphicsUpdateQueue mGraphicsUpdates;
 	mutable std::mutex mPublishedSnapshotMutex;
 	std::shared_ptr<const TerminalSnapshot> mPublishedSnapshot;
 	std::atomic<bool> mShutdownRequested{ false };

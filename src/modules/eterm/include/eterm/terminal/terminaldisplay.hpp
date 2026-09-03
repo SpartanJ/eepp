@@ -30,6 +30,8 @@ class VertexBuffer;
 
 namespace eterm { namespace Terminal {
 
+class KittyGraphicsRenderer;
+
 enum class TerminalShortcutAction {
 	PASTE,
 	PASTE_SELECTION,
@@ -168,6 +170,10 @@ class TerminalDisplay {
 	const char* getClipboard() const;
 
 	bool update( bool isMouseOverMe = true );
+
+	Sizei getCellPixelSize() const;
+
+	Sizei getGridPixelSize() const;
 
 	void executeFile( const std::string& cmd );
 
@@ -315,6 +321,7 @@ class TerminalDisplay {
 	std::vector<Color> mColors;
 	std::shared_ptr<TerminalSession> mSession;
 	std::shared_ptr<const TerminalSnapshot> mSnapshot;
+	std::unique_ptr<KittyGraphicsRenderer> mGraphicsRenderer;
 	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks{ 0 };
 	std::map<Uint32, EventFunc> mCallbacks;
@@ -349,6 +356,8 @@ class TerminalDisplay {
 	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
 	Uint64 mSnapshotGeneration{ 0 };
+	Uint64 mLastAppliedGraphicsSequence{ 0 };
+	bool mGraphicsResyncPending{ false };
 	FontHinting mFontHinting{ FontHinting::Full };
 	FontAntialiasing mFontAntialiasing{ FontAntialiasing::Grayscale };
 	FrameBufferUniquePtr mFrameBuffer;
@@ -377,11 +386,15 @@ class TerminalDisplay {
 
 	Vector2i positionToGrid( const Vector2i& pos );
 
+	Vector2i positionToPixel( const Vector2i& pos ) const;
+
 	void onSizeChange();
 
 	void onProcessExit( int exitCode );
 
 	void consumeSnapshot();
+
+	void drainGraphicsUpdates();
 
 	void drainSessionEvents();
 

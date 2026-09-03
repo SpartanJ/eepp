@@ -211,6 +211,46 @@ static const unsigned int tabspaces = 4;
 #define TRUECOLOR( r, g, b ) ( 1 << 24 | ( r ) << 16 | ( g ) << 8 | ( b ) )
 #define IS_TRUECOL( x ) ( 1 << 24 & ( x ) )
 
+static int kittyDiacriticIndex( Rune value ) {
+	static constexpr Rune values[] = {
+		0x0305,	 0x030D,  0x030E,  0x0310,	0x0312,	 0x033D,  0x033E,  0x033F,	0x0346,	 0x034A,
+		0x034B,	 0x034C,  0x0350,  0x0351,	0x0352,	 0x0357,  0x035B,  0x0363,	0x0364,	 0x0365,
+		0x0366,	 0x0367,  0x0368,  0x0369,	0x036A,	 0x036B,  0x036C,  0x036D,	0x036E,	 0x036F,
+		0x0483,	 0x0484,  0x0485,  0x0486,	0x0487,	 0x0592,  0x0593,  0x0594,	0x0595,	 0x0597,
+		0x0598,	 0x0599,  0x059C,  0x059D,	0x059E,	 0x059F,  0x05A0,  0x05A1,	0x05A8,	 0x05A9,
+		0x05AB,	 0x05AC,  0x05AF,  0x05C4,	0x0610,	 0x0611,  0x0612,  0x0613,	0x0614,	 0x0615,
+		0x0616,	 0x0617,  0x0657,  0x0658,	0x0659,	 0x065A,  0x065B,  0x065D,	0x065E,	 0x06D6,
+		0x06D7,	 0x06D8,  0x06D9,  0x06DA,	0x06DB,	 0x06DC,  0x06DF,  0x06E0,	0x06E1,	 0x06E2,
+		0x06E4,	 0x06E7,  0x06E8,  0x06EB,	0x06EC,	 0x0730,  0x0732,  0x0733,	0x0735,	 0x0736,
+		0x073A,	 0x073D,  0x073F,  0x0740,	0x0741,	 0x0743,  0x0745,  0x0747,	0x0749,	 0x074A,
+		0x07EB,	 0x07EC,  0x07ED,  0x07EE,	0x07EF,	 0x07F0,  0x07F1,  0x07F3,	0x0816,	 0x0817,
+		0x0818,	 0x0819,  0x081B,  0x081C,	0x081D,	 0x081E,  0x081F,  0x0820,	0x0821,	 0x0822,
+		0x0823,	 0x0825,  0x0826,  0x0827,	0x0829,	 0x082A,  0x082B,  0x082C,	0x082D,	 0x0951,
+		0x0953,	 0x0954,  0x0F82,  0x0F83,	0x0F86,	 0x0F87,  0x135D,  0x135E,	0x135F,	 0x17DD,
+		0x193A,	 0x1A17,  0x1A75,  0x1A76,	0x1A77,	 0x1A78,  0x1A79,  0x1A7A,	0x1A7B,	 0x1A7C,
+		0x1B6B,	 0x1B6D,  0x1B6E,  0x1B6F,	0x1B70,	 0x1B71,  0x1B72,  0x1B73,	0x1CD0,	 0x1CD1,
+		0x1CD2,	 0x1CDA,  0x1CDB,  0x1CE0,	0x1DC0,	 0x1DC1,  0x1DC3,  0x1DC4,	0x1DC5,	 0x1DC6,
+		0x1DC7,	 0x1DC8,  0x1DC9,  0x1DCB,	0x1DCC,	 0x1DD1,  0x1DD2,  0x1DD3,	0x1DD4,	 0x1DD5,
+		0x1DD6,	 0x1DD7,  0x1DD8,  0x1DD9,	0x1DDA,	 0x1DDB,  0x1DDC,  0x1DDD,	0x1DDE,	 0x1DDF,
+		0x1DE0,	 0x1DE1,  0x1DE2,  0x1DE3,	0x1DE4,	 0x1DE5,  0x1DE6,  0x1DFE,	0x20D0,	 0x20D1,
+		0x20D4,	 0x20D5,  0x20D6,  0x20D7,	0x20DB,	 0x20DC,  0x20E1,  0x20E7,	0x20E9,	 0x20F0,
+		0x2CEF,	 0x2CF0,  0x2CF1,  0x2DE0,	0x2DE1,	 0x2DE2,  0x2DE3,  0x2DE4,	0x2DE5,	 0x2DE6,
+		0x2DE7,	 0x2DE8,  0x2DE9,  0x2DEA,	0x2DEB,	 0x2DEC,  0x2DED,  0x2DEE,	0x2DEF,	 0x2DF0,
+		0x2DF1,	 0x2DF2,  0x2DF3,  0x2DF4,	0x2DF5,	 0x2DF6,  0x2DF7,  0x2DF8,	0x2DF9,	 0x2DFA,
+		0x2DFB,	 0x2DFC,  0x2DFD,  0x2DFE,	0x2DFF,	 0xA66F,  0xA67C,  0xA67D,	0xA6F0,	 0xA6F1,
+		0xA8E0,	 0xA8E1,  0xA8E2,  0xA8E3,	0xA8E4,	 0xA8E5,  0xA8E6,  0xA8E7,	0xA8E8,	 0xA8E9,
+		0xA8EA,	 0xA8EB,  0xA8EC,  0xA8ED,	0xA8EE,	 0xA8EF,  0xA8F0,  0xA8F1,	0xAAB0,	 0xAAB2,
+		0xAAB3,	 0xAAB7,  0xAAB8,  0xAABE,	0xAABF,	 0xAAC1,  0xFE20,  0xFE21,	0xFE22,	 0xFE23,
+		0xFE24,	 0xFE25,  0xFE26,  0x10A0F, 0x10A38, 0x1D185, 0x1D186, 0x1D187, 0x1D188, 0x1D189,
+		0x1D1AA, 0x1D1AB, 0x1D1AC, 0x1D1AD, 0x1D242, 0x1D243, 0x1D244,
+	};
+	for ( size_t i = 0; i < sizeof( values ) / sizeof( values[0] ); ++i ) {
+		if ( values[i] == value )
+			return static_cast<int>( i );
+	}
+	return -1;
+}
+
 /* Arbitrary sizes */
 #define UTF_INVALID 0xFFFD
 #define UTF_SIZ 4
@@ -867,8 +907,13 @@ void TerminalEmulator::trimMemory() {
 }
 
 void TerminalEmulator::clearHistory() {
-	for ( int i = 0; i < mTerm.histcursize; ++i )
+	for ( int i = 0; i < mTerm.histcursize; ++i ) {
+		if ( mTerm.hist[i] ) {
+			for ( int column = 0; column < mTerm.col; ++column )
+				mKittyPlaceholderMetadata.erase( &mTerm.hist[i][column] );
+		}
 		eeSAFE_FREE( mTerm.hist[i] );
+	}
 	eeSAFE_FREE( mTerm.hist );
 	mTerm.histcursize = 0;
 	mTerm.histi = 0;
@@ -904,6 +949,12 @@ void TerminalEmulator::notifyColorSchemeChanged() {
 	if ( mColorSchemeNotifications && mColorScheme != 0 && scheme != mColorScheme )
 		reportColorScheme();
 	mColorScheme = scheme;
+}
+
+void TerminalEmulator::requestGraphicsResync() {
+	mKittyGraphics.resync();
+	mDirty = true;
+	draw();
 }
 
 Vector2i TerminalEmulator::getSize() const {
@@ -1048,8 +1099,9 @@ void TerminalEmulator::treset( void ) {
 		tswapscreen();
 	}
 
-	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_APPKEYPAD | MODE_APPCURSOR | MODE_FOCUS |
-					 MODE_BRCKTPASTE | MODE_MOUSEX10 | MODE_MOUSEMANY );
+	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_MOUSESGR_PIXELS | MODE_APPKEYPAD |
+					 MODE_APPCURSOR | MODE_FOCUS | MODE_BRCKTPASTE | MODE_MOUSEX10 |
+					 MODE_MOUSEMANY );
 	// Preserve eterm's established behavior and xterm's default alternateScroll resource.
 	xsetmode( 1, MODE_ALTSCRROLL );
 	auto dpy = mDpy.lock();
@@ -1098,6 +1150,7 @@ void TerminalEmulator::tscrolldown( int top, int n ) {
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, n );
+	mKittyGraphics.scrollScreen( top, mTerm.bot, n, false );
 }
 
 void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
@@ -1151,6 +1204,9 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, -n );
+	mKittyGraphics.scrollScreen( top, mTerm.bot, -n,
+								 copyhist && mTerm.histsize > 0 && !IS_SET( MODE_ALTSCREEN ) &&
+									 top == mTerm.top );
 
 	onScrollPositionChange();
 }
@@ -1559,6 +1615,7 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 		TLINE( y )[x - 1].mode &= ~ATTR_WIDE;
 	}
 
+	mKittyPlaceholderMetadata.erase( &TLINE( y )[x] );
 	mTerm.dirty[y] = 1;
 	TLINE( y )[x] = *attr;
 	TLINE( y )[x].u = u;
@@ -1576,11 +1633,14 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 		temp = x1, x1 = x2, x2 = temp;
 	if ( y1 > y2 )
 		temp = y1, y1 = y2, y2 = temp;
-
 	LIMIT( x1, 0, mTerm.col - 1 );
 	LIMIT( x2, 0, mTerm.col - 1 );
 	LIMIT( y1, 0, mTerm.row - 1 );
 	LIMIT( y2, 0, mTerm.row - 1 );
+	for ( int clearY = y1; clearY <= y2; ++clearY ) {
+		for ( int clearX = x1; clearX <= x2; ++clearX )
+			mKittyPlaceholderMetadata.erase( &TLINE( clearY )[clearX] );
+	}
 
 	/*
 	 * Fast path for the common full-row clear performed while scrolling: no
@@ -1753,6 +1813,7 @@ void TerminalEmulator::tsetattr( int* attr, int l, const char* separators ) {
 										ATTR_BLINK | ATTR_REVERSE | ATTR_INVISIBLE | ATTR_STRUCK );
 				mTerm.c.attr.fg = mDefaultFg;
 				mTerm.c.attr.bg = mDefaultBg;
+				mKittyUnderlineColor = 0;
 				break;
 			case 1:
 				mTerm.c.attr.mode |= ATTR_BOLD;
@@ -1816,12 +1877,11 @@ void TerminalEmulator::tsetattr( int* attr, int l, const char* separators ) {
 				mTerm.c.attr.bg = mDefaultBg;
 				break;
 			case 58:
-				/* This starts a sequence to change the color of
-				 * "underline" pixels. We don't support that and
-				 * instead eat up a following "5;n" or "2;r;g;b". */
-				tdefcolor( attr, separators, &i, l );
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
+					mKittyUnderlineColor = idx;
 				break;
-			case 59: /* reset underline color (unsupported, therefore a no-op) */
+			case 59:
+				mKittyUnderlineColor = 0;
 				break;
 			default:
 				if ( BETWEEN( attr[i], 30, 37 ) ) {
@@ -1916,6 +1976,11 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1006: /* 1006: extended reporting mode */
 					xsetmode( set, MODE_MOUSESGR );
 					break;
+				case 1016: /* 1016: extended reporting in terminal-grid pixels */
+					xsetmode( set, MODE_MOUSESGR_PIXELS );
+					if ( set )
+						xsetmode( 1, MODE_MOUSESGR );
+					break;
 				case 1007: /* wheel sends cursor keys on the alternate screen */
 					xsetmode( set, MODE_ALTSCRROLL );
 					break;
@@ -1936,7 +2001,10 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 						tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 					}
 					if ( set ^ alt ) /* set is always 1 or 0 */
+					{
 						tswapscreen();
+						mKittyGraphics.setAlternateScreen( set != 0 );
+					}
 					if ( *args != 1049 )
 						break;
 					/* FALLTHROUGH */
@@ -2153,6 +2221,7 @@ void TerminalEmulator::csihandle( void ) {
 					// fallthrough
 				case 2: /* all */
 					tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
+					mKittyGraphics.clearScreen();
 					break;
 				default:
 					goto unknown;
@@ -2278,6 +2347,18 @@ void TerminalEmulator::csihandle( void ) {
 			break;
 		case 't': /* Window manipulation */
 			switch ( mCsiescseq.arg[0] ) {
+				case 14: /* Report terminal grid size in pixels. */
+					len =
+						snprintf( buf, sizeof( buf ), "\033[4;%d;%dt", mPixelHeight, mPixelWidth );
+					ttywrite( buf, len, 0 );
+					break;
+				case 16: { /* Report terminal cell size in pixels. */
+					const int cellWidth = mTerm.col > 0 ? mPixelWidth / mTerm.col : 0;
+					const int cellHeight = mTerm.row > 0 ? mPixelHeight / mTerm.row : 0;
+					len = snprintf( buf, sizeof( buf ), "\033[6;%d;%dt", cellHeight, cellWidth );
+					ttywrite( buf, len, 0 );
+					break;
+				}
 				case 22: /* Save window title */
 					// Push current title to title stack
 					mTerm.title_stack.push_back( mTerm.title );
@@ -2335,6 +2416,20 @@ void TerminalEmulator::strhandle( void ) {
 	int j, narg, par;
 
 	mTerm.esc &= ~( ESC_STR_END | ESC_STR );
+	if ( mStrescseq.discarded )
+		return;
+	if ( mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
+		auto result =
+			mKittyGraphics.handle( std::string_view{ mStrescseq.buf + 1, mStrescseq.len - 1 },
+								   Vector2i( mTerm.c.x, mTerm.c.y ) );
+		if ( !result.response.empty() )
+			write( result.response.data(), result.response.size() );
+		if ( result.changed )
+			mDirty = true;
+		if ( result.cursorMovement != Vector2i::Zero )
+			tmoveto( mTerm.c.x + result.cursorMovement.x, mTerm.c.y + result.cursorMovement.y );
+		return;
+	}
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
@@ -2851,6 +2946,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			ttywrite( vtiden, strlen( vtiden ), 0 );
 			break;
 		case 'c': /* RIS -- Reset to initial state */
+			mKittyGraphics.reset();
 			treset();
 			resettitle();
 			loadColors();
@@ -2979,23 +3075,28 @@ void TerminalEmulator::tputc( Rune u ) {
 			goto check_control_code;
 		}
 
+		if ( mStrescseq.discarded )
+			return;
+
+		const bool kittyGraphics =
+			mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G';
+		const size_t sequenceLimit =
+			kittyGraphics ? MAX_KITTY_GRAPHICS_APC_SIZE : MAX_GENERIC_STRING_SEQUENCE_SIZE;
+		if ( len > sequenceLimit - mStrescseq.len ) {
+			mStrescseq.discarded = true;
+			return;
+		}
+
 		if ( mStrescseq.len + len >= mStrescseq.siz ) {
-			/*
-			 * Here is a bug in terminals. If the user never sends
-			 * some code to stop the str or esc command, then st
-			 * will stop responding. But this is better than
-			 * silently failing with unknown characters. At least
-			 * then users will report back.
-			 *
-			 * In the case users ever get fixed, here is the code:
-			 */
-			/*
-			 * term.esc = 0;
-			 * strhandle();
-			 */
-			if ( mStrescseq.siz > ( SIZE_MAX - UTF_SIZ ) / 2 )
+			const size_t required = mStrescseq.len + len + 1;
+			size_t newSize = mStrescseq.siz;
+			while ( newSize < required && newSize < sequenceLimit )
+				newSize = eemin( newSize * 2, sequenceLimit );
+			if ( newSize < required ) {
+				mStrescseq.discarded = true;
 				return;
-			mStrescseq.siz *= 2;
+			}
+			mStrescseq.siz = newSize;
 			mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, mStrescseq.siz );
 		}
 
@@ -3045,6 +3146,35 @@ check_control_code:
 		 */
 		return;
 	}
+	if ( mKittyPlaceholderCell.x >= 0 ) {
+		const int diacritic = kittyDiacriticIndex( u );
+		if ( diacritic >= 0 ) {
+			auto* placeholder = &mTerm.line[mKittyPlaceholderCell.y][mKittyPlaceholderCell.x];
+			auto metadata = mKittyPlaceholderMetadata.find( placeholder );
+			if ( metadata == mKittyPlaceholderMetadata.end() ) {
+				mKittyPlaceholderCell = Vector2i( -1, -1 );
+				return;
+			}
+			switch ( metadata->second.diacriticCount++ ) {
+				case 0:
+					metadata->second.row = static_cast<Uint16>( diacritic );
+					break;
+				case 1:
+					metadata->second.column = static_cast<Uint16>( diacritic );
+					break;
+				case 2:
+					if ( diacritic <= 255 )
+						metadata->second.imageIdMsb = static_cast<Uint8>( diacritic );
+					break;
+				default:
+					break;
+			}
+			mTerm.dirty[mKittyPlaceholderCell.y] = 1;
+			mDirty = true;
+			return;
+		}
+		mKittyPlaceholderCell = Vector2i( -1, -1 );
+	}
 	if ( selected( mTerm.c.x, mTerm.c.y ) )
 		selclear();
 
@@ -3065,6 +3195,15 @@ check_control_code:
 	}
 
 	tsetchar( u, &mTerm.c.attr, mTerm.c.x, mTerm.c.y );
+	if ( u == 0x10EEEE ) {
+		mKittyPlaceholderCell = Vector2i( mTerm.c.x, mTerm.c.y );
+		const Uint32 placementId = IS_TRUECOL( mKittyUnderlineColor )
+									   ? mKittyUnderlineColor & 0xFFFFFF
+								   : mKittyUnderlineColor <= 255 ? mKittyUnderlineColor
+																 : 0;
+		mKittyPlaceholderMetadata[&mTerm.line[mTerm.c.y][mTerm.c.x]] =
+			KittyPlaceholderMetadata{ placementId };
+	}
 	mTerm.lastc = u;
 
 	if ( width == 2 ) {
@@ -3123,6 +3262,36 @@ void TerminalEmulator::tresize( int col, int row ) {
 	int save_end = 0;
 	int loaded = 0;
 	bool is_alt = IS_SET( MODE_ALTSCREEN );
+	std::vector<KittyPlaceholderMetadata> primaryPlaceholderMetadata;
+	std::vector<KittyPlaceholderMetadata> alternatePlaceholderMetadata;
+	auto collectPlaceholderMetadata = [&]( Line line, int columns,
+										   std::vector<KittyPlaceholderMetadata>& output ) {
+		if ( !line )
+			return;
+		for ( int column = 0; column < columns; ++column ) {
+			if ( line[column].u != 0x10EEEE )
+				continue;
+			auto metadata = mKittyPlaceholderMetadata.find( &line[column] );
+			if ( metadata != mKittyPlaceholderMetadata.end() )
+				output.emplace_back( metadata->second );
+		}
+	};
+	if ( mTerm.col > 0 ) {
+		for ( int history = 0; history < mTerm.histlen; ++history ) {
+			const int index =
+				( mTerm.histi - mTerm.histlen + 1 + history + mTerm.histsize ) % mTerm.histsize;
+			collectPlaceholderMetadata( mTerm.hist[index], mTerm.col, primaryPlaceholderMetadata );
+		}
+		Line* primaryLines = is_alt ? mTerm.alt : mTerm.line;
+		Line* alternateLines = is_alt ? mTerm.line : mTerm.alt;
+		for ( int line = 0; line < mTerm.row; ++line ) {
+			collectPlaceholderMetadata( primaryLines[line], mTerm.col, primaryPlaceholderMetadata );
+			collectPlaceholderMetadata( alternateLines[line], mTerm.col,
+										alternatePlaceholderMetadata );
+		}
+	}
+	mKittyPlaceholderMetadata.clear();
+	mKittyPlaceholderCell = Vector2i( -1, -1 );
 
 	if ( col < 1 || row < 1 ) {
 		terminalDiagnostic( "tresize: error resizing to %dx%d\n", col, row );
@@ -3304,6 +3473,32 @@ void TerminalEmulator::tresize( int col, int row ) {
 			eemax( mTerm.scr - mTerm.histlen, eemin( mTerm.scr + mTerm.row - 1, mSel.oe.y ) );
 		selnormalize();
 	}
+	auto restorePlaceholderMetadata = [&]( Line line, int columns,
+										   const std::vector<KittyPlaceholderMetadata>& metadata,
+										   size_t& index ) {
+		if ( !line )
+			return;
+		for ( int column = 0; column < columns && index < metadata.size(); ++column ) {
+			if ( line[column].u == 0x10EEEE )
+				mKittyPlaceholderMetadata[&line[column]] = metadata[index++];
+		}
+	};
+	size_t primaryMetadataIndex = 0;
+	for ( int history = 0; history < mTerm.histlen; ++history ) {
+		const int index =
+			( mTerm.histi - mTerm.histlen + 1 + history + mTerm.histsize ) % mTerm.histsize;
+		restorePlaceholderMetadata( mTerm.hist[index], mTerm.col, primaryPlaceholderMetadata,
+									primaryMetadataIndex );
+	}
+	Line* primaryLines = is_alt ? mTerm.alt : mTerm.line;
+	Line* alternateLines = is_alt ? mTerm.line : mTerm.alt;
+	size_t alternateMetadataIndex = 0;
+	for ( int line = 0; line < mTerm.row; ++line ) {
+		restorePlaceholderMetadata( primaryLines[line], mTerm.col, primaryPlaceholderMetadata,
+									primaryMetadataIndex );
+		restorePlaceholderMetadata( alternateLines[line], mTerm.col, alternatePlaceholderMetadata,
+									alternateMetadataIndex );
+	}
 
 	mDirty = true;
 	onScrollPositionChange();
@@ -3357,6 +3552,63 @@ void TerminalEmulator::draw() {
 			cx--;
 
 		drawregion( *dpy, 0, 0, mTerm.col, mTerm.row );
+		std::vector<TerminalGraphicsPlaceholderCell> placeholderCells;
+		const bool scanPlaceholders = mKittyGraphics.hasVirtualPlacements();
+		for ( int y = 0; scanPlaceholders && y < mTerm.row; ++y ) {
+			const TerminalGlyph* previous = nullptr;
+			Uint32 previousPlacementId = 0;
+			Uint32 previousRow = 0;
+			Uint32 previousColumn = 0;
+			Uint8 previousMsb = 0;
+			for ( int x = 0; x < mTerm.col; ++x ) {
+				const auto& glyph = TLINE( y )[x];
+				if ( glyph.u != 0x10EEEE ) {
+					previous = nullptr;
+					continue;
+				}
+				auto metadata = mKittyPlaceholderMetadata.find( &glyph );
+				if ( metadata == mKittyPlaceholderMetadata.end() ) {
+					previous = nullptr;
+					continue;
+				}
+				Uint32 row = metadata->second.row;
+				Uint32 column = metadata->second.column;
+				Uint8 msb = metadata->second.imageIdMsb;
+				const Uint32 placementId = metadata->second.placementId;
+				const bool sameColors =
+					previous && previous->fg == glyph.fg && previousPlacementId == placementId;
+				if ( metadata->second.diacriticCount == 0 && sameColors ) {
+					row = previousRow;
+					column = previousColumn + 1;
+					msb = previousMsb;
+				} else if ( metadata->second.diacriticCount == 1 && sameColors &&
+							row == previousRow ) {
+					column = previousColumn + 1;
+					msb = previousMsb;
+				} else if ( metadata->second.diacriticCount == 2 && sameColors &&
+							row == previousRow && column == previousColumn + 1 ) {
+					msb = previousMsb;
+				}
+				if ( row == UINT16_MAX || column == UINT16_MAX ) {
+					previous = nullptr;
+					continue;
+				}
+				const Uint32 lowImageId = IS_TRUECOL( glyph.fg ) ? glyph.fg & 0xFFFFFF
+										  : glyph.fg <= 255		 ? glyph.fg
+																 : 0;
+				placeholderCells.push_back( { lowImageId | ( static_cast<Uint32>( msb ) << 24 ),
+											  placementId, Vector2i( x, y ), row, column } );
+				previous = &glyph;
+				previousRow = row;
+				previousColumn = column;
+				previousMsb = msb;
+				previousPlacementId = placementId;
+			}
+		}
+		mKittyGraphics.setPlaceholderCells( std::move( placeholderCells ) );
+		auto graphicsUpdates = mKittyGraphics.takeUpdates();
+		if ( !graphicsUpdates.empty() || mKittyGraphics.hasPendingPresentation() )
+			dpy->drawGraphics( mKittyGraphics.takePresentation(), std::move( graphicsUpdates ) );
 
 		if ( mTerm.scr == 0 )
 			dpy->drawCursor( cx, mTerm.c.y, mTerm.line[mTerm.c.y][cx], mTerm.ocx, mTerm.ocy,
@@ -3379,6 +3631,7 @@ void TerminalEmulator::redraw() {
 }
 
 void TerminalEmulator::reset() {
+	mKittyGraphics.reset();
 	treset();
 	redraw();
 }
@@ -3448,8 +3701,10 @@ void TerminalEmulator::reportColorScheme() {
 	ttywrite( buf, len, 0 );
 }
 
-void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
+void TerminalEmulator::mousereport( const TerminalMouseEventType& type,
+									const Vector2i& cellPosition, const Vector2i& pixelPosition,
 									const Uint32& flags, const Uint32& mod ) {
+	const Vector2i& pos = xgetmode( MODE_MOUSESGR_PIXELS ) ? pixelPosition : cellPosition;
 	if ( !xgetmode( (TerminalWinMode)MODE_MOUSE ) && !xgetmode( MODE_MOUSESGR ) &&
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
 		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
@@ -3560,6 +3815,10 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 }
 
 void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
+	mKittyGraphics.reset();
+	mKittyPlaceholderMetadata.clear();
+	mKittyPlaceholderCell = Vector2i( -1, -1 );
+	mBuflen = 0;
 	mStatus = STARTING;
 	mExitCode = 1;
 	mPty = std::move( pty );
@@ -3654,6 +3913,7 @@ void TerminalEmulator::onProcessExit( int exitCode ) {
 }
 
 void TerminalEmulator::onScrollPositionChange() {
+	mKittyGraphics.setViewport( mTerm.scr, mTerm.histlen, mTerm.row );
 	auto dpy = mDpy.lock();
 	if ( dpy )
 		dpy->onScrollPositionChange();
@@ -3704,11 +3964,19 @@ int TerminalEmulator::write( const char* buf, size_t buflen ) {
 }
 
 void TerminalEmulator::resize( int columns, int rows ) {
+	resize( columns, rows, mPixelWidth, mPixelHeight );
+}
+
+void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelHeight ) {
+	mPixelWidth = eemax( 0, pixelWidth );
+	mPixelHeight = eemax( 0, pixelHeight );
+	mKittyGraphics.setCellPixelSize( columns > 0 ? mPixelWidth / columns : 0,
+									 rows > 0 ? mPixelHeight / rows : 0 );
 	bool is_alt = IS_SET( MODE_ALTSCREEN );
 
 	// Alt doesn't need reflow, we can resize and redraw instantly which looks and feels better
 	if ( is_alt ) {
-		if ( !mPty->resize( columns, rows ) ) {
+		if ( !mPty->resize( columns, rows, mPixelWidth, mPixelHeight ) ) {
 			_die( "Failed to resize pty!" );
 			return;
 		}
@@ -3722,6 +3990,8 @@ void TerminalEmulator::resize( int columns, int rows ) {
 	redraw();
 	mPendingPtyColumns = columns;
 	mPendingPtyRows = rows;
+	mPendingPtyPixelWidth = mPixelWidth;
+	mPendingPtyPixelHeight = mPixelHeight;
 	mPendingPtyResize = true;
 	mPendingPtyResizeClock.restart();
 }
@@ -3729,10 +3999,13 @@ void TerminalEmulator::resize( int columns, int rows ) {
 #define MAX_TTY_READS ( 1024 )
 
 bool TerminalEmulator::update() {
+	if ( mKittyGraphics.updateAnimations() )
+		mDirty = true;
 	if ( mPendingPtyResize && mPendingPtyResizeClock.getElapsedTime() >= Milliseconds( 100 ) ) {
 		mPendingPtyResize = false;
 
-		if ( !mPty->resize( mPendingPtyColumns, mPendingPtyRows ) ) {
+		if ( !mPty->resize( mPendingPtyColumns, mPendingPtyRows, mPendingPtyPixelWidth,
+							mPendingPtyPixelHeight ) ) {
 			_die( "Failed to resize pty!" );
 		}
 

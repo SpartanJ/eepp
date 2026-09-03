@@ -9,6 +9,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/boxdrawdata.hpp>
+#include <eterm/terminal/kittygraphicsrenderer.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 #include <limits.h>
 
@@ -457,6 +458,9 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 			eeSAFE_DELETE( processFactory );
 		return nullptr;
 	}
+	terminal->mSession->resize( termSize.getWidth(), termSize.getHeight(),
+								terminal->getGridPixelSize().getWidth(),
+								terminal->getGridPixelSize().getHeight() );
 	terminal->mSession->setPresentationRate( presentationRateForWindow( window ) );
 	terminal->mProgram = program;
 	terminal->mArgs = args;
@@ -479,6 +483,7 @@ TerminalDisplay::~TerminalDisplay() {
 TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
 								  const Sizef& pixelsSize, const bool& useFrameBuffer ) :
 	mWindow( window ),
+	mGraphicsRenderer( std::make_unique<KittyGraphicsRenderer>() ),
 	mFont( font ),
 	mFontSize( fontSize ),
 	mSize( pixelsSize ),
@@ -493,6 +498,8 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	resetColors();
 
 	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
+	mColumns = gridSize.getWidth();
+	mRows = gridSize.getHeight();
 	mDirtyLines.resize( gridSize.getHeight(), 1 );
 
 	mQuadVertex = GLi->quadVertex();
@@ -715,7 +722,9 @@ void TerminalDisplay::setKeepAlive( bool keepAlive ) {
 }
 
 bool TerminalDisplay::update( bool isMouseOverMe ) {
+	drainGraphicsUpdates();
 	consumeSnapshot();
+	drainGraphicsUpdates();
 	drainSessionEvents();
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -732,6 +741,29 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 		}
 	}
 	return true;
+}
+
+void TerminalDisplay::drainGraphicsUpdates() {
+	if ( !mSession )
+		return;
+	auto updates = mSession->drainGraphicsUpdates();
+	if ( !updates.empty() ) {
+		if ( !mGraphicsRenderer->applyUpdates( std::move( updates ) ) ) {
+			mGraphicsRenderer->reset();
+			mLastAppliedGraphicsSequence = 0;
+			if ( !mGraphicsResyncPending ) {
+				mGraphicsResyncPending = true;
+				mSession->requestGraphicsResync();
+			}
+			return;
+		}
+		mLastAppliedGraphicsSequence = mGraphicsRenderer->lastAppliedSequence();
+		mGraphicsResyncPending = false;
+		if ( mSnapshot && mSnapshot->graphics &&
+			 mSnapshot->graphics->requiredUpdateSequence <= mLastAppliedGraphicsSequence )
+			mGraphicsRenderer->setPresentation( mSnapshot->graphics );
+		mDirty = true;
+	}
 }
 
 void TerminalDisplay::consumeSnapshot() {
@@ -768,6 +800,13 @@ void TerminalDisplay::consumeSnapshot() {
 	mCursor = mSnapshot->cursor;
 	mCursorGlyph = mSnapshot->cursorGlyph;
 	mCursorMode = mSnapshot->cursorMode;
+	if ( mSnapshot->graphics &&
+		 mSnapshot->graphics->requiredUpdateSequence <= mGraphicsRenderer->lastAppliedSequence() ) {
+		mGraphicsRenderer->setPresentation( mSnapshot->graphics );
+	} else if ( mSnapshot->graphics && !mGraphicsResyncPending ) {
+		mGraphicsResyncPending = true;
+		mSession->requestGraphicsResync();
+	}
 	const int presentationBits = mMode & MODE_BLINK;
 	mMode = mSnapshot->windowMode | presentationBits;
 	if ( mFocus )
@@ -1093,8 +1132,8 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 			mWindow->getInput()->getModState() & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR,
 			false );
 	}
-	mSession->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
-						   mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ),
+						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
@@ -1134,8 +1173,8 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mSession->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
-						   mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ),
+						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
@@ -1181,8 +1220,8 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ), flags,
-						   mWindow->getInput()->getModState() );
+	mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
+						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
 }
 
 static inline Color termColor( unsigned int terminalColor, const std::vector<Color>& colors ) {
@@ -1368,6 +1407,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 	auto fontSize = mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	const Sizef cellSize( spaceCharAdvanceX, fontSize );
 
 	float x = 0.0f;
 	float y = pos.y;
@@ -1446,6 +1486,38 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		mVBBackground->draw();
 		mVBBackground->unbind();
 	}
+	const Sizef graphicsGridSize( mColumns * cellSize.getWidth(), mRows * cellSize.getHeight() );
+	mGraphicsRenderer->draw( KittyGraphicsRenderer::Pass::VeryNegative, pos, cellSize,
+							 graphicsGridSize );
+	if ( mGraphicsRenderer->hasPlacements( KittyGraphicsRenderer::Pass::VeryNegative ) ) {
+		y = std::floor( pos.y );
+		for ( Uint32 row = 0; row < mRows; ++row ) {
+			x = std::floor( pos.x );
+			for ( Uint32 column = 0; column < mColumns; ++column ) {
+				const auto& glyph = mSnapshot->cells[row * mColumns + column];
+				if ( glyph.mode & ATTR_WDUMMY )
+					continue;
+				auto foreground = termColor( glyph.fg, mColors );
+				auto background = termColor( glyph.bg, mColors );
+				if ( IS_SET( MODE_REVERSE ) ) {
+					foreground = foreground == defaultFg ? defaultBg : foreground.invert();
+					background = background == defaultBg ? defaultFg : background.invert();
+				}
+				if ( glyph.mode & ATTR_REVERSE )
+					background = foreground;
+				const bool wide = glyph.mode & ATTR_WIDE;
+				const Float advance = spaceCharAdvanceX * ( wide ? 2.0f : 1.0f );
+				if ( background != defaultBg ) {
+					mPrimitives.setColor( background );
+					mPrimitives.drawRectangle( Rectf( { x, y }, { advance, lineHeight } ) );
+				}
+				x += advance;
+			}
+			y += lineHeight;
+		}
+	}
+	mGraphicsRenderer->draw( KittyGraphicsRenderer::Pass::Negative, pos, cellSize,
+							 graphicsGridSize );
 
 	y = std::floor( pos.y );
 
@@ -1683,6 +1755,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			vbo->unbind();
 		}
 	}
+	mGraphicsRenderer->draw( KittyGraphicsRenderer::Pass::NonNegative, pos, cellSize,
+							 graphicsGridSize );
 
 	// Underline is rendered after foreground render because it usually clashes with the underlines
 	// decorations and ends up being not visible, I prefer to do this even it it's not standard.
@@ -1777,6 +1851,27 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 	return { mouseX, mouseY };
 }
 
+Vector2i TerminalDisplay::positionToPixel( const Vector2i& pos ) const {
+	const Sizei gridPixels = getGridPixelSize();
+	const int x = static_cast<int>( std::floor( pos.x - mPosition.x - mPadding.Left ) );
+	const int y = static_cast<int>( std::floor( pos.y - mPosition.y - mPadding.Top ) );
+	return { eeclamp( x, 0, eemax( 0, gridPixels.getWidth() - 1 ) ),
+			 eeclamp( y, 0, eemax( 0, gridPixels.getHeight() - 1 ) ) };
+}
+
+Sizei TerminalDisplay::getCellPixelSize() const {
+	return {
+		static_cast<int>( std::round( mFont->getGlyph( 'A', mFontSize, false, false ).advance ) ),
+		static_cast<int>( std::round( mFont->getFontHeight( mFontSize ) ) ) };
+}
+
+Sizei TerminalDisplay::getGridPixelSize() const {
+	const Sizei cell = getCellPixelSize();
+	const int columns = mSnapshot ? mSnapshot->columns : static_cast<int>( mColumns );
+	const int rows = mSnapshot ? mSnapshot->rows : static_cast<int>( mRows );
+	return { columns * cell.getWidth(), rows * cell.getHeight() };
+}
+
 void TerminalDisplay::onSizeChange() {
 	Sizei gridSize( gridSizeFromTermDimensions(
 		mFont, mFontSize,
@@ -1784,7 +1879,10 @@ void TerminalDisplay::onSizeChange() {
 
 	if ( mSession && ( !mSnapshot || gridSize.getWidth() != mSnapshot->columns ||
 					   gridSize.getHeight() != mSnapshot->rows ) ) {
-		mSession->resize( gridSize.getWidth(), gridSize.getHeight() );
+		const Sizei cellSize = getCellPixelSize();
+		mSession->resize( gridSize.getWidth(), gridSize.getHeight(),
+						  gridSize.getWidth() * cellSize.getWidth(),
+						  gridSize.getHeight() * cellSize.getHeight() );
 		mDirtyLines.resize( gridSize.getHeight(), 1 );
 	}
 

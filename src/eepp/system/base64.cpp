@@ -1,61 +1,121 @@
 #include <eepp/system/base64.hpp>
+#include <array>
 
 namespace EE { namespace System {
 
-/* base64.c : base-64 / MIME encode/decode */
-/* PUBLIC DOMAIN - Jon Mayo - November 13, 2003 */
-/* $Id: base64.c 156 2007-07-12 23:29:10Z orange $ */
+namespace {
 
-/* decode a base64 string in one shot */
-size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
-	static const Uint8 base64dec_tab[256] = {
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 62,	255, 255, 255, 63,	52,	 53,  54,  55,	56,	 57,
-		58,	 59,  60,  61,	255, 255, 255, 0,	255, 255, 255, 0,	1,	 2,	  3,   4,	5,	 6,
-		7,	 8,	  9,   10,	11,	 12,  13,  14,	15,	 16,  17,  18,	19,	 20,  21,  22,	23,	 24,
-		25,	 255, 255, 255, 255, 255, 255, 26,	27,	 28,  29,  30,	31,	 32,  33,  34,	35,	 36,
-		37,	 38,  39,  40,	41,	 42,  43,  44,	45,	 46,  47,  48,	49,	 50,  51,  255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255,
-	};
+constexpr Uint8 BASE64_INVALID = 0xFF;
+constexpr Uint8 BASE64_PADDING = 0xFE;
+constexpr Uint8 BASE64_WHITESPACE = 0xFD;
 
-	size_t ii, io;
-	Uint32 v;
-	unsigned rem;
+constexpr std::array<Uint8, 256> makeBase64DecodeTable() {
+	std::array<Uint8, 256> table{};
 
-	for ( io = 0, ii = 0, v = 0, rem = 0; ii < in_len; ii++ ) {
-		unsigned char ch;
-		unsigned char c = (unsigned char)in[ii];
-		if ( isspace( c ) )
-			continue;
-		if ( c == '=' )
-			break; /* stop at = */
-		ch = base64dec_tab[c];
-		if ( ch == 255 )
-			break; /* stop at a parse error */
+	for ( size_t i = 0; i < table.size(); ++i )
+		table[i] = BASE64_INVALID;
+
+	for ( size_t i = 0; i < 26; ++i ) {
+		table[static_cast<unsigned char>( 'A' + i )] = static_cast<Uint8>( i );
+		table[static_cast<unsigned char>( 'a' + i )] = static_cast<Uint8>( i + 26 );
+	}
+
+	for ( size_t i = 0; i < 10; ++i )
+		table[static_cast<unsigned char>( '0' + i )] = static_cast<Uint8>( i + 52 );
+
+	table[static_cast<unsigned char>( '+' )] = 62;
+	table[static_cast<unsigned char>( '/' )] = 63;
+	table[static_cast<unsigned char>( '=' )] = BASE64_PADDING;
+
+	// ASCII whitespace accepted by the historical decoder via isspace():
+	table[static_cast<unsigned char>( ' ' )] = BASE64_WHITESPACE;
+	table[static_cast<unsigned char>( '\t' )] = BASE64_WHITESPACE;
+	table[static_cast<unsigned char>( '\n' )] = BASE64_WHITESPACE;
+	table[static_cast<unsigned char>( '\v' )] = BASE64_WHITESPACE;
+	table[static_cast<unsigned char>( '\f' )] = BASE64_WHITESPACE;
+	table[static_cast<unsigned char>( '\r' )] = BASE64_WHITESPACE;
+
+	return table;
+}
+
+constexpr auto base64dec_tab = makeBase64DecodeTable();
+
+template <bool AllowWhitespace>
+size_t decodeBase64( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
+	size_t ii = 0;
+	size_t io = 0;
+	Uint32 v = 0;
+	unsigned rem = 0;
+
+	while ( ii < in_len ) {
+		/*
+		 * Fast path: four ordinary base64 bytes become three output bytes.
+		 *
+		 * The OR validates all four table entries at once: valid base64 values
+		 * are 0..63, while padding/whitespace/invalid entries have high bits set.
+		 *
+		 * This path is especially useful for protocol payloads that guarantee
+		 * contiguous, whitespace-free base64 data.
+		 */
+		if ( rem == 0 && ii + 4 <= in_len && io + 3 <= out_len ) {
+			const Uint8 a = base64dec_tab[static_cast<unsigned char>( in[ii] )];
+			const Uint8 b = base64dec_tab[static_cast<unsigned char>( in[ii + 1] )];
+			const Uint8 c = base64dec_tab[static_cast<unsigned char>( in[ii + 2] )];
+			const Uint8 d = base64dec_tab[static_cast<unsigned char>( in[ii + 3] )];
+
+			if ( ( a | b | c | d ) <= 63 ) {
+				out[io] = static_cast<unsigned char>( ( a << 2 ) | ( b >> 4 ) );
+				out[io + 1] = static_cast<unsigned char>( ( b << 4 ) | ( c >> 2 ) );
+				out[io + 2] = static_cast<unsigned char>( ( c << 6 ) | d );
+
+				ii += 4;
+				io += 3;
+				continue;
+			}
+		}
+
+		const Uint8 ch = base64dec_tab[static_cast<unsigned char>( in[ii++] )];
+
+		if ( ch > 63 ) {
+			if constexpr ( AllowWhitespace ) {
+				if ( ch == BASE64_WHITESPACE )
+					continue;
+			}
+
+			// Preserve the old behavior: stop at '=' or the first parse error.
+			break;
+		}
+
 		v = ( v << 6 ) | ch;
 		rem += 6;
+
 		if ( rem >= 8 ) {
 			rem -= 8;
+
 			if ( io >= out_len )
-				return -1; /* truncation is failure */
-			out[io++] = ( v >> rem ) & 255;
+				return static_cast<size_t>( -1 );
+
+			out[io++] = static_cast<unsigned char>( ( v >> rem ) & 255 );
+
+			// Every four valid base64 characters rem returns to zero.
+			if ( rem == 0 )
+				v = 0;
 		}
 	}
-	if ( rem >= 8 ) {
-		rem -= 8;
-		if ( io >= out_len )
-			return -1; /* truncation is failure */
-		out[io++] = ( v >> rem ) & 255;
-	}
+
 	return io;
+}
+
+} // namespace
+
+size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
+	return decodeBase64<true>( in_len, in, out_len, out );
+}
+
+size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out,
+					   DecodeMode mode ) {
+	return mode == DecodeMode::NoWhitespace ? decodeBase64<false>( in_len, in, out_len, out )
+											: decodeBase64<true>( in_len, in, out_len, out );
 }
 
 size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char* out ) {
@@ -74,23 +134,27 @@ size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, c
 		while ( rem >= 6 ) {
 			rem -= 6;
 			if ( io >= out_len )
-				return -1; /* truncation is failure */
+				return static_cast<size_t>( -1 ); /* truncation is failure */
 			out[io++] = base64enc_tab[( v >> rem ) & 63];
 		}
 	}
+
 	if ( rem ) {
 		v <<= ( 6 - rem );
 		if ( io >= out_len )
-			return -1; /* truncation is failure */
+			return static_cast<size_t>( -1 ); /* truncation is failure */
 		out[io++] = base64enc_tab[v & 63];
 	}
+
 	while ( io & 3 ) {
 		if ( io >= out_len )
-			return -1; /* truncation is failure */
+			return static_cast<size_t>( -1 ); /* truncation is failure */
 		out[io++] = '=';
 	}
+
 	if ( io >= out_len )
-		return -1; /* no room for null terminator */
+		return static_cast<size_t>( -1 ); /* no room for null terminator */
+
 	out[io] = 0;
 	return io;
 }
@@ -98,31 +162,33 @@ size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, c
 bool Base64::encode( std::string_view in, std::string& out ) {
 	size_t b64len = encodeSafeOutLen( in.size() );
 
-	if ( out.size() < b64len ) {
+	if ( out.size() < b64len )
 		out.resize( b64len );
-	}
 
-	int len = encode( in.size(), (const unsigned char*)in.data(), out.size(), (char*)&out[0] );
+	const size_t len =
+		encode( in.size(), reinterpret_cast<const unsigned char*>( in.data() ), out.size(), out.data() );
 
-	if ( -1 != len && (size_t)len != out.size() ) {
+	if ( len != static_cast<size_t>( -1 ) && len != out.size() )
 		out.resize( len );
-	}
 
-	return -1 != len;
+	return len != static_cast<size_t>( -1 );
 }
 
 size_t Base64::decode( std::string_view in, std::string& out ) {
+	return decode( in, out, DecodeMode::AllowWhitespace );
+}
+
+size_t Base64::decode( std::string_view in, std::string& out, DecodeMode mode ) {
 	size_t d64len = decodeSafeOutLen( in.size() );
 
-	if ( out.size() < d64len ) {
+	if ( out.size() < d64len )
 		out.resize( d64len );
-	}
 
-	int len = decode( in.size(), in.data(), out.size(), (unsigned char*)&out[0] );
+	const size_t len = decode( in.size(), in.data(), out.size(),
+							   reinterpret_cast<unsigned char*>( out.data() ), mode );
 
-	if ( -1 != len && (size_t)len != out.size() ) {
+	if ( len != static_cast<size_t>( -1 ) && len != out.size() )
 		out.resize( len );
-	}
 
 	return len;
 }
