@@ -787,6 +787,7 @@ void DebuggerPlugin::updateUI() {
 	if ( !getUISceneNode() )
 		return;
 
+	mLifetime.setDispatcher( getUISceneNode() );
 	mLifetime.weakHandle().run( []( DebuggerPlugin* plugin ) {
 		plugin->buildSidePanelTab();
 		plugin->buildStatusBar();
