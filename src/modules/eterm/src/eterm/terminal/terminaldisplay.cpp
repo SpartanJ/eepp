@@ -2136,7 +2136,7 @@ void TerminalDisplay::initVBOs() {
 }
 
 Rectf TerminalDisplay::updateIMELocation() {
-	if ( !Engine::isMainThread() )
+	if ( !Engine::isMainThread() || !hasFocus() )
 		return {};
 	Float fontSize = mFont->getFontHeight( mFontSize );
 	Float spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
