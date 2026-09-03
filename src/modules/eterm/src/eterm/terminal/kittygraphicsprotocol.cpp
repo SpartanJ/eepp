@@ -12,7 +12,8 @@
 #include <thread>
 #include <type_traits>
 
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_ANDROID
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -89,7 +90,8 @@ bool decodeBase64( std::string_view input, bool finalChunk, std::vector<Uint8>& 
 }
 
 bool readSharedMemory( const KittyGraphicsCommandData& data, std::vector<Uint8>& output ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN || \
+	EE_PLATFORM == EE_PLATFORM_ANDROID
 	(void)data;
 	(void)output;
 	return false;
@@ -597,7 +599,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 		std::vector<Uint8>* destinationPixels = nullptr;
 		bool createdFrame = false;
 		if ( frameNumber == 1 ) {
-			if ( !image->second.rgba.unique() )
+			if ( image->second.rgba.use_count() != 1 )
 				image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
 			destinationPixels = image->second.rgba.get();
 		} else {
@@ -749,7 +751,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 								  mPrimaryPlacements.end() );
 	}
 	std::shared_ptr<std::vector<Uint8>> pixelStorage;
-	if ( existing != mImages.end() && existing->second.rgba.unique() ) {
+	if ( existing != mImages.end() && existing->second.rgba.use_count() == 1 ) {
 		pixelStorage = existing->second.rgba;
 		pixelStorage->assign( pixels.begin(), pixels.end() );
 		if ( format == 24 )
@@ -1282,7 +1284,7 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 					 source->data() + static_cast<size_t>( sourceY + row ) * imageStride +
 						 static_cast<size_t>( sourceX ) * 4,
 					 rowBytes );
-	if ( destinationFrame == 1 && !image->second.rgba.unique() ) {
+	if ( destinationFrame == 1 && image->second.rgba.use_count() != 1 ) {
 		image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
 		destination = image->second.rgba.get();
 	}

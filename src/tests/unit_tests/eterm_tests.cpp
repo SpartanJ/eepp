@@ -14,7 +14,8 @@
 #include <limits>
 #include <thread>
 
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_ANDROID
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -1035,7 +1036,8 @@ UTEST( eterm, kitty_graphics_reuses_unreferenced_replacement_pixel_storage ) {
 	EXPECT_TRUE( expected == *protocol.imagePixels( 91 ) );
 }
 
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_ANDROID
 UTEST( eterm, kitty_graphics_reads_and_unlinks_posix_shared_memory ) {
 	// mpv uses the Linux-compatible form without the optional leading slash.
 	const std::string name = "eterm-kitty-unit-" + std::to_string( getpid() );

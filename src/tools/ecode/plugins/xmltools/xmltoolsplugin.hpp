@@ -36,9 +36,9 @@ class XMLToolsPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
-	bool hasSettingsPage() const override { return true; }
+	bool hasSettingsPage() const { return true; }
 
-	void registerSettings( SettingsPage& page ) override;
+	void registerSettings( SettingsPage& page );
 
 	bool getHighlightMatch() const;
 
