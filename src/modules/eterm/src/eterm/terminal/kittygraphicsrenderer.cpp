@@ -26,8 +26,22 @@ bool KittyGraphicsRenderer::applyUpdates( std::vector<TerminalGraphicsUpdate>&& 
 			return false;
 
 		switch ( update.type ) {
-			case TerminalGraphicsUpdateType::CreateImage:
 			case TerminalGraphicsUpdateType::ReplaceImage: {
+				if ( !update.rgba || update.imageSize.getWidth() <= 0 ||
+					 update.imageSize.getHeight() <= 0 )
+					return false;
+				auto existing = mImages.find( update.imageId );
+				if ( existing != mImages.end() && existing->second.texture &&
+					 existing->second.size == update.imageSize ) {
+					existing->second.texture->update( update.rgba->data(),
+													  update.imageSize.getWidth(),
+													  update.imageSize.getHeight(), 0, 0 );
+					existing->second.frames.clear();
+					break;
+				}
+				[[fallthrough]];
+			}
+			case TerminalGraphicsUpdateType::CreateImage: {
 				if ( !update.rgba || update.imageSize.getWidth() <= 0 ||
 					 update.imageSize.getHeight() <= 0 )
 					return false;

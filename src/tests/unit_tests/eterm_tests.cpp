@@ -1,6 +1,7 @@
 #include "utest.hpp"
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -13,6 +14,12 @@
 #include <limits>
 #include <thread>
 
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 using namespace eterm::Terminal;
 using namespace eterm::System;
 using namespace EE::System;
@@ -23,6 +30,7 @@ class MockPty : public IPseudoTerminal {
 	std::string mWrites;
 	bool mLoopWrites{ true };
 	size_t mMaxRead{ std::numeric_limits<size_t>::max() };
+	std::deque<size_t> mReadSizes;
 	size_t mReadOffset{ 0 };
 	std::atomic<size_t> mBytesRead{ 0 };
 	int mCols = 80;
@@ -48,7 +56,12 @@ class MockPty : public IPseudoTerminal {
 	int read( char* buf, size_t n, bool ) override {
 		if ( mReadOffset == mBuffer.size() )
 			return 0;
-		size_t toRead = std::min( { n, mBuffer.size() - mReadOffset, mMaxRead } );
+		size_t readLimit = mMaxRead;
+		if ( !mReadSizes.empty() ) {
+			readLimit = mReadSizes.front();
+			mReadSizes.pop_front();
+		}
+		size_t toRead = std::min( { n, mBuffer.size() - mReadOffset, readLimit } );
 		memcpy( buf, mBuffer.data() + mReadOffset, toRead );
 		mReadOffset += toRead;
 		mBytesRead.fetch_add( toRead, std::memory_order_relaxed );
@@ -934,6 +947,62 @@ UTEST( eterm, kitty_graphics_apc_is_fragmentation_safe_and_not_terminal_text ) {
 	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
 	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
 }
+
+UTEST( eterm, kitty_graphics_bulk_apc_accepts_every_input_split_boundary ) {
+	const std::string stream = "\033_Ga=T,f=32,s=1,v=1,q=2;AQIDBA==\033\\";
+	for ( size_t split = 1; split < stream.size(); ++split ) {
+		auto pty = std::make_unique<MockPty>();
+		pty->mBuffer = stream;
+		pty->mLoopWrites = false;
+		pty->mReadSizes = { split, stream.size() - split };
+		auto process = std::make_unique<MockProcess>();
+		auto display = std::make_shared<MockDisplay>();
+		auto term =
+			TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+		term->update();
+		while ( !term->update() ) {
+		}
+		ASSERT_TRUE( display->mGraphics != nullptr );
+		ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+	}
+}
+
+UTEST( eterm, kitty_graphics_strict_base64_rejects_invalid_payload_bytes ) {
+	KittyGraphicsProtocol protocol;
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQI BA==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQIDBA=$" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQ=DBA==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData, protocol.handle( "a=t,f=32,s=1,v=1;AB==" ).error );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+UTEST( eterm, kitty_graphics_reads_and_unlinks_posix_shared_memory ) {
+	// mpv uses the Linux-compatible form without the optional leading slash.
+	const std::string name = "eterm-kitty-unit-" + std::to_string( getpid() );
+	shm_unlink( name.c_str() );
+	const int descriptor = shm_open( name.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600 );
+	ASSERT_TRUE( descriptor >= 0 );
+	const Uint8 stored[] = { 99, 98, 1, 2, 3 };
+	ASSERT_EQ( static_cast<ssize_t>( sizeof( stored ) ),
+			   write( descriptor, stored, sizeof( stored ) ) );
+	close( descriptor );
+
+	std::string encodedName;
+	ASSERT_TRUE( Base64::encode( name, encodedName ) );
+	KittyGraphicsProtocol protocol;
+	EXPECT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=T,t=s,f=24,s=1,v=1,O=2,S=3,q=2,m=1;" + encodedName ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	ASSERT_TRUE( updates[0].rgba != nullptr );
+	const std::vector<Uint8> expected{ 1, 2, 3, 255 };
+	EXPECT_TRUE( expected == *updates[0].rgba );
+	EXPECT_EQ( -1, shm_open( name.c_str(), O_RDONLY, 0 ) );
+}
+#endif
 
 UTEST( eterm, kitty_graphics_accepts_unchunked_direct_image_larger_than_eight_kibibytes ) {
 	std::vector<Uint8> rgb( 64 * 64 * 3 );

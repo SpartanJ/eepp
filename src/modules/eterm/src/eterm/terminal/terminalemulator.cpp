@@ -2664,10 +2664,16 @@ void TerminalEmulator::strdump( void ) {
 }
 
 void TerminalEmulator::strreset( void ) {
-	auto old = mStrescseq.buf;
+	char* buffer = mStrescseq.buf;
+	size_t capacity = mStrescseq.siz;
+	constexpr size_t MaxRetainedStringCapacity = 128 * 1024;
+	if ( !buffer || capacity > MaxRetainedStringCapacity ) {
+		buffer = (char*)xrealloc( buffer, STR_BUF_SIZ );
+		capacity = STR_BUF_SIZ;
+	}
 	mStrescseq = STREscape{};
-	mStrescseq.buf = (char*)xrealloc( old, STR_BUF_SIZ );
-	mStrescseq.siz = STR_BUF_SIZ;
+	mStrescseq.buf = buffer;
+	mStrescseq.siz = capacity;
 }
 
 void TerminalEmulator::sendbreak( const TerminalArg* ) {
@@ -3230,6 +3236,45 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 	int n;
 
 	for ( n = 0; n < buflen; n += charsize ) {
+		/* Kitty control data and payload are ASCII transport bytes. Once ESC _ G has been
+		 * recognized, append ordinary bytes in bulk instead of routing every Base64 byte through
+		 * UTF-8 decoding and the terminal character state machine. Control bytes remain on the
+		 * normal path so fragmented ESC \\ termination and malformed strings retain their exact
+		 * behavior. */
+		if ( !show_ctrl && ( mTerm.esc & ESC_STR ) && mStrescseq.type == '_' &&
+			 mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
+			int end = n;
+			while ( end < buflen ) {
+				const unsigned char byte = static_cast<unsigned char>( buf[end] );
+				if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+					 ( byte >= 0x80 && byte <= 0x9F ) )
+					break;
+				++end;
+			}
+			const size_t bytes = static_cast<size_t>( end - n );
+			if ( bytes != 0 ) {
+				if ( !mStrescseq.discarded ) {
+					if ( mStrescseq.len > MAX_KITTY_GRAPHICS_APC_SIZE ||
+						 bytes > MAX_KITTY_GRAPHICS_APC_SIZE - mStrescseq.len ) {
+						mStrescseq.discarded = true;
+					} else {
+						const size_t required = mStrescseq.len + bytes + 1;
+						if ( required > mStrescseq.siz ) {
+							size_t capacity = mStrescseq.siz;
+							while ( capacity < required )
+								capacity = eemin( capacity * 2, MAX_KITTY_GRAPHICS_APC_SIZE + 1 );
+							mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, capacity );
+							mStrescseq.siz = capacity;
+						}
+						std::memcpy( mStrescseq.buf + mStrescseq.len, buf + n, bytes );
+						mStrescseq.len += bytes;
+					}
+				}
+				n = end;
+				if ( n == buflen )
+					return buflen;
+			}
+		}
 		if ( IS_SET( MODE_UTF8 ) ) {
 			/* process a complete utf8 char */
 			charsize = utf8decode( buf + n, &u, buflen - n );

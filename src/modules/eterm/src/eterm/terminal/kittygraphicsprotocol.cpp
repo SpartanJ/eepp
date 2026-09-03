@@ -9,7 +9,15 @@
 #include <charconv>
 #include <cstring>
 #include <limits>
+#include <thread>
 #include <type_traits>
+
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 using namespace EE::System;
 
@@ -54,40 +62,96 @@ bool checkedPixelBytes( Uint32 width, Uint32 height, size_t channels, size_t& re
 	return true;
 }
 
-bool validBase64( std::string_view input, bool finalChunk ) {
-	if ( input.size() % 4 == 1 )
+bool decodeBase64( std::string_view input, bool finalChunk, std::vector<Uint8>& output ) {
+	if ( !finalChunk && input.size() % 4 != 0 )
 		return false;
-	size_t padding = 0;
-	for ( size_t i = 0; i < input.size(); ++i ) {
-		const unsigned char character = input[i];
-		const bool alphabet =
-			( character >= 'A' && character <= 'Z' ) || ( character >= 'a' && character <= 'z' ) ||
-			( character >= '0' && character <= '9' ) || character == '+' || character == '/';
-		if ( character == '=' ) {
-			++padding;
-			if ( !finalChunk || padding > 2 )
-				return false;
-		} else if ( !alphabet || padding != 0 ) {
-			return false;
-		}
+	const size_t oldSize = output.size();
+	const size_t capacity = Base64::decodeSafeOutLen( input.size() );
+	constexpr size_t MaxTransferBytes = 64 * 1024 * 1024;
+	if ( oldSize > MaxTransferBytes || capacity > MaxTransferBytes - oldSize )
+		return false;
+	output.resize( oldSize + capacity );
+	const size_t decodedSize =
+		Base64::decode( input.size(), input.data(), capacity, output.data() + oldSize,
+						Base64::DecodeMode::NoWhitespaceStrict );
+	if ( decodedSize == static_cast<size_t>( -1 ) ) {
+		output.resize( oldSize );
+		return false;
 	}
-	return finalChunk || input.size() % 4 == 0;
+	output.resize( oldSize + decodedSize );
+	return true;
 }
 
-bool decodeBase64( std::string_view input, bool finalChunk, std::vector<Uint8>& output ) {
-	if ( !validBase64( input, finalChunk ) )
+bool readSharedMemory( const KittyGraphicsCommandData& data, std::vector<Uint8>& output ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	(void)data;
+	(void)output;
+	return false;
+#else
+	std::vector<Uint8> decodedName;
+	if ( !decodeBase64( data.payload, true, decodedName ) || decodedName.empty() ||
+		 decodedName.size() > 255 ||
+		 std::find( decodedName.begin() + 1, decodedName.end(), '/' ) != decodedName.end() ||
+		 std::find( decodedName.begin(), decodedName.end(), 0 ) != decodedName.end() )
 		return false;
-	std::vector<Uint8> decoded( Base64::decodeSafeOutLen( input.size() ) );
-	const size_t decodedSize = Base64::decode( input.size(), input.data(), decoded.size(),
-											   decoded.data(), Base64::DecodeMode::NoWhitespace );
-	if ( decodedSize == static_cast<size_t>( -1 ) )
+	std::string name( decodedName.begin(), decodedName.end() );
+	const int descriptor = shm_open( name.c_str(), O_RDONLY, 0 );
+	if ( descriptor == -1 )
 		return false;
-	decoded.resize( decodedSize );
-	constexpr size_t MaxTransferBytes = 64 * 1024 * 1024;
-	if ( output.size() > MaxTransferBytes || decoded.size() > MaxTransferBytes - output.size() )
-		return false;
-	output.insert( output.end(), decoded.begin(), decoded.end() );
-	return true;
+	// POSIX Kitty transfers are single-use. Unlink immediately after opening so all error paths
+	// still retire the client-owned object while the descriptor keeps its contents alive.
+	shm_unlink( name.c_str() );
+	struct stat status{};
+	const size_t offset = data.dataOffset.value_or( 0 );
+	bool valid = fstat( descriptor, &status ) == 0 && status.st_size >= 0 &&
+				 static_cast<Uint64>( status.st_size ) >= offset;
+	size_t bytes = 0;
+	if ( valid ) {
+		const size_t available = static_cast<size_t>( status.st_size ) - offset;
+		bytes = data.dataSize.value_or( static_cast<Uint32>(
+			std::min<size_t>( available, std::numeric_limits<Uint32>::max() ) ) );
+		valid = bytes <= available && bytes <= 128 * 1024 * 1024;
+	}
+	if ( valid && bytes != 0 ) {
+		const size_t mappingBytes = offset + bytes;
+		valid = mappingBytes >= bytes && mappingBytes <= 128 * 1024 * 1024;
+		void* mapping = valid ? mmap( nullptr, mappingBytes, PROT_READ, MAP_SHARED, descriptor, 0 )
+							  : MAP_FAILED;
+		if ( mapping == MAP_FAILED ) {
+			valid = false;
+		} else {
+			const auto* source = static_cast<const Uint8*>( mapping ) + offset;
+			// mpv reuses the same shm name for every frame. If it reopened the object before
+			// we unlinked it above, its next memcpy can overlap this read. Require consecutive
+			// identical observations after yielding to the writer; otherwise retain the previous
+			// displayed frame instead of publishing visibly torn rows.
+			std::vector<Uint8> snapshot( source, source + bytes );
+			bool stable = false;
+			unsigned stableObservations = 0;
+			constexpr unsigned RequiredStableObservations = 2;
+			constexpr unsigned MaxSnapshotAttempts = 6;
+			for ( unsigned attempt = 0; attempt < MaxSnapshotAttempts; ++attempt ) {
+				std::this_thread::yield();
+				if ( std::memcmp( snapshot.data(), source, bytes ) == 0 ) {
+					if ( ++stableObservations == RequiredStableObservations ) {
+						stable = true;
+						break;
+					}
+				} else {
+					stableObservations = 0;
+					snapshot.assign( source, source + bytes );
+				}
+			}
+			if ( stable )
+				output = std::move( snapshot );
+			else
+				valid = false;
+			munmap( mapping, mappingBytes );
+		}
+	}
+	close( descriptor );
+	return valid && bytes != 0;
+#endif
 }
 
 bool placementContains( const TerminalVisiblePlacement& placement, Vector2i cell ) {
@@ -146,6 +210,9 @@ KittyGraphicsParseResult KittyGraphicsProtocol::parse( std::string_view command 
 				break;
 			case 'S':
 				PARSE_UINT_FIELD( dataSize );
+				break;
+			case 'O':
+				PARSE_UINT_FIELD( dataOffset );
 				break;
 			case 'm':
 				PARSE_UINT_FIELD( more );
@@ -327,6 +394,20 @@ KittyGraphicsHandleResult
 KittyGraphicsProtocol::handleTransmit( const KittyGraphicsCommandData& data, bool display,
 									   bool query, bool frame, Vector2i cursor ) {
 	const bool more = data.more.value_or( 0 ) != 0;
+	if ( data.transmission == 's' ) {
+		if ( mPending.active )
+			mPending = {};
+		PendingTransfer transfer;
+		transfer.data = data;
+		transfer.data.payload = {};
+		transfer.display = display;
+		transfer.query = query;
+		transfer.frame = frame;
+		if ( !readSharedMemory( data, transfer.decodedData ) )
+			return { response( data, KittyGraphicsError::DecodeFailed ),
+					 KittyGraphicsError::DecodeFailed, false };
+		return finishTransfer( std::move( transfer ), cursor );
+	}
 	if ( mPending.active ) {
 		if ( frame != mPending.frame || data.format || data.dataSize || data.imageId ||
 			 data.imageNumber || data.usageHint || data.placementId || data.width || data.height ||
@@ -361,6 +442,14 @@ KittyGraphicsProtocol::handleTransmit( const KittyGraphicsCommandData& data, boo
 	transfer.query = query;
 	transfer.frame = frame;
 	transfer.active = true;
+	const Uint32 format = data.format.value_or( 32 );
+	if ( format == 24 || format == 32 ) {
+		size_t expectedBytes = 0;
+		if ( data.width && data.height &&
+			 checkedPixelBytes( *data.width, *data.height, format == 24 ? 3 : 4, expectedBytes ) &&
+			 expectedBytes <= 64 * 1024 * 1024 )
+			transfer.decodedData.reserve( expectedBytes );
+	}
 	if ( !decodeBase64( data.payload, !more, transfer.decodedData ) )
 		return { response( data, KittyGraphicsError::InvalidData ), KittyGraphicsError::InvalidData,
 				 false };
@@ -495,7 +584,9 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 		std::vector<Uint8>* destinationPixels = nullptr;
 		bool createdFrame = false;
 		if ( frameNumber == 1 ) {
-			destinationPixels = &image->second.rgba;
+			if ( !image->second.rgba.unique() )
+				image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
+			destinationPixels = image->second.rgba.get();
 		} else {
 			auto frame = image->second.frames.find( frameNumber );
 			if ( frame == image->second.frames.end() ) {
@@ -505,7 +596,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 				if ( data.columns ) {
 					const Uint32 baseFrame = *data.columns;
 					if ( baseFrame == 1 )
-						newFrame.rgba = image->second.rgba;
+						newFrame.rgba = *image->second.rgba;
 					else {
 						auto base = image->second.frames.find( baseFrame );
 						if ( base == image->second.frames.end() )
@@ -620,7 +711,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 				 false };
 
 	auto existing = mImages.find( imageId );
-	const size_t oldBytes = existing == mImages.end() ? 0 : existing->second.rgba.size();
+	const size_t oldBytes = existing == mImages.end() ? 0 : existing->second.rgba->size();
 	if ( !ensureCapacity( pixels.size(), imageId, existing == mImages.end() ) )
 		return { response( data, KittyGraphicsError::NoSpace ), KittyGraphicsError::NoSpace,
 				 false };
@@ -646,8 +737,8 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	image.usageHint = data.usageHint.value_or( 0 );
 	image.anonymous = anonymous;
 	image.creationSerial = ++mCreationSerial;
-	image.rgba = std::move( pixels );
-	mStorageBytes = mStorageBytes - oldBytes + image.rgba.size();
+	image.rgba = std::make_shared<std::vector<Uint8>>( std::move( pixels ) );
+	mStorageBytes = mStorageBytes - oldBytes + image.rgba->size();
 	const bool replaced = existing != mImages.end();
 	auto inserted = mImages.insert_or_assign( imageId, std::move( image ) ).first;
 
@@ -658,7 +749,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	update.imageSize = inserted->second.size;
 	update.region =
 		Rect( 0, 0, inserted->second.size.getWidth(), inserted->second.size.getHeight() );
-	update.rgba = std::make_shared<const std::vector<Uint8>>( inserted->second.rgba );
+	update.rgba = inserted->second.rgba;
 	mUpdates.emplace_back( std::move( update ) );
 	++mStats.fullImageUpdates;
 	++mPresentationGeneration;
@@ -1122,7 +1213,7 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 				 false };
 	auto pixelsFor = [&]( Uint32 frameNumber ) -> std::vector<Uint8>* {
 		if ( frameNumber == 1 )
-			return &image->second.rgba;
+			return image->second.rgba.get();
 		auto frame = image->second.frames.find( frameNumber );
 		return frame == image->second.frames.end() ? nullptr : &frame->second.rgba;
 	};
@@ -1162,6 +1253,10 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 					 source->data() + static_cast<size_t>( sourceY + row ) * imageStride +
 						 static_cast<size_t>( sourceX ) * 4,
 					 rowBytes );
+	if ( destinationFrame == 1 && !image->second.rgba.unique() ) {
+		image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
+		destination = image->second.rgba.get();
+	}
 	const bool replace = data.cursorMovement.value_or( 0 ) == 1;
 	for ( Uint32 row = 0; row < height; ++row ) {
 		Uint8* target = destination->data() +
@@ -1239,7 +1334,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 	auto image = mImages.find( imageId );
 	if ( image == mImages.end() )
 		return;
-	mStorageBytes -= image->second.rgba.size();
+	mStorageBytes -= image->second.rgba->size();
 	for ( const auto& frame : image->second.frames )
 		mFrameStorageBytes -= frame.second.rgba.size();
 	mImages.erase( image );
@@ -1252,7 +1347,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 bool KittyGraphicsProtocol::ensureCapacity( size_t bytes, KittyImageId replacingId,
 											bool addingImage ) {
 	auto replaced = mImages.find( replacingId );
-	const size_t replacedBytes = replaced == mImages.end() ? 0 : replaced->second.rgba.size();
+	const size_t replacedBytes = replaced == mImages.end() ? 0 : replaced->second.rgba->size();
 	auto hasCapacity = [&] {
 		return bytes <= mMaxStorageBytes &&
 			   mStorageBytes - replacedBytes <= mMaxStorageBytes - bytes &&
@@ -1401,7 +1496,7 @@ std::shared_ptr<TerminalGraphicsPresentation> KittyGraphicsProtocol::takePresent
 
 const std::vector<Uint8>* KittyGraphicsProtocol::imagePixels( KittyImageId imageId ) const {
 	auto image = mImages.find( imageId );
-	return image == mImages.end() ? nullptr : &image->second.rgba;
+	return image == mImages.end() ? nullptr : image->second.rgba.get();
 }
 
 bool KittyGraphicsProtocol::hasVirtualPlacements() const {
@@ -1539,7 +1634,7 @@ void KittyGraphicsProtocol::resync() {
 		create.imageId = image.first;
 		create.imageSize = image.second.size;
 		create.region = Rect( 0, 0, image.second.size.getWidth(), image.second.size.getHeight() );
-		create.rgba = std::make_shared<const std::vector<Uint8>>( image.second.rgba );
+		create.rgba = image.second.rgba;
 		mUpdates.emplace_back( std::move( create ) );
 		for ( const auto& frame : image.second.frames ) {
 			TerminalGraphicsUpdate createFrame;

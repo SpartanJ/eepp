@@ -8,6 +8,7 @@ stream, and exclusively owns the OpenGL texture cache.
 ## Supported features
 
 - direct RGB and RGBA transmission, including chunking and zlib compression;
+- POSIX shared-memory transmission, including byte offsets and explicit sizes;
 - PNG transmission;
 - image IDs, image numbers, placement IDs, source cropping, cell geometry, and pixel offsets;
 - root-image rectangle updates, animation frames, frame composition, and animation control;
@@ -17,9 +18,9 @@ stream, and exclusively owns the OpenGL texture cache.
 - relative placements, including parent validation, cycle detection, and descendant movement;
 - terminal pixel-size queries and SGR pixel mouse coordinates.
 
-Local file, temporary-file, and shared-memory transfer media are intentionally not enabled. Direct
-transmission is the portable path and works through SSH without giving terminal applications access
-to the terminal host's filesystem or shared-memory namespace.
+Local file and temporary-file transfer media are intentionally not enabled. POSIX shared-memory
+objects are opened read-only and immediately unlinked as required by the protocol. Direct
+transmission remains the portable path and works through SSH.
 
 ## Resource and threading behavior
 

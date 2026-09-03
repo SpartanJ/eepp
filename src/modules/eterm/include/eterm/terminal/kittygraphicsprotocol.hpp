@@ -35,6 +35,7 @@ struct KittyGraphicsCommandData {
 	std::string_view payload;
 	std::optional<Uint32> format;
 	std::optional<Uint32> dataSize;
+	std::optional<Uint32> dataOffset;
 	std::optional<Uint32> more;
 	std::optional<Uint32> imageId;
 	std::optional<Uint32> imageNumber;
@@ -167,7 +168,7 @@ class KittyGraphicsProtocol {
 			Int32 gapMs{ 40 };
 			Uint32 usageHint{ 0 };
 		};
-		std::vector<Uint8> rgba;
+		std::shared_ptr<std::vector<Uint8>> rgba;
 		std::unordered_map<Uint32, Frame> frames;
 		Sizei size;
 		Uint32 imageNumber{ 0 };

@@ -14,6 +14,7 @@ class EE_API Base64 {
 	enum class DecodeMode {
 		AllowWhitespace,
 		NoWhitespace,
+		NoWhitespaceStrict,
 	};
 
 	/** Encode binary data into base64 digits with MIME style === pads

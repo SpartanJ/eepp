@@ -1,5 +1,5 @@
-#include <eepp/system/base64.hpp>
 #include <array>
+#include <eepp/system/base64.hpp>
 
 namespace EE { namespace System {
 
@@ -106,6 +106,46 @@ size_t decodeBase64( size_t in_len, const char* in, size_t out_len, unsigned cha
 	return io;
 }
 
+size_t decodeBase64Strict( size_t inLen, const char* input, size_t outLen, unsigned char* output ) {
+	size_t outputOffset = 0;
+	Uint32 value = 0;
+	unsigned bits = 0;
+	size_t padding = 0;
+	for ( size_t offset = 0; offset < inLen; ++offset ) {
+		const Uint8 decoded = base64dec_tab[static_cast<unsigned char>( input[offset] )];
+		if ( decoded == BASE64_PADDING ) {
+			padding = inLen - offset;
+			if ( padding > 2 || inLen % 4 != 0 )
+				return static_cast<size_t>( -1 );
+			for ( size_t remainder = offset; remainder < inLen; ++remainder )
+				if ( input[remainder] != '=' )
+					return static_cast<size_t>( -1 );
+			break;
+		}
+		if ( decoded > 63 || padding != 0 )
+			return static_cast<size_t>( -1 );
+		value = ( value << 6 ) | decoded;
+		bits += 6;
+		if ( bits >= 8 ) {
+			bits -= 8;
+			if ( outputOffset >= outLen )
+				return static_cast<size_t>( -1 );
+			output[outputOffset++] = static_cast<unsigned char>( ( value >> bits ) & 0xFF );
+			if ( bits == 0 )
+				value = 0;
+		}
+	}
+	const size_t dataLength = inLen - padding;
+	if ( dataLength % 4 == 1 || ( padding == 1 && dataLength % 4 != 3 ) ||
+		 ( padding == 2 && dataLength % 4 != 2 ) )
+		return static_cast<size_t>( -1 );
+	// Reject non-canonical encodings whose unused bits are non-zero. Besides being strict, this
+	// avoids accepting multiple byte strings for the same payload at protocol boundaries.
+	if ( bits != 0 && ( value & ( ( 1u << bits ) - 1u ) ) != 0 )
+		return static_cast<size_t>( -1 );
+	return outputOffset;
+}
+
 } // namespace
 
 size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out ) {
@@ -114,6 +154,8 @@ size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned c
 
 size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned char* out,
 					   DecodeMode mode ) {
+	if ( mode == DecodeMode::NoWhitespaceStrict )
+		return decodeBase64Strict( in_len, in, out_len, out );
 	return mode == DecodeMode::NoWhitespace ? decodeBase64<false>( in_len, in, out_len, out )
 											: decodeBase64<true>( in_len, in, out_len, out );
 }
@@ -165,8 +207,8 @@ bool Base64::encode( std::string_view in, std::string& out ) {
 	if ( out.size() < b64len )
 		out.resize( b64len );
 
-	const size_t len =
-		encode( in.size(), reinterpret_cast<const unsigned char*>( in.data() ), out.size(), out.data() );
+	const size_t len = encode( in.size(), reinterpret_cast<const unsigned char*>( in.data() ),
+							   out.size(), out.data() );
 
 	if ( len != static_cast<size_t>( -1 ) && len != out.size() )
 		out.resize( len );
