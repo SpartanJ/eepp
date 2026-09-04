@@ -1,6 +1,7 @@
 # Project Architecture: eepp & ecode
 
-This repository contains two primary components: a core framework (`eepp`) and an application built on top of it (`ecode`).
+This repository contains the core framework (`eepp`) and several applications and tools built on
+top of it, including `ecode`, `eterm`, and `eeiv`.
 
 ## 1. eepp (Core Framework)
 
@@ -11,6 +12,16 @@ This repository contains two primary components: a core framework (`eepp`) and a
 [ecode](https://github.com/SpartanJ/ecode/) is a lightweight, multi-platform code editor designed for responsiveness and performance.
 *   **Relationship:** `ecode` is built *using* the `eepp` GUI framework. It acts as the primary real-world consumer of `eepp`.
 *   **Goal:** Development on `ecode` is often used to test, improve, and drive new features in the underlying `eepp` library.
+
+## 3. eterm (Terminal Emulator)
+
+`eterm` is the repository's terminal emulator. Its name is always written in lowercase: `eterm`,
+not `eTerm`. Its implementation lives under `src/modules/eterm/`.
+
+## 4. eeiv (Image Viewer)
+
+`eeiv` is the repository's image viewer. Its application entry point is
+`src/tools/eeiv/eeiv.cpp`.
 
 ## Documentation & Code References
 

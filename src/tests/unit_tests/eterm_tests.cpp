@@ -1064,12 +1064,24 @@ UTEST( eterm, kitty_graphics_reuses_unreferenced_replacement_pixel_storage ) {
 	updates.clear();
 	const auto* storage = protocol.imagePixels( 91 );
 	ASSERT_TRUE( storage != nullptr );
+	const auto* firstAllocation = storage->data();
 
 	ASSERT_EQ( KittyGraphicsError::None,
 			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;BwgJCgsM" ).error );
 	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
 	const std::vector<Uint8> expected{ 7, 8, 9, 10, 11, 12 };
 	EXPECT_TRUE( expected == *protocol.imagePixels( 91 ) );
+	ASSERT_TRUE( firstAllocation != protocol.imagePixels( 91 )->data() );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	updates.clear();
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;DQ4PEBES" ).error );
+	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
+	const std::vector<Uint8> recycledExpected{ 13, 14, 15, 16, 17, 18 };
+	EXPECT_TRUE( recycledExpected == *protocol.imagePixels( 91 ) );
+	EXPECT_TRUE( firstAllocation == protocol.imagePixels( 91 )->data() );
 }
 
 UTEST( eterm, kitty_graphics_rejects_shared_memory_transmission ) {

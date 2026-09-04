@@ -663,11 +663,11 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	std::shared_ptr<std::vector<Uint8>> pixelStorage;
 	if ( existing != mImages.end() && existing->second.pixels.use_count() == 1 ) {
 		pixelStorage = existing->second.pixels;
-		pixelStorage->assign( pixels.begin(), pixels.end() );
-		if ( format == 24 )
-			recycleBuffer( pixels, mDecodedScratch );
-		else if ( format == 32 )
-			recycleBuffer( pixels, mDecodedScratch );
+		// The existing image is no longer referenced by a queued UI update. Exchange its backing
+		// allocation with the freshly decoded frame instead of copying the complete image. The old
+		// image allocation becomes the next transfer's decode buffer.
+		pixelStorage->swap( pixels );
+		recycleBuffer( pixels, mDecodedScratch );
 	} else {
 		pixelStorage = std::make_shared<std::vector<Uint8>>( std::move( pixels ) );
 	}
