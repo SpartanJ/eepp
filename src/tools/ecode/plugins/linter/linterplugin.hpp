@@ -76,9 +76,9 @@ class LinterPlugin : public Plugin {
 
 	std::string getDescription() { return Definition().description; }
 
-	bool hasSettingsPage() const override { return true; }
+	bool hasSettingsPage() const { return true; }
 
-	void registerSettings( SettingsPage& page ) override;
+	void registerSettings( SettingsPage& page );
 
 	virtual String::HashType getConfigFileHash() { return mConfigHash; }
 

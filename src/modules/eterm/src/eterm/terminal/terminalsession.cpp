@@ -20,7 +20,10 @@ struct TerminalSession::SelectionResponse {
 class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
   public:
 	WorkerDisplay( TerminalSession& session, TerminalColorPalette palette ) :
-		mSession( session ), mInitialPalette( std::move( palette ) ), mPalette( mInitialPalette ) {
+		mSession( session ),
+		mInitialPalette( std::move( palette ) ),
+		mPalette( mInitialPalette ),
+		mGraphics( std::make_shared<TerminalGraphicsPresentation>() ) {
 		mMode |= MODE_FOCUSED;
 	}
 
@@ -58,8 +61,20 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		mCursorVisible = true;
 	}
 
+	void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
+					   std::vector<TerminalGraphicsUpdate> updates ) {
+		if ( !presentation )
+			presentation = std::make_shared<TerminalGraphicsPresentation>();
+		presentation->requiredUpdateSequence = mGraphics ? mGraphics->requiredUpdateSequence : 0;
+		for ( auto& update : updates )
+			presentation->requiredUpdateSequence =
+				mSession.enqueueGraphicsUpdate( std::move( update ) );
+		mGraphics = std::move( presentation );
+	}
+
 	void drawEnd() {
 		auto snapshot = std::make_shared<TerminalSnapshot>();
+		snapshot->graphics = mGraphics;
 		snapshot->cells = mCells;
 		snapshot->dirtyRows = mDirtyRows;
 		snapshot->title = mTitle;
@@ -232,6 +247,7 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 	std::vector<TerminalGlyph> mCells;
 	std::vector<Uint8> mDirtyRows;
 	std::string mTitle;
+	std::shared_ptr<const TerminalGraphicsPresentation> mGraphics;
 	Uint64 mGeneration{ 0 };
 	Uint64 mLastAppliedScrollCommand{ 0 };
 	Vector2i mCursor;
@@ -302,7 +318,11 @@ void TerminalSession::writeRaw( std::string data ) {
 }
 
 void TerminalSession::resize( int columns, int rows ) {
-	enqueue( ResizeCommand{ columns, rows } );
+	resize( columns, rows, 0, 0 );
+}
+
+void TerminalSession::resize( int columns, int rows, int pixelWidth, int pixelHeight ) {
+	enqueue( ResizeCommand{ columns, rows, pixelWidth, pixelHeight } );
 }
 
 void TerminalSession::scrollUp( int amount ) {
@@ -334,9 +354,9 @@ void TerminalSession::selectionClear() {
 	enqueue( SelectionClearCommand{} );
 }
 
-void TerminalSession::mouseReport( TerminalMouseEventType type, Vector2i position, Uint32 flags,
-								   Uint32 modifiers ) {
-	enqueue( MouseCommand{ type, position, flags, modifiers } );
+void TerminalSession::mouseReport( TerminalMouseEventType type, Vector2i cellPosition,
+								   Vector2i pixelPosition, Uint32 flags, Uint32 modifiers ) {
+	enqueue( MouseCommand{ type, cellPosition, pixelPosition, flags, modifiers } );
 }
 
 void TerminalSession::setFocus( bool focus ) {
@@ -383,6 +403,10 @@ void TerminalSession::restart( PtyPtr&& pty, ProcPtr&& process ) {
 	enqueue( RestartCommand{ std::move( pty ), std::move( process ) } );
 }
 
+void TerminalSession::requestGraphicsResync() {
+	enqueue( GraphicsResyncCommand{} );
+}
+
 std::shared_ptr<const TerminalSnapshot> TerminalSession::snapshot() const {
 	std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
 	return mPublishedSnapshot;
@@ -408,6 +432,14 @@ std::vector<TerminalSession::Event> TerminalSession::drainEvents() {
 		mEvents.pop_front();
 	}
 	return events;
+}
+
+std::vector<TerminalGraphicsUpdate> TerminalSession::drainGraphicsUpdates() {
+	return mGraphicsUpdates.drain();
+}
+
+Uint64 TerminalSession::enqueueGraphicsUpdate( TerminalGraphicsUpdate update ) {
+	return mGraphicsUpdates.enqueue( std::move( update ) );
 }
 
 void TerminalSession::enqueueEvent( Event event, bool coalescable ) {
@@ -480,7 +512,7 @@ void TerminalSession::processCommand( Command&& command ) {
 			} else if constexpr ( std::is_same_v<T, WriteRawCommand> ) {
 				mEmulator->write( value.data.data(), value.data.size() );
 			} else if constexpr ( std::is_same_v<T, ResizeCommand> ) {
-				mEmulator->resize( value.columns, value.rows );
+				mEmulator->resize( value.columns, value.rows, value.pixelWidth, value.pixelHeight );
 			} else if constexpr ( std::is_same_v<T, ScrollCommand> ) {
 				TerminalArg argument( value.amount );
 				if ( value.direction < 0 )
@@ -502,7 +534,8 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->selclear();
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, MouseCommand> ) {
-				mEmulator->mousereport( value.type, value.position, value.flags, value.modifiers );
+				mEmulator->mousereport( value.type, value.cellPosition, value.pixelPosition,
+										value.flags, value.modifiers );
 			} else if constexpr ( std::is_same_v<T, FocusCommand> ) {
 				if ( mWorkerDisplay->getMode( MODE_FOCUS ) )
 					mEmulator->ttywrite( value.value ? "\033[I" : "\033[O", 3, false );
@@ -556,6 +589,9 @@ void TerminalSession::processCommand( Command&& command ) {
 				value.response->selection = mEmulator->getSelection();
 				value.response->ready = true;
 				value.response->condition.notify_one();
+			} else if constexpr ( std::is_same_v<T, GraphicsResyncCommand> ) {
+				mGraphicsUpdates.resetResync();
+				mEmulator->requestGraphicsResync();
 			}
 		},
 		std::move( command ) );

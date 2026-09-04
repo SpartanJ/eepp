@@ -107,13 +107,13 @@ bool PseudoTerminal::isTTY() const {
 	return true;
 }
 
-bool PseudoTerminal::resize( int columns, int rows ) {
+bool PseudoTerminal::resize( int columns, int rows, int pixelWidth, int pixelHeight ) {
 	struct winsize w;
 
 	w.ws_row = rows;
 	w.ws_col = columns;
-	w.ws_xpixel = 0;
-	w.ws_ypixel = 0;
+	w.ws_xpixel = pixelWidth;
+	w.ws_ypixel = pixelHeight;
 
 	bool masterResized = ioctl( (int)mMaster, TIOCSWINSZ, &w ) >= 0;
 	bool slaveResized =
@@ -297,7 +297,7 @@ bool PseudoTerminal::isTTY() const {
 	return true;
 }
 
-bool PseudoTerminal::resize( int columns, int rows ) {
+bool PseudoTerminal::resize( int columns, int rows, int, int ) {
 	if ( !pResizePseudoConsole )
 		return false;
 

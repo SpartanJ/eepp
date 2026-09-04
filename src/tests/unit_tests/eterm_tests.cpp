@@ -1,16 +1,22 @@
 #include "utest.hpp"
 #include <atomic>
 #include <chrono>
+#include <deque>
+#include <eepp/system/base64.hpp>
+#include <eepp/system/compression.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
+#include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminalsession.hpp>
 #include <limits>
 #include <thread>
 
 using namespace eterm::Terminal;
 using namespace eterm::System;
+using namespace EE::System;
 
 class MockPty : public IPseudoTerminal {
   public:
@@ -18,15 +24,20 @@ class MockPty : public IPseudoTerminal {
 	std::string mWrites;
 	bool mLoopWrites{ true };
 	size_t mMaxRead{ std::numeric_limits<size_t>::max() };
+	std::deque<size_t> mReadSizes;
 	size_t mReadOffset{ 0 };
 	std::atomic<size_t> mBytesRead{ 0 };
 	int mCols = 80;
 	int mRows = 24;
+	int mPixelWidth = 0;
+	int mPixelHeight = 0;
 	int getNumColumns() const override { return mCols; }
 	int getNumRows() const override { return mRows; }
-	bool resize( int columns, int rows ) override {
+	bool resize( int columns, int rows, int pixelWidth, int pixelHeight ) override {
 		mCols = columns;
 		mRows = rows;
+		mPixelWidth = pixelWidth;
+		mPixelHeight = pixelHeight;
 		return true;
 	}
 	bool isTTY() const override { return true; }
@@ -39,7 +50,12 @@ class MockPty : public IPseudoTerminal {
 	int read( char* buf, size_t n, bool ) override {
 		if ( mReadOffset == mBuffer.size() )
 			return 0;
-		size_t toRead = std::min( { n, mBuffer.size() - mReadOffset, mMaxRead } );
+		size_t readLimit = mMaxRead;
+		if ( !mReadSizes.empty() ) {
+			readLimit = mReadSizes.front();
+			mReadSizes.pop_front();
+		}
+		size_t toRead = std::min( { n, mBuffer.size() - mReadOffset, readLimit } );
 		memcpy( buf, mBuffer.data() + mReadOffset, toRead );
 		mReadOffset += toRead;
 		mBytesRead.fetch_add( toRead, std::memory_order_relaxed );
@@ -84,6 +100,8 @@ UTEST( eterm_session, command_wakeup_and_snapshot_immutability ) {
 			   snapshot.cells[1].u == 'B' && snapshot.cells[2].u == 'C';
 	} );
 	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( first->graphics != nullptr );
+	EXPECT_EQ( static_cast<Uint64>( 0 ), first->graphics->requiredUpdateSequence );
 	const Uint64 firstGeneration = first->generation;
 
 	session->writeRaw( "\rXYZ" );
@@ -100,6 +118,68 @@ UTEST( eterm_session, skipped_snapshot_generation_requires_full_redraw ) {
 	snapshot.generation = 42;
 	EXPECT_TRUE( snapshot.dirtyRowsFollow( 41 ) );
 	EXPECT_FALSE( snapshot.dirtyRowsFollow( 40 ) );
+}
+
+UTEST( eterm_session, graphics_update_queue_preserves_order_and_payloads ) {
+	TerminalGraphicsUpdateQueue queue;
+	auto pixels = std::make_shared<const std::vector<Uint8>>( 16, 0x7F );
+	TerminalGraphicsUpdate create;
+	create.type = TerminalGraphicsUpdateType::CreateImage;
+	create.imageId = 7;
+	create.pixels = pixels;
+	TerminalGraphicsUpdate patch;
+	patch.type = TerminalGraphicsUpdateType::UpdateRegion;
+	patch.imageId = 7;
+	patch.pixels = pixels;
+
+	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( create ) ) );
+	EXPECT_EQ( static_cast<Uint64>( 2 ), queue.enqueue( std::move( patch ) ) );
+	EXPECT_EQ( static_cast<size_t>( 32 ), queue.queuedBytes() );
+	auto updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), updates[0].sequence );
+	EXPECT_EQ( static_cast<Uint64>( 2 ), updates[1].sequence );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
+	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[1].type );
+	EXPECT_TRUE( pixels == updates[0].pixels );
+}
+
+UTEST( eterm_session, graphics_update_queue_overflow_requires_resync ) {
+	TerminalGraphicsUpdateQueue queue( 2, 8 );
+	TerminalGraphicsUpdate update;
+	update.type = TerminalGraphicsUpdateType::UpdateRegion;
+	update.pixels = std::make_shared<const std::vector<Uint8>>( 8, 0xFF );
+	queue.enqueue( update );
+	queue.enqueue( std::move( update ) );
+
+	EXPECT_TRUE( queue.needsResync() );
+	auto updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::Resync, updates[0].type );
+	EXPECT_EQ( static_cast<Uint64>( 2 ), updates[0].sequence );
+	EXPECT_EQ( static_cast<size_t>( 0 ), queue.queuedBytes() );
+}
+
+UTEST( eterm_session, graphics_update_queue_coalesces_superseded_video_frames ) {
+	TerminalGraphicsUpdateQueue queue( 4, 8 );
+	TerminalGraphicsUpdate create;
+	create.type = TerminalGraphicsUpdateType::CreateImage;
+	create.imageId = 7;
+	create.pixels = std::make_shared<const std::vector<Uint8>>( 8, 1 );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( create ) ) );
+	for ( Uint8 frame = 2; frame < 20; ++frame ) {
+		TerminalGraphicsUpdate replacement;
+		replacement.type = TerminalGraphicsUpdateType::ReplaceImage;
+		replacement.imageId = 7;
+		replacement.pixels = std::make_shared<const std::vector<Uint8>>( 8, frame );
+		EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( replacement ) ) );
+	}
+	EXPECT_FALSE( queue.needsResync() );
+	EXPECT_EQ( static_cast<size_t>( 8 ), queue.queuedBytes() );
+	auto updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
+	EXPECT_EQ( static_cast<Uint8>( 19 ), updates[0].pixels->front() );
 }
 
 UTEST( eterm_session, ordered_selection_request ) {
@@ -347,6 +427,7 @@ class MockDisplay : public ITerminalDisplay {
 	std::vector<Uint32> mResetColorIndices;
 	int mResetColorsCount{ 0 };
 	Uint32 mBackground{ 0x101010FF };
+	std::shared_ptr<TerminalGraphicsPresentation> mGraphics;
 	bool drawBegin( Uint32, Uint32 ) override { return true; }
 	void drawLine( Line line, int, int y, int ) override {
 		++mDrawLines;
@@ -360,6 +441,10 @@ class MockDisplay : public ITerminalDisplay {
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
 	void drawEnd() override { ++mDrawEnds; }
 	void resetColors() override { ++mResetColorsCount; }
+	void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
+					   std::vector<TerminalGraphicsUpdate> ) override {
+		mGraphics = std::move( presentation );
+	}
 	int resetColor( const Uint32& index, const char* ) override {
 		mResetColorIndices.emplace_back( index );
 		return 0;
@@ -381,6 +466,448 @@ class MockDisplay : public ITerminalDisplay {
 	}
 };
 
+UTEST( eterm, kitty_graphics_parser_preserves_payload_and_types_action ) {
+	auto result = KittyGraphicsProtocol::parse(
+		"a=T,f=32,s=2,v=1,i=7,p=9,q=1,C=1,z=-3,future=value;AAAA;BBBB" );
+	ASSERT_TRUE( result.command.has_value() );
+	auto* transmit = std::get_if<KittyTransmitCommand>( &*result.command );
+	ASSERT_TRUE( transmit != nullptr );
+	EXPECT_TRUE( transmit->display );
+	EXPECT_EQ( static_cast<Uint32>( 32 ), *transmit->data.format );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), *transmit->data.width );
+	EXPECT_EQ( static_cast<Uint32>( 1 ), *transmit->data.height );
+	EXPECT_EQ( static_cast<Int32>( -3 ), *transmit->data.zIndex );
+	EXPECT_STDSTREQ( "AAAA;BBBB", std::string( transmit->data.payload ) );
+}
+
+UTEST( eterm, kitty_graphics_parser_rejects_invalid_control_data ) {
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument,
+			   KittyGraphicsProtocol::parse( "a=T,m=2;AAAA" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument,
+			   KittyGraphicsProtocol::parse( "a=T,i=1,I=2;AAAA" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument,
+			   KittyGraphicsProtocol::parse( "a=T,s=4294967296;AAAA" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument,
+			   KittyGraphicsProtocol::parse( "a=unknown;AAAA" ).error );
+}
+
+UTEST( eterm, kitty_graphics_parser_fuzz_corpus_is_bounded_and_total ) {
+	Uint32 state = 0xC0FFEEu;
+	for ( size_t iteration = 0; iteration < 5000; ++iteration ) {
+		state ^= state << 13;
+		state ^= state >> 17;
+		state ^= state << 5;
+		const size_t length = state % 512;
+		std::string input( length, '\0' );
+		for ( char& character : input ) {
+			state ^= state << 13;
+			state ^= state >> 17;
+			state ^= state << 5;
+			character = static_cast<char>( state & 0x7F );
+		}
+		const auto result = KittyGraphicsProtocol::parse( input );
+		EXPECT_TRUE( result.command.has_value() || result.error != KittyGraphicsError::None );
+	}
+}
+
+UTEST( eterm, kitty_graphics_direct_rgba_chunks_create_worker_image ) {
+	KittyGraphicsProtocol protocol;
+	auto first = protocol.handle( "a=t,f=32,s=1,v=1,i=7,m=1;AQID" );
+	EXPECT_EQ( KittyGraphicsError::None, first.error );
+	EXPECT_FALSE( first.changed );
+	auto final = protocol.handle( "m=0;BA==" );
+	EXPECT_EQ( KittyGraphicsError::None, final.error );
+	EXPECT_TRUE( final.changed );
+	EXPECT_STDSTREQ( "\033_Gi=7;OK\033\\", final.response );
+
+	auto pixels = protocol.imagePixels( 7 );
+	ASSERT_TRUE( pixels != nullptr );
+	ASSERT_EQ( static_cast<size_t>( 4 ), pixels->size() );
+	EXPECT_EQ( static_cast<Uint8>( 1 ), ( *pixels )[0] );
+	EXPECT_EQ( static_cast<Uint8>( 4 ), ( *pixels )[3] );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
+}
+
+UTEST( eterm, kitty_graphics_chunk_continuations_reject_metadata_and_wrong_action ) {
+	KittyGraphicsProtocol protocol;
+	EXPECT_EQ( KittyGraphicsError::None, protocol.handle( "a=t,f=32,s=1,v=1,i=8,m=1;AQID" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument, protocol.handle( "m=0,s=1;BA==" ).error );
+	EXPECT_EQ( static_cast<size_t>( 0 ), protocol.imageCount() );
+	EXPECT_EQ( KittyGraphicsError::None, protocol.handle( "a=t,f=32,s=1,v=1,i=8,m=1;AQID" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument, protocol.handle( "a=p,i=8" ).error );
+	EXPECT_EQ( static_cast<size_t>( 0 ), protocol.imageCount() );
+
+	protocol.handle( "a=t,f=32,s=1,v=1,i=8;AQIDBA==" );
+	EXPECT_EQ( KittyGraphicsError::None, protocol.handle( "a=f,i=8,f=32,s=1,v=1,m=1;AQID" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidArgument, protocol.handle( "m=0;BA==" ).error );
+}
+
+UTEST( eterm, kitty_graphics_image_number_allocates_id_and_echoes_number ) {
+	KittyGraphicsProtocol protocol;
+	auto created = protocol.handle( "a=t,f=32,s=1,v=1,I=77;AQIDBA==" );
+	EXPECT_TRUE( created.changed );
+	EXPECT_TRUE( created.response.find( ",I=77;OK" ) != std::string::npos );
+	auto placed = protocol.handle( "a=p,I=77,p=3" );
+	EXPECT_EQ( KittyGraphicsError::None, placed.error );
+	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+}
+
+UTEST( eterm, kitty_graphics_rgb_and_zlib_preserve_rgb24 ) {
+	const std::vector<Uint8> rgb{ 10, 20, 30, 40, 50, 60 };
+	std::vector<Uint8> compressed( Compression::getMaxCompressedBufferSize( rgb.size() ) );
+	IOStreamMemory source( reinterpret_cast<const char*>( rgb.data() ), rgb.size() );
+	IOStreamMemory destination( reinterpret_cast<char*>( compressed.data() ), compressed.size() );
+	ASSERT_EQ( Compression::OK, Compression::compress( destination, source ) );
+	compressed.resize( destination.tell() );
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode(
+		std::string_view( reinterpret_cast<const char*>( compressed.data() ), compressed.size() ),
+		encoded ) );
+
+	KittyGraphicsProtocol protocol;
+	auto result = protocol.handle( "a=t,f=24,s=2,v=1,i=9,o=z;" + encoded );
+	EXPECT_TRUE( result.changed );
+	auto pixels = protocol.imagePixels( 9 );
+	ASSERT_TRUE( pixels != nullptr );
+	const std::vector<Uint8> expected{ 10, 20, 30, 40, 50, 60 };
+	EXPECT_TRUE( expected == *pixels );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint8>( 3 ), updates.front().channels );
+	EXPECT_TRUE( updates.front().pixels && expected == *updates.front().pixels );
+}
+
+UTEST( eterm, kitty_graphics_png_decodes_to_rgba ) {
+	KittyGraphicsProtocol protocol;
+	const auto result = protocol.handle( "a=t,f=100,i=10;"
+										 "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42"
+										 "mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" );
+	EXPECT_EQ( KittyGraphicsError::None, result.error );
+	EXPECT_TRUE( result.changed );
+	const auto* pixels = protocol.imagePixels( 10 );
+	ASSERT_TRUE( pixels != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ), pixels->size() );
+}
+
+UTEST( eterm, kitty_graphics_placement_uses_final_cursor_and_geometry ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=1,v=1,i=21,p=4,c=2,r=3,C=1,x=0,y=0,w=1,h=1;AQIDBA==",
+					 Vector2i( 5, 6 ) );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	const auto& placement = presentation->placements.front();
+	EXPECT_EQ( static_cast<KittyImageId>( 21 ), placement.imageId );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 4 ), placement.placementId );
+	EXPECT_EQ( 5, placement.visibleAnchorCell.x );
+	EXPECT_EQ( 6, placement.visibleAnchorCell.y );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), placement.columns );
+	EXPECT_EQ( static_cast<Uint32>( 3 ), placement.rows );
+
+	auto put = protocol.handle( "a=p,i=21,p=5,c=4,r=2", Vector2i( 1, 2 ) );
+	EXPECT_EQ( 4, put.cursorMovement.x );
+	EXPECT_EQ( 2, put.cursorMovement.y );
+	presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 2 ), presentation->placements.size() );
+}
+
+UTEST( eterm, kitty_graphics_placement_derives_missing_cell_geometry ) {
+	KittyGraphicsProtocol protocol;
+	protocol.setCellPixelSize( 10, 20 );
+	protocol.handle( "a=t,f=32,s=2,v=2,i=22;AAAAAAAAAAAAAAAAAAAAAA==" );
+	auto result = protocol.handle( "a=p,i=22,X=9,Y=19,C=1" );
+	EXPECT_TRUE( result.changed );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), presentation->placements[0].columns );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), presentation->placements[0].rows );
+}
+
+UTEST( eterm, kitty_graphics_retransmit_removes_old_placements_and_crop_intersects ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=2,v=2,i=23,p=4;AAAAAAAAAAAAAAAAAAAAAA==" );
+	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+	protocol.handle( "a=t,f=32,s=1,v=1,i=23;AQIDBA==" );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	protocol.handle( "a=t,f=32,s=2,v=2,i=24;AAAAAAAAAAAAAAAAAAAAAA==" );
+	auto placed = protocol.handle( "a=p,i=24,p=5,x=1,y=1,w=99,h=99" );
+	EXPECT_STDSTREQ( "\033_Gi=24,p=5;OK\033\\", placed.response );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( 2, presentation->placements[0].sourcePixels.Right );
+	EXPECT_EQ( 2, presentation->placements[0].sourcePixels.Bottom );
+}
+
+UTEST( eterm, kitty_graphics_resync_republishes_authoritative_images ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=t,f=32,s=1,v=1,i=27;AQIDBA==" );
+	protocol.takeUpdates();
+	protocol.resync();
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::ResetAll, updates[0].type );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[1].type );
+	EXPECT_EQ( static_cast<KittyImageId>( 27 ), updates[1].imageId );
+	ASSERT_TRUE( updates[1].pixels != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ), updates[1].pixels->size() );
+}
+
+UTEST( eterm, kitty_graphics_root_frame_patch_publishes_only_changed_rectangle ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=t,f=32,s=2,v=1,i=29;AQIDBAUGBwg=" );
+	protocol.takeUpdates();
+	auto result = protocol.handle( "a=f,i=29,r=1,f=32,s=1,v=1,x=1,y=0,X=1;CQoLDA==" );
+	EXPECT_TRUE( result.changed );
+	const auto* pixels = protocol.imagePixels( 29 );
+	ASSERT_TRUE( pixels != nullptr );
+	const std::vector<Uint8> expected{ 1, 2, 3, 4, 9, 10, 11, 12 };
+	EXPECT_TRUE( expected == *pixels );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[0].type );
+	EXPECT_EQ( 1, updates[0].region.Left );
+	EXPECT_EQ( 0, updates[0].region.Top );
+	EXPECT_EQ( 2, updates[0].region.Right );
+	EXPECT_EQ( 1, updates[0].region.Bottom );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ), updates[0].pixels->size() );
+}
+
+UTEST( eterm, kitty_graphics_rgb24_root_converts_only_when_mutated ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=92;AQIDBAUG" ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint8>( 3 ), updates[0].channels );
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=f,i=92,r=1,f=32,s=1,v=1,x=1,y=0,X=1;BwgJCg==" ).error );
+	const std::vector<Uint8> expected{ 1, 2, 3, 255, 7, 8, 9, 10 };
+	ASSERT_TRUE( protocol.imagePixels( 92 ) != nullptr );
+	EXPECT_TRUE( expected == *protocol.imagePixels( 92 ) );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::ReplaceImage, updates[0].type );
+	EXPECT_EQ( static_cast<Uint8>( 4 ), updates[0].channels );
+	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[1].type );
+}
+
+UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=2,v=1,i=30;AQIDBAUGBwg=" );
+	protocol.takeUpdates();
+	protocol.takePresentation();
+	auto frame = protocol.handle( "a=f,i=30,c=1,f=32,s=1,v=1,x=1,y=0,X=1,z=25;CQoLDA==" );
+	EXPECT_EQ( KittyGraphicsError::None, frame.error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateFrame, updates[0].type );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), updates[0].frameNumber );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
+	const std::vector<Uint8> expectedFrame{ 1, 2, 3, 4, 9, 10, 11, 12 };
+	EXPECT_TRUE( expectedFrame == *updates[0].pixels );
+
+	auto control = protocol.handle( "a=a,i=30,c=2" );
+	EXPECT_TRUE( control.changed );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), presentation->placements[0].frameNumber );
+
+	auto compose = protocol.handle( "a=c,i=30,r=1,c=2,X=1,Y=0,x=0,y=0,w=1,h=1,C=1" );
+	EXPECT_EQ( KittyGraphicsError::None, compose.error );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateFrameRegion, updates[0].type );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
+	const std::vector<Uint8> expectedPatch{ 5, 6, 7, 8 };
+	EXPECT_TRUE( expectedPatch == *updates[0].pixels );
+	EXPECT_TRUE( protocol.handle( "a=a,i=30,c=1,r=1,z=-1,s=3" ).changed );
+	EXPECT_TRUE( protocol.updateAnimations() );
+	presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), presentation->placements[0].frameNumber );
+	EXPECT_TRUE( protocol.handle( "a=d,d=f,i=30" ).changed );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::DeleteFrame, updates[0].type );
+}
+
+UTEST( eterm, kitty_graphics_delete_placements_and_uppercase_frees_data ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=1,v=1,i=31,p=1,c=2,r=2;AQIDBA==", Vector2i( 3, 4 ) );
+	protocol.handle( "a=p,i=31,p=2,c=1,r=1", Vector2i( 8, 9 ) );
+	protocol.takeUpdates();
+
+	auto result = protocol.handle( "a=d,d=c", Vector2i( 4, 5 ) );
+	EXPECT_TRUE( result.changed );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 2 ), presentation->placements[0].placementId );
+	EXPECT_TRUE( protocol.imagePixels( 31 ) != nullptr );
+
+	result = protocol.handle( "a=d,d=I,i=31,p=2" );
+	EXPECT_TRUE( result.changed );
+	EXPECT_TRUE( protocol.imagePixels( 31 ) == nullptr );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::DeleteImage, updates[0].type );
+	EXPECT_EQ( static_cast<KittyImageId>( 31 ), updates[0].imageId );
+}
+
+UTEST( eterm, kitty_graphics_storage_quota_evicts_oldest_unplaced_image ) {
+	KittyGraphicsProtocol protocol( 8, 2, 2 );
+	EXPECT_TRUE( protocol.handle( "a=t,f=32,s=1,v=1,i=41;AQIDBA==" ).changed );
+	EXPECT_TRUE( protocol.handle( "a=t,f=32,s=1,v=1,i=42,N=1;BQYHCA==" ).changed );
+	protocol.takeUpdates();
+	EXPECT_TRUE( protocol.handle( "a=t,f=32,s=1,v=1,i=43;CQoLDA==" ).changed );
+	EXPECT_TRUE( protocol.imagePixels( 41 ) != nullptr );
+	EXPECT_TRUE( protocol.imagePixels( 42 ) == nullptr );
+	EXPECT_TRUE( protocol.imagePixels( 43 ) != nullptr );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::DeleteImage, updates[0].type );
+	EXPECT_EQ( static_cast<KittyImageId>( 42 ), updates[0].imageId );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[1].type );
+}
+
+UTEST( eterm, kitty_graphics_screen_lifecycle_restores_primary_and_resets_gpu ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=1,v=1,i=51;AQIDBA==" );
+	protocol.takeUpdates();
+	protocol.takePresentation();
+	protocol.setAlternateScreen( true );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	protocol.handle( "a=p,i=51,p=2" );
+	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+	protocol.setAlternateScreen( false );
+	auto primary = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), primary->placements.size() );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 0 ), primary->placements[0].placementId );
+	protocol.clearScreen();
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	EXPECT_TRUE( protocol.imagePixels( 51 ) != nullptr );
+	protocol.reset();
+	EXPECT_TRUE( protocol.imagePixels( 51 ) == nullptr );
+	auto updates = protocol.takeUpdates();
+	ASSERT_TRUE( !updates.empty() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::ResetAll, updates.back().type );
+}
+
+UTEST( eterm, kitty_graphics_scrolling_tracks_history_and_scrollback ) {
+	KittyGraphicsProtocol protocol;
+	protocol.setViewport( 0, 0, 4 );
+	protocol.handle( "a=T,f=32,s=1,v=1,i=61,r=1;AQIDBA==", Vector2i( 0, 0 ) );
+	protocol.takePresentation();
+	protocol.scrollScreen( 0, 3, -1, true );
+	protocol.setViewport( 0, 1, 4 );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	protocol.setViewport( 1, 1, 4 );
+	auto history = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), history->placements.size() );
+	EXPECT_EQ( 0, history->placements[0].visibleAnchorCell.y );
+	protocol.setViewport( 0, 0, 4 );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+}
+
+UTEST( eterm, kitty_graphics_margin_scroll_discards_only_scrolled_out_placements ) {
+	KittyGraphicsProtocol protocol;
+	protocol.setViewport( 0, 0, 6 );
+	protocol.handle( "a=T,f=32,s=1,v=1,i=62,p=1;AQIDBA==", Vector2i( 0, 0 ) );
+	protocol.handle( "a=p,i=62,p=2", Vector2i( 0, 2 ) );
+	protocol.handle( "a=p,i=62,p=3", Vector2i( 0, 5 ) );
+	protocol.scrollScreen( 1, 4, -2, false );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 2 ), presentation->placements.size() );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 1 ), presentation->placements[0].placementId );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 3 ), presentation->placements[1].placementId );
+}
+
+UTEST( eterm, kitty_graphics_margin_scroll_clips_partially_visible_placements ) {
+	KittyGraphicsProtocol protocol;
+	protocol.setViewport( 0, 0, 6 );
+	protocol.handle( "a=T,f=32,s=1,v=4,i=63,p=1,c=1,r=4;AAAAAAAAAAAAAAAAAAAAAA==",
+					 Vector2i( 0, 1 ) );
+	protocol.scrollScreen( 1, 4, -2, false );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 1 ), presentation->placements.size() );
+	EXPECT_EQ( 1, presentation->placements[0].visibleAnchorCell.y );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), presentation->placements[0].rows );
+	EXPECT_EQ( 2, presentation->placements[0].sourcePixels.Top );
+	EXPECT_EQ( 4, presentation->placements[0].sourcePixels.Bottom );
+}
+
+UTEST( eterm, kitty_graphics_virtual_and_relative_placements_follow_protocol_rules ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=t,f=32,s=1,v=1,i=71;AQIDBA==" );
+	auto virtualPlacement = protocol.handle( "a=p,i=71,p=10,U=1,c=2,r=2", Vector2i( 2, 3 ) );
+	EXPECT_TRUE( virtualPlacement.changed );
+	EXPECT_EQ( 0, virtualPlacement.cursorMovement.x );
+	EXPECT_TRUE( protocol.takePresentation()->placements.empty() );
+	auto relative = protocol.handle( "a=p,i=71,p=11,P=71,Q=10,H=4,V=-1,c=1,r=1" );
+	EXPECT_TRUE( relative.changed );
+	EXPECT_EQ( 0, relative.cursorMovement.x );
+	protocol.setPlaceholderCells( { { 71, 10, Vector2i( 2, 3 ), 0, 0 } } );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 2 ), presentation->placements.size() );
+	auto child = std::find_if(
+		presentation->placements.begin(), presentation->placements.end(),
+		[]( const TerminalVisiblePlacement& placement ) { return placement.placementId == 11; } );
+	ASSERT_TRUE( child != presentation->placements.end() );
+	EXPECT_EQ( 6, child->visibleAnchorCell.x );
+	EXPECT_EQ( 2, child->visibleAnchorCell.y );
+	protocol.handle( "a=d,d=a" );
+	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+	auto replacement = protocol.handle( "a=p,i=71,p=11,P=71,Q=10,H=1,V=1" );
+	EXPECT_TRUE( replacement.changed );
+}
+
+UTEST( eterm, kitty_graphics_relative_placements_report_missing_parents_and_cycles ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=t,f=32,s=1,v=1,i=72;AQIDBA==" );
+	EXPECT_EQ( KittyGraphicsError::NoParent, protocol.handle( "a=p,i=72,p=2,P=72,Q=99" ).error );
+	EXPECT_TRUE( protocol.handle( "a=p,i=72,p=1", Vector2i( 1, 1 ) ).changed );
+	EXPECT_TRUE( protocol.handle( "a=p,i=72,p=2,P=72,Q=1,H=1,V=0" ).changed );
+	EXPECT_EQ( KittyGraphicsError::Cycle,
+			   protocol.handle( "a=p,i=72,p=1,P=72,Q=2,H=1,V=0" ).error );
+}
+
+UTEST( eterm, kitty_graphics_independent_client_namespaces_coexist ) {
+	KittyGraphicsProtocol protocol;
+	auto first = protocol.handle( "a=T,f=32,s=1,v=1,I=101,p=1;AQIDBA==" );
+	auto second = protocol.handle( "a=T,f=32,s=1,v=1,I=202,p=1;BQYHCA==", Vector2i( 2, 0 ) );
+	EXPECT_EQ( KittyGraphicsError::None, first.error );
+	EXPECT_EQ( KittyGraphicsError::None, second.error );
+	ASSERT_EQ( static_cast<size_t>( 2 ), protocol.imageCount() );
+	auto presentation = protocol.takePresentation();
+	ASSERT_EQ( static_cast<size_t>( 2 ), presentation->placements.size() );
+	EXPECT_NE( presentation->placements[0].imageId, presentation->placements[1].imageId );
+	EXPECT_TRUE( protocol.handle( "a=d,d=n,I=101" ).changed );
+	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+	EXPECT_EQ( static_cast<size_t>( 2 ), protocol.imageCount() );
+}
+
+UTEST( eterm_session, kitty_graphics_update_and_metadata_cross_worker_boundary ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_Ga=t,f=32,s=1,v=1,i=13;AQIDBA==\033\\";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	auto snapshot = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return value.graphics && value.graphics->requiredUpdateSequence > 0;
+	} );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), snapshot->graphics->requiredUpdateSequence );
+	auto updates = session->drainGraphicsUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), updates[0].sequence );
+	EXPECT_EQ( static_cast<KittyImageId>( 13 ), updates[0].imageId );
+	EXPECT_STDSTREQ( "\033_Gi=13;OK\033\\", ptyPtr->mWrites );
+}
+
 UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[?u\033[>7u\033[<1u\033[<u\033[=3u";
@@ -393,6 +920,237 @@ UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
 	term->update();
 
 	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+}
+
+UTEST( eterm, kitty_graphics_unicode_placeholder_uses_color_and_diacritics ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_Ga=t,f=32,s=2,v=2,i=72,q=2;AAAAAAAAAAAAAAAAAAAAAA==\033\\"
+				   "\033_Ga=p,i=72,p=3,U=1,c=2,r=2,q=2\033\\"
+				   "\033[38;5;72m\033[58;5;3m\xF4\x8E\xBB\xAE\xCC\x85\xCC\x85";
+	pty->mLoopWrites = false;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+	ASSERT_TRUE( display->mGraphics != nullptr );
+	ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+	const auto& placement = display->mGraphics->placements[0];
+	EXPECT_EQ( static_cast<KittyImageId>( 72 ), placement.imageId );
+	EXPECT_EQ( static_cast<KittyPlacementId>( 3 ), placement.placementId );
+	EXPECT_EQ( 0, placement.visibleAnchorCell.x );
+	EXPECT_EQ( 0, placement.visibleAnchorCell.y );
+	EXPECT_EQ( 0, placement.sourcePixels.Left );
+	EXPECT_EQ( 0, placement.sourcePixels.Top );
+	EXPECT_EQ( 1, placement.sourcePixels.Right );
+	EXPECT_EQ( 1, placement.sourcePixels.Bottom );
+	term->resize( 100, 30, 1000, 600 );
+	ASSERT_TRUE( display->mGraphics != nullptr );
+	ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+	EXPECT_EQ( static_cast<KittyImageId>( 72 ), display->mGraphics->placements[0].imageId );
+}
+
+UTEST( eterm, kitty_graphics_apc_is_fragmentation_safe_and_not_terminal_text ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_Ga=q,i=31,f=32,s=1,v=1;AAAAAA==\033\\OK";
+	pty->mLoopWrites = false;
+	pty->mMaxRead = 1;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	while ( !term->update() ) {
+	}
+
+	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
+}
+
+UTEST( eterm, kitty_graphics_bulk_apc_accepts_every_input_split_boundary ) {
+	const std::string stream = "\033_Ga=T,f=32,s=1,v=1,q=2;AQIDBA==\033\\";
+	for ( size_t split = 1; split < stream.size(); ++split ) {
+		auto pty = std::make_unique<MockPty>();
+		pty->mBuffer = stream;
+		pty->mLoopWrites = false;
+		pty->mReadSizes = { split, stream.size() - split };
+		auto process = std::make_unique<MockProcess>();
+		auto display = std::make_shared<MockDisplay>();
+		auto term =
+			TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+		term->update();
+		while ( !term->update() ) {
+		}
+		ASSERT_TRUE( display->mGraphics != nullptr );
+		ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+	}
+}
+
+UTEST( eterm, kitty_graphics_strict_base64_rejects_invalid_payload_bytes ) {
+	KittyGraphicsProtocol protocol;
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQI BA==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQIDBA=$" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1;AQ=DBA==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData, protocol.handle( "a=t,f=32,s=1,v=1;AB==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1,m=1;AQ==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1,m=1;AQI!" ).error );
+}
+
+UTEST( eterm, kitty_graphics_strict_base64_validates_final_quantum ) {
+	auto decode = []( std::string_view encoded ) {
+		std::vector<Uint8> output( Base64::decodeSafeOutLen( encoded.size() ) );
+		return Base64::decode( encoded.size(), encoded.data(), output.size(), output.data(),
+							   Base64::DecodeMode::NoWhitespaceStrict );
+	};
+	EXPECT_EQ( static_cast<size_t>( 1 ), decode( "AA" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), decode( "AAA" ) );
+	EXPECT_EQ( static_cast<size_t>( 1 ), decode( "AA==" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), decode( "AAA=" ) );
+	for ( std::string_view invalid :
+		  { "A", "AB", "AAB", "AB==", "AAB=", "====", "A===", "AA=A", "AAAA=", "AAAA====" } )
+		EXPECT_EQ( static_cast<size_t>( -1 ), decode( invalid ) );
+}
+
+UTEST( eterm, kitty_graphics_strict_base64_decodes_boundaries_and_large_payloads ) {
+	for ( size_t length = 1; length <= 257; ++length ) {
+		std::vector<Uint8> boundarySource( length );
+		for ( size_t i = 0; i < boundarySource.size(); ++i )
+			boundarySource[i] = static_cast<Uint8>( ( i * 197 + length ) & 0xFF );
+		std::string boundaryEncoded;
+		ASSERT_TRUE( Base64::encode(
+			std::string_view( reinterpret_cast<const char*>( boundarySource.data() ),
+							  boundarySource.size() ),
+			boundaryEncoded ) );
+		std::vector<Uint8> boundaryDecoded( Base64::decodeSafeOutLen( boundaryEncoded.size() ) );
+		const size_t boundaryDecodedSize =
+			Base64::decode( boundaryEncoded.size(), boundaryEncoded.data(), boundaryDecoded.size(),
+							boundaryDecoded.data(), Base64::DecodeMode::NoWhitespaceStrict );
+		ASSERT_EQ( boundarySource.size(), boundaryDecodedSize );
+		boundaryDecoded.resize( boundaryDecodedSize );
+		EXPECT_TRUE( boundarySource == boundaryDecoded );
+	}
+
+	std::vector<Uint8> source( 65537 );
+	for ( size_t i = 0; i < source.size(); ++i )
+		source[i] = static_cast<Uint8>( ( i * 131 + i / 7 ) & 0xFF );
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode(
+		std::string_view( reinterpret_cast<const char*>( source.data() ), source.size() ),
+		encoded ) );
+	std::vector<Uint8> decoded( Base64::decodeSafeOutLen( encoded.size() ) );
+	const size_t decodedSize =
+		Base64::decode( encoded.size(), encoded.data(), decoded.size(), decoded.data(),
+						Base64::DecodeMode::NoWhitespaceStrict );
+	ASSERT_EQ( source.size(), decodedSize );
+	decoded.resize( decodedSize );
+	EXPECT_TRUE( source == decoded );
+
+	encoded[encoded.size() / 2] = '!';
+	EXPECT_EQ( static_cast<size_t>( -1 ),
+			   Base64::decode( encoded.size(), encoded.data(), decoded.size(), decoded.data(),
+							   Base64::DecodeMode::NoWhitespaceStrict ) );
+}
+
+UTEST( eterm, kitty_graphics_reuses_unreferenced_replacement_pixel_storage ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;AQIDBAUG" ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	updates.clear();
+	const auto* storage = protocol.imagePixels( 91 );
+	ASSERT_TRUE( storage != nullptr );
+	const auto* firstAllocation = storage->data();
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;BwgJCgsM" ).error );
+	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
+	const std::vector<Uint8> expected{ 7, 8, 9, 10, 11, 12 };
+	EXPECT_TRUE( expected == *protocol.imagePixels( 91 ) );
+	ASSERT_TRUE( firstAllocation != protocol.imagePixels( 91 )->data() );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	updates.clear();
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;DQ4PEBES" ).error );
+	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
+	const std::vector<Uint8> recycledExpected{ 13, 14, 15, 16, 17, 18 };
+	EXPECT_TRUE( recycledExpected == *protocol.imagePixels( 91 ) );
+	EXPECT_TRUE( firstAllocation == protocol.imagePixels( 91 )->data() );
+}
+
+UTEST( eterm, kitty_graphics_rejects_shared_memory_transmission ) {
+	KittyGraphicsProtocol protocol;
+	EXPECT_EQ( KittyGraphicsError::Unsupported,
+			   protocol.handle( "a=T,t=s,f=24,s=1,v=1,q=2;L2VlcHAtc2ht" ).error );
+}
+
+UTEST( eterm, kitty_graphics_accepts_unchunked_direct_image_larger_than_eight_kibibytes ) {
+	std::vector<Uint8> rgb( 64 * 64 * 3 );
+	for ( size_t offset = 0; offset < rgb.size(); offset += 3 )
+		rgb[offset] = 255;
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode(
+		std::string_view( reinterpret_cast<const char*>( rgb.data() ), rgb.size() ), encoded ) );
+	const std::string command = "a=T,f=24,s=64,v=64,c=10,r=5,C=1;" + encoded;
+	ASSERT_TRUE( KittyGraphicsProtocol::parse( command ).command.has_value() );
+	KittyGraphicsProtocol directProtocol;
+	EXPECT_EQ( KittyGraphicsError::None, directProtocol.handle( command ).error );
+
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_G" + command + "\033\\";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	while ( !term->update() ) {
+	}
+
+	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+	ASSERT_TRUE( display->mGraphics != nullptr );
+	ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+	EXPECT_EQ( static_cast<Uint32>( 10 ), display->mGraphics->placements[0].columns );
+	EXPECT_EQ( static_cast<Uint32>( 5 ), display->mGraphics->placements[0].rows );
+}
+
+UTEST( eterm, kitty_graphics_anonymous_video_frames_replace_at_same_anchor ) {
+	KittyGraphicsProtocol protocol( 8, 8, 8 );
+	for ( int frame = 0; frame < 20; ++frame ) {
+		const char* pixels = frame % 2 == 0 ? "AQIDBA==" : "BQYHCA==";
+		auto result =
+			protocol.handle( std::string( "a=T,f=32,s=1,v=1,q=2;" ) + pixels, Vector2i( 3, 4 ) );
+		EXPECT_EQ( KittyGraphicsError::None, result.error );
+		EXPECT_TRUE( result.changed );
+		EXPECT_EQ( static_cast<size_t>( 1 ), protocol.imageCount() );
+		ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
+	}
+	const auto* pixels = protocol.imagePixels( 1 );
+	ASSERT_TRUE( pixels != nullptr );
+	EXPECT_EQ( static_cast<Uint8>( 5 ), ( *pixels )[0] );
+}
+
+UTEST( eterm, oversized_kitty_graphics_apc_is_discarded_until_terminator ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_Ga=t;" + std::string( MAX_KITTY_GRAPHICS_APC_SIZE, 'A' ) + "\033\\OK";
+	pty->mLoopWrites = false;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	term->update();
+	while ( !term->update() ) {
+	}
+
+	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
 }
 
 UTEST( eterm, cursor_style_and_xterm_version_queries ) {
@@ -410,6 +1168,37 @@ UTEST( eterm, cursor_style_and_xterm_version_queries ) {
 	EXPECT_EQ( static_cast<size_t>( 0 ), ptyPtr->mWrites.find( "\033P>|eterm " ) );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 2 );
 	EXPECT_STDSTREQ( "\033\\", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 2 ) );
+}
+
+UTEST( eterm, pixel_geometry_queries_use_latest_worker_resize ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[14t\033[16t";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->resize( 40, 20, 400, 300 );
+
+	term->update();
+
+	EXPECT_TRUE( ptyPtr->mWrites.find( "\033[4;300;400t" ) != std::string::npos );
+	EXPECT_TRUE( ptyPtr->mWrites.find( "\033[6;15;10t" ) != std::string::npos );
+}
+
+UTEST( eterm, sgr_pixel_mouse_mode_uses_grid_relative_pixels ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1000h\033[?1016h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 2, 3 }, { 20, 30 },
+					   EE_BUTTON_LMASK, 0 );
+
+	EXPECT_STDSTREQ( "\033[<0;21;31M", ptyPtr->mWrites );
 }
 
 UTEST( eterm, cursor_style_zero_uses_blinking_configured_shape ) {
@@ -451,12 +1240,14 @@ UTEST( eterm, alternate_scroll_mode_controls_wheel_key_translation ) {
 	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
 
 	term->update();
-	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, { 0, 0 },
+					   EE_BUTTON_WUMASK, 0 );
 	EXPECT_TRUE( ptyPtr->mWrites.empty() );
 
 	ptyPtr->mBuffer += "\033[?1007h";
 	term->update();
-	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, EE_BUTTON_WUMASK, 0 );
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 0, 0 }, { 0, 0 },
+					   EE_BUTTON_WUMASK, 0 );
 	EXPECT_STDSTREQ( "\033[A", ptyPtr->mWrites );
 }
 
