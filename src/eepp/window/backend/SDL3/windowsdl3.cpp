@@ -325,11 +325,9 @@ int WindowSDL::getCurrentDisplayIndex() const {
 }
 
 std::string WindowSDL::getVersion() {
-	int major = SDL_MAJOR_VERSION;
-	int minor = SDL_MINOR_VERSION;
-	int patch = SDL_MICRO_VERSION;
-
-	return String::format( "SDL %d.%d.%d", major, minor, patch );
+	int ver = SDL_GetVersion();
+	return String::format( "SDL %d.%d.%d", SDL_VERSIONNUM_MAJOR( ver ), SDL_VERSIONNUM_MINOR( ver ),
+						   SDL_VERSIONNUM_MICRO( ver ) );
 }
 
 void WindowSDL::setGLConfig() {
