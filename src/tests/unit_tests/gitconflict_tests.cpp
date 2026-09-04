@@ -83,6 +83,7 @@ UTEST( GitConflict, KeepsMergeOperationAfterAllConflictsAreStaged ) {
 	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
 	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "eepp tests" } ) );
 	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "eepp-tests@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "rerere.enabled", "false" } ) );
 	const std::string file = ( temp.path / "conflict.txt" ).string();
 	ASSERT_TRUE( FileSystem::fileWrite( file, "base\n" ) );
 	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "conflict.txt" } ) );

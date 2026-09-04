@@ -42,6 +42,12 @@ bool CPU::hasAVX2() {
 		__cpuid( cpuInfo, 0 );
 		if ( cpuInfo[0] < 7 )
 			return false;
+		__cpuid( cpuInfo, 1 );
+		constexpr int OSXSAVE = 1 << 27;
+		constexpr int AVX = 1 << 28;
+		if ( ( cpuInfo[2] & ( OSXSAVE | AVX ) ) != ( OSXSAVE | AVX ) ||
+			 ( _xgetbv( 0 ) & 0x6 ) != 0x6 )
+			return false;
 		__cpuid( cpuInfo, 7 );
 		return ( cpuInfo[1] & ( 1 << 5 ) ) != 0;
 #elif defined( COMPILER_GCC_CLANG )

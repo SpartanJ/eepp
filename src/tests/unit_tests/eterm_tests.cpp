@@ -14,13 +14,6 @@
 #include <limits>
 #include <thread>
 
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
-	EE_PLATFORM != EE_PLATFORM_ANDROID
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#endif
-
 using namespace eterm::Terminal;
 using namespace eterm::System;
 using namespace EE::System;
@@ -133,11 +126,11 @@ UTEST( eterm_session, graphics_update_queue_preserves_order_and_payloads ) {
 	TerminalGraphicsUpdate create;
 	create.type = TerminalGraphicsUpdateType::CreateImage;
 	create.imageId = 7;
-	create.rgba = pixels;
+	create.pixels = pixels;
 	TerminalGraphicsUpdate patch;
 	patch.type = TerminalGraphicsUpdateType::UpdateRegion;
 	patch.imageId = 7;
-	patch.rgba = pixels;
+	patch.pixels = pixels;
 
 	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( create ) ) );
 	EXPECT_EQ( static_cast<Uint64>( 2 ), queue.enqueue( std::move( patch ) ) );
@@ -148,14 +141,14 @@ UTEST( eterm_session, graphics_update_queue_preserves_order_and_payloads ) {
 	EXPECT_EQ( static_cast<Uint64>( 2 ), updates[1].sequence );
 	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
 	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[1].type );
-	EXPECT_TRUE( pixels == updates[0].rgba );
+	EXPECT_TRUE( pixels == updates[0].pixels );
 }
 
 UTEST( eterm_session, graphics_update_queue_overflow_requires_resync ) {
 	TerminalGraphicsUpdateQueue queue( 2, 8 );
 	TerminalGraphicsUpdate update;
 	update.type = TerminalGraphicsUpdateType::UpdateRegion;
-	update.rgba = std::make_shared<const std::vector<Uint8>>( 8, 0xFF );
+	update.pixels = std::make_shared<const std::vector<Uint8>>( 8, 0xFF );
 	queue.enqueue( update );
 	queue.enqueue( std::move( update ) );
 
@@ -172,13 +165,13 @@ UTEST( eterm_session, graphics_update_queue_coalesces_superseded_video_frames ) 
 	TerminalGraphicsUpdate create;
 	create.type = TerminalGraphicsUpdateType::CreateImage;
 	create.imageId = 7;
-	create.rgba = std::make_shared<const std::vector<Uint8>>( 8, 1 );
+	create.pixels = std::make_shared<const std::vector<Uint8>>( 8, 1 );
 	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( create ) ) );
 	for ( Uint8 frame = 2; frame < 20; ++frame ) {
 		TerminalGraphicsUpdate replacement;
 		replacement.type = TerminalGraphicsUpdateType::ReplaceImage;
 		replacement.imageId = 7;
-		replacement.rgba = std::make_shared<const std::vector<Uint8>>( 8, frame );
+		replacement.pixels = std::make_shared<const std::vector<Uint8>>( 8, frame );
 		EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( replacement ) ) );
 	}
 	EXPECT_FALSE( queue.needsResync() );
@@ -186,7 +179,7 @@ UTEST( eterm_session, graphics_update_queue_coalesces_superseded_video_frames ) 
 	auto updates = queue.drain();
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
-	EXPECT_EQ( static_cast<Uint8>( 19 ), updates[0].rgba->front() );
+	EXPECT_EQ( static_cast<Uint8>( 19 ), updates[0].pixels->front() );
 }
 
 UTEST( eterm_session, ordered_selection_request ) {
@@ -561,7 +554,7 @@ UTEST( eterm, kitty_graphics_image_number_allocates_id_and_echoes_number ) {
 	ASSERT_EQ( static_cast<size_t>( 1 ), protocol.takePresentation()->placements.size() );
 }
 
-UTEST( eterm, kitty_graphics_rgb_and_zlib_normalize_to_rgba ) {
+UTEST( eterm, kitty_graphics_rgb_and_zlib_preserve_rgb24 ) {
 	const std::vector<Uint8> rgb{ 10, 20, 30, 40, 50, 60 };
 	std::vector<Uint8> compressed( Compression::getMaxCompressedBufferSize( rgb.size() ) );
 	IOStreamMemory source( reinterpret_cast<const char*>( rgb.data() ), rgb.size() );
@@ -578,8 +571,12 @@ UTEST( eterm, kitty_graphics_rgb_and_zlib_normalize_to_rgba ) {
 	EXPECT_TRUE( result.changed );
 	auto pixels = protocol.imagePixels( 9 );
 	ASSERT_TRUE( pixels != nullptr );
-	const std::vector<Uint8> expected{ 10, 20, 30, 255, 40, 50, 60, 255 };
+	const std::vector<Uint8> expected{ 10, 20, 30, 40, 50, 60 };
 	EXPECT_TRUE( expected == *pixels );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint8>( 3 ), updates.front().channels );
+	EXPECT_TRUE( updates.front().pixels && expected == *updates.front().pixels );
 }
 
 UTEST( eterm, kitty_graphics_png_decodes_to_rgba ) {
@@ -652,8 +649,8 @@ UTEST( eterm, kitty_graphics_resync_republishes_authoritative_images ) {
 	EXPECT_EQ( TerminalGraphicsUpdateType::ResetAll, updates[0].type );
 	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[1].type );
 	EXPECT_EQ( static_cast<KittyImageId>( 27 ), updates[1].imageId );
-	ASSERT_TRUE( updates[1].rgba != nullptr );
-	EXPECT_EQ( static_cast<size_t>( 4 ), updates[1].rgba->size() );
+	ASSERT_TRUE( updates[1].pixels != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ), updates[1].pixels->size() );
 }
 
 UTEST( eterm, kitty_graphics_root_frame_patch_publishes_only_changed_rectangle ) {
@@ -673,8 +670,28 @@ UTEST( eterm, kitty_graphics_root_frame_patch_publishes_only_changed_rectangle )
 	EXPECT_EQ( 0, updates[0].region.Top );
 	EXPECT_EQ( 2, updates[0].region.Right );
 	EXPECT_EQ( 1, updates[0].region.Bottom );
-	ASSERT_TRUE( updates[0].rgba != nullptr );
-	EXPECT_EQ( static_cast<size_t>( 4 ), updates[0].rgba->size() );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ), updates[0].pixels->size() );
+}
+
+UTEST( eterm, kitty_graphics_rgb24_root_converts_only_when_mutated ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=24,s=2,v=1,i=92;AQIDBAUG" ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( static_cast<Uint8>( 3 ), updates[0].channels );
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=f,i=92,r=1,f=32,s=1,v=1,x=1,y=0,X=1;BwgJCg==" ).error );
+	const std::vector<Uint8> expected{ 1, 2, 3, 255, 7, 8, 9, 10 };
+	ASSERT_TRUE( protocol.imagePixels( 92 ) != nullptr );
+	EXPECT_TRUE( expected == *protocol.imagePixels( 92 ) );
+	updates = protocol.takeUpdates();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::ReplaceImage, updates[0].type );
+	EXPECT_EQ( static_cast<Uint8>( 4 ), updates[0].channels );
+	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[1].type );
 }
 
 UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
@@ -688,9 +705,9 @@ UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( TerminalGraphicsUpdateType::CreateFrame, updates[0].type );
 	EXPECT_EQ( static_cast<Uint32>( 2 ), updates[0].frameNumber );
-	ASSERT_TRUE( updates[0].rgba != nullptr );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
 	const std::vector<Uint8> expectedFrame{ 1, 2, 3, 4, 9, 10, 11, 12 };
-	EXPECT_TRUE( expectedFrame == *updates[0].rgba );
+	EXPECT_TRUE( expectedFrame == *updates[0].pixels );
 
 	auto control = protocol.handle( "a=a,i=30,c=2" );
 	EXPECT_TRUE( control.changed );
@@ -703,9 +720,9 @@ UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
 	updates = protocol.takeUpdates();
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateFrameRegion, updates[0].type );
-	ASSERT_TRUE( updates[0].rgba != nullptr );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
 	const std::vector<Uint8> expectedPatch{ 5, 6, 7, 8 };
-	EXPECT_TRUE( expectedPatch == *updates[0].rgba );
+	EXPECT_TRUE( expectedPatch == *updates[0].pixels );
 	EXPECT_TRUE( protocol.handle( "a=a,i=30,c=1,r=1,z=-1,s=3" ).changed );
 	EXPECT_TRUE( protocol.updateAnimations() );
 	presentation = protocol.takePresentation();
@@ -977,6 +994,25 @@ UTEST( eterm, kitty_graphics_strict_base64_rejects_invalid_payload_bytes ) {
 	EXPECT_EQ( KittyGraphicsError::InvalidData,
 			   protocol.handle( "a=t,f=32,s=1,v=1;AQ=DBA==" ).error );
 	EXPECT_EQ( KittyGraphicsError::InvalidData, protocol.handle( "a=t,f=32,s=1,v=1;AB==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1,m=1;AQ==" ).error );
+	EXPECT_EQ( KittyGraphicsError::InvalidData,
+			   protocol.handle( "a=t,f=32,s=1,v=1,m=1;AQI!" ).error );
+}
+
+UTEST( eterm, kitty_graphics_strict_base64_validates_final_quantum ) {
+	auto decode = []( std::string_view encoded ) {
+		std::vector<Uint8> output( Base64::decodeSafeOutLen( encoded.size() ) );
+		return Base64::decode( encoded.size(), encoded.data(), output.size(), output.data(),
+							   Base64::DecodeMode::NoWhitespaceStrict );
+	};
+	EXPECT_EQ( static_cast<size_t>( 1 ), decode( "AA" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), decode( "AAA" ) );
+	EXPECT_EQ( static_cast<size_t>( 1 ), decode( "AA==" ) );
+	EXPECT_EQ( static_cast<size_t>( 2 ), decode( "AAA=" ) );
+	for ( std::string_view invalid :
+		  { "A", "AB", "AAB", "AB==", "AAB=", "====", "A===", "AA=A", "AAAA=", "AAAA====" } )
+		EXPECT_EQ( static_cast<size_t>( -1 ), decode( invalid ) );
 }
 
 UTEST( eterm, kitty_graphics_strict_base64_decodes_boundaries_and_large_payloads ) {
@@ -1032,36 +1068,15 @@ UTEST( eterm, kitty_graphics_reuses_unreferenced_replacement_pixel_storage ) {
 	ASSERT_EQ( KittyGraphicsError::None,
 			   protocol.handle( "a=t,f=24,s=2,v=1,i=91,q=2;BwgJCgsM" ).error );
 	EXPECT_TRUE( storage == protocol.imagePixels( 91 ) );
-	const std::vector<Uint8> expected{ 7, 8, 9, 255, 10, 11, 12, 255 };
+	const std::vector<Uint8> expected{ 7, 8, 9, 10, 11, 12 };
 	EXPECT_TRUE( expected == *protocol.imagePixels( 91 ) );
 }
 
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
-	EE_PLATFORM != EE_PLATFORM_ANDROID
-UTEST( eterm, kitty_graphics_reads_and_unlinks_posix_shared_memory ) {
-	// mpv uses the Linux-compatible form without the optional leading slash.
-	const std::string name = "eterm-kitty-unit-" + std::to_string( getpid() );
-	shm_unlink( name.c_str() );
-	const int descriptor = shm_open( name.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600 );
-	ASSERT_TRUE( descriptor >= 0 );
-	const Uint8 stored[] = { 99, 98, 1, 2, 3 };
-	ASSERT_EQ( static_cast<ssize_t>( sizeof( stored ) ),
-			   write( descriptor, stored, sizeof( stored ) ) );
-	close( descriptor );
-
-	std::string encodedName;
-	ASSERT_TRUE( Base64::encode( name, encodedName ) );
+UTEST( eterm, kitty_graphics_rejects_shared_memory_transmission ) {
 	KittyGraphicsProtocol protocol;
-	EXPECT_EQ( KittyGraphicsError::None,
-			   protocol.handle( "a=T,t=s,f=24,s=1,v=1,O=2,S=3,q=2,m=1;" + encodedName ).error );
-	auto updates = protocol.takeUpdates();
-	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
-	ASSERT_TRUE( updates[0].rgba != nullptr );
-	const std::vector<Uint8> expected{ 1, 2, 3, 255 };
-	EXPECT_TRUE( expected == *updates[0].rgba );
-	EXPECT_EQ( -1, shm_open( name.c_str(), O_RDONLY, 0 ) );
+	EXPECT_EQ( KittyGraphicsError::Unsupported,
+			   protocol.handle( "a=T,t=s,f=24,s=1,v=1,q=2;L2VlcHAtc2ht" ).error );
 }
-#endif
 
 UTEST( eterm, kitty_graphics_accepts_unchunked_direct_image_larger_than_eight_kibibytes ) {
 	std::vector<Uint8> rgb( 64 * 64 * 3 );

@@ -108,40 +108,51 @@ size_t decodeBase64( size_t in_len, const char* in, size_t out_len, unsigned cha
 
 size_t decodeBase64Strict( size_t inLen, const char* input, size_t outLen, unsigned char* output ) {
 	size_t outputOffset = 0;
-	Uint32 value = 0;
-	unsigned bits = 0;
-	size_t padding = 0;
-	for ( size_t offset = 0; offset < inLen; ++offset ) {
-		const Uint8 decoded = base64dec_tab[static_cast<unsigned char>( input[offset] )];
-		if ( decoded == BASE64_PADDING ) {
-			padding = inLen - offset;
-			if ( padding > 2 || inLen % 4 != 0 )
-				return static_cast<size_t>( -1 );
-			for ( size_t remainder = offset; remainder < inLen; ++remainder )
-				if ( input[remainder] != '=' )
-					return static_cast<size_t>( -1 );
+	size_t inputOffset = 0;
+	while ( inputOffset + 4 <= inLen ) {
+		const Uint8 a = base64dec_tab[static_cast<unsigned char>( input[inputOffset] )];
+		const Uint8 b = base64dec_tab[static_cast<unsigned char>( input[inputOffset + 1] )];
+		const Uint8 c = base64dec_tab[static_cast<unsigned char>( input[inputOffset + 2] )];
+		const Uint8 d = base64dec_tab[static_cast<unsigned char>( input[inputOffset + 3] )];
+		if ( ( a | b | c | d ) > 63 )
 			break;
-		}
-		if ( decoded > 63 || padding != 0 )
+		if ( outputOffset + 3 > outLen )
 			return static_cast<size_t>( -1 );
-		value = ( value << 6 ) | decoded;
-		bits += 6;
-		if ( bits >= 8 ) {
-			bits -= 8;
-			if ( outputOffset >= outLen )
-				return static_cast<size_t>( -1 );
-			output[outputOffset++] = static_cast<unsigned char>( ( value >> bits ) & 0xFF );
-			if ( bits == 0 )
-				value = 0;
-		}
+		output[outputOffset] = static_cast<unsigned char>( ( a << 2 ) | ( b >> 4 ) );
+		output[outputOffset + 1] = static_cast<unsigned char>( ( b << 4 ) | ( c >> 2 ) );
+		output[outputOffset + 2] = static_cast<unsigned char>( ( c << 6 ) | d );
+		inputOffset += 4;
+		outputOffset += 3;
 	}
-	const size_t dataLength = inLen - padding;
-	if ( dataLength % 4 == 1 || ( padding == 1 && dataLength % 4 != 3 ) ||
-		 ( padding == 2 && dataLength % 4 != 2 ) )
+
+	const size_t remaining = inLen - inputOffset;
+	if ( remaining == 0 )
+		return outputOffset;
+	if ( remaining == 1 || remaining > 4 )
 		return static_cast<size_t>( -1 );
-	// Reject non-canonical encodings whose unused bits are non-zero. Besides being strict, this
-	// avoids accepting multiple byte strings for the same payload at protocol boundaries.
-	if ( bits != 0 && ( value & ( ( 1u << bits ) - 1u ) ) != 0 )
+
+	const Uint8 a = base64dec_tab[static_cast<unsigned char>( input[inputOffset] )];
+	const Uint8 b = base64dec_tab[static_cast<unsigned char>( input[inputOffset + 1] )];
+	if ( a > 63 || b > 63 || outputOffset >= outLen )
+		return static_cast<size_t>( -1 );
+	output[outputOffset++] = static_cast<unsigned char>( ( a << 2 ) | ( b >> 4 ) );
+
+	if ( remaining == 2 )
+		return ( b & 0x0F ) == 0 ? outputOffset : static_cast<size_t>( -1 );
+
+	const Uint8 c = base64dec_tab[static_cast<unsigned char>( input[inputOffset + 2] )];
+	if ( c == BASE64_PADDING ) {
+		return remaining == 4 && input[inputOffset + 3] == '=' && ( b & 0x0F ) == 0
+				   ? outputOffset
+				   : static_cast<size_t>( -1 );
+	}
+	if ( c > 63 || outputOffset >= outLen )
+		return static_cast<size_t>( -1 );
+	output[outputOffset++] = static_cast<unsigned char>( ( b << 4 ) | ( c >> 2 ) );
+
+	if ( remaining == 3 )
+		return ( c & 0x03 ) == 0 ? outputOffset : static_cast<size_t>( -1 );
+	if ( input[inputOffset + 3] != '=' || ( c & 0x03 ) != 0 )
 		return static_cast<size_t>( -1 );
 	return outputOffset;
 }

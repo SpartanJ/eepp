@@ -9,16 +9,7 @@
 #include <charconv>
 #include <cstring>
 #include <limits>
-#include <thread>
 #include <type_traits>
-
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
-	EE_PLATFORM != EE_PLATFORM_ANDROID
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
 
 using namespace EE::System;
 
@@ -78,88 +69,17 @@ bool decodeBase64( std::string_view input, bool finalChunk, std::vector<Uint8>& 
 	if ( oldSize > MaxTransferBytes || capacity > MaxTransferBytes - oldSize )
 		return false;
 	output.resize( oldSize + capacity );
+	const Base64::DecodeMode mode =
+		finalChunk ? Base64::DecodeMode::NoWhitespaceStrict : Base64::DecodeMode::NoWhitespace;
 	const size_t decodedSize =
-		Base64::decode( input.size(), input.data(), capacity, output.data() + oldSize,
-						Base64::DecodeMode::NoWhitespaceStrict );
-	if ( decodedSize == static_cast<size_t>( -1 ) ) {
+		Base64::decode( input.size(), input.data(), capacity, output.data() + oldSize, mode );
+	if ( decodedSize == static_cast<size_t>( -1 ) ||
+		 ( !finalChunk && decodedSize != input.size() / 4 * 3 ) ) {
 		output.resize( oldSize );
 		return false;
 	}
 	output.resize( oldSize + decodedSize );
 	return true;
-}
-
-bool readSharedMemory( const KittyGraphicsCommandData& data, std::vector<Uint8>& output ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN || \
-	EE_PLATFORM == EE_PLATFORM_ANDROID
-	(void)data;
-	(void)output;
-	return false;
-#else
-	std::vector<Uint8> decodedName;
-	if ( !decodeBase64( data.payload, true, decodedName ) || decodedName.empty() ||
-		 decodedName.size() > 255 ||
-		 std::find( decodedName.begin() + 1, decodedName.end(), '/' ) != decodedName.end() ||
-		 std::find( decodedName.begin(), decodedName.end(), 0 ) != decodedName.end() )
-		return false;
-	std::string name( decodedName.begin(), decodedName.end() );
-	const int descriptor = shm_open( name.c_str(), O_RDONLY, 0 );
-	if ( descriptor == -1 )
-		return false;
-	// POSIX Kitty transfers are single-use. Unlink immediately after opening so all error paths
-	// still retire the client-owned object while the descriptor keeps its contents alive.
-	shm_unlink( name.c_str() );
-	struct stat status{};
-	const size_t offset = data.dataOffset.value_or( 0 );
-	bool valid = fstat( descriptor, &status ) == 0 && status.st_size >= 0 &&
-				 static_cast<Uint64>( status.st_size ) >= offset;
-	size_t bytes = 0;
-	if ( valid ) {
-		const size_t available = static_cast<size_t>( status.st_size ) - offset;
-		bytes = data.dataSize.value_or( static_cast<Uint32>(
-			std::min<size_t>( available, std::numeric_limits<Uint32>::max() ) ) );
-		valid = bytes <= available && bytes <= 128 * 1024 * 1024;
-	}
-	if ( valid && bytes != 0 ) {
-		const size_t mappingBytes = offset + bytes;
-		valid = mappingBytes >= bytes && mappingBytes <= 128 * 1024 * 1024;
-		void* mapping = valid ? mmap( nullptr, mappingBytes, PROT_READ, MAP_SHARED, descriptor, 0 )
-							  : MAP_FAILED;
-		if ( mapping == MAP_FAILED ) {
-			valid = false;
-		} else {
-			const auto* source = static_cast<const Uint8*>( mapping ) + offset;
-			// mpv reuses the same shm name for every frame. If it reopened the object before
-			// we unlinked it above, its next memcpy can overlap this read. Require consecutive
-			// identical observations after yielding to the writer; otherwise retain the previous
-			// displayed frame instead of publishing visibly torn rows.
-			std::vector<Uint8> snapshot( source, source + bytes );
-			bool stable = false;
-			unsigned stableObservations = 0;
-			constexpr unsigned RequiredStableObservations = 2;
-			constexpr unsigned MaxSnapshotAttempts = 6;
-			for ( unsigned attempt = 0; attempt < MaxSnapshotAttempts; ++attempt ) {
-				std::this_thread::yield();
-				if ( std::memcmp( snapshot.data(), source, bytes ) == 0 ) {
-					if ( ++stableObservations == RequiredStableObservations ) {
-						stable = true;
-						break;
-					}
-				} else {
-					stableObservations = 0;
-					snapshot.assign( source, source + bytes );
-				}
-			}
-			if ( stable )
-				output = std::move( snapshot );
-			else
-				valid = false;
-			munmap( mapping, mappingBytes );
-		}
-	}
-	close( descriptor );
-	return valid && bytes != 0;
-#endif
 }
 
 bool placementContains( const TerminalVisiblePlacement& placement, Vector2i cell ) {
@@ -402,20 +322,6 @@ KittyGraphicsHandleResult
 KittyGraphicsProtocol::handleTransmit( const KittyGraphicsCommandData& data, bool display,
 									   bool query, bool frame, Vector2i cursor ) {
 	const bool more = data.more.value_or( 0 ) != 0;
-	if ( data.transmission == 's' ) {
-		if ( mPending.active )
-			mPending = {};
-		PendingTransfer transfer;
-		transfer.data = data;
-		transfer.data.payload = {};
-		transfer.display = display;
-		transfer.query = query;
-		transfer.frame = frame;
-		if ( !readSharedMemory( data, transfer.decodedData ) )
-			return { response( data, KittyGraphicsError::DecodeFailed ),
-					 KittyGraphicsError::DecodeFailed, false };
-		return finishTransfer( std::move( transfer ), cursor );
-	}
 	if ( mPending.active ) {
 		if ( frame != mPending.frame || data.format || data.dataSize || data.imageId ||
 			 data.imageNumber || data.usageHint || data.placementId || data.width || data.height ||
@@ -561,7 +467,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 		}
 	}
 
-	if ( format == 24 ) {
+	if ( format == 24 && transfer.frame ) {
 		std::vector<Uint8> rgba = std::move( mPixelScratch );
 		rgba.resize( static_cast<size_t>( width ) * height * 4 );
 		for ( size_t sourceOffset = 0, destinationOffset = 0; sourceOffset < pixels.size();
@@ -579,6 +485,9 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 		auto image = mImages.find( imageId );
 		if ( image == mImages.end() )
 			return { response( data, KittyGraphicsError::NotFound ), KittyGraphicsError::NotFound,
+					 false };
+		if ( !ensureRootRGBA( imageId, image->second ) )
+			return { response( data, KittyGraphicsError::NoSpace ), KittyGraphicsError::NoSpace,
 					 false };
 		Uint32 frameNumber = data.rows.value_or( 0 );
 		if ( frameNumber == 0 ) {
@@ -599,9 +508,10 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 		std::vector<Uint8>* destinationPixels = nullptr;
 		bool createdFrame = false;
 		if ( frameNumber == 1 ) {
-			if ( image->second.rgba.use_count() != 1 )
-				image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
-			destinationPixels = image->second.rgba.get();
+			if ( image->second.pixels.use_count() != 1 )
+				image->second.pixels =
+					std::make_shared<std::vector<Uint8>>( *image->second.pixels );
+			destinationPixels = image->second.pixels.get();
 		} else {
 			auto frame = image->second.frames.find( frameNumber );
 			if ( frame == image->second.frames.end() ) {
@@ -611,7 +521,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 				if ( data.columns ) {
 					const Uint32 baseFrame = *data.columns;
 					if ( baseFrame == 1 )
-						newFrame.rgba = *image->second.rgba;
+						newFrame.rgba = *image->second.pixels;
 					else {
 						auto base = image->second.frames.find( baseFrame );
 						if ( base == image->second.frames.end() )
@@ -687,9 +597,9 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 			createdFrame
 				? Rect( 0, 0, image->second.size.getWidth(), image->second.size.getHeight() )
 				: Rect( destinationX, destinationY, destinationX + width, destinationY + height );
-		update.rgba = createdFrame
-						  ? std::make_shared<const std::vector<Uint8>>( *destinationPixels )
-						  : std::make_shared<const std::vector<Uint8>>( std::move( finalPatch ) );
+		update.pixels = createdFrame
+							? std::make_shared<const std::vector<Uint8>>( *destinationPixels )
+							: std::make_shared<const std::vector<Uint8>>( std::move( finalPatch ) );
 		if ( !createdFrame && !mUpdates.empty() && mUpdates.back().type == update.type &&
 			 mUpdates.back().imageId == update.imageId &&
 			 mUpdates.back().frameNumber == update.frameNumber &&
@@ -730,7 +640,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 				 false };
 
 	auto existing = mImages.find( imageId );
-	const size_t oldBytes = existing == mImages.end() ? 0 : existing->second.rgba->size();
+	const size_t oldBytes = existing == mImages.end() ? 0 : existing->second.pixels->size();
 	if ( !ensureCapacity( pixels.size(), imageId, existing == mImages.end() ) )
 		return { response( data, KittyGraphicsError::NoSpace ), KittyGraphicsError::NoSpace,
 				 false };
@@ -751,11 +661,11 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 								  mPrimaryPlacements.end() );
 	}
 	std::shared_ptr<std::vector<Uint8>> pixelStorage;
-	if ( existing != mImages.end() && existing->second.rgba.use_count() == 1 ) {
-		pixelStorage = existing->second.rgba;
+	if ( existing != mImages.end() && existing->second.pixels.use_count() == 1 ) {
+		pixelStorage = existing->second.pixels;
 		pixelStorage->assign( pixels.begin(), pixels.end() );
 		if ( format == 24 )
-			recycleBuffer( pixels, mPixelScratch );
+			recycleBuffer( pixels, mDecodedScratch );
 		else if ( format == 32 )
 			recycleBuffer( pixels, mDecodedScratch );
 	} else {
@@ -767,8 +677,9 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	image.usageHint = data.usageHint.value_or( 0 );
 	image.anonymous = anonymous;
 	image.creationSerial = ++mCreationSerial;
-	image.rgba = std::move( pixelStorage );
-	mStorageBytes = mStorageBytes - oldBytes + image.rgba->size();
+	image.channels = format == 24 ? 3 : 4;
+	image.pixels = std::move( pixelStorage );
+	mStorageBytes = mStorageBytes - oldBytes + image.pixels->size();
 	const bool replaced = existing != mImages.end();
 	auto inserted = mImages.insert_or_assign( imageId, std::move( image ) ).first;
 
@@ -777,9 +688,10 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 						   : TerminalGraphicsUpdateType::CreateImage;
 	update.imageId = imageId;
 	update.imageSize = inserted->second.size;
+	update.channels = inserted->second.channels;
 	update.region =
 		Rect( 0, 0, inserted->second.size.getWidth(), inserted->second.size.getHeight() );
-	update.rgba = inserted->second.rgba;
+	update.pixels = inserted->second.pixels;
 	mUpdates.emplace_back( std::move( update ) );
 	++mStats.fullImageUpdates;
 	++mPresentationGeneration;
@@ -1241,9 +1153,12 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 				 image == mImages.end() ? KittyGraphicsError::NotFound
 										: KittyGraphicsError::InvalidArgument,
 				 false };
+	if ( !ensureRootRGBA( imageId, image->second ) )
+		return { response( data, KittyGraphicsError::NoSpace ), KittyGraphicsError::NoSpace,
+				 false };
 	auto pixelsFor = [&]( Uint32 frameNumber ) -> std::vector<Uint8>* {
 		if ( frameNumber == 1 )
-			return image->second.rgba.get();
+			return image->second.pixels.get();
 		auto frame = image->second.frames.find( frameNumber );
 		return frame == image->second.frames.end() ? nullptr : &frame->second.rgba;
 	};
@@ -1284,9 +1199,9 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 					 source->data() + static_cast<size_t>( sourceY + row ) * imageStride +
 						 static_cast<size_t>( sourceX ) * 4,
 					 rowBytes );
-	if ( destinationFrame == 1 && image->second.rgba.use_count() != 1 ) {
-		image->second.rgba = std::make_shared<std::vector<Uint8>>( *image->second.rgba );
-		destination = image->second.rgba.get();
+	if ( destinationFrame == 1 && image->second.pixels.use_count() != 1 ) {
+		image->second.pixels = std::make_shared<std::vector<Uint8>>( *image->second.pixels );
+		destination = image->second.pixels.get();
 	}
 	const bool replace = data.cursorMovement.value_or( 0 ) == 1;
 	for ( Uint32 row = 0; row < height; ++row ) {
@@ -1320,7 +1235,7 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 	update.frameNumber = destinationFrame;
 	update.imageSize = image->second.size;
 	update.region = Rect( destinationX, destinationY, destinationX + width, destinationY + height );
-	update.rgba = std::make_shared<const std::vector<Uint8>>( std::move( result ) );
+	update.pixels = std::make_shared<const std::vector<Uint8>>( std::move( result ) );
 	mUpdates.emplace_back( std::move( update ) );
 	mPresentationDirty = true;
 	return { response( data, KittyGraphicsError::None, imageId ), KittyGraphicsError::None, true };
@@ -1366,7 +1281,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 	auto image = mImages.find( imageId );
 	if ( image == mImages.end() )
 		return;
-	mStorageBytes -= image->second.rgba->size();
+	mStorageBytes -= image->second.pixels->size();
 	for ( const auto& frame : image->second.frames )
 		mFrameStorageBytes -= frame.second.rgba.size();
 	mImages.erase( image );
@@ -1379,7 +1294,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 bool KittyGraphicsProtocol::ensureCapacity( size_t bytes, KittyImageId replacingId,
 											bool addingImage ) {
 	auto replaced = mImages.find( replacingId );
-	const size_t replacedBytes = replaced == mImages.end() ? 0 : replaced->second.rgba->size();
+	const size_t replacedBytes = replaced == mImages.end() ? 0 : replaced->second.pixels->size();
 	auto hasCapacity = [&] {
 		return bytes <= mMaxStorageBytes &&
 			   mStorageBytes - replacedBytes <= mMaxStorageBytes - bytes &&
@@ -1401,6 +1316,37 @@ bool KittyGraphicsProtocol::ensureCapacity( size_t bytes, KittyImageId replacing
 		eraseImage( candidate->first );
 		++mStats.evictions;
 	}
+	return true;
+}
+
+bool KittyGraphicsProtocol::ensureRootRGBA( KittyImageId imageId, Image& image ) {
+	if ( image.channels == 4 )
+		return true;
+	const size_t pixelCount = static_cast<size_t>( image.size.getWidth() ) * image.size.getHeight();
+	const size_t rgbaBytes = pixelCount * 4;
+	if ( !ensureCapacity( rgbaBytes, imageId, false ) )
+		return false;
+	std::vector<Uint8> rgba;
+	rgba.resize( rgbaBytes );
+	for ( size_t pixel = 0; pixel < pixelCount; ++pixel ) {
+		const size_t source = pixel * 3;
+		const size_t destination = pixel * 4;
+		rgba[destination] = ( *image.pixels )[source];
+		rgba[destination + 1] = ( *image.pixels )[source + 1];
+		rgba[destination + 2] = ( *image.pixels )[source + 2];
+		rgba[destination + 3] = 255;
+	}
+	const size_t oldBytes = image.pixels->size();
+	image.pixels = std::make_shared<std::vector<Uint8>>( std::move( rgba ) );
+	image.channels = 4;
+	mStorageBytes = mStorageBytes - oldBytes + rgbaBytes;
+	TerminalGraphicsUpdate update;
+	update.type = TerminalGraphicsUpdateType::ReplaceImage;
+	update.imageId = imageId;
+	update.imageSize = image.size;
+	update.region = Rect( 0, 0, image.size.getWidth(), image.size.getHeight() );
+	update.pixels = image.pixels;
+	mUpdates.emplace_back( std::move( update ) );
 	return true;
 }
 
@@ -1528,7 +1474,7 @@ std::shared_ptr<TerminalGraphicsPresentation> KittyGraphicsProtocol::takePresent
 
 const std::vector<Uint8>* KittyGraphicsProtocol::imagePixels( KittyImageId imageId ) const {
 	auto image = mImages.find( imageId );
-	return image == mImages.end() ? nullptr : image->second.rgba.get();
+	return image == mImages.end() ? nullptr : image->second.pixels.get();
 }
 
 bool KittyGraphicsProtocol::hasVirtualPlacements() const {
@@ -1665,8 +1611,9 @@ void KittyGraphicsProtocol::resync() {
 		create.type = TerminalGraphicsUpdateType::CreateImage;
 		create.imageId = image.first;
 		create.imageSize = image.second.size;
+		create.channels = image.second.channels;
 		create.region = Rect( 0, 0, image.second.size.getWidth(), image.second.size.getHeight() );
-		create.rgba = image.second.rgba;
+		create.pixels = image.second.pixels;
 		mUpdates.emplace_back( std::move( create ) );
 		for ( const auto& frame : image.second.frames ) {
 			TerminalGraphicsUpdate createFrame;
@@ -1676,7 +1623,7 @@ void KittyGraphicsProtocol::resync() {
 			createFrame.imageSize = image.second.size;
 			createFrame.region =
 				Rect( 0, 0, image.second.size.getWidth(), image.second.size.getHeight() );
-			createFrame.rgba = std::make_shared<const std::vector<Uint8>>( frame.second.rgba );
+			createFrame.pixels = std::make_shared<const std::vector<Uint8>>( frame.second.rgba );
 			mUpdates.emplace_back( std::move( createFrame ) );
 		}
 	}

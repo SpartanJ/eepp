@@ -30,6 +30,7 @@ class KittyGraphicsRenderer {
 		TexturePtr texture;
 		std::unordered_map<Uint32, TexturePtr> frames;
 		Sizei size;
+		Uint8 channels{ 4 };
 	};
 
 	std::unordered_map<KittyImageId, GPUImage> mImages;

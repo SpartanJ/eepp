@@ -61,6 +61,7 @@ using namespace EE::System;
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <thread>
 
 #if defined( EE_ARCH_X86_64 )
 #include <immintrin.h>
@@ -127,6 +128,39 @@ TerminalCursorMode blinkingCursorVariant( TerminalCursorMode mode ) {
 #if defined( __GNUC__ ) || defined( __clang__ )
 __attribute__( ( target( "avx2" ) ) )
 #endif
+static int findKittyAPCControlAVX2( const char* data, int begin, int end ) {
+	const __m256i highThreeBitMask = _mm256_set1_epi8( static_cast<char>( 0xE0 ) );
+	const __m256i c1Prefix = _mm256_set1_epi8( static_cast<char>( 0x80 ) );
+	const __m256i bell = _mm256_set1_epi8( 0x07 );
+	const __m256i cancel = _mm256_set1_epi8( 0x18 );
+	const __m256i substitute = _mm256_set1_epi8( 0x1A );
+	const __m256i escape = _mm256_set1_epi8( 0x1B );
+	int offset = begin;
+	for ( ; offset + 32 <= end; offset += 32 ) {
+		const __m256i bytes =
+			_mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + offset ) );
+		const __m256i c1 =
+			_mm256_cmpeq_epi8( _mm256_and_si256( bytes, highThreeBitMask ), c1Prefix );
+		const __m256i explicitControls = _mm256_or_si256(
+			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, bell ), _mm256_cmpeq_epi8( bytes, cancel ) ),
+			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, substitute ),
+							 _mm256_cmpeq_epi8( bytes, escape ) ) );
+		if ( _mm256_movemask_epi8( _mm256_or_si256( c1, explicitControls ) ) != 0 )
+			break;
+	}
+	while ( offset < end ) {
+		const unsigned char byte = static_cast<unsigned char>( data[offset] );
+		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+			 ( byte >= 0x80 && byte <= 0x9F ) )
+			break;
+		++offset;
+	}
+	return offset;
+}
+
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
 static int trailingNonSpaceWidthAVX2( Line line, int width, int minimumWidth ) {
 	const __m256i offsets = _mm256_set_epi32( 112, 96, 80, 64, 48, 32, 16, 0 );
 	const __m256i spaces = _mm256_set1_epi32( ' ' );
@@ -164,6 +198,21 @@ static int trailingNonSpaceWidthNEON( Line line, int width, int minimumWidth ) {
 	return width;
 }
 #endif
+
+static int findKittyAPCControl( const char* data, int begin, int end ) {
+#if defined( EE_ARCH_X86_64 )
+	if ( CPU::hasAVX2() )
+		return findKittyAPCControlAVX2( data, begin, end );
+#endif
+	while ( begin < end ) {
+		const unsigned char byte = static_cast<unsigned char>( data[begin] );
+		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+			 ( byte >= 0x80 && byte <= 0x9F ) )
+			break;
+		++begin;
+	}
+	return begin;
+}
 
 /* identification sequence returned in DA and DECID */
 static const char* vtiden = "\033[?6c";
@@ -3243,14 +3292,7 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 		 * behavior. */
 		if ( !show_ctrl && ( mTerm.esc & ESC_STR ) && mStrescseq.type == '_' &&
 			 mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
-			int end = n;
-			while ( end < buflen ) {
-				const unsigned char byte = static_cast<unsigned char>( buf[end] );
-				if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
-					 ( byte >= 0x80 && byte <= 0x9F ) )
-					break;
-				++end;
-			}
+			const int end = findKittyAPCControl( buf, n, buflen );
 			const size_t bytes = static_cast<size_t>( end - n );
 			if ( bytes != 0 ) {
 				if ( !mStrescseq.discarded ) {
@@ -4106,6 +4148,16 @@ bool TerminalEmulator::update() {
 		// event.
 		redraw();
 		onProcessExit( mExitCode );
+	}
+
+	/* A non-blocking read can temporarily catch up with a producer that was blocked writing to the
+	 * PTY. Do not enter the worker's 8 ms idle wait immediately after consuming data: give the
+	 * producer a scheduling opportunity and probe the PTY once more. This matters for high-volume
+	 * protocols such as Kitty graphics, where otherwise every transport chunk can pay one idle
+	 * interval after the receiver becomes faster than the sender's wakeup latency. */
+	if ( reads > 0 && !readBudgetSaturated ) {
+		std::this_thread::yield();
+		return false;
 	}
 
 	return !readBudgetSaturated;

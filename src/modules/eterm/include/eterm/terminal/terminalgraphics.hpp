@@ -64,15 +64,16 @@ enum class TerminalGraphicsUpdateType : Uint8 {
 };
 
 struct TerminalGraphicsUpdate {
-	std::shared_ptr<const std::vector<Uint8>> rgba;
+	std::shared_ptr<const std::vector<Uint8>> pixels;
 	Sizei imageSize;
 	Rect region;
 	Uint64 sequence{ 0 };
 	KittyImageId imageId{ 0 };
 	Uint32 frameNumber{ 1 };
 	TerminalGraphicsUpdateType type{ TerminalGraphicsUpdateType::Resync };
+	Uint8 channels{ 4 };
 
-	size_t payloadBytes() const { return rgba ? rgba->size() : 0; }
+	size_t payloadBytes() const { return pixels ? pixels->size() : 0; }
 };
 
 /** Bounded ordered worker-to-UI mutation queue with explicit overflow recovery. */

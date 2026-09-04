@@ -168,19 +168,20 @@ class KittyGraphicsProtocol {
 			Int32 gapMs{ 40 };
 			Uint32 usageHint{ 0 };
 		};
-		std::shared_ptr<std::vector<Uint8>> rgba;
+		std::shared_ptr<std::vector<Uint8>> pixels;
 		std::unordered_map<Uint32, Frame> frames;
 		Sizei size;
+		Uint64 creationSerial{ 0 };
+		EE::System::Clock frameClock;
 		Uint32 imageNumber{ 0 };
 		Uint32 usageHint{ 0 };
-		bool anonymous{ false };
-		Uint64 creationSerial{ 0 };
 		Uint32 currentFrame{ 1 };
 		Uint32 loopCount{ 1 };
 		Uint32 loopsCompleted{ 0 };
-		Uint8 animationState{ 1 };
 		Int32 rootGapMs{ 0 };
-		EE::System::Clock frameClock;
+		Uint8 animationState{ 1 };
+		Uint8 channels{ 4 };
+		bool anonymous{ false };
 	};
 
 	struct PendingTransfer {
@@ -210,6 +211,7 @@ class KittyGraphicsProtocol {
 	KittyImageId allocateImageId();
 	KittyImageId resolveImageId( const KittyGraphicsCommandData& data ) const;
 	bool ensureCapacity( size_t bytes, KittyImageId replacingId, bool addingImage );
+	bool ensureRootRGBA( KittyImageId imageId, Image& image );
 	bool isImagePlaced( KittyImageId imageId ) const;
 	void eraseImage( KittyImageId imageId );
 	std::string response( const KittyGraphicsCommandData& data, KittyGraphicsError error,

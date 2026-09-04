@@ -27,58 +27,68 @@ bool KittyGraphicsRenderer::applyUpdates( std::vector<TerminalGraphicsUpdate>&& 
 
 		switch ( update.type ) {
 			case TerminalGraphicsUpdateType::ReplaceImage: {
-				if ( !update.rgba || update.imageSize.getWidth() <= 0 ||
-					 update.imageSize.getHeight() <= 0 )
+				if ( !update.pixels || update.imageSize.getWidth() <= 0 ||
+					 update.imageSize.getHeight() <= 0 ||
+					 ( update.channels != 3 && update.channels != 4 ) ||
+					 update.pixels->size() != static_cast<size_t>( update.imageSize.getWidth() ) *
+												  update.imageSize.getHeight() * update.channels )
 					return false;
 				auto existing = mImages.find( update.imageId );
 				if ( existing != mImages.end() && existing->second.texture &&
-					 existing->second.size == update.imageSize ) {
-					existing->second.texture->update( update.rgba->data(),
-													  update.imageSize.getWidth(),
-													  update.imageSize.getHeight(), 0, 0 );
+					 existing->second.size == update.imageSize &&
+					 existing->second.channels == update.channels ) {
+					existing->second.texture->update(
+						update.pixels->data(), update.imageSize.getWidth(),
+						update.imageSize.getHeight(), 0, 0,
+						Image::channelsToPixelFormat( update.channels ) );
 					existing->second.frames.clear();
 					break;
 				}
 				[[fallthrough]];
 			}
 			case TerminalGraphicsUpdateType::CreateImage: {
-				if ( !update.rgba || update.imageSize.getWidth() <= 0 ||
-					 update.imageSize.getHeight() <= 0 )
+				if ( !update.pixels || update.imageSize.getWidth() <= 0 ||
+					 update.imageSize.getHeight() <= 0 ||
+					 ( update.channels != 3 && update.channels != 4 ) ||
+					 update.pixels->size() != static_cast<size_t>( update.imageSize.getWidth() ) *
+												  update.imageSize.getHeight() * update.channels )
 					return false;
 				auto texture = TextureFactory::instance()->loadFromPixels(
-					update.rgba->data(), update.imageSize.getWidth(), update.imageSize.getHeight(),
-					4, false, Texture::ClampMode::ClampToEdge, false, false );
+					update.pixels->data(), update.imageSize.getWidth(),
+					update.imageSize.getHeight(), update.channels, false,
+					Texture::ClampMode::ClampToEdge, false, false );
 				if ( !texture )
 					return false;
 				texture->setFilter( Texture::Filter::Linear );
-				mImages.insert_or_assign( update.imageId,
-										  GPUImage{ std::move( texture ), {}, update.imageSize } );
+				mImages.insert_or_assign(
+					update.imageId,
+					GPUImage{ std::move( texture ), {}, update.imageSize, update.channels } );
 				break;
 			}
 			case TerminalGraphicsUpdateType::UpdateRegion: {
 				auto image = mImages.find( update.imageId );
-				if ( image == mImages.end() || !update.rgba )
+				if ( image == mImages.end() || !update.pixels )
 					return false;
 				const int width = update.region.Right - update.region.Left;
 				const int height = update.region.Bottom - update.region.Top;
 				if ( width <= 0 || height <= 0 || update.region.Left < 0 || update.region.Top < 0 ||
 					 update.region.Right > image->second.size.getWidth() ||
 					 update.region.Bottom > image->second.size.getHeight() ||
-					 update.rgba->size() != static_cast<size_t>( width ) * height * 4 )
+					 update.pixels->size() != static_cast<size_t>( width ) * height * 4 )
 					return false;
-				image->second.texture->update( update.rgba->data(), width, height,
+				image->second.texture->update( update.pixels->data(), width, height,
 											   update.region.Left, update.region.Top );
 				break;
 			}
 			case TerminalGraphicsUpdateType::CreateFrame:
 			case TerminalGraphicsUpdateType::ReplaceFrame: {
 				auto image = mImages.find( update.imageId );
-				if ( image == mImages.end() || !update.rgba || update.frameNumber <= 1 ||
-					 update.rgba->size() != static_cast<size_t>( image->second.size.getWidth() ) *
-												image->second.size.getHeight() * 4 )
+				if ( image == mImages.end() || !update.pixels || update.frameNumber <= 1 ||
+					 update.pixels->size() != static_cast<size_t>( image->second.size.getWidth() ) *
+												  image->second.size.getHeight() * 4 )
 					return false;
 				auto texture = TextureFactory::instance()->loadFromPixels(
-					update.rgba->data(), image->second.size.getWidth(),
+					update.pixels->data(), image->second.size.getWidth(),
 					image->second.size.getHeight(), 4, false, Texture::ClampMode::ClampToEdge,
 					false, false );
 				if ( !texture )
@@ -89,7 +99,7 @@ bool KittyGraphicsRenderer::applyUpdates( std::vector<TerminalGraphicsUpdate>&& 
 			}
 			case TerminalGraphicsUpdateType::UpdateFrameRegion: {
 				auto image = mImages.find( update.imageId );
-				if ( image == mImages.end() || !update.rgba )
+				if ( image == mImages.end() || !update.pixels )
 					return false;
 				auto frame = image->second.frames.find( update.frameNumber );
 				if ( frame == image->second.frames.end() )
@@ -99,9 +109,9 @@ bool KittyGraphicsRenderer::applyUpdates( std::vector<TerminalGraphicsUpdate>&& 
 				if ( width <= 0 || height <= 0 || update.region.Left < 0 || update.region.Top < 0 ||
 					 update.region.Right > image->second.size.getWidth() ||
 					 update.region.Bottom > image->second.size.getHeight() ||
-					 update.rgba->size() != static_cast<size_t>( width ) * height * 4 )
+					 update.pixels->size() != static_cast<size_t>( width ) * height * 4 )
 					return false;
-				frame->second->update( update.rgba->data(), width, height, update.region.Left,
+				frame->second->update( update.pixels->data(), width, height, update.region.Left,
 									   update.region.Top );
 				break;
 			}

@@ -530,10 +530,18 @@ void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x
 
 		{
 			ScopedTexture saver( mTexture );
+			const bool tightlyPackedThreeChannelRows =
+				( pf == Image::PixelFormat::PIXEL_FORMAT_RGB ||
+				  pf == Image::PixelFormat::PIXEL_FORMAT_BGR ) &&
+				( static_cast<size_t>( width ) * 3 ) % 4 != 0;
+			if ( tightlyPackedThreeChannelRows )
+				glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height,
 							 (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE,
 							 pixels );
+			if ( tightlyPackedThreeChannelRows )
+				glPixelStorei( GL_UNPACK_ALIGNMENT, 4 );
 
 			if ( hasLocalCopy() ) {
 				Image image( pixels, width, height, mChannels );
