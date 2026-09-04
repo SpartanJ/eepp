@@ -80,6 +80,8 @@ namespace eterm { namespace Terminal {
 
 namespace {
 
+constexpr Rune KittyGraphicsPlaceholder = 0x10EEEE;
+
 bool terminalDiagnosticsEnabled() {
 #ifdef EE_DEBUG
 	return true;
@@ -957,9 +959,11 @@ void TerminalEmulator::trimMemory() {
 
 void TerminalEmulator::clearHistory() {
 	for ( int i = 0; i < mTerm.histcursize; ++i ) {
-		if ( mTerm.hist[i] ) {
-			for ( int column = 0; column < mTerm.col; ++column )
-				mKittyPlaceholderMetadata.erase( &mTerm.hist[i][column] );
+		if ( mTerm.hist[i] && !mKittyPlaceholderMetadata.empty() ) {
+			for ( int column = 0; column < mTerm.col; ++column ) {
+				if ( mTerm.hist[i][column].u == KittyGraphicsPlaceholder )
+					mKittyPlaceholderMetadata.erase( &mTerm.hist[i][column] );
+			}
 		}
 		eeSAFE_FREE( mTerm.hist[i] );
 	}
@@ -1664,7 +1668,8 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 		TLINE( y )[x - 1].mode &= ~ATTR_WIDE;
 	}
 
-	mKittyPlaceholderMetadata.erase( &TLINE( y )[x] );
+	if ( TLINE( y )[x].u == KittyGraphicsPlaceholder )
+		mKittyPlaceholderMetadata.erase( &TLINE( y )[x] );
 	mTerm.dirty[y] = 1;
 	TLINE( y )[x] = *attr;
 	TLINE( y )[x].u = u;
@@ -1686,9 +1691,13 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 	LIMIT( x2, 0, mTerm.col - 1 );
 	LIMIT( y1, 0, mTerm.row - 1 );
 	LIMIT( y2, 0, mTerm.row - 1 );
-	for ( int clearY = y1; clearY <= y2; ++clearY ) {
-		for ( int clearX = x1; clearX <= x2; ++clearX )
-			mKittyPlaceholderMetadata.erase( &TLINE( clearY )[clearX] );
+	if ( !mKittyPlaceholderMetadata.empty() ) {
+		for ( int clearY = y1; clearY <= y2; ++clearY ) {
+			for ( int clearX = x1; clearX <= x2; ++clearX ) {
+				if ( TLINE( clearY )[clearX].u == KittyGraphicsPlaceholder )
+					mKittyPlaceholderMetadata.erase( &TLINE( clearY )[clearX] );
+			}
+		}
 	}
 
 	/*
@@ -3250,7 +3259,7 @@ check_control_code:
 	}
 
 	tsetchar( u, &mTerm.c.attr, mTerm.c.x, mTerm.c.y );
-	if ( u == 0x10EEEE ) {
+	if ( u == KittyGraphicsPlaceholder ) {
 		mKittyPlaceholderCell = Vector2i( mTerm.c.x, mTerm.c.y );
 		const Uint32 placementId = IS_TRUECOL( mKittyUnderlineColor )
 									   ? mKittyUnderlineColor & 0xFFFFFF
@@ -3356,7 +3365,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		if ( !line )
 			return;
 		for ( int column = 0; column < columns; ++column ) {
-			if ( line[column].u != 0x10EEEE )
+			if ( line[column].u != KittyGraphicsPlaceholder )
 				continue;
 			auto metadata = mKittyPlaceholderMetadata.find( &line[column] );
 			if ( metadata != mKittyPlaceholderMetadata.end() )
@@ -3566,7 +3575,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		if ( !line )
 			return;
 		for ( int column = 0; column < columns && index < metadata.size(); ++column ) {
-			if ( line[column].u == 0x10EEEE )
+			if ( line[column].u == KittyGraphicsPlaceholder )
 				mKittyPlaceholderMetadata[&line[column]] = metadata[index++];
 		}
 	};
@@ -3649,7 +3658,7 @@ void TerminalEmulator::draw() {
 			Uint8 previousMsb = 0;
 			for ( int x = 0; x < mTerm.col; ++x ) {
 				const auto& glyph = TLINE( y )[x];
-				if ( glyph.u != 0x10EEEE ) {
+				if ( glyph.u != KittyGraphicsPlaceholder ) {
 					previous = nullptr;
 					continue;
 				}
