@@ -1,6 +1,6 @@
-# eTerm Kitty graphics protocol
+# eterm Kitty graphics protocol
 
-eTerm implements the terminal-receiver side of the Kitty graphics protocol. Protocol parsing,
+eterm implements the terminal-receiver side of the Kitty graphics protocol. Protocol parsing,
 decoding, image storage, placement state, animation, and terminal lifecycle integration run on the
 terminal worker. The UI thread consumes immutable placement metadata and an ordered pixel-update
 stream, and exclusively owns the OpenGL texture cache.
@@ -38,7 +38,7 @@ metadata with its text cells.
 
 ## Compatibility testing
 
-The eTerm unit suite covers fragmented APC input, malformed/fuzzed commands, raw/zlib/PNG transfer,
+The eterm unit suite covers fragmented APC input, malformed/fuzzed commands, raw/zlib/PNG transfer,
 independent image namespaces, replacement, partial updates, placement geometry, scrolling and
 scrollback, screen lifecycle, animation, Unicode placeholders, relative placement graphs, ordered
 worker/UI delivery, queue overflow, and resynchronization.
