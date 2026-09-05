@@ -8,6 +8,9 @@
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/window.hpp>
 
+#include <deque>
+#include <mutex>
+
 using namespace EE::Graphics;
 
 namespace EE { namespace Window {
@@ -248,6 +251,12 @@ class EE_API Input {
 	/** Process an input event. Called by the input update. */
 	void processEvent( InputEvent* Event );
 
+	/** Queues an event from any producer thread for processing during the next normal update cycle.
+	 * If the bounded queue is full, an older mouse-motion event can be discarded to make room.
+	 * @return True if the event was queued.
+	 */
+	bool enqueueEvent( InputEvent event );
+
 	/** @return An id of the current event update processed ( */
 	const Uint64& getEventsSentId() const;
 
@@ -301,10 +310,15 @@ class EE_API Input {
 	Clock mLastMouseEvent;
 
 	std::map<Uint32, InputCallback> mCallbacks;
+	std::mutex mInjectedEventsMutex;
+	std::deque<InputEvent> mInjectedEvents;
 
 	InputFinger* getFingerId( const Int64& fingerId );
 
 	void resetFingerWasDown();
+
+	/** Processes all events injected by producer threads. Called by backend update cycles. */
+	void drainQueuedEvents();
 };
 
 }} // namespace EE::Window

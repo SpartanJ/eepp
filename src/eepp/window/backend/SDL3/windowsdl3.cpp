@@ -16,6 +16,8 @@
 #include <eepp/window/backend/SDL3/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/terminalruntime.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
@@ -36,6 +38,7 @@ WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 }
 
 WindowSDL::~WindowSDL() {
+	shutdownRuntimeRenderTarget();
 	destroySDLResources();
 }
 
@@ -252,6 +255,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	setup2D( false );
 
+	if ( !initializeRuntimeRenderTarget() )
+		return false;
+
 	mWindow.Created = true;
 
 	if ( "" != mWindow.WindowConfig.Icon ) {
@@ -382,26 +388,36 @@ void WindowSDL::setTitle( const std::string& title ) {
 }
 
 bool WindowSDL::isActive() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 bool WindowSDL::isVisible() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return true;
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( !( flags & SDL_WINDOW_HIDDEN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
 bool WindowSDL::hasFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & ( SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 bool WindowSDL::hasInputFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & SDL_WINDOW_INPUT_FOCUS );
 }
 
 bool WindowSDL::hasMouseFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & SDL_WINDOW_MOUSE_FOCUS );
 }
@@ -420,6 +436,7 @@ void WindowSDL::onWindowResize( Uint32 width, Uint32 height ) {
 		mLastWindowedSize = Sizei( width, height );
 
 	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
+	resizeRuntimeRenderTarget( width, height );
 
 	setup2D( false );
 

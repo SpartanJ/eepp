@@ -21,7 +21,8 @@ FrameBufferFBO::FrameBufferFBO( EE::Window::Window* window ) :
 	mLastFB( 0 ),
 	mLastCB( 0 ),
 	mLastDB( 0 ),
-	mLastSB( 0 ) {}
+	mLastSB( 0 ),
+	mCreated( false ) {}
 
 FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer,
 								bool DepthBuffer, bool useColorBuffer, const Uint32& channels,
@@ -34,8 +35,9 @@ FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool 
 	mLastFB( 0 ),
 	mLastCB( 0 ),
 	mLastDB( 0 ),
-	mLastSB( 0 ) {
-	create( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer, channels );
+	mLastSB( 0 ),
+	mCreated( false ) {
+	mCreated = create( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer, channels );
 }
 
 FrameBufferFBO::~FrameBufferFBO() {
@@ -70,7 +72,8 @@ FrameBufferFBO::~FrameBufferFBO() {
 }
 
 bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height ) {
-	return create( Width, Height, true, false, false, 4 );
+	mCreated = create( Width, Height, true, false, false, 4 );
+	return mCreated;
 }
 
 bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool StencilBuffer,
@@ -200,6 +203,13 @@ void FrameBufferFBO::bind() {
 	}
 }
 
+void FrameBufferFBO::bindAsReadTarget() {
+	if ( mFrameBuffer ) {
+		GlobalBatchRenderer::instance()->draw();
+		GLi->bindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
+	}
+}
+
 void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
 		recoverView();
@@ -215,6 +225,9 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	mSize.x = Width;
 	mSize.y = Height;
 
+	// Resizing is not a bind-stack operation. Preserve the target to which unbind() must eventually
+	// return, especially for the logical root FBO which remains bound across frames.
+	const Int32 lastFB = mLastFB;
 	bindFrameBuffer();
 
 	if ( mHasDepthBuffer ) {
@@ -255,6 +268,7 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	}
 
 	GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
+	mLastFB = lastFB;
 }
 
 void FrameBufferFBO::draw( const Vector2f& position, const Sizef& size ) {
@@ -289,7 +303,7 @@ void FrameBufferFBO::draw( Rect src, Rect dst ) {
 }
 
 bool FrameBufferFBO::created() const {
-	return mFrameBuffer != 0;
+	return mCreated;
 }
 
 const Int32& FrameBufferFBO::getFrameBufferId() const {

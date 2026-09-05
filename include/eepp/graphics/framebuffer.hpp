@@ -43,6 +43,10 @@ class EE_API FrameBuffer {
 	*position 0,0 means 0,0 point in the frame buffer, not the screen. */
 	virtual void bind() = 0;
 
+	/** Selects this framebuffer as the readback source without changing the current view or
+	 * clipping state. */
+	virtual void bindAsReadTarget() = 0;
+
 	/** @brief Disables the off-screen rendering.
 	**	Anything rendered after this will be rendered to the back-buffer. */
 	virtual void unbind() = 0;

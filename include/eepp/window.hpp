@@ -17,6 +17,7 @@
 #include <eepp/window/keycodes.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/platformimpl.hpp>
+#include <eepp/window/runtime.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/windowcontext.hpp>
 #include <eepp/window/windowhandle.hpp>

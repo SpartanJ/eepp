@@ -1,4 +1,5 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -9,22 +10,9 @@
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/kittyframepresenter.hpp>
 #include <eepp/window/window.hpp>
-
-#ifdef EE_GLES1_LATE_INCLUDE
-#if EE_PLATFORM == EE_PLATFORM_IOS
-#include <OpenGLES/ES1/gl.h>
-#include <OpenGLES/ES1/glext.h>
-#else
-#include <GLES/gl.h>
-
-#ifndef GL_GLEXT_PROTOTYPES
-#define GL_GLEXT_PROTOTYPES
-#endif
-
-#include <GLES/glext.h>
-#endif
-#endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
@@ -221,11 +209,7 @@ void Window::setup2D( const bool& KeepView ) {
 
 	BlendMode::setMode( BlendMode::Alpha(), true );
 
-	if ( GLv_3CP != GLi->version() && GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
-#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
-		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
-#endif
-	}
+	GLi->configurePointSprite();
 
 	if ( GLv_2 == GLi->version() || GLv_ES1 == GLi->version() ) {
 		GLi->enableClientState( GL_VERTEX_ARRAY );
@@ -307,17 +291,11 @@ Image Window::getFrontBufferImage() {
 	GlobalBatchRenderer::instance()->draw();
 	Image fb( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, 3 );
 
-	GLint pack_alignment;
-	glGetIntegerv( GL_PACK_ALIGNMENT, &pack_alignment );
-	if ( 1 != pack_alignment )
-		glPixelStorei( GL_PACK_ALIGNMENT, 1 );
-
 	Uint8* pixelData = fb.getPixels();
-	glReadPixels( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, GL_RGB,
-				  GL_UNSIGNED_BYTE, pixelData );
-
-	if ( 1 != pack_alignment )
-		glPixelStorei( GL_PACK_ALIGNMENT, pack_alignment );
+	if ( !GLi->readPixels( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height,
+						   Graphics::Renderer::PixelFormat::RGB24, pixelData,
+						   static_cast<size_t>( mWindow.WindowConfig.Width ) * 3 ) )
+		return {};
 
 	for ( unsigned int j = 0; j * 2 < fb.getHeight(); ++j ) {
 		int index1 = j * fb.getWidth() * fb.getChannels();
@@ -332,6 +310,72 @@ Image Window::getFrontBufferImage() {
 	}
 
 	return fb;
+}
+
+bool Window::readFrameBuffer( FrameReadback& readback ) {
+	const Uint32 channels = readback.format == FramePixelFormat::RGB24 ? 3 : 4;
+	const size_t rowBytes = static_cast<size_t>( readback.size.getWidth() ) * channels;
+	if ( nullptr == readback.pixels || readback.size.getWidth() <= 0 ||
+		 readback.size.getHeight() <= 0 || readback.stride < rowBytes || readback.position.x < 0 ||
+		 readback.position.y < 0 ||
+		 static_cast<Uint32>( readback.position.x + readback.size.getWidth() ) > getWidth() ||
+		 static_cast<Uint32>( readback.position.y + readback.size.getHeight() ) > getHeight() )
+		return false;
+	const auto format = readback.format == FramePixelFormat::RGB24
+							? Graphics::Renderer::PixelFormat::RGB24
+							: Graphics::Renderer::PixelFormat::RGBA32;
+	if ( mLogicalFrameBuffer )
+		mLogicalFrameBuffer->bindAsReadTarget();
+	if ( !GLi->readPixels( readback.position.x, readback.position.y, readback.size.getWidth(),
+						   readback.size.getHeight(), format, readback.pixels, readback.stride ) )
+		return false;
+	readback.origin = FrameOrigin::BottomLeft;
+	return true;
+}
+
+bool Window::initializeRuntimeRenderTarget() {
+	if ( !Runtime::isOffscreen() )
+		return true;
+
+	if ( mLogicalFrameBuffer )
+		return true;
+
+	mLogicalFrameBuffer =
+		Graphics::FrameBuffer::New( getWidth(), getHeight(), true, false, true, 4, this );
+
+	if ( !mLogicalFrameBuffer || !mLogicalFrameBuffer->created() ) {
+		Log::error( "Unable to create the %s runtime logical framebuffer", Runtime::modeName() );
+		mLogicalFrameBuffer.reset();
+		return false;
+	}
+
+	mLogicalFrameBuffer->bind();
+
+	setup2D( false );
+
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		mFramePresenter = std::make_unique<KittyFramePresenter>();
+		if ( !mFramePresenter->initialize( *this ) )
+			return false;
+	}
+
+	return true;
+}
+
+void Window::resizeRuntimeRenderTarget( Uint32 width, Uint32 height ) {
+	if ( mLogicalFrameBuffer ) {
+		mLogicalFrameBuffer->resize( width, height );
+		mLogicalFrameBuffer->bind();
+	}
+	if ( mFramePresenter )
+		mFramePresenter->resized( *this, Sizei( width, height ) );
+}
+
+void Window::shutdownRuntimeRenderTarget() {
+	if ( mFramePresenter )
+		mFramePresenter->shutdown( *this );
+	mFramePresenter.reset();
+	mLogicalFrameBuffer.reset();
 }
 
 bool Window::isRunning() const {
@@ -461,6 +505,8 @@ void Window::clear() {
 
 void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->draw();
+	if ( mFramePresenter )
+		mFramePresenter->present( *this );
 	if ( TextureFactory* textureFactory = TextureFactory::existsSingleton() )
 		textureFactory->collectReleasedTextures();
 	mIME.updateLocation();
@@ -526,17 +572,21 @@ void Window::sendVideoResizeCb() {
 }
 
 void Window::logSuccessfulInit( const std::string& BackendName ) {
+	const char* presenter =
+		Runtime::mode() == RuntimeMode::Terminal ? "Kitty graphics protocol" : "None";
 	std::string msg( String::format(
 		"Engine Initialized Successfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
 		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
-		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
-		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
+		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tRuntime Mode: "
+		"%s\n\tHeadless: %s\n\tFrame Presenter: %s\n\tWindow/Input Backend: %s\n\tGL Backend: "
+		"%s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
 		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d\n\tWindow scale: %.2f",
 		Version::getVersionName(), Version::getCodename(), Version::getBuildTime(),
 		Sys::getPlatform(), Sys::getOSName( true ), Sys::getOSArchitecture(), Sys::getCPUCount(),
 		Sys::getProcessPath(), FileSystem::getCurrentWorkingDirectory(), Sys::getUserDirectory(),
 		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ),
-		BackendName, GLi->versionStr(), GLi->getVendor(), GLi->getRenderer(), GLi->getVersion(),
+		Runtime::modeName(), Runtime::isOffscreen() ? "Yes" : "No", presenter, BackendName,
+		GLi->versionStr(), GLi->getVendor(), GLi->getRenderer(), GLi->getVersion(),
 		GLi->getShadingLanguageVersion(), getWidth(), getHeight(), getScale() ) );
 
 #ifndef EE_SILENT

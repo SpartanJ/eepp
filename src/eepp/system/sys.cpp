@@ -1228,6 +1228,14 @@ std::string Sys::getEnv( const std::string& name ) {
 #endif
 }
 
+bool Sys::setEnv( const char* name, const char* value ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return 0 == _putenv_s( name, value );
+#else
+	return 0 == setenv( name, value, 1 );
+#endif
+}
+
 std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 	return String::split( getEnv( name.c_str() ), PATH_SEP_CHAR );
 }

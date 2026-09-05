@@ -112,6 +112,11 @@ class EE_API Sys {
 	/** @return An environment variable */
 	static std::string getEnv( const std::string& name );
 
+	/** Sets a null-terminated environment variable name and value for the current process.
+	 * @return True if the environment was updated successfully.
+	 */
+	static bool setEnv( const char* name, const char* value );
+
 	/** @return A split environment variable */
 	static std::vector<std::string> getEnvSplit( const std::string& name );
 

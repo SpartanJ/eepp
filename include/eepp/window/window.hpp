@@ -1,10 +1,12 @@
 #ifndef EE_WINDOWCWINDOW_HPP
 #define EE_WINDOWCWINDOW_HPP
 
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/view.hpp>
 #include <eepp/window/base.hpp>
+#include <eepp/window/framepresenter.hpp>
 #include <eepp/window/inputmethod.hpp>
 
 #include <limits>
@@ -42,6 +44,28 @@ enum class WindowFlashOperation {
 };
 
 enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
+
+/** Pixel layout requested from Window::readFrameBuffer(). */
+enum class FramePixelFormat : Uint8 { RGB24, RGBA32 };
+
+/** Row orientation of framebuffer readback storage. */
+enum class FrameOrigin : Uint8 { BottomLeft, TopLeft };
+
+/** Description of caller-owned storage for a framebuffer rectangle readback. */
+struct FrameReadback {
+	/** Destination pixel storage. */
+	Uint8* pixels{ nullptr };
+	/** Rectangle size in pixels. */
+	Sizei size;
+	/** Destination row stride in bytes. */
+	size_t stride{ 0 };
+	/** Bottom-left framebuffer coordinate of the rectangle. */
+	Vector2i position;
+	/** Destination pixel layout. */
+	FramePixelFormat format{ FramePixelFormat::RGB24 };
+	/** Requested destination row orientation. */
+	FrameOrigin origin{ FrameOrigin::BottomLeft };
+};
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
 #define EE_SCREEN_KEYBOARD_ENABLED false
@@ -376,6 +400,13 @@ class EE_API Window {
 	 */
 	Image getFrontBufferImage();
 
+	/** Reads a framebuffer rectangle into caller-owned storage without allocating an Image.
+	 * The destination must hold at least `stride * size.y` bytes. TopLeft origin is written
+	 * directly in that orientation without a separate full-frame flip allocation.
+	 * @return True if the readback description is valid and the pixels were read.
+	 */
+	bool readFrameBuffer( FrameReadback& readback );
+
 	/** @return The pointer to the Window Info ( read only ) */
 	const WindowInfo* getWindowInfo() const;
 
@@ -549,6 +580,8 @@ class EE_API Window {
 	Sizei mLastWindowedSize;
 	InputMethod mIME;
 	std::function<void()> mMainLoop;
+	FrameBufferUniquePtr mLogicalFrameBuffer;
+	std::unique_ptr<FramePresenter> mFramePresenter;
 
 	class FrameData {
 	  public:
@@ -595,6 +628,15 @@ class EE_API Window {
 	void sendVideoResizeCb();
 
 	void createView();
+
+	/** Creates the logical root framebuffer and presenter required by the active runtime. */
+	bool initializeRuntimeRenderTarget();
+
+	/** Resizes the logical root framebuffer and notifies its presenter. */
+	void resizeRuntimeRenderTarget( Uint32 width, Uint32 height );
+
+	/** Releases runtime presentation and logical framebuffer resources. */
+	void shutdownRuntimeRenderTarget();
 
 	void calculateFps();
 

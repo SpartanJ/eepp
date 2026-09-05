@@ -27,6 +27,8 @@ class RendererGLES2;
  */
 class EE_API Renderer {
   public:
+	/** Pixel layouts supported by framebuffer readback operations. */
+	enum class PixelFormat : Uint8 { RGB24, RGBA32 };
 	/** @return The graphic library renderer version from a string. */
 	static GraphicsLibraryVersion glVersionFromString( std::string glVersion );
 
@@ -73,6 +75,9 @@ class EE_API Renderer {
 	bool isExtension( GraphicsLibraryExtension name );
 
 	bool pointSpriteSupported();
+
+	/** Configures point-sprite coordinate replacement when required by the active graphics API. */
+	void configurePointSprite();
 
 	bool shadersSupported();
 
@@ -359,6 +364,19 @@ class EE_API Renderer {
 	void* getProcAddress( std::string proc );
 
 	void readPixels( int x, int y, unsigned int width, unsigned int height, void* pixels );
+
+	/** Reads a framebuffer rectangle into caller-owned storage.
+	 * @param x Left coordinate of the rectangle.
+	 * @param y Bottom coordinate of the rectangle.
+	 * @param width Rectangle width in pixels.
+	 * @param height Rectangle height in pixels.
+	 * @param format Destination pixel format.
+	 * @param pixels Destination storage.
+	 * @param stride Destination row stride in bytes.
+	 * @return True if the arguments are valid and the pixels were read.
+	 */
+	bool readPixels( int x, int y, unsigned int width, unsigned int height, PixelFormat format,
+					 void* pixels, size_t stride );
 
 	Color readPixel( int x, int y );
 

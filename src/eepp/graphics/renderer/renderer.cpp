@@ -397,6 +397,14 @@ bool Renderer::pointSpriteSupported() {
 #endif
 }
 
+void Renderer::configurePointSprite() {
+	if ( GLv_3CP != version() && GLv_3 != version() && GLv_ES2 != version() ) {
+#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
+		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
+#endif
+	}
+}
+
 bool Renderer::shadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == version() || GLv_3 == version() || GLv_3CP == version() );
@@ -863,6 +871,29 @@ void Renderer::readPixels( int x, int y, unsigned int width, unsigned int height
 	glReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
 }
 
+bool Renderer::readPixels( int x, int y, unsigned int width, unsigned int height,
+						   PixelFormat pixelFormat, void* pixels, size_t stride ) {
+	const unsigned int channels = pixelFormat == PixelFormat::RGB24 ? 3 : 4;
+	const size_t rowBytes = static_cast<size_t>( width ) * channels;
+	if ( nullptr == pixels || stride < rowBytes )
+		return false;
+	GLint packAlignment;
+	glGetIntegerv( GL_PACK_ALIGNMENT, &packAlignment );
+	if ( packAlignment != 1 )
+		pixelStorei( GL_PACK_ALIGNMENT, 1 );
+	const GLenum format = pixelFormat == PixelFormat::RGB24 ? GL_RGB : GL_RGBA;
+	if ( stride == rowBytes ) {
+		glReadPixels( x, y, width, height, format, GL_UNSIGNED_BYTE, pixels );
+	} else {
+		Uint8* output = static_cast<Uint8*>( pixels );
+		for ( unsigned int row = 0; row < height; ++row )
+			glReadPixels( x, y + row, width, 1, format, GL_UNSIGNED_BYTE, output + row * stride );
+	}
+	if ( packAlignment != 1 )
+		pixelStorei( GL_PACK_ALIGNMENT, packAlignment );
+	return true;
+}
+
 Color Renderer::readPixel( int x, int y ) {
 	Uint8 pixel[4];
 	readPixels( x, y, 1, 1, pixel );
@@ -1255,7 +1286,6 @@ void Renderer::genVertexArrays( int n, unsigned int* arrays ) {
 		eeglGenVertexArrays( n, arrays );
 #endif
 }
-
 
 void Renderer::waitForIdle() {
 	glFinish();

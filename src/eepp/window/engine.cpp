@@ -30,6 +30,8 @@
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
 #include <eepp/window/engine.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/terminalruntime.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -52,6 +54,17 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 
+namespace {
+
+void configureRuntimeVideoDriver() {
+	if ( !Runtime::isOffscreen() )
+		return;
+	Sys::setEnv( "SDL_VIDEODRIVER", "offscreen" );
+	Sys::setEnv( "SDL_VIDEO_DRIVER", "offscreen" );
+}
+
+} // namespace
+
 static UintPtr sMainThreadId{ 0 };
 
 SINGLETON_DECLARE_IMPLEMENTATION( Engine )
@@ -65,6 +78,7 @@ Engine::Engine() :
 	mDisplayManager( NULL ),
 	mGlobalResourceCatalog( ResourceCatalog::New() ),
 	mDefaultResourceScope( ResourceScope::New() ) {
+	configureRuntimeVideoDriver();
 	mDefaultResourceScope->importCatalog( mGlobalResourceCatalog );
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mZip = Zip::New();
@@ -103,6 +117,9 @@ Engine::~Engine() {
 	CSS::StyleSheetSpecification::destroySingleton();
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
+
+	for ( auto& window : mWindows )
+		window.second->shutdownRuntimeRenderTarget();
 
 	Graphics::Private::FrameBufferRegistry::destroySingleton();
 
@@ -228,6 +245,20 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 }
 
 EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal && !mWindows.empty() ) {
+		Log::error( "Terminal runtime currently supports one top-level Window" );
+		return nullptr;
+	}
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		TerminalRuntime& terminal = TerminalRuntime::instance();
+		if ( !terminal.initialize() )
+			return nullptr;
+		const Sizei terminalSize = terminal.pixelSize();
+		if ( terminalSize.x > 0 && terminalSize.y > 0 ) {
+			Settings.Width = terminalSize.x;
+			Settings.Height = terminalSize.y;
+		}
+	}
 	EE::Window::Window* window = NULL;
 
 	if ( NULL != mWindow ) {
@@ -245,6 +276,11 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	if ( NULL == window ) {
 		window = createDefaultWindow( Settings, Context );
+	}
+	if ( NULL == window ) {
+		if ( Runtime::mode() == RuntimeMode::Terminal )
+			TerminalRuntime::instance().shutdown();
+		return nullptr;
 	}
 
 	setCurrentWindow( window );

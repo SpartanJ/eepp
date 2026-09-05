@@ -174,39 +174,30 @@ size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned c
 size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char* out ) {
 	static const Uint8 base64enc_tab[] =
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	const size_t encodedLen = ( ( in_len + 2 ) / 3 ) * 4;
+	if ( out_len <= encodedLen )
+		return static_cast<size_t>( -1 );
 
-	size_t ii, io;
-	Uint32 v;
-	unsigned rem;
-
-	for ( io = 0, ii = 0, v = 0, rem = 0; ii < in_len; ii++ ) {
-		unsigned char ch;
-		ch = in[ii];
-		v = ( v << 8 ) | ch;
-		rem += 8;
-		while ( rem >= 6 ) {
-			rem -= 6;
-			if ( io >= out_len )
-				return static_cast<size_t>( -1 ); /* truncation is failure */
-			out[io++] = base64enc_tab[( v >> rem ) & 63];
-		}
+	size_t ii = 0;
+	size_t io = 0;
+	const size_t bulkEnd = in_len - in_len % 3;
+	for ( ; ii < bulkEnd; ii += 3 ) {
+		const Uint32 value = ( static_cast<Uint32>( in[ii] ) << 16 ) |
+							 ( static_cast<Uint32>( in[ii + 1] ) << 8 ) | in[ii + 2];
+		out[io++] = base64enc_tab[value >> 18];
+		out[io++] = base64enc_tab[( value >> 12 ) & 63];
+		out[io++] = base64enc_tab[( value >> 6 ) & 63];
+		out[io++] = base64enc_tab[value & 63];
 	}
 
-	if ( rem ) {
-		v <<= ( 6 - rem );
-		if ( io >= out_len )
-			return static_cast<size_t>( -1 ); /* truncation is failure */
-		out[io++] = base64enc_tab[v & 63];
-	}
-
-	while ( io & 3 ) {
-		if ( io >= out_len )
-			return static_cast<size_t>( -1 ); /* truncation is failure */
+	if ( ii < in_len ) {
+		const Uint32 value = static_cast<Uint32>( in[ii] ) << 16 |
+							 ( ii + 1 < in_len ? static_cast<Uint32>( in[ii + 1] ) << 8 : 0 );
+		out[io++] = base64enc_tab[value >> 18];
+		out[io++] = base64enc_tab[( value >> 12 ) & 63];
+		out[io++] = ii + 1 < in_len ? base64enc_tab[( value >> 6 ) & 63] : '=';
 		out[io++] = '=';
 	}
-
-	if ( io >= out_len )
-		return static_cast<size_t>( -1 ); /* no room for null terminator */
 
 	out[io] = 0;
 	return io;

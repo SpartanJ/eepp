@@ -28,6 +28,8 @@ void InputSDL::update() {
 	if ( mEventsSentId == std::numeric_limits<Uint64>::max() )
 		mEventsSentId = 0;
 
+	drainQueuedEvents();
+
 	if ( !mQueuedEvents.empty() ) {
 		for ( const auto& prevEvent : mQueuedEvents )
 			sendEvent( prevEvent );

@@ -12,6 +12,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <atomic>
 #include <iostream>
@@ -48,30 +49,37 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	}
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	displayManager->enableScreenSaver();
-	displayManager->enableMouseFocusClickThrough();
-	displayManager->disableBypassCompositor();
+	const bool offscreen = Runtime::isOffscreen();
+	if ( !offscreen ) {
+		displayManager->enableScreenSaver();
+		displayManager->enableMouseFocusClickThrough();
+		displayManager->disableBypassCompositor();
+	}
 
-	if ( displayManager->getDisplayIndex( 0 ) == nullptr ) {
+	if ( !offscreen && displayManager->getDisplayIndex( 0 ) == nullptr ) {
 		std::cerr << "Display not found, exiting" << std::endl;
 		return;
 	}
 
 	mWindow = Engine::instance()->createWindow( windowSettings, contextSettings );
 
-	if ( !mWindow->isOpen() ) {
+	if ( nullptr == mWindow || !mWindow->isOpen() ) {
 		std::cerr << "Could not create window, exiting" << std::endl;
 		return;
 	}
 
 	mDidRun = true;
 
-	PixelDensity::setPixelDensity(
-		appSettings.pixelDensity && *appSettings.pixelDensity > 0
-			? *appSettings.pixelDensity
-			: eemax( mWindow->getScale(),
-					 displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
-						 ->getPixelDensity() ) );
+	if ( appSettings.pixelDensity && *appSettings.pixelDensity > 0 ) {
+		PixelDensity::setPixelDensity( *appSettings.pixelDensity );
+	} else if ( offscreen ) {
+		PixelDensity::setPixelDensity( 1.f );
+	} else {
+		PixelDensity::setPixelDensity(
+			eemax( mWindow->getScale(),
+				   displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
+					   ->getPixelDensity() ) );
+	}
 
 	if ( !appSettings.basePath || appSettings.basePath->empty() ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -154,10 +162,14 @@ UISceneNode* UIApplication::getUI() const {
 }
 
 int UIApplication::run() {
+	// Offscreen SDL windows do not receive an initial expose event. Ensure the first logical
+	// framebuffer is rendered even when the scene was fully laid out before entering the loop.
+	if ( Runtime::isOffscreen() )
+		mUISceneNode->invalidate( nullptr );
+
 	mWindow->runMainLoop( [this]() {
 		mWindow->getInput()->update();
 		SceneManager::instance()->update();
-
 		if ( mUISceneNode->invalidated() ) {
 			mWindow->clear();
 
