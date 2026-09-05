@@ -1234,7 +1234,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		pixelDensity = pixelDensityConf;
 
 	Log::instance()->setLiveWrite( true );
-	Log::instance()->setLogToStdOut( true );
+	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 
 	mResPath = Sys::getProcessPath();
 

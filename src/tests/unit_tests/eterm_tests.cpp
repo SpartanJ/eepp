@@ -544,6 +544,20 @@ UTEST( eterm, kitty_graphics_chunk_continuations_reject_metadata_and_wrong_actio
 	EXPECT_EQ( KittyGraphicsError::InvalidArgument, protocol.handle( "m=0;BA==" ).error );
 }
 
+UTEST( eterm, kitty_graphics_frame_chunks_repeat_frame_action ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_EQ( KittyGraphicsError::None, protocol.handle( "a=t,f=32,s=1,v=1,i=8;AQIDBA==" ).error );
+	protocol.takeUpdates();
+	EXPECT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=f,i=8,r=1,f=32,s=1,v=1,X=1,m=1;BQYH" ).error );
+	const auto final = protocol.handle( "a=f,m=0;CA==" );
+	EXPECT_EQ( KittyGraphicsError::None, final.error );
+	EXPECT_TRUE( final.changed );
+	const std::vector<Uint8> expected{ 5, 6, 7, 8 };
+	ASSERT_TRUE( protocol.imagePixels( 8 ) != nullptr );
+	EXPECT_TRUE( expected == *protocol.imagePixels( 8 ) );
+}
+
 UTEST( eterm, kitty_graphics_image_number_allocates_id_and_echoes_number ) {
 	KittyGraphicsProtocol protocol;
 	auto created = protocol.handle( "a=t,f=32,s=1,v=1,I=77;AQIDBA==" );
@@ -577,6 +591,23 @@ UTEST( eterm, kitty_graphics_rgb_and_zlib_preserve_rgb24 ) {
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( static_cast<Uint8>( 3 ), updates.front().channels );
 	EXPECT_TRUE( updates.front().pixels && expected == *updates.front().pixels );
+}
+
+UTEST( eterm, memory_stream_supports_multichunk_compression_output ) {
+	std::vector<Uint8> sourcePixels( 128 * 1024 );
+	Uint32 state = 0x12345678;
+	for ( Uint8& pixel : sourcePixels ) {
+		state ^= state << 13;
+		state ^= state >> 17;
+		state ^= state << 5;
+		pixel = static_cast<Uint8>( state );
+	}
+	std::vector<Uint8> compressed( Compression::getMaxCompressedBufferSize( sourcePixels.size() ) );
+	IOStreamMemory source( reinterpret_cast<const char*>( sourcePixels.data() ),
+						   sourcePixels.size() );
+	IOStreamMemory destination( reinterpret_cast<char*>( compressed.data() ), compressed.size() );
+	EXPECT_EQ( Compression::OK, Compression::compress( destination, source ) );
+	EXPECT_TRUE( destination.tell() > 16 * 1024 );
 }
 
 UTEST( eterm, kitty_graphics_png_decodes_to_rgba ) {

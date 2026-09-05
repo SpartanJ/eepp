@@ -208,11 +208,14 @@ void TerminalRuntime::detach() {
 namespace {
 Uint32 decodeModifiers( unsigned int value ) {
 	const unsigned int bits = value ? value - 1 : 0;
-	return ( bits & 1 ? KEYMOD_SHIFT : 0 ) | ( bits & 2 ? KEYMOD_ALT : 0 ) |
-		   ( bits & 4 ? KEYMOD_CTRL : 0 ) | ( bits & 8 ? KEYMOD_META : 0 );
+	return ( bits & 1 ? KEYMOD_SHIFT : 0 ) | ( bits & 2 ? KEYMOD_LALT : 0 ) |
+		   ( bits & 4 ? KEYMOD_CTRL : 0 ) | ( bits & 8 ? KEYMOD_META : 0 ) |
+		   ( bits & 64 ? KEYMOD_CAPS : 0 ) | ( bits & 128 ? KEYMOD_NUM : 0 );
 }
 
-Scancode decodeScancode( Uint32 code ) {
+Scancode decodeScancode( Uint32 code, bool kittyBackspace ) {
+	if ( kittyBackspace && code == 127 )
+		return SCANCODE_BACKSPACE;
 	if ( code >= 'a' && code <= 'z' )
 		return static_cast<Scancode>( SCANCODE_A + code - 'a' );
 	if ( code >= 'A' && code <= 'Z' )
@@ -243,6 +246,10 @@ Scancode decodeScancode( Uint32 code ) {
 		return SCANCODE_DELETE;
 	if ( code >= static_cast<Uint32>( KEY_F1 ) && code <= static_cast<Uint32>( KEY_F12 ) )
 		return static_cast<Scancode>( SCANCODE_F1 + code - static_cast<Uint32>( KEY_F1 ) );
+	if ( code >= 57376 && code <= 57387 )
+		return static_cast<Scancode>( SCANCODE_F13 + code - 57376 );
+	if ( code >= 57400 && code <= 57408 )
+		return static_cast<Scancode>( SCANCODE_KP_1 + code - 57400 );
 	switch ( code ) {
 		case 9:
 			return SCANCODE_TAB;
@@ -252,19 +259,97 @@ Scancode decodeScancode( Uint32 code ) {
 			return SCANCODE_ESCAPE;
 		case 32:
 			return SCANCODE_SPACE;
-		case 127:
-			return SCANCODE_BACKSPACE;
+		case '-':
+			return SCANCODE_MINUS;
+		case '=':
+			return SCANCODE_EQUALS;
+		case '[':
+			return SCANCODE_LEFTBRACKET;
+		case ']':
+			return SCANCODE_RIGHTBRACKET;
+		case '\\':
+			return SCANCODE_BACKSLASH;
+		case ';':
+			return SCANCODE_SEMICOLON;
+		case '\'':
+			return SCANCODE_APOSTROPHE;
+		case '`':
+			return SCANCODE_GRAVE;
+		case ',':
+			return SCANCODE_COMMA;
+		case '.':
+			return SCANCODE_PERIOD;
+		case '/':
+			return SCANCODE_SLASH;
+		case 57358:
+			return SCANCODE_CAPSLOCK;
+		case 57359:
+			return SCANCODE_SCROLLLOCK;
+		case 57360:
+			return SCANCODE_NUMLOCKCLEAR;
+		case 57361:
+			return SCANCODE_PRINTSCREEN;
+		case 57362:
+			return SCANCODE_PAUSE;
+		case 57363:
+			return SCANCODE_MENU;
+		case 57399:
+			return SCANCODE_KP_0;
+		case 57409:
+			return SCANCODE_KP_PERIOD;
+		case 57410:
+			return SCANCODE_KP_DIVIDE;
+		case 57411:
+			return SCANCODE_KP_MULTIPLY;
+		case 57412:
+			return SCANCODE_KP_MINUS;
+		case 57413:
+			return SCANCODE_KP_PLUS;
+		case 57414:
+			return SCANCODE_KP_ENTER;
+		case 57415:
+			return SCANCODE_KP_EQUALS;
+		case 57416:
+			return SCANCODE_KP_COMMA;
+		case 57441:
+			return SCANCODE_LSHIFT;
+		case 57442:
+			return SCANCODE_LCTRL;
+		case 57443:
+			return SCANCODE_LALT;
+		case 57444:
+			return SCANCODE_LGUI;
+		case 57447:
+			return SCANCODE_RSHIFT;
+		case 57448:
+			return SCANCODE_RCTRL;
+		case 57449:
+			return SCANCODE_RALT;
+		case 57450:
+			return SCANCODE_RGUI;
 		default:
 			return SCANCODE_UNKNOWN;
 	}
 }
 
-void enqueueKey( Window& window, Uint32 code, Uint32 mods, Uint32 kind, Uint32 text ) {
+Keycode decodeKeycode( Uint32 code, Scancode scancode, bool kittyBackspace ) {
+	// Kitty identifies Backspace with its terminal encoding (DEL), while eepp represents the
+	// logical key as BS. Keep protocol encoding out of the neutral InputEvent keycode.
+	if ( kittyBackspace && code == 127 )
+		return KEY_BACKSPACE;
+	return code >= 57344 && scancode != SCANCODE_UNKNOWN
+			   ? static_cast<Keycode>( SCANCODE_TO_KEYCODE( scancode ) )
+			   : static_cast<Keycode>( code );
+}
+
+void enqueueKey( Window& window, Uint32 code, Uint32 mods, Uint32 kind, Uint32 text,
+				 bool kittyBackspace = false ) {
+	const Scancode scancode = decodeScancode( code, kittyBackspace );
 	InputEvent event( kind == 3 ? InputEvent::KeyUp : InputEvent::KeyDown );
 	event.key = { 0,
 				  static_cast<Uint8>( kind == 3 ? 0 : 1 ),
 				  static_cast<Uint8>( kind == 2 ),
-				  { decodeScancode( code ), static_cast<Keycode>( code ), mods, text } };
+				  { scancode, decodeKeycode( code, scancode, kittyBackspace ), mods, text } };
 	window.getInput()->enqueueEvent( event );
 	if ( text && kind != 3 ) {
 		InputEvent input( InputEvent::TextInput );
@@ -342,6 +427,15 @@ void TerminalRuntime::readInput() {
 				pending.append( data, count );
 		}
 #endif
+		// Kitty graphics acknowledgements are APC strings. They are not input events, and leaving
+		// an unrecognized ESC _ prefix at the front would block all subsequent keyboard and mouse
+		// input.
+		while ( pending.size() >= 2 && pending[0] == '\033' && pending[1] == '_' ) {
+			const size_t end = pending.find( "\033\\", 2 );
+			if ( end == std::string::npos )
+				break;
+			pending.erase( 0, end + 2 );
+		}
 		while ( pending.size() >= 3 && pending[0] == '\033' && pending[1] == '[' ) {
 			size_t end = 2;
 			while ( end < pending.size() && !( pending[end] >= '@' && pending[end] <= '~' ) )
@@ -408,7 +502,22 @@ void TerminalRuntime::readInput() {
 				if ( separator != std::string::npos ) {
 					code = static_cast<unsigned int>( std::strtoul( params.c_str(), nullptr, 10 ) );
 					std::sscanf( params.c_str() + separator + 1, "%u:%u;%u", &mods, &kind, &text );
-					enqueueKey( *mWindow, code, decodeModifiers( mods ), kind, text );
+					enqueueKey( *mWindow, code, decodeModifiers( mods ), kind, text, code == 127 );
+					const size_t textSeparator = params.find( ';', separator + 1 );
+					if ( kind != 3 && textSeparator != std::string::npos ) {
+						size_t next = params.find( ':', textSeparator + 1 );
+						while ( next != std::string::npos ) {
+							const Uint32 codepoint = static_cast<Uint32>(
+								std::strtoul( params.c_str() + next + 1, nullptr, 10 ) );
+							if ( codepoint ) {
+								InputEvent input( InputEvent::TextInput );
+								input.text = { 0,
+											   static_cast<String::StringBaseType>( codepoint ) };
+								mWindow->getInput()->enqueueEvent( input );
+							}
+							next = params.find( ':', next + 1 );
+						}
+					}
 				}
 			} else if ( final == 'A' || final == 'B' || final == 'C' || final == 'D' ||
 						final == 'H' || final == 'F' || final == 'P' || final == 'Q' ||

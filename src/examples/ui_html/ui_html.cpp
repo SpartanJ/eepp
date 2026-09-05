@@ -71,7 +71,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 						 4 ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
-	Log::instance()->setLogToStdOut( true );
+	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 
 	Http::setDefaultUserAgent( "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like "
