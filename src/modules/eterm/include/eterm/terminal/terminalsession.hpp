@@ -119,6 +119,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 
 	void write( std::string data, bool mayEcho = true );
 	void writeRaw( std::string data );
+	void keyEvent( KittyKeyEvent event );
+	void textInput( Uint32 codepoint );
 	void resize( int columns, int rows );
 	void resize( int columns, int rows, int pixelWidth, int pixelHeight );
 	void scrollUp( int amount );
@@ -161,6 +163,12 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	};
 	struct WriteRawCommand {
 		std::string data;
+	};
+	struct KeyCommand {
+		KittyKeyEvent event;
+	};
+	struct TextInputCommand {
+		Uint32 codepoint{ 0 };
 	};
 	struct ResizeCommand {
 		int columns{ 0 };
@@ -220,10 +228,10 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct FocusCommand : BoolCommand {};
 
 	using Command =
-		std::variant<WriteCommand, WriteRawCommand, ResizeCommand, ScrollCommand,
-					 SelectionStartCommand, SelectionExtendCommand, SelectionClearCommand,
-					 MouseCommand, FocusCommand, CursorModeCommand, PaletteCommand,
-					 PresentationRateCommand, AllowTrimCommand, DataEventsCommand,
+		std::variant<WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand,
+					 ScrollCommand, SelectionStartCommand, SelectionExtendCommand,
+					 SelectionClearCommand, MouseCommand, FocusCommand, CursorModeCommand,
+					 PaletteCommand, PresentationRateCommand, AllowTrimCommand, DataEventsCommand,
 					 PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
 					 SelectionRequestCommand, GraphicsResyncCommand>;
 

@@ -34,6 +34,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #include <eterm/terminal/boxdrawdata.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
 #include <eepp/core/memorymanager.hpp>
@@ -1051,6 +1052,126 @@ void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
 	}
 }
 
+static Uint32 keyboardSanitizeMod( Uint32 mod ) {
+	return mod & KEYMOD_CTRL_SHIFT_ALT_META;
+}
+
+static char legacyControlCharacter( Scancode scancode ) {
+	if ( scancode >= SCANCODE_A && scancode <= SCANCODE_Z )
+		return static_cast<char>( scancode - SCANCODE_A + 1 );
+	if ( scancode == SCANCODE_LEFTBRACKET )
+		return 27;
+	if ( scancode == SCANCODE_SLASH )
+		return 28;
+	if ( scancode == SCANCODE_RIGHTBRACKET )
+		return 29;
+	return 0;
+}
+
+void TerminalEmulator::keyEvent( const KittyKeyEvent& event ) {
+	const Uint32 flags = activeKeyboardState().flags;
+	const Uint32 keycode = static_cast<Uint32>( event.keycode );
+	const bool reportAll =
+		flags & kittyKeyboardFlag( KittyKeyboardFlag::ReportAllKeysAsEscapeCodes );
+	const bool altGr = event.modifiers & KEYMOD_RALT;
+	const bool textProducingModifiers = ( event.modifiers & ( KEYMOD_LALT | KEYMOD_META ) ) == 0 &&
+										( altGr || ( event.modifiers & KEYMOD_CTRL ) == 0 );
+	// AltGr keydown can already carry the layout-produced character, but SDL still follows it with
+	// the authoritative text-input event. Always defer AltGr here so it is normalized as composed
+	// text instead of being emitted immediately as an Alt shortcut.
+	if ( reportAll && event.type != KittyKeyEventType::Release &&
+		 ( event.character == 0 || altGr ) && keycode >= 32 && keycode <= 126 &&
+		 textProducingModifiers ) {
+		mPendingTextKey = event;
+		mHasPendingTextKey = true;
+		return;
+	}
+	const auto enhanced = KittyKeyboardEncoder::encode( event, flags );
+	if ( enhanced.handled ) {
+		ttywrite( enhanced.bytes.data(), enhanced.bytes.size(), 1 );
+		mExpectedTextInput = enhanced.expectedText;
+		return;
+	}
+	if ( event.type == KittyKeyEventType::Release )
+		return;
+
+	if ( event.modifiers & KEYMOD_CTRL ) {
+		const char control = legacyControlCharacter( event.scancode );
+		if ( control ) {
+			ttywrite( &control, 1, 1 );
+			return;
+		}
+	}
+
+	const Uint32 modifiers = keyboardSanitizeMod( event.modifiers );
+	auto writeMapped = [this, modifiers]( const auto& entries ) {
+		for ( const auto& entry : entries ) {
+			if ( entry.mask != KEYMOD_CTRL_SHIFT_ALT_META && entry.mask != modifiers )
+				continue;
+			if ( IS_SET( MODE_APPKEYPAD ) ? entry.appkey < 0 : entry.appkey > 0 )
+				continue;
+			if ( IS_SET( MODE_NUMLOCK ) && entry.appkey == 2 )
+				continue;
+			if ( IS_SET( MODE_APPCURSOR ) ? entry.appcursor < 0 : entry.appcursor > 0 )
+				continue;
+			if ( !entry.string.empty() ) {
+				ttywrite( entry.string.data(), entry.string.size(), 1 );
+				return true;
+			}
+			break;
+		}
+		return false;
+	};
+
+	const auto key = terminalKeyMap.KeyMap().find( event.keycode );
+	if ( key != terminalKeyMap.KeyMap().end() && writeMapped( key->second ) )
+		return;
+	const auto platform = terminalKeyMap.PlatformKeyMap().find( event.scancode );
+	if ( platform != terminalKeyMap.PlatformKeyMap().end() )
+		writeMapped( platform->second );
+}
+
+void TerminalEmulator::textInput( Uint32 codepoint ) {
+	if ( mHasPendingTextKey ) {
+		if ( mPendingTextKey.modifiers & KEYMOD_RALT ) {
+			// SDL's text event is the authoritative result of the AltGr layout level. Report that
+			// result as text, without turning the consumed AltGr (or its platform-synthetic Ctrl)
+			// into an application shortcut. Keep the physical scancode for base-layout reporting.
+			mPendingTextKey.keycode = static_cast<Keycode>( codepoint );
+			mPendingTextKey.modifiers &= ~( KEYMOD_RALT | KEYMOD_CTRL | KEYMOD_SHIFT );
+		}
+		mPendingTextKey.character = codepoint;
+		const auto encoded =
+			KittyKeyboardEncoder::encode( mPendingTextKey, activeKeyboardState().flags );
+		mHasPendingTextKey = false;
+		if ( encoded.handled ) {
+			ttywrite( encoded.bytes.data(), encoded.bytes.size(), 1 );
+			return;
+		}
+	}
+	if ( mExpectedTextInput ) {
+		const bool matches = mExpectedTextInput == codepoint;
+		mExpectedTextInput = 0;
+		if ( matches )
+			return;
+	}
+	const std::string enhanced =
+		KittyKeyboardEncoder::encodeText( codepoint, activeKeyboardState().flags );
+	if ( !enhanced.empty() ) {
+		ttywrite( enhanced.data(), enhanced.size(), 1 );
+		return;
+	}
+	String input;
+	input.push_back( codepoint );
+	const std::string utf8 = input.toUtf8();
+	ttywrite( utf8.data(), utf8.size(), 1 );
+}
+
+void TerminalEmulator::clearPendingKeyboardInput() {
+	mExpectedTextInput = 0;
+	mHasPendingTextKey = false;
+}
+
 void TerminalEmulator::ttywriteraw( const char* s, size_t n ) {
 	if ( mPty->write( s, n ) < (int)n ) {
 		_die( "Failed to write to TTY" );
@@ -1124,6 +1245,7 @@ void TerminalEmulator::tcursor( int mode ) {
 void TerminalEmulator::treset( void ) {
 	uint i;
 
+	resetKittyKeyboardProtocol();
 	mColorSchemeNotifications = false;
 	mTerm.is_syncing = false;
 	mTerm.c = TerminalCursor{};
@@ -1184,6 +1306,42 @@ void TerminalEmulator::tswapscreen( void ) {
 	mTerm.alt = tmp;
 	mTerm.mode ^= MODE_ALTSCREEN;
 	tfulldirt();
+}
+
+KittyKeyboardState& TerminalEmulator::activeKeyboardState() {
+	return tisaltscr() ? mAlternateKeyboardState : mPrimaryKeyboardState;
+}
+
+void TerminalEmulator::resetKittyKeyboardProtocol() {
+	mPrimaryKeyboardState.reset();
+	mAlternateKeyboardState.reset();
+	clearPendingKeyboardInput();
+}
+
+bool TerminalEmulator::handleKittyKeyboardProtocol() {
+	if ( mCsiescseq.mode[0] != 'u' || ( mCsiescseq.priv != '?' && mCsiescseq.priv != '>' &&
+										mCsiescseq.priv != '<' && mCsiescseq.priv != '=' ) )
+		return false;
+
+	auto& state = activeKeyboardState();
+	const bool omitted = mCsiescseq.buf[1] == 'u';
+	if ( mCsiescseq.priv == '?' ) {
+		if ( omitted ) {
+			char response[24];
+			const int len = snprintf( response, sizeof( response ), "\033[?%uu", state.flags );
+			ttywrite( response, static_cast<size_t>( len ), 0 );
+		}
+	} else if ( mCsiescseq.priv == '>' ) {
+		if ( mCsiescseq.narg == 1 && mCsiescseq.arg[0] >= 0 )
+			state.push( static_cast<Uint32>( mCsiescseq.arg[0] ) );
+	} else if ( mCsiescseq.priv == '<' ) {
+		if ( mCsiescseq.narg == 1 && mCsiescseq.arg[0] >= 0 )
+			state.pop( omitted ? 1 : static_cast<size_t>( mCsiescseq.arg[0] ) );
+	} else if ( mCsiescseq.priv == '=' && mCsiescseq.narg <= 2 && mCsiescseq.arg[0] >= 0 ) {
+		const Uint32 mode = mCsiescseq.narg == 1 ? 1 : static_cast<Uint32>( mCsiescseq.arg[1] );
+		state.set( static_cast<Uint32>( mCsiescseq.arg[0] ), mode );
+	}
+	return true;
 }
 
 void TerminalEmulator::tscrolldown( int top, int n ) {
@@ -2168,6 +2326,8 @@ void TerminalEmulator::csihandle( void ) {
 	int len;
 
 	std::shared_ptr<ITerminalDisplay> dpy{};
+	if ( handleKittyKeyboardProtocol() )
+		return;
 
 	switch ( mCsiescseq.mode[0] ) {
 		default:
@@ -2367,12 +2527,7 @@ void TerminalEmulator::csihandle( void ) {
 			tcursor( CURSOR_SAVE );
 			break;
 		case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
-			if ( mCsiescseq.priv == '?' || mCsiescseq.priv == '>' || mCsiescseq.priv == '<' ||
-				 mCsiescseq.priv == '=' ) {
-				// Kitty keyboard protocol. Remain in legacy mode and do not answer its query: a
-				// response would claim support and require encoding all subsequent key events.
-				break;
-			} else if ( mCsiescseq.priv ) {
+			if ( mCsiescseq.priv ) {
 				goto unknown;
 			} else {
 				tcursor( CURSOR_LOAD );
@@ -3912,6 +4067,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type,
 
 void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
 	mKittyGraphics.reset();
+	resetKittyKeyboardProtocol();
 	mKittyPlaceholderMetadata.clear();
 	mKittyPlaceholderCell = Vector2i( -1, -1 );
 	mBuflen = 0;

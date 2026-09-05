@@ -42,6 +42,7 @@
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/kittygraphicsprotocol.hpp>
+#include <eterm/terminal/kittykeyboardprotocol.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
 #include <stdint.h>
@@ -245,6 +246,12 @@ class TerminalEmulator final {
 
 	void ttywrite( const char* s, size_t n, int may_echo );
 
+	void keyEvent( const KittyKeyEvent& event );
+
+	void textInput( Uint32 codepoint );
+
+	void clearPendingKeyboardInput();
+
 	int tisaltscr();
 
 	int scrollSize() const;
@@ -322,6 +329,11 @@ class TerminalEmulator final {
 	CSIEscape mCsiescseq;
 	STREscape mStrescseq;
 	KittyGraphicsProtocol mKittyGraphics;
+	KittyKeyboardState mPrimaryKeyboardState;
+	KittyKeyboardState mAlternateKeyboardState;
+	KittyKeyEvent mPendingTextKey;
+	Uint32 mExpectedTextInput{ 0 };
+	bool mHasPendingTextKey{ false };
 
 	uint32_t mDefaultFg;
 	uint32_t mDefaultBg;
@@ -361,6 +373,9 @@ class TerminalEmulator final {
 
 	void csidump();
 	void csihandle();
+	bool handleKittyKeyboardProtocol();
+	KittyKeyboardState& activeKeyboardState();
+	void resetKittyKeyboardProtocol();
 	void csiparse();
 	void csireset();
 

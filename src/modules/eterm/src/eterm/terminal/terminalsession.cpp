@@ -317,6 +317,14 @@ void TerminalSession::writeRaw( std::string data ) {
 	enqueue( WriteRawCommand{ std::move( data ) } );
 }
 
+void TerminalSession::keyEvent( KittyKeyEvent event ) {
+	enqueue( KeyCommand{ std::move( event ) } );
+}
+
+void TerminalSession::textInput( Uint32 codepoint ) {
+	enqueue( TextInputCommand{ codepoint } );
+}
+
 void TerminalSession::resize( int columns, int rows ) {
 	resize( columns, rows, 0, 0 );
 }
@@ -511,6 +519,10 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->ttywrite( value.data.data(), value.data.size(), value.mayEcho );
 			} else if constexpr ( std::is_same_v<T, WriteRawCommand> ) {
 				mEmulator->write( value.data.data(), value.data.size() );
+			} else if constexpr ( std::is_same_v<T, KeyCommand> ) {
+				mEmulator->keyEvent( value.event );
+			} else if constexpr ( std::is_same_v<T, TextInputCommand> ) {
+				mEmulator->textInput( value.codepoint );
 			} else if constexpr ( std::is_same_v<T, ResizeCommand> ) {
 				mEmulator->resize( value.columns, value.rows, value.pixelWidth, value.pixelHeight );
 			} else if constexpr ( std::is_same_v<T, ScrollCommand> ) {
@@ -537,6 +549,8 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->mousereport( value.type, value.cellPosition, value.pixelPosition,
 										value.flags, value.modifiers );
 			} else if constexpr ( std::is_same_v<T, FocusCommand> ) {
+				if ( !value.value )
+					mEmulator->clearPendingKeyboardInput();
 				if ( mWorkerDisplay->getMode( MODE_FOCUS ) )
 					mEmulator->ttywrite( value.value ? "\033[I" : "\033[O", 3, false );
 				mWorkerDisplay->setFocused( value.value );

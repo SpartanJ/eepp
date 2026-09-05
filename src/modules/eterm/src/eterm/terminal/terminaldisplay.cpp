@@ -20,13 +20,6 @@ namespace eterm { namespace Terminal {
 #define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
 #define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
 
-static const Scancode asciiScancodeTable[] = {
-	SCANCODE_A, SCANCODE_B, SCANCODE_C,			  SCANCODE_D,	  SCANCODE_E,			SCANCODE_F,
-	SCANCODE_G, SCANCODE_H, SCANCODE_I,			  SCANCODE_J,	  SCANCODE_K,			SCANCODE_L,
-	SCANCODE_M, SCANCODE_N, SCANCODE_O,			  SCANCODE_P,	  SCANCODE_Q,			SCANCODE_R,
-	SCANCODE_S, SCANCODE_T, SCANCODE_U,			  SCANCODE_V,	  SCANCODE_W,			SCANCODE_X,
-	SCANCODE_Y, SCANCODE_Z, SCANCODE_LEFTBRACKET, SCANCODE_SLASH, SCANCODE_RIGHTBRACKET };
-
 static Uint32 sanitizeMod( const Uint32& mod ) {
 	Uint32 smod = 0;
 	if ( mod & KEYMOD_CTRL )
@@ -1935,10 +1928,7 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	if ( !mSession )
 		return;
-	String input;
-	input.push_back( chr );
-	std::string utf8Input( input.toUtf8() );
-	mSession->write( std::move( utf8Input ) );
+	mSession->textInput( chr );
 	mDirty = true;
 }
 
@@ -1973,8 +1963,8 @@ bool TerminalDisplay::isRegisteredShortcut( const Keycode& keyCode, const Uint32
 	return false;
 }
 
-void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
-								 const Scancode& scancode ) {
+void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+								 const Scancode& scancode, bool repeat ) {
 	if ( mWindow->getIME().isEditing() )
 		return;
 	Uint32 smod = sanitizeMod( mod );
@@ -1993,6 +1983,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 					continue;
 
 				if ( !k.altscrn || ( k.altscrn == ( isAltScr() ? 1 : -1 ) ) ) {
+					suppressKeyUp( scancode );
 					action( k.action );
 					return;
 				}
@@ -2000,67 +1991,28 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 		}
 	}
 
-	if ( mod & KEYMOD_CTRL ) {
-		// I really dont like this, as it depends on the underlying backend implementation (SDL in
-		// this case)
-		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
-			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
-			char tmp = 0;
-			for ( size_t i = 0; i < eeARRAY_SIZE( asciiScancodeTable ); ++i ) {
-				if ( asciiScancodeTable[i] == scancode ) {
-					tmp = i + 1;
-					break;
-				}
-			}
+	mSession->keyEvent( { keyCode, scancode, chr, mod,
+						  repeat ? KittyKeyEventType::Repeat : KittyKeyEventType::Press } );
+}
 
-			mSession->write( std::string( 1, tmp ) );
-			return;
-		}
+void TerminalDisplay::onKeyUp( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+							   const Scancode& scancode ) {
+	if ( scancode >= 0 && static_cast<size_t>( scancode ) < mSuppressedKeyUps.size() &&
+		 mSuppressedKeyUps.test( static_cast<size_t>( scancode ) ) ) {
+		mSuppressedKeyUps.reset( static_cast<size_t>( scancode ) );
+		return;
 	}
+	if ( mSession )
+		mSession->keyEvent( { keyCode, scancode, chr, mod, KittyKeyEventType::Release } );
+}
 
-	auto kvIt = terminalKeyMap.KeyMap().find( keyCode );
-	if ( kvIt != terminalKeyMap.KeyMap().end() ) {
-		for ( auto& k : kvIt->second ) {
-			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
-				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
-					continue;
+void TerminalDisplay::suppressKeyUp( const Scancode& scancode ) {
+	if ( scancode >= 0 && static_cast<size_t>( scancode ) < mSuppressedKeyUps.size() )
+		mSuppressedKeyUps.set( static_cast<size_t>( scancode ) );
+}
 
-				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
-					continue;
-
-				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
-					continue;
-
-				if ( k.string.size() > 0 ) {
-					mSession->write( k.string );
-					return;
-				}
-				break;
-			}
-		}
-	}
-
-	auto pkmIt = terminalKeyMap.PlatformKeyMap().find( scancode );
-	if ( pkmIt != terminalKeyMap.PlatformKeyMap().end() ) {
-		for ( auto& k : pkmIt->second ) {
-			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
-				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
-					continue;
-
-				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
-					continue;
-
-				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
-					continue;
-
-				if ( k.string.size() > 0 ) {
-					mSession->write( k.string );
-					return;
-				}
-				break;
-			}
-		}
-	}
+void TerminalDisplay::clearSuppressedKeys() {
+	mSuppressedKeyUps.reset();
 }
 
 Font* TerminalDisplay::getFont() const {

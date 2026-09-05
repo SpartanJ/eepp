@@ -251,6 +251,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_EVENT_KEY_DOWN: {
 			event.Type = InputEvent::KeyDown;
 			event.key.state = SDLEvent.key.down ? 1 : 0;
+			event.key.repeat = SDLEvent.key.repeat ? 1 : 0;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = static_cast<Keycode>( SDLEvent.key.key );
 			event.key.keysym.scancode = static_cast<Scancode>( SDLEvent.key.scancode );
@@ -262,6 +263,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_EVENT_KEY_UP: {
 			event.Type = InputEvent::KeyUp;
 			event.key.state = SDLEvent.key.down ? 1 : 0;
+			event.key.repeat = 0;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = static_cast<Keycode>( SDLEvent.key.key );
 			event.key.keysym.scancode = static_cast<Scancode>( SDLEvent.key.scancode );
@@ -383,11 +385,13 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_ADDED: {
-			static_cast<JoystickManagerSDL*>( mJoystickManager )->addJoystick( SDLEvent.jdevice.which );
+			static_cast<JoystickManagerSDL*>( mJoystickManager )
+				->addJoystick( SDLEvent.jdevice.which );
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_REMOVED: {
-			static_cast<JoystickManagerSDL*>( mJoystickManager )->removeJoystick( SDLEvent.jdevice.which );
+			static_cast<JoystickManagerSDL*>( mJoystickManager )
+				->removeJoystick( SDLEvent.jdevice.which );
 			break;
 		}
 		case SDL_EVENT_QUIT: {

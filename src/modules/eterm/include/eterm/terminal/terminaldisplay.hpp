@@ -14,6 +14,7 @@
 #include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/terminal/terminalsession.hpp>
 
+#include <bitset>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -198,7 +199,14 @@ class TerminalDisplay {
 	void onTextEditing( const String& text, const Int32& start, const Int32& length );
 
 	void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
-					const Scancode& scancode );
+					const Scancode& scancode, bool repeat = false );
+
+	void onKeyUp( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+				  const Scancode& scancode );
+
+	void suppressKeyUp( const Scancode& scancode );
+
+	void clearSuppressedKeys();
 
 	bool isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const;
 
@@ -334,6 +342,7 @@ class TerminalDisplay {
 	Vector2f mPosition;
 	Sizef mSize;
 	std::vector<bool> mDirtyLines;
+	std::bitset<SCANCODES_NUM> mSuppressedKeyUps;
 	bool mDirty{ true };
 	bool mDirtyCursor{ true };
 	bool mDrawing{ false };

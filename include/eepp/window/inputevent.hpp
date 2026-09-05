@@ -56,6 +56,7 @@ class InputEvent {
 	struct KeyboardEvent {
 		Uint8 which; /** The keyboard device index */
 		Uint8 state;
+		Uint8 repeat; /** Non-zero for an automatically repeated key-down. */
 		KeySym keysym;
 	};
 

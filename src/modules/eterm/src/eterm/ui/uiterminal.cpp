@@ -498,16 +498,20 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 		std::string cmd =
 			mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 		if ( !cmd.empty() && ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() ) ) {
+			mTerm->suppressKeyUp( event.getScancode() );
 			execute( cmd );
 			return 1;
 		}
 	}
 
-	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
+	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode(),
+					  event.isRepeat() );
 	return 1;
 }
 
-Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
+Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
+	if ( mTerm )
+		mTerm->onKeyUp( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
 	return 1;
 }
 
@@ -575,6 +579,7 @@ Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 
 Uint32 UITerminal::onFocusLoss() {
 	getUISceneNode()->getWindow()->stopTextInput();
+	mTerm->clearSuppressedKeys();
 	mTerm->setFocus( false );
 	invalidateDraw();
 	return UIWidget::onFocusLoss();

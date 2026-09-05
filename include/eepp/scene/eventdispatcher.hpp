@@ -60,7 +60,7 @@ class EE_API EventDispatcher {
 					const Uint32& mod );
 
 	void sendKeyDown( const Keycode& keyCode, const Scancode& scancode, const Uint32& chr,
-					  const Uint32& mod );
+					  const Uint32& mod, bool repeat = false );
 
 	void sendMouseClick( Node* toNode, const Vector2i& pos, const Uint32 flags );
 

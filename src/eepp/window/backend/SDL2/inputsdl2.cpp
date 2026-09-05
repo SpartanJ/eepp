@@ -273,6 +273,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_KEYDOWN: {
 			event.Type = InputEvent::KeyDown;
 			event.key.state = SDLEvent.key.state;
+			event.key.repeat = SDLEvent.key.repeat;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
@@ -284,6 +285,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_KEYUP: {
 			event.Type = InputEvent::KeyUp;
 			event.key.state = SDLEvent.key.state;
+			event.key.repeat = 0;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;

@@ -908,9 +908,88 @@ UTEST( eterm_session, kitty_graphics_update_and_metadata_cross_worker_boundary )
 	EXPECT_STDSTREQ( "\033_Gi=13;OK\033\\", ptyPtr->mWrites );
 }
 
-UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
+UTEST( eterm, kitty_keyboard_state_stack_and_modes ) {
+	KittyKeyboardState state;
+	state.push( 1 );
+	EXPECT_EQ( static_cast<Uint32>( 1 ), state.flags );
+	state.push( 7 );
+	EXPECT_EQ( static_cast<Uint32>( 7 ), state.flags );
+	state.pop();
+	EXPECT_EQ( static_cast<Uint32>( 1 ), state.flags );
+	state.set( 8, 2 );
+	EXPECT_EQ( static_cast<Uint32>( 9 ), state.flags );
+	state.set( 1, 3 );
+	EXPECT_EQ( static_cast<Uint32>( 8 ), state.flags );
+	state.set( 8, 1 );
+	EXPECT_EQ( static_cast<Uint32>( 8 ), state.flags );
+	state.set( 1, 99 );
+	EXPECT_EQ( static_cast<Uint32>( 8 ), state.flags );
+	state.pop( 1000000 );
+	EXPECT_EQ( static_cast<Uint32>( 0 ), state.flags );
+	EXPECT_TRUE( state.stack.empty() );
+}
+
+UTEST( eterm, kitty_keyboard_encoder_modifiers_and_enter ) {
+	EXPECT_EQ( static_cast<Uint32>( 1 ), KittyKeyboardEncoder::encodeModifiers( KEYMOD_NONE ) );
+	EXPECT_EQ( static_cast<Uint32>( 2 ), KittyKeyboardEncoder::encodeModifiers( KEYMOD_SHIFT ) );
+	EXPECT_EQ( static_cast<Uint32>( 3 ), KittyKeyboardEncoder::encodeModifiers( KEYMOD_ALT ) );
+	EXPECT_EQ( static_cast<Uint32>( 5 ), KittyKeyboardEncoder::encodeModifiers( KEYMOD_CTRL ) );
+	EXPECT_EQ( static_cast<Uint32>( 6 ),
+			   KittyKeyboardEncoder::encodeModifiers( KEYMOD_CTRL | KEYMOD_SHIFT ) );
+
+	KittyKeyEvent enter{ KEY_RETURN, SCANCODE_RETURN, '\r', KEYMOD_CTRL, KittyKeyEventType::Press };
+	EXPECT_FALSE( KittyKeyboardEncoder::encode( enter, 1 ).handled );
+	EXPECT_STDSTREQ( "\033[13;5u", KittyKeyboardEncoder::encode( enter, 8 ).bytes );
+	EXPECT_STDSTREQ( "\033[13;5:1u", KittyKeyboardEncoder::encode( enter, 10 ).bytes );
+	enter.type = KittyKeyEventType::Repeat;
+	EXPECT_STDSTREQ( "\033[13;5:2u", KittyKeyboardEncoder::encode( enter, 10 ).bytes );
+	enter.type = KittyKeyEventType::Release;
+	EXPECT_STDSTREQ( "\033[13;5:3u", KittyKeyboardEncoder::encode( enter, 10 ).bytes );
+	EXPECT_STDSTREQ( "\033[97;5u",
+					 KittyKeyboardEncoder::encode(
+						 { KEY_A, SCANCODE_A, 0, KEYMOD_CTRL, KittyKeyEventType::Press }, 1 )
+						 .bytes );
+	EXPECT_FALSE( KittyKeyboardEncoder::encode(
+					  { KEY_A, SCANCODE_A, 0, KEYMOD_SHIFT, KittyKeyEventType::Press }, 1 )
+					  .handled );
+	EXPECT_FALSE( KittyKeyboardEncoder::encode(
+					  { KEY_1, SCANCODE_1, 0, KEYMOD_SHIFT, KittyKeyEventType::Press }, 7 )
+					  .handled );
+	EXPECT_STDSTREQ( "\033[97:65;2u",
+					 KittyKeyboardEncoder::encode(
+						 { KEY_A, SCANCODE_A, 'A', KEYMOD_SHIFT, KittyKeyEventType::Press }, 12 )
+						 .bytes );
+	EXPECT_STDSTREQ( "\033[13;1:1~",
+					 KittyKeyboardEncoder::encode(
+						 { KEY_F3, SCANCODE_F3, 0, KEYMOD_NONE, KittyKeyEventType::Press }, 31 )
+						 .bytes );
+	EXPECT_STDSTREQ(
+		"\033[57414;1:1u",
+		KittyKeyboardEncoder::encode(
+			{ KEY_KP_ENTER, SCANCODE_KP_ENTER, 0, KEYMOD_NONE, KittyKeyEventType::Press }, 31 )
+			.bytes );
+	EXPECT_STDSTREQ(
+		"\033[57442;5:1u",
+		KittyKeyboardEncoder::encode(
+			{ KEY_LCTRL, SCANCODE_LCTRL, 0, KEYMOD_CTRL, KittyKeyEventType::Press }, 31 )
+			.bytes );
+}
+
+UTEST( eterm, kitty_keyboard_protocol_keeps_screen_state_independent ) {
 	auto pty = std::make_unique<MockPty>();
-	pty->mBuffer = "\033[?u\033[>7u\033[<1u\033[<u\033[=3u";
+	pty->mBuffer = "\033[=1u\033[?1049h\033[?u\033[=3u\033[?1049l\033[?u";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+	EXPECT_STDSTREQ( "\033[?0u\033[?1u", ptyPtr->mWrites );
+}
+
+UTEST( eterm, kitty_keyboard_protocol_negotiates_and_reports_active_state ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?u\033[>7u\033[?u\033[<u\033[?u";
 	pty->mLoopWrites = false;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
@@ -919,7 +998,43 @@ UTEST( eterm, modern_csi_prefixes_do_not_claim_unsupported_keyboard_protocol ) {
 
 	term->update();
 
-	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+	EXPECT_STDSTREQ( "\033[?0u\033[?7u\033[?0u", ptyPtr->mWrites );
+}
+
+UTEST( eterm, kitty_keyboard_protocol_encodes_worker_key_without_duplicate_text ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[>8u";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+	term->keyEvent( { KEY_A, SCANCODE_A, 0, KEYMOD_NONE, KittyKeyEventType::Press } );
+	term->textInput( 'a' );
+	term->keyEvent( { KEY_RETURN, SCANCODE_RETURN, '\r', KEYMOD_CTRL, KittyKeyEventType::Press } );
+	EXPECT_STDSTREQ( "\033[97;1u\033[13;5u", ptyPtr->mWrites );
+}
+
+UTEST( eterm, kitty_keyboard_protocol_preserves_altgr_text ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[>15u";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+
+	// Spanish AltGr+2 produces '@'. Windows may include a synthetic Ctrl modifier for AltGr.
+	term->keyEvent(
+		{ KEY_2, SCANCODE_2, '@', KEYMOD_RALT | KEYMOD_LCTRL, KittyKeyEventType::Press } );
+	term->textInput( '@' );
+
+	EXPECT_STDSTREQ( "\033[64::50;1:1u", ptyPtr->mWrites );
+	EXPECT_FALSE( KittyKeyboardEncoder::encode(
+					  { KEY_2, SCANCODE_2, 0, KEYMOD_RALT, KittyKeyEventType::Press }, 7 )
+					  .handled );
 }
 
 UTEST( eterm, kitty_graphics_unicode_placeholder_uses_color_and_diacritics ) {
