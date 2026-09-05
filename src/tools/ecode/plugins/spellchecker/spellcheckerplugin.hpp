@@ -39,9 +39,9 @@ class SpellCheckerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
-	bool hasSettingsPage() const { return true; }
+	bool hasSettingsPage() const override { return true; }
 
-	void registerSettings( SettingsPage& page );
+	void registerSettings( SettingsPage& page ) override;
 
 	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							const Float& fontSize, const Float& lineHeight ) override;

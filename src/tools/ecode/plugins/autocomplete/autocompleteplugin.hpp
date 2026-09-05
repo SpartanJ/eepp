@@ -95,9 +95,9 @@ class AutoCompletePlugin : public Plugin {
 
 	bool isReady() const override { return true; }
 
-	bool hasSettingsPage() const { return true; }
+	bool hasSettingsPage() const override { return true; }
 
-	void registerSettings( SettingsPage& page );
+	void registerSettings( SettingsPage& page ) override;
 
 	void onRegister( UICodeEditor* ) override;
 

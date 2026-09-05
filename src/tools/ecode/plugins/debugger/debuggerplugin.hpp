@@ -68,9 +68,9 @@ class DebuggerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
-	bool hasSettingsPage() const { return true; }
+	bool hasSettingsPage() const override { return true; }
 
-	void registerSettings( SettingsPage& page );
+	void registerSettings( SettingsPage& page ) override;
 
 	void onSaveState( IniFile* state ) override;
 

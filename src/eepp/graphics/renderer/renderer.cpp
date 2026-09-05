@@ -7,6 +7,21 @@
 #include <eepp/graphics/renderer/renderergles2.hpp>
 #include <eepp/system/sys.hpp>
 
+#ifdef EE_GLES1_LATE_INCLUDE
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES1/gl.h>
+#include <OpenGLES/ES1/glext.h>
+#else
+#include <GLES/gl.h>
+
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
+
+#include <GLES/glext.h>
+#endif
+#endif
+
 namespace EE { namespace Graphics {
 
 #if defined( EE_GLEW_AVAILABLE ) || defined( EE_GLES2 )

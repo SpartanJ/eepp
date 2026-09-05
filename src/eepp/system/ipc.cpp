@@ -35,7 +35,6 @@ constexpr Uint16 IPCVersion = 1;
 constexpr Uint16 IPCFlags = 0;
 constexpr std::size_t IPCHeaderSize = 12;
 constexpr std::size_t IPCInlinePayloadSize = 512;
-constexpr Uint32 IPCPipeBufferSize = 64 * 1024;
 using EndpointHash = std::array<char, 33>;
 using NativeName = std::array<wchar_t, 64>;
 
@@ -125,6 +124,8 @@ class IPC::Impl {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 namespace {
+
+constexpr Uint32 IPCPipeBufferSize = 64 * 1024;
 
 NativeName nativeName( std::wstring_view prefix, const EndpointHash& hash ) {
 	NativeName name{};
