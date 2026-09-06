@@ -48,6 +48,7 @@ enum class AccessibilityState : Uint64 {
 	ReadOnly = 1ull << 6,
 	Visible = 1ull << 7,
 	Showing = 1ull << 8,
+	Expanded = 1ull << 9,
 };
 
 inline AccessibilityState operator|( AccessibilityState left, AccessibilityState right ) {
@@ -69,6 +70,8 @@ enum class AccessibilityAction : Uint8 {
 	Decrement,
 	SetValue,
 	SetText,
+	Expand,
+	Collapse,
 };
 
 using AccessibilityActions = Uint32;
@@ -85,6 +88,7 @@ enum class AccessibilityEvent : Uint8 {
 	ChildrenChanged,
 	FocusChanged,
 	NameChanged,
+	DescriptionChanged,
 	ValueChanged,
 	StateChanged,
 	SelectionChanged,

@@ -15,6 +15,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -74,6 +75,8 @@ AccessibilityRole AccessibilityWidgetResolver::getRole( const UIWidget* widget )
 		role = AccessibilityRole::TabList;
 	else if ( widget->isType( UI_TYPE_COMBOBOX ) )
 		role = AccessibilityRole::ComboBox;
+	else if ( widget->isType( UI_TYPE_TEXTEDIT ) )
+		role = AccessibilityRole::TextBox;
 	else if ( widget->isType( UI_TYPE_TEXTINPUT ) )
 		role = AccessibilityRole::TextBox;
 	else if ( widget->isType( UI_TYPE_SLIDER ) )
@@ -107,6 +110,10 @@ String AccessibilityWidgetResolver::getDescription( const UIWidget* widget ) {
 }
 
 String AccessibilityWidgetResolver::getValue( const UIWidget* widget ) {
+	if ( widget->isType( UI_TYPE_COMBOBOX ) )
+		return static_cast<const UIComboBox*>( widget )->getDropDownList()->getText();
+	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
+		return static_cast<const UITextEdit*>( widget )->getText();
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) )
 		return static_cast<const UITextInput*>( widget )->getText();
 	if ( widget->isType( UI_TYPE_SLIDER ) )
@@ -137,6 +144,12 @@ AccessibilityRangeInfo AccessibilityWidgetResolver::getRange( const UIWidget* wi
 
 AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget ) {
 	auto state = baseState( widget );
+	if ( widget->isType( UI_TYPE_MENUCHECKBOX ) &&
+		 static_cast<const UIMenuCheckBox*>( widget )->isActive() )
+		state |= AccessibilityState::Checked;
+	if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) &&
+		 static_cast<const UIMenuRadioButton*>( widget )->isActive() )
+		state |= AccessibilityState::Selected;
 	if ( widget->isType( UI_TYPE_CHECKBOX ) &&
 		 static_cast<const UICheckBox*>( widget )->isChecked() )
 		state |= AccessibilityState::Checked;
@@ -146,8 +159,18 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 	if ( widget->isType( UI_TYPE_SELECTBUTTON ) &&
 		 static_cast<const UISelectButton*>( widget )->isSelected() )
 		state |= AccessibilityState::Selected;
-	if ( widget->isType( UI_TYPE_TEXTINPUT ) )
-		state |= AccessibilityState::Editable;
+	if ( widget->isType( UI_TYPE_COMBOBOX ) &&
+		 static_cast<const UIComboBox*>( widget )->getListBox()->isVisible() )
+		state |= AccessibilityState::Expanded;
+	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
+		state |= static_cast<const UITextEdit*>( widget )->isLocked()
+					 ? AccessibilityState::ReadOnly
+					 : AccessibilityState::Editable;
+	} else if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
+		state |= static_cast<const UITextInput*>( widget )->isEditingAllowed()
+					 ? AccessibilityState::Editable
+					 : AccessibilityState::ReadOnly;
+	}
 	return state;
 }
 
@@ -157,16 +180,31 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		   !widget->isType( UI_TYPE_RADIOBUTTON ) && !widget->isType( UI_TYPE_TEXTINPUT ) ) )
 		return 0;
 	auto actions = baseActions( widget );
-	if ( widget->isType( UI_TYPE_PUSHBUTTON ) )
-		actions |= accessibilityActionMask( AccessibilityAction::Press );
-	if ( widget->isType( UI_TYPE_SELECTBUTTON ) )
+	if ( widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
+		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
+	} else if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
 		actions |= accessibilityActionMask( AccessibilityAction::Select );
+	} else if ( widget->isType( UI_TYPE_TAB ) || widget->isType( UI_TYPE_SELECTBUTTON ) ) {
+		actions |= accessibilityActionMask( AccessibilityAction::Select );
+	} else if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
+		actions |= accessibilityActionMask( AccessibilityAction::Press );
+	}
 	if ( widget->isType( UI_TYPE_CHECKBOX ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
 	if ( widget->isType( UI_TYPE_RADIOBUTTON ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Select );
-	if ( widget->isType( UI_TYPE_TEXTINPUT ) )
+	if ( widget->isType( UI_TYPE_TEXTEDIT ) &&
+		 !static_cast<const UITextEdit*>( widget )->isLocked() )
 		actions |= accessibilityActionMask( AccessibilityAction::SetText );
+	else if ( widget->isType( UI_TYPE_TEXTINPUT ) &&
+			  static_cast<const UITextInput*>( widget )->isEditingAllowed() )
+		actions |= accessibilityActionMask( AccessibilityAction::SetText );
+	if ( widget->isType( UI_TYPE_COMBOBOX ) ) {
+		actions |= accessibilityActionMask(
+			static_cast<const UIComboBox*>( widget )->getListBox()->isVisible()
+				? AccessibilityAction::Collapse
+				: AccessibilityAction::Expand );
+	}
 	if ( widget->isType( UI_TYPE_SLIDER ) || widget->isType( UI_TYPE_SPINBOX ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Increment ) |
 				   accessibilityActionMask( AccessibilityAction::Decrement ) |
@@ -181,6 +219,27 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 	if ( request.action == AccessibilityAction::Focus ) {
 		widget->setFocus( NodeFocusReason::Unknown );
 		return true;
+	}
+	if ( request.action == AccessibilityAction::Toggle && widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
+		static_cast<UIMenuCheckBox*>( widget )->activate();
+		return true;
+	}
+	if ( request.action == AccessibilityAction::Select &&
+		 widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
+		static_cast<UIMenuRadioButton*>( widget )->activate();
+		return true;
+	}
+	if ( request.action == AccessibilityAction::Press && widget->isType( UI_TYPE_MENUITEM ) ) {
+		static_cast<UIMenuItem*>( widget )->activate();
+		return true;
+	}
+	if ( request.action == AccessibilityAction::Select && widget->isType( UI_TYPE_TAB ) ) {
+		auto tab = static_cast<UITab*>( widget );
+		if ( auto tabWidget = tab->getTabWidget() ) {
+			tabWidget->setTabSelected( tab );
+			return true;
+		}
+		return false;
 	}
 	if ( request.action == AccessibilityAction::Press && widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 		static_cast<UIPushButton*>( widget )->onMouseClick( Vector2i(), EE_BUTTON_LMASK );
@@ -201,6 +260,19 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 	}
 	if ( request.action == AccessibilityAction::SetText && widget->isType( UI_TYPE_TEXTINPUT ) ) {
 		static_cast<UITextInput*>( widget )->setText( request.value );
+		return true;
+	}
+	if ( request.action == AccessibilityAction::SetText && widget->isType( UI_TYPE_TEXTEDIT ) ) {
+		static_cast<UITextEdit*>( widget )->setText( request.value );
+		return true;
+	}
+	if ( ( request.action == AccessibilityAction::Expand ||
+		   request.action == AccessibilityAction::Collapse ) &&
+		 widget->isType( UI_TYPE_COMBOBOX ) ) {
+		auto comboBox = static_cast<UIComboBox*>( widget );
+		bool expanded = comboBox->getListBox()->isVisible();
+		if ( ( request.action == AccessibilityAction::Expand ) != expanded )
+			comboBox->getDropDownList()->showList();
 		return true;
 	}
 	if ( widget->isType( UI_TYPE_SLIDER ) ) {

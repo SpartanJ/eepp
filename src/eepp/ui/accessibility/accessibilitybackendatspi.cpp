@@ -227,8 +227,13 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 			detail = "selected";
 		} else if ( event.type == AccessibilityEvent::NameChanged ) {
 			detail = "accessible-name";
+		} else if ( event.type == AccessibilityEvent::DescriptionChanged ) {
+			detail = "accessible-description";
 		} else if ( event.type == AccessibilityEvent::ValueChanged ) {
 			detail = "accessible-value";
+		} else if ( event.type == AccessibilityEvent::BoundsChanged ) {
+			signal = "BoundsChanged";
+			detail = "";
 		} else if ( event.type == AccessibilityEvent::ChildrenChanged ||
 					event.type == AccessibilityEvent::Created ||
 					event.type == AccessibilityEvent::Destroyed ) {
@@ -424,6 +429,10 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				return "set value";
 			case AccessibilityAction::SetText:
 				return "set text";
+			case AccessibilityAction::Expand:
+				return "expand";
+			case AccessibilityAction::Collapse:
+				return "collapse";
 		}
 		return "";
 	}

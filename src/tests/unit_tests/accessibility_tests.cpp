@@ -5,10 +5,16 @@
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
+#include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitextedit.hpp>
 
 using namespace EE;
 using namespace EE::System;
@@ -75,6 +81,87 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( selectable->isSelected() );
 	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( selectableRef ).states ) &
 				 static_cast<Uint64>( AccessibilityState::Selected ) );
+
+	UISpinBox* spinBox = UISpinBox::New();
+	spinBox->setParent( scene->getRoot() );
+	auto spinBoxRef = manager->getNodeRef( spinBox );
+	EXPECT_EQ( manager->getNodeInfo( spinBoxRef ).role, AccessibilityRole::SpinButton );
+	EXPECT_TRUE(
+		manager->performAction( spinBoxRef, { AccessibilityAction::SetValue, String( "7.5" ) } ) );
+	EXPECT_EQ( spinBox->getValue(), 7.5 );
+
+	UIProgressBar* progressBar = UIProgressBar::New();
+	progressBar->setProgress( 25.f );
+	progressBar->setParent( scene->getRoot() );
+	auto progressInfo = manager->getNodeInfo( manager->getNodeRef( progressBar ) );
+	EXPECT_EQ( progressInfo.role, AccessibilityRole::ProgressBar );
+	EXPECT_TRUE( progressInfo.range.valid );
+	Float progressValue = 0;
+	EXPECT_TRUE( String::fromString( progressValue, progressInfo.value.toUtf8() ) );
+	EXPECT_EQ( progressValue, 25.f );
+
+	UITextEdit* textEdit = UITextEdit::New();
+	textEdit->setParent( scene->getRoot() );
+	auto textEditRef = manager->getNodeRef( textEdit );
+	EXPECT_EQ( manager->getNodeInfo( textEditRef ).role, AccessibilityRole::TextBox );
+	EXPECT_TRUE( manager->performAction( textEditRef,
+										 { AccessibilityAction::SetText, String( "Notes" ) } ) );
+	EXPECT_TRUE( manager->getNodeInfo( textEditRef ).value == String( "Notes" ) );
+	textEdit->setLocked( true );
+	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( textEditRef ).states ) &
+				 static_cast<Uint64>( AccessibilityState::ReadOnly ) );
+	EXPECT_FALSE( manager->performAction( textEditRef,
+										  { AccessibilityAction::SetText, String( "Blocked" ) } ) );
+
+	UIMenu* menu = UIMenu::New();
+	menu->setParent( scene->getRoot() );
+	UIMenuCheckBox* menuCheckBox = menu->addCheckBox( "Line numbers" );
+	UIMenuRadioButton* menuRadioButton = menu->addRadioButton( "Dark theme" );
+	auto menuCheckBoxRef = manager->getNodeRef( menuCheckBox );
+	auto menuRadioButtonRef = manager->getNodeRef( menuRadioButton );
+	EXPECT_EQ( manager->getNodeInfo( menuCheckBoxRef ).role, AccessibilityRole::CheckMenuItem );
+	EXPECT_TRUE(
+		manager->performAction( menuCheckBoxRef, { AccessibilityAction::Toggle, String() } ) );
+	EXPECT_TRUE( menuCheckBox->isActive() );
+	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( menuCheckBoxRef ).states ) &
+				 static_cast<Uint64>( AccessibilityState::Checked ) );
+	EXPECT_TRUE(
+		manager->performAction( menuRadioButtonRef, { AccessibilityAction::Select, String() } ) );
+	EXPECT_TRUE( menuRadioButton->isActive() );
+
+	UIComboBox* comboBox = UIComboBox::New();
+	comboBox->setParent( scene->getRoot() );
+	comboBox->getListBox()->addListBoxItem( "First" );
+	comboBox->setText( "First" );
+	auto comboBoxRef = manager->getNodeRef( comboBox );
+	auto comboBoxInfo = manager->getNodeInfo( comboBoxRef );
+	EXPECT_EQ( comboBoxInfo.role, AccessibilityRole::ComboBox );
+	EXPECT_TRUE( comboBoxInfo.value == String( "First" ) );
+	EXPECT_TRUE( comboBoxInfo.actions & accessibilityActionMask( AccessibilityAction::Expand ) );
+	EXPECT_TRUE( manager->performAction( comboBoxRef, { AccessibilityAction::Expand, String() } ) );
+	comboBoxInfo = manager->getNodeInfo( comboBoxRef );
+	EXPECT_TRUE( static_cast<Uint64>( comboBoxInfo.states ) &
+				 static_cast<Uint64>( AccessibilityState::Expanded ) );
+	EXPECT_TRUE( comboBoxInfo.actions & accessibilityActionMask( AccessibilityAction::Collapse ) );
+	EXPECT_TRUE(
+		manager->performAction( comboBoxRef, { AccessibilityAction::Collapse, String() } ) );
+
+	UITabWidget* tabs = UITabWidget::New();
+	tabs->setParent( scene->getRoot() );
+	UITab* firstTab = tabs->add( "General", UIWidget::New() );
+	UITab* secondTab = tabs->add( "Advanced", UIWidget::New() );
+	tabs->setTabSelected( secondTab );
+	auto firstTabInfo = manager->getNodeInfo( manager->getNodeRef( firstTab ) );
+	auto secondTabInfo = manager->getNodeInfo( manager->getNodeRef( secondTab ) );
+	EXPECT_EQ( firstTabInfo.role, AccessibilityRole::Tab );
+	EXPECT_FALSE( static_cast<Uint64>( firstTabInfo.states ) &
+				  static_cast<Uint64>( AccessibilityState::Selected ) );
+	EXPECT_TRUE( static_cast<Uint64>( secondTabInfo.states ) &
+				 static_cast<Uint64>( AccessibilityState::Selected ) );
+	EXPECT_TRUE( firstTabInfo.actions & accessibilityActionMask( AccessibilityAction::Select ) );
+	EXPECT_TRUE( manager->performAction( manager->getNodeRef( firstTab ),
+										 { AccessibilityAction::Select, String() } ) );
+	EXPECT_TRUE( tabs->getTabSelected() == firstTab );
 
 	manager->clearPendingEvents();
 	button->setAccessibilityLabel( "Save project" );

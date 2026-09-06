@@ -2380,6 +2380,8 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	findRegionsDelayed();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
+	if ( isType( UI_TYPE_TEXTEDIT ) )
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {

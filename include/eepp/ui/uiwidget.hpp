@@ -1688,6 +1688,8 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onVisibilityChange();
 
+	virtual void onEnabledChange();
+
 	/**
 	 * @brief Handles size change events.
 	 *

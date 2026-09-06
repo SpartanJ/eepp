@@ -53,7 +53,8 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 								   public IToggleProvider,
 								   public ISelectionItemProvider,
 								   public IValueProvider,
-								   public IRangeValueProvider {
+								   public IRangeValueProvider,
+								   public IExpandCollapseProvider {
   public:
 	UIAutomationProvider( UIAutomationAccessibilityBackend& backend, AccessibilityNodeRef ref ) :
 		mBackend( &backend ), mRef( ref ) {}
@@ -83,10 +84,15 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 					  hasState( info().states, AccessibilityState::Selected ) ) ) {
 			*object = static_cast<ISelectionItemProvider*>( this );
 		} else if ( interfaceId == __uuidof( IValueProvider ) &&
-					actions & accessibilityActionMask( AccessibilityAction::SetText ) ) {
+					( actions & accessibilityActionMask( AccessibilityAction::SetText ) ||
+					  info().role == AccessibilityRole::ComboBox ) ) {
 			*object = static_cast<IValueProvider*>( this );
 		} else if ( interfaceId == __uuidof( IRangeValueProvider ) && info().range.valid ) {
 			*object = static_cast<IRangeValueProvider*>( this );
+		} else if ( interfaceId == __uuidof( IExpandCollapseProvider ) &&
+					( actions & accessibilityActionMask( AccessibilityAction::Expand ) ||
+					  actions & accessibilityActionMask( AccessibilityAction::Collapse ) ) ) {
+			*object = static_cast<IExpandCollapseProvider*>( this );
 		}
 		if ( !*object )
 			return E_NOINTERFACE;
@@ -128,6 +134,9 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 								   reinterpret_cast<void**>( provider ) );
 		if ( patternId == UIA_RangeValuePatternId )
 			return QueryInterface( __uuidof( IRangeValueProvider ),
+								   reinterpret_cast<void**>( provider ) );
+		if ( patternId == UIA_ExpandCollapsePatternId )
+			return QueryInterface( __uuidof( IExpandCollapseProvider ),
 								   reinterpret_cast<void**>( provider ) );
 		return S_OK;
 	}
@@ -178,6 +187,12 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			value->boolVal = hasState( nodeInfo.states, AccessibilityState::Showing )
 								 ? VARIANT_FALSE
 								 : VARIANT_TRUE;
+		} else if ( propertyId == UIA_ValueValuePropertyId ) {
+			value->vt = VT_BSTR;
+			value->bstrVal = SysAllocString( nodeInfo.value.toWideString().c_str() );
+		} else if ( propertyId == UIA_RangeValueValuePropertyId && nodeInfo.range.valid ) {
+			value->vt = VT_R8;
+			String::fromString( value->dblVal, nodeInfo.value.toUtf8() );
 		}
 		return S_OK;
 	}
@@ -362,6 +377,19 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 								accessibilityActionMask( AccessibilityAction::SetValue ) )
 						? FALSE
 						: TRUE;
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE Expand() { return perform( AccessibilityAction::Expand ); }
+
+	HRESULT STDMETHODCALLTYPE Collapse() { return perform( AccessibilityAction::Collapse ); }
+
+	HRESULT STDMETHODCALLTYPE get_ExpandCollapseState( ExpandCollapseState* state ) {
+		if ( !state )
+			return E_INVALIDARG;
+		*state = hasState( info().states, AccessibilityState::Expanded )
+					 ? ExpandCollapseState_Expanded
+					 : ExpandCollapseState_Collapsed;
 		return S_OK;
 	}
 
@@ -551,12 +579,35 @@ void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent&
 	auto nativeProvider = provider( event.ref );
 	if ( !nativeProvider )
 		return;
-	EVENTID eventId = UIA_LayoutInvalidatedEventId;
-	if ( event.type == AccessibilityEvent::FocusChanged )
-		eventId = UIA_AutomationFocusChangedEventId;
-	else if ( event.type == AccessibilityEvent::SelectionChanged )
-		eventId = UIA_SelectionItem_ElementSelectedEventId;
-	UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ), eventId );
+	auto raisePropertyChanged = [&]( PROPERTYID propertyId ) {
+		VARIANT oldValue;
+		VARIANT newValue;
+		VariantInit( &oldValue );
+		VariantInit( &newValue );
+		if ( SUCCEEDED( nativeProvider->GetPropertyValue( propertyId, &newValue ) ) &&
+			 newValue.vt != VT_EMPTY )
+			UiaRaiseAutomationPropertyChangedEvent(
+				static_cast<IRawElementProviderSimple*>( nativeProvider ), propertyId, oldValue,
+				newValue );
+		VariantClear( &newValue );
+	};
+	if ( event.type == AccessibilityEvent::NameChanged ) {
+		raisePropertyChanged( UIA_NamePropertyId );
+	} else if ( event.type == AccessibilityEvent::DescriptionChanged ) {
+		raisePropertyChanged( UIA_HelpTextPropertyId );
+	} else if ( event.type == AccessibilityEvent::ValueChanged ) {
+		raisePropertyChanged( manager().getNodeInfo( event.ref ).range.valid
+								  ? UIA_RangeValueValuePropertyId
+								  : UIA_ValueValuePropertyId );
+	} else {
+		EVENTID eventId = UIA_LayoutInvalidatedEventId;
+		if ( event.type == AccessibilityEvent::FocusChanged )
+			eventId = UIA_AutomationFocusChangedEventId;
+		else if ( event.type == AccessibilityEvent::SelectionChanged )
+			eventId = UIA_SelectionItem_ElementSelectedEventId;
+		UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
+								 eventId );
+	}
 	nativeProvider->Release();
 	if ( event.type == AccessibilityEvent::Destroyed )
 		invalidateProvider( event.ref );

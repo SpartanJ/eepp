@@ -97,6 +97,7 @@ UIMenuCheckBox* UIMenuCheckBox::setActive( const bool& active ) {
 		}
 
 		onValueChange();
+		notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 	}
 
 	return this;

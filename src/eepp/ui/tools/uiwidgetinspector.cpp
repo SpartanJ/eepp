@@ -1,4 +1,5 @@
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
@@ -20,6 +21,127 @@ using namespace EE::UI::Models;
 using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Tools {
+
+namespace {
+
+void appendAccessibilityFlag( std::string& output, const char* label, Uint64 value, Uint64 flags ) {
+	if ( flags & value ) {
+		if ( !output.empty() )
+			output += ", ";
+		output += label;
+	}
+}
+
+class AccessibilityPropertiesModel final : public Model {
+  public:
+	static std::shared_ptr<AccessibilityPropertiesModel> create() {
+		return std::make_shared<AccessibilityPropertiesModel>();
+	}
+
+	size_t rowCount( const ModelIndex& ) const override { return mData.size(); }
+
+	size_t columnCount( const ModelIndex& ) const override { return 2; }
+
+	std::string columnName( const size_t& column ) const override {
+		return column == 0 ? "Property" : "Value";
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( role != ModelRole::Display || index.row() < 0 ||
+			 index.row() >= static_cast<Int64>( mData.size() ) )
+			return {};
+		return index.column() == 0 ? Variant( mData[index.row()].first )
+								   : Variant( mData[index.row()].second );
+	}
+
+	void setWidget( UIWidget* widget ) {
+		mConnections.clear();
+		mWidget = widget;
+		refresh();
+		if ( !mWidget )
+			return;
+		static constexpr Uint32 Events[] = {
+			Event::OnTextChanged,		Event::OnValueChange,	Event::OnSelectionChanged,
+			Event::OnEnabledChange,		Event::OnVisibleChange, Event::OnPositionChange,
+			Event::OnSizeChange,		Event::OnFocus,			Event::OnFocusLoss,
+			Event::OnChildCountChanged,
+		};
+		for ( auto event : Events )
+			mConnections += mWidget->connect( event, [this]( const Event* ) { refresh(); } );
+		mConnections +=
+			mWidget->connect( Event::OnClose, [this]( const Event* ) { setWidget( nullptr ); } );
+	}
+
+  private:
+	void refresh() {
+		mData.clear();
+		if ( mWidget ) {
+			auto manager = mWidget->getUISceneNode()->getAccessibilityManager();
+			auto ref = manager->getNodeRef( mWidget );
+			auto info = manager->getNodeInfo( ref );
+			auto parent = manager->getParent( ref );
+			std::string states;
+			static constexpr std::pair<AccessibilityState, const char*> StateNames[] = {
+				{ AccessibilityState::Enabled, "Enabled" },
+				{ AccessibilityState::Focusable, "Focusable" },
+				{ AccessibilityState::Focused, "Focused" },
+				{ AccessibilityState::Checked, "Checked" },
+				{ AccessibilityState::Selected, "Selected" },
+				{ AccessibilityState::Editable, "Editable" },
+				{ AccessibilityState::ReadOnly, "ReadOnly" },
+				{ AccessibilityState::Visible, "Visible" },
+				{ AccessibilityState::Showing, "Showing" },
+				{ AccessibilityState::Expanded, "Expanded" },
+			};
+			for ( const auto& state : StateNames )
+				appendAccessibilityFlag( states, state.second, static_cast<Uint64>( state.first ),
+										 static_cast<Uint64>( info.states ) );
+			std::string actions;
+			static constexpr std::pair<AccessibilityAction, const char*> ActionNames[] = {
+				{ AccessibilityAction::Focus, "Focus" },
+				{ AccessibilityAction::Press, "Press" },
+				{ AccessibilityAction::Toggle, "Toggle" },
+				{ AccessibilityAction::Select, "Select" },
+				{ AccessibilityAction::Increment, "Increment" },
+				{ AccessibilityAction::Decrement, "Decrement" },
+				{ AccessibilityAction::SetValue, "SetValue" },
+				{ AccessibilityAction::SetText, "SetText" },
+				{ AccessibilityAction::Expand, "Expand" },
+				{ AccessibilityAction::Collapse, "Collapse" },
+			};
+			for ( const auto& action : ActionNames )
+				appendAccessibilityFlag( actions, action.second,
+										 accessibilityActionMask( action.first ), info.actions );
+			mData = {
+				{ "Role", mWidget->getElementTag() },
+				{ "Name", info.name.toUtf8() },
+				{ "Description", info.description.toUtf8() },
+				{ "Value", info.value.toUtf8() },
+				{ "States", states },
+				{ "Actions", actions },
+				{ "Source", String::toString( ref.source ) },
+				{ "Stable ID", String::toString( ref.id ) },
+				{ "Parent ID", String::toString( parent.id ) },
+				{ "Children",
+				  String::toString( static_cast<Uint64>( manager->getChildCount( ref ) ) ) },
+				{ "Bounds", String::toString( info.bounds.Left ) + ", " +
+								String::toString( info.bounds.Top ) + ", " +
+								String::toString( info.bounds.Right ) + ", " +
+								String::toString( info.bounds.Bottom ) },
+				{ "Relations", String::toString( static_cast<Uint64>( info.relations.size() ) ) },
+			};
+			if ( info.role != AccessibilityRole::None && info.name.empty() && info.value.empty() )
+				mData.emplace_back( "Warning", "Exposed element has no accessible name or value." );
+		}
+		invalidate();
+	}
+
+	UIWidget* mWidget{ nullptr };
+	Scene::EventConnectionList mConnections;
+	std::vector<std::pair<std::string, std::string>> mData;
+};
+
+} // namespace
 
 struct UIWidgetInspector::PickHighlightOverState {
 	std::vector<std::pair<UISceneNode*, bool>> sceneStates;
@@ -70,8 +192,10 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			<TabWidget lw="fixed" lh="mp">
 				<TableView id="widget_inspector_computed" class="computed" lw="mp" lh="mp" />
 				<CodeEditor id="widget_inspector_style" lw="mp" lh="mp" />
+				<TableView id="widget_inspector_accessibility" class="computed" lw="mp" lh="mp" />
 				<Tab id="widget_inspector_tab_computed" text="@string(computed, Computed)" owns="widget_inspector_computed" />
 				<Tab id="widget_inspector_tab_style" text="@string(style, Style)" owns="widget_inspector_style" />
+				<Tab text="Accessibility" owns="widget_inspector_accessibility" />
 			</TabWidget>
 		</Splitter>
 	</vbox>
@@ -116,34 +240,41 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 										  ColorSchemePreference::Dark
 									  ? SyntaxColorScheme::getDefaultDark()
 									  : SyntaxColorScheme::getDefaultLight() );
+	UITableView* accessibilityView = cont->find<UITableView>( "widget_inspector_accessibility" );
+	accessibilityView->setAutoColumnsWidth( true );
+	accessibilityView->setHeadersVisible( true );
+	auto accessibilityModel = AccessibilityPropertiesModel::create();
+	accessibilityView->setModel( accessibilityModel );
 
 	UITableView* computedView = cont->find<UITableView>( "widget_inspector_computed" );
 	computedView->setAutoColumnsWidth( true );
 	computedView->setHeadersVisible( true );
-	nodeTree->setOnSelection( [computedView, stylesEditor]( const ModelIndex& index ) {
-		Node* node = static_cast<Node*>( index.internalData() );
-		computedView->setModel( node->isWidget()
-									? CSSPropertiesModel::create( node->asType<UIWidget>() )
-									: CSSPropertiesModel::create() );
+	nodeTree->setOnSelection(
+		[computedView, stylesEditor, accessibilityModel]( const ModelIndex& index ) {
+			Node* node = static_cast<Node*>( index.internalData() );
+			computedView->setModel( node->isWidget()
+										? CSSPropertiesModel::create( node->asType<UIWidget>() )
+										: CSSPropertiesModel::create() );
 
-		stylesEditor->getDocument().reset();
-		stylesEditor->getDocument().setSyntaxDefinition(
-			SyntaxDefinitionManager::instance()->getByLSPName( "css" ) );
+			stylesEditor->getDocument().reset();
+			stylesEditor->getDocument().setSyntaxDefinition(
+				SyntaxDefinitionManager::instance()->getByLSPName( "css" ) );
+			accessibilityModel->setWidget( node->isWidget() ? node->asType<UIWidget>() : nullptr );
 
-		if ( node->isWidget() ) {
-			UIWidget* widget = node->asType<UIWidget>();
-			if ( widget->getUIStyle() && widget->getUIStyle()->getDefinition() ) {
-				const auto& styles = widget->getUIStyle()->getDefinition()->getStyles();
-				String elemStyle;
-				for ( const auto& style : styles ) {
-					if ( style->getSelector().getName() != ":root" ||
-						 widget->getElementTag() == ":root" )
-						elemStyle += style->build( false, false );
+			if ( node->isWidget() ) {
+				UIWidget* widget = node->asType<UIWidget>();
+				if ( widget->getUIStyle() && widget->getUIStyle()->getDefinition() ) {
+					const auto& styles = widget->getUIStyle()->getDefinition()->getStyles();
+					String elemStyle;
+					for ( const auto& style : styles ) {
+						if ( style->getSelector().getName() != ":root" ||
+							 widget->getElementTag() == ":root" )
+							elemStyle += style->build( false, false );
+					}
+					stylesEditor->getDocument().textInput( elemStyle );
 				}
-				stylesEditor->getDocument().textInput( elemStyle );
 			}
-		}
-	} );
+		} );
 
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
 

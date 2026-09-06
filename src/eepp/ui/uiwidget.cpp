@@ -202,7 +202,7 @@ UIWidget* UIWidget::setAccessibilityLabel( const String& label ) {
 
 UIWidget* UIWidget::setAccessibilityDescription( const String& description ) {
 	ensureAccessibilityProperties().description = description;
-	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
 	return this;
 }
 
@@ -225,6 +225,12 @@ void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
 	if ( !manager || !manager->hasActiveNativeClients() )
 		return;
 	UIWidget* target = this;
+	Node* directParent = getParent();
+	if ( directParent && directParent->isWidget() ) {
+		auto parentWidget = directParent->asType<UIWidget>();
+		if ( parentWidget != mUISceneNode->getRoot() && parentWidget->isAccessibilityElement() )
+			target = parentWidget;
+	}
 	while ( target && !target->isAccessibilityElement() ) {
 		Node* parent = target->getParent();
 		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
@@ -843,6 +849,7 @@ void UIWidget::onParentSizeChange( const Vector2f& sizeChange ) {
 void UIWidget::onPositionChange() {
 	updateAnchorsDistances();
 	UINode::onPositionChange();
+	notifyAccessibilityEvent( AccessibilityEvent::BoundsChanged );
 }
 
 void UIWidget::onVisibilityChange() {
@@ -851,6 +858,12 @@ void UIWidget::onVisibilityChange() {
 	notifyLayoutAttrChangeParent(
 		toLayoutInvalidationFlags( LayoutInvalidationReason::NormalFlowChild ) );
 	UINode::onVisibilityChange();
+	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
+}
+
+void UIWidget::onEnabledChange() {
+	UINode::onEnabledChange();
+	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 }
 
 void UIWidget::onSizeChange() {
@@ -868,6 +881,7 @@ void UIWidget::onSizeChange() {
 		mForeground->invalidate();
 
 	notifyLayoutAttrChange( LayoutInvalidation::Self );
+	notifyAccessibilityEvent( AccessibilityEvent::BoundsChanged );
 }
 
 void UIWidget::onSizePolicyChange() {}

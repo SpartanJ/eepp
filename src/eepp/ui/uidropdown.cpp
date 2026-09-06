@@ -244,6 +244,7 @@ void UIDropDown::show() {
 
 	widget->setEnabled( true );
 	widget->setVisible( true );
+	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 
 	if ( NULL != getUISceneNode() &&
 		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
@@ -268,6 +269,7 @@ void UIDropDown::hide() {
 		widget->setEnabled( false );
 		widget->setVisible( false );
 	}
+	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 }
 
 Uint32 UIDropDown::onMouseOver( const Vector2i& position, const Uint32& flags ) {
