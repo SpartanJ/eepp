@@ -11,6 +11,10 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+namespace {
+char WakeEventMarker;
+}
+
 InputSDL::InputSDL( EE::Window::Window* window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) ), mDPIScale( 1.f ) {
 #if defined( EE_X11_PLATFORM )
@@ -51,6 +55,13 @@ void InputSDL::waitEvent( const Time& timeout ) {
 		if ( SDLEvent.type != SDL_FIRSTEVENT )
 			mQueuedEvents.emplace_back( SDLEvent );
 	}
+}
+
+void InputSDL::wakeUp() {
+	SDL_Event event{};
+	event.type = SDL_USEREVENT;
+	event.user.data1 = &WakeEventMarker;
+	SDL_PushEvent( &event );
 }
 
 bool InputSDL::grabInput() {
@@ -124,6 +135,9 @@ void InputSDL::init() {
 }
 
 void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
+	if ( SDLEvent.type == SDL_USEREVENT && SDLEvent.user.data1 == &WakeEventMarker )
+		return;
+
 	InputEvent event;
 	switch ( SDLEvent.type ) {
 		case SDL_WINDOWEVENT: {

@@ -127,8 +127,11 @@ String AccessibilityWidgetResolver::getValue( const UIWidget* widget ) {
 		return static_cast<const UIComboBox*>( widget )->getDropDownList()->getText();
 	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
 		return static_cast<const UITextEdit*>( widget )->getText();
-	if ( widget->isType( UI_TYPE_TEXTINPUT ) )
-		return static_cast<const UITextInput*>( widget )->getText();
+	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
+		auto input = static_cast<const UITextInput*>( widget );
+		return input->getMode() == UITextInput::TextInputMode::Password ? String()
+																		: input->getText();
+	}
 	if ( widget->isType( UI_TYPE_SLIDER ) )
 		return String( String::toString( static_cast<const UISlider*>( widget )->getValue() ) );
 	if ( widget->isType( UI_TYPE_SPINBOX ) )
@@ -153,6 +156,18 @@ AccessibilityRangeInfo AccessibilityWidgetResolver::getRange( const UIWidget* wi
 	if ( widget->isType( UI_TYPE_PROGRESSBAR ) )
 		return { 0., static_cast<const UIProgressBar*>( widget )->getTotalSteps(), 0., 0., true };
 	return {};
+}
+
+AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget ) {
+	if ( !widget->isType( UI_TYPE_TEXTINPUT ) ||
+		 static_cast<const UITextInput*>( widget )->getMode() ==
+			 UITextInput::TextInputMode::Password )
+		return {};
+	const auto& document = static_cast<const UITextInput*>( widget )->getDocument();
+	auto selection = document.getSelection( true );
+	return { static_cast<Int32>( document.getSelection().end().column() ),
+			 static_cast<Int32>( selection.start().column() ),
+			 static_cast<Int32>( selection.end().column() ), true };
 }
 
 AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget ) {

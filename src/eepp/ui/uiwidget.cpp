@@ -121,6 +121,7 @@ UIWidget::~UIWidget() {
 
 	if ( !SceneManager::instance()->isShuttingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
+
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
 	eeSAFE_DELETE( mAccessibilityProperties );
@@ -539,8 +540,12 @@ UITooltip* UIWidget::createTooltip() {
 }
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
-	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	UINode::onChildCountChange( child, removed );
+	if ( removed && child && child->isWidget() && mUISceneNode &&
+		 mUISceneNode->getAccessibilityManager() &&
+		 mUISceneNode->getAccessibilityManager()->hasActiveNativeClients() )
+		mUISceneNode->getAccessibilityManager()->onWidgetRemovedFromParent(
+			child->asType<UIWidget>() );
 
 	if ( removed && child->isWidget() ) {
 		UIWidget* widget = child->asType<UIWidget>();
@@ -1349,6 +1354,14 @@ UIWidget* UIWidget::setClass( std::string&& cls ) {
 }
 
 UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
+	return setClasses( SmallVector<std::string, 1>( classes.begin(), classes.end() ) );
+}
+
+UIWidget* UIWidget::setClasses( std::initializer_list<std::string> classes ) {
+	return setClasses( SmallVector<std::string, 1>( classes.begin(), classes.end() ) );
+}
+
+UIWidget* UIWidget::setClasses( const SmallVector<std::string, 1>& classes ) {
 	if ( mClasses != classes ) {
 		mClasses = classes;
 		rebuildClassHashes();
@@ -1493,7 +1506,7 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	}
 }
 
-const std::vector<std::string>& UIWidget::getClasses() const {
+const SmallVector<std::string, 1>& UIWidget::getClasses() const {
 	return mClasses;
 }
 
@@ -1638,6 +1651,9 @@ void UIWidget::onParentChange() {
 		getUISceneNode()->invalidateStyle( this, true );
 		getUISceneNode()->invalidateStyleState( this, true, true );
 	}
+	if ( mUISceneNode && mUISceneNode->getAccessibilityManager() &&
+		 mUISceneNode->getAccessibilityManager()->hasActiveNativeClients() )
+		mUISceneNode->getAccessibilityManager()->onWidgetParentChange( this );
 }
 
 void UIWidget::onClassChange() {

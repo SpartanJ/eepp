@@ -3,6 +3,7 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/accessibility/accessibilitysource.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -43,6 +44,27 @@ UIWidget* semanticChildAt( Node* parent, size_t wantedIndex, size_t& currentInde
 			return found;
 	}
 	return nullptr;
+}
+
+bool semanticIndexOf( Node* parent, UIWidget* target, size_t& currentIndex, Int32& foundIndex ) {
+	for ( Node* node = parent->getFirstChild(); node; node = node->getNextNode() ) {
+		if ( node == target ) {
+			foundIndex = static_cast<Int32>( currentIndex );
+			return true;
+		}
+		if ( node->isWidget() ) {
+			auto widget = node->asType<UIWidget>();
+			if ( widget->isAccessibilityHidden() )
+				continue;
+			if ( widget->isAccessibilityElement() ) {
+				++currentIndex;
+				continue;
+			}
+		}
+		if ( semanticIndexOf( node, target, currentIndex, foundIndex ) )
+			return true;
+	}
+	return false;
 }
 
 UIWidget* hitSemanticWidget( Node* parent, const Math::Vector2f& point ) {
@@ -139,6 +161,7 @@ AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef re
 		info.description = widget->getAccessibilityDescription();
 		info.value = widget->getAccessibilityValue();
 		info.range = widget->getAccessibilityRange();
+		info.text = AccessibilityWidgetResolver::getText( widget );
 		info.states = widget->getAccessibilityState();
 		info.actions = widget->getAccessibilityActions();
 		info.bounds = widget->getWorldBounds();
@@ -223,14 +246,15 @@ UISceneNode* AccessibilityManager::getSceneNode() const {
 	return mScene;
 }
 
-void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent event ) {
+void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent event,
+								   AccessibilityNodeRef related, Int32 index ) {
 	if ( !isValid( ref ) && event != AccessibilityEvent::Destroyed )
 		return;
 	for ( const auto& pending : mPendingEvents ) {
-		if ( pending.ref == ref && pending.type == event )
+		if ( pending.ref == ref && pending.related == related && pending.type == event )
 			return;
 	}
-	mPendingEvents.push_back( { ref, event } );
+	mPendingEvents.push_back( { ref, related, index, event } );
 	if ( mBackend )
 		mBackend->onEvent( mPendingEvents.back() );
 }
@@ -243,6 +267,34 @@ void AccessibilityManager::clearPendingEvents() {
 	mPendingEvents.clear();
 }
 
+void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
+	if ( !widget || !widget->isAccessibilityElement() || widget->isAccessibilityHidden() )
+		return;
+	auto ref = getNodeRef( widget );
+	auto parent = getParent( ref );
+	if ( !parent.isValid() )
+		return;
+	Int32 index = -1;
+	const size_t childCount = getChildCount( parent );
+	for ( size_t i = 0; i < childCount; ++i ) {
+		if ( getChild( parent, i ) == ref ) {
+			index = static_cast<Int32>( i );
+			break;
+		}
+	}
+	notify( parent, AccessibilityEvent::Created, ref, index );
+}
+
+void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
+	auto found = mWidgetIds.find( widget );
+	if ( found == mWidgetIds.end() )
+		return;
+	AccessibilityNodeRef ref{ WidgetSource, found->second };
+	auto parent = getParent( ref );
+	if ( parent.isValid() )
+		notify( parent, AccessibilityEvent::Destroyed, ref );
+}
+
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	auto source = mWidgetSources.find( widget );
 	if ( source != mWidgetSources.end() ) {
@@ -253,6 +305,14 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	if ( found == mWidgetIds.end() )
 		return;
 	AccessibilityNodeRef ref{ WidgetSource, found->second };
+	auto parent = getParent( ref );
+	if ( parent.isValid() ) {
+		Int32 index = -1;
+		size_t currentIndex = 0;
+		if ( auto parentWidget = resolve( parent ) )
+			semanticIndexOf( parentWidget, widget, currentIndex, index );
+		notify( parent, AccessibilityEvent::Destroyed, ref, index );
+	}
 	mWidgets.erase( found->second );
 	mWidgetIds.erase( found );
 	notify( ref, AccessibilityEvent::Destroyed );

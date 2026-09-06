@@ -13,6 +13,8 @@
 
 namespace EE {
 
+template <typename T, size_t MinInlineCapacity> class SmallVector;
+
 template <typename T> struct FormatArg {
 	static const T& get( const T& arg ) { return arg; }
 };
@@ -201,6 +203,19 @@ class EE_API String {
 	/** Joins a string vector into a single string */
 	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ',
 							 const bool& appendLastJoinChar = false );
+
+	/** Joins a small string vector into a single string */
+	template <size_t MinInlineCapacity>
+	static std::string join( const SmallVector<std::string, MinInlineCapacity>& strArray,
+							 const Int8& joinchar = ' ', const bool& appendLastJoinChar = false ) {
+		std::string str;
+		for ( size_t i = 0; i < strArray.size(); ++i ) {
+			str += strArray[i];
+			if ( i + 1 != strArray.size() || appendLastJoinChar )
+				str += joinchar;
+		}
+		return str;
+	}
 
 	/** Joins a string vector into a single string */
 	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ',

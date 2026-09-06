@@ -974,6 +974,10 @@ TextDocument& UITextInput::getDocument() {
 	return mDoc;
 }
 
+const TextDocument& UITextInput::getDocument() const {
+	return mDoc;
+}
+
 KeyBindings& UITextInput::getKeyBindings() {
 	return mKeyBindings;
 }

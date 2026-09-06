@@ -47,11 +47,16 @@ class EE_API AccessibilityManager {
 
 	UISceneNode* getSceneNode() const;
 
-	void notify( AccessibilityNodeRef ref, AccessibilityEvent event );
+	void notify( AccessibilityNodeRef ref, AccessibilityEvent event,
+				 AccessibilityNodeRef related = {}, Int32 index = -1 );
 
 	const std::vector<AccessibilityPendingEvent>& getPendingEvents() const;
 
 	void clearPendingEvents();
+
+	void onWidgetParentChange( UIWidget* widget );
+
+	void onWidgetRemovedFromParent( UIWidget* widget );
 
 	void onWidgetDelete( UIWidget* widget );
 

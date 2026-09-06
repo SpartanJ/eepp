@@ -820,7 +820,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Vector of CSS class strings.
 	 */
-	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
+	inline const SmallVector<std::string, 1>& getStyleSheetClasses() const { return mClasses; }
 
 	/** @return Number of sorted unique CSS class hashes cached by this widget. */
 	inline Uint32 getClassHashCount() const { return static_cast<Uint32>( mClassHashes.size() ); }
@@ -970,6 +970,10 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIWidget* setClasses( const std::vector<std::string>& classes );
 
+	UIWidget* setClasses( const SmallVector<std::string, 1>& classes );
+
+	UIWidget* setClasses( std::initializer_list<std::string> classes );
+
 	/**
 	 * @brief Adds a CSS class.
 	 *
@@ -1045,7 +1049,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Vector of CSS class strings.
 	 */
-	const std::vector<std::string>& getClasses() const;
+	const SmallVector<std::string, 1>& getClasses() const;
 
 	/**
 	 * @brief Gets the CSS element tag.
@@ -1564,7 +1568,7 @@ class EE_API UIWidget : public UINode {
 	LayoutInvalidationFlags mPendingParentLayoutReasons{ 0 };
 	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
-	std::vector<std::string> mClasses;
+	SmallVector<std::string, 1> mClasses;
 	SmallVector<String::HashType, 1> mClassHashes;
 	String mTooltipText;
 	mutable Float mMinIntrinsicWidth{ 0 };
@@ -1572,6 +1576,7 @@ class EE_API UIWidget : public UINode {
 	mutable bool mIntrinsicWidthsDirty{ true };
 	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
 	Uint8 mMarginAuto{ 0 };
+	AccessibilityProperties* mAccessibilityProperties{ nullptr };
 
 	void calculateAutoMargin();
 	void rebuildClassHashes();
@@ -1946,8 +1951,6 @@ class EE_API UIWidget : public UINode {
 	String resolveAccessibilityDescription() const;
 
 	void notifyAccessibilityEvent( AccessibilityEvent event );
-
-	AccessibilityProperties* mAccessibilityProperties{ nullptr };
 };
 
 }} // namespace EE::UI

@@ -20,6 +20,8 @@ class EE_API AccessibilityWidgetResolver {
 
 	static AccessibilityRangeInfo getRange( const UIWidget* widget );
 
+	static AccessibilityTextInfo getText( const UIWidget* widget );
+
 	static AccessibilityState getState( const UIWidget* widget );
 
 	static AccessibilityActions getActions( const UIWidget* widget );

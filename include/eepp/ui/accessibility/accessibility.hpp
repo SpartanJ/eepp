@@ -132,6 +132,13 @@ struct AccessibilityRangeInfo {
 	bool valid{ false };
 };
 
+struct AccessibilityTextInfo {
+	Int32 caretOffset{ 0 };
+	Int32 selectionStart{ 0 };
+	Int32 selectionEnd{ 0 };
+	bool valid{ false };
+};
+
 struct AccessibilityNodeInfo {
 	AccessibilityRole role{ AccessibilityRole::None };
 	String name;
@@ -140,6 +147,7 @@ struct AccessibilityNodeInfo {
 	AccessibilityState states{ AccessibilityState::None };
 	AccessibilityActions actions{ 0 };
 	AccessibilityRangeInfo range;
+	AccessibilityTextInfo text;
 	Math::Rectf bounds;
 	bool boundsValid{ false };
 	std::vector<AccessibilityRelationInfo> relations;
@@ -152,6 +160,8 @@ struct AccessibilityActionRequest {
 
 struct AccessibilityPendingEvent {
 	AccessibilityNodeRef ref;
+	AccessibilityNodeRef related;
+	Int32 index{ -1 };
 	AccessibilityEvent type;
 };
 

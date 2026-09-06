@@ -200,6 +200,21 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		} else if ( propertyId == UIA_RangeValueValuePropertyId && nodeInfo.range.valid ) {
 			value->vt = VT_R8;
 			String::fromString( value->dblVal, nodeInfo.value.toUtf8() );
+		} else if ( propertyId == UIA_ToggleToggleStatePropertyId ) {
+			value->vt = VT_I4;
+			value->lVal = hasState( nodeInfo.states, AccessibilityState::Checked )
+							  ? ToggleState_On
+							  : ToggleState_Off;
+		} else if ( propertyId == UIA_SelectionItemIsSelectedPropertyId ) {
+			value->vt = VT_BOOL;
+			value->boolVal = hasState( nodeInfo.states, AccessibilityState::Selected )
+								 ? VARIANT_TRUE
+								 : VARIANT_FALSE;
+		} else if ( propertyId == UIA_ExpandCollapseExpandCollapseStatePropertyId ) {
+			value->vt = VT_I4;
+			value->lVal = hasState( nodeInfo.states, AccessibilityState::Expanded )
+							  ? ExpandCollapseState_Expanded
+							  : ExpandCollapseState_Collapsed;
 		}
 		return S_OK;
 	}
@@ -250,11 +265,12 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 	HRESULT STDMETHODCALLTYPE GetRuntimeId( SAFEARRAY** runtimeId ) {
 		if ( !runtimeId )
 			return E_INVALIDARG;
-		int values[] = { UiaAppendRuntimeId, static_cast<int>( mRef.id & 0x7fffffff ) };
-		*runtimeId = SafeArrayCreateVector( VT_I4, 0, 2 );
+		int values[] = { UiaAppendRuntimeId, static_cast<int>( mRef.source & 0x7fffffff ),
+						 static_cast<int>( mRef.id & 0x7fffffff ) };
+		*runtimeId = SafeArrayCreateVector( VT_I4, 0, 3 );
 		if ( !*runtimeId )
 			return E_OUTOFMEMORY;
-		for ( LONG index = 0; index < 2; ++index )
+		for ( LONG index = 0; index < 3; ++index )
 			SafeArrayPutElement( *runtimeId, &index, &values[index] );
 		return S_OK;
 	}
@@ -634,18 +650,41 @@ void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent&
 		raisePropertyChanged( UIA_IsEnabledPropertyId );
 	} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
 		raisePropertyChanged( UIA_IsOffscreenPropertyId );
+	} else if ( event.type == AccessibilityEvent::StateChanged ) {
+		auto info = manager().getNodeInfo( event.ref );
+		if ( info.role == AccessibilityRole::CheckBox ||
+			 info.role == AccessibilityRole::CheckMenuItem )
+			raisePropertyChanged( UIA_ToggleToggleStatePropertyId );
+		else if ( info.role == AccessibilityRole::RadioButton ||
+				  info.role == AccessibilityRole::RadioMenuItem )
+			raisePropertyChanged( UIA_SelectionItemIsSelectedPropertyId );
+		else if ( info.role == AccessibilityRole::ComboBox ||
+				  info.role == AccessibilityRole::TreeItem )
+			raisePropertyChanged( UIA_ExpandCollapseExpandCollapseStatePropertyId );
+	} else if ( event.type == AccessibilityEvent::Created ||
+				event.type == AccessibilityEvent::Destroyed ||
+				event.type == AccessibilityEvent::ChildrenChanged ) {
+		StructureChangeType changeType = StructureChangeType_ChildrenInvalidated;
+		if ( event.type == AccessibilityEvent::Created )
+			changeType = StructureChangeType_ChildrenBulkAdded;
+		else if ( event.type == AccessibilityEvent::Destroyed )
+			changeType = StructureChangeType_ChildrenBulkRemoved;
+		UiaRaiseStructureChangedEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
+									   changeType, nullptr, 0 );
 	} else {
 		EVENTID eventId = UIA_LayoutInvalidatedEventId;
 		if ( event.type == AccessibilityEvent::FocusChanged )
 			eventId = UIA_AutomationFocusChangedEventId;
-		else if ( event.type == AccessibilityEvent::SelectionChanged )
+		else if ( event.type == AccessibilityEvent::SelectionChanged ) {
+			raisePropertyChanged( UIA_SelectionItemIsSelectedPropertyId );
 			eventId = UIA_SelectionItem_ElementSelectedEventId;
+		}
 		UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 								 eventId );
 	}
 	nativeProvider->Release();
 	if ( event.type == AccessibilityEvent::Destroyed )
-		invalidateProvider( event.ref );
+		invalidateProvider( event.related.isValid() ? event.related : event.ref );
 }
 
 } // namespace

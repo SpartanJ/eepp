@@ -110,6 +110,16 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( String::fromString( progressValue, progressInfo.value.toUtf8() ) );
 	EXPECT_EQ( progressValue, 25.f );
 
+	UITextInput* textInput = UITextInput::New();
+	textInput->setText( "Project" );
+	textInput->getDocument().setSelection( { 0, 3 } );
+	textInput->setParent( scene->getRoot() );
+	auto textInputInfo = manager->getNodeInfo( manager->getNodeRef( textInput ) );
+	EXPECT_TRUE( textInputInfo.text.valid );
+	EXPECT_EQ( textInputInfo.text.caretOffset, 3 );
+	EXPECT_EQ( textInputInfo.text.selectionStart, 3 );
+	EXPECT_EQ( textInputInfo.text.selectionEnd, 3 );
+
 	UITextEdit* textEdit = UITextEdit::New();
 	textEdit->setParent( scene->getRoot() );
 	auto textEditRef = manager->getNodeRef( textEdit );
@@ -223,6 +233,29 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( manager->performAction( treeItemRef, { AccessibilityAction::Expand, String() } ) );
 	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( treeItemRef ).states ) &
 				 static_cast<Uint64>( AccessibilityState::Expanded ) );
+
+	manager->clearPendingEvents();
+	auto dynamicButton = UIPushButton::New();
+	dynamicButton->setText( "Dynamic" );
+	manager->clearPendingEvents();
+	dynamicButton->setParent( ignoredContainer );
+	manager->onWidgetParentChange( dynamicButton );
+	auto dynamicButtonRef = manager->getNodeRef( dynamicButton );
+	bool createdEventFound = false;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		createdEventFound |= event.ref == root && event.related == dynamicButtonRef &&
+							 event.type == AccessibilityEvent::Created && event.index >= 0;
+	}
+	EXPECT_TRUE( createdEventFound );
+
+	manager->clearPendingEvents();
+	eeDelete( dynamicButton );
+	bool removedEventFound = false;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		removedEventFound |= event.ref == root && event.related == dynamicButtonRef &&
+							 event.type == AccessibilityEvent::Destroyed && event.index >= 0;
+	}
+	EXPECT_TRUE( removedEventFound );
 
 	manager->clearPendingEvents();
 	button->setAccessibilityLabel( "Save project" );

@@ -1,4 +1,3 @@
-#include "eepp/window/input.hpp"
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/resourcescope.hpp>

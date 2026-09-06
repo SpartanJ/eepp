@@ -18,6 +18,8 @@ class EE_API InputSDL : public Input {
 
 	void waitEvent( const Time& timeout = Time::Zero );
 
+	void wakeUp();
+
 	bool grabInput();
 
 	void grabInput( const bool& Grab );
