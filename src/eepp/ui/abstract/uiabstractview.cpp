@@ -142,6 +142,7 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 		getSelection().removeAllMatching(
 			[this]( auto& index ) { return !getModel()->isValid( index ); } );
 	}
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UIAbstractView::onModelIndexDeleted( const void* internalData ) {
@@ -183,6 +184,7 @@ void UIAbstractView::notifySelectionChange() {
 
 	onModelSelectionChange();
 	sendCommonEvent( Event::OnSelectionChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 	if ( mOnSelectionChange )
 		mOnSelectionChange();
 }

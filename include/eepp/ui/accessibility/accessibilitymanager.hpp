@@ -10,6 +10,7 @@ namespace EE { namespace UI {
 class UISceneNode;
 class UIWidget;
 class AccessibilityBackend;
+class AccessibilitySource;
 
 /** Resolves accessibility information directly from the live UI tree. */
 class EE_API AccessibilityManager {
@@ -61,9 +62,16 @@ class EE_API AccessibilityManager {
 	Uint64 mNextId{ 1 };
 	UnorderedMap<UIWidget*, Uint64> mWidgetIds;
 	UnorderedMap<Uint64, UIWidget*> mWidgets;
+	AccessibilitySourceId mNextSourceId{ WidgetSource + 1 };
+	UnorderedMap<AccessibilitySourceId, std::unique_ptr<AccessibilitySource>> mSources;
+	UnorderedMap<UIWidget*, AccessibilitySourceId> mWidgetSources;
 	std::vector<AccessibilityPendingEvent> mPendingEvents;
 
 	UIWidget* resolve( AccessibilityNodeRef ref ) const;
+
+	AccessibilitySource* resolveSource( AccessibilityNodeRef ref ) const;
+
+	AccessibilitySource* sourceFor( UIWidget* widget );
 };
 
 }} // namespace EE::UI

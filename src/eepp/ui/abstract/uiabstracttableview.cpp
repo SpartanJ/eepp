@@ -1060,12 +1060,17 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 		if ( openModelIndexTree )
 			onOpenMenuModelIndex( index );
 		getSelection().set( index );
-		if ( scrollToSelection ) {
-			auto rowHeight = getRowHeight();
-			scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
-								{ columnData( index.column() ).width, rowHeight } } );
-		}
+		if ( scrollToSelection )
+			scrollToIndex( index );
 	}
+}
+
+void UIAbstractTableView::scrollToIndex( const ModelIndex& index ) {
+	if ( !getModel() || !getModel()->isValid( index ) )
+		return;
+	auto rowHeight = getRowHeight();
+	scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
+						{ columnData( index.column() ).width, rowHeight } } );
 }
 
 const size_t& UIAbstractTableView::getIconSize() const {

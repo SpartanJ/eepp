@@ -1,5 +1,8 @@
 #include "accessibilitybackend.hpp"
+#include "accessibilitymodelviewsource.hpp"
+#include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitysource.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -97,7 +100,34 @@ UIWidget* AccessibilityManager::resolve( AccessibilityNodeRef ref ) const {
 	return found != mWidgets.end() ? found->second : nullptr;
 }
 
+AccessibilitySource* AccessibilityManager::resolveSource( AccessibilityNodeRef ref ) const {
+	if ( ref.source == WidgetSource )
+		return nullptr;
+	auto found = mSources.find( ref.source );
+	return found != mSources.end() ? found->second.get() : nullptr;
+}
+
+AccessibilitySource* AccessibilityManager::sourceFor( UIWidget* widget ) {
+	if ( !widget || !widget->isType( UI_TYPE_ABSTRACTTABLEVIEW ) )
+		return nullptr;
+	auto found = mWidgetSources.find( widget );
+	if ( found != mWidgetSources.end() ) {
+		auto source = mSources.find( found->second );
+		return source != mSources.end() ? source->second.get() : nullptr;
+	}
+	auto sourceId = mNextSourceId++;
+	auto source = createAccessibilityModelViewSource( *this, sourceId, widget );
+	if ( !source )
+		return nullptr;
+	auto ptr = source.get();
+	mSources.emplace( sourceId, std::move( source ) );
+	mWidgetSources.emplace( widget, sourceId );
+	return ptr;
+}
+
 bool AccessibilityManager::isValid( AccessibilityNodeRef ref ) const {
+	if ( auto source = resolveSource( ref ) )
+		return source->isValid( ref.id );
 	return resolve( ref ) != nullptr;
 }
 
@@ -113,11 +143,14 @@ AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef re
 		info.actions = widget->getAccessibilityActions();
 		info.bounds = widget->getWorldBounds();
 		info.boundsValid = true;
-	}
+	} else if ( auto source = resolveSource( ref ) )
+		info = source->getInfo( ref.id );
 	return info;
 }
 
 AccessibilityNodeRef AccessibilityManager::getParent( AccessibilityNodeRef ref ) {
+	if ( auto source = resolveSource( ref ) )
+		return source->getParent( ref.id );
 	auto widget = resolve( ref );
 	if ( !widget || widget == mScene->getRoot() )
 		return {};
@@ -131,20 +164,32 @@ AccessibilityNodeRef AccessibilityManager::getParent( AccessibilityNodeRef ref )
 }
 
 size_t AccessibilityManager::getChildCount( AccessibilityNodeRef ref ) {
-	if ( auto widget = resolve( ref ) )
+	if ( auto source = resolveSource( ref ) )
+		return source->getChildCount( ref.id );
+	if ( auto widget = resolve( ref ) ) {
+		if ( auto source = sourceFor( widget ) )
+			return source->getRootChildCount();
 		return countSemanticChildren( widget );
+	}
 	return 0;
 }
 
 AccessibilityNodeRef AccessibilityManager::getChild( AccessibilityNodeRef ref, size_t index ) {
+	if ( auto source = resolveSource( ref ) )
+		return source->getChild( ref.id, index );
 	size_t currentIndex = 0;
 	auto widget = resolve( ref );
+	if ( auto source = sourceFor( widget ) )
+		return source->getRootChild( index );
 	return widget ? getNodeRef( semanticChildAt( widget, index, currentIndex ) )
 				  : AccessibilityNodeRef{};
 }
 
 AccessibilityNodeRef AccessibilityManager::hitTest( const Math::Vector2f& screenPosition ) {
-	return getNodeRef( hitSemanticWidget( mScene->getRoot(), screenPosition ) );
+	auto widget = hitSemanticWidget( mScene->getRoot(), screenPosition );
+	if ( auto source = sourceFor( widget ) )
+		return source->hitTest( screenPosition );
+	return getNodeRef( widget );
 }
 
 AccessibilityNodeRef AccessibilityManager::getKeyboardFocusedNode() {
@@ -153,6 +198,8 @@ AccessibilityNodeRef AccessibilityManager::getKeyboardFocusedNode() {
 
 bool AccessibilityManager::performAction( AccessibilityNodeRef ref,
 										  const AccessibilityActionRequest& request ) {
+	if ( auto source = resolveSource( ref ) )
+		return source->performAction( ref.id, request );
 	auto widget = resolve( ref );
 	return widget && widget->isEnabled() && widget->performAccessibilityAction( request );
 }
@@ -197,6 +244,11 @@ void AccessibilityManager::clearPendingEvents() {
 }
 
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
+	auto source = mWidgetSources.find( widget );
+	if ( source != mWidgetSources.end() ) {
+		mSources.erase( source->second );
+		mWidgetSources.erase( source );
+	}
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() )
 		return;

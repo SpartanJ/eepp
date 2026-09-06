@@ -225,12 +225,6 @@ void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
 	if ( !manager || !manager->hasActiveNativeClients() )
 		return;
 	UIWidget* target = this;
-	Node* directParent = getParent();
-	if ( directParent && directParent->isWidget() ) {
-		auto parentWidget = directParent->asType<UIWidget>();
-		if ( parentWidget != mUISceneNode->getRoot() && parentWidget->isAccessibilityElement() )
-			target = parentWidget;
-	}
 	while ( target && !target->isAccessibilityElement() ) {
 		Node* parent = target->getParent();
 		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
@@ -858,12 +852,12 @@ void UIWidget::onVisibilityChange() {
 	notifyLayoutAttrChangeParent(
 		toLayoutInvalidationFlags( LayoutInvalidationReason::NormalFlowChild ) );
 	UINode::onVisibilityChange();
-	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::VisibilityChanged );
 }
 
 void UIWidget::onEnabledChange() {
 	UINode::onEnabledChange();
-	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::EnabledChanged );
 }
 
 void UIWidget::onSizeChange() {
@@ -1559,7 +1553,6 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 }
 
 Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
-	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
 	pushState( UIState::StateFocusWithin );
 	sendCommonEvent( Event::OnFocusWithin );
 
@@ -1572,11 +1565,12 @@ Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocus( reason );
+	auto result = UINode::onFocus( reason );
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
+	return result;
 }
 
 Uint32 UIWidget::onFocusLoss() {
-	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
 	popState( UIState::StateFocusWithin );
 	sendCommonEvent( Event::OnFocusWithinLoss );
 
@@ -1589,7 +1583,9 @@ Uint32 UIWidget::onFocusLoss() {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocusLoss();
+	auto result = UINode::onFocusLoss();
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
+	return result;
 }
 
 UIStyle* UIWidget::getUIStyle() const {
@@ -1887,6 +1883,9 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::Cursor,
 			 PropertyId::Visible,
 			 PropertyId::Enabled,
+			 PropertyId::AccessibilityLabel,
+			 PropertyId::AccessibilityDescription,
+			 PropertyId::AccessibilityHidden,
 			 PropertyId::Theme,
 			 PropertyId::Skin,
 			 PropertyId::Flags,
@@ -2459,6 +2458,15 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				mTooltip->setStringBuffer( text );
 			break;
 		}
+		case PropertyId::AccessibilityLabel:
+			setAccessibilityLabel( getTranslatorString( attribute.value() ) );
+			break;
+		case PropertyId::AccessibilityDescription:
+			setAccessibilityDescription( getTranslatorString( attribute.value() ) );
+			break;
+		case PropertyId::AccessibilityHidden:
+			setAccessibilityHidden( attribute.asBool() );
+			break;
 		case PropertyId::LayoutWeight:
 			setLayoutWeight( attribute.asFloat() );
 			break;
@@ -3029,7 +3037,7 @@ UIWidget* UIWidget::getNextTabWidget() const {
 }
 
 void UIWidget::onFocusPrevWidget() {
-	if ( !isTabStop() ) {
+	if ( !isTabStop() || ( mFlags & UI_USES_TAB_MOD ) ) {
 		Node* node = getPrevTabWidget();
 		if ( NULL != node ) {
 			node->setFocus( NodeFocusReason::Tab );
@@ -3041,7 +3049,7 @@ void UIWidget::onFocusPrevWidget() {
 }
 
 void UIWidget::onFocusNextWidget() {
-	if ( !isTabStop() ) {
+	if ( !isTabStop() || ( mFlags & UI_USES_TAB_MOD ) ) {
 		Node* node = getNextTabWidget();
 		if ( NULL != node ) {
 			node->setFocus( NodeFocusReason::Tab );

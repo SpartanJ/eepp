@@ -1,3 +1,4 @@
+#include "eepp/window/input.hpp"
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/resourcescope.hpp>
@@ -25,6 +26,7 @@ UITextEdit::UITextEdit( const std::string& tag ) : UICodeEditor( tag, true, true
 	mFont = NULL;
 	mHorizontalScrollBarEnabled = true;
 	mKerningEnabled = true;
+	mFlags |= UI_USES_TAB_MOD;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 

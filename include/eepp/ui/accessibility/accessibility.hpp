@@ -35,6 +35,13 @@ enum class AccessibilityRole : Uint8 {
 	MenuItem,
 	CheckMenuItem,
 	RadioMenuItem,
+	List,
+	ListItem,
+	Table,
+	Row,
+	Cell,
+	Tree,
+	TreeItem,
 };
 
 enum class AccessibilityState : Uint64 {
@@ -49,6 +56,7 @@ enum class AccessibilityState : Uint64 {
 	Visible = 1ull << 7,
 	Showing = 1ull << 8,
 	Expanded = 1ull << 9,
+	Active = 1ull << 10,
 };
 
 inline AccessibilityState operator|( AccessibilityState left, AccessibilityState right ) {
@@ -72,6 +80,7 @@ enum class AccessibilityAction : Uint8 {
 	SetText,
 	Expand,
 	Collapse,
+	ScrollTo,
 };
 
 using AccessibilityActions = Uint32;
@@ -91,6 +100,8 @@ enum class AccessibilityEvent : Uint8 {
 	DescriptionChanged,
 	ValueChanged,
 	StateChanged,
+	EnabledChanged,
+	VisibilityChanged,
 	SelectionChanged,
 	BoundsChanged,
 };

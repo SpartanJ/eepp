@@ -43,7 +43,7 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 	AccessibilityManager& mManager;
 	HWND mWindow{};
 	WNDPROC mPreviousWindowProcedure{};
-	UnorderedMap<Uint64, UIAutomationProvider*> mProviders;
+	UnorderedMap<AccessibilitySourceId, UnorderedMap<Uint64, UIAutomationProvider*>> mProviders;
 };
 
 class UIAutomationProvider final : public IRawElementProviderSimple,
@@ -54,7 +54,8 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 								   public ISelectionItemProvider,
 								   public IValueProvider,
 								   public IRangeValueProvider,
-								   public IExpandCollapseProvider {
+								   public IExpandCollapseProvider,
+								   public IScrollItemProvider {
   public:
 	UIAutomationProvider( UIAutomationAccessibilityBackend& backend, AccessibilityNodeRef ref ) :
 		mBackend( &backend ), mRef( ref ) {}
@@ -93,6 +94,9 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 					( actions & accessibilityActionMask( AccessibilityAction::Expand ) ||
 					  actions & accessibilityActionMask( AccessibilityAction::Collapse ) ) ) {
 			*object = static_cast<IExpandCollapseProvider*>( this );
+		} else if ( interfaceId == __uuidof( IScrollItemProvider ) &&
+					actions & accessibilityActionMask( AccessibilityAction::ScrollTo ) ) {
+			*object = static_cast<IScrollItemProvider*>( this );
 		}
 		if ( !*object )
 			return E_NOINTERFACE;
@@ -137,6 +141,9 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 								   reinterpret_cast<void**>( provider ) );
 		if ( patternId == UIA_ExpandCollapsePatternId )
 			return QueryInterface( __uuidof( IExpandCollapseProvider ),
+								   reinterpret_cast<void**>( provider ) );
+		if ( patternId == UIA_ScrollItemPatternId )
+			return QueryInterface( __uuidof( IScrollItemProvider ),
 								   reinterpret_cast<void**>( provider ) );
 		return S_OK;
 	}
@@ -393,6 +400,8 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		return S_OK;
 	}
 
+	HRESULT STDMETHODCALLTYPE ScrollIntoView() { return perform( AccessibilityAction::ScrollTo ); }
+
 	HRESULT STDMETHODCALLTYPE SetValue( double value ) {
 		if ( !mBackend )
 			return UIA_E_ELEMENTNOTAVAILABLE;
@@ -469,6 +478,19 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 				return UIA_TabItemControlTypeId;
 			case AccessibilityRole::TabList:
 				return UIA_TabControlTypeId;
+			case AccessibilityRole::List:
+				return UIA_ListControlTypeId;
+			case AccessibilityRole::ListItem:
+				return UIA_ListItemControlTypeId;
+			case AccessibilityRole::Table:
+				return UIA_DataGridControlTypeId;
+			case AccessibilityRole::Row:
+			case AccessibilityRole::Cell:
+				return UIA_DataItemControlTypeId;
+			case AccessibilityRole::Tree:
+				return UIA_TreeControlTypeId;
+			case AccessibilityRole::TreeItem:
+				return UIA_TreeItemControlTypeId;
 			case AccessibilityRole::MenuBar:
 				return UIA_MenuBarControlTypeId;
 			case AccessibilityRole::Menu:
@@ -508,7 +530,8 @@ UIAutomationAccessibilityBackend::UIAutomationAccessibilityBackend(
 	if ( !scene || !scene->getWindow() )
 		return;
 	mWindow = reinterpret_cast<HWND>( scene->getWindow()->getWindowHandler() );
-	if ( !mWindow || !SetPropW( mWindow, BackendProperty, this ) ) {
+	if ( !mWindow || GetPropW( mWindow, BackendProperty ) ||
+		 !SetPropW( mWindow, BackendProperty, this ) ) {
 		mWindow = nullptr;
 		return;
 	}
@@ -522,7 +545,7 @@ UIAutomationAccessibilityBackend::UIAutomationAccessibilityBackend(
 }
 
 UIAutomationAccessibilityBackend::~UIAutomationAccessibilityBackend() {
-	if ( mWindow ) {
+	if ( mWindow && IsWindow( mWindow ) && GetPropW( mWindow, BackendProperty ) == this ) {
 		if ( reinterpret_cast<WNDPROC>( GetWindowLongPtrW( mWindow, GWLP_WNDPROC ) ) ==
 			 &UIAutomationAccessibilityBackend::windowProcedure ) {
 			SetWindowLongPtrW( mWindow, GWLP_WNDPROC,
@@ -530,9 +553,11 @@ UIAutomationAccessibilityBackend::~UIAutomationAccessibilityBackend() {
 		}
 		RemovePropW( mWindow, BackendProperty );
 	}
-	for ( auto& provider : mProviders ) {
-		provider.second->detach();
-		provider.second->Release();
+	for ( auto& source : mProviders ) {
+		for ( auto& provider : source.second ) {
+			provider.second->detach();
+			provider.second->Release();
+		}
 	}
 }
 
@@ -555,24 +580,30 @@ LRESULT CALLBACK UIAutomationAccessibilityBackend::windowProcedure( HWND window,
 UIAutomationProvider* UIAutomationAccessibilityBackend::provider( AccessibilityNodeRef ref ) {
 	if ( !ref.isValid() )
 		return nullptr;
-	auto found = mProviders.find( ref.id );
-	if ( found != mProviders.end() ) {
+	auto& providers = mProviders[ref.source];
+	auto found = providers.find( ref.id );
+	if ( found != providers.end() ) {
 		found->second->AddRef();
 		return found->second;
 	}
 	auto nativeProvider = new UIAutomationProvider( *this, ref );
-	mProviders.emplace( ref.id, nativeProvider );
+	providers.emplace( ref.id, nativeProvider );
 	nativeProvider->AddRef();
 	return nativeProvider;
 }
 
 void UIAutomationAccessibilityBackend::invalidateProvider( AccessibilityNodeRef ref ) {
-	auto found = mProviders.find( ref.id );
-	if ( found == mProviders.end() )
+	auto source = mProviders.find( ref.source );
+	if ( source == mProviders.end() )
+		return;
+	auto found = source->second.find( ref.id );
+	if ( found == source->second.end() )
 		return;
 	found->second->detach();
 	found->second->Release();
-	mProviders.erase( found );
+	source->second.erase( found );
+	if ( source->second.empty() )
+		mProviders.erase( source );
 }
 
 void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent& event ) {
@@ -599,6 +630,10 @@ void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent&
 		raisePropertyChanged( manager().getNodeInfo( event.ref ).range.valid
 								  ? UIA_RangeValueValuePropertyId
 								  : UIA_ValueValuePropertyId );
+	} else if ( event.type == AccessibilityEvent::EnabledChanged ) {
+		raisePropertyChanged( UIA_IsEnabledPropertyId );
+	} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
+		raisePropertyChanged( UIA_IsOffscreenPropertyId );
 	} else {
 		EVENTID eventId = UIA_LayoutInvalidatedEventId;
 		if ( event.type == AccessibilityEvent::FocusChanged )

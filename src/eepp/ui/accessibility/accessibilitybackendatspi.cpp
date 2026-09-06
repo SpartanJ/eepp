@@ -14,6 +14,10 @@ namespace {
 
 constexpr int DBusMessageTypeError = 3;
 
+bool hasState( AccessibilityState states, AccessibilityState state ) {
+	return static_cast<Uint64>( states ) & static_cast<Uint64>( state );
+}
+
 struct DBusConnection;
 struct DBusMessage;
 struct DBusError;
@@ -207,7 +211,7 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 
 	bool isAvailable() const { return mConnection != nullptr; }
 
-	bool hasActiveClients() const { return mHasActiveClients; }
+	bool hasActiveClients() const { return isAvailable(); }
 
 	void update() {
 		if ( mConnection )
@@ -217,6 +221,7 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 	void onEvent( const AccessibilityPendingEvent& event ) {
 		if ( !mConnection )
 			return;
+		auto info = mManager.getNodeInfo( event.ref );
 		const char* signal = "PropertyChange";
 		const char* detail = "accessible-state";
 		if ( event.type == AccessibilityEvent::FocusChanged ) {
@@ -231,6 +236,23 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 			detail = "accessible-description";
 		} else if ( event.type == AccessibilityEvent::ValueChanged ) {
 			detail = "accessible-value";
+		} else if ( event.type == AccessibilityEvent::StateChanged ) {
+			signal = "StateChanged";
+			if ( info.role == AccessibilityRole::CheckBox ||
+				 info.role == AccessibilityRole::RadioButton ||
+				 info.role == AccessibilityRole::CheckMenuItem ||
+				 info.role == AccessibilityRole::RadioMenuItem )
+				detail = "checked";
+			else if ( info.role == AccessibilityRole::ComboBox )
+				detail = "expanded";
+			else
+				return;
+		} else if ( event.type == AccessibilityEvent::EnabledChanged ) {
+			signal = "StateChanged";
+			detail = "enabled";
+		} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
+			signal = "StateChanged";
+			detail = "visible";
 		} else if ( event.type == AccessibilityEvent::BoundsChanged ) {
 			signal = "BoundsChanged";
 			detail = "";
@@ -249,20 +271,38 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 		DBusMessageIter variant;
 		mDBus.messageIterInitAppend( message, &iter );
 		appendBasic( iter, 's', &detail );
-		Int32 detail1 = event.type == AccessibilityEvent::FocusChanged ||
-								event.type == AccessibilityEvent::SelectionChanged
-							? 1
-							: 0;
+		Int32 detail1 = 0;
+		if ( event.type == AccessibilityEvent::FocusChanged )
+			detail1 = hasState( info.states, AccessibilityState::Focused );
+		else if ( event.type == AccessibilityEvent::SelectionChanged )
+			detail1 = hasState( info.states, AccessibilityState::Selected );
+		else if ( event.type == AccessibilityEvent::StateChanged &&
+				  std::strcmp( detail, "checked" ) == 0 )
+			detail1 = hasState( info.states, AccessibilityState::Checked );
+		else if ( event.type == AccessibilityEvent::StateChanged &&
+				  std::strcmp( detail, "expanded" ) == 0 )
+			detail1 = hasState( info.states, AccessibilityState::Expanded );
+		else if ( event.type == AccessibilityEvent::EnabledChanged )
+			detail1 = hasState( info.states, AccessibilityState::Enabled );
+		else if ( event.type == AccessibilityEvent::VisibilityChanged )
+			detail1 = hasState( info.states, AccessibilityState::Visible );
 		Int32 detail2 = 0;
 		appendBasic( iter, 'i', &detail1 );
 		appendBasic( iter, 'i', &detail2 );
-		const char* empty = "";
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
-		appendBasic( variant, 's', &empty );
+		bool childrenChanged = event.type == AccessibilityEvent::ChildrenChanged ||
+							   event.type == AccessibilityEvent::Created ||
+							   event.type == AccessibilityEvent::Destroyed;
+		if ( childrenChanged ) {
+			mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
+			appendRef( variant, event.ref );
+		} else {
+			const char* empty = "";
+			mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+			appendBasic( variant, 's', &empty );
+		}
 		mDBus.messageIterCloseContainer( &iter, &variant );
 		appendRef( iter, mManager.getRoot() );
 		send( message );
-		mDBus.connectionFlush( mConnection );
 	}
 
   private:
@@ -273,7 +313,6 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 	DBusLibrary mDBus;
 	DBusConnection* mConnection{};
 	std::string mBusName;
-	bool mHasActiveClients{ false };
 
 	static DBusHandlerResult handleMessage( DBusConnection*, DBusMessage* message,
 											void* userData ) {
@@ -288,14 +327,27 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 		if ( std::strncmp( path, NodePathPrefix, std::strlen( NodePathPrefix ) ) != 0 )
 			return {};
 		char* end = nullptr;
-		Uint64 id = std::strtoull( path + std::strlen( NodePathPrefix ), &end, 10 );
-		return end && *end == '\0' ? AccessibilityNodeRef{ 1, id } : AccessibilityNodeRef{};
+		const char* encoded = path + std::strlen( NodePathPrefix );
+		Uint64 first = std::strtoull( encoded, &end, 10 );
+		if ( !end )
+			return {};
+		if ( *end == '\0' )
+			return { 1, first };
+		if ( *end != '/' )
+			return {};
+		char* idEnd = nullptr;
+		Uint64 id = std::strtoull( end + 1, &idEnd, 10 );
+		return idEnd && *idEnd == '\0'
+				   ? AccessibilityNodeRef{ static_cast<AccessibilitySourceId>( first ), id }
+				   : AccessibilityNodeRef{};
 	}
 
 	std::string pathFromRef( AccessibilityNodeRef ref ) {
 		if ( ref == mManager.getRoot() )
 			return RootPath;
-		return std::string( NodePathPrefix ) + String::toString( ref.id );
+		return ref.source == 1 ? std::string( NodePathPrefix ) + String::toString( ref.id )
+							   : std::string( NodePathPrefix ) + String::toString( ref.source ) +
+									 "/" + String::toString( ref.id );
 	}
 
 	Uint32 role( AccessibilityRole role ) const {
@@ -341,6 +393,20 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				return 8;
 			case AccessibilityRole::RadioMenuItem:
 				return 45;
+			case AccessibilityRole::List:
+				return 31;
+			case AccessibilityRole::ListItem:
+				return 32;
+			case AccessibilityRole::Table:
+				return 55;
+			case AccessibilityRole::Row:
+				return 90;
+			case AccessibilityRole::Cell:
+				return 56;
+			case AccessibilityRole::Tree:
+				return 65;
+			case AccessibilityRole::TreeItem:
+				return 91;
 			default:
 				return 67;
 		}
@@ -390,13 +456,27 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				return "check menu item";
 			case AccessibilityRole::RadioMenuItem:
 				return "radio menu item";
+			case AccessibilityRole::List:
+				return "list";
+			case AccessibilityRole::ListItem:
+				return "list item";
+			case AccessibilityRole::Table:
+				return "table";
+			case AccessibilityRole::Row:
+				return "table row";
+			case AccessibilityRole::Cell:
+				return "table cell";
+			case AccessibilityRole::Tree:
+				return "tree";
+			case AccessibilityRole::TreeItem:
+				return "tree item";
 			default:
 				return "unknown";
 		}
 	}
 
 	AccessibilityAction actionAt( AccessibilityActions actions, Int32 index ) const {
-		for ( Uint32 action = 0; action <= static_cast<Uint32>( AccessibilityAction::SetText );
+		for ( Uint32 action = 0; action <= static_cast<Uint32>( AccessibilityAction::ScrollTo );
 			  ++action ) {
 			if ( actions & ( 1u << action ) ) {
 				if ( index-- == 0 )
@@ -433,6 +513,8 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				return "expand";
 			case AccessibilityAction::Collapse:
 				return "collapse";
+			case AccessibilityAction::ScrollTo:
+				return "scroll to";
 		}
 		return "";
 	}
@@ -540,7 +622,6 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 		auto ref = refFromPath( path );
 		if ( !interface || !member || !mManager.isValid( ref ) )
 			return 1;
-		mHasActiveClients = true;
 		auto info = mManager.getNodeInfo( ref );
 
 		if ( std::strcmp( interface, "org.a11y.atspi.Accessible" ) == 0 ) {
@@ -618,9 +699,11 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 						words[state / 32] |= 1u << ( state % 32 );
 				};
 				Uint64 states = static_cast<Uint64>( info.states );
+				addState( states & static_cast<Uint64>( AccessibilityState::Active ), 1 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Checked ), 4 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Editable ), 7 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Enabled ), 8 );
+				addState( states & static_cast<Uint64>( AccessibilityState::Expanded ), 9 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Focusable ), 11 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Focused ), 12 );
 				addState( states & static_cast<Uint64>( AccessibilityState::Selected ), 23 );
@@ -712,6 +795,25 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 			Int32 count = static_cast<Int32>( __builtin_popcount( actions ) );
 			if ( std::strcmp( member, "GetNActions" ) == 0 ) {
 				sendBasic( request, 'i', &count );
+			} else if ( std::strcmp( member, "GetActions" ) == 0 ) {
+				DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+				DBusMessageIter iter;
+				DBusMessageIter array;
+				mDBus.messageIterInitAppend( reply, &iter );
+				mDBus.messageIterOpenContainer( &iter, 'a', "(sss)", &array );
+				for ( Int32 index = 0; index < count; ++index ) {
+					DBusMessageIter structure;
+					auto action = actionAt( actions, index );
+					const char* name = actionName( action );
+					const char* empty = "";
+					mDBus.messageIterOpenContainer( &array, 'r', nullptr, &structure );
+					appendBasic( structure, 's', &name );
+					appendBasic( structure, 's', &empty );
+					appendBasic( structure, 's', &empty );
+					mDBus.messageIterCloseContainer( &array, &structure );
+				}
+				mDBus.messageIterCloseContainer( &iter, &array );
+				send( reply );
 			} else {
 				Int32 index = -1;
 				mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 );
@@ -721,7 +823,8 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				if ( std::strcmp( member, "DoAction" ) == 0 ) {
 					int success = mManager.performAction( ref, { action, {} } );
 					sendBasic( request, 'b', &success );
-				} else if ( std::strcmp( member, "GetName" ) == 0 ) {
+				} else if ( std::strcmp( member, "GetName" ) == 0 ||
+							std::strcmp( member, "GetLocalizedName" ) == 0 ) {
 					const char* name = actionName( action );
 					sendBasic( request, 's', &name );
 				} else if ( std::strcmp( member, "GetDescription" ) == 0 ||
@@ -746,8 +849,14 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 			DBusMessageIter iter;
 			DBusMessageIter variant;
 			mDBus.messageIterInitAppend( reply, &iter );
-			if ( std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
-				 info.range.valid ) {
+			if ( std::strcmp( requestedInterface, "org.a11y.atspi.Action" ) == 0 &&
+				 std::strcmp( property, "NActions" ) == 0 ) {
+				Int32 value =
+					static_cast<Int32>( __builtin_popcount( nativeActions( info.actions ) ) );
+				mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+				appendBasic( variant, 'i', &value );
+			} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
+						info.range.valid ) {
 				double value = 0;
 				if ( std::strcmp( property, "CurrentValue" ) == 0 )
 					String::fromString( value, info.value.toUtf8() );

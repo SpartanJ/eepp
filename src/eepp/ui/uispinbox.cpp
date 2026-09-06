@@ -23,6 +23,7 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 	mInput->setFlags( UI_SCROLLABLE );
+	mInput->setAccessibilityHidden( true );
 
 	auto cb = [this]( const Event* ) { adjustChildren(); };
 

@@ -3,9 +3,12 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/models/itemlistmodel.hpp>
+#include <eepp/ui/models/stringmapmodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -13,8 +16,10 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitreeview.hpp>
 
 using namespace EE;
 using namespace EE::System;
@@ -48,14 +53,19 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_EQ( manager->getChildCount( root ), 2u );
 	EXPECT_TRUE( manager->getChild( root, 0 ) == buttonRef );
 	EXPECT_TRUE( manager->getParent( buttonRef ) == root );
-	ignoredContainer->setAccessibilityHidden( true );
+	ignoredContainer->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "true" ) );
 	EXPECT_EQ( manager->getChildCount( root ), 1u );
-	ignoredContainer->setAccessibilityHidden( false );
+	ignoredContainer->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "false" ) );
 
 	auto buttonInfo = manager->getNodeInfo( buttonRef );
 	EXPECT_EQ( buttonInfo.role, AccessibilityRole::Button );
 	EXPECT_TRUE( buttonInfo.name == String( "Save" ) );
 	EXPECT_TRUE( buttonInfo.actions & accessibilityActionMask( AccessibilityAction::Press ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-label", "Save item" ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-description", "Saves the item" ) );
+	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save item" ) );
+	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).description == String( "Saves the item" ) );
+	button->setAccessibilityLabel( {} );
 
 	EXPECT_FALSE( checkbox->isChecked() );
 	EXPECT_TRUE( manager->performAction( checkboxRef, { AccessibilityAction::Toggle, {} } ) );
@@ -163,6 +173,57 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 										 { AccessibilityAction::Select, String() } ) );
 	EXPECT_TRUE( tabs->getTabSelected() == firstTab );
 
+	UITableView* table = UITableView::New();
+	table->setParent( scene->getRoot() );
+	auto tableModel = ItemPairListOwnerModel<std::string, std::string>::create(
+		{ { "Alpha", "One" }, { "Beta", "Two" } } );
+	tableModel->setColumnName( 0, "Name" );
+	tableModel->setColumnName( 1, "Value" );
+	table->setModel( tableModel );
+	auto tableRef = manager->getNodeRef( table );
+	EXPECT_EQ( manager->getNodeInfo( tableRef ).role, AccessibilityRole::Table );
+	EXPECT_EQ( manager->getChildCount( tableRef ), 2u );
+	auto firstRowRef = manager->getChild( tableRef, 0 );
+	EXPECT_TRUE( firstRowRef.source != tableRef.source );
+	EXPECT_EQ( manager->getNodeInfo( firstRowRef ).role, AccessibilityRole::Row );
+	EXPECT_EQ( manager->getChildCount( firstRowRef ), 2u );
+	auto firstCellRef = manager->getChild( firstRowRef, 0 );
+	EXPECT_EQ( manager->getNodeInfo( firstCellRef ).role, AccessibilityRole::Cell );
+	EXPECT_TRUE( manager->getNodeInfo( firstCellRef ).name == String( "Name" ) );
+	EXPECT_TRUE( manager->getNodeInfo( firstCellRef ).value == String( "Alpha" ) );
+	EXPECT_TRUE( manager->getParent( firstCellRef ) == firstRowRef );
+	EXPECT_TRUE( manager->performAction( firstRowRef, { AccessibilityAction::Select, String() } ) );
+	EXPECT_TRUE( table->getSelection().containsRow( 0 ) );
+
+	UIListView* list = UIListView::New();
+	list->setParent( scene->getRoot() );
+	list->setModel( ItemListOwnerModel<std::string>::create( { "Red", "Green", "Blue" } ) );
+	auto listRef = manager->getNodeRef( list );
+	EXPECT_EQ( manager->getNodeInfo( listRef ).role, AccessibilityRole::List );
+	EXPECT_EQ( manager->getChildCount( listRef ), 3u );
+	auto listItemRef = manager->getChild( listRef, 1 );
+	EXPECT_TRUE( manager->getChild( listRef, 1 ) == listItemRef );
+	EXPECT_EQ( manager->getNodeInfo( listItemRef ).role, AccessibilityRole::ListItem );
+	EXPECT_TRUE( manager->getNodeInfo( listItemRef ).name == String( "Green" ) );
+	EXPECT_TRUE(
+		manager->performAction( listItemRef, { AccessibilityAction::ScrollTo, String() } ) );
+	EXPECT_TRUE( list->getSelection().isEmpty() );
+
+	UITreeView* tree = UITreeView::New();
+	tree->setParent( scene->getRoot() );
+	std::map<std::string, std::vector<std::string>> treeItems{ { "Parent", { "Child" } } };
+	tree->setModel( StringMapModel<>::create( treeItems ) );
+	auto treeRef = manager->getNodeRef( tree );
+	EXPECT_EQ( manager->getNodeInfo( treeRef ).role, AccessibilityRole::Tree );
+	auto treeItemRef = manager->getChild( treeRef, 0 );
+	EXPECT_EQ( manager->getNodeInfo( treeItemRef ).role, AccessibilityRole::TreeItem );
+	EXPECT_EQ( manager->getChildCount( treeItemRef ), 1u );
+	EXPECT_TRUE( manager->getNodeInfo( treeItemRef ).actions &
+				 accessibilityActionMask( AccessibilityAction::Expand ) );
+	EXPECT_TRUE( manager->performAction( treeItemRef, { AccessibilityAction::Expand, String() } ) );
+	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( treeItemRef ).states ) &
+				 static_cast<Uint64>( AccessibilityState::Expanded ) );
+
 	manager->clearPendingEvents();
 	button->setAccessibilityLabel( "Save project" );
 	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save project" ) );
@@ -172,6 +233,9 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 
 	eeDelete( button );
 	EXPECT_FALSE( manager->isValid( buttonRef ) );
-	EXPECT_EQ( manager->getPendingEvents().size(), 2u );
-	EXPECT_EQ( manager->getPendingEvents().back().type, AccessibilityEvent::Destroyed );
+	bool destroyedEventFound = false;
+	for ( const auto& event : manager->getPendingEvents() )
+		destroyedEventFound |=
+			event.ref == buttonRef && event.type == AccessibilityEvent::Destroyed;
+	EXPECT_TRUE( destroyedEventFound );
 }

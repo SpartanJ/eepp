@@ -192,6 +192,12 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( PropertyId::Tooltip, "tooltip", "" )
 		.setType( PropertyType::String )
 		.addAlias( "alt" );
+	registerProperty( PropertyId::AccessibilityLabel, "aria-label", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AccessibilityDescription, "aria-description", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::AccessibilityHidden, "aria-hidden", "false" )
+		.setType( PropertyType::Bool );
 	registerProperty( PropertyId::LayoutWeight, "layout-weight", "" )
 		.addAlias( "layout_weight" )
 		.addAlias( "lw8" )

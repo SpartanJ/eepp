@@ -82,6 +82,7 @@ class AccessibilityPropertiesModel final : public Model {
 			auto parent = manager->getParent( ref );
 			std::string states;
 			static constexpr std::pair<AccessibilityState, const char*> StateNames[] = {
+				{ AccessibilityState::Active, "Active" },
 				{ AccessibilityState::Enabled, "Enabled" },
 				{ AccessibilityState::Focusable, "Focusable" },
 				{ AccessibilityState::Focused, "Focused" },

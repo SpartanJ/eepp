@@ -60,9 +60,12 @@ void UIEventDispatcher::checkTabPress( Uint32 KeyCode, Uint32 mod ) {
 		mod = Input::sanitizeMod( mod );
 		Window::Window* win = mFocusNode->getSceneNode()->getWindow();
 		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
-			if ( mod & KEYMOD_SHIFT ) {
+			auto tabMod = ( mFocusNode->asType<UIWidget>()->getFlags() & UI_USES_TAB_MOD ) != 0
+							  ? KeyMod::getDefaultModifier()
+							  : 0;
+			if ( mod == ( KEYMOD_SHIFT | tabMod ) ) {
 				mFocusNode->asType<UIWidget>()->onFocusPrevWidget();
-			} else if ( mod == 0 ) {
+			} else if ( mod == tabMod ) {
 				mFocusNode->asType<UIWidget>()->onFocusNextWidget();
 			}
 		}

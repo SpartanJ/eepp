@@ -1,6 +1,7 @@
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
@@ -14,10 +15,12 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitab.hpp>
+#include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
@@ -42,6 +45,10 @@ AccessibilityState baseState( const UIWidget* widget ) {
 		state |= AccessibilityState::Visible;
 	if ( widget->hasVisibility() )
 		state |= AccessibilityState::Showing;
+	auto role = AccessibilityWidgetResolver::getRole( widget );
+	if ( ( role == AccessibilityRole::Application || role == AccessibilityRole::Window ) &&
+		 widget->getUISceneNode() && widget->getUISceneNode()->getWindow()->hasInputFocus() )
+		state |= AccessibilityState::Active;
 	return state;
 }
 
@@ -65,6 +72,12 @@ AccessibilityRole AccessibilityWidgetResolver::getRole( const UIWidget* widget )
 		role = AccessibilityRole::MenuBar;
 	else if ( widget->isType( UI_TYPE_MENU ) )
 		role = AccessibilityRole::Menu;
+	else if ( widget->isType( UI_TYPE_LISTVIEW ) )
+		role = AccessibilityRole::List;
+	else if ( widget->isType( UI_TYPE_TREEVIEW ) )
+		role = AccessibilityRole::Tree;
+	else if ( widget->isType( UI_TYPE_TABLEVIEW ) )
+		role = AccessibilityRole::Table;
 	else if ( widget->isType( UI_TYPE_CHECKBOX ) )
 		role = AccessibilityRole::CheckBox;
 	else if ( widget->isType( UI_TYPE_RADIOBUTTON ) )
@@ -154,8 +167,10 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 		 static_cast<const UICheckBox*>( widget )->isChecked() )
 		state |= AccessibilityState::Checked;
 	if ( widget->isType( UI_TYPE_RADIOBUTTON ) &&
-		 static_cast<const UIRadioButton*>( widget )->isActive() )
+		 static_cast<const UIRadioButton*>( widget )->isActive() ) {
+		state |= AccessibilityState::Checked;
 		state |= AccessibilityState::Selected;
+	}
 	if ( widget->isType( UI_TYPE_SELECTBUTTON ) &&
 		 static_cast<const UISelectButton*>( widget )->isSelected() )
 		state |= AccessibilityState::Selected;
