@@ -37,6 +37,7 @@ class EE_API UISelectButton : public UIPushButton {
 	void setSelectOnClick( bool set );
 
 	bool hasSelectOnClick() const;
+
   protected:
 	Uint32 mSelectOnClickCbId{ 0 };
 

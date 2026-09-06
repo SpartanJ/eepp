@@ -684,10 +684,10 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( iconF ) {
 				setIcon( iconF->createDrawable(
 					eemax<size_t>( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom,
-									   PixelDensity::dpToPxI( 16 ) ) ) );
+								   PixelDensity::dpToPxI( 16 ) ) ) );
 			} else if ( DrawablePtr icon = StyleSheetSpecification::instance()
-										->getDrawableImageParser()
-										.createDrawable( val, getPixelsSize(), this ) ) {
+											   ->getDrawableImageParser()
+											   .createDrawable( val, getPixelsSize(), this ) ) {
 				setIcon( std::move( icon ) );
 			}
 			break;

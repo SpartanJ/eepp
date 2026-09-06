@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <eepp/core/small_vector.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -23,6 +24,8 @@ namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
+class AccessibilityWidgetResolver;
+struct AccessibilityProperties;
 
 struct MarginAuto {
 	static constexpr auto Left = ( 1 << 0 );
@@ -72,6 +75,34 @@ class EE_API UIWidget : public UINode {
 	static UIWidget* NewWithTag( const std::string& tag );
 
 	virtual ~UIWidget();
+
+	AccessibilityRole getAccessibilityRole() const;
+
+	String getAccessibilityName() const;
+
+	String getAccessibilityDescription() const;
+
+	String getAccessibilityValue() const;
+
+	AccessibilityRangeInfo getAccessibilityRange() const;
+
+	AccessibilityState getAccessibilityState() const;
+
+	AccessibilityActions getAccessibilityActions() const;
+
+	bool performAccessibilityAction( const AccessibilityActionRequest& request );
+
+	bool isAccessibilityElement() const;
+
+	bool isAccessibilityHidden() const;
+
+	UIWidget* setAccessibilityRole( AccessibilityRole role );
+
+	UIWidget* setAccessibilityLabel( const String& label );
+
+	UIWidget* setAccessibilityDescription( const String& description );
+
+	UIWidget* setAccessibilityHidden( bool hidden );
 
 	/**
 	 * @brief Gets the widget type identifier.
@@ -1510,6 +1541,7 @@ class EE_API UIWidget : public UINode {
 	friend class UISceneNode;
 	friend class UIEventDispatcher;
 	friend class UILayout;
+	friend class AccessibilityWidgetResolver;
 
 	std::string mTag;
 	UITheme* mTheme;
@@ -1902,6 +1934,18 @@ class EE_API UIWidget : public UINode {
 	void reloadFontFamily();
 
 	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
+
+	AccessibilityProperties& ensureAccessibilityProperties();
+
+	AccessibilityRole resolveAccessibilityRole( AccessibilityRole defaultRole ) const;
+
+	String resolveAccessibilityName( const String& defaultName = String() ) const;
+
+	String resolveAccessibilityDescription() const;
+
+	void notifyAccessibilityEvent( AccessibilityEvent event );
+
+	AccessibilityProperties* mAccessibilityProperties{ nullptr };
 };
 
 }} // namespace EE::UI

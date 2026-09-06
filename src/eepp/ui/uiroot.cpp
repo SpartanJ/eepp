@@ -1,4 +1,6 @@
 #include <eepp/ui/uiroot.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 

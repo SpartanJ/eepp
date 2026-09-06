@@ -39,6 +39,7 @@ void UISelectButton::select() {
 
 		sendCommonEvent( Event::OnSelectionChanged );
 		onValueChange();
+		notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 	}
 }
 
@@ -52,6 +53,7 @@ void UISelectButton::unselect() {
 
 		sendCommonEvent( Event::OnSelectionChanged );
 		onValueChange();
+		notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 	}
 
 	popState( UIState::StateSelected );

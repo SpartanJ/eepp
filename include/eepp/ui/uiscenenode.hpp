@@ -41,6 +41,7 @@ class UIWindow;
 class UILayout;
 class UIIcon;
 class UIRoot;
+class AccessibilityManager;
 
 struct NavigationRequest {
 	URI uri;
@@ -482,6 +483,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @return Pointer to the root UIWidget.
 	 */
 	UIWidget* getRoot() const;
+
+	/** Lazily creates and returns the live accessibility query resolver. */
+	AccessibilityManager* getAccessibilityManager();
+
+	const AccessibilityManager* getAccessibilityManager() const;
 
 	/**
 	 * @brief Invalidates the style of a widget.
@@ -962,6 +968,7 @@ class EE_API UISceneNode : public SceneNode {
 	static void finishAsyncResourceMainThreadQueueShutdown();
 
 	UIRoot* mRoot{ nullptr };
+	std::unique_ptr<AccessibilityManager> mAccessibilityManager;
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;

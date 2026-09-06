@@ -138,6 +138,7 @@ void UIRadioButton::switchState() {
 }
 
 void UIRadioButton::setActive( const bool& active ) {
+	const bool wasActive = mActive;
 	if ( !active ) {
 		if ( checkActives() ) {
 			mActiveButton->setVisible( false );
@@ -180,6 +181,9 @@ void UIRadioButton::setActive( const bool& active ) {
 			tChild = tChild->getNextNode();
 		}
 	}
+
+	if ( wasActive != mActive )
+		notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 }
 
 bool UIRadioButton::checkActives() {

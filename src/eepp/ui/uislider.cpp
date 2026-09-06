@@ -362,6 +362,7 @@ void UISlider::setValue( Float val, bool emitEvent ) {
 
 		if ( emitEvent )
 			onValueChange();
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 	}
 }
 

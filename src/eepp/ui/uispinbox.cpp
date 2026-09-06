@@ -174,8 +174,10 @@ UISpinBox* UISpinBox::setValue( const double& val ) {
 	}
 	mModifyingVal = false;
 
-	if ( valueChanged )
+	if ( valueChanged ) {
 		onValueChange();
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	}
 	return this;
 }
 

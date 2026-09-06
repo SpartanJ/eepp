@@ -1,0 +1,19 @@
+#include "accessibilitybackend.hpp"
+
+namespace EE { namespace UI {
+
+class NullAccessibilityBackend final : public AccessibilityBackend {
+  public:
+	bool isAvailable() const { return false; }
+
+	void onEvent( const AccessibilityPendingEvent& ) {}
+};
+
+#if EE_PLATFORM != EE_PLATFORM_LINUX && EE_PLATFORM != EE_PLATFORM_FREEBSD && \
+	EE_PLATFORM != EE_PLATFORM_WIN
+std::unique_ptr<AccessibilityBackend> createAccessibilityBackend( AccessibilityManager& ) {
+	return std::make_unique<NullAccessibilityBackend>();
+}
+#endif
+
+}} // namespace EE::UI

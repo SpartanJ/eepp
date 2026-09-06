@@ -13,6 +13,7 @@
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -166,6 +167,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mRoot->enableReportSizeChangeToChildren();
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
+	mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	mUIThemeManager->setResourceScope( mResourceScope );
 
 	resizeNode( mWindow );
@@ -1174,6 +1176,8 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
+	if ( mAccessibilityManager )
+		mAccessibilityManager->update();
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
 	drainAsyncResourceMainThreadQueue();
@@ -1231,6 +1235,8 @@ void UISceneNode::update( const Time& elapsed ) {
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
+	if ( mAccessibilityManager && node->isWidget() )
+		mAccessibilityManager->onWidgetDelete( node->asType<UIWidget>() );
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
 
@@ -1267,6 +1273,16 @@ void UISceneNode::setTheme( UITheme* theme, Node* to ) {
 
 UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
+}
+
+AccessibilityManager* UISceneNode::getAccessibilityManager() {
+	if ( !mAccessibilityManager )
+		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	return mAccessibilityManager.get();
+}
+
+const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
+	return mAccessibilityManager.get();
 }
 
 template <typename DirtyContainer>

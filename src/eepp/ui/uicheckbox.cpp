@@ -168,6 +168,7 @@ UICheckBox* UICheckBox::setChecked( const bool& checked ) {
 	alignFix();
 
 	onValueChange();
+	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 
 	return this;
 }

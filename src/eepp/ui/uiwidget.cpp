@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
@@ -26,6 +28,14 @@
 using namespace EE::Window;
 
 namespace EE { namespace UI {
+
+struct AccessibilityProperties {
+	AccessibilityRole role{ AccessibilityRole::None };
+	String label;
+	String description;
+	bool roleSet{ false };
+	bool hidden{ false };
+};
 
 Uint32 UIWidget::getDefaultTextHints() const {
 	const UISceneNode* sceneNode = getUISceneNode();
@@ -113,6 +123,115 @@ UIWidget::~UIWidget() {
 		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
+	eeSAFE_DELETE( mAccessibilityProperties );
+}
+
+AccessibilityRole UIWidget::getAccessibilityRole() const {
+	return AccessibilityWidgetResolver::getRole( this );
+}
+
+AccessibilityRole UIWidget::resolveAccessibilityRole( AccessibilityRole defaultRole ) const {
+	if ( mAccessibilityProperties ) {
+		if ( mAccessibilityProperties->hidden )
+			return AccessibilityRole::None;
+		if ( mAccessibilityProperties->roleSet )
+			return mAccessibilityProperties->role;
+	}
+	return defaultRole;
+}
+
+String UIWidget::getAccessibilityName() const {
+	return AccessibilityWidgetResolver::getName( this );
+}
+
+String UIWidget::getAccessibilityDescription() const {
+	return AccessibilityWidgetResolver::getDescription( this );
+}
+
+String UIWidget::getAccessibilityValue() const {
+	return AccessibilityWidgetResolver::getValue( this );
+}
+
+AccessibilityRangeInfo UIWidget::getAccessibilityRange() const {
+	return AccessibilityWidgetResolver::getRange( this );
+}
+
+AccessibilityState UIWidget::getAccessibilityState() const {
+	return AccessibilityWidgetResolver::getState( this );
+}
+
+AccessibilityActions UIWidget::getAccessibilityActions() const {
+	return AccessibilityWidgetResolver::getActions( this );
+}
+
+bool UIWidget::performAccessibilityAction( const AccessibilityActionRequest& request ) {
+	return AccessibilityWidgetResolver::performAction( this, request );
+}
+
+String UIWidget::resolveAccessibilityName( const String& defaultName ) const {
+	return mAccessibilityProperties && !mAccessibilityProperties->label.empty()
+			   ? mAccessibilityProperties->label
+			   : defaultName;
+}
+
+String UIWidget::resolveAccessibilityDescription() const {
+	return mAccessibilityProperties ? mAccessibilityProperties->description : String();
+}
+
+bool UIWidget::isAccessibilityElement() const {
+	return getAccessibilityRole() != AccessibilityRole::None;
+}
+
+bool UIWidget::isAccessibilityHidden() const {
+	return mAccessibilityProperties && mAccessibilityProperties->hidden;
+}
+
+UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
+	auto& properties = ensureAccessibilityProperties();
+	properties.role = role;
+	properties.roleSet = true;
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityLabel( const String& label ) {
+	ensureAccessibilityProperties().label = label;
+	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityDescription( const String& description ) {
+	ensureAccessibilityProperties().description = description;
+	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityHidden( bool hidden ) {
+	ensureAccessibilityProperties().hidden = hidden;
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	return this;
+}
+
+AccessibilityProperties& UIWidget::ensureAccessibilityProperties() {
+	if ( !mAccessibilityProperties )
+		mAccessibilityProperties = eeNew( AccessibilityProperties, () );
+	return *mAccessibilityProperties;
+}
+
+void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
+	if ( !mUISceneNode )
+		return;
+	auto manager = mUISceneNode->getAccessibilityManager();
+	if ( !manager || !manager->hasActiveNativeClients() )
+		return;
+	UIWidget* target = this;
+	while ( target && !target->isAccessibilityElement() ) {
+		Node* parent = target->getParent();
+		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+	}
+	if ( !target )
+		target = mUISceneNode->getRoot();
+	manager->notify( manager->getNodeRef( target ), event );
 }
 
 void UIWidget::updateAnchorsDistances() {
@@ -420,6 +539,7 @@ UITooltip* UIWidget::createTooltip() {
 }
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	UINode::onChildCountChange( child, removed );
 
 	if ( removed && child->isWidget() ) {
@@ -1425,6 +1545,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 }
 
 Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
 	pushState( UIState::StateFocusWithin );
 	sendCommonEvent( Event::OnFocusWithin );
 
@@ -1441,6 +1562,7 @@ Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
 }
 
 Uint32 UIWidget::onFocusLoss() {
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
 	popState( UIState::StateFocusWithin );
 	sendCommonEvent( Event::OnFocusWithinLoss );
 
