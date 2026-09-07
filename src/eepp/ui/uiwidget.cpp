@@ -1557,8 +1557,8 @@ const Uint32& UIWidget::getStylePreviousState() const {
 	return NULL != mStyle ? mStyle->getPreviousState() : mState;
 }
 
-std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::findAllByClass( const std::string& className ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && hasClass( className ) && !inClosingTree() ) {
 		widgets.push_back( this );
@@ -1568,8 +1568,7 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets =
-				child->asType<UIWidget>()->findAllByClass( className );
+			WidgetQueryResult foundWidgets = child->asType<UIWidget>()->findAllByClass( className );
 
 			if ( !foundWidgets.empty() )
 				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
@@ -1581,8 +1580,8 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 	return widgets;
 }
 
-std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::findAllByTag( const std::string& tag ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && getElementTag() == tag && !inClosingTree() ) {
 		widgets.push_back( this );
@@ -1592,7 +1591,7 @@ std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
+			WidgetQueryResult foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
 
 			if ( !foundWidgets.empty() )
 				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
@@ -1667,8 +1666,8 @@ UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
 	return NULL;
 }
 
-std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && !inClosingTree() && selector.select( this ) ) {
 		widgets.push_back( this );
@@ -1678,7 +1677,7 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets =
+			WidgetQueryResult foundWidgets =
 				child->asType<UIWidget>()->querySelectorAll( selector );
 
 			if ( !foundWidgets.empty() )
@@ -1714,7 +1713,7 @@ UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
 
-std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector ) {
+WidgetQueryResult UIWidget::querySelectorAll( const std::string& selector ) {
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 

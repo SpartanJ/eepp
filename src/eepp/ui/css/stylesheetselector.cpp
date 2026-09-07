@@ -237,10 +237,10 @@ bool StyleSheetSelector::selectComplex( UIWidget* element, const bool& applyPseu
 	return true;
 }
 
-std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element,
-															   bool applyPseudo ) const {
-	static std::vector<UIWidget*> EMPTY_ELEMENTS;
-	std::vector<UIWidget*> elements;
+SmallVector<UIWidget*, 8> StyleSheetSelector::getRelatedElements( UIWidget* element,
+																  bool applyPseudo ) const {
+	static SmallVector<UIWidget*, 8> EMPTY_ELEMENTS;
+	SmallVector<UIWidget*, 8> elements;
 	if ( mSelectorRules.empty() )
 		return elements;
 

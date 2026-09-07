@@ -123,7 +123,7 @@ template <typename T> class UIProperty {
 		}
 
 		/** @return All currently connected widgets, or an empty vector after expiration. */
-		std::vector<UIWidget*> widgets() const {
+		SmallVector<UIWidget*, 8> widgets() const {
 			auto state = mState.lock();
 			if ( !state || !state->property || !state->property->databind().isInitialized() )
 				return {};

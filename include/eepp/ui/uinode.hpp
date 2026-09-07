@@ -1516,7 +1516,13 @@ class EE_API UINode : public Node {
 	/** @brief Get a widget's computed absolute font size in pixels. */
 	Float getAbsoluteFontSize( const UIWidget* widget ) const;
 
+	/** Returns true if the node is currently being created, this state is not used by all node
+	 * types.
+	 */
 	bool isCreatingNode() const;
+
+	/** Forces a left mouse click event over the node */
+	void click();
 
   protected:
 	Vector2f mDpPos;

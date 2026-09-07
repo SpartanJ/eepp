@@ -581,8 +581,7 @@ void UIStyle::subscribeNonCacheableStyles() {
 		return;
 	for ( auto& style : mGlobalDefinition->getStyles() ) {
 		if ( !style->getSelector().isCacheable() ) {
-			std::vector<UIWidget*> elements =
-				style->getSelector().getRelatedElements( mWidget, false );
+			auto elements = style->getSelector().getRelatedElements( mWidget, false );
 
 			if ( !elements.empty() ) {
 				for ( auto& element : elements ) {

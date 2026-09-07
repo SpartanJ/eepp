@@ -23,6 +23,7 @@ namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
+class UIWidget;
 
 struct MarginAuto {
 	static constexpr auto Left = ( 1 << 0 );
@@ -30,6 +31,8 @@ struct MarginAuto {
 	static constexpr auto Top = ( 1 << 2 );
 	static constexpr auto Bottom = ( 1 << 3 );
 };
+
+using WidgetQueryResult = SmallVector<UIWidget*, 8>;
 
 /**
  * @brief Base class for all UI widgets in the eepp framework.
@@ -1118,7 +1121,7 @@ class EE_API UIWidget : public UINode {
 	 * @param className The CSS class to search for.
 	 * @return Vector of matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> findAllByClass( const std::string& className );
+	WidgetQueryResult findAllByClass( const std::string& className );
 
 	/**
 	 * @brief Finds all widgets by CSS tag.
@@ -1128,7 +1131,7 @@ class EE_API UIWidget : public UINode {
 	 * @param tag The CSS tag to search for.
 	 * @return Vector of matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> findAllByTag( const std::string& tag );
+	WidgetQueryResult findAllByTag( const std::string& tag );
 
 	/**
 	 * @brief Finds a widget by CSS class.
@@ -1190,7 +1193,7 @@ class EE_API UIWidget : public UINode {
 	 * @param selector The CSS selector to use.
 	 * @return Vector of all matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+	WidgetQueryResult querySelectorAll( const CSS::StyleSheetSelector& selector );
 
 	/**
 	 * @brief Queries all widgets using a CSS selector string.
@@ -1200,7 +1203,7 @@ class EE_API UIWidget : public UINode {
 	 * @param selector The CSS selector string to use.
 	 * @return Vector of all matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
+	WidgetQueryResult querySelectorAll( const std::string& selector );
 
 	/**
 	 * @brief Gets a property value as a string.
