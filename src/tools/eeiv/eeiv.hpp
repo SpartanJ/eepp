@@ -69,6 +69,7 @@ class App {
 	void updateSlideShow();
 	void toggleHelp();
 	void fitImage();
+	void resetImageZoom();
 	Sprite* getImageSprite() const;
 	void processDroppedFiles();
 
