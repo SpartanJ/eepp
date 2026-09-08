@@ -680,6 +680,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
+	UIWindow* mMaximizedTabWidgetWindow{ nullptr };
+	UITabWidget* mMaximizedTabWidget{ nullptr };
+	UINodeLink* mMaximizedTabWidgetLink{ nullptr };
 	UITextView* mDocInfo{ nullptr };
 	std::string mDocInfoLineAbbr;
 	std::string mDocInfoColAbbr;

@@ -291,6 +291,7 @@ is hover a word that represents a color.</string>
 	<string name="escape_sequence_tooltip">Replace \, \t, \n, \r and (Unicode characters</string>
 	<string name="escape_sequences">Escape Sequences</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="enable_exclusive_mode">Enable Exclusive Mode</string>
 	<string name="executable_to_run">Executable to Run</string>
 	<string name="execute_dir_in_terminal">Open directory in terminal</string>
 	<string name="execute_in_terminal">Execute in terminal</string>

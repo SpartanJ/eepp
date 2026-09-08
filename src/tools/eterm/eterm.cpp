@@ -3,6 +3,7 @@
 #include <eepp/ee.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
+#include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -40,39 +41,76 @@ struct TerminalLaunchConfig {
 	bool closeOnExit{ false };
 };
 
-EE::Window::Window* appWindow{ nullptr };
-UISceneNode* scene{ nullptr };
-UILinearLayout* mainLayout{ nullptr };
-UITabWidgetSplitter* tabSplitter{ nullptr };
-FontTrueType* terminalFont{ nullptr };
-UIIcon* terminalIcon{ nullptr };
-UIMessageBox* closeDialog{ nullptr };
-UIWidget* closeDialogWidget{ nullptr };
-TerminalLaunchConfig terminalConfig;
-std::map<std::string, TerminalColorScheme> terminalColorSchemes;
-const TerminalColorScheme* selectedColorScheme{ nullptr };
-Float terminalFontSize{ 12 };
-bool warnBeforeClose{ false };
-bool closeApproved{ false };
-bool benchmarkMode{ false };
-Clock secondsCounter;
-SmallVector<UITab*, 8> pendingExitCloseTabs;
-
-void updateWindowTitle();
-
-class TerminalSplitterClient : public UITabWidgetSplitter::Client {
+class EtermApp {
   public:
-	void onTabCreated( UITab* tab, UIWidget* ) override {
-		if ( terminalIcon )
-			tab->setIcon( terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
-	}
+	int run( int argc, char* argv[] );
 
-	void onWidgetFocusChange( UIWidget* ) override { updateWindowTitle(); }
+	class TerminalSplitterClient : public UITabWidgetSplitter::Client {
+	  public:
+		explicit TerminalSplitterClient( EtermApp& app ) : mApp( app ) {}
+
+		void onTabCreated( UITab* tab, UIWidget* ) override;
+		void onWidgetFocusChange( UIWidget* ) override;
+
+	  private:
+		EtermApp& mApp;
+	};
+
+  private:
+	std::string getResourcePath() const;
+	String i18n( const std::string& key, const String& defaultValue ) const;
+	void loadColorSchemes( const std::string& resPath );
+	static UITerminal* terminalFromTab( UITab* tab );
+	void updateWindowTitle();
+	bool hasTerminals() const;
+	static bool hasRunningChildren( UITab* tab );
+	void closeTab( UITab* tab );
+	void queueExitCloseTab( UITab* tab );
+	void queueExitedTabs();
+	void requestCloseTab( UITab* tab );
+	void renameSession( UITerminal* terminal );
+	void maximizeTabWidget( UITabWidget* tabWidget );
+	void restoreMaximizedTabWidget();
+	void configureTab( UITab* tab );
+	UITerminal* createTerminal( UITabWidget* target = nullptr );
+	UITerminal* createTerminalSplit( SplitDirection direction, UITerminal* terminal );
+	void addTabKeyBindings( UITerminal* terminal );
+	bool closeWindow( EE::Window::Window* );
+
+	EE::Window::Window* appWindow{ nullptr };
+	UISceneNode* scene{ nullptr };
+	UILinearLayout* mainLayout{ nullptr };
+	UITabWidgetSplitter* tabSplitter{ nullptr };
+	FontTrueType* terminalFont{ nullptr };
+	UIIcon* terminalIcon{ nullptr };
+	UIMessageBox* closeDialog{ nullptr };
+	UIWidget* closeDialogWidget{ nullptr };
+	UIWindow* maximizedTabWidgetWindow{ nullptr };
+	UITabWidget* maximizedTabWidget{ nullptr };
+	UINodeLink* maximizedTabWidgetLink{ nullptr };
+	TerminalLaunchConfig terminalConfig;
+	std::map<std::string, TerminalColorScheme> terminalColorSchemes;
+	const TerminalColorScheme* selectedColorScheme{ nullptr };
+	Float terminalFontSize{ 12 };
+	bool warnBeforeClose{ false };
+	bool closeApproved{ false };
+	bool benchmarkMode{ false };
+	Clock secondsCounter;
+	SmallVector<UITab*, 8> pendingExitCloseTabs;
+	TerminalSplitterClient splitterClient{ *this };
 };
 
-TerminalSplitterClient splitterClient;
+void EtermApp::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* ) {
+	if ( mApp.terminalIcon )
+		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	mApp.configureTab( tab );
+}
 
-std::string getResourcePath() {
+void EtermApp::TerminalSplitterClient::onWidgetFocusChange( UIWidget* ) {
+	mApp.updateWindowTitle();
+}
+
+std::string EtermApp::getResourcePath() const {
 	std::string resPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( String::contains( resPath, "ecode.app" ) ) {
@@ -92,7 +130,11 @@ std::string getResourcePath() {
 	return resPath;
 }
 
-void loadColorSchemes( const std::string& resPath ) {
+String EtermApp::i18n( const std::string& key, const String& defaultValue ) const {
+	return scene ? scene->i18n( key, defaultValue ) : defaultValue;
+}
+
+void EtermApp::loadColorSchemes( const std::string& resPath ) {
 	auto colorSchemes =
 		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
 	const std::string configColorSchemesPath =
@@ -111,16 +153,16 @@ void loadColorSchemes( const std::string& resPath ) {
 	}
 }
 
-UITerminal* terminalFromTab( UITab* tab ) {
+UITerminal* EtermApp::terminalFromTab( UITab* tab ) {
 	return tab && tab->getOwnedWidget() && tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL )
 			   ? tab->getOwnedWidget()->asType<UITerminal>()
 			   : nullptr;
 }
 
-void updateWindowTitle() {
+void EtermApp::updateWindowTitle() {
 	if ( !appWindow )
 		return;
-	std::string title{ "eterm" };
+	String title{ "eterm" };
 	if ( tabSplitter ) {
 		if ( auto* terminal = tabSplitter->getCurWidget() &&
 									  tabSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL )
@@ -134,12 +176,12 @@ void updateWindowTitle() {
 	if ( benchmarkMode ) {
 		title += " - ";
 		title += String::toString( appWindow->getFPS() );
-		title += " FPS";
+		title += " " + i18n( "fps", "FPS" );
 	}
 	appWindow->setTitle( title );
 }
 
-bool hasTerminals() {
+bool EtermApp::hasTerminals() const {
 	bool found = false;
 	if ( tabSplitter )
 		tabSplitter->forEachWidgetStoppable( [&found]( UIWidget* ) {
@@ -149,30 +191,30 @@ bool hasTerminals() {
 	return found;
 }
 
-bool hasRunningChildren( UITab* tab ) {
+bool EtermApp::hasRunningChildren( UITab* tab ) {
 	auto* terminal = terminalFromTab( tab );
 	return terminal && terminal->getTerm() &&
 		   Sys::processHasChildren( terminal->getTerm()->getProcessId() );
 }
 
-void closeTab( UITab* tab ) {
+void EtermApp::closeTab( UITab* tab ) {
 	if ( !tabSplitter || !tab || !tab->getOwnedWidget() )
 		return;
 	tabSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
 						   UITabWidget::FocusTabBehavior::Default );
 }
 
-void queueExitCloseTab( UITab* tab ) {
+void EtermApp::queueExitCloseTab( UITab* tab ) {
 	if ( tab && std::find( pendingExitCloseTabs.begin(), pendingExitCloseTabs.end(), tab ) ==
 					pendingExitCloseTabs.end() ) {
 		pendingExitCloseTabs.emplace_back( tab );
 	}
 }
 
-void queueExitedTabs() {
+void EtermApp::queueExitedTabs() {
 	if ( !terminalConfig.closeOnExit )
 		return;
-	tabSplitter->forEachTab( []( UITab* tab ) {
+	tabSplitter->forEachTab( [this]( UITab* tab ) {
 		auto* terminal = terminalFromTab( tab );
 		if ( !terminal || !terminal->getTerm() )
 			return;
@@ -183,7 +225,7 @@ void queueExitedTabs() {
 	} );
 }
 
-void requestCloseTab( UITab* tab ) {
+void EtermApp::requestCloseTab( UITab* tab ) {
 	if ( !warnBeforeClose || !hasRunningChildren( tab ) ) {
 		closeTab( tab );
 		return;
@@ -192,14 +234,15 @@ void requestCloseTab( UITab* tab ) {
 		return;
 	closeDialog = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
-		"Are you sure you want to close this terminal?\nIt is still running a process." );
+		i18n( "close_terminal_running_process_confirm",
+			  "Are you sure you want to close this terminal?\nIt is still running a process." ) );
 	closeDialogWidget = tab->getOwnedWidget()->asType<UIWidget>();
 	closeDialog->setTitle( "eterm" );
-	closeDialog->on( Event::OnConfirm, []( const Event* ) {
+	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
 		if ( closeDialogWidget && tabSplitter->ownedWidgetExists( closeDialogWidget ) )
 			tabSplitter->closeTab( closeDialogWidget, UITabWidget::FocusTabBehavior::Default );
 	} );
-	closeDialog->on( Event::OnClose, []( const Event* ) {
+	closeDialog->on( Event::OnClose, [this]( const Event* ) {
 		closeDialog = nullptr;
 		closeDialogWidget = nullptr;
 	} );
@@ -207,9 +250,194 @@ void requestCloseTab( UITab* tab ) {
 	closeDialog->showWhenReady();
 }
 
-void addTabKeyBindings( UITerminal* terminal, UITab* tab );
+void EtermApp::renameSession( UITerminal* terminal ) {
+	if ( !terminal )
+		return;
+	auto* msgBox =
+		UIMessageBox::New( UIMessageBox::INPUT, i18n( "new_terminal_name", "New terminal name:" ) );
+	msgBox->setTitle( "eterm" );
+	msgBox->getTextInput()->setHint( i18n( "any_name_ellipsis", "Any name..." ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->on( Event::OnConfirm, [msgBox, terminal]( const Event* ) {
+		terminal->setTitle( msgBox->getTextInput()->getText().toUtf8() );
+		msgBox->close();
+		terminal->setFocus();
+	} );
+	msgBox->showWhenReady();
+}
 
-UITerminal* createTerminal( UITabWidget* target = nullptr ) {
+void EtermApp::maximizeTabWidget( UITabWidget* tabWidget ) {
+	if ( !tabWidget || scene->getRoot()->hasChild( "detached_tab_widget_win" ) )
+		return;
+
+	UIWindow::StyleConfig winCfg;
+	winCfg.WinFlags = UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL | UI_WIN_NO_DECORATION;
+	auto* win = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winCfg );
+	maximizedTabWidgetWindow = win;
+	maximizedTabWidget = tabWidget;
+	win->setPixelsSize( scene->getPixelsSize() - PixelDensity::dpToPx( 64 ) );
+	win->setId( "detached_tab_widget_win" );
+	win->getModalWidget()->onClick( [this]( auto ) { restoreMaximizedTabWidget(); } );
+	win->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	win->toFront();
+	win->center();
+	win->setKeyBindingCommand( "close-maximized-tab-widget",
+							   [this] { restoreMaximizedTabWidget(); } );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "close-maximized-tab-widget" );
+	win->setCheckEphemeralCloseFn( [this]( Node* focusNode ) {
+		if ( focusNode->isType( UI_TYPE_POPUPMENU ) )
+			return false;
+		if ( focusNode->getSceneNode()->isUISceneNode() ) {
+			auto* sceneNode = static_cast<UISceneNode*>( focusNode->getSceneNode() );
+			auto* widgetTreeView = sceneNode->getRoot()->hasChild( "widget-tree-view" );
+			if ( widgetTreeView &&
+				 ( focusNode == widgetTreeView || widgetTreeView->inParentTreeOf( focusNode ) ) )
+				return false;
+		}
+		return true;
+	} );
+	auto* tabWidgetParent = tabWidget->getParent();
+	const bool wasFirstSplit = tabWidgetParent->isType( UI_TYPE_SPLITTER ) &&
+							   tabWidgetParent->asType<UISplitter>()->getFirstWidget() == tabWidget;
+	auto* nodeLink = UINodeLink::NewLink( tabWidget );
+	maximizedTabWidgetLink = nodeLink;
+	if ( wasFirstSplit )
+		nodeLink->setClass( "was_first_split" );
+	tabWidget->setParent( win );
+	tabWidget->setId( "detached_tab_widget" );
+	tabWidget->setPixelsPosition( Vector2f::Zero );
+	tabWidget->setPixelsSize( win->getContainer()->getPixelsSize() );
+	tabWidget->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	if ( !tabWidget->inParentTreeOf( scene->getEventDispatcher()->getFocusNode() ) )
+		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
+	win->on( Event::OnWindowClose, [this]( auto ) { restoreMaximizedTabWidget(); } );
+	nodeLink->setParent( tabWidgetParent );
+	nodeLink->setId( "nodelink_tab_widget" );
+	if ( wasFirstSplit && tabWidgetParent->isType( UI_TYPE_SPLITTER ) )
+		tabWidgetParent->asType<UISplitter>()->swap();
+
+	auto* fullscreenImg = UIImage::New();
+	fullscreenImg->unsetFlags( UI_AUTO_SIZE );
+	fullscreenImg->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	fullscreenImg->setParent( win );
+	fullscreenImg->setSize( { 24, tabWidget->getTabBar()->getSize().getHeight() } );
+	fullscreenImg->setPosition( { tabWidget->getSize().getWidth() - 24, 0 } );
+	fullscreenImg->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	if ( auto* icon = scene->findIcon( "fullscreen" ) )
+		fullscreenImg->setDrawable( icon->createDrawable( PixelDensity::dpToPxI( 16 ) ) );
+	fullscreenImg->setVerticalAlign( UI_VALIGN_CENTER );
+	fullscreenImg->setHorizontalAlign( UI_HALIGN_CENTER );
+	fullscreenImg->addClass( "pseudo_anchor" );
+	fullscreenImg->toFront();
+	fullscreenImg->onClick( [this]( const Event* ) {
+		restoreMaximizedTabWidget();
+		appWindow->getCursorManager()->set( Cursor::SysType::SysArrow );
+	} );
+}
+
+void EtermApp::restoreMaximizedTabWidget() {
+	if ( !scene || !SceneManager::isActive() )
+		return;
+	if ( !maximizedTabWidgetLink || !maximizedTabWidget )
+		return;
+	auto* nodeLink = maximizedTabWidgetLink;
+	auto* curTabWidget = maximizedTabWidget;
+	auto* win = maximizedTabWidgetWindow;
+	auto* splitterParent = nodeLink->getParent();
+	nodeLink->setParent( scene );
+	curTabWidget->setParent( splitterParent );
+	curTabWidget->setAnchors( 0 );
+	curTabWidget->setId( "" );
+	if ( nodeLink->hasClass( "was_first_split" ) && splitterParent->isType( UI_TYPE_SPLITTER ) ) {
+		splitterParent->asType<UISplitter>()->swap();
+	}
+	nodeLink->close();
+	maximizedTabWidgetLink = nullptr;
+	maximizedTabWidget = nullptr;
+	maximizedTabWidgetWindow = nullptr;
+	if ( win && !win->isClosing() )
+		win->close();
+}
+
+void EtermApp::configureTab( UITab* tab ) {
+	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
+		auto* menu = menuEvent->getMenu();
+		auto* clickedTab = event->getNode()->asType<UITab>();
+		auto* terminal = terminalFromTab( clickedTab );
+		if ( !menu || !terminal || !clickedTab->getTabWidget() )
+			return;
+
+		const auto addItem = [this, menu]( const String& text, const std::string& icon,
+										   const std::string& command ) {
+			DrawablePtr drawable;
+			if ( auto* menuIcon = scene->findIcon( icon ) )
+				drawable = menuIcon->createDrawable( PixelDensity::dpToPxI( 12 ) );
+			auto* item = menu->add( text, std::move( drawable ) );
+			item->setId( command );
+			return item;
+		};
+		addItem( i18n( "close_tab", "Close Tab" ), "document-close", "close-tab" );
+		addItem( i18n( "close_other_tabs", "Close Other Tabs" ), "", "close-other-tabs" );
+		addItem( i18n( "close_clean_tabs", "Close Clean Tabs" ), "", "close-clean-tabs" );
+		addItem( i18n( "close_all_tabs", "Close All Tabs" ), "", "close-all-tabs" );
+		addItem( i18n( "close_tabs_to_the_left", "Close Tabs To The Left" ), "",
+				 "close-tabs-to-the-left" );
+		addItem( i18n( "close_tabs_to_the_right", "Close Tabs To The Right" ), "",
+				 "close-tabs-to-the-right" );
+
+		menu->addSeparator();
+		auto* exclusiveMode =
+			menu->addCheckBox( i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ),
+							   terminal->getExclusiveMode() );
+		exclusiveMode->setId( UITerminal::getExclusiveModeToggleCommandName() );
+		addItem( i18n( "rename_session", "Rename Session" ), "", "terminal-rename" );
+
+		menu->addSeparator();
+		const bool canMove = clickedTab->getTabWidget()->getTabCount() > 1;
+		addItem( i18n( "move_tab_to_start", "Move Tab To Start" ), "window", "move-tab-to-start" )
+			->setEnabled( canMove );
+		addItem( i18n( "move_tab_to_end", "Move Tab To End" ), "window", "move-tab-to-end" )
+			->setEnabled( canMove );
+
+		menu->addSeparator();
+		addItem( scene->getRoot()->hasChild( "detached_tab_widget_win" )
+					 ? i18n( "restore_maximized_tab_widget", "Restore Maximized Tab Widget" )
+					 : i18n( "maximize_tab_widget", "Maximize Tab Widget" ),
+				 "fullscreen",
+				 scene->getRoot()->hasChild( "detached_tab_widget_win" )
+					 ? "restore-maximized-tab-widget"
+					 : "maximize-tab-widget" );
+
+		menu->on( Event::OnItemClicked, [this, clickedTab, terminal]( const Event* itemEvent ) {
+			if ( !itemEvent->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			const auto& command = itemEvent->getNode()->getId();
+			auto* previous = tabSplitter->getCurWidget();
+			tabSplitter->setCurrentWidget( terminal );
+
+			if ( command == "close-clean-tabs" ) {
+				tabSplitter->tryCloseAllTabs( terminal, UITabWidget::FocusTabBehavior::Default );
+			} else if ( command == "move-tab-to-start" ) {
+				clickedTab->getTabWidget()->moveTab( clickedTab, 0 );
+			} else if ( command == "move-tab-to-end" ) {
+				clickedTab->getTabWidget()->moveTab( clickedTab,
+													 clickedTab->getTabWidget()->getTabCount() );
+			} else if ( command == "maximize-tab-widget" ) {
+				maximizeTabWidget( clickedTab->getTabWidget() );
+			} else if ( command == "restore-maximized-tab-widget" ) {
+				restoreMaximizedTabWidget();
+			} else {
+				terminal->execute( command );
+			}
+
+			if ( previous && tabSplitter->ownedWidgetExists( previous ) )
+				tabSplitter->setCurrentWidget( previous );
+		} );
+	} );
+}
+
+UITerminal* EtermApp::createTerminal( UITabWidget* target ) {
 	if ( !target && tabSplitter ) {
 		auto* current = tabSplitter->getCurWidget();
 		target = current ? tabSplitter->tabWidgetFromWidget( current )
@@ -239,14 +467,17 @@ UITerminal* createTerminal( UITabWidget* target = nullptr ) {
 	if ( selectedColorScheme )
 		terminal->setColorScheme( *selectedColorScheme );
 
-	auto* tab = tabSplitter->createWidgetInTabWidget( target, terminal, "Terminal" ).first;
-	addTabKeyBindings( terminal, tab );
-	terminal->on( Event::OnTitleChange, [tab, terminal]( const Event* ) {
-		tab->setText( terminal->getTitle().empty() ? "Terminal" : terminal->getTitle() );
+	auto* tab =
+		tabSplitter->createWidgetInTabWidget( target, terminal, i18n( "terminal", "Terminal" ) )
+			.first;
+	addTabKeyBindings( terminal );
+	terminal->on( Event::OnTitleChange, [this, tab, terminal]( const Event* ) {
+		tab->setText( terminal->getTitle().empty() ? i18n( "terminal", "Terminal" )
+												   : String( terminal->getTitle() ) );
 		if ( tabSplitter->getCurWidget() == terminal )
 			updateWindowTitle();
 	} );
-	terminal->getTerm()->pushEventCallback( [tab]( const TerminalDisplay::Event& event ) {
+	terminal->getTerm()->pushEventCallback( [this, tab]( const TerminalDisplay::Event& event ) {
 		if ( terminalConfig.closeOnExit && event.type == TerminalDisplay::EventType::PROCESS_EXIT )
 			queueExitCloseTab( tab );
 	} );
@@ -258,38 +489,48 @@ UITerminal* createTerminal( UITabWidget* target = nullptr ) {
 	return terminal;
 }
 
-UITerminal* createTerminalSplit( SplitDirection direction, UITerminal* terminal ) {
+UITerminal* EtermApp::createTerminalSplit( SplitDirection direction, UITerminal* terminal ) {
 	auto* source = terminal ? tabSplitter->tabWidgetFromWidget( terminal ) : nullptr;
 	auto* target = source ? tabSplitter->splitTabWidget( direction, source ) : nullptr;
 	return target ? createTerminal( target ) : nullptr;
 }
 
-void addTabKeyBindings( UITerminal* terminal, UITab* tab ) {
-	terminal->setCommand( "create-new-terminal", [] { createTerminal(); } );
-	terminal->setCommand( "close-tab", [tab] { requestCloseTab( tab ); } );
-	terminal->setCommand( "next-tab", [terminal] {
+void EtermApp::addTabKeyBindings( UITerminal* terminal ) {
+	tabSplitter->registerSplitterCommands( *terminal );
+	terminal->setCommand( "create-new-terminal", [this] { createTerminal(); } );
+	terminal->setCommand( "debug-widget-tree-view",
+						  [this] { UIWidgetInspector::create( scene ); } );
+	terminal->setCommand( "terminal-rename", [this, terminal] { renameSession( terminal ); } );
+	terminal->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [terminal] {
+		terminal->setExclusiveMode( !terminal->getExclusiveMode() );
+	} );
+	terminal->setCommand( "next-tab", [this, terminal] {
 		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( terminal ) )
 			tabs->focusNextTab();
 	} );
-	terminal->setCommand( "previous-tab", [terminal] {
+	terminal->setCommand( "previous-tab", [this, terminal] {
 		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( terminal ) )
 			tabs->focusPreviousTab();
 	} );
-	terminal->setCommand( "split-right",
-						  [terminal] { createTerminalSplit( SplitDirection::Right, terminal ); } );
-	terminal->setCommand( "split-bottom",
-						  [terminal] { createTerminalSplit( SplitDirection::Bottom, terminal ); } );
-	terminal->setCommand( "split-left",
-						  [terminal] { createTerminalSplit( SplitDirection::Left, terminal ); } );
-	terminal->setCommand( "split-top",
-						  [terminal] { createTerminalSplit( SplitDirection::Top, terminal ); } );
+	terminal->setCommand( "split-right", [this, terminal] {
+		createTerminalSplit( SplitDirection::Right, terminal );
+	} );
+	terminal->setCommand( "split-bottom", [this, terminal] {
+		createTerminalSplit( SplitDirection::Bottom, terminal );
+	} );
+	terminal->setCommand(
+		"split-left", [this, terminal] { createTerminalSplit( SplitDirection::Left, terminal ); } );
+	terminal->setCommand(
+		"split-top", [this, terminal] { createTerminalSplit( SplitDirection::Top, terminal ); } );
 	terminal->setCommand( "switch-to-previous-split",
-						  [terminal] { tabSplitter->switchPreviousSplit( terminal ); } );
+						  [this, terminal] { tabSplitter->switchPreviousSplit( terminal ); } );
 	terminal->setCommand( "switch-to-next-split",
-						  [terminal] { tabSplitter->switchNextSplit( terminal ); } );
+						  [this, terminal] { tabSplitter->switchNextSplit( terminal ); } );
 	terminal->addKeyBinding( { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
 							 "create-new-terminal" );
 	terminal->addKeyBinding( { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-tab" );
+	terminal->addKeyBinding( { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+							 "debug-widget-tree-view" );
 	terminal->addKeyBinding( { KEY_PAGEDOWN, KEYMOD_CTRL }, "next-tab" );
 	terminal->addKeyBinding( { KEY_PAGEUP, KEYMOD_CTRL }, "previous-tab" );
 	terminal->addKeyBinding( { KEY_TAB, KEYMOD_CTRL }, "next-tab" );
@@ -310,7 +551,7 @@ void addTabKeyBindings( UITerminal* terminal, UITab* tab ) {
 		"switch-to-next-split" );
 }
 
-bool closeWindow( EE::Window::Window* ) {
+bool EtermApp::closeWindow( EE::Window::Window* ) {
 	if ( closeApproved || !warnBeforeClose )
 		return true;
 	bool running = false;
@@ -321,13 +562,14 @@ bool closeWindow( EE::Window::Window* ) {
 		return false;
 	closeDialog = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
-		"Are you sure you want to close this window? It is still running a process." );
+		i18n( "close_window_running_process_confirm",
+			  "Are you sure you want to close this window? It is still running a process." ) );
 	closeDialog->setTitle( "eterm" );
-	closeDialog->on( Event::OnConfirm, []( const Event* ) {
+	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
 		closeApproved = true;
 		appWindow->close();
 	} );
-	closeDialog->on( Event::OnClose, []( const Event* ) {
+	closeDialog->on( Event::OnClose, [this]( const Event* ) {
 		closeDialog = nullptr;
 		closeDialogWidget = nullptr;
 	} );
@@ -336,11 +578,9 @@ bool closeWindow( EE::Window::Window* ) {
 	return false;
 }
 
-} // namespace
-
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+int EtermApp::run( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
-	Log::instance()->setLogToStdOut( true );
+	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 #endif
 	args::ArgumentParser parser( "eterm" );
@@ -407,6 +647,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "warn-before-closing",
 		"Prompts for confirmation if a program is still running when closing the terminal.",
 		{ "warn-before-closing" } );
+	args::Flag alwaysShowTabBar( parser, "always-show-tab-bar",
+								 "Always show the tab bar, even with a single tab.",
+								 { "always-show-tab-bar" } );
 	args::ValueFlag<size_t> initialTabs( parser, "tabs", "Number of initial terminal tabs",
 										 { "tabs" }, 1 );
 
@@ -476,6 +719,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
 	appWindow->setClearColor( RGB( 0, 0, 0 ) );
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	scene->combineStyleSheet( R"css(
+		TabWidget {
+			max-tab-width: 200dp;
+		}
+		Tab > Tab::Text {
+			text-overflow: ellipsis;
+		}
+		.pseudo_anchor {
+			tint: var(--floating-icon);
+			cursor: arrow;
+		}
+		.pseudo_anchor:hover {
+			tint: var(--primary);
+			cursor: hand;
+		}
+	)css" );
 
 	auto& resourceScope = *scene->getResourceScope();
 	auto remixIconFont = FontTrueType::New( "eterm-remixicon", resourceScope );
@@ -539,21 +799,29 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	mainLayout->setPixelsSize( appWindow->getSize().asFloat() );
 
 	tabSplitter = UITabWidgetSplitter::New( &splitterClient, scene );
-	tabSplitter->setHideTabBarOnSingleTab( true );
-	tabSplitter->setTabTryCloseCallback(
-		[]( UIWidget* widget, UITabWidget::FocusTabBehavior, std::function<void()> ) {
-			if ( warnBeforeClose ) {
-				auto* tab = tabSplitter->getTabFromWidget( widget );
-				if ( hasRunningChildren( tab ) ) {
-					requestCloseTab( tab );
-					return false;
-				}
+	tabSplitter->setHideTabBarOnSingleTab( !alwaysShowTabBar.Get() );
+	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {
+		restoreMaximizedTabWidget();
+		return true;
+	} );
+	tabSplitter->setTabTryCloseCallback( [this]( UIWidget* widget, UITabWidget::FocusTabBehavior,
+												 std::function<void()> ) {
+		if ( auto* detachedTabWidget = scene->getRoot()->find<UIWidget>( "detached_tab_widget" );
+			 widget && detachedTabWidget && detachedTabWidget->inParentTreeOf( widget ) ) {
+			restoreMaximizedTabWidget();
+		}
+		if ( warnBeforeClose ) {
+			auto* tab = tabSplitter->getTabFromWidget( widget );
+			if ( hasRunningChildren( tab ) ) {
+				requestCloseTab( tab );
+				return false;
 			}
-			return true;
-		} );
-	tabSplitter->setOnTabWidgetCreateCb( []( UITabWidget* tabs ) {
-		tabs->on( Event::OnTabSelected, []( const Event* ) { updateWindowTitle(); } );
-		tabs->on( Event::OnTabClosed, []( const Event* event ) {
+		}
+		return true;
+	} );
+	tabSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabs ) {
+		tabs->on( Event::OnTabSelected, [this]( const Event* ) { updateWindowTitle(); } );
+		tabs->on( Event::OnTabClosed, [this]( const Event* event ) {
 			auto* closedTab = static_cast<const TabEvent*>( event )->getTab();
 			pendingExitCloseTabs.erase(
 				std::remove( pendingExitCloseTabs.begin(), pendingExitCloseTabs.end(), closedTab ),
@@ -575,15 +843,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	for ( size_t tab = 0; tab < eemax( static_cast<size_t>( 1 ), initialTabs.Get() ); ++tab ) {
 		if ( !createTerminal( tabs ) ) {
-			appWindow->showMessageBox( EE::Window::Window::MessageBoxType::Error, "eterm",
-									   "Operating System not supported." );
+			appWindow->showMessageBox(
+				EE::Window::Window::MessageBoxType::Error, "eterm",
+				i18n( "operating_system_not_supported", "Operating System not supported." ) );
 			return EXIT_FAILURE;
 		}
 	}
 
-	appWindow->setCloseRequestCallback( &closeWindow );
+	appWindow->setCloseRequestCallback(
+		[this]( EE::Window::Window* window ) { return closeWindow( window ); } );
 	app.setShowMemoryManagerResult( true );
-	appWindow->runMainLoop( [] {
+	appWindow->runMainLoop( [this] {
 		appWindow->getInput()->update();
 		SceneManager::instance()->update();
 		queueExitedTabs();
@@ -609,4 +879,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 	} );
 	return EXIT_SUCCESS;
+}
+
+} // namespace
+
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	EtermApp app;
+	return app.run( argc, argv );
 }

@@ -223,6 +223,7 @@
 ,
  和 (Unicode字符</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="enable_exclusive_mode">启用独占模式</string>
 	<string name="execute_dir_in_terminal">在终端打开文件夹</string>
 	<string name="execute_in_terminal">在终端执行</string>
 	<string name="expand_all">Expand All</string>

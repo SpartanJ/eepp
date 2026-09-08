@@ -1876,7 +1876,10 @@ void TerminalDisplay::onSizeChange() {
 		mSession->resize( gridSize.getWidth(), gridSize.getHeight(),
 						  gridSize.getWidth() * cellSize.getWidth(),
 						  gridSize.getHeight() * cellSize.getHeight() );
-		mDirtyLines.resize( gridSize.getHeight(), 1 );
+		// Rendering must continue using the currently published snapshot until the worker
+		// publishes the resized grid. consumeSnapshot() updates mRows and mDirtyLines together;
+		// shrinking the dirty vector here leaves drawGrid() indexing it with the old mRows.
+		mDirtyLines.resize( std::max<std::size_t>( mRows, gridSize.getHeight() ), true );
 	}
 
 	if ( mFrameBuffer && ( mFrameBuffer->getWidth() < mSize.getWidth() ||
