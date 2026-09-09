@@ -54,40 +54,31 @@ UIWindow* SettingsPanel::create( App& app ) {
 		{ "uiFont", "appearance.fonts",
 		  app.i18n( "ui_font_and_size_ellipsis", "UI Font & Size..." ),
 		  app.i18n( "ui_font_desc", "Choose the proportional font used by the interface." ) },
-		app.i18n( "choose_font", "Choose Font..." ), [&app] { app.openFontPicker( true ); } );
+		app.i18n( "choose_font", "Choose Font..." ),
+		[&app] { app.settingsActions->openFontPicker( true ); } );
 	panel->addAction(
 		{ "terminalFont", "appearance.fonts",
 		  app.i18n( "terminal_font_and_size_ellipsis", "Terminal Font & Size..." ),
 		  app.i18n( "terminal_font_desc", "Choose the monospace font used by terminals." ) },
-		app.i18n( "choose_font", "Choose Font..." ), [&app] { app.openFontPicker( false ); } );
+		app.i18n( "choose_font", "Choose Font..." ),
+		[&app] { app.settingsActions->openFontPicker( false ); } );
 	panel->addAction(
 		{ "fallbackFont", "appearance.fonts",
 		  app.i18n( "fallback_font_ellipsis", "Fallback Font..." ),
 		  app.i18n( "fallback_font_desc", "Choose the font used for missing glyphs." ) },
 		app.i18n( "choose_font", "Choose Font..." ),
-		[&app] { app.openFontPicker( false, true ); } );
+		[&app] { app.settingsActions->openFontPicker( false, true ); } );
 	panel->addFloat(
 		{ "uiFontSize", "appearance.fonts", app.i18n( "ui_font_size", "UI Font Size" ),
 		  app.i18n( "ui_font_size_desc", "Set the font size used by the application UI." ) },
 		6, 72, 0.5, [&app] { return app.config->font.uiSize; },
-		[&app]( double value ) {
-			app.config->font.uiSize = value;
-			app.scene->getUIThemeManager()->setDefaultFontSize( value );
-			app.scene->getRoot()->reloadStyle( true, true, true, true, true );
-			app.savePreferences();
-		} );
+		[&app]( double value ) { app.settingsActions->setUIFontSize( value ); } );
 	panel->addFloat(
 		{ "terminalFontSize", "appearance.fonts",
 		  app.i18n( "terminal_font_size", "Terminal Font Size" ),
 		  app.i18n( "terminal_font_size_desc", "Set the default terminal font size." ) },
 		6, 72, 0.5, [&app] { return app.config->font.size; },
-		[&app]( double value ) {
-			app.config->font.size = value;
-			app.terminalFontSize = PixelDensity::dpToPx( value );
-			app.forEachTerminal(
-				[&app]( UITerminal* terminal ) { terminal->setFontSize( app.terminalFontSize ); } );
-			app.savePreferences();
-		} );
+		[&app]( double value ) { app.settingsActions->setTerminalFontSize( value ); } );
 	panel->addFloat(
 		{ "uiScaleFactor", "appearance.fonts", app.i18n( "ui_scale_factor", "UI Scale Factor" ),
 		  app.i18n( "ui_scale_factor_desc",
@@ -448,14 +439,11 @@ UIWindow* SettingsPanel::create( App& app ) {
 					} );
 
 	panel->build();
-	settingsWindow->setKeyBindingCommand( "closeWindow", [&app] {
-		if ( app.settingsWindow )
-			app.settingsWindow->closeWindow();
-	} );
+	settingsWindow->setKeyBindingCommand( "closeWindow",
+										  [settingsWindow] { settingsWindow->closeWindow(); } );
 	settingsWindow->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
 	settingsWindow->on( Event::OnWindowClose, [&app]( const Event* ) {
 		app.savePreferences();
-		app.settingsWindow = nullptr;
 		if ( app.tabSplitter && app.tabSplitter->getCurWidget() )
 			app.tabSplitter->getCurWidget()->setFocus();
 	} );

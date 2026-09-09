@@ -1,6 +1,4 @@
 #include "eterm.hpp"
-#include "settingspanel.hpp"
-
 #include <iostream>
 
 namespace eterm {
@@ -99,70 +97,6 @@ void App::createNewTerminal() {
 			createTerminal();
 			break;
 	}
-}
-
-void App::openFontPicker( bool uiFont, bool fallbackFont ) {
-	const Uint32 flags = UIFontPickerDialog::ShowStyle |
-						 ( fallbackFont ? 0 : UIFontPickerDialog::ShowSize ) |
-						 ( !uiFont && !fallbackFont ? UIFontPickerDialog::MonospaceOnly : 0 );
-	auto* dialog = UIFontPickerDialog::New( flags );
-	dialog->setTitle( i18n( "select_font", "Select Font" ) );
-	dialog->setCloseShortcut( KEY_ESCAPE );
-	std::string currentPath = uiFont		 ? config->font.uiPath
-							  : fallbackFont ? config->font.fallbackPath
-											 : config->font.path;
-	if ( !currentPath.empty() )
-		dialog->setSelectedFont( currentPath );
-	if ( !fallbackFont ) {
-		auto selection = dialog->getSelection();
-		selection.size = static_cast<Uint32>( uiFont ? config->font.uiSize : config->font.size );
-		dialog->setSelection( selection );
-	}
-	dialog->setOnFontPicked( [this, uiFont, fallbackFont]( const UIFontSelection& selection ) {
-		if ( selection.font.path.empty() )
-			return;
-		auto& resourceScope = *scene->getResourceScope();
-		if ( uiFont ) {
-			auto font = FontTrueType::New( "eterm-ui-font", resourceScope );
-			if ( font->loadFromFile( selection.font.path ) ) {
-				config->font.uiPath = selection.font.path;
-				config->font.uiSize = selection.size;
-				scene->getUIThemeManager()->setDefaultFont( font.get() );
-				scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
-				scene->getRoot()->reloadStyle( true, true, true, true, true );
-			}
-		} else if ( fallbackFont ) {
-			auto font = FontTrueType::New( "eterm-fallback-font", resourceScope );
-			if ( font->loadFromFile( selection.font.path ) ) {
-				config->font.fallbackPath = selection.font.path;
-				resourceScope.getFontService().addFallbackFont( std::move( font ) );
-			}
-		} else {
-			auto font = FontTrueType::New( "eterm-monospace", resourceScope );
-			if ( font->loadFromFile( selection.font.path ) ) {
-				config->font.path = selection.font.path;
-				config->font.size = selection.size;
-				terminalFont = font.get();
-				terminalFontSize = PixelDensity::dpToPx( config->font.size );
-				FontFamily::loadFromRegular( terminalFont );
-				forEachTerminal( [this]( UITerminal* terminal ) {
-					terminal->setFont( terminalFont );
-					terminal->setFontSize( terminalFontSize );
-				} );
-			}
-		}
-		savePreferences();
-	} );
-	dialog->show();
-}
-
-void App::showSettings() {
-	if ( settingsWindow ) {
-		settingsWindow->show();
-		settingsWindow->toFront();
-		return;
-	}
-	settingsWindow = eterm::SettingsPanel::create( *this );
 }
 
 void App::updateWindowTitle() {
@@ -448,7 +382,7 @@ void App::configureTab( UITab* tab ) {
 			} else if ( command == "restore-maximized-tab-widget" ) {
 				restoreMaximizedTabWidget();
 			} else if ( command == "open-settings" ) {
-				showSettings();
+				settingsActions->showSettings();
 			} else {
 				terminal->execute( command );
 			}
@@ -786,6 +720,7 @@ int App::run( int argc, char* argv[] ) {
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
 		return EXIT_FAILURE;
+	settingsActions = std::make_unique<SettingsActions>( this );
 	keybindingsPath = config->getConfigPath() + "keybindings.cfg";
 	loadKeybindings();
 	fileWatcher = std::make_unique<efsw::FileWatcher>();

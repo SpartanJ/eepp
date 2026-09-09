@@ -1971,6 +1971,8 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.x64.res" }
 		filter "system:linux or system:bsd"
 			links { "util" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter "system:haiku"
 			links { "bsd" }
 

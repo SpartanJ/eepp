@@ -1943,6 +1943,9 @@ solution "eepp"
 		if os.is_real("linux") then
 			links { "util" }
 		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		end
 		if os.is("haiku") then
 			links { "bsd" }
 		end

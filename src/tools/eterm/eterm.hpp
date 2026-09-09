@@ -1,12 +1,12 @@
 #pragma once
 
 #include "appconfig.hpp"
+#include "settingsactions.hpp"
 #include <args/args.hxx>
 #include <atomic>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/ee.hpp>
 #include <eepp/ui/iconmanager.hpp>
-#include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
@@ -60,6 +60,7 @@ class App : private efsw::FileWatchListener {
 
   private:
 	friend struct SettingsPanel;
+	friend class SettingsActions;
 
 	std::string getResourcePath() const;
 
@@ -100,7 +101,7 @@ class App : private efsw::FileWatchListener {
 	template <typename T> void registerTabCommands( T& commandTarget, UIWidget* widget ) {
 		tabSplitter->registerSplitterCommands( commandTarget );
 		commandTarget.setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
-		commandTarget.setCommand( "open-settings", [this] { showSettings(); } );
+		commandTarget.setCommand( "open-settings", [this] { settingsActions->showSettings(); } );
 		commandTarget.setCommand( "open-keybindings", [this] { openKeybindings(); } );
 		commandTarget.setCommand( "debug-widget-tree-view",
 								  [this] { UIWidgetInspector::create( scene ); } );
@@ -135,10 +136,6 @@ class App : private efsw::FileWatchListener {
 	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
 						   efsw::Action action, const std::string& oldFilename ) override;
 
-	void showSettings();
-
-	void openFontPicker( bool uiFont, bool fallbackFont = false );
-
 	void forEachTerminal( const std::function<void( UITerminal* )>& fn );
 
 	void savePreferences();
@@ -156,7 +153,6 @@ class App : private efsw::FileWatchListener {
 	FontTrueType* terminalFont{ nullptr };
 	UIIcon* terminalIcon{ nullptr };
 	UIMessageBox* closeDialog{ nullptr };
-	UIWindow* settingsWindow{ nullptr };
 	UICodeEditor* keybindingsEditor{ nullptr };
 	UIWidget* closeDialogWidget{ nullptr };
 	UIWindow* maximizedTabWidgetWindow{ nullptr };
@@ -164,6 +160,7 @@ class App : private efsw::FileWatchListener {
 	UINodeLink* maximizedTabWidgetLink{ nullptr };
 	TerminalLaunchConfig terminalConfig;
 	std::unique_ptr<eterm::AppConfig> config;
+	std::unique_ptr<SettingsActions> settingsActions;
 	std::map<std::string, TerminalColorScheme> terminalColorSchemes;
 	std::unordered_map<std::string, std::string> keybindings;
 	std::string keybindingsPath;
