@@ -1958,9 +1958,9 @@ workspace "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
-		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
+		incdirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
-		links { "eterm-static" }
+		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "eterm", false )
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/eterm.rc", "bin/assets/icon/eterm.ico" }

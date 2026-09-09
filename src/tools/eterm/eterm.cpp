@@ -5,8 +5,8 @@
 
 namespace eterm {
 
-void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* ) {
-	if ( mApp.terminalIcon )
+void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* widget ) {
+	if ( mApp.terminalIcon && widget && widget->isType( UI_TYPE_TERMINAL ) )
 		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	mApp.configureTab( tab );
 }
@@ -394,6 +394,12 @@ void App::configureTab( UITab* tab ) {
 				 "close-tabs-to-the-right" );
 
 		menu->addSeparator();
+		addItem( i18n( "split_left", "Split Left" ), "split-horizontal", "split-left" );
+		addItem( i18n( "split_right", "Split Right" ), "split-horizontal", "split-right" );
+		addItem( i18n( "split_top", "Split Top" ), "split-vertical", "split-top" );
+		addItem( i18n( "split_bottom", "Split Bottom" ), "split-vertical", "split-bottom" );
+
+		menu->addSeparator();
 		auto* exclusiveMode = menu->addCheckBox(
 			i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ), terminal->getExclusiveMode(),
 			terminal->getKeyBindings().getCommandKeybindString(
@@ -404,6 +410,11 @@ void App::configureTab( UITab* tab ) {
 
 		menu->addSeparator();
 		const bool canMove = clickedTab->getTabWidget()->getTabCount() > 1;
+		const Uint32 tabIndex = clickedTab->getTabWidget()->getTabIndex( clickedTab );
+		addItem( i18n( "move_tab_left", "Move Tab Left" ), "", "move-tab-left" )
+			->setEnabled( canMove && tabIndex > 0 );
+		addItem( i18n( "move_tab_right", "Move Tab Right" ), "", "move-tab-right" )
+			->setEnabled( canMove && tabIndex + 1 < clickedTab->getTabWidget()->getTabCount() );
 		addItem( i18n( "move_tab_to_start", "Move Tab To Start" ), "window", "move-tab-to-start" )
 			->setEnabled( canMove );
 		addItem( i18n( "move_tab_to_end", "Move Tab To End" ), "window", "move-tab-to-end" )
@@ -511,6 +522,7 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 		addItem( i18n( "new_terminal", "New Terminal" ), "terminal", "create-new-terminal" );
 		menu->addSeparator();
 		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
+		addItem( i18n( "key_bindings", "Keybindings" ), "keybindings", "open-keybindings" );
 		menu->on( Event::OnItemClicked, [this, terminal]( const Event* itemEvent ) {
 			if ( !itemEvent->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
@@ -530,68 +542,33 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 	return terminal;
 }
 
-UITerminal* App::createTerminalSplit( SplitDirection direction, UITerminal* terminal ) {
-	auto* source = terminal ? tabSplitter->tabWidgetFromWidget( terminal ) : nullptr;
+UITerminal* App::createTerminalSplit( SplitDirection direction, UIWidget* widget ) {
+	auto* source = widget ? tabSplitter->tabWidgetFromWidget( widget ) : nullptr;
 	auto* target = source ? tabSplitter->splitTabWidget( direction, source ) : nullptr;
 	return target ? createTerminal( target ) : nullptr;
 }
 
+void App::moveTab( UIWidget* widget, int offset ) {
+	if ( !widget || offset == 0 )
+		return;
+	auto* tabs = tabSplitter->tabWidgetFromWidget( widget );
+	auto* tab = tabs ? tabs->getTabFromOwnedWidget( widget ) : nullptr;
+	if ( !tab )
+		return;
+	const Uint32 index = tabs->getTabIndex( tab );
+	if ( offset < 0 && index > 0 )
+		tabs->moveTab( tab, index - 1 );
+	else if ( offset > 0 && index + 1 < tabs->getTabCount() )
+		tabs->moveTab( tab, index + 1 );
+}
+
 void App::addTabKeyBindings( UITerminal* terminal ) {
-	tabSplitter->registerSplitterCommands( *terminal );
-	terminal->setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
-	terminal->setCommand( "open-settings", [this] { showSettings(); } );
-	terminal->setCommand( "debug-widget-tree-view",
-						  [this] { UIWidgetInspector::create( scene ); } );
+	registerTabCommands( *terminal, terminal );
 	terminal->setCommand( "terminal-rename", [this, terminal] { renameSession( terminal ); } );
 	terminal->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [terminal] {
 		terminal->setExclusiveMode( !terminal->getExclusiveMode() );
 	} );
-	terminal->setCommand( "next-tab", [this, terminal] {
-		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( terminal ) )
-			tabs->focusNextTab();
-	} );
-	terminal->setCommand( "previous-tab", [this, terminal] {
-		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( terminal ) )
-			tabs->focusPreviousTab();
-	} );
-	terminal->setCommand( "split-right", [this, terminal] {
-		createTerminalSplit( SplitDirection::Right, terminal );
-	} );
-	terminal->setCommand( "split-bottom", [this, terminal] {
-		createTerminalSplit( SplitDirection::Bottom, terminal );
-	} );
-	terminal->setCommand(
-		"split-left", [this, terminal] { createTerminalSplit( SplitDirection::Left, terminal ); } );
-	terminal->setCommand(
-		"split-top", [this, terminal] { createTerminalSplit( SplitDirection::Top, terminal ); } );
-	terminal->setCommand( "switch-to-previous-split",
-						  [this, terminal] { tabSplitter->switchPreviousSplit( terminal ); } );
-	terminal->setCommand( "switch-to-next-split",
-						  [this, terminal] { tabSplitter->switchNextSplit( terminal ); } );
-	terminal->addKeyBinding( { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-							 "create-new-terminal" );
-	terminal->addKeyBinding( { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" );
-	terminal->addKeyBinding( { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-tab" );
-	terminal->addKeyBinding( { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-							 "debug-widget-tree-view" );
-	terminal->addKeyBinding( { KEY_PAGEDOWN, KEYMOD_CTRL }, "next-tab" );
-	terminal->addKeyBinding( { KEY_PAGEUP, KEYMOD_CTRL }, "previous-tab" );
-	terminal->addKeyBinding( { KEY_TAB, KEYMOD_CTRL }, "next-tab" );
-	terminal->addKeyBinding( { KEY_TAB, KEYMOD_CTRL | KEYMOD_SHIFT }, "previous-tab" );
-	terminal->addKeyBinding( { KEY_L, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-							 "split-right" );
-	terminal->addKeyBinding( { KEY_K, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-							 "split-bottom" );
-	terminal->addKeyBinding( { KEY_J, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-							 "split-left" );
-	terminal->addKeyBinding( { KEY_I, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-							 "split-top" );
-	terminal->addKeyBinding(
-		{ KEY_J, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
-		"switch-to-previous-split" );
-	terminal->addKeyBinding(
-		{ KEY_L, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
-		"switch-to-next-split" );
+	applyKeybindings( terminal );
 }
 
 bool App::closeWindow( EE::Window::Window* ) {
@@ -809,6 +786,11 @@ int App::run( int argc, char* argv[] ) {
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
 		return EXIT_FAILURE;
+	keybindingsPath = config->getConfigPath() + "keybindings.cfg";
+	loadKeybindings();
+	fileWatcher = std::make_unique<efsw::FileWatcher>();
+	fileWatcher->addWatch( config->getConfigPath(), this );
+	fileWatcher->watch();
 	scene->setColorSchemePreference( config->theme.uiColorScheme );
 	scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
 	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
@@ -828,6 +810,19 @@ int App::run( int argc, char* argv[] ) {
 		.pseudo_anchor:hover {
 			tint: var(--primary);
 			cursor: hand;
+		}
+		Tab.tab_modified > Tab::close {
+			foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
+			foreground-tint: var(--primary);
+			foreground-size: 6dp 6dp;
+			foreground-position: center;
+			opacity: 1;
+		}
+		Tab.tab_modified > Tab::close:hover {
+			foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
+			foreground-tint: var(--tab-close-hover);
+			foreground-size: 10dp 10dp;
+			foreground-position: center;
 		}
 	)css" );
 
@@ -976,6 +971,8 @@ int App::run( int argc, char* argv[] ) {
 	appWindow->runMainLoop( [this] {
 		appWindow->getInput()->update();
 		SceneManager::instance()->update();
+		if ( keybindingsChanged.exchange( false, std::memory_order_acq_rel ) )
+			reloadKeybindings();
 		queueExitedTabs();
 		// Process-exit events are drained from UITerminal scheduled updates. Removing a tab from
 		// that callback would mutate the scheduled-widget set while it is being traversed.
@@ -998,6 +995,7 @@ int App::run( int argc, char* argv[] ) {
 			secondsCounter.restart();
 		}
 	} );
+	fileWatcher.reset();
 	return EXIT_SUCCESS;
 }
 
