@@ -69,6 +69,14 @@ void App::savePreferences() {
 		Log::error( "Could not save eterm configuration to %s", config->getConfigPath() );
 }
 
+void App::saveWindowState() {
+	if ( !config || !appWindow )
+		return;
+	config->captureWindowState( appWindow );
+	if ( !config->saveWindowState() )
+		Log::error( "Could not save eterm window state to %s", config->getConfigPath() );
+}
+
 void App::forEachTerminal( const std::function<void( UITerminal* )>& fn ) {
 	if ( !tabSplitter )
 		return;
@@ -366,12 +374,13 @@ void App::configureTab( UITab* tab ) {
 		if ( !menu || !terminal || !clickedTab->getTabWidget() )
 			return;
 
-		const auto addItem = [this, menu]( const String& text, const std::string& icon,
-										   const std::string& command ) {
+		const auto addItem = [this, menu, terminal]( const String& text, const std::string& icon,
+													 const std::string& command ) {
 			DrawablePtr drawable;
 			if ( auto* menuIcon = scene->findIcon( icon ) )
 				drawable = menuIcon->createDrawable( PixelDensity::dpToPxI( 12 ) );
-			auto* item = menu->add( text, std::move( drawable ) );
+			auto* item = menu->add( text, std::move( drawable ),
+									terminal->getKeyBindings().getCommandKeybindString( command ) );
 			item->setId( command );
 			return item;
 		};
@@ -385,9 +394,10 @@ void App::configureTab( UITab* tab ) {
 				 "close-tabs-to-the-right" );
 
 		menu->addSeparator();
-		auto* exclusiveMode =
-			menu->addCheckBox( i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ),
-							   terminal->getExclusiveMode() );
+		auto* exclusiveMode = menu->addCheckBox(
+			i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ), terminal->getExclusiveMode(),
+			terminal->getKeyBindings().getCommandKeybindString(
+				UITerminal::getExclusiveModeToggleCommandName() ) );
 		exclusiveMode->setId( UITerminal::getExclusiveModeToggleCommandName() );
 		addItem( i18n( "rename_session", "Rename Session" ), "", "terminal-rename" );
 		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
@@ -487,15 +497,18 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 	} );
 	terminal->on( Event::OnCreateContextMenu, [this, terminal]( const Event* event ) {
 		auto menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
-		const auto addItem = [this, menu]( const String& text, const std::string& icon,
-										   const std::string& command ) {
+		const auto addItem = [this, menu, terminal]( const String& text, const std::string& icon,
+													 const std::string& command ) {
 			DrawablePtr drawable;
 			if ( auto* menuIcon = scene->findIcon( icon ) )
 				drawable = menuIcon->createDrawable( PixelDensity::dpToPxI( 12 ) );
-			auto* item = menu->add( text, std::move( drawable ) );
+			auto* item = menu->add( text, std::move( drawable ),
+									terminal->getKeyBindings().getCommandKeybindString( command ) );
 			item->setId( command );
 			return item;
 		};
+		menu->addSeparator();
+		addItem( i18n( "new_terminal", "New Terminal" ), "terminal", "create-new-terminal" );
 		menu->addSeparator();
 		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
 		menu->on( Event::OnItemClicked, [this, terminal]( const Event* itemEvent ) {
@@ -582,12 +595,16 @@ void App::addTabKeyBindings( UITerminal* terminal ) {
 }
 
 bool App::closeWindow( EE::Window::Window* ) {
-	if ( closeApproved || !warnBeforeClose )
+	if ( closeApproved || !warnBeforeClose ) {
+		saveWindowState();
 		return true;
+	}
 	bool running = false;
 	tabSplitter->forEachTab( [&running]( UITab* tab ) { running |= hasRunningChildren( tab ); } );
-	if ( !running )
+	if ( !running ) {
+		saveWindowState();
 		return true;
+	}
 	if ( closeDialog )
 		return false;
 	closeDialog = UIMessageBox::New(
@@ -597,6 +614,7 @@ bool App::closeWindow( EE::Window::Window* ) {
 	closeDialog->setTitle( "eterm" );
 	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
 		closeApproved = true;
+		saveWindowState();
 		appWindow->close();
 	} );
 	closeDialog->on( Event::OnClose, [this]( const Event* ) {
@@ -704,9 +722,6 @@ int App::run( int argc, char* argv[] ) {
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
-	if ( !config->savePreferences() )
-		Log::error( "Could not save eterm configuration to %s", config->getConfigPath() );
-
 	config->terminal.shell = shell.Get();
 	config->terminal.shellArguments = shellArgs.Get();
 	config->terminal.historySize = historySize.Get();
@@ -732,6 +747,8 @@ int App::run( int argc, char* argv[] ) {
 	config->window.benchmarkMode |= benchmarkModeFlag.Get();
 	config->window.warnBeforeClose |= warnBeforeCloseFlag.Get();
 	config->window.alwaysShowTabBar |= alwaysShowTabBar.Get();
+	if ( !config->savePreferences() )
+		Log::error( "Could not save eterm configuration to %s", config->getConfigPath() );
 
 	const std::string initialWorkingDirectory = FileSystem::getCurrentWorkingDirectory();
 	const std::string resPath = getResourcePath();
@@ -781,28 +798,19 @@ int App::run( int argc, char* argv[] ) {
 	appSettings.baseFont = uiFont.get();
 	const Int32 frameRateLimit =
 		config->window.benchmarkMode ? 0 : static_cast<Int32>( config->window.maxFPS );
-	UIApplication app(
-		WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
-						WindowStyle::Default, WindowBackend::Default, 32,
-						resPath + "icon/eterm.png", appSettings.pixelDensity.value() ),
-		appSettings,
-		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
-						 config->window.rendererVersion ) );
+	UIApplication app( WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
+									   WindowStyle::Default, WindowBackend::Default, 32,
+									   resPath + "icon/eterm.png" ),
+					   appSettings,
+					   ContextSettings( config->window.vsync, frameRateLimit,
+										config->window.multisamples,
+										config->window.rendererVersion ) );
 	appWindow = app.getWindow();
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
 		return EXIT_FAILURE;
 	scene->setColorSchemePreference( config->theme.uiColorScheme );
 	scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
-	if ( config->windowState.position != Vector2i( -1, -1 ) ) {
-		appWindow->setPosition( config->windowState.position.x +
-									( config->windowState.maximized ? -1 : 0 ),
-								config->windowState.position.y );
-	}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && EE_PLATFORM != EE_PLATFORM_MACOS
-	if ( config->windowState.maximized )
-		appWindow->maximize();
-#endif
 	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
 	appWindow->setClearColor( RGB( 0, 0, 0 ) );
 	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
@@ -917,10 +925,12 @@ int App::run( int argc, char* argv[] ) {
 				pendingExitCloseTabs.end() );
 			if ( closeDialogWidget == closedTab->getOwnedWidget() )
 				closeDialogWidget = nullptr;
-			if ( !hasTerminals() )
+			if ( !hasTerminals() ) {
+				saveWindowState();
 				appWindow->close();
-			else
+			} else {
 				updateWindowTitle();
+			}
 		} );
 	} );
 	auto* tabs = tabSplitter->createTabWidget( mainLayout );
@@ -939,9 +949,29 @@ int App::run( int argc, char* argv[] ) {
 			return EXIT_FAILURE;
 		}
 	}
+	if ( config->windowState.position != Vector2i( -1, -1 ) &&
+		 config->windowState.displayIndex < displayManager->getDisplayCount() ) {
+		// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
+		appWindow->setPosition( config->windowState.position.x +
+									( config->windowState.maximized ? -1 : 0 ),
+								config->windowState.position.y );
+	}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	if ( config->windowState.maximized ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		scene->runOnMainThread( [this] { appWindow->maximize(); } );
+#elif EE_PLATFORM != EE_PLATFORM_MACOS
+		appWindow->maximize();
+#endif
+	}
+#endif
 
 	appWindow->setCloseRequestCallback(
 		[this]( EE::Window::Window* window ) { return closeWindow( window ); } );
+	appWindow->setQuitCallback( [this]( EE::Window::Window* window ) {
+		if ( window->isOpen() && closeWindow( window ) )
+			window->close();
+	} );
 	app.setShowMemoryManagerResult( true );
 	appWindow->runMainLoop( [this] {
 		appWindow->getInput()->update();
@@ -968,9 +998,6 @@ int App::run( int argc, char* argv[] ) {
 			secondsCounter.restart();
 		}
 	} );
-	config->captureWindowState( appWindow );
-	if ( !config->saveWindowState() )
-		Log::error( "Could not save eterm window state to %s", config->getConfigPath() );
 	return EXIT_SUCCESS;
 }
 

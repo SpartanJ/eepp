@@ -112,6 +112,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-paste-selection",
 				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
+	mKeyBindings.addKeybind( { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" );
+	mKeyBindings.addKeybind( { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" );
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
 	subscribeScheduledUpdate();

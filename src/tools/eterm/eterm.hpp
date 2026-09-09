@@ -60,28 +60,53 @@ class App {
 	friend struct SettingsPanel;
 
 	std::string getResourcePath() const;
+
 	String i18n( const std::string& key, const String& defaultValue ) const;
+
 	void loadColorSchemes( const std::string& resPath );
+
 	static UITerminal* terminalFromTab( UITab* tab );
+
 	void updateWindowTitle();
+
 	bool hasTerminals() const;
+
 	static bool hasRunningChildren( UITab* tab );
+
 	void closeTab( UITab* tab );
+
 	void queueExitCloseTab( UITab* tab );
+
 	void queueExitedTabs();
+
 	void requestCloseTab( UITab* tab );
+
 	void renameSession( UITerminal* terminal );
+
 	void maximizeTabWidget( UITabWidget* tabWidget );
+
 	void restoreMaximizedTabWidget();
+
 	void configureTab( UITab* tab );
+
 	UITerminal* createTerminal( UITabWidget* target = nullptr );
+
 	UITerminal* createTerminalSplit( SplitDirection direction, UITerminal* terminal );
+
 	void addTabKeyBindings( UITerminal* terminal );
+
 	void showSettings();
+
 	void openFontPicker( bool uiFont, bool fallbackFont = false );
+
 	void forEachTerminal( const std::function<void( UITerminal* )>& fn );
+
 	void savePreferences();
+
+	void saveWindowState();
+
 	void createNewTerminal();
+
 	bool closeWindow( EE::Window::Window* );
 
 	EE::Window::Window* appWindow{ nullptr };

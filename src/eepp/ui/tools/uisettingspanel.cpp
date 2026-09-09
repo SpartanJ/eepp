@@ -723,7 +723,7 @@ void UISettingsPanel::materializeCategory( Impl& panel, const std::string& categ
 		if ( auto* value = std::get_if<BoolPointerSetting>( &setting.value ) ) {
 			auto* check = createBoolControl( panel, setting, view );
 			auto binding = UIDataBind<bool>::New( value->value, check,
-												  UIValueConverter<bool>::converterBool() );
+											  UIValueConverter<bool>::converterBool() );
 			binding->onValueChangeCb = value->apply;
 			panel.bindingGroup += std::move( binding );
 		} else if ( auto* value = std::get_if<BoolSetting>( &setting.value ) ) {
