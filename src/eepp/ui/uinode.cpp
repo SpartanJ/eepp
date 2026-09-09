@@ -1905,4 +1905,10 @@ bool UINode::isCreatingNode() const {
 	return mFlags & UI_CREATING_NODE;
 }
 
+void UINode::click() {
+	Vector2f pos;
+	nodeToWorld( pos );
+	getEventDispatcher()->sendMouseClick( this, pos.ceil().asInt(), EE_BUTTON_LMASK );
+}
+
 }} // namespace EE::UI

@@ -307,6 +307,7 @@ Text selbst.</string>
 	<string name="escape_sequence_tooltip">Unicode-Zeichen \, \t, \n, \r und ( ersetzen</string>
 	<string name="escape_sequences">Escape-Sequenzen</string>
 	<string name="exclusive_mode">Exklusivmodus</string>
+	<string name="enable_exclusive_mode">Exklusivmodus aktivieren</string>
 	<string name="executable_to_run">Auszuführende Programmdatei</string>
 	<string name="execute_dir_in_terminal">Verzeichnis in Konsole öffnen</string>
 	<string name="execute_in_terminal">In Konsole ausführen</string>

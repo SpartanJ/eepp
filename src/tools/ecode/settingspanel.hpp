@@ -1,11 +1,9 @@
 #ifndef ECODE_SETTINGSPANEL_HPP
 #define ECODE_SETTINGSPANEL_HPP
 
-#include "settingsmodel.hpp"
 #include <eepp/ee.hpp>
 #include <eepp/scene/mainthreadlifetime.hpp>
-#include <functional>
-#include <string>
+#include <memory>
 #include <vector>
 
 namespace ecode {
@@ -22,39 +20,11 @@ class SettingsPanel {
 	void show( Scope scope, const std::string& category = {} );
 
   protected:
-	struct SettingView {
-		UIWidget* row{ nullptr };
-	};
-	struct SubcategoryHeading {
-		std::string category;
-		String name;
-		UITextView* heading{ nullptr };
-	};
-
 	struct PanelState {
 		UIWindow* window{ nullptr };
+		UISettingsPanel* panel{ nullptr };
 		EventConnectionList connections;
-		UITextInput* search{ nullptr };
-		UITreeView* categories{ nullptr };
-		UIScrollView* scroll{ nullptr };
-		UILinearLayout* settings{ nullptr };
-		UITextView* pageTitle{ nullptr };
-		std::shared_ptr<Model> categoryModel;
-		UIBindingGroup bindingGroup;
-		SettingsModel model;
 		std::vector<std::shared_ptr<SettingsDocument>> documents;
-		std::vector<std::pair<std::string, std::vector<std::string>>> categoryItems;
-		UnorderedMap<std::string, std::string> categoryIds;
-		UnorderedMap<std::string, String> categorySearchText;
-		UnorderedMap<std::string, String> categoryTitles;
-		UnorderedMap<std::string, UITextView*> categoryHeadings;
-		UnorderedMap<std::string, UIWidget*> categorySections;
-		UnorderedMap<std::string, UILinearLayout*> categoryContainers;
-		UnorderedSet<std::string> materializedCategories;
-		std::vector<SubcategoryHeading> subcategoryHeadings;
-		std::vector<SettingView> settingViews;
-		std::string selectedCategory;
-		std::string categoryFilter;
 
 		void reset();
 	};
@@ -76,13 +46,9 @@ class SettingsPanel {
 
 	void addProjectSettings( PanelState& state );
 
-	void addCategory( PanelState& state, const std::string& id, const String& parent,
-					  const String& name );
+	void addCategory( PanelState& state, std::string id, String parent, String name );
 
-	void addSubcategoryHeading( PanelState& state, const std::string& category,
-								const String& name );
-
-	void setupCategories( PanelState& state );
+	void addSubcategoryHeading( PanelState& state, std::string category, String name );
 
 	void addBool( PanelState& state, SettingDescriptor binding, bool* value,
 				  std::function<void( bool )> apply = {} );
@@ -110,22 +76,11 @@ class SettingsPanel {
 
 	void addAction( PanelState& state, SettingDescriptor binding, const String& buttonText,
 					std::function<void()> action );
+
 	void refreshTextSetting( PanelState& state, const std::string& id );
-
-	UIWidget* createRow( PanelState& state, SettingDefinition& setting, SettingView& view,
-						 pugi::xml_node layout );
-
-	UICheckBox* createBoolControl( PanelState& state, SettingDefinition& setting,
-								   SettingView& view );
-
-	void materializeCategory( PanelState& state, const std::string& category );
-
-	void materializeVisibleSettings( PanelState& state, const String& query );
 
 	void setCategoryEnabled( PanelState& state, const std::string& category, bool enabled,
 							 const std::string& excludedSetting = {} );
-
-	void filter( PanelState& state );
 };
 
 } // namespace ecode

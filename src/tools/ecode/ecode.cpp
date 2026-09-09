@@ -556,6 +556,8 @@ void App::maximizeTabWidget() {
 	UIWindow::StyleConfig winCfg;
 	winCfg.WinFlags = UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL | UI_WIN_NO_DECORATION;
 	UIWindow* win = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winCfg );
+	mMaximizedTabWidgetWindow = win;
+	mMaximizedTabWidget = curTabWidget;
 	win->setPixelsSize( getUISceneNode()->getPixelsSize() - PixelDensity::dpToPx( 64 ) );
 	win->setId( "detached_tab_widget_win" );
 	win->addClass( "tab_widget_cont" );
@@ -587,6 +589,7 @@ void App::maximizeTabWidget() {
 	bool wasFirstSplit = tabWidgetParent->isType( UI_TYPE_SPLITTER ) &&
 						 tabWidgetParent->asType<UISplitter>()->getFirstWidget() == curTabWidget;
 	auto nodeLink = UINodeLink::NewLink( curTabWidget );
+	mMaximizedTabWidgetLink = nodeLink;
 	if ( wasFirstSplit )
 		nodeLink->setClass( "was_first_split" );
 	curTabWidget->setParent( win );
@@ -626,27 +629,24 @@ void App::maximizeTabWidget() {
 void App::restoreMaximizedTabWidget() {
 	if ( !App::instance() || !SceneManager::isActive() )
 		return;
-	auto sceneNode = appInstance->getUISceneNode();
-	if ( !sceneNode )
+	if ( !mMaximizedTabWidgetLink || !mMaximizedTabWidget )
 		return;
-	auto nodeLink = sceneNode->getRoot()->find( "nodelink_tab_widget" );
-	if ( !nodeLink )
-		return;
-	auto splitterParent = nodeLink->getParent();
-	nodeLink->setParent( sceneNode );
-	auto curTabWidget = sceneNode->getRoot()->find<UIWidget>( "detached_tab_widget" );
-	if ( !curTabWidget )
-		return;
+	auto* nodeLink = mMaximizedTabWidgetLink;
+	auto* curTabWidget = mMaximizedTabWidget;
+	auto* win = mMaximizedTabWidgetWindow;
+	auto* splitterParent = nodeLink->getParent();
+	nodeLink->setParent( mUISceneNode );
 	curTabWidget->setParent( splitterParent );
 	curTabWidget->setAnchors( 0 );
 	curTabWidget->setId( "" );
-	if ( nodeLink->asType<UIWidget>()->hasClass( "was_first_split" ) &&
-		 splitterParent->isType( UI_TYPE_SPLITTER ) ) {
+	if ( nodeLink->hasClass( "was_first_split" ) && splitterParent->isType( UI_TYPE_SPLITTER ) ) {
 		splitterParent->asType<UISplitter>()->swap();
 	}
 	nodeLink->close();
-	auto win = mUISceneNode->find( "detached_tab_widget_win" );
-	if ( win )
+	mMaximizedTabWidgetLink = nullptr;
+	mMaximizedTabWidget = nullptr;
+	mMaximizedTabWidgetWindow = nullptr;
+	if ( win && !win->isClosing() )
 		win->close();
 }
 
@@ -1734,6 +1734,16 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 
 		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ||
 			 tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) ) {
+			if ( tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) ) {
+				menu->addSeparator();
+				auto* terminal = tab->getOwnedWidget()->asType<UITerminal>();
+				menu->addCheckBox( i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ),
+								   terminal->getExclusiveMode(),
+								   getKeybind( UITerminal::getExclusiveModeToggleCommandName() ) )
+					->setId( UITerminal::getExclusiveModeToggleCommandName() );
+				menuAdd( "rename_session", "Rename Session", "", "terminal-rename" );
+			}
+
 			menu->addSeparator();
 
 			bool enabled = tab->getTabWidget()->getTabCount() > 1;
@@ -5073,6 +5083,11 @@ void App::init( InitParameters& params ) {
 												   std::function<void()> onMsgBoxCloseCb ) -> bool {
 			if ( widget == nullptr || widget->getData() == 0 )
 				return true;
+			if ( auto* detachedTabWidget =
+					 mUISceneNode->getRoot()->find<UIWidget>( "detached_tab_widget" );
+				 detachedTabWidget && detachedTabWidget->inParentTreeOf( widget ) ) {
+				restoreMaximizedTabWidget();
+			}
 			if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 				return mSplitter->tryCodeEditorClose( widget->asType<UICodeEditor>(),
 													  focusTabBehavior, onMsgBoxCloseCb );

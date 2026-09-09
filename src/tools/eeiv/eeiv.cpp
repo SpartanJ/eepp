@@ -398,7 +398,7 @@ void App::registerKeyBindings() {
 		} else if ( key == KEY_KP_MULTIPLY || key == KEY_Z ) {
 			fitImage();
 		} else if ( key == KEY_KP_DIVIDE ) {
-			setImgScale( mConfig.DefaultImageZoom );
+			resetImageZoom();
 		} else if ( key == KEY_N && mImageViewer->getImage()->getDrawable() ) {
 			const Sizef size( mImageViewer->getImage()->getDrawable()->getPixelsSize() );
 			getWindow()->setSize( size.getWidth(), size.getHeight() );
@@ -468,6 +468,23 @@ void App::toggleHelp() {
 void App::fitImage() {
 	if ( mImageViewer && mImageViewer->hasImage() )
 		mImageViewer->resetImageView();
+}
+
+void App::resetImageZoom() {
+	if ( !mImageViewer || !mImageViewer->getImage() || !mImageViewer->getImage()->getDrawable() )
+		return;
+
+	UIImage* image = mImageViewer->getImage();
+	const Sizef displayedSize( image->getPixelsSize() );
+	const Sizef nativeSize( image->getDrawable()->getPixelsSize() );
+	if ( displayedSize.getWidth() == 0.f || displayedSize.getHeight() == 0.f )
+		return;
+
+	const Float pixelDensity = PixelDensity::getPixelDensity();
+	image->setScale( { mConfig.DefaultImageZoom * nativeSize.getWidth() /
+						   ( displayedSize.getWidth() * pixelDensity ),
+					   mConfig.DefaultImageZoom * nativeSize.getHeight() /
+						   ( displayedSize.getHeight() * pixelDensity ) } );
 }
 
 Sprite* App::getImageSprite() const {

@@ -223,6 +223,7 @@
 ,
  和 (Unicode字符</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="enable_exclusive_mode">启用独占模式</string>
 	<string name="execute_dir_in_terminal">在终端打开文件夹</string>
 	<string name="execute_in_terminal">在终端执行</string>
 	<string name="expand_all">Expand All</string>
@@ -680,7 +681,7 @@ file in the directory tree.</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_and_size_ellipsis">界面字体和大小...</string>
-	<string name="ui_font_size">Ui字体大小</string>
+	<string name="ui_font_size">UI字体大小</string>
 	<string name="ui_language">界面语言</string>
 	<string name="ui_multisamples_level">多重采样抗锯齿级别</string>
 	<string name="ui_panel_font_size">界面面板字体大小</string>

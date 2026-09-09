@@ -291,6 +291,7 @@ is hover a word that represents a color.</string>
 	<string name="escape_sequence_tooltip">Replace \, \t, \n, \r and (Unicode characters</string>
 	<string name="escape_sequences">Escape Sequences</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="enable_exclusive_mode">Enable Exclusive Mode</string>
 	<string name="executable_to_run">Executable to Run</string>
 	<string name="execute_dir_in_terminal">Open directory in terminal</string>
 	<string name="execute_in_terminal">Execute in terminal</string>
@@ -886,14 +887,14 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_and_size_ellipsis">UI Font &amp; Size...</string>
-	<string name="ui_font_size">Ui Font Size</string>
+	<string name="ui_font_size">UI Font Size</string>
 	<string name="ui_language">UI Language</string>
 	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>
-	<string name="ui_panel_font_size">Ui Panel Font Size</string>
+	<string name="ui_panel_font_size">UI Panel Font Size</string>
 	<string name="ui_prefes_color_scheme">UI Prefers Color Scheme</string>
 	<string name="ui_renderer">Renderer</string>
 	<string name="ui_renderer_version">Renderer Version</string>
-	<string name="ui_scale_factor">Ui Scale Factor</string>
+	<string name="ui_scale_factor">UI Scale Factor</string>
 	<string name="ui_thene">UI Theme</string>
 	<string name="uicodeeditor_copy">Copy</string>
 	<string name="uicodeeditor_copy_containing_folder_path">Copy Containing Folder Path</string>

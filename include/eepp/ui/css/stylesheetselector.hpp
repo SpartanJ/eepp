@@ -27,7 +27,7 @@ class EE_API StyleSheetSelector {
 
 	bool hasPseudoClasses() const;
 
-	std::vector<UIWidget*> getRelatedElements( UIWidget* element, bool applyPseudo = true ) const;
+	SmallVector<UIWidget*, 8> getRelatedElements( UIWidget* element, bool applyPseudo = true ) const;
 
 	bool isStructurallyVolatile() const;
 

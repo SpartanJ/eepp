@@ -5837,7 +5837,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 	ASSERT_TRUE( documentScene != nullptr );
 
 	UIWidget* body = nullptr;
-	std::vector<UIWidget*> images;
+	WidgetQueryResult images;
 	for ( int i = 0; i < 300; ++i ) {
 		pump();
 		body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();

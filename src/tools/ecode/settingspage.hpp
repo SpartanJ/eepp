@@ -2,7 +2,12 @@
 #define ECODE_SETTINGSPAGE_HPP
 
 #include "settingsdocument.hpp"
-#include "settingsmodel.hpp"
+
+#include <eepp/ui/tools/uisettingspanel.hpp>
+
+using namespace EE;
+using namespace EE::System;
+using namespace EE::UI::Tools;
 
 namespace ecode {
 

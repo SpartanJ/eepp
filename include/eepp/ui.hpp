@@ -96,6 +96,7 @@
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>

@@ -548,12 +548,12 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
+SmallVector<UIWidget*, 8> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 											  const Uint32& marker ) {
 	Uint32 oldMarker = mCurrentMarker;
 	mCurrentMarker = marker;
 
-	std::vector<UIWidget*> rootWidgets;
+	SmallVector<UIWidget*, 8> rootWidgets;
 
 	if ( NULL == parent )
 		parent = this;
@@ -648,7 +648,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 	std::string id( node.attribute( "id" ).as_string() );
 	mIsLoading = true;
 	Clock innerClock;
-	std::vector<UIWidget*> widgets = loadNode( node, parent, marker );
+	SmallVector<UIWidget*, 8> widgets = loadNode( node, parent, marker );
 
 	if ( mVerbose ) {
 		std::sort(

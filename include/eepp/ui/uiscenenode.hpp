@@ -864,7 +864,8 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param marker Marker for style association.
 	 * @return Vector of root widgets created.
 	 */
-	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker = 0 );
+	SmallVector<UIWidget*, 8> loadNode( pugi::xml_node node, Node* parent,
+										const Uint32& marker = 0 );
 
 	/** Sets the document / scene URI used to resolve paths of inner elements */
 	void setURI( const URI& uri );

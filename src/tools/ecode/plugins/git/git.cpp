@@ -774,7 +774,7 @@ std::string Git::setSafeDirectory( const std::string& projectDir ) const {
 }
 
 Git::Result Git::pull( const std::string& projectDir ) {
-	return gitSimple( "pull", projectDir );
+	return gitSimple( "pull --prune", projectDir );
 }
 
 Git::Result Git::push( const std::string& projectDir ) {
@@ -979,6 +979,12 @@ Git::Result Git::deleteRemoteBranch( const std::string& remote, const std::strin
 									 const std::string& projectDir ) {
 	Result result;
 	result.returnCode = git( { "push", remote, "--delete", branch }, projectDir, result.result );
+	if ( result.success() ) {
+		std::string cleanupResult;
+		result.returnCode = git( { "update-ref", "-d", "refs/remotes/" + remote + "/" + branch },
+								 projectDir, cleanupResult );
+		result.result.append( cleanupResult );
+	}
 	return result;
 }
 
@@ -1148,7 +1154,7 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 
 static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	auto split = String::split( raw, '\t', true );
-	if ( split.size() < 4 )
+	if ( split.size() < 4 || ( split.size() > 5 && !split[5].empty() ) )
 		return {};
 	std::string name( std::string{ split[1] } );
 	std::string remote( std::string{ split[1] } );
@@ -1176,7 +1182,7 @@ static Git::Branch parseTag( std::string_view raw ) {
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
 													 const std::string& projectDir ) {
 	// clang-format off
-	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)' --sort=v:refname" );
 	// clang-format on
 
 	if ( filterBranch.empty() ) {

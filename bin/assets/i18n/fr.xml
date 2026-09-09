@@ -290,6 +290,7 @@ texte lui-même.</string>
 	<string name="escape_sequence_tooltip">Remplacer \, \t, \n, \r et (caractères Unicode)</string>
 	<string name="escape_sequences">Séquences d'échappement</string>
 	<string name="exclusive_mode">Mode exclusif</string>
+	<string name="enable_exclusive_mode">Activer le mode exclusif</string>
 	<string name="executable_to_run">Exécutable à exécuter</string>
 	<string name="execute_dir_in_terminal">Ouvrir le répertoire dans le terminal</string>
 	<string name="execute_in_terminal">Exécuter dans le terminal</string>

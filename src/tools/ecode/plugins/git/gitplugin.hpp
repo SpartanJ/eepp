@@ -157,7 +157,7 @@ class GitPlugin : public PluginBase {
 	UIDropDownList* mPanelSwicher{ nullptr };
 	UIDropDownList* mRepoDropDown{ nullptr };
 	UIStackWidget* mStackWidget{ nullptr };
-	std::vector<UIWidget*> mStackMap;
+	SmallVector<UIWidget*, 4> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
 	UIWidget* mConflictStateBar{ nullptr };
