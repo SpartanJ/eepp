@@ -31,6 +31,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <nlohmann/json.hpp>
 
