@@ -2112,14 +2112,15 @@ std::wstring String::toWideString() const {
 #endif
 
 std::string String::toUtf8() const {
-	// Prepare the output string
 	std::string output;
-	output.reserve( mString.length() + 1 );
-
-	// Convert
-	Utf32::toUtf8( mString.begin(), mString.end(), std::back_inserter( output ) );
-
+	toUtf8( output );
 	return output;
+}
+
+void String::toUtf8( std::string& output ) const {
+	output.clear();
+	output.reserve( mString.length() + 1 );
+	Utf32::toUtf8( mString.begin(), mString.end(), std::back_inserter( output ) );
 }
 
 std::basic_string<char16_t> String::toUtf16() const {

@@ -102,6 +102,36 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			snapshot->exitCode = mEmulator->getExitCode();
 			snapshot->currentWorkingDirectory = mEmulator->getCurrentWorkingDirectory();
 			snapshot->promptState = mEmulator->getPromptState();
+			const auto& searchMatches = mEmulator->getSearchMatches();
+			snapshot->searchMatchCount = static_cast<Uint32>( searchMatches.size() );
+			snapshot->currentSearchMatch = mEmulator->getCurrentSearchMatch();
+			snapshot->searchRequestId = mEmulator->getSearchRequestId();
+			for ( size_t index = 0; index < searchMatches.size(); ++index ) {
+				const auto& match = searchMatches[index];
+				for ( Int64 row = match.start.row; row <= match.end.row; ++row ) {
+					const int visibleRow =
+						static_cast<int>( row ) +
+						( match.start.source == TerminalBufferSource::AlternateScreen
+							  ? 0
+							  : snapshot->scrollPosition );
+					if ( visibleRow < 0 || visibleRow >= snapshot->rows )
+						continue;
+					const int startColumn = row == match.start.row ? match.start.column : 0;
+					const int endColumn =
+						row == match.end.row ? match.end.column : snapshot->columns - 1;
+					snapshot->visibleSearchMatches.push_back(
+						{ { startColumn, visibleRow },
+						  { endColumn, visibleRow },
+						  static_cast<Int32>( index ) == snapshot->currentSearchMatch } );
+					for ( int column = std::max( 0, startColumn );
+						  column <= std::min( snapshot->columns - 1, endColumn ); ++column ) {
+						auto& glyph = snapshot->cells[visibleRow * snapshot->columns + column];
+						glyph.mode |= static_cast<Int32>( index ) == snapshot->currentSearchMatch
+										  ? ATTR_SEARCH_ACTIVE
+										  : ATTR_SEARCH_MATCH;
+					}
+				}
+			}
 			if ( auto* process = mEmulator->getProcess() )
 				snapshot->processId = process->pid();
 		}
@@ -415,6 +445,20 @@ void TerminalSession::requestGraphicsResync() {
 	enqueue( GraphicsResyncCommand{} );
 }
 
+void TerminalSession::setSearchQuery( TerminalSearchQuery query ) {
+	mLatestSearchRequest.store( query.requestId, std::memory_order_release );
+	enqueue( SearchQueryCommand{ std::move( query ) } );
+}
+
+void TerminalSession::navigateSearch( int direction ) {
+	enqueue( SearchNavigateCommand{ direction < 0 ? -1 : 1 } );
+}
+
+void TerminalSession::clearSearch() {
+	mLatestSearchRequest.store( 0, std::memory_order_release );
+	enqueue( SearchClearCommand{} );
+}
+
 std::shared_ptr<const TerminalSnapshot> TerminalSession::snapshot() const {
 	std::lock_guard<std::mutex> lock( mPublishedSnapshotMutex );
 	return mPublishedSnapshot;
@@ -606,6 +650,14 @@ void TerminalSession::processCommand( Command&& command ) {
 			} else if constexpr ( std::is_same_v<T, GraphicsResyncCommand> ) {
 				mGraphicsUpdates.resetResync();
 				mEmulator->requestGraphicsResync();
+			} else if constexpr ( std::is_same_v<T, SearchQueryCommand> ) {
+				if ( value.query.requestId ==
+					 mLatestSearchRequest.load( std::memory_order_acquire ) )
+					mEmulator->setSearchQuery( std::move( value.query ) );
+			} else if constexpr ( std::is_same_v<T, SearchNavigateCommand> ) {
+				mEmulator->navigateSearch( value.direction );
+			} else if constexpr ( std::is_same_v<T, SearchClearCommand> ) {
+				mEmulator->clearSearch();
 			}
 		},
 		std::move( command ) );

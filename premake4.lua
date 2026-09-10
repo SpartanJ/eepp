@@ -1945,10 +1945,13 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
-		links { "eterm-static" }
-		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
+		links { "efsw-static", "eterm-static" }
+		includedirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
 		if os.is_real("linux") then
 			links { "util" }
+		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
 		if os.is("haiku") then
 			links { "bsd" }

@@ -5,8 +5,20 @@ This project relies on a comprehensive suite of unit tests to prevent regression
 ## Running Tests
 The test binary manages its own current working directory, so you can execute it from anywhere.
 
-*   **Prefer the release test binary during normal development:**
-    When AddressSanitizer or other debug-only diagnostics are not required, build and run `bin/unit_tests/eepp-unit_tests`. The optimized release suite is substantially faster and should be the default for iterative testing. Use `bin/unit_tests/eepp-unit_tests-debug` when investigating memory safety, assertions, or other behavior that specifically requires the debug configuration.
+The required default workflow is:
+
+1. Build the release unit-test target.
+2. Run `bin/unit_tests/eepp-unit_tests` directly, without Xvfb.
+3. If sandbox restrictions prevent access to the host display, retry that same direct command with
+   elevated permissions.
+4. Use Xvfb only after direct execution has failed outside the sandbox because no usable graphical
+   display is available. Xvfb is the last fallback, not the default headless convenience path.
+
+Do not infer that a session is headless merely because its first sandboxed command cannot connect to
+the display. A sandbox can hide or deny access to an otherwise usable host display.
+
+*   **Use the release test binary during normal development:**
+    When AddressSanitizer or other debug-only diagnostics are not required, build and run `bin/unit_tests/eepp-unit_tests`. The optimized release suite is substantially faster and is the required default for iterative testing. Use `bin/unit_tests/eepp-unit_tests-debug` only when investigating memory safety, assertions, or other behavior that specifically requires the debug configuration.
 *   **Default Execution on a Graphical Linux Desktop:**
     Unit-test windows are created hidden, so run the release suite directly against the desktop:
     `bin/unit_tests/eepp-unit_tests`
@@ -16,7 +28,7 @@ The test binary manages its own current working directory, so you can execute it
 *   **Filtered Tests on a Graphical Linux Desktop:**
     Use the same direct hardware-backed command for focused runs:
     `bin/unit_tests/eepp-unit_tests --filter="FontRendering.*Offset*"`
-*   **Headless CI and Systems Without a Usable Desktop Display:**
+*   **Last Fallback for Headless CI and Systems Confirmed to Lack a Usable Desktop Display:**
     Keep `projects/scripts/xvfb-run-eepp` as the fallback when no desktop display is available:
     `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests`
     The wrapper provides a race-safe isolated display at `1280x1024x24` and injects

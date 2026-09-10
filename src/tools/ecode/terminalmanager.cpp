@@ -133,6 +133,10 @@ void TerminalManager::loadTerminalColorSchemes() {
 
 KeyBindings::ShortcutMap TerminalManager::getTerminalKeybindings() {
 	return {
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find-next" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT | KEYMOD_ALT },
+		  "terminal-find-previous" },
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
 		{ { KEY_E,
 			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
@@ -741,7 +745,6 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 	term->getKeyBindings().reset();
 	term->addKeyBinds( mApp->getRealLocalKeybindings() );
 	term->addKeyBinds( mApp->getRealSplitterKeybindings() );
-	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
 	// Remove the keybinds that are problematic for a terminal
 	term->getKeyBindings().removeCommandsKeybind(
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
@@ -749,6 +752,9 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
 		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
 		  "project-run-executable", "project-build-and-run" } );
+	// Terminal bindings must be installed last so they can intentionally reuse shortcuts removed
+	// from the editor/global context (for example mod+shift+f).
+	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
 }
 
 } // namespace ecode

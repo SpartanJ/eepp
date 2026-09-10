@@ -30,9 +30,16 @@ namespace eterm { namespace Terminal {
 
 /** Immutable worker-to-UI presentation state. Cell selection is already applied as ATTR_REVERSE. */
 struct TerminalSnapshot {
+	struct SearchCellRange {
+		Vector2i start;
+		Vector2i end;
+		bool active{ false };
+	};
+
 	std::shared_ptr<const TerminalGraphicsPresentation> graphics;
 	std::vector<TerminalGlyph> cells;
 	std::vector<Uint8> dirtyRows;
+	std::vector<SearchCellRange> visibleSearchMatches;
 	std::string title;
 	std::string currentWorkingDirectory;
 	std::string selection;
@@ -48,6 +55,9 @@ struct TerminalSnapshot {
 	int processId{ 0 };
 	int exitCode{ 0 };
 	Uint32 presentationRate{ 60 };
+	Uint32 searchMatchCount{ 0 };
+	Int32 currentSearchMatch{ -1 };
+	Uint64 searchRequestId{ 0 };
 	TerminalCursorMode cursorMode{ SteadyUnderline };
 	TerminalSelectionMode selectionMode{ SEL_IDLE };
 	PromptState promptState{ PromptState::Unknown };
@@ -148,6 +158,9 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	std::vector<Event> drainEvents();
 	std::vector<TerminalGraphicsUpdate> drainGraphicsUpdates();
 	void requestGraphicsResync();
+	void setSearchQuery( TerminalSearchQuery query );
+	void navigateSearch( int direction );
+	void clearSearch();
 
 	/** Bounded exact-selection request. Returns no value on timeout or during shutdown. */
 	std::optional<std::string>
@@ -220,6 +233,13 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	};
 	struct SelectionClearCommand {};
 	struct GraphicsResyncCommand {};
+	struct SearchQueryCommand {
+		TerminalSearchQuery query;
+	};
+	struct SearchNavigateCommand {
+		int direction{ 1 };
+	};
+	struct SearchClearCommand {};
 	struct ResetCommand {};
 	struct TerminateCommand {};
 	struct AllowTrimCommand : BoolCommand {};
@@ -233,7 +253,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 					 SelectionClearCommand, MouseCommand, FocusCommand, CursorModeCommand,
 					 PaletteCommand, PresentationRateCommand, AllowTrimCommand, DataEventsCommand,
 					 PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
-					 SelectionRequestCommand, GraphicsResyncCommand>;
+					 SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand,
+					 SearchNavigateCommand, SearchClearCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
 					 TerminalColorPalette palette );
@@ -261,6 +282,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	std::shared_ptr<const TerminalSnapshot> mPublishedSnapshot;
 	std::atomic<bool> mShutdownRequested{ false };
 	std::atomic<Uint64> mNextScrollCommand{ 0 };
+	std::atomic<Uint64> mLatestSearchRequest{ 0 };
 };
 
 }} // namespace eterm::Terminal

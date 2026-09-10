@@ -12,13 +12,13 @@ namespace eterm {
 
 AppConfig::AppConfig( std::string configPath ) : mConfigPath( std::move( configPath ) ) {
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
-	mIni.path( mConfigPath + "eterm.ini" );
-	mState.path( mConfigPath + "eterm.state.ini" );
+	mIni.path( mConfigPath + "config.cfg" );
+	mState.path( mConfigPath + "state.cfg" );
 }
 
 void AppConfig::load() {
-	mIni.readFile();
-	mState.readFile();
+	mIni.loadFromFile( mIni.path() );
+	mState.loadFromFile( mState.path() );
 	terminal.shell = mIni.getValue( "terminal", "shell", terminal.shell );
 	terminal.shellArguments =
 		mIni.getValue( "terminal", "shell_arguments", terminal.shellArguments );

@@ -17,6 +17,14 @@ This produces an optimized release build with debug symbols and without AddressS
 release executable (for example, `bin/eepp-ui-html`) when measuring performance. Recheck
 `.ecode/project_build.json` before use because the local configuration may change.
 
+This workflow is mandatory for any task whose purpose includes performance investigation,
+optimization, benchmarking, or validating runtime speed. Do not reuse a gmake tree generated with
+`--address-sanitizer`, and do not substitute `make config=release`: regenerate with the current
+`eepp-linux-ninja` command and build the `release` Ninja target exactly as configured above.
+
+The debug/unit-test workflow below is additional correctness validation. It does not replace the
+release Ninja build required for performance work.
+
 ## Debug and Unit-Test Builds
 
 All build commands must be executed from the **root project directory**. Follow these steps to build the project:

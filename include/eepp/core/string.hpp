@@ -794,6 +794,9 @@ class EE_API String {
 	/** Convert the string to a UTF-8 string */
 	std::string toUtf8() const;
 
+	/** Convert the string to UTF-8, reusing the output buffer capacity. */
+	void toUtf8( std::string& output ) const;
+
 	/** Convert the string to a UTF-16 string */
 	std::basic_string<char16_t> toUtf16() const;
 

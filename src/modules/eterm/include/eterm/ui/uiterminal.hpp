@@ -12,6 +12,8 @@ using namespace eterm::Terminal;
 
 namespace eterm { namespace UI {
 
+class UITerminalFind;
+
 class UITerminal : public UIWidget {
   public:
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
@@ -135,6 +137,7 @@ class UITerminal : public UIWidget {
 	Clock mMouseClock;
 	std::shared_ptr<TerminalDisplay> mTerm;
 	Uint32 mTerminalEventCallbackId{ 0 };
+	UITerminalFind* mFindBar{ nullptr };
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 
