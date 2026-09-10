@@ -135,6 +135,8 @@ enum TerminalGlyphAttribute {
 	ATTR_WDUMMY = 1 << 10,
 	ATTR_BOXDRAW = 1 << 11,
 	ATTR_EMOJI = 1 << 12,
+	ATTR_SEARCH_MATCH = 1 << 13,
+	ATTR_SEARCH_ACTIVE = 1 << 14,
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 

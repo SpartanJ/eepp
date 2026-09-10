@@ -586,6 +586,99 @@ int TerminalEmulator::tlinelen( Line line, int col ) const {
 	return i;
 }
 
+void TerminalEmulator::setSearchQuery( TerminalSearchQuery query ) {
+	TerminalSearchMatch previousMatch;
+	const bool preserveCurrent =
+		query.requestId == mSearchQuery.requestId && mCurrentSearchMatch >= 0 &&
+		mCurrentSearchMatch < static_cast<Int32>( mSearch.matches().size() );
+	if ( preserveCurrent )
+		previousMatch = mSearch.matches()[mCurrentSearchMatch];
+	mSearchQuery = std::move( query );
+	mSearchDirty = false;
+	mSearchRefreshClock.restart();
+	mSearchRows.clear();
+	if ( !TerminalSearch::isQuerySearchable( mSearchQuery ) ) {
+		mSearch.search( mSearchRows, mSearchQuery );
+		mCurrentSearchMatch = -1;
+		redraw();
+		return;
+	}
+	if ( tisaltscr() ) {
+		mSearchRows.reserve( mTerm.row );
+		for ( int row = 0; row < mTerm.row; ++row ) {
+			const int length = tlinelen( mTerm.line[row], mTerm.col );
+			mSearchRows.push_back(
+				{ mTerm.line[row], TerminalBufferSource::AlternateScreen, row, mTerm.col, length,
+				  length > 0 && ( mTerm.line[row][length - 1].mode & ATTR_WRAP ) } );
+		}
+	} else {
+		mSearchRows.reserve( mTerm.histlen + mTerm.row );
+		for ( int row = -mTerm.histlen; row < mTerm.row; ++row ) {
+			Line line =
+				row < 0 ? mTerm.hist[( row + mTerm.histi + mTerm.histsize + 1 ) % mTerm.histsize]
+						: mTerm.line[row];
+			const int length = tlinelen( line, mTerm.col );
+			mSearchRows.push_back(
+				{ line,
+				  row < 0 ? TerminalBufferSource::MainHistory : TerminalBufferSource::MainScreen,
+				  row, mTerm.col, length, length > 0 && ( line[length - 1].mode & ATTR_WRAP ) } );
+		}
+	}
+	mSearch.search( mSearchRows, mSearchQuery );
+	mCurrentSearchMatch = mSearch.matches().empty() ? -1 : 0;
+	if ( preserveCurrent ) {
+		const auto& matches = mSearch.matches();
+		for ( size_t index = 0; index < matches.size(); ++index ) {
+			if ( matches[index].start.source == previousMatch.start.source &&
+				 matches[index].start.row == previousMatch.start.row &&
+				 matches[index].start.column == previousMatch.start.column ) {
+				mCurrentSearchMatch = static_cast<Int32>( index );
+				break;
+			}
+		}
+	}
+	if ( mCurrentSearchMatch >= 0 )
+		navigateSearch( 0 );
+	else
+		redraw();
+}
+
+void TerminalEmulator::navigateSearch( int direction ) {
+	const auto& matches = mSearch.matches();
+	if ( matches.empty() )
+		return;
+	if ( direction != 0 ) {
+		mCurrentSearchMatch =
+			( mCurrentSearchMatch + direction + static_cast<Int32>( matches.size() ) ) %
+			static_cast<Int32>( matches.size() );
+	}
+	const auto& match = matches[mCurrentSearchMatch];
+	if ( match.start.source == TerminalBufferSource::MainHistory ) {
+		TerminalArg scroll( eeclamp( static_cast<int>( -match.start.row ), 0, mTerm.histlen ) );
+		kscrollto( &scroll );
+	} else if ( match.start.source == TerminalBufferSource::MainScreen && mTerm.scr != 0 ) {
+		TerminalArg scroll( 0 );
+		kscrollto( &scroll );
+	}
+	redraw();
+}
+
+void TerminalEmulator::clearSearch() {
+	mSearchQuery = {};
+	mSearch.search( {}, mSearchQuery );
+	mCurrentSearchMatch = -1;
+	mSearchDirty = false;
+	redraw();
+}
+
+const std::vector<TerminalSearchMatch>& TerminalEmulator::getSearchMatches() const {
+	return mSearch.matches();
+}
+
+Int32 TerminalEmulator::getCurrentSearchMatch() const {
+	return mCurrentSearchMatch;
+}
+
 int TerminalEmulator::tiswrapped( int y ) {
 	int len = tlinelen( y );
 
@@ -4233,11 +4326,15 @@ void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelH
 			return;
 		}
 		tresize( columns, rows );
+		if ( !mSearchQuery.text.empty() )
+			setSearchQuery( mSearchQuery );
 		redraw();
 		return;
 	}
 
 	tresize( columns, rows );
+	if ( !mSearchQuery.text.empty() )
+		setSearchQuery( mSearchQuery );
 
 	redraw();
 	mPendingPtyColumns = columns;
@@ -4294,6 +4391,11 @@ bool TerminalEmulator::update() {
 	bool readBudgetSaturated =
 		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
+	if ( reads > 0 && TerminalSearch::isQuerySearchable( mSearchQuery ) )
+		mSearchDirty = true;
+	if ( mSearchDirty &&
+		 ( !readBudgetSaturated || mSearchRefreshClock.getElapsedTime() >= Milliseconds( 100 ) ) )
+		setSearchQuery( mSearchQuery );
 
 	/* Keep presentation decoupled from every PTY read batch. Sustained output publishes on the
 	 * host frame deadline, while a drained/idle burst still publishes immediately. */

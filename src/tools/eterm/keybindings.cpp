@@ -10,6 +10,10 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 	return {
 		{ { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" },
 		{ { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" },
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find-next" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT | KEYMOD_ALT },
+		  "terminal-find-previous" },
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
 		{ { KEY_E,
 			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },

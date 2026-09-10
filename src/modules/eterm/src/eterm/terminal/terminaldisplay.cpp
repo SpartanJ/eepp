@@ -629,6 +629,33 @@ const std::shared_ptr<TerminalSession>& TerminalDisplay::getSession() const {
 	return mSession;
 }
 
+void TerminalDisplay::setSearchQuery( TerminalSearchQuery query ) {
+	if ( mSession )
+		mSession->setSearchQuery( std::move( query ) );
+}
+
+void TerminalDisplay::navigateSearch( int direction ) {
+	if ( mSession )
+		mSession->navigateSearch( direction );
+}
+
+void TerminalDisplay::clearSearch() {
+	if ( mSession )
+		mSession->clearSearch();
+}
+
+Uint32 TerminalDisplay::getSearchMatchCount() const {
+	return mSnapshot ? mSnapshot->searchMatchCount : 0;
+}
+
+Int32 TerminalDisplay::getCurrentSearchMatch() const {
+	return mSnapshot ? mSnapshot->currentSearchMatch : -1;
+}
+
+Uint64 TerminalDisplay::getSearchRequestId() const {
+	return mSnapshot ? mSnapshot->searchRequestId : 0;
+}
+
 int TerminalDisplay::scrollSize() const {
 	return mSnapshot ? mSnapshot->historyLength : 0;
 }
@@ -1444,6 +1471,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			if ( glyph.mode & ATTR_REVERSE )
 				bg = fg;
+			if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
+				Color highlight = mColorScheme.getCursor();
+				highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
+				bg = Color::blend( highlight, bg );
+			}
 
 			bool isWide = glyph.mode & ATTR_WIDE;
 
@@ -1498,6 +1530,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				}
 				if ( glyph.mode & ATTR_REVERSE )
 					background = foreground;
+				if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
+					Color highlight = mColorScheme.getCursor();
+					highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
+					background = Color::blend( highlight, background );
+				}
 				const bool wide = glyph.mode & ATTR_WIDE;
 				const Float advance = spaceCharAdvanceX * ( wide ? 2.0f : 1.0f );
 				if ( background != defaultBg ) {
@@ -1554,6 +1591,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				temp = fg;
 				fg = bg;
 				bg = temp;
+			}
+			if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
+				Color highlight = mColorScheme.getCursor();
+				highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
+				bg = Color::blend( highlight, bg );
 			}
 
 			if ( glyph.mode & ATTR_BLINK && ( mMode & MODE_BLINK ) )

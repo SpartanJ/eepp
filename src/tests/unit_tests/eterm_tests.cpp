@@ -10,6 +10,7 @@
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
+#include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminalsession.hpp>
 #include <limits>
 #include <thread>
@@ -1343,8 +1344,12 @@ UTEST( eterm, sgr_pixel_mouse_mode_uses_grid_relative_pixels ) {
 	term->update();
 	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 2, 3 }, { 20, 30 },
 					   EE_BUTTON_LMASK, 0 );
+	term->mousereport( TerminalMouseEventType::MouseButtonDown, { 2, 3 }, { 20, 30 },
+					   EE_BUTTON_RMASK, 0 );
+	term->mousereport( TerminalMouseEventType::MouseButtonRelease, { 2, 3 }, { 20, 30 },
+					   EE_BUTTON_RMASK, 0 );
 
-	EXPECT_STDSTREQ( "\033[<0;21;31M", ptyPtr->mWrites );
+	EXPECT_STDSTREQ( "\033[<0;21;31M\033[<2;21;31M\033[<2;21;31m", ptyPtr->mWrites );
 }
 
 UTEST( eterm, cursor_style_zero_uses_blinking_configured_shape ) {
@@ -2326,4 +2331,90 @@ UTEST( eterm, history_corruption_on_resize ) {
 
 		EXPECT_STDSTREQ( expected_lines[expected_idx], sel );
 	}
+}
+
+UTEST( eterm_search, logical_lines_options_and_cell_mapping ) {
+	TerminalGlyph first[] = { { 'H' }, { 'e' }, { 'l' }, { 'l' }, { 'o', ATTR_WRAP } };
+	TerminalGlyph second[] = { { 'W' }, { 'o' }, { 'r' }, { 'l' }, { 'd' } };
+	TerminalGlyph wide[] = { { 0x754C, ATTR_WIDE }, { 0, ATTR_WDUMMY }, { '!' } };
+	std::vector<TerminalSearchRowView> rows{
+		{ first, TerminalBufferSource::MainHistory, -1, 5, 5, true },
+		{ second, TerminalBufferSource::MainScreen, 0, 5, 5, false },
+		{ wide, TerminalBufferSource::MainScreen, 1, 3, 3, false },
+	};
+	TerminalSearch search;
+	EXPECT_TRUE( search.search( rows, { "o", 0, true, false } ).empty() );
+
+	auto matches = search.search( rows, { "lowo", 1, false, false } );
+	ASSERT_EQ( static_cast<size_t>( 1 ), matches.size() );
+	EXPECT_EQ( static_cast<Int64>( -1 ), matches[0].start.row );
+	EXPECT_EQ( 3, matches[0].start.column );
+	EXPECT_EQ( static_cast<Int64>( 0 ), matches[0].end.row );
+	EXPECT_EQ( 1, matches[0].end.column );
+
+	EXPECT_TRUE( search.search( rows, { "hello", 2, true, true } ).empty() );
+	EXPECT_EQ( static_cast<size_t>( 1 ),
+			   search.search( rows, { "HELLOWORLD", 3, false, true } ).size() );
+
+	String unicodeQuery;
+	unicodeQuery += static_cast<String::StringBaseType>( 0x754C );
+	unicodeQuery += '!';
+	matches = search.search( rows, { unicodeQuery, 4, true, false } );
+	ASSERT_EQ( static_cast<size_t>( 1 ), matches.size() );
+	EXPECT_EQ( 0, matches[0].start.column );
+	EXPECT_EQ( 2, matches[0].end.column );
+
+	matches = search.search( rows, { "l+oW.rld", 5, true, false, TerminalSearchType::RegEx } );
+	ASSERT_EQ( static_cast<size_t>( 1 ), matches.size() );
+	EXPECT_EQ( 2, matches[0].start.column );
+	EXPECT_EQ( static_cast<Int64>( 0 ), matches[0].end.row );
+	EXPECT_EQ( 4, matches[0].end.column );
+
+	matches = search.search( rows, { "界!", 6, true, false, TerminalSearchType::RegEx } );
+	ASSERT_EQ( static_cast<size_t>( 1 ), matches.size() );
+	EXPECT_EQ( 0, matches[0].start.column );
+	EXPECT_EQ( 2, matches[0].end.column );
+
+	matches = search.search( rows, { "[Ww]%a+d", 7, true, false, TerminalSearchType::LuaPattern } );
+	ASSERT_EQ( static_cast<size_t>( 1 ), matches.size() );
+	EXPECT_EQ( 0, matches[0].start.column );
+	EXPECT_EQ( 4, matches[0].end.column );
+
+	EXPECT_TRUE(
+		search.search( rows, { "[", 8, true, false, TerminalSearchType::RegEx } ).empty() );
+	EXPECT_EQ( static_cast<size_t>( 1 ),
+			   search.search( rows, { "helloworld", 9, false, false, TerminalSearchType::RegEx } )
+				   .size() );
+}
+
+UTEST( eterm_search, emulator_history_navigation_and_clear ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	ASSERT_TRUE( term != nullptr );
+
+	for ( int line = 0; line < 40; ++line ) {
+		const std::string text = "line " + std::to_string( line ) + " needle\r\n";
+		term->write( text.data(), text.size() );
+		term->update();
+	}
+	term->setSearchQuery( { "n", 41, true, false } );
+	EXPECT_TRUE( term->getSearchMatches().empty() );
+	EXPECT_EQ( -1, term->getCurrentSearchMatch() );
+	EXPECT_EQ( static_cast<Uint64>( 41 ), term->getSearchRequestId() );
+
+	term->setSearchQuery( { "needle", 42, true, true } );
+	ASSERT_EQ( static_cast<size_t>( 40 ), term->getSearchMatches().size() );
+	EXPECT_EQ( 0, term->getCurrentSearchMatch() );
+	EXPECT_TRUE( term->scrollPos() > 0 );
+
+	term->navigateSearch( -1 );
+	EXPECT_EQ( 39, term->getCurrentSearchMatch() );
+	EXPECT_EQ( 0, term->scrollPos() );
+	term->navigateSearch( 1 );
+	EXPECT_EQ( 0, term->getCurrentSearchMatch() );
+	term->clearSearch();
+	EXPECT_TRUE( term->getSearchMatches().empty() );
+	EXPECT_EQ( -1, term->getCurrentSearchMatch() );
 }

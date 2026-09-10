@@ -258,6 +258,18 @@ class TerminalDisplay {
 
 	const std::shared_ptr<TerminalSession>& getSession() const;
 
+	void setSearchQuery( TerminalSearchQuery query );
+
+	void navigateSearch( int direction );
+
+	void clearSearch();
+
+	Uint32 getSearchMatchCount() const;
+
+	Int32 getCurrentSearchMatch() const;
+
+	Uint64 getSearchRequestId() const;
+
 	std::string getSelection();
 
 	bool hasSelection() const;

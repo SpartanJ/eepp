@@ -9,6 +9,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <eterm/ui/uiterminalfind.hpp>
 
 using namespace EE::Scene;
 
@@ -112,6 +113,11 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-paste-selection",
 				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
+	mFindBar = UITerminalFind::New( this );
+	setCommand( "terminal-find", [this] { mFindBar->show(); } );
+	setCommand( "terminal-find-next", [this] { mTerm->navigateSearch( 1 ); } );
+	setCommand( "terminal-find-previous", [this] { mTerm->navigateSearch( -1 ); } );
+	setCommand( "terminal-find-close", [this] { mFindBar->hide(); } );
 	mKeyBindings.addKeybind( { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" );
 	mKeyBindings.addKeybind( { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" );
 	setCommand( "terminal-open-link",
@@ -345,6 +351,8 @@ void UITerminal::scheduledUpdate( const Time& ) {
 	bool mouseOutsideBounds =
 		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
 	terminal->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	if ( mFindBar && mFindBar->isVisible() )
+		mFindBar->refreshStatus();
 	if ( !mVScroll->isDragging() && ( mScrollByBar || mPendingContentSizeChange ) ) {
 		updateScrollPosition();
 		if ( !mScrollByBar && mPendingContentSizeChange )
@@ -546,7 +554,7 @@ Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& f
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( flags & EE_BUTTON_RMASK ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && !mTerm->isAppCapturingMouse() ) {
 		onCreateContextMenu( position, flags );
 		return 1;
 	}
@@ -567,6 +575,9 @@ void UITerminal::onSizeChange() {
 			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
+	if ( mFindBar && mFindBar->isVisible() )
+		mFindBar->setPosition( eemax( 0.f, getSize().getWidth() - mFindBar->getSize().getWidth() ),
+							   0 );
 	UIWidget::onSizeChange();
 }
 
@@ -604,6 +615,8 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 		->setEnabled( mTerm->hasSelection() );
 	menuAdd( menu, i18n( "uiterminal_paste", "Paste" ), "paste", "terminal-paste" )
 		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
+	menu->addSeparator();
+	menuAdd( menu, i18n( "uiterminal_find", "Find..." ), "search", "terminal-find" );
 }
 
 DrawablePtr UITerminal::findIcon( const std::string& name ) {

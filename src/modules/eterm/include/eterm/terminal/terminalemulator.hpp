@@ -43,6 +43,7 @@
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/kittygraphicsprotocol.hpp>
 #include <eterm/terminal/kittykeyboardprotocol.hpp>
+#include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
 #include <stdint.h>
@@ -297,6 +298,18 @@ class TerminalEmulator final {
 
 	int getTerminalMode() const { return mTerm.mode; }
 
+	void setSearchQuery( TerminalSearchQuery query );
+
+	void navigateSearch( int direction );
+
+	void clearSearch();
+
+	const std::vector<TerminalSearchMatch>& getSearchMatches() const;
+
+	Int32 getCurrentSearchMatch() const;
+
+	Uint64 getSearchRequestId() const { return mSearchQuery.requestId; }
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
@@ -361,6 +374,12 @@ class TerminalEmulator final {
 	};
 	std::unordered_map<const TerminalGlyph*, KittyPlaceholderMetadata> mKittyPlaceholderMetadata;
 	Uint32 mKittyUnderlineColor{ 0 };
+	TerminalSearch mSearch;
+	TerminalSearchQuery mSearchQuery;
+	std::vector<TerminalSearchRowView> mSearchRows;
+	Int32 mCurrentSearchMatch{ -1 };
+	Clock mSearchRefreshClock;
+	bool mSearchDirty{ false };
 
 	void setClipboard( const char* str );
 

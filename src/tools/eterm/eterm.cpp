@@ -3,6 +3,10 @@
 
 namespace eterm {
 
+struct TabWidgetSplitterDeleter {
+	void operator()( UITabWidgetSplitter* splitter ) const { eeDelete( splitter ); }
+};
+
 void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* widget ) {
 	if ( mApp.terminalIcon && widget && widget->isType( UI_TYPE_TERMINAL ) )
 		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
@@ -825,7 +829,9 @@ int App::run( int argc, char* argv[] ) {
 	mainLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	mainLayout->setPixelsSize( appWindow->getSize().asFloat() );
 
-	tabSplitter = UITabWidgetSplitter::New( &splitterClient, scene );
+	std::unique_ptr<UITabWidgetSplitter, TabWidgetSplitterDeleter> tabSplitterOwner(
+		UITabWidgetSplitter::New( &splitterClient, scene ) );
+	tabSplitter = tabSplitterOwner.get();
 	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );
 	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {
 		restoreMaximizedTabWidget();

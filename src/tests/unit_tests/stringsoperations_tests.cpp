@@ -100,6 +100,13 @@ UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	const std::string utf8Text = text.toUtf8();
 	EXPECT_STREQ( "áβ中", utf8Text.c_str() );
 	EXPECT_EQ( textStorage, text.getString().data() );
+
+	std::string reusableUtf8;
+	reusableUtf8.reserve( 128 );
+	const char* utf8Storage = reusableUtf8.data();
+	text.toUtf8( reusableUtf8 );
+	EXPECT_STREQ( "áβ中", reusableUtf8.c_str() );
+	EXPECT_EQ( utf8Storage, reusableUtf8.data() );
 }
 
 UTEST( FileSystem, fileCountLines ) {
