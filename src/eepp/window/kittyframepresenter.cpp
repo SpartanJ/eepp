@@ -36,6 +36,14 @@ bool environmentFlag( const char* name, bool defaultValue ) {
 	return defaultValue;
 }
 
+bool supportsPersistentRootImageUpdates() {
+	const char* term = std::getenv( "TERM" );
+	// Root-image animation-frame edits (Kitty a=f,r=1) are not implemented consistently by
+	// terminal emulators. eterm supports the exact update path used by this presenter; use the
+	// universally reliable anonymous full-frame path elsewhere unless explicitly overridden.
+	return term && String::iequals( term, "eterm" );
+}
+
 int environmentCompressionLevel() {
 	const char* value = std::getenv( "EEPP_TERMINAL_ZLIB_LEVEL" );
 	if ( !value || !value[0] )
@@ -128,9 +136,12 @@ KittyFramePresenter::~KittyFramePresenter() {
 bool KittyFramePresenter::initialize( Window& window ) {
 	if ( !TerminalRuntime::instance().initialize() )
 		return false;
-	mPersistentUpdatesEnabled = environmentFlag( "EEPP_TERMINAL_PERSISTENT_UPDATES", true );
+	const bool persistentUpdatesDefault = supportsPersistentRootImageUpdates();
+	mPersistentUpdatesEnabled =
+		environmentFlag( "EEPP_TERMINAL_PERSISTENT_UPDATES", persistentUpdatesDefault );
 	mDamageUpdatesEnabled =
-		mPersistentUpdatesEnabled && environmentFlag( "EEPP_TERMINAL_DAMAGE_UPDATES", true );
+		mPersistentUpdatesEnabled &&
+		environmentFlag( "EEPP_TERMINAL_DAMAGE_UPDATES", persistentUpdatesDefault );
 	mZlibCompressionLevel = environmentCompressionLevel();
 	TerminalRuntime::instance().attach( window );
 	mRunning = true;
