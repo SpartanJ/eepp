@@ -1,5 +1,3 @@
-#include <tabulate/tabulate.hpp>
-
 #include "../eepp/window/terminal/framedamage.hpp"
 #include "../tests/unit_tests/utest.hpp"
 
@@ -223,16 +221,8 @@ UTEST( Benchmark, TerminalFrameDamage ) {
 		return findFrameDamageAdaptive( current, previous, size, rectangles, changedTiles );
 	};
 
-	tabulate::Table table;
-	table.add_row( { "Resolution", "Scenario", "Tile-major us", "memcmp + tile us", "Row-major us",
-					 "memcmp + rows us", "Production", "Production us", "Gap to fastest",
-					 "Transfer MiB" } );
-	for ( size_t column = 0; column < table[0].size(); ++column ) {
-		table[0][column]
-			.format()
-			.font_align( tabulate::FontAlign::center )
-			.font_style( { tabulate::FontStyle::bold } );
-	}
+	UTEST_PRINT_INFO( "resolution scenario tile-us memcmp+tile-us row-us memcmp+row-us production "
+					  "production-us gap-to-fastest transfer-MiB" );
 	for ( const Resolution& resolution : resolutions ) {
 		const size_t frameBytes = static_cast<size_t>( resolution.size.x ) * resolution.size.y * 3;
 		std::vector<Uint8> previous( frameBytes, 0x35 );
@@ -273,20 +263,16 @@ UTEST( Benchmark, TerminalFrameDamage ) {
 			const double gapToFastest = ( productionTime / fastestTime - 1.0 ) * 100.0;
 			const double transferMiB =
 				static_cast<double>( baseline.transferPixels * 3 ) / ( 1024.0 * 1024.0 );
-			table.add_row( { String::format( "%dx%d", resolution.size.x, resolution.size.y ),
-							 scenario.name, String::format( "%.2f", baseline.microsecondsPerFrame ),
-							 String::format( "%.2f", equality.microsecondsPerFrame ),
-							 String::format( "%.2f", rows.microsecondsPerFrame ),
-							 String::format( "%.2f", equalityRows.microsecondsPerFrame ),
-							 productionUsesRows ? "row-major" : "tile-major",
-							 String::format( "%.2f", productionTime ),
-							 String::format( "%.1f%%", gapToFastest ),
-							 String::format( "%.2f", transferMiB ) } );
+			UTEST_PRINT_INFO(
+				String::format( "%dx%d %-16s %.2f %.2f %.2f %.2f %s %.2f %.1f%% %.2f",
+								resolution.size.x, resolution.size.y, scenario.name,
+								baseline.microsecondsPerFrame, equality.microsecondsPerFrame,
+								rows.microsecondsPerFrame, equalityRows.microsecondsPerFrame,
+								productionUsesRows ? "row-major" : "tile-major", productionTime,
+								gapToFastest, transferMiB )
+					.c_str() );
 			EXPECT_GT(
 				baseline.checksum + equality.checksum + rows.checksum + equalityRows.checksum, 0u );
 		}
 	}
-	for ( size_t column = 2; column < table[0].size(); ++column )
-		table.column( column ).format().font_align( tabulate::FontAlign::right );
-	UTEST_PRINT_INFO( ( "\n" + table.str() ).c_str() );
 }
