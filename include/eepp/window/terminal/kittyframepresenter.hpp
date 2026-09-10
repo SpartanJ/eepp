@@ -50,6 +50,7 @@ class KittyFramePresenter final : public FramePresenter {
 	Frame mRecycle;
 	Frame mPresented;
 	std::vector<DamageRectangle> mDamageRectangles;
+	std::vector<Uint8> mDamageTiles;
 	std::vector<Uint8> mTransferPixels;
 	std::vector<Uint8> mCompressedPixels;
 	int mZlibCompressionLevel{ 1 };

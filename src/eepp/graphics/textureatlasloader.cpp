@@ -156,6 +156,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				std::string name( &tTextureHdr.Name[0] );
 				std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
+				std::string completePath( path );
 				FileSystem::filePathRemoveProcessPath( path );
 
 				//! Checks if the texture is already loaded
@@ -173,8 +174,10 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );
 						} );
 					} else {
-						mRL.add( [this, textureIndex, path = std::move( path )] {
-							TexturePtr texture = TextureFactory::instance()->loadFromFile( path );
+						mRL.add( [this, textureIndex, path = std::move( path ),
+								  completePath = std::move( completePath )] {
+							TexturePtr texture =
+								TextureFactory::instance()->loadFromFile( completePath );
 							if ( texture )
 								mResourceScope->publishLocal( path, texture );
 							mTempAtlass[textureIndex].LoadedTexture = std::move( texture );

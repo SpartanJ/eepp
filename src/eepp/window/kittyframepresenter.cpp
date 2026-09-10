@@ -6,6 +6,8 @@
 #include <eepp/window/terminal/terminalruntime.hpp>
 #include <eepp/window/window.hpp>
 
+#include "terminal/framedamage.hpp"
+
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -17,11 +19,9 @@ namespace EE { namespace Window {
 
 namespace {
 
-constexpr Int32 TileSize = 32;
 constexpr size_t CompressionThreshold = 4096;
 constexpr Uint32 StreamImageId = 0x45455050;
 constexpr Uint32 StreamPlacementId = 1;
-enum class DamageResult : Uint8 { None, Rectangle, Full };
 
 bool environmentFlag( const char* name, bool defaultValue ) {
 	const char* value = std::getenv( name );
@@ -51,53 +51,6 @@ int environmentCompressionLevel() {
 	char* end = nullptr;
 	const long level = std::strtol( value, &end, 10 );
 	return end != value && *end == '\0' && level >= 0 && level <= 9 ? static_cast<int>( level ) : 1;
-}
-
-template <typename Rectangle>
-DamageResult findDamage( const std::vector<Uint8>& current, const std::vector<Uint8>& previous,
-						 const Math::Sizei& size, std::vector<Rectangle>& rectangles ) {
-	rectangles.clear();
-	const Int32 tilesX = ( size.x + TileSize - 1 ) / TileSize;
-	const Int32 tilesY = ( size.y + TileSize - 1 ) / TileSize;
-	const size_t rowBytes = static_cast<size_t>( size.x ) * 3;
-	const size_t totalPixels = static_cast<size_t>( size.x ) * size.y;
-	size_t changedPixels = 0;
-	Int32 left = size.x;
-	Int32 top = size.y;
-	Int32 right = 0;
-	Int32 bottom = 0;
-
-	for ( Int32 tileY = 0; tileY < tilesY; ++tileY ) {
-		const Int32 y = tileY * TileSize;
-		const Int32 height = eemin( TileSize, size.y - y );
-		for ( Int32 tileX = 0; tileX < tilesX; ++tileX ) {
-			bool changed = false;
-			const Int32 x = tileX * TileSize;
-			const Int32 width = eemin( TileSize, size.x - x );
-			for ( Int32 row = 0; row < height && !changed; ++row ) {
-				const Int32 sourceRow = size.y - 1 - ( y + row );
-				const size_t offset =
-					static_cast<size_t>( sourceRow ) * rowBytes + static_cast<size_t>( x ) * 3;
-				changed = 0 != std::memcmp( current.data() + offset, previous.data() + offset,
-											static_cast<size_t>( width ) * 3 );
-			}
-			if ( changed ) {
-				changedPixels += static_cast<size_t>( width ) * height;
-				left = eemin( left, x );
-				top = eemin( top, y );
-				right = eemax( right, x + width );
-				bottom = eemax( bottom, y + height );
-				if ( changedPixels * 5 >= totalPixels * 3 )
-					return DamageResult::Full;
-			}
-		}
-	}
-
-	if ( left < right && top < bottom ) {
-		rectangles.push_back( { left, top, right - left, bottom - top } );
-		return DamageResult::Rectangle;
-	}
-	return DamageResult::None;
 }
 
 bool compressPixels( const std::vector<Uint8>& input, std::vector<Uint8>& output, int level ) {
@@ -221,13 +174,13 @@ bool KittyFramePresenter::sendFrame( const Frame& frame ) {
 		return sendTransfer( mTransferPixels, full, true );
 	}
 
-	const DamageResult damage =
-		findDamage( frame.pixels, mPresented.pixels, frame.size, mDamageRectangles );
-	if ( damage == DamageResult::Full ) {
+	const Private::FrameDamageResult damage = Private::findFrameDamageAdaptive(
+		frame.pixels, mPresented.pixels, frame.size, mDamageRectangles, mDamageTiles );
+	if ( damage == Private::FrameDamageResult::Full ) {
 		extractRectangle( frame, full );
 		return sendTransfer( mTransferPixels, full, false );
 	}
-	if ( damage == DamageResult::None )
+	if ( damage == Private::FrameDamageResult::None )
 		return true;
 	for ( const DamageRectangle& rectangle : mDamageRectangles ) {
 		extractRectangle( frame, rectangle );
