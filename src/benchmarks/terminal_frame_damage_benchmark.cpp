@@ -1,10 +1,10 @@
-#include "../tests/unit_tests/utest.hpp"
+#include <tabulate/tabulate.hpp>
 
 #include "../eepp/window/terminal/framedamage.hpp"
+#include "../tests/unit_tests/utest.hpp"
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/clock.hpp>
-#include <tabulate/tabulate.hpp>
 
 #include <algorithm>
 #include <array>
