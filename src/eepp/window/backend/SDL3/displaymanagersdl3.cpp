@@ -17,14 +17,14 @@ std::string DisplaySDL3::getName() const {
 Rect DisplaySDL3::getBounds() const {
 	SDL_Rect r{};
 	if ( mDisplayId && SDL_GetDisplayBounds( mDisplayId, &r ) == 0 )
-		return Rect( r.x, r.y, r.w, r.h );
+		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
 
 Rect DisplaySDL3::getUsableBounds() const {
 	SDL_Rect r{};
 	if ( mDisplayId && SDL_GetDisplayUsableBounds( mDisplayId, &r ) == 0 )
-		return Rect( r.x, r.y, r.w, r.h );
+		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
 

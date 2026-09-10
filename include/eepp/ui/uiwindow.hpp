@@ -4,6 +4,7 @@
 #include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -11,6 +12,7 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UIApplication;
 class UITextView;
 class UISceneNode;
 
@@ -61,6 +63,14 @@ class EE_API UIWindow : public UIWidget {
 		RELATIVE_LAYOUT
 	};
 
+	/** Selects how a native host created by NewInApplicationWindow() is initially positioned. */
+	enum class ApplicationWindowPosition {
+		/** Leaves placement entirely to the desktop window manager. */
+		WindowManager,
+		/** Centers the host over the primary application window and clamps it to usable bounds. */
+		CenteredOnPrimary
+	};
+
 	static UIWindow* NewOpt( WindowBaseContainerType type,
 							 const StyleConfig& windowStyleConfig = StyleConfig() );
 
@@ -71,6 +81,17 @@ class EE_API UIWindow : public UIWidget {
 	static UIWindow* NewHBox();
 
 	static UIWindow* NewRelLay();
+
+	/** Creates a UIWindow in a native application window. On Emscripten and in terminal runtime
+	 * this transparently falls back to a regular in-application UIWindow. Native placement is left
+	 * to the window manager unless CenteredOnPrimary is explicitly requested. */
+	static UIWindow* NewInApplicationWindow(
+		UIApplication& application, const EE::Window::WindowSettings& windowSettings,
+		WindowBaseContainerType type = SIMPLE_LAYOUT,
+		const StyleConfig& windowStyleConfig = StyleConfig(),
+		const EE::Window::ContextSettings& contextSettings = EE::Window::ContextSettings(),
+		bool modal = false,
+		ApplicationWindowPosition position = ApplicationWindowPosition::WindowManager );
 
 	virtual ~UIWindow();
 
@@ -210,6 +231,13 @@ class EE_API UIWindow : public UIWidget {
 	virtual void unserialize( const nlohmann::json& json );
 
   protected:
+	/** Shared native-host factory used by UIWindow subclasses. On Emscripten and in terminal
+	 * runtime it creates a regular in-scene window instead. */
+	static UIWindow* createInApplicationWindow( UIApplication& application,
+												const EE::Window::WindowSettings& windowSettings,
+												const std::function<UIWindow*()>& windowFactory,
+												const EE::Window::ContextSettings& contextSettings,
+												bool modal, ApplicationWindowPosition position );
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
 		RESIZE_LEFT,
@@ -256,6 +284,7 @@ class EE_API UIWindow : public UIWidget {
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	std::function<bool( Node* focusNode )> mCheckEphemeralCloseFn;
+	std::function<void()> mApplicationWindowCloseCallback;
 
 	explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 

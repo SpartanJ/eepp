@@ -7,6 +7,8 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
@@ -227,6 +229,16 @@ void Node::unsubscribeScheduledUpdate() {
 
 Node* Node::setParent( Node* parent ) {
 	eeASSERT( NULL != parent );
+#ifdef EE_DEBUG
+	if ( isUINode() && parent->isUINode() ) {
+		auto* childScene = asType<UI::UINode>()->getUISceneNode();
+		auto* parentScene = parent->asType<UI::UINode>()->getUISceneNode();
+		// Same-window scene rebinding is an existing supported mechanism for embedded documents.
+		// Cross-window rebinding cannot safely migrate input and native-window dependencies.
+		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
+				  childScene->getWindow() == parentScene->getWindow() );
+	}
+#endif
 
 	if ( parent == mParentNode )
 		return this;

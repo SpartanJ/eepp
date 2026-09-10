@@ -172,6 +172,9 @@ class EE_API TextureFactory : protected Mutex {
 	 */
 	void setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit );
 
+	/** Invalidates cached OpenGL binding state after changing the current graphics context. */
+	void invalidateTextureBindings();
+
 	/** Returns the number of currently live textures. */
 	Uint32 getTextureCount();
 

@@ -21,6 +21,10 @@ class EE_API UIIconThemeManager {
 
 	UIIconTheme* getCurrentTheme() const;
 
+	/** Returns a retaining handle to the current icon theme, or an empty handle if no owned theme
+	 * is current. */
+	UIIconThemePtr getCurrentThemeHandle() const;
+
 	UIIconThemeManager* setCurrentTheme( UIIconThemePtr currentTheme );
 
 	UIIconTheme* getFallbackTheme() const;

@@ -133,6 +133,28 @@ UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultRes
 	return eeNew( UISceneNode, ( window, importDefaultResources ) );
 }
 
+UISceneNode::Context::Context( UISceneNode* scene ) :
+	mPreviousScene( SceneManager::instance()->setScopedUISceneNode( scene ) ),
+	mWindowContext(
+		Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ) {}
+
+UISceneNode::Context::~Context() {
+	if ( !mActive )
+		return;
+	SceneManager::instance()->setScopedUISceneNode( mPreviousScene );
+}
+
+UISceneNode::Context::Context( Context&& other ) noexcept :
+	mPreviousScene( other.mPreviousScene ),
+	mWindowContext( std::move( other.mWindowContext ) ),
+	mActive( other.mActive ) {
+	other.mActive = false;
+}
+
+UISceneNode::Context UISceneNode::makeCurrent() {
+	return Context( this );
+}
+
 UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources ) :
 	SceneNode( window ),
 	mRoot( NULL ),
@@ -146,6 +168,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mDrawableResolver( *this ),
 	mWebResourceCache( WebResourceCache::New() ),
 	mKeyBindings( mWindow->getInput() ) {
+	auto context = makeCurrent();
 	if ( mImportDefaultResources )
 		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
 
@@ -547,7 +570,7 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 }
 
 SmallVector<UIWidget*, 8> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
-											  const Uint32& marker ) {
+												 const Uint32& marker ) {
 	Uint32 oldMarker = mCurrentMarker;
 	mCurrentMarker = marker;
 
@@ -641,8 +664,7 @@ SmallVector<UIWidget*, 8> UISceneNode::loadNode( pugi::xml_node node, Node* pare
 
 UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const Uint32& marker ) {
 	Clock clock;
-	UISceneNode* prevUISceneNode = SceneManager::instance()->getUISceneNode();
-	SceneManager::instance()->setCurrentUISceneNode( this );
+	auto context = makeCurrent();
 	std::string id( node.attribute( "id" ).as_string() );
 	mIsLoading = true;
 	Clock innerClock;
@@ -683,8 +705,6 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 	}
 
 	mIsLoading = false;
-
-	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
 
 	if ( mVerbose ) {
 		Log::debug( "UISceneNode::loadLayoutNodes loaded in: %.2f ms",
@@ -1174,15 +1194,13 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
-	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
+	auto context = makeCurrent();
 
 	drainAsyncResourceMainThreadQueue();
 
 	if ( mFirstUpdate && mVerbose ) {
 		mClock.restart();
 	}
-
-	SceneManager::instance()->setCurrentUISceneNode( this );
 
 	updateDirtyStyles();
 	updateDirtyStyleStates();
@@ -1220,8 +1238,6 @@ void UISceneNode::update( const Time& elapsed ) {
 		updateDirtyLayouts();
 		invalidationDepth--;
 	}
-
-	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 
 	if ( mFirstUpdate && mVerbose ) {
 		mFirstUpdate = false;

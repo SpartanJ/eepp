@@ -39,6 +39,8 @@ class EE_API RendererGLES2 : public RendererGLShader {
 
 	void enable( unsigned int cap );
 
+	void onContextChanged();
+
 	void enableClientState( unsigned int array );
 
 	void disableClientState( unsigned int array );

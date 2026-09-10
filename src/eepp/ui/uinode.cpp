@@ -44,7 +44,7 @@ UINode::UINode() :
 	mUISceneNode( SceneManager::instance()->getUISceneNode() ) {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
-	if ( NULL != mUISceneNode )
+	if ( NULL != mUISceneNode && NULL != mUISceneNode->getRoot() )
 		setParent( (Node*)mUISceneNode->getRoot() );
 }
 

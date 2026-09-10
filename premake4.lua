@@ -1737,6 +1737,12 @@ solution "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-application-multi-window"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_multi_window/*.cpp" }
+		build_link_configuration( "eepp-ui-application-multi-window", true )
+
 	project "eepp-ui-font-picker"
 		set_kind()
 		language "C++"

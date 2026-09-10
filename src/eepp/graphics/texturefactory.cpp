@@ -1,5 +1,6 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <SOIL2/src/SOIL2/stb_image.h>
+#include <algorithm>
 #include <atomic>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -219,6 +220,11 @@ int TextureFactory::getCurrentTexture( const Uint32& TextureUnit ) const {
 void TextureFactory::setCurrentTexture( const int& textureHandle, const Uint32& TextureUnit ) {
 	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
 	mCurrentTexture[TextureUnit] = textureHandle;
+}
+
+void TextureFactory::invalidateTextureBindings() {
+	std::fill( mCurrentTexture.begin(), mCurrentTexture.end(), -1 );
+	mLastCoordinateType = static_cast<Texture::CoordinateType>( -1 );
 }
 
 TextureRegistrySnapshot TextureFactory::snapshotTextures() {

@@ -35,7 +35,7 @@ std::string DisplaySDL2::getName() const {
 Rect DisplaySDL2::getBounds() const {
 	SDL_Rect r;
 	if ( SDL_GetDisplayBounds( index, &r ) == 0 )
-		return Rect( r.x, r.y, r.w, r.h );
+		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
 
@@ -114,7 +114,7 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) const {
 Rect DisplaySDL2::getUsableBounds() const {
 	SDL_Rect r;
 	if ( SDL_GetDisplayUsableBounds( index, &r ) == 0 )
-		return Rect( r.x, r.y, r.w, r.h );
+		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
 
