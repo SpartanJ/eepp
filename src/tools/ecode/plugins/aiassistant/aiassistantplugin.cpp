@@ -276,7 +276,8 @@ AIAssistantPlugin::~AIAssistantPlugin() {
 			mModelCatalog->cancel();
 		mModelCatalog.reset();
 	}
-	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() ) {
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+		 getPluginContext() && getPluginContext()->getSplitter() ) {
 		getPluginContext()->getSplitter()->forEachWidgetClass(
 			"llm_chatui", []( UIWidget* widget ) {
 				LLMChatUI* chat = static_cast<LLMChatUI*>( widget );

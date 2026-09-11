@@ -627,44 +627,7 @@ static std::string sGetProcessPath() {
 		return std::string( dirname( exe_file ) ) + "/";
 	}
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-#ifdef UNICODE
-	// Get path to executable:
-	char szDrive[_MAX_DRIVE];
-	char szDir[_MAX_DIR];
-	char szFilename[_MAX_DIR];
-	char szExt[_MAX_DIR];
-	std::wstring dllName( _MAX_DIR, 0 );
-
-	GetModuleFileName( 0, &dllName[0], _MAX_PATH );
-
-	std::string dllstrName( String( dllName ).toUtf8() );
-
-#ifdef EE_COMPILER_MSVC
-	_splitpath_s( dllstrName.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR,
-				  szExt, _MAX_DIR );
-#else
-	_splitpath( dllstrName.c_str(), szDrive, szDir, szFilename, szExt );
-#endif
-
-	return std::string( szDrive ) + std::string( szDir );
-#else
-	// Get path to executable:
-	TCHAR szDllName[_MAX_PATH];
-	TCHAR szDrive[_MAX_DRIVE];
-	TCHAR szDir[_MAX_DIR];
-	TCHAR szFilename[_MAX_DIR];
-	TCHAR szExt[_MAX_DIR];
-	GetModuleFileName( 0, szDllName, _MAX_PATH );
-
-#ifdef EE_COMPILER_MSVC
-	_splitpath_s( szDllName, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR, szExt,
-				  _MAX_DIR );
-#else
-	_splitpath( szDllName, szDrive, szDir, szFilename, szExt );
-#endif
-
-	return std::string( szDrive ) + std::string( szDir );
-#endif
+	return FileSystem::fileRemoveFileName( Sys::getProcessFilePath() );
 #elif EE_PLATFORM == EE_PLATFORM_BSD
 	int mib[4];
 	mib[0] = CTL_KERN;
@@ -1393,11 +1356,23 @@ std::string Sys::getProcessFilePath() {
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::wstring exename( _MAX_DIR, 0 );
-	DWORD size = GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
-	if ( size > 0 && size < _MAX_PATH )
-		exename.resize( size ); // Resize to actual size without extra null characters
-	return String( exename ).toUtf8();
+	// Windows paths are UTF-16. Using GetModuleFileNameA here makes executable paths containing
+	// characters outside the active ANSI code page unusable (for example, CJK install paths).
+	DWORD capacity = _MAX_PATH;
+	while ( capacity <= 32768 ) {
+		std::wstring exename( capacity, 0 );
+		DWORD size = GetModuleFileNameW( nullptr, &exename[0], capacity );
+		if ( size == 0 )
+			return {};
+		if ( size < capacity ) {
+			exename.resize( size );
+			return String( exename ).toUtf8();
+		}
+		if ( capacity == 32768 )
+			break;
+		capacity = eemin<DWORD>( capacity * 2, 32768 );
+	}
+	return {};
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	char path[] = "/proc/self/exe";
 	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
