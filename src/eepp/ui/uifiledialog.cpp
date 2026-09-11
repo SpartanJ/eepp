@@ -10,7 +10,9 @@
 #include <eepp/system/log.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -44,6 +46,33 @@ struct NativeFileDialogHandler {
 UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
 								 const std::string& defaultDirectory ) {
 	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
+}
+
+UIFileDialog* UIFileDialog::NewInApplicationWindow(
+	UIApplication& application, const WindowSettings& windowSettings, Uint32 dialogFlags,
+	const std::string& defaultFilePattern, const std::string& defaultDirectory,
+	const ContextSettings& contextSettings, bool modal, ApplicationWindowPosition position ) {
+	dialogFlags &= ~UIFileDialog::UseNativeFileDialog;
+	WindowSettings dialogWindowSettings( windowSettings );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	if ( Runtime::mode() != RuntimeMode::Terminal ) {
+		// WindowSettings dimensions are screen coordinates, while the file dialog minimum is in dp.
+		// Create the native host at its final minimum size so the window manager never positions a
+		// smaller window that is immediately enlarged after the dialog has been laid out.
+		dialogWindowSettings.Width =
+			eemax( dialogWindowSettings.Width,
+				   static_cast<Uint32>( PixelDensity::dpToPxI( FDLG_MIN_WIDTH ) ) );
+		dialogWindowSettings.Height =
+			eemax( dialogWindowSettings.Height,
+				   static_cast<Uint32>( PixelDensity::dpToPxI( FDLG_MIN_HEIGHT ) ) );
+	}
+#endif
+	return static_cast<UIFileDialog*>( createInApplicationWindow(
+		application, dialogWindowSettings,
+		[dialogFlags, defaultFilePattern, defaultDirectory] {
+			return New( dialogFlags, defaultFilePattern, defaultDirectory );
+		},
+		contextSettings, modal, position ) );
 }
 
 UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePattern,

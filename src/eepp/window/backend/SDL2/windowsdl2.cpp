@@ -316,7 +316,8 @@ void WindowSDL::makeCurrent() {
 }
 
 void WindowSDL::close() {
-	destroySDLResources();
+	if ( !getDeferNativeResourceDestructionOnClose() )
+		destroySDLResources();
 	Window::close();
 }
 
@@ -538,6 +539,17 @@ void WindowSDL::setSize( Uint32 width, Uint32 height, bool windowed ) {
 	mCursorManager->reload();
 
 	sendVideoResizeCb();
+}
+
+void WindowSDL::setMinimumSize( Uint32 width, Uint32 height ) {
+	SDL_SetWindowMinimumSize( mSDLWindow, static_cast<int>( width ), static_cast<int>( height ) );
+}
+
+bool WindowSDL::setModalFor( Window* parent ) {
+	auto* parentWindow = dynamic_cast<WindowSDL*>( parent );
+	if ( nullptr == parentWindow )
+		return false;
+	return 0 == SDL_SetWindowModalFor( mSDLWindow, parentWindow->mSDLWindow );
 }
 
 void WindowSDL::swapBuffers() {

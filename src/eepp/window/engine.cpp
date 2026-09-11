@@ -30,6 +30,7 @@
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
 #include <eepp/window/terminal/terminalruntime.hpp>
 
@@ -53,6 +54,21 @@
 using namespace EE::Graphics;
 
 namespace EE { namespace Window {
+
+Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window ) :
+	mEngine( engine ), mPreviousWindow( engine->getCurrentWindow() ) {
+	mEngine->setCurrentWindow( window );
+}
+
+Engine::WindowContext::~WindowContext() {
+	if ( mActive )
+		mEngine->setCurrentWindow( mPreviousWindow );
+}
+
+Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
+	mEngine( other.mEngine ), mPreviousWindow( other.mPreviousWindow ), mActive( other.mActive ) {
+	other.mActive = false;
+}
 
 namespace {
 
@@ -245,6 +261,7 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 }
 
 EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+	const bool firstWindow = mWindows.empty();
 	if ( Runtime::mode() == RuntimeMode::Terminal && !mWindows.empty() ) {
 		Log::error( "Terminal runtime currently supports one top-level Window" );
 		return nullptr;
@@ -287,7 +304,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	if ( Settings.PixelDensity > 0 )
+	if ( firstWindow && Settings.PixelDensity > 0 )
 		PixelDensity::setPixelDensity( Settings.PixelDensity );
 
 	return window;
@@ -297,11 +314,9 @@ void Engine::destroyWindow( EE::Window::Window* window ) {
 	mWindows.erase( window->getWindowID() );
 
 	if ( window == mWindow ) {
-		if ( mWindows.size() > 0 ) {
-			mWindow = mWindows.begin()->second;
-		} else {
-			mWindow = NULL;
-		}
+		mWindow = NULL;
+		if ( !mWindows.empty() )
+			setCurrentWindow( mWindows.begin()->second );
 	}
 
 	eeSAFE_DELETE( window );
@@ -329,16 +344,39 @@ EE::Window::Window* Engine::getWindowID( const Uint32& winID ) {
 	return nullptr;
 }
 
+void Engine::updateInput() {
+	if ( !mWindow )
+		return;
+	for ( auto& window : mWindows ) {
+		if ( window.second != mWindow )
+			window.second->getInput()->beginInputFrame();
+	}
+	mWindow->getInput()->update();
+	for ( auto& window : mWindows ) {
+		if ( window.second != mWindow )
+			window.second->getInput()->endInputFrame();
+	}
+}
+
 EE::Window::Window* Engine::getCurrentWindow() const {
 	return mWindow;
 }
 
 void Engine::setCurrentWindow( EE::Window::Window* window ) {
-	if ( NULL != window && window != mWindow ) {
+	if ( window != mWindow ) {
 		mWindow = window;
-
-		mWindow->setCurrent();
+		if ( mWindow ) {
+			mWindow->setCurrent();
+			// Renderer state caches are shared by all windows, while the OpenGL bindings and state
+			// they mirror belong to each context. Reapply that cached state to the new context.
+			if ( Renderer::existsSingleton() )
+				Renderer::instance()->onContextChanged();
+		}
 	}
+}
+
+Engine::WindowContext Engine::makeWindowCurrent( EE::Window::Window* window ) {
+	return WindowContext( this, window );
 }
 
 Uint32 Engine::getWindowCount() const {
@@ -468,7 +506,7 @@ void Engine::disableSharedGLContext() {
 }
 
 bool Engine::isSharedGLContextEnabled() {
-	return mSharedGLContext && mWindow->isThreadedGLContext();
+	return mSharedGLContext && mWindow && mWindow->isThreadedGLContext();
 }
 
 bool Engine::isThreaded() {

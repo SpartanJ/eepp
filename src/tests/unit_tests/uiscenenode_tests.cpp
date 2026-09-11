@@ -2,19 +2,25 @@
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/cursor.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -27,6 +33,231 @@ UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_EQ( Cursor::fromName( "POINTER" ), Cursor::Hand );
 	EXPECT_STREQ( Cursor::toName( Cursor::Hand ), "hand" );
 	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
+}
+
+UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
+	auto* engine = Engine::instance();
+	auto* window = engine->getCurrentWindow();
+	if ( !window ) {
+		window =
+			engine->createWindow( WindowSettings( 320, 240, "UI Context Test", WindowStyle::Default,
+												  WindowBackend::Default, 32, {}, 1, false, true ),
+								  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	}
+
+	auto* sceneA = UISceneNode::New( window );
+	auto* sceneB = UISceneNode::New( window );
+	auto* sceneManager = SceneManager::instance();
+	sceneManager->add( sceneA );
+	sceneManager->add( sceneB );
+	sceneManager->setCurrentUISceneNode( sceneA );
+
+	{
+		auto contextA = sceneA->makeCurrent();
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+		auto* nodeA = UIWidget::New();
+		EXPECT_EQ( nodeA->getUISceneNode(), sceneA );
+
+		{
+			auto contextB = sceneB->makeCurrent();
+			EXPECT_EQ( sceneManager->getUISceneNode(), sceneB );
+			auto* nodeB = UIWidget::New();
+			EXPECT_EQ( nodeB->getUISceneNode(), sceneB );
+		}
+
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	}
+
+	EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	sceneManager->remove( sceneB );
+	sceneManager->remove( sceneA );
+	eeDelete( sceneB );
+	eeDelete( sceneA );
+}
+
+class TestUIApplication : public UIApplication {
+  public:
+	using UIApplication::UIApplication;
+	void tickOnce() { tick(); }
+};
+
+UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f,
+								 true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
+	ASSERT_TRUE( app.getUI()->getUIIconThemeManager()->getCurrentTheme() != nullptr );
+	EXPECT_TRUE( app.getUI()->getUIIconThemeManager()->findIcon( "go-up" ) != nullptr );
+	EXPECT_EQ( app.getQuitPolicy(), UIApplication::QuitPolicy::OnPrimaryWindowClosed );
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		auto* inApplicationWindow = UIWindow::NewInApplicationWindow(
+			app, WindowSettings( 240, 180, "Terminal In-Application Window" ),
+			UIWindow::RELATIVE_LAYOUT, UIWindow::StyleConfig(), ContextSettings(), true );
+		ASSERT_TRUE( inApplicationWindow != nullptr );
+		EXPECT_EQ( app.getWindowCount(), 1u );
+		EXPECT_EQ( inApplicationWindow->getUISceneNode(), app.getUI() );
+		EXPECT_TRUE( inApplicationWindow->isModal() );
+		EXPECT_FALSE( inApplicationWindow->getWinFlags() & UI_WIN_NO_DECORATION );
+		return;
+	}
+
+	auto* primaryWindow = app.getWindow();
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Secondary UI Context", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_EQ( app.getUI( secondaryUI->getWindow() ), secondaryUI );
+	EXPECT_EQ( secondaryUI->getUIIconThemeManager()->getCurrentTheme(),
+			   app.getUI()->getUIIconThemeManager()->getCurrentTheme() );
+	EXPECT_EQ( Engine::instance()->getCurrentWindow(), primaryWindow );
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+	TextureFactory::instance()->setCurrentTexture( 123, 0 );
+	Engine::instance()->setCurrentWindow( secondaryUI->getWindow() );
+	EXPECT_EQ( TextureFactory::instance()->getCurrentTexture( 0 ), -1 );
+	Engine::instance()->setCurrentWindow( primaryWindow );
+
+	{
+		auto context = secondaryUI->makeCurrent();
+		auto* widget = UIWidget::New();
+		EXPECT_EQ( widget->getUISceneNode(), secondaryUI );
+
+		auto* textInput = UITextInput::New();
+		textInput->setParent( secondaryUI->getRoot() );
+		textInput->setFocus();
+		InputEvent textEvent;
+		textEvent.Type = InputEvent::TextInput;
+		textEvent.WinID = secondaryUI->getWindow()->getWindowID();
+		textEvent.text.text = 'x';
+		textEvent.text.timestamp = 1;
+		secondaryUI->getWindow()->getInput()->beginInputFrame();
+		primaryWindow->getInput()->processEventForWindow( &textEvent );
+		secondaryUI->getWindow()->getInput()->endInputFrame();
+		EXPECT_STDSTREQ( textInput->getText().toUtf8(), "x" );
+	}
+
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+
+	const Vector2i primaryPosition = primaryWindow->getPosition();
+	const Sizei primaryScreenSize = primaryWindow->getSizeInScreenCoordinates();
+	auto* fileDialog = UIFileDialog::NewInApplicationWindow(
+		app,
+		WindowSettings( 640, 400, "File Dialog UI Context",
+						WindowStyle::Titlebar | WindowStyle::Resize, WindowBackend::Default, 32, {},
+						1, false, true ),
+		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ), true,
+		UIWindow::ApplicationWindowPosition::CenteredOnPrimary );
+	ASSERT_TRUE( fileDialog != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_NE( fileDialog->getUISceneNode(), app.getUI() );
+	EXPECT_NE( fileDialog->getUISceneNode(), secondaryUI );
+	EXPECT_TRUE( fileDialog->getWinFlags() & UI_WIN_NO_DECORATION );
+	EXPECT_EQ( fileDialog->getLayoutWidthPolicy(), SizePolicy::MatchParent );
+	EXPECT_EQ( fileDialog->getLayoutHeightPolicy(), SizePolicy::MatchParent );
+	EXPECT_EQ( Engine::instance()->getCurrentWindow(), primaryWindow );
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+	EXPECT_TRUE( fileDialog->getParent()->isType( UI_TYPE_RELATIVE_LAYOUT ) );
+	const Sizei dialogWindowSize =
+		fileDialog->getUISceneNode()->getWindow()->getSizeInScreenCoordinates();
+	const Sizef dialogMinimumSizePx = PixelDensity::dpToPx( fileDialog->getMinWindowSize() );
+	const Float dialogWindowScale = fileDialog->getUISceneNode()->getWindow()->getScale();
+	EXPECT_TRUE( dialogWindowSize.getWidth() >=
+				 eeceil( dialogMinimumSizePx.getWidth() / dialogWindowScale ) );
+	EXPECT_TRUE( dialogWindowSize.getHeight() >=
+				 eeceil( dialogMinimumSizePx.getHeight() / dialogWindowScale ) );
+	const Vector2i dialogPosition = fileDialog->getUISceneNode()->getWindow()->getPosition();
+	const Vector2i primaryCenter( primaryPosition.x + primaryScreenSize.getWidth() / 2,
+								  primaryPosition.y + primaryScreenSize.getHeight() / 2 );
+	auto* displayManager = Engine::instance()->getDisplayManager();
+	for ( int i = 0; i < displayManager->getDisplayCount(); ++i ) {
+		auto* display = displayManager->getDisplayIndex( i );
+		if ( nullptr == display || !display->getBounds().contains( primaryCenter ) )
+			continue;
+		const Rect usableBounds = display->getUsableBounds();
+		const Rect border = fileDialog->getUISceneNode()->getWindow()->getBorderSize();
+		if ( dialogWindowSize.getWidth() + border.Left + border.Right <= usableBounds.getWidth() ) {
+			EXPECT_TRUE( dialogPosition.x - border.Left >= usableBounds.Left );
+			EXPECT_TRUE( dialogPosition.x + dialogWindowSize.getWidth() + border.Right <=
+						 usableBounds.Right );
+		}
+		if ( dialogWindowSize.getHeight() + border.Top + border.Bottom <=
+			 usableBounds.getHeight() ) {
+			EXPECT_TRUE( dialogPosition.y - border.Top >= usableBounds.Top );
+			EXPECT_TRUE( dialogPosition.y + dialogWindowSize.getHeight() + border.Bottom <=
+						 usableBounds.Bottom );
+		}
+		break;
+	}
+
+	auto* primaryFont = app.getUI()->getUIThemeManager()->getDefaultFont();
+	ASSERT_TRUE( primaryFont != nullptr );
+	fileDialog->getUISceneNode()->getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_EQ( app.getUI()->getUIThemeManager()->getDefaultFont(), primaryFont );
+	auto* genericWindow = UIWindow::NewInApplicationWindow(
+		app,
+		WindowSettings( 400, 240, "Generic UI Window", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		UIWindow::RELATIVE_LAYOUT, UIWindow::StyleConfig(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ), true );
+	ASSERT_TRUE( genericWindow != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	genericWindow->getUISceneNode()->getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	auto* messageBox = UIMessageBox::NewInApplicationWindow(
+		app,
+		WindowSettings( 400, 180, "Message Box UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIMessageBox::OK, "Native modal message", UI_MESSAGE_BOX_DEFAULT_FLAGS,
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( messageBox != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_FALSE( messageBox->isModal() );
+	EXPECT_TRUE( messageBox->getModalWidget() == nullptr );
+	const Sizei messageBoxWindowSize =
+		messageBox->getUISceneNode()->getWindow()->getSizeInScreenCoordinates();
+	const Uint32 messageBoxWindowId = messageBox->getUISceneNode()->getWindow()->getWindowID();
+	EXPECT_EQ( messageBoxWindowSize.getWidth(), 400 );
+	EXPECT_EQ( messageBoxWindowSize.getHeight(), 180 );
+	bool messageBoxConfirmed = false;
+	messageBox->on( Event::OnConfirm,
+					[&messageBoxConfirmed]( const Event* ) { messageBoxConfirmed = true; } );
+	messageBox->getUISceneNode()->getUIThemeManager()->setDefaultEffectsEnabled( true );
+	messageBox->getEventDispatcher()->sendMsg( messageBox->getButtonOK(), NodeMessage::MouseClick,
+											   EE_BUTTON_LMASK );
+	EXPECT_TRUE( messageBoxConfirmed );
+	EXPECT_FALSE( messageBox->getUISceneNode()->getWindow()->isVisible() );
+	for ( int i = 0; i < 20 && app.getWindowCount() == 3u; ++i ) {
+		Sys::sleep( Milliseconds( 5 ) );
+		app.tickOnce();
+	}
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_TRUE( Engine::instance()->getWindowID( messageBoxWindowId ) == nullptr );
+
+	auto* reopenedDialog = UIFileDialog::NewInApplicationWindow(
+		app,
+		WindowSettings( 640, 400, "Reopened File Dialog", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( reopenedDialog != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_EQ( reopenedDialog->getUISceneNode()->getUIThemeManager()->getDefaultFont(),
+			   primaryFont );
+
+	primaryWindow->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
 }
 
 UTEST( Node, DescendantWorldBoundsRefreshAfterDirtyAncestorMoves ) {
@@ -79,9 +310,7 @@ class InvalidationTestSceneNode : public UISceneNode {
 
 	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
 
-	UIWidget* processedStyleRoot( size_t index ) const {
-		return mDirtyStylesSnapshot[index].first;
-	}
+	UIWidget* processedStyleRoot( size_t index ) const { return mDirtyStylesSnapshot[index].first; }
 
 	bool processedStyleRootDisablesAnimations( size_t index ) const {
 		return mDirtyStylesSnapshot[index].second;

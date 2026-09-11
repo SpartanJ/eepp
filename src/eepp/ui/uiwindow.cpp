@@ -7,7 +7,9 @@
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -17,6 +19,9 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/displaymanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -44,6 +49,134 @@ UIWindow* UIWindow::NewHBox() {
 
 UIWindow* UIWindow::NewRelLay() {
 	return eeNew( UIWindow, ( RELATIVE_LAYOUT ) );
+}
+
+UIWindow* UIWindow::NewInApplicationWindow( UIApplication& application,
+											const EE::Window::WindowSettings& windowSettings,
+											WindowBaseContainerType type,
+											const StyleConfig& windowStyleConfig,
+											const EE::Window::ContextSettings& contextSettings,
+											bool modal, ApplicationWindowPosition position ) {
+	return createInApplicationWindow(
+		application, windowSettings,
+		[type, windowStyleConfig] { return NewOpt( type, windowStyleConfig ); }, contextSettings,
+		modal, position );
+}
+
+UIWindow* UIWindow::createInApplicationWindow( UIApplication& application,
+											   const EE::Window::WindowSettings& windowSettings,
+											   const std::function<UIWindow*()>& windowFactory,
+											   const EE::Window::ContextSettings& contextSettings,
+											   bool modal, ApplicationWindowPosition position ) {
+	bool supportsMultipleNativeWindows = Runtime::mode() != RuntimeMode::Terminal;
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	supportsMultipleNativeWindows = false;
+#endif
+	if ( !supportsMultipleNativeWindows ) {
+		(void)contextSettings;
+		(void)position;
+		auto* ui = application.getUI();
+		if ( nullptr == ui )
+			return nullptr;
+
+		auto context = ui->makeCurrent();
+		auto* uiWindow = windowFactory();
+		if ( nullptr == uiWindow )
+			return nullptr;
+
+		Uint32 windowFlags = uiWindow->getWinFlags();
+		uiWindow->setWindowFlags( modal ? windowFlags | UI_WIN_MODAL
+										: windowFlags & ~UI_WIN_MODAL );
+		if ( !windowSettings.Title.empty() )
+			uiWindow->setTitle( windowSettings.Title );
+
+		const Sizef requestedSize( windowSettings.Width, windowSettings.Height );
+		const Sizef minimumSize( uiWindow->getMinWindowSizeWithDecoration() );
+		uiWindow->setSizeWithDecoration(
+			eemax( requestedSize.getWidth(), minimumSize.getWidth() ),
+			eemax( requestedSize.getHeight(), minimumSize.getHeight() ) );
+		if ( !( windowSettings.Style & WindowStyle::Hidden ) )
+			uiWindow->showWhenReady();
+		return uiWindow;
+	}
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	const bool showHostWindow = !( windowSettings.Style & WindowStyle::Hidden );
+	EE::Window::WindowSettings hiddenWindowSettings( windowSettings );
+	hiddenWindowSettings.Style |= WindowStyle::Hidden;
+	auto* ui = application.createWindow( hiddenWindowSettings, contextSettings );
+	if ( nullptr == ui )
+		return nullptr;
+
+	auto context = ui->makeCurrent();
+	auto* layout = UIRelativeLayout::New();
+	layout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	layout->setParent( ui->getRoot() );
+	auto* uiWindow = windowFactory();
+	if ( nullptr == uiWindow )
+		return nullptr;
+	uiWindow->setWindowFlags( ( uiWindow->getWinFlags() & ~UI_WIN_MODAL ) | UI_WIN_NO_DECORATION );
+	uiWindow->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	uiWindow->setPosition( 0, 0 );
+	uiWindow->setParent( layout );
+
+	auto* window = ui->getWindow();
+	// The application window provides the decoration. The UIWindow decoration was explicitly
+	// disabled above, so its border/title sizes must not affect the native client-area minimum.
+	const Sizef minimumSizePx = PixelDensity::dpToPx( uiWindow->getMinWindowSize() );
+	const Float windowScale = window->getScale();
+	const Sizei minimumSize( eeceil( minimumSizePx.getWidth() / windowScale ),
+							 eeceil( minimumSizePx.getHeight() / windowScale ) );
+	window->setMinimumSize( minimumSize.getWidth(), minimumSize.getHeight() );
+	const Sizei windowSize = window->getSizeInScreenCoordinates();
+	if ( windowSize.getWidth() < minimumSize.getWidth() ||
+		 windowSize.getHeight() < minimumSize.getHeight() ) {
+		window->setSize( eemax( windowSize.getWidth(), minimumSize.getWidth() ),
+						 eemax( windowSize.getHeight(), minimumSize.getHeight() ) );
+	}
+	auto* primaryWindow = application.getWindow();
+	if ( modal && nullptr != primaryWindow && primaryWindow != window &&
+		 !window->setModalFor( primaryWindow ) )
+		Log::warning( "UIWindow failed to make its application window modal" );
+	uiWindow->mApplicationWindowCloseCallback = [&application, window] {
+		application.closeWindow( window );
+	};
+	uiWindow->showWhenReady();
+	if ( showHostWindow )
+		window->show();
+	if ( position == ApplicationWindowPosition::CenteredOnPrimary && nullptr != primaryWindow &&
+		 primaryWindow != window ) {
+		const Vector2i primaryPosition = primaryWindow->getPosition();
+		const Sizei primarySize = primaryWindow->getSizeInScreenCoordinates();
+		const Sizei dialogSize = window->getSizeInScreenCoordinates();
+		Vector2i dialogPosition(
+			primaryPosition.x + ( primarySize.getWidth() - dialogSize.getWidth() ) / 2,
+			primaryPosition.y + ( primarySize.getHeight() - dialogSize.getHeight() ) / 2 );
+		auto* displayManager = Engine::instance()->getDisplayManager();
+		const Vector2i primaryCenter( primaryPosition.x + primarySize.getWidth() / 2,
+									  primaryPosition.y + primarySize.getHeight() / 2 );
+		for ( int i = 0; i < displayManager->getDisplayCount(); ++i ) {
+			auto* display = displayManager->getDisplayIndex( i );
+			if ( nullptr == display || !display->getBounds().contains( primaryCenter ) )
+				continue;
+			const Rect usableBounds = display->getUsableBounds();
+			const Rect border = window->getBorderSize();
+			const int minimumX = usableBounds.Left + border.Left;
+			const int minimumY = usableBounds.Top + border.Top;
+			const int maximumX = usableBounds.Right - dialogSize.getWidth() - border.Right;
+			const int maximumY = usableBounds.Bottom - dialogSize.getHeight() - border.Bottom;
+			dialogPosition.x =
+				maximumX < minimumX ? minimumX : eeclamp( dialogPosition.x, minimumX, maximumX );
+			dialogPosition.y =
+				maximumY < minimumY ? minimumY : eeclamp( dialogPosition.y, minimumY, maximumY );
+			break;
+		}
+		window->setPosition( dialogPosition.x, dialogPosition.y );
+	}
+	return uiWindow;
+#else
+	return nullptr;
+#endif
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) : UIWindow( type, StyleConfig() ) {}
@@ -322,6 +455,13 @@ void UIWindow::updateWinFlags() {
 
 	if ( isModal() && NULL == mModalNode ) {
 		createModalNode();
+	} else if ( !isModal() && NULL != mModalNode ) {
+		// The modal blocker is parented to the scene, not to the window. It must be removed when
+		// UI_WIN_MODAL is cleared or it will continue winning hit tests over the entire scene.
+		mModalNode->setEnabled( false );
+		mModalNode->setVisible( false );
+		mModalNode->close();
+		mModalNode = NULL;
 	}
 
 	if ( needsUpdate ) {
@@ -452,6 +592,7 @@ bool UIWindow::isType( const Uint32& type ) const {
 void UIWindow::closeWindow() {
 	if ( mClosing )
 		return;
+	mClosing = true;
 
 	if ( NULL != mButtonClose )
 		mButtonClose->setEnabled( false );
@@ -473,7 +614,16 @@ void UIWindow::closeWindow() {
 }
 
 void UIWindow::close() {
+	mClosing = true;
 	UIWidget::close();
+
+	// An application-hosted UIWindow owns the lifetime of its native host. OnWindowClose is
+	// emitted from the destructor and is therefore too late for controls such as a message-box
+	// OK button, which close the UIWindow itself.
+	if ( mApplicationWindowCloseCallback ) {
+		auto closeApplicationWindow = std::move( mApplicationWindowCloseCallback );
+		closeApplicationWindow();
+	}
 
 	if ( NULL != mModalNode ) {
 		mModalNode->setEnabled( false );

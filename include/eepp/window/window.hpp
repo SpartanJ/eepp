@@ -274,6 +274,14 @@ class EE_API Window {
 	 */
 	virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
+	/** Sets the native minimum client size in screen coordinates. Backends without native support
+	 * may leave the default no-op implementation. */
+	virtual void setMinimumSize( Uint32 Width, Uint32 Height );
+
+	/** Makes this window modal for @p parent. Passing nullptr clears modality where supported.
+	 * @return True when the backend applied the requested relationship. */
+	virtual bool setModalFor( Window* parent );
+
 	/** @return The window size in pixels */
 	virtual Sizei getSize() const;
 
@@ -310,6 +318,12 @@ class EE_API Window {
 	Emscripten. Since there's no swap buffers.
 	*/
 	virtual void display( bool clear = false );
+
+	/** Presents the rendered frame.
+	 * @param clear Whether to clear the back buffer after presentation.
+	 * @param limitFrameRate Whether to apply this window's frame-rate limiter. Multi-window loops
+	 * disable this per window and throttle once after all windows have been presented. */
+	void display( bool clear, bool limitFrameRate );
 
 	/** @return The elapsed time for the last frame rendered */
 	virtual const System::Time& getElapsed() const;
@@ -350,6 +364,13 @@ class EE_API Window {
 
 	/** Close the window if is running */
 	virtual void close();
+
+	/** Defers backend resource destruction until the Engine destroys this Window. Intended for
+	 * owners that must release scene resources at a safe point after close(). */
+	void setDeferNativeResourceDestructionOnClose( bool defer );
+
+	/** Returns whether close() leaves native resources alive until Engine destruction. */
+	bool getDeferNativeResourceDestructionOnClose() const;
 
 	/** Set the current active view
 	 * @param view New view to use (pass GetDefaultView() to set the default view)
@@ -568,6 +589,7 @@ class EE_API Window {
 	friend class Input;
 
 	mutable WindowInfo mWindow;
+	bool mDeferNativeResourceDestructionOnClose{ false };
 	Clipboard* mClipboard;
 	Input* mInput;
 	CursorManager* mCursorManager;

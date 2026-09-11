@@ -115,6 +115,11 @@ void RendererGL3::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+void RendererGL3::onContextChanged() {
+	Renderer::onContextChanged();
+	reloadCurrentShader();
+}
+
 ShaderProgramPtr RendererGL3::createSubpixelDualSourceShader() {
 	std::string vertexShader = mBaseVertexShader;
 	String::replaceAll( vertexShader, "#version 120", "#version 130" );

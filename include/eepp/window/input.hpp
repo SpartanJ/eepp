@@ -27,6 +27,12 @@ class EE_API Input {
 	/** Update the Input */
 	virtual void update() = 0;
 
+	/** Clears transient input state, advances the event-frame ID, and drains injected events. */
+	void beginInputFrame();
+
+	/** Emits the end-of-event-processing notification for this input frame. */
+	void endInputFrame();
+
 	/** If timeout is zero waits indefinitely for the next available event otherwise waits until the
 	 * specified timeout for the next available event.
 	 */
@@ -253,6 +259,10 @@ class EE_API Input {
 
 	/** Process an input event. Called by the input update. */
 	void processEvent( InputEvent* Event );
+
+	/** Routes an input event to the Input instance identified by InputEvent::WinID, then processes
+	 * it. Events without a window ID are processed by this instance. */
+	void processEventForWindow( InputEvent* Event );
 
 	/** Queues an event from any producer thread for processing during the next normal update cycle.
 	 * If the bounded queue is full, an older mouse-motion event can be discarded to make room.

@@ -414,6 +414,12 @@
       },
       {
         "args": "",
+        "command": "${project_root}/bin/eepp-ui-application-multi-window-debug",
+        "name": "eepp-ui-application-multi-window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
         "command": "${project_root}/bin/eepp-ui-accessibility-debug",
         "name": "eepp-ui-accessibility-debug",
         "working_dir": "${project_root}/bin"

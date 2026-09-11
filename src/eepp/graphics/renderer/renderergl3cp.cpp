@@ -147,6 +147,11 @@ void RendererGL3CP::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+void RendererGL3CP::onContextChanged() {
+	Renderer::onContextChanged();
+	reloadCurrentShader();
+}
+
 ShaderProgramPtr RendererGL3CP::createSubpixelDualSourceShader() {
 	static const char fragmentShader[] = R"(#version 330
 uniform sampler2D textureUnit0;

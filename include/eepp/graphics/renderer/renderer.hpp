@@ -170,6 +170,9 @@ class EE_API Renderer {
 
 	virtual void enable( unsigned int cap );
 
+	/** Reapplies renderer state cached outside OpenGL after changing the current context. */
+	virtual void onContextChanged();
+
 	virtual GraphicsLibraryVersion version() = 0;
 
 	virtual std::string versionStr() = 0;

@@ -35,6 +35,13 @@ UIIconTheme* UIIconThemeManager::getCurrentTheme() const {
 	return mCurrentTheme;
 }
 
+UIIconThemePtr UIIconThemeManager::getCurrentThemeHandle() const {
+	auto it =
+		std::find_if( mIconThemes.begin(), mIconThemes.end(),
+					  [&]( const UIIconThemePtr& theme ) { return theme.get() == mCurrentTheme; } );
+	return it != mIconThemes.end() ? *it : UIIconThemePtr{};
+}
+
 UIIconThemeManager* UIIconThemeManager::setCurrentTheme( UIIconThemePtr currentTheme ) {
 	if ( currentTheme.get() != mCurrentTheme && currentTheme.get() != mFallbackTheme ) {
 		mCurrentTheme = currentTheme.get();

@@ -1,10 +1,12 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/sys.hpp>
 
 #ifdef EE_GLES1_LATE_INCLUDE
@@ -481,6 +483,21 @@ void Renderer::disable( unsigned int cap ) {
 
 void Renderer::enable( unsigned int cap ) {
 	glEnable( cap );
+}
+
+void Renderer::onContextChanged() {
+	if ( TextureFactory::existsSingleton() )
+		TextureFactory::instance()->invalidateTextureBindings();
+
+	BlendMode::setMode( BlendMode::getPreBlendFunc(), true );
+	lineSmooth();
+	polygonSmooth();
+	polygonMode();
+	multisample( isMultisample() );
+	colorMask( mColorMask[0], mColorMask[1], mColorMask[2], mColorMask[3] );
+	const float lineWidth = mLineWidth;
+	mLineWidth = -1.f;
+	this->lineWidth( lineWidth );
 }
 
 const char* Renderer::getString( unsigned int name ) {

@@ -125,10 +125,13 @@ diff --git a/second.txt b/second.txt
 +after
 )patch";
 
-	auto* viewer =
-		UIDiffView::NewMultiFileDiffViewer( patchText, "", UIDiffView::ViewMode::SideBySide, true );
-	auto diffViews = viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW );
+	auto* viewer = UIMultiDiffView::New( patchText, "", UIDiffView::ViewMode::SideBySide, true );
+	const auto& diffViews = viewer->getDiffViews();
 	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getFileCount() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getAddedLines() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getRemovedLines() );
+	EXPECT_TRUE( viewer->isToolbarVisible() );
 	for ( const auto* diffView : diffViews ) {
 		EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffView->getViewMode() );
 		EXPECT_FALSE( diffView->isViewModeToggleVisible() );
@@ -136,14 +139,16 @@ diff --git a/second.txt b/second.txt
 		EXPECT_TRUE( diffView->isInteractiveFileHeader() );
 	}
 
-	UIDiffView::setMultiFileViewMode( viewer, UIDiffView::ViewMode::Unified );
-	UIDiffView::setMultiFileCollapsed( viewer, true );
+	viewer->setViewMode( UIDiffView::ViewMode::Unified );
+	viewer->setCollapsed( true );
+	EXPECT_EQ( UIDiffView::ViewMode::Unified, viewer->getViewMode() );
+	EXPECT_TRUE( viewer->isCollapsed() );
 	for ( const auto* diffView : diffViews ) {
 		EXPECT_EQ( UIDiffView::ViewMode::Unified, diffView->getViewMode() );
 		EXPECT_TRUE( diffView->isCollapsed() );
 		EXPECT_TRUE( diffView->getViewLines().empty() );
 	}
-	UIDiffView::setMultiFileCollapsed( viewer, false );
+	viewer->setCollapsed( false );
 	for ( const auto* diffView : diffViews ) {
 		EXPECT_FALSE( diffView->isCollapsed() );
 		EXPECT_FALSE( diffView->getViewLines().empty() );
@@ -202,8 +207,8 @@ UTEST( UIDiffView, MultiFileViewerHandlesLargePatches ) {
 					 "\n+++ b/" + fileName + "\n@@ -1 +1 @@\n-old\n+new\n";
 	}
 
-	auto* viewer = UIDiffView::NewMultiFileDiffViewer( patchText );
-	EXPECT_EQ( fileCount, viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW ).size() );
+	auto* viewer = UIMultiDiffView::New( patchText );
+	EXPECT_EQ( fileCount, viewer->getDiffViews().size() );
 	EXPECT_TRUE( viewer->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 	EXPECT_FALSE( viewer->getUISceneNode()->isLoading() );
 

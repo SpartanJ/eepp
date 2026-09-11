@@ -21,14 +21,8 @@ InputSDL::InputSDL( Window* window ) :
 InputSDL::~InputSDL() {}
 
 void InputSDL::update() {
+	beginInputFrame();
 	SDL_Event SDLEvent;
-	cleanStates();
-
-	++mEventsSentId;
-	if ( mEventsSentId == std::numeric_limits<Uint64>::max() )
-		mEventsSentId = 0;
-
-	drainQueuedEvents();
 
 	if ( !mQueuedEvents.empty() ) {
 		for ( const auto& prevEvent : mQueuedEvents )
@@ -37,9 +31,7 @@ void InputSDL::update() {
 	}
 	while ( SDL_PollEvent( &SDLEvent ) )
 		sendEvent( SDLEvent );
-	InputEvent endProcessingEvent;
-	endProcessingEvent.Type = InputEvent::EventsSent;
-	processEvent( &endProcessingEvent );
+	endInputFrame();
 }
 
 void InputSDL::waitEvent( const Time& timeout ) {
@@ -251,7 +243,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.WinID = SDLEvent.text.windowID;
 			for ( const auto& character : txt ) {
 				event.text.text = character;
-				processEvent( &event );
+				processEventForWindow( &event );
 			}
 			event.Type = InputEvent::NoEvent; // Already processed all characters
 			break;
@@ -348,11 +340,11 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			event.Type = InputEvent::MouseButtonDown;
 			event.button.state = 1;
-			processEvent( &event );
+			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.state = 0;
-			processEvent( &event );
+			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseWheel;
 			event.wheel.which = SDLEvent.wheel.windowID;
@@ -361,7 +353,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 										: InputEvent::WheelEvent::Flipped;
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
-			processEvent( &event );
+			processEventForWindow( &event );
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
@@ -490,17 +482,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 	}
 
-	EE::Window::Window* win = nullptr;
-
-	if ( InputEvent::NoEvent != event.Type ) {
-		if ( event.WinID == mWindow->getWindowID() || event.WinID == 0 ) {
-			processEvent( &event );
-		} else if ( ( win = EE::Window::Engine::instance()->getWindowID( event.WinID ) ) ) {
-			win->getInput()->processEvent( &event );
-		} else {
-			processEvent( &event );
-		}
-	}
+	if ( InputEvent::NoEvent != event.Type )
+		processEventForWindow( &event );
 
 	// In SDL3, drop event data is managed by SDL, do not free
 }

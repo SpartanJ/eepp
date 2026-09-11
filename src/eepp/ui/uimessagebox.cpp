@@ -1,3 +1,4 @@
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uilayout.hpp>
@@ -16,6 +17,17 @@ namespace EE { namespace UI {
 UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 								 const Uint32& windowFlags ) {
 	return eeNew( UIMessageBox, ( type, message, windowFlags ) );
+}
+
+UIMessageBox* UIMessageBox::NewInApplicationWindow(
+	UIApplication& application, const EE::Window::WindowSettings& windowSettings, const Type& type,
+	const String& message, const Uint32& windowFlags,
+	const EE::Window::ContextSettings& contextSettings, bool modal,
+	ApplicationWindowPosition position ) {
+	return static_cast<UIMessageBox*>( createInApplicationWindow(
+		application, windowSettings,
+		[type, message, windowFlags] { return New( type, message, windowFlags ); }, contextSettings,
+		modal, position ) );
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :

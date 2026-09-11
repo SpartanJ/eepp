@@ -28,6 +28,28 @@ class EE_API Engine {
 	SINGLETON_DECLARE_HEADERS( Engine )
 
   public:
+	/** Scoped binding of the current native window and graphics context. Restores the previous
+	 * binding when destroyed. Context objects are movable but cannot be copied. */
+	class EE_API WindowContext {
+	  public:
+		~WindowContext();
+
+		WindowContext( const WindowContext& ) = delete;
+		WindowContext& operator=( const WindowContext& ) = delete;
+
+		WindowContext( WindowContext&& other ) noexcept;
+		WindowContext& operator=( WindowContext&& ) = delete;
+
+	  private:
+		friend class Engine;
+
+		WindowContext( Engine* engine, EE::Window::Window* window );
+
+		Engine* mEngine{ nullptr };
+		EE::Window::Window* mPreviousWindow{ nullptr };
+		bool mActive{ true };
+	};
+
 	~Engine();
 
 	static bool isEngineRunning();
@@ -54,6 +76,9 @@ class EE_API Engine {
 	/** Set the window as the current. */
 	void setCurrentWindow( EE::Window::Window* window );
 
+	/** Makes @p window and its graphics context current for the returned scope. */
+	WindowContext makeWindowCurrent( EE::Window::Window* window );
+
 	/** @return The number of windows created. */
 	Uint32 getWindowCount() const;
 
@@ -66,6 +91,10 @@ class EE_API Engine {
 	void forEachWindow( std::function<void( EE::Window::Window* )> cb );
 
 	EE::Window::Window* getWindowID( const Uint32& winID );
+
+	/** Begins an input frame for every window, pumps the backend event queue once, routes events by
+	 * window ID, and then completes every input frame. */
+	void updateInput();
 
 	/** Constructs WindowSettings from an ini file
 	It will search for the following properties:
@@ -181,7 +210,7 @@ class EE_API Engine {
 	EE::Window::Window* createSDL2Window( const WindowSettings& Settings,
 										  const ContextSettings& Context );
 
-#ifdef EE_BACKEND_SDL3
+#if defined( EE_BACKEND_SDL3 ) || defined( EE_SDL_VERSION_3 )
 	Backend::WindowBackendLibrary* createSDL3Backend( const WindowSettings& Settings );
 
 	EE::Window::Window* createSDL3Window( const WindowSettings& Settings,

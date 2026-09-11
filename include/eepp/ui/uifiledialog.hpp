@@ -16,6 +16,7 @@
 namespace EE { namespace UI {
 
 struct NativeFileDialogHandler;
+class UIApplication;
 
 class EE_API UIFileDialog : public UIWindow {
   public:
@@ -38,6 +39,19 @@ class EE_API UIFileDialog : public UIWindow {
 	static UIFileDialog* New( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
 							  const std::string& defaultFilePattern = "*",
 							  const std::string& defaultDirectory = Sys::getProcessPath() );
+
+	/** Creates an eepp file dialog that fills a new native UIApplication window. The dialog uses
+	 * the eepp file browser while its host uses the platform window decoration. UseNativeFileDialog
+	 * is ignored by this factory. Closing either dialog closes the application window. Native
+	 * placement is left to the window manager by default. On Emscripten and in terminal runtime it
+	 * creates a decorated in-application dialog instead of a native window. */
+	static UIFileDialog* NewInApplicationWindow(
+		UIApplication& application, const WindowSettings& windowSettings,
+		Uint32 dialogFlags = UIFileDialog::DefaultFlags,
+		const std::string& defaultFilePattern = "*",
+		const std::string& defaultDirectory = Sys::getProcessPath(),
+		const ContextSettings& contextSettings = ContextSettings(), bool modal = true,
+		ApplicationWindowPosition position = ApplicationWindowPosition::WindowManager );
 
 	virtual ~UIFileDialog();
 

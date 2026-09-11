@@ -14,6 +14,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/webresourcecache.hpp>
+#include <eepp/window/engine.hpp>
 
 #include <atomic>
 #include <functional>
@@ -52,6 +53,29 @@ struct NavigationRequest {
 
 class EE_API UISceneNode : public SceneNode {
   public:
+	/** Scoped binding of a UI scene and its native graphics context. Restores both previous
+	 * bindings when destroyed. Context objects are movable but cannot be copied. */
+	class EE_API Context {
+	  public:
+		explicit Context( UISceneNode* scene );
+
+		~Context();
+
+		Context( const Context& ) = delete;
+		Context& operator=( const Context& ) = delete;
+
+		Context( Context&& other ) noexcept;
+		Context& operator=( Context&& ) = delete;
+
+	  private:
+		UISceneNode* mPreviousScene{ nullptr };
+		EE::Window::Engine::WindowContext mWindowContext;
+		bool mActive{ true };
+	};
+
+	/** Makes this scene and its native window current for the returned scope. */
+	Context makeCurrent();
+
 	/**
 	 * @brief Creates a new UISceneNode instance.
 	 *

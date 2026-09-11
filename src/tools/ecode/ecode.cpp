@@ -2663,21 +2663,16 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView = UIDiffView::NewMultiFileDiffViewer(
-			content, repoPath, mConfig.editor.diffViewMode, interactiveFileHeaders );
-		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
+		auto multiDiff = UIMultiDiffView::New( content, repoPath, mConfig.editor.diffViewMode,
+											   interactiveFileHeaders );
+		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
-		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
-
-		while ( diffView ) {
-			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) ) {
-				configureDiffView( diffView->asType<UIDiffView>() );
-				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
-			}
-			diffView = diffView->getNextNode();
+		for ( auto* diffView : multiDiff->getDiffViews() ) {
+			configureDiffView( diffView );
+			diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 		}
 		return;
 	}
@@ -2719,21 +2714,15 @@ void App::loadDiffFromPath( const std::string& path ) {
 		if ( !icon )
 			icon = getUISceneNode()->findIcon( "file" );
 
-		auto scrollView =
-			UIDiffView::NewMultiFileDiffViewer( content, "", mConfig.editor.diffViewMode );
-		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
+		auto multiDiff = UIMultiDiffView::New( content, "", mConfig.editor.diffViewMode );
+		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
 		if ( icon )
 			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
 		tab->setText( diffViewTitle );
 
-		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
-
-		while ( diffView ) {
-			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) ) {
-				configureDiffView( diffView->asType<UIDiffView>() );
-				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
-			}
-			diffView = diffView->getNextNode();
+		for ( auto* diffView : multiDiff->getDiffViews() ) {
+			configureDiffView( diffView );
+			diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 		}
 		return;
 	}

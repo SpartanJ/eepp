@@ -178,11 +178,9 @@ class GitPlugin : public PluginBase {
 		UITextView* message{ nullptr };
 		UITextView* status{ nullptr };
 		UIPushButton* messageToggle{ nullptr };
-		UIPushButton* filesToggle{ nullptr };
-		UIPushButton* modeToggle{ nullptr };
 		UIPushButton* gitHub{ nullptr };
 		UIWidget* diffContainer{ nullptr };
-		UIScrollView* diff{ nullptr };
+		Tools::UIMultiDiffView* diff{ nullptr };
 		std::string messageBody;
 		std::string url;
 		Git::Commit commit;
@@ -190,9 +188,7 @@ class GitPlugin : public PluginBase {
 		std::atomic<Uint64> generation{ 0 };
 		std::shared_ptr<std::atomic_bool> diffPreparationCancelled;
 		EventConnection closeConnection;
-		Tools::UIDiffView::ViewMode viewMode{ Tools::UIDiffView::ViewMode::Unified };
 		bool messageExpanded{ false };
-		bool filesCollapsed{ false };
 		bool workingTree{ false };
 
 		void openCommitDetails( GitPlugin& plugin, const Git::Commit& commit, bool detached,
@@ -216,8 +212,6 @@ class GitPlugin : public PluginBase {
 			message = nullptr;
 			status = nullptr;
 			messageToggle = nullptr;
-			filesToggle = nullptr;
-			modeToggle = nullptr;
 			gitHub = nullptr;
 			diffContainer = nullptr;
 			diff = nullptr;
@@ -225,9 +219,7 @@ class GitPlugin : public PluginBase {
 			url.clear();
 			commit = {};
 			repo.clear();
-			viewMode = Tools::UIDiffView::ViewMode::Unified;
 			messageExpanded = false;
-			filesCollapsed = false;
 			workingTree = false;
 		}
 	};
@@ -278,7 +270,6 @@ class GitPlugin : public PluginBase {
 		SyntaxColorScheme scheme;
 	};
 	std::optional<CustomTokenizer> mStatusCustomTokenizer;
-	std::optional<CustomTokenizer> mCommitStatusCustomTokenizer;
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
 	Uint32 mModelChangedId{ 0 };
 	Uint32 mModelStylerId{ 0 };
@@ -364,8 +355,6 @@ class GitPlugin : public PluginBase {
 	void updateStatus( bool force = false );
 
 	void updateStatusBarSync();
-
-	void styleCommitFilesStatus( UITextView* status );
 
 	void updateUI();
 

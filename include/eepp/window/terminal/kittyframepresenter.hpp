@@ -12,9 +12,12 @@ namespace EE { namespace Window {
  *
  * Presentation policy can be configured before initialization with
  * `EEPP_TERMINAL_DAMAGE_UPDATES`, `EEPP_TERMINAL_PERSISTENT_UPDATES`, and
- * `EEPP_TERMINAL_ZLIB_LEVEL`. Damage and persistent updates default to enabled. The zlib level
- * defaults to 1, accepts levels 1 through 9, and can be set to 0 to disable compression. Disabling
- * persistent updates also disables damage updates because rectangles require a persistent image.
+ * `EEPP_TERMINAL_ZLIB_LEVEL`. Persistent and damage updates default to enabled only when
+ * `TERM=eterm`; other terminals default to anonymous full-frame transfers because support for the
+ * Kitty root-image animation update commands is inconsistent. Either default can be explicitly
+ * overridden with its corresponding environment variable. The zlib level defaults to 1, accepts
+ * levels 1 through 9, and can be set to 0 to disable compression. Disabling persistent updates also
+ * disables damage updates because rectangle updates require a persistent image.
  */
 class KittyFramePresenter final : public FramePresenter {
   public:
@@ -47,13 +50,14 @@ class KittyFramePresenter final : public FramePresenter {
 	Frame mRecycle;
 	Frame mPresented;
 	std::vector<DamageRectangle> mDamageRectangles;
+	std::vector<Uint8> mDamageTiles;
 	std::vector<Uint8> mTransferPixels;
 	std::vector<Uint8> mCompressedPixels;
 	int mZlibCompressionLevel{ 1 };
 	bool mRunning{ false };
 	bool mHasPending{ false };
-	bool mDamageUpdatesEnabled{ true };
-	bool mPersistentUpdatesEnabled{ true };
+	bool mDamageUpdatesEnabled{ false };
+	bool mPersistentUpdatesEnabled{ false };
 	/** Consumes the bounded newest-frame queue until shutdown. */
 	void run();
 	/** Encodes and writes one RGB24 frame using chunked Kitty direct transmission. */

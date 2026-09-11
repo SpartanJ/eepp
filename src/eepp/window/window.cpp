@@ -75,6 +75,12 @@ void Window::setSize( Uint32 Width, Uint32 Height ) {
 	setSize( Width, Height, isWindowed() );
 }
 
+void Window::setMinimumSize( Uint32, Uint32 ) {}
+
+bool Window::setModalFor( Window* ) {
+	return false;
+}
+
 bool Window::isWindowed() const {
 	return 0 != !( mWindow.WindowConfig.Style & WindowStyle::Fullscreen );
 }
@@ -390,6 +396,14 @@ void Window::close() {
 	mWindow.Created = false;
 }
 
+void Window::setDeferNativeResourceDestructionOnClose( bool defer ) {
+	mDeferNativeResourceDestructionOnClose = defer;
+}
+
+bool Window::getDeferNativeResourceDestructionOnClose() const {
+	return mDeferNativeResourceDestructionOnClose;
+}
+
 void Window::setFrameRateLimit( Uint32 FrameRateLimit ) {
 	if ( FrameRateLimit == ContextSettings::FrameRateLimitScreenRefreshRate ) {
 		Display* currentDisplay = nullptr;
@@ -504,6 +518,10 @@ void Window::clear() {
 }
 
 void Window::display( bool clear ) {
+	display( clear, true );
+}
+
+void Window::display( bool clear, bool limitFrameRate ) {
 	GlobalBatchRenderer::instance()->draw();
 	if ( mFramePresenter )
 		mFramePresenter->present( *this );
@@ -526,7 +544,8 @@ void Window::display( bool clear ) {
 
 	updateElapsedTime();
 
-	limitFps();
+	if ( limitFrameRate )
+		limitFps();
 
 	calculateFps();
 

@@ -31,6 +31,18 @@ Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
 }
 
+void Input::beginInputFrame() {
+	cleanStates();
+	++mEventsSentId;
+	drainQueuedEvents();
+}
+
+void Input::endInputFrame() {
+	InputEvent endProcessingEvent;
+	endProcessingEvent.Type = InputEvent::EventsSent;
+	processEvent( &endProcessingEvent );
+}
+
 void Input::cleanStates() {
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 
@@ -227,6 +239,16 @@ void Input::processEvent( InputEvent* Event ) {
 	}
 
 	sendEvent( Event );
+}
+
+void Input::processEventForWindow( InputEvent* Event ) {
+	if ( Event->WinID == 0 || Event->WinID == mWindow->getWindowID() ) {
+		processEvent( Event );
+	} else if ( auto* window = Engine::instance()->getWindowID( Event->WinID ) ) {
+		window->getInput()->processEvent( Event );
+	} else {
+		processEvent( Event );
+	}
 }
 
 bool Input::enqueueEvent( InputEvent event ) {

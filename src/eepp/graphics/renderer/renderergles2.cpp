@@ -148,6 +148,11 @@ void RendererGLES2::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+void RendererGLES2::onContextChanged() {
+	Renderer::onContextChanged();
+	reloadCurrentShader();
+}
+
 ShaderProgramPtr RendererGLES2::createSubpixelDualSourceShader() {
 #ifdef EE_GLES2
 	static const char fragmentShader[] = R"(#extension GL_EXT_blend_func_extended : require

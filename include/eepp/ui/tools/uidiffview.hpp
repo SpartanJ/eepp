@@ -17,11 +17,14 @@ class Sprite;
 namespace UI {
 
 class UIScrollView;
+class UIPushButton;
+class UITextView;
 
 namespace Tools {
 
 class UIImageViewer;
 class UIDiffEditorPlugin;
+class UIMultiDiffView;
 
 class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
   public:
@@ -182,6 +185,8 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	std::string mImageDiffOldPath;
 	std::string mImageDiffNewPath;
 
+	friend class UIMultiDiffView;
+
 	UIDiffView();
 
 	virtual void onSizePolicyChange() override;
@@ -229,6 +234,67 @@ class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
 	void updateImagesPosAndSize();
 
 	void updateFileHeaderInfo();
+};
+
+class EE_API UIMultiDiffView : public UILinearLayout {
+  public:
+	static UIMultiDiffView* New( const std::string& patchText, const std::string& repoPath = "",
+								 UIDiffView::ViewMode viewMode = UIDiffView::ViewMode::Unified,
+								 bool interactiveFileHeaders = false );
+
+	static UIMultiDiffView* New( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+								 const std::string& repoPath = "",
+								 UIDiffView::ViewMode viewMode = UIDiffView::ViewMode::Unified,
+								 bool interactiveFileHeaders = false );
+
+	const std::vector<UIDiffView*>& getDiffViews() const { return mDiffViews; }
+
+	UIScrollView* getScrollView() const { return mScrollView; }
+
+	void setViewMode( UIDiffView::ViewMode mode );
+
+	UIDiffView::ViewMode getViewMode() const { return mViewMode; }
+
+	void setCollapsed( bool collapsed );
+
+	bool isCollapsed() const { return mCollapsed; }
+
+	void setToolbarVisible( bool visible );
+
+	bool isToolbarVisible() const;
+
+	size_t getFileCount() const { return mFileCount; }
+
+	size_t getAddedLines() const { return mAddedLines; }
+
+	size_t getRemovedLines() const { return mRemovedLines; }
+
+  protected:
+	UILinearLayout* mToolbar{ nullptr };
+	UIPushButton* mFilesToggle{ nullptr };
+	UIPushButton* mModeToggle{ nullptr };
+	UITextView* mFilesStatus{ nullptr };
+	UIScrollView* mScrollView{ nullptr };
+	std::vector<UIDiffView*> mDiffViews;
+	UIDiffView::ViewMode mViewMode{ UIDiffView::ViewMode::Unified };
+	size_t mFileCount{ 0 };
+	size_t mAddedLines{ 0 };
+	size_t mRemovedLines{ 0 };
+	bool mCollapsed{ false };
+
+	UIMultiDiffView();
+
+	void load( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+			   const std::string& repoPath, UIDiffView::ViewMode viewMode,
+			   bool interactiveFileHeaders );
+
+	void updateFilesToggle();
+
+	void updateModeToggle();
+
+	void updateStatus();
+
+	virtual void onThemeLoaded() override;
 };
 
 } // namespace Tools
