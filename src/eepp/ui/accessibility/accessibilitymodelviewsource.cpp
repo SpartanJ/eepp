@@ -70,11 +70,6 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		ModelIndex index = found->second.index;
 		if ( found->second.cell )
 			return refFor( index.siblingAtColumn( mView->getMainColumn() ), false );
-		if ( mIsTree ) {
-			auto parent = index.parent();
-			if ( parent.isValid() )
-				return refFor( parent.siblingAtColumn( mView->getMainColumn() ), false );
-		}
 		return mHost;
 	}
 
@@ -84,7 +79,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			 mIsList )
 			return 0;
 		if ( mIsTree )
-			return mView->getModel()->rowCount( found->second.index );
+			return 0;
 		return visibleColumnCount();
 	}
 
@@ -94,19 +89,29 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			return {};
 		ModelIndex index = found->second.index;
 		if ( mIsTree )
-			return refFor( mView->getModel()->index( child, mView->getMainColumn(), index ),
-						   false );
+			return {};
 		int column = visibleColumnAt( child );
 		return column >= 0 ? refFor( index.siblingAtColumn( column ), true )
 						   : AccessibilityNodeRef{};
 	}
 
 	size_t getRootChildCount() const override {
+		if ( mIsTree ) {
+			refreshVisibleTree();
+			return mVisibleTreeIndexes.size();
+		}
 		return mView->getModel() ? mView->getModel()->rowCount() : 0;
 	}
 
 	AccessibilityNodeRef getRootChild( size_t index ) override {
-		if ( !mView->getModel() || index >= mView->getModel()->rowCount() )
+		if ( !mView->getModel() )
+			return {};
+		if ( mIsTree ) {
+			refreshVisibleTree();
+			return index < mVisibleTreeIndexes.size() ? refFor( mVisibleTreeIndexes[index], false )
+													  : AccessibilityNodeRef{};
+		}
+		if ( index >= mView->getModel()->rowCount() )
 			return {};
 		return refFor( mView->getModel()->index( index, mView->getMainColumn() ), false );
 	}
@@ -138,9 +143,20 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			   request.action == AccessibilityAction::Collapse ) ) {
 			static_cast<UITreeView*>( mView )->setExpanded(
 				index, request.action == AccessibilityAction::Expand );
+			invalidate();
 			return true;
 		}
 		return false;
+	}
+
+	void invalidate() override { mVisibleTreeIndexesValid = false; }
+
+	void reset() override {
+		mVisibleTreeIndexesValid = false;
+		mVisibleTreeIndexes.clear();
+		mItemIds.clear();
+		mCellIds.clear();
+		mNodes.clear();
 	}
 
   private:
@@ -177,6 +193,13 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		return -1;
 	}
 
+	void refreshVisibleTree() const {
+		if ( mVisibleTreeIndexesValid )
+			return;
+		mVisibleTreeIndexes = static_cast<UITreeView*>( mView )->getVisibleModelIndexes();
+		mVisibleTreeIndexesValid = true;
+	}
+
 	AccessibilitySourceId mSourceId;
 	Abstract::UIAbstractTableView* mView;
 	AccessibilityNodeRef mHost;
@@ -186,6 +209,8 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	mutable UnorderedMap<ModelIndex, Uint64> mItemIds;
 	mutable UnorderedMap<ModelIndex, Uint64> mCellIds;
 	mutable UnorderedMap<Uint64, NodeInfo> mNodes;
+	mutable std::vector<ModelIndex> mVisibleTreeIndexes;
+	mutable bool mVisibleTreeIndexesValid{ false };
 };
 
 } // namespace

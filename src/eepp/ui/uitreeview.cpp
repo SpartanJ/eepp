@@ -307,8 +307,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				DrawablePtr drawable =
-					icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
+				DrawablePtr drawable = icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );
@@ -481,6 +480,15 @@ bool UITreeView::isExpanded( const ModelIndex& index ) const {
 	return getIndexMetadata( index ).open;
 }
 
+std::vector<ModelIndex> UITreeView::getVisibleModelIndexes() const {
+	std::vector<ModelIndex> indexes;
+	traverseTree( [&indexes]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		indexes.emplace_back( index );
+		return IterationDecision::Continue;
+	} );
+	return indexes;
+}
+
 void UITreeView::setExpanded( const std::vector<ModelIndex>& indexes, bool expanded ) {
 	if ( !getModel() )
 		return;
@@ -493,6 +501,7 @@ void UITreeView::setExpanded( const std::vector<ModelIndex>& indexes, bool expan
 			getIndexMetadata( index ).open = expanded;
 	}
 	createOrUpdateColumns( false );
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UITreeView::setExpanded( const ModelIndex& index, bool expanded ) {
@@ -515,6 +524,7 @@ void UITreeView::expandAll( const ModelIndex& index ) {
 		return;
 	setAllExpanded( index, true );
 	createOrUpdateColumns( false );
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UITreeView::collapseAll( const ModelIndex& index ) {
@@ -522,6 +532,7 @@ void UITreeView::collapseAll( const ModelIndex& index ) {
 		return;
 	setAllExpanded( index, false );
 	createOrUpdateColumns( false );
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 UIIcon* UITreeView::getExpandIcon() const {
@@ -783,6 +794,7 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	ModelEvent event( getModel(), index, this,
 					  open ? ModelEventType::OpenTree : ModelEventType::CloseTree );
 	sendEvent( &event );
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 bool UITreeView::getDisableCellClipping() const {

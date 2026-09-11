@@ -25,13 +25,15 @@ class EE_API AccessibilityManager {
 
 	bool isValid( AccessibilityNodeRef ref ) const;
 
-	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref ) const;
+	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const;
 
 	AccessibilityNodeRef getParent( AccessibilityNodeRef ref );
 
 	size_t getChildCount( AccessibilityNodeRef ref );
 
 	AccessibilityNodeRef getChild( AccessibilityNodeRef ref, size_t index );
+
+	const std::vector<AccessibilityNodeRef>& getChildren( AccessibilityNodeRef ref );
 
 	AccessibilityNodeRef hitTest( const Math::Vector2f& screenPosition );
 
@@ -71,12 +73,20 @@ class EE_API AccessibilityManager {
 	UnorderedMap<AccessibilitySourceId, std::unique_ptr<AccessibilitySource>> mSources;
 	UnorderedMap<UIWidget*, AccessibilitySourceId> mWidgetSources;
 	std::vector<AccessibilityPendingEvent> mPendingEvents;
+	struct ChildrenCacheEntry {
+		std::vector<AccessibilityNodeRef> children;
+		AccessibilityNodeRef parent;
+	};
+	ChildrenCacheEntry mChildrenCache[2];
+	Uint8 mMostRecentlyUsedChildrenCache{};
 
 	UIWidget* resolve( AccessibilityNodeRef ref ) const;
 
 	AccessibilitySource* resolveSource( AccessibilityNodeRef ref ) const;
 
 	AccessibilitySource* sourceFor( UIWidget* widget );
+
+	void invalidateChildren();
 };
 
 }} // namespace EE::UI

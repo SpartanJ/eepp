@@ -52,6 +52,10 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( buttonRef == manager->getNodeRef( button ) );
 	EXPECT_EQ( manager->getChildCount( root ), 2u );
 	EXPECT_TRUE( manager->getChild( root, 0 ) == buttonRef );
+	auto rootChildren = manager->getChildren( root );
+	EXPECT_EQ( rootChildren.size(), 2u );
+	EXPECT_TRUE( rootChildren[0] == buttonRef );
+	EXPECT_TRUE( rootChildren[1] == checkboxRef );
 	EXPECT_TRUE( manager->getParent( buttonRef ) == root );
 	ignoredContainer->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "true" ) );
 	EXPECT_EQ( manager->getChildCount( root ), 1u );
@@ -127,6 +131,8 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( manager->performAction( textEditRef,
 										 { AccessibilityAction::SetText, String( "Notes" ) } ) );
 	EXPECT_TRUE( manager->getNodeInfo( textEditRef ).value == String( "Notes" ) );
+	EXPECT_TRUE( manager->getNodeInfo( textEditRef ).name.empty() );
+	EXPECT_TRUE( manager->getNodeInfo( textEditRef, false ).value.empty() );
 	textEdit->setLocked( true );
 	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( textEditRef ).states ) &
 				 static_cast<Uint64>( AccessibilityState::ReadOnly ) );
@@ -204,6 +210,15 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( manager->getParent( firstCellRef ) == firstRowRef );
 	EXPECT_TRUE( manager->performAction( firstRowRef, { AccessibilityAction::Select, String() } ) );
 	EXPECT_TRUE( table->getSelection().containsRow( 0 ) );
+	auto replacementModel = ItemPairListOwnerModel<std::string, std::string>::create(
+		{ { "Gamma", "Three" }, { "Delta", "Four" } } );
+	replacementModel->setColumnName( 0, "Name" );
+	replacementModel->setColumnName( 1, "Value" );
+	table->setModel( replacementModel );
+	manager->notify( tableRef, AccessibilityEvent::ModelChanged );
+	EXPECT_FALSE( manager->isValid( firstRowRef ) );
+	firstRowRef = manager->getChild( tableRef, 0 );
+	EXPECT_TRUE( manager->getNodeInfo( firstRowRef ).name == String( "Gamma" ) );
 
 	UIListView* list = UIListView::New();
 	list->setParent( scene->getRoot() );
@@ -211,6 +226,7 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	auto listRef = manager->getNodeRef( list );
 	EXPECT_EQ( manager->getNodeInfo( listRef ).role, AccessibilityRole::List );
 	EXPECT_EQ( manager->getChildCount( listRef ), 3u );
+	EXPECT_EQ( manager->getChildren( listRef ).size(), 3u );
 	auto listItemRef = manager->getChild( listRef, 1 );
 	EXPECT_TRUE( manager->getChild( listRef, 1 ) == listItemRef );
 	EXPECT_EQ( manager->getNodeInfo( listItemRef ).role, AccessibilityRole::ListItem );
@@ -227,12 +243,21 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_EQ( manager->getNodeInfo( treeRef ).role, AccessibilityRole::Tree );
 	auto treeItemRef = manager->getChild( treeRef, 0 );
 	EXPECT_EQ( manager->getNodeInfo( treeItemRef ).role, AccessibilityRole::TreeItem );
-	EXPECT_EQ( manager->getChildCount( treeItemRef ), 1u );
+	EXPECT_EQ( manager->getChildCount( treeRef ), 1u );
+	EXPECT_EQ( manager->getChildCount( treeItemRef ), 0u );
+	EXPECT_TRUE( manager->getParent( treeItemRef ) == treeRef );
 	EXPECT_TRUE( manager->getNodeInfo( treeItemRef ).actions &
 				 accessibilityActionMask( AccessibilityAction::Expand ) );
 	EXPECT_TRUE( manager->performAction( treeItemRef, { AccessibilityAction::Expand, String() } ) );
 	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( treeItemRef ).states ) &
 				 static_cast<Uint64>( AccessibilityState::Expanded ) );
+	EXPECT_EQ( manager->getChildCount( treeRef ), 2u );
+	auto childTreeItemRef = manager->getChild( treeRef, 1 );
+	EXPECT_EQ( manager->getNodeInfo( childTreeItemRef ).role, AccessibilityRole::TreeItem );
+	EXPECT_TRUE( manager->getParent( childTreeItemRef ) == treeRef );
+	EXPECT_TRUE(
+		manager->performAction( treeItemRef, { AccessibilityAction::Collapse, String() } ) );
+	EXPECT_EQ( manager->getChildCount( treeRef ), 1u );
 
 	manager->clearPendingEvents();
 	auto dynamicButton = UIPushButton::New();

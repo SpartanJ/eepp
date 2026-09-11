@@ -32,6 +32,13 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 
 	HWND window() const { return mWindow; }
 
+	int runtimeIdScope() const {
+		auto scene = mManager.getSceneNode();
+		return scene && scene->getWindow()
+				   ? static_cast<int>( scene->getWindow()->getWindowID() & 0x7fffffff )
+				   : 0;
+	}
+
 	UIAutomationProvider* provider( AccessibilityNodeRef ref );
 
 	void invalidateProvider( AccessibilityNodeRef ref );
@@ -265,12 +272,15 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 	HRESULT STDMETHODCALLTYPE GetRuntimeId( SAFEARRAY** runtimeId ) {
 		if ( !runtimeId )
 			return E_INVALIDARG;
-		int values[] = { UiaAppendRuntimeId, static_cast<int>( mRef.source & 0x7fffffff ),
+		if ( !mBackend )
+			return UIA_E_ELEMENTNOTAVAILABLE;
+		int values[] = { UiaAppendRuntimeId, mBackend->runtimeIdScope(),
+						 static_cast<int>( mRef.source & 0x7fffffff ),
 						 static_cast<int>( mRef.id & 0x7fffffff ) };
-		*runtimeId = SafeArrayCreateVector( VT_I4, 0, 3 );
+		*runtimeId = SafeArrayCreateVector( VT_I4, 0, 4 );
 		if ( !*runtimeId )
 			return E_OUTOFMEMORY;
-		for ( LONG index = 0; index < 3; ++index )
+		for ( LONG index = 0; index < 4; ++index )
 			SafeArrayPutElement( *runtimeId, &index, &values[index] );
 		return S_OK;
 	}
@@ -663,7 +673,8 @@ void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent&
 			raisePropertyChanged( UIA_ExpandCollapseExpandCollapseStatePropertyId );
 	} else if ( event.type == AccessibilityEvent::Created ||
 				event.type == AccessibilityEvent::Destroyed ||
-				event.type == AccessibilityEvent::ChildrenChanged ) {
+				event.type == AccessibilityEvent::ChildrenChanged ||
+				event.type == AccessibilityEvent::ModelChanged ) {
 		StructureChangeType changeType = StructureChangeType_ChildrenInvalidated;
 		if ( event.type == AccessibilityEvent::Created )
 			changeType = StructureChangeType_ChildrenBulkAdded;

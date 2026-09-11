@@ -190,7 +190,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mRoot->enableReportSizeChangeToChildren();
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
-	mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	if ( !mAccessibilityManager )
+		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	mUIThemeManager->setResourceScope( mResourceScope );
 
 	resizeNode( mWindow );
@@ -1197,7 +1198,7 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
-	
+
 	if ( mAccessibilityManager )
 		mAccessibilityManager->update();
 

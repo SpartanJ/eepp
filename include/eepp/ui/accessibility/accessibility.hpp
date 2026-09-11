@@ -95,6 +95,7 @@ enum class AccessibilityEvent : Uint8 {
 	Created,
 	Destroyed,
 	ChildrenChanged,
+	ModelChanged,
 	FocusChanged,
 	NameChanged,
 	DescriptionChanged,

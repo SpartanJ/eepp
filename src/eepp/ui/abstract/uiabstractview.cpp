@@ -142,7 +142,9 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 		getSelection().removeAllMatching(
 			[this]( auto& index ) { return !getModel()->isValid( index ); } );
 	}
-	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	notifyAccessibilityEvent( flags & Model::UpdateFlag::InvalidateAllIndexes
+								  ? AccessibilityEvent::ModelChanged
+								  : AccessibilityEvent::ChildrenChanged );
 }
 
 void UIAbstractView::onModelIndexDeleted( const void* internalData ) {

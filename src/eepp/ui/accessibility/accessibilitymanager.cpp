@@ -28,22 +28,20 @@ size_t countSemanticChildren( Node* parent ) {
 	return count;
 }
 
-UIWidget* semanticChildAt( Node* parent, size_t wantedIndex, size_t& currentIndex ) {
+void collectSemanticChildren( Node* parent, std::vector<AccessibilityNodeRef>& children,
+							  AccessibilityManager& manager ) {
 	for ( Node* node = parent->getFirstChild(); node; node = node->getNextNode() ) {
 		if ( node->isWidget() ) {
 			auto widget = node->asType<UIWidget>();
 			if ( widget->isAccessibilityHidden() )
 				continue;
 			if ( widget->isAccessibilityElement() ) {
-				if ( currentIndex++ == wantedIndex )
-					return widget;
+				children.emplace_back( manager.getNodeRef( widget ) );
 				continue;
 			}
 		}
-		if ( auto found = semanticChildAt( node, wantedIndex, currentIndex ) )
-			return found;
+		collectSemanticChildren( node, children, manager );
 	}
-	return nullptr;
 }
 
 bool semanticIndexOf( Node* parent, UIWidget* target, size_t& currentIndex, Int32& foundIndex ) {
@@ -93,11 +91,11 @@ UIWidget* focusedWidget( Node* parent ) {
 
 } // namespace
 
-AccessibilityManager::AccessibilityManager( UISceneNode* scene ) : mScene( scene ) {
-	mBackend = createAccessibilityBackend( *this );
-}
+AccessibilityManager::AccessibilityManager( UISceneNode* scene ) : mScene( scene ) {}
 
-AccessibilityManager::~AccessibilityManager() = default;
+AccessibilityManager::~AccessibilityManager() {
+	mBackend.reset();
+}
 
 AccessibilityNodeRef AccessibilityManager::getRoot() {
 	return getNodeRef( mScene ? mScene->getRoot() : nullptr );
@@ -153,13 +151,15 @@ bool AccessibilityManager::isValid( AccessibilityNodeRef ref ) const {
 	return resolve( ref ) != nullptr;
 }
 
-AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef ref ) const {
+AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef ref,
+														 bool includeValue ) const {
 	AccessibilityNodeInfo info;
 	if ( auto widget = resolve( ref ) ) {
 		info.role = widget->getAccessibilityRole();
 		info.name = widget->getAccessibilityName();
 		info.description = widget->getAccessibilityDescription();
-		info.value = widget->getAccessibilityValue();
+		if ( includeValue )
+			info.value = widget->getAccessibilityValue();
 		info.range = widget->getAccessibilityRange();
 		info.text = AccessibilityWidgetResolver::getText( widget );
 		info.states = widget->getAccessibilityState();
@@ -187,25 +187,51 @@ AccessibilityNodeRef AccessibilityManager::getParent( AccessibilityNodeRef ref )
 }
 
 size_t AccessibilityManager::getChildCount( AccessibilityNodeRef ref ) {
-	if ( auto source = resolveSource( ref ) )
-		return source->getChildCount( ref.id );
-	if ( auto widget = resolve( ref ) ) {
-		if ( auto source = sourceFor( widget ) )
-			return source->getRootChildCount();
-		return countSemanticChildren( widget );
-	}
-	return 0;
+	return getChildren( ref ).size();
 }
 
 AccessibilityNodeRef AccessibilityManager::getChild( AccessibilityNodeRef ref, size_t index ) {
-	if ( auto source = resolveSource( ref ) )
-		return source->getChild( ref.id, index );
-	size_t currentIndex = 0;
+	const auto& children = getChildren( ref );
+	return index < children.size() ? children[index] : AccessibilityNodeRef{};
+}
+
+const std::vector<AccessibilityNodeRef>&
+AccessibilityManager::getChildren( AccessibilityNodeRef ref ) {
+	const bool cacheResult = hasActiveNativeClients();
+	if ( cacheResult ) {
+		for ( Uint8 i = 0; i < 2; ++i ) {
+			if ( ref == mChildrenCache[i].parent ) {
+				mMostRecentlyUsedChildrenCache = i;
+				return mChildrenCache[i].children;
+			}
+		}
+	}
+	Uint8 cacheIndex = cacheResult ? 1 - mMostRecentlyUsedChildrenCache : 0;
+	auto& cache = mChildrenCache[cacheIndex];
+	cache.children.clear();
+	cache.parent = cacheResult ? ref : AccessibilityNodeRef{};
+	if ( cacheResult )
+		mMostRecentlyUsedChildrenCache = cacheIndex;
+	if ( auto source = resolveSource( ref ) ) {
+		const size_t childCount = source->getChildCount( ref.id );
+		cache.children.reserve( childCount );
+		for ( size_t i = 0; i < childCount; ++i )
+			cache.children.emplace_back( source->getChild( ref.id, i ) );
+		return cache.children;
+	}
 	auto widget = resolve( ref );
-	if ( auto source = sourceFor( widget ) )
-		return source->getRootChild( index );
-	return widget ? getNodeRef( semanticChildAt( widget, index, currentIndex ) )
-				  : AccessibilityNodeRef{};
+	if ( !widget )
+		return cache.children;
+	if ( auto source = sourceFor( widget ) ) {
+		const size_t childCount = source->getRootChildCount();
+		cache.children.reserve( childCount );
+		for ( size_t i = 0; i < childCount; ++i )
+			cache.children.emplace_back( source->getRootChild( i ) );
+		return cache.children;
+	}
+	cache.children.reserve( countSemanticChildren( widget ) );
+	collectSemanticChildren( widget, cache.children, *this );
+	return cache.children;
 }
 
 AccessibilityNodeRef AccessibilityManager::hitTest( const Math::Vector2f& screenPosition ) {
@@ -236,6 +262,8 @@ bool AccessibilityManager::hasActiveNativeClients() const {
 }
 
 void AccessibilityManager::update() {
+	if ( !mBackend )
+		mBackend = createAccessibilityBackend( *this );
 	if ( mBackend ) {
 		mBackend->update();
 		mPendingEvents.clear();
@@ -250,6 +278,26 @@ void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent 
 								   AccessibilityNodeRef related, Int32 index ) {
 	if ( !isValid( ref ) && event != AccessibilityEvent::Destroyed )
 		return;
+	if ( event == AccessibilityEvent::ChildrenChanged ||
+		 event == AccessibilityEvent::ModelChanged || event == AccessibilityEvent::Created ||
+		 event == AccessibilityEvent::Destroyed ) {
+		invalidateChildren();
+	}
+	if ( event == AccessibilityEvent::ChildrenChanged ||
+		 event == AccessibilityEvent::ModelChanged ) {
+		if ( auto widget = resolve( ref ) ) {
+			auto source = mWidgetSources.find( widget );
+			if ( source != mWidgetSources.end() ) {
+				auto found = mSources.find( source->second );
+				if ( found != mSources.end() ) {
+					if ( event == AccessibilityEvent::ModelChanged )
+						found->second->reset();
+					else
+						found->second->invalidate();
+				}
+			}
+		}
+	}
 	for ( const auto& pending : mPendingEvents ) {
 		if ( pending.ref == ref && pending.related == related && pending.type == event )
 			return;
@@ -274,6 +322,7 @@ void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
 	auto parent = getParent( ref );
 	if ( !parent.isValid() )
 		return;
+	invalidateChildren();
 	Int32 index = -1;
 	const size_t childCount = getChildCount( parent );
 	for ( size_t i = 0; i < childCount; ++i ) {
@@ -291,8 +340,10 @@ void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
 		return;
 	AccessibilityNodeRef ref{ WidgetSource, found->second };
 	auto parent = getParent( ref );
-	if ( parent.isValid() )
+	if ( parent.isValid() ) {
+		invalidateChildren();
 		notify( parent, AccessibilityEvent::Destroyed, ref );
+	}
 }
 
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
@@ -307,6 +358,7 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	AccessibilityNodeRef ref{ WidgetSource, found->second };
 	auto parent = getParent( ref );
 	if ( parent.isValid() ) {
+		invalidateChildren();
 		Int32 index = -1;
 		size_t currentIndex = 0;
 		if ( auto parentWidget = resolve( parent ) )
@@ -316,6 +368,13 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	mWidgets.erase( found->second );
 	mWidgetIds.erase( found );
 	notify( ref, AccessibilityEvent::Destroyed );
+}
+
+void AccessibilityManager::invalidateChildren() {
+	for ( auto& cache : mChildrenCache ) {
+		cache.parent = {};
+		cache.children.clear();
+	}
 }
 
 }} // namespace EE::UI

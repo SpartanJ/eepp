@@ -113,7 +113,8 @@ String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
 		name = String::fromUtf8( widget->getUISceneNode()->getWindow()->getTitle() );
 	else if ( widget->isType( UI_TYPE_PUSHBUTTON ) )
 		name = static_cast<const UIPushButton*>( widget )->getText();
-	else if ( widget->isType( UI_TYPE_TEXTVIEW ) )
+	else if ( widget->isType( UI_TYPE_TEXTVIEW ) && !widget->isType( UI_TYPE_TEXTINPUT ) &&
+			  !widget->isType( UI_TYPE_TEXTEDIT ) )
 		name = static_cast<const UITextView*>( widget )->getText();
 	return widget->resolveAccessibilityName( name );
 }

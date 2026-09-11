@@ -27,6 +27,10 @@ class EE_API AccessibilitySource {
 	virtual AccessibilityNodeRef hitTest( const Math::Vector2f& position ) = 0;
 
 	virtual bool performAction( Uint64 id, const AccessibilityActionRequest& request ) = 0;
+
+	virtual void invalidate() {}
+
+	virtual void reset() { invalidate(); }
 };
 
 }} // namespace EE::UI

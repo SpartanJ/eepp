@@ -1,8 +1,21 @@
 #include <eepp/ee.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 
-EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 1280, 720, "eepp - Accessibility" } );
+EE_MAIN_FUNC int main( int argc, char** argv ) {
+	bool multiWindow = false;
+	bool closePrimary = false;
+	bool benchmark = false;
+	for ( int i = 1; i < argc; ++i ) {
+		multiWindow |= std::string_view( argv[i] ) == "--multi-window";
+		closePrimary |= std::string_view( argv[i] ) == "--close-primary";
+		benchmark |= std::string_view( argv[i] ) == "--benchmark";
+	}
+	UIApplication app( { 1280, 720, "eepp - Accessibility",
+						 static_cast<Uint32>( benchmark ? WindowStyle::Default | WindowStyle::Hidden
+														: WindowStyle::Default ) } );
+	multiWindow |= closePrimary;
+	if ( closePrimary )
+		app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
 	auto scene = app.getUI();
 	auto content = scene->loadLayoutFromString( R"xml(
 		<vbox lw="mp" lh="mp" padding="16dp" padding="8dp">
@@ -33,18 +46,28 @@ EE_MAIN_FUNC int main( int, char** ) {
 			<hbox lw="mp" lh="wc" margin-top="8dp">
 				<PushButton id="save" text="Save settings" />
 				<PushButton id="inspect" text="Open inspector" />
+				<PushButton id="open-window" text="Open accessibility window" />
 			</hbox>
 			<TextView id="status" text="Ready" />
 		</vbox>
 	)xml" );
-	content->setAccessibilityRole( AccessibilityRole::Window );
 	content->setAccessibilityLabel( "Accessibility settings" );
 
 	auto comboBox = content->find<UIComboBox>( "language" );
 	comboBox->getListBox()->addListBoxItems( { "English", "Spanish", "German" } );
 	comboBox->setText( "English" );
 	auto list = content->find<UIListView>( "items" );
-	list->setModel( Models::ItemListOwnerModel<std::string>::create( { "Red", "Green", "Blue" } ) );
+	if ( benchmark ) {
+		std::vector<std::string> items;
+		items.reserve( 1000 );
+		for ( size_t i = 0; i < 1000; ++i )
+			items.emplace_back( "Benchmark item " + std::to_string( i ) );
+		list->setAccessibilityLabel( "Benchmark items" );
+		list->setModel( Models::ItemListOwnerModel<std::string>::create( std::move( items ) ) );
+	} else {
+		list->setModel(
+			Models::ItemListOwnerModel<std::string>::create( { "Red", "Green", "Blue" } ) );
+	}
 	auto table = content->find<UITableView>( "projects" );
 	auto tableModel = Models::ItemPairListOwnerModel<std::string, std::string>::create(
 		{ { "eepp", "Active" }, { "ecode", "Ready" } } );
@@ -58,6 +81,69 @@ EE_MAIN_FUNC int main( int, char** ) {
 	content->find<UIPushButton>( "inspect" )->onClick( [scene]( auto ) {
 		EE::UI::Tools::UIWidgetInspector::create( scene );
 	} );
+	content->find<UIPushButton>( "open-window" )->onClick( [&app]( auto ) {
+		auto* extra = app.createWindow( { 400, 180, "eepp - Accessibility Dynamic" } );
+		if ( !extra )
+			return;
+		auto* extraContent = extra->loadLayoutFromString( R"xml(
+			<vbox lw="mp" lh="mp" padding="16dp">
+				<TextView text="Dynamic accessibility window" />
+				<PushButton id="close-dynamic" text="Close dynamic window" />
+			</vbox>
+		)xml" );
+		extraContent->find<UIPushButton>( "close-dynamic" )->onClick( [&app, extra]( auto ) {
+			app.closeWindow( extra->getWindow() );
+		} );
+	} );
+	if ( benchmark ) {
+		auto benchmarkRoot = UIWidget::New();
+		benchmarkRoot->setAccessibilityRole( AccessibilityRole::Group );
+		benchmarkRoot->setAccessibilityLabel( "Benchmark depth 0" );
+		benchmarkRoot->setParent( content );
+		auto parent = benchmarkRoot;
+		for ( size_t i = 1; i < 32; ++i ) {
+			auto group = UIWidget::New();
+			group->setAccessibilityRole( AccessibilityRole::Group );
+			group->setAccessibilityLabel( "Benchmark depth " + std::to_string( i ) );
+			group->setParent( parent );
+			parent = group;
+		}
+		auto leaf = UIPushButton::New();
+		leaf->setText( "Benchmark depth leaf" );
+		leaf->setParent( parent );
+
+		auto mutate = UIPushButton::New();
+		mutate->setText( "Replace benchmark model" );
+		mutate->setParent( content );
+		mutate->onClick( [list]( auto ) {
+			for ( size_t generation = 0; generation < 16; ++generation ) {
+				std::vector<std::string> items;
+				items.reserve( 1000 );
+				for ( size_t i = 0; i < 1000; ++i )
+					items.emplace_back( "Updated benchmark item " + std::to_string( i ) );
+				list->setModel(
+					Models::ItemListOwnerModel<std::string>::create( std::move( items ) ) );
+			}
+		} );
+	}
+	if ( multiWindow ) {
+		auto* primaryWindow = app.getWindow();
+		auto* secondary = app.createWindow( { 480, 240, "eepp - Accessibility Secondary" } );
+		if ( secondary ) {
+			auto* secondaryContent = secondary->loadLayoutFromString( R"xml(
+				<vbox lw="mp" lh="mp" padding="16dp">
+					<TextView text="Secondary accessibility window" />
+					<PushButton id="close-secondary" text="Close secondary window" />
+					<PushButton id="close-primary" text="Close primary window" />
+				</vbox>
+			)xml" );
+			secondaryContent->find<UIPushButton>( "close-secondary" )
+				->onClick(
+					[&app, secondary]( auto ) { app.closeWindow( secondary->getWindow() ); } );
+			secondaryContent->find<UIPushButton>( "close-primary" )
+				->onClick( [&app, primaryWindow]( auto ) { app.closeWindow( primaryWindow ); } );
+		}
+	}
 	content->find( "project-name" )->setFocus();
 	return app.run();
 }
