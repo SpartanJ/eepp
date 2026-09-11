@@ -9,10 +9,14 @@ class NullAccessibilityBackend final : public AccessibilityBackend {
 	void onEvent( const AccessibilityPendingEvent& ) {}
 };
 
+std::unique_ptr<AccessibilityBackend> createNullAccessibilityBackend() {
+	return std::make_unique<NullAccessibilityBackend>();
+}
+
 #if EE_PLATFORM != EE_PLATFORM_LINUX && EE_PLATFORM != EE_PLATFORM_FREEBSD && \
 	EE_PLATFORM != EE_PLATFORM_WIN
 std::unique_ptr<AccessibilityBackend> createAccessibilityBackend( AccessibilityManager& ) {
-	return std::make_unique<NullAccessibilityBackend>();
+	return createNullAccessibilityBackend();
 }
 #endif
 

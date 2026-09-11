@@ -24,7 +24,9 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 
 	bool isAvailable() const { return mWindow != nullptr; }
 
-	bool hasActiveClients() const { return isAvailable() && UiaClientsAreListening(); }
+	bool hasActiveClients() const { return isAvailable() && mHasActiveClients; }
+
+	void update() { mHasActiveClients = UiaClientsAreListening(); }
 
 	void onEvent( const AccessibilityPendingEvent& event );
 
@@ -50,6 +52,7 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 	AccessibilityManager& mManager;
 	HWND mWindow{};
 	WNDPROC mPreviousWindowProcedure{};
+	bool mHasActiveClients{};
 	UnorderedMap<AccessibilitySourceId, UnorderedMap<Uint64, UIAutomationProvider*>> mProviders;
 };
 
@@ -593,14 +596,17 @@ LRESULT CALLBACK UIAutomationAccessibilityBackend::windowProcedure( HWND window,
 		static_cast<UIAutomationAccessibilityBackend*>( GetPropW( window, BackendProperty ) );
 	if ( backend && message == WM_GETOBJECT && static_cast<LONG>( lParam ) == UiaRootObjectId ) {
 		auto root = backend->provider( backend->manager().getRoot() );
+		if ( !root )
+			return DefWindowProcW( window, message, wParam, lParam );
 		LRESULT result = UiaReturnRawElementProvider(
 			window, wParam, lParam, static_cast<IRawElementProviderSimple*>( root ) );
 		root->Release();
 		return result;
 	}
-	return backend ? CallWindowProcW( backend->mPreviousWindowProcedure, window, message, wParam,
-									  lParam )
-				   : DefWindowProcW( window, message, wParam, lParam );
+	WNDPROC previous = backend ? backend->mPreviousWindowProcedure : nullptr;
+	return previous && previous != &UIAutomationAccessibilityBackend::windowProcedure
+			   ? CallWindowProcW( previous, window, message, wParam, lParam )
+			   : DefWindowProcW( window, message, wParam, lParam );
 }
 
 UIAutomationProvider* UIAutomationAccessibilityBackend::provider( AccessibilityNodeRef ref ) {

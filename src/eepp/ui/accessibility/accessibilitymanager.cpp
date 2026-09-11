@@ -7,6 +7,8 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
+#include <cstdlib>
+
 namespace EE { namespace UI {
 
 namespace {
@@ -262,8 +264,11 @@ bool AccessibilityManager::hasActiveNativeClients() const {
 }
 
 void AccessibilityManager::update() {
-	if ( !mBackend )
-		mBackend = createAccessibilityBackend( *this );
+	if ( !mBackend ) {
+		mBackend = std::getenv( "EEPP_DISABLE_ACCESSIBILITY" )
+					   ? createNullAccessibilityBackend()
+					   : createAccessibilityBackend( *this );
+	}
 	if ( mBackend ) {
 		mBackend->update();
 		mPendingEvents.clear();

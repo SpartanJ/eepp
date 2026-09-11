@@ -1,18 +1,31 @@
 #include <eepp/ee.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
+
+#include <cstdlib>
+#include <iostream>
 
 EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool multiWindow = false;
 	bool closePrimary = false;
 	bool benchmark = false;
+	bool benchmarkInactive = false;
+	size_t benchmarkItems = 1000;
+	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
 		multiWindow |= std::string_view( argv[i] ) == "--multi-window";
 		closePrimary |= std::string_view( argv[i] ) == "--close-primary";
 		benchmark |= std::string_view( argv[i] ) == "--benchmark";
+		benchmarkInactive |= std::string_view( argv[i] ) == "--benchmark-inactive";
+		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
+			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
+		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
+			benchmarkIterations = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 	}
 	UIApplication app( { 1280, 720, "eepp - Accessibility",
-						 static_cast<Uint32>( benchmark ? WindowStyle::Default | WindowStyle::Hidden
-														: WindowStyle::Default ) } );
+						 static_cast<Uint32>( benchmark || benchmarkInactive
+												  ? WindowStyle::Default | WindowStyle::Hidden
+												  : WindowStyle::Default ) } );
 	multiWindow |= closePrimary;
 	if ( closePrimary )
 		app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
@@ -59,8 +72,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	auto list = content->find<UIListView>( "items" );
 	if ( benchmark ) {
 		std::vector<std::string> items;
-		items.reserve( 1000 );
-		for ( size_t i = 0; i < 1000; ++i )
+		items.reserve( benchmarkItems );
+		for ( size_t i = 0; i < benchmarkItems; ++i )
 			items.emplace_back( "Benchmark item " + std::to_string( i ) );
 		list->setAccessibilityLabel( "Benchmark items" );
 		list->setModel( Models::ItemListOwnerModel<std::string>::create( std::move( items ) ) );
@@ -76,6 +89,19 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	table->setModel( tableModel );
 
 	auto status = content->find<UITextView>( "status" );
+	if ( benchmarkInactive ) {
+		Clock clock;
+		scene->getAccessibilityManager()->update();
+		const auto initializationUs = clock.getElapsedTime().asMicroseconds();
+		clock.restart();
+		for ( size_t i = 0; i < benchmarkIterations; ++i )
+			status->setText( i & 1 ? "Ready" : "Idle" );
+		const auto notificationsUs = clock.getElapsedTime().asMicroseconds();
+		std::cout << "{\"initialization_us\":" << initializationUs
+				  << ",\"iterations\":" << benchmarkIterations
+				  << ",\"notifications_us\":" << notificationsUs << "}\n";
+		return EXIT_SUCCESS;
+	}
 	content->find<UIPushButton>( "save" )->onClick(
 		[status]( auto ) { status->setText( "Settings saved" ); } );
 	content->find<UIPushButton>( "inspect" )->onClick( [scene]( auto ) {
@@ -115,11 +141,11 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		auto mutate = UIPushButton::New();
 		mutate->setText( "Replace benchmark model" );
 		mutate->setParent( content );
-		mutate->onClick( [list]( auto ) {
+		mutate->onClick( [list, benchmarkItems]( auto ) {
 			for ( size_t generation = 0; generation < 16; ++generation ) {
 				std::vector<std::string> items;
-				items.reserve( 1000 );
-				for ( size_t i = 0; i < 1000; ++i )
+				items.reserve( benchmarkItems );
+				for ( size_t i = 0; i < benchmarkItems; ++i )
 					items.emplace_back( "Updated benchmark item " + std::to_string( i ) );
 				list->setModel(
 					Models::ItemListOwnerModel<std::string>::create( std::move( items ) ) );

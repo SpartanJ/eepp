@@ -23,6 +23,8 @@ class AccessibilityBackend {
 
 std::unique_ptr<AccessibilityBackend> createAccessibilityBackend( AccessibilityManager& manager );
 
+std::unique_ptr<AccessibilityBackend> createNullAccessibilityBackend();
+
 }} // namespace EE::UI
 
 #endif

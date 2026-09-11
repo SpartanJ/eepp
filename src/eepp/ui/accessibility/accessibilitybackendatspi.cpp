@@ -225,7 +225,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			mRunning.store( false, std::memory_order_release );
 			if ( mIOThread.joinable() ) {
 				const char stop = 1;
-				write( mWakePipe[1], &stop, sizeof( stop ) );
+				const ssize_t written = write( mWakePipe[1], &stop, sizeof( stop ) );
+				(void)written;
 				mIOThread.join();
 				close( mWakePipe[0] );
 				close( mWakePipe[1] );
