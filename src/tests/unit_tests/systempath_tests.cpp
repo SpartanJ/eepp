@@ -43,5 +43,6 @@ UTEST( SystemPath, workingDirectoryRoundTripsUnicode ) {
 	TemporaryWorkingDirectory temp;
 	ASSERT_TRUE( temp.created );
 	ASSERT_TRUE( temp.changed );
-	EXPECT_STDSTREQ( temp.path, FileSystem::getCurrentWorkingDirectory() );
+	EXPECT_STDSTREQ( FileSystem::getRealPath( temp.path ),
+					 FileSystem::getCurrentWorkingDirectory() );
 }
