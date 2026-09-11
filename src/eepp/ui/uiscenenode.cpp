@@ -130,8 +130,9 @@ static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 	}
 }
 
-UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources ) {
-	return eeNew( UISceneNode, ( window, importDefaultResources ) );
+UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources,
+							   std::shared_ptr<ThreadPool> threadPool ) {
+	return eeNew( UISceneNode, ( window, importDefaultResources, std::move( threadPool ) ) );
 }
 
 UISceneNode::Context::Context( UISceneNode* scene ) :
@@ -156,7 +157,8 @@ UISceneNode::Context UISceneNode::makeCurrent() {
 	return Context( this );
 }
 
-UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources ) :
+UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources,
+						  std::shared_ptr<ThreadPool> threadPool ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
@@ -168,7 +170,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mResourceScope( ResourceScope::New() ),
 	mDrawableResolver( *this ),
 	mWebResourceCache( WebResourceCache::New() ),
-	mKeyBindings( mWindow->getInput() ) {
+	mKeyBindings( mWindow->getInput() ),
+	mThreadPool( std::move( threadPool ) ) {
 	auto context = makeCurrent();
 	if ( mImportDefaultResources )
 		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
@@ -190,8 +193,6 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mRoot->enableReportSizeChangeToChildren();
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
-	if ( !mAccessibilityManager )
-		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	mUIThemeManager->setResourceScope( mResourceScope );
 
 	resizeNode( mWindow );
@@ -440,8 +441,11 @@ void UISceneNode::updateHostUISceneNode() {
 
 	mHostUISceneNode = hostScene;
 
-	if ( mHostUISceneNode )
+	if ( mHostUISceneNode ) {
+		mAccessibilityManager.reset();
+		mHasActiveAccessibilityClients = false;
 		mHostUISceneNode->registerChildUISceneNode( this );
+	}
 }
 
 void UISceneNode::registerChildUISceneNode( UISceneNode* sceneNode ) {
@@ -1199,8 +1203,12 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
 
-	if ( mAccessibilityManager )
+	if ( !mHostUISceneNode && !mAccessibilityManager )
+		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	if ( mAccessibilityManager ) {
 		mAccessibilityManager->update();
+		mHasActiveAccessibilityClients = mAccessibilityManager->hasActiveNativeClients();
+	}
 
 	drainAsyncResourceMainThreadQueue();
 
@@ -1294,13 +1302,16 @@ UIWidget* UISceneNode::getRoot() const {
 }
 
 AccessibilityManager* UISceneNode::getAccessibilityManager() {
+	if ( mHostUISceneNode )
+		return mHostUISceneNode->getAccessibilityManager();
 	if ( !mAccessibilityManager )
 		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	return mAccessibilityManager.get();
 }
 
 const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
-	return mAccessibilityManager.get();
+	return mHostUISceneNode ? mHostUISceneNode->getAccessibilityManager()
+							: mAccessibilityManager.get();
 }
 
 template <typename DirtyContainer>

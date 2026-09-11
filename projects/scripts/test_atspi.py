@@ -132,6 +132,15 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	check(project_name.get_layer() is not None, "Project name component layer query failed")
 	check(project_name.get_mdi_z_order() == 0, "Project name component Z-order query failed")
 	check(project_name.get_alpha() == 1, "Project name component alpha query failed")
+	project_extents = project_name.get_extents(Atspi.CoordType.SCREEN)
+	check(project_extents.width > 0 and project_extents.height > 0, "Project name extents are empty")
+	window = application.get_child_at_index(0)
+	hit = window.get_accessible_at_point(
+		project_extents.x + project_extents.width // 2,
+		project_extents.y + project_extents.height // 2,
+		Atspi.CoordType.SCREEN,
+	)
+	check(hit is not None, "visible window component hit test failed")
 	check(project_name.get_character_count() == 4, "Project name character count must equal 4")
 	check(Atspi.Text.get_text(project_name, 0, -1) == "eepp", "Project name text query failed")
 	check(project_name.get_text_attributes(0) is not None, "Project name text attributes query failed")

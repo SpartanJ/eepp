@@ -220,11 +220,9 @@ AccessibilityProperties& UIWidget::ensureAccessibilityProperties() {
 }
 
 void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
-	if ( !mUISceneNode )
+	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
 		return;
 	auto manager = mUISceneNode->getAccessibilityManager();
-	if ( !manager || !manager->hasActiveNativeClients() )
-		return;
 	UIWidget* target = this;
 	while ( target && !target->isAccessibilityElement() ) {
 		Node* parent = target->getParent();
@@ -542,8 +540,7 @@ UITooltip* UIWidget::createTooltip() {
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
 	if ( removed && child && child->isWidget() && mUISceneNode &&
-		 mUISceneNode->getAccessibilityManager() &&
-		 mUISceneNode->getAccessibilityManager()->hasActiveNativeClients() )
+		 mUISceneNode->hasActiveAccessibilityClients() )
 		mUISceneNode->getAccessibilityManager()->onWidgetRemovedFromParent(
 			child->asType<UIWidget>() );
 
@@ -1651,8 +1648,7 @@ void UIWidget::onParentChange() {
 		getUISceneNode()->invalidateStyle( this, true );
 		getUISceneNode()->invalidateStyleState( this, true, true );
 	}
-	if ( mUISceneNode && mUISceneNode->getAccessibilityManager() &&
-		 mUISceneNode->getAccessibilityManager()->hasActiveNativeClients() )
+	if ( mUISceneNode && mUISceneNode->hasActiveAccessibilityClients() )
 		mUISceneNode->getAccessibilityManager()->onWidgetParentChange( this );
 }
 

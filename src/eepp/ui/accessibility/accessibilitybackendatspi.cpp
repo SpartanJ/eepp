@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/input.hpp>
@@ -193,20 +194,23 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		registerManager( manager );
 		if ( manager.getSceneNode() && manager.getSceneNode()->getWindow() )
 			mName = String::fromUtf8( manager.getSceneNode()->getWindow()->getTitle() );
+	}
+
+	void initialize() {
 		if ( !mDBus.load() )
-			return;
+			return initializationFinished();
 		DBusConnection* sessionBus = mDBus.busGet( 0, nullptr );
 		if ( !sessionBus )
-			return;
+			return initializationFinished();
 		DBusMessage* request = mDBus.messageNewMethodCall( "org.a11y.Bus", "/org/a11y/bus",
 														   "org.a11y.Bus", "GetAddress" );
 		if ( !request )
-			return;
+			return initializationFinished();
 		DBusMessage* reply =
 			mDBus.connectionSendWithReplyAndBlock( sessionBus, request, 1000, nullptr );
 		mDBus.messageUnref( request );
 		if ( !reply )
-			return;
+			return initializationFinished();
 		const char* address = nullptr;
 		const bool gotAddress = mDBus.messageGetArgs( reply, nullptr, 's', &address, 0 ) != 0;
 		if ( gotAddress && address ) {
@@ -218,6 +222,21 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			}
 		}
 		mDBus.messageUnref( reply );
+		if ( mConnection ) {
+			registerApplication();
+			if ( mConnection && mDBus.connectionGetUnixFd( mConnection, &mConnectionFd ) &&
+				 pipe( mWakePipe ) == 0 ) {
+				mRunning.store( true, std::memory_order_release );
+				mIOThread = std::thread( &AtSpiApplication::waitForMessages, this );
+			}
+			// Socket.Embed emits the registry's application-add event before replying. A client can
+			// query us immediately, and the blocking Embed call may already have moved that query
+			// into libdbus's internal dispatch queue before the I/O thread starts polling the
+			// drained socket.
+			if ( mConnection )
+				mDispatchRequested.store( true, std::memory_order_release );
+		}
+		initializationFinished();
 	}
 
 	~AtSpiApplication() {
@@ -279,29 +298,15 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		}
 	}
 
-	bool isAvailable() const { return mConnection != nullptr; }
+	bool isAvailable() const {
+		return mInitialized.load( std::memory_order_acquire ) && mConnection != nullptr;
+	}
 
 	bool hasActiveClients() const { return mHasActiveClients.load( std::memory_order_acquire ); }
 
 	void update() {
-		if ( !mConnection )
+		if ( !mInitialized.load( std::memory_order_acquire ) || !mConnection )
 			return;
-		if ( !mRegistered ) {
-			mRegistered = true;
-			registerApplication();
-			if ( mConnection && mDBus.connectionGetUnixFd( mConnection, &mConnectionFd ) &&
-				 pipe( mWakePipe ) == 0 ) {
-				mRunning.store( true, std::memory_order_release );
-				mIOThread = std::thread( &AtSpiApplication::waitForMessages, this );
-			}
-			// Socket.Embed emits the registry's application-add event before replying. A client can
-			// query us immediately, and the blocking Embed call may already have moved that query
-			// into libdbus's internal dispatch queue before the I/O thread starts polling the
-			// drained socket.
-			if ( mConnection )
-				mDispatchRequested.store( true, std::memory_order_release );
-			return;
-		}
 		if ( !mPendingWindowAdds.empty() ) {
 			for ( auto* manager : mPendingWindowAdds ) {
 				for ( size_t i = 0; i < mManagers.size(); ++i ) {
@@ -466,12 +471,13 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	std::atomic<bool> mRunning{};
 	std::atomic<bool> mDispatchRequested{};
 	std::atomic<bool> mHasActiveClients{};
+	std::atomic<bool> mInitialized{};
 	std::thread mIOThread;
 	std::string mBusName;
 	std::string mRegistryBusName{ "org.a11y.atspi.Registry" };
 	std::string mRegistryPath{ RootPath };
 	Int32 mApplicationId{};
-	bool mRegistered{};
+	void initializationFinished() { mInitialized.store( true, std::memory_order_release ); }
 
 	void waitForMessages() {
 		while ( mRunning.load( std::memory_order_acquire ) ) {
@@ -1563,6 +1569,12 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 		if ( !mApplication ) {
 			mApplication = std::make_shared<AtSpiApplication>( manager );
 			application() = mApplication;
+			if ( scene->hasThreadPool() ) {
+				scene->getThreadPool()->run(
+					[application = mApplication] { application->initialize(); } );
+			} else {
+				mApplication->initialize();
+			}
 		} else {
 			mApplication->registerManager( manager );
 		}

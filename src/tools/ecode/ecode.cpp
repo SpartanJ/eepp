@@ -4951,9 +4951,8 @@ void App::init( InitParameters& params ) {
 		PixelDensity::setPixelDensity(
 			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
-		mUISceneNode = UISceneNode::New();
+		mUISceneNode = UISceneNode::New( nullptr, true, mThreadPool );
 		mLifetime.setDispatcher( mUISceneNode );
-		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
 
 		if ( params.language.empty() )

@@ -11,6 +11,10 @@
 
 using namespace EE::Window;
 
+namespace EE { namespace System {
+class ThreadPool;
+}} // namespace EE::System
+
 namespace EE { namespace UI {
 
 class UISceneNode;
@@ -38,7 +42,8 @@ class EE_API UIApplication {
 		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
 				  bool loadBaseResources = true, Font* baseFont = nullptr,
 				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr,
-				  Font* fallbackFont = nullptr );
+				  Font* fallbackFont = nullptr,
+				  std::shared_ptr<System::ThreadPool> threadPool = nullptr );
 
 		//! By default it will use the current process path as the base path. This will set the
 		//! default working directory.
@@ -74,6 +79,8 @@ class EE_API UIApplication {
 		//! Enables system font fallback and warms the system font list on a background thread. If
 		//! not set, UIApplication::systemFontsEnabledByDefault() is used.
 		std::optional<bool> enableSystemFonts;
+		//! Optional worker pool shared by the primary and secondary UI scenes.
+		std::shared_ptr<System::ThreadPool> threadPool;
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),

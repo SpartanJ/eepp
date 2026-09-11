@@ -87,10 +87,11 @@ class EE_API UISceneNode : public SceneNode {
 	 *                               Graphics::defaultResourceScope(). Keep this enabled for normal
 	 *                               application scenes. Disable it for intentionally isolated
 	 * scenes that must only resolve local or explicitly imported resources.
+	 * @param threadPool Shared worker pool used for asynchronous scene services.
 	 * @return Pointer to the newly created UISceneNode instance.
 	 */
-	static UISceneNode* New( EE::Window::Window* window = NULL,
-							 bool importDefaultResources = true );
+	static UISceneNode* New( EE::Window::Window* window = NULL, bool importDefaultResources = true,
+							 std::shared_ptr<ThreadPool> threadPool = nullptr );
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -512,6 +513,11 @@ class EE_API UISceneNode : public SceneNode {
 	AccessibilityManager* getAccessibilityManager();
 
 	const AccessibilityManager* getAccessibilityManager() const;
+
+	bool hasActiveAccessibilityClients() const {
+		return mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
+								: mHasActiveAccessibilityClients;
+	}
 
 	/**
 	 * @brief Invalidates the style of a widget.
@@ -1002,6 +1008,7 @@ class EE_API UISceneNode : public SceneNode {
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
 	bool mStyleDuringLoad{ false };
+	bool mHasActiveAccessibilityClients{ false };
 	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
 	bool mHTTPStyleSheetChanged{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
@@ -1055,8 +1062,10 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param window Pointer to the window, or NULL for default.
 	 * @param importDefaultResources Whether the scene scope imports the default resource catalog.
+	 * @param threadPool Shared worker pool used for asynchronous scene services.
 	 */
-	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true );
+	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true,
+						  std::shared_ptr<ThreadPool> threadPool = nullptr );
 
 	/**
 	 * @brief Handles node resize.

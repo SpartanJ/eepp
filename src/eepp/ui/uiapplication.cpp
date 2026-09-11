@@ -101,7 +101,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	defaultFontService.setHinting( appSettings.fontHinting );
 	defaultFontService.setAntialiasing( appSettings.fontAntialiasing );
 
-	mUISceneNode = UISceneNode::New( mWindow );
+	mUISceneNode = UISceneNode::New( mWindow, true, appSettings.threadPool );
 	FontService& uiFontService = mUISceneNode->getResourceScope()->getFontService();
 	uiFontService.setHinting( appSettings.fontHinting );
 	uiFontService.setAntialiasing( appSettings.fontAntialiasing );
@@ -197,7 +197,8 @@ UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 		return nullptr;
 	window->setDeferNativeResourceDestructionOnClose( true );
 
-	auto* ui = UISceneNode::New( window );
+	auto* ui = UISceneNode::New(
+		window, true, mUISceneNode ? mUISceneNode->getThreadPool() : mSettings.threadPool );
 	SceneManager::instance()->add( ui );
 	mWindows.push_back( { window, ui, primary, false } );
 	configureUIScene( ui );
@@ -401,14 +402,16 @@ void UIApplication::tick() {
 UIApplication::Settings::Settings( std::optional<std::string> basePath,
 								   std::optional<Float> pixelDensity, bool loadBaseResources,
 								   Font* baseFont, std::optional<std::string> baseStyleSheetPath,
-								   Font* emojiFont, Font* fallbackFont ) :
+								   Font* emojiFont, Font* fallbackFont,
+								   std::shared_ptr<System::ThreadPool> threadPool ) :
 	basePath( basePath ),
 	pixelDensity( pixelDensity ),
 	loadBaseResources( loadBaseResources ),
 	baseFont( baseFont ),
 	baseStyleSheetPath( baseStyleSheetPath ),
 	emojiFont( emojiFont ),
-	fallbackFont( fallbackFont ) {}
+	fallbackFont( fallbackFont ),
+	threadPool( std::move( threadPool ) ) {}
 
 void UIApplication::setShowMemoryManagerResult( bool show ) {
 	mShowMemoryManagerResult = show;

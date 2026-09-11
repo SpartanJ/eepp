@@ -22,10 +22,13 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
 			benchmarkIterations = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 	}
+	UIApplication::Settings settings;
+	settings.threadPool = ThreadPool::createShared( 1 );
 	UIApplication app( { 1280, 720, "eepp - Accessibility",
 						 static_cast<Uint32>( benchmark || benchmarkInactive
 												  ? WindowStyle::Default | WindowStyle::Hidden
-												  : WindowStyle::Default ) } );
+												  : WindowStyle::Default ) },
+					   settings );
 	multiWindow |= closePrimary;
 	if ( closePrimary )
 		app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
