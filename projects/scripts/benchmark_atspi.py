@@ -183,7 +183,13 @@ def run_sample(args, item_count, target_process_id, model_changed, model_change_
 				Atspi.CoordType.SCREEN,
 			),
 		)
-		check(hit is not None, "component hit test failed")
+		window_states = window.get_state_set()
+		if (
+			window_states.contains(Atspi.StateType.SHOWING)
+			and window_extents.width > 0
+			and window_extents.height > 0
+		):
+			check(hit is not None, "component hit test failed for a showing window")
 
 		mutate = find_named(nodes, "Replace benchmark model")
 		model_changed.clear()
