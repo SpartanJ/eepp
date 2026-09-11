@@ -646,28 +646,6 @@ void GitPlugin::updateStatusBarSync() {
 	mStatusButton->invalidateDraw();
 }
 
-void GitPlugin::styleCommitFilesStatus( UITextView* status ) {
-	if ( !status )
-		return;
-	status->setUsingCustomStyling( true );
-	if ( !mCommitStatusCustomTokenizer.has_value() ) {
-		std::vector<SyntaxPattern> patterns;
-		patterns.emplace_back( SyntaxPattern( { ".*%((%d+)%)%s+(%+%d+)%s+(%-%d+)" },
-											  { "normal", "warning", "keyword", "type" } ) );
-		SyntaxDefinition syntaxDef( "git_commit_files_status", {}, std::move( patterns ) );
-		SyntaxColorScheme scheme( "git_commit_files_status",
-								  { { "normal"_sst, { getVarColor( "--font" ) } },
-									{ "warning"_sst, { getVarColor( "--theme-warning" ) } },
-									{ "keyword"_sst, { getVarColor( "--theme-success" ) } },
-									{ "type"_sst, { getVarColor( "--theme-error" ) } } },
-								  {} );
-		mCommitStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
-	}
-	SyntaxTokenizer::tokenizeText( mCommitStatusCustomTokenizer->def,
-								   mCommitStatusCustomTokenizer->scheme, status->getTextCache() );
-	status->invalidateDraw();
-}
-
 void GitPlugin::updateStatus( bool force ) {
 	if ( !mGit || !mGitFound )
 		return;
@@ -843,9 +821,6 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
 			mStatusCustomTokenizer.reset();
-			mCommitStatusCustomTokenizer.reset();
-			styleCommitFilesStatus( mCommitDetails.status );
-			styleCommitFilesStatus( mDetachedHistory.details.status );
 			updateUINow( true );
 			break;
 		}
@@ -3060,19 +3035,8 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 					<TextView id="git_commit_message" lw="mp" lh="wc" word-wrap="true"
 							  focusable="false" visible="false" />
 				</vbox>
-				<hbox lw="mp" lh="wc" padding-left="8dp" padding-right="8dp"
-					  padding-top="4dp" padding-bottom="4dp">
-					<PushButton id="git_commit_files_toggle"
-								tooltip="@string(git_collapse_all_files, Collapse All Files)"
-								icon="icon(collapse-all, 12dp)" class="git_commit_btn" />
-					<PushButton id="git_commit_mode_toggle"
-								text="@string(git_split_diff, Split)"
-								tooltip="@string(git_switch_to_split_diff, Switch to split diff view)"
-								icon="icon(split-horizontal, 12dp)" text-as-fallback="true"
-								margin-left="4dp" class="git_commit_btn" />
-					<TextView id="git_commit_files_status" lw="0" lw8="1" lh="wc"
-							  margin-left="8dp" layout_gravity="center_vertical" focusable="false" />
-				</hbox>
+				<TextView id="git_commit_files_status" lw="mp" lh="wc" padding="8dp"
+						  focusable="false" />
 				<vbox id="git_commit_diff" lw="mp" lh="0" lw8="1" />
 			</vbox>
 		)xml" );
@@ -3086,8 +3050,6 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 		view->bind( "git_commit_message", message );
 		view->bind( "git_commit_files_status", status );
 		view->bind( "git_commit_message_toggle", messageToggle );
-		view->bind( "git_commit_files_toggle", filesToggle );
-		view->bind( "git_commit_mode_toggle", modeToggle );
 		view->bind( "git_commit_github", gitHub );
 		view->bind( "git_commit_diff", diffContainer );
 		messageToggle->onClick( [owner, state]( const Event* ) {
@@ -3098,34 +3060,6 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 					? owner->i18n( "git_collapse_commit_description",
 								   "Collapse Commit Description" )
 					: owner->i18n( "git_expand_commit_description", "Expand Commit Description" ) );
-		} );
-		filesToggle->onClick( [owner, state]( const Event* ) {
-			state->filesCollapsed = !state->filesCollapsed;
-			UIDiffView::setMultiFileCollapsed( state->diff, state->filesCollapsed );
-			state->filesToggle->setTooltipText(
-				state->filesCollapsed
-					? owner->i18n( "git_expand_all_files", "Expand All Files" )
-					: owner->i18n( "git_collapse_all_files", "Collapse All Files" ) );
-			if ( auto* icon =
-					 owner->findIcon( state->filesCollapsed ? "expand-all" : "collapse-all" ) )
-				state->filesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
-		} );
-		modeToggle->onClick( [owner, state]( const Event* ) {
-			state->viewMode = state->viewMode == UIDiffView::ViewMode::Unified
-								  ? UIDiffView::ViewMode::SideBySide
-								  : UIDiffView::ViewMode::Unified;
-			UIDiffView::setMultiFileViewMode( state->diff, state->viewMode );
-			state->modeToggle->setText( state->viewMode == UIDiffView::ViewMode::Unified
-											? owner->i18n( "git_split_diff", "Split" )
-											: owner->i18n( "git_unified_diff", "Unified" ) );
-			state->modeToggle->setTooltipText(
-				state->viewMode == UIDiffView::ViewMode::Unified
-					? owner->i18n( "git_switch_to_split_diff", "Switch to split diff view" )
-					: owner->i18n( "git_switch_to_unified_diff", "Switch to unified diff view" ) );
-			if ( auto* icon = owner->findIcon( state->viewMode == UIDiffView::ViewMode::Unified
-												   ? "split-horizontal"
-												   : "layout" ) )
-				state->modeToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 		} );
 		gitHub->onClick( [state]( const Event* ) {
 			if ( !state->url.empty() )
@@ -3158,11 +3092,7 @@ void GitPlugin::CommitDetailsState::openCommitDetails( GitPlugin& plugin, const 
 	message->setVisible( false );
 	messageToggle->setVisible( false );
 	status->setText( plugin.i18n( "git_loading_changed_files", "Loading changed files..." ) );
-	plugin.styleCommitFilesStatus( status );
-	filesCollapsed = false;
-	filesToggle->setTooltipText( plugin.i18n( "git_collapse_all_files", "Collapse All Files" ) );
-	if ( auto* icon = plugin.findIcon( "collapse-all" ) )
-		filesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	status->setVisible( true );
 	url.clear();
 	gitHub->setVisible( false );
 	view->find( "git_commit_sha" )->setVisible( !isWorkingTree );
@@ -3233,7 +3163,6 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 				details.status->setText(
 					plugin->i18n( "git_changed_files_error", "Could not load changed files" ) +
 					( result.result.empty() ? "" : ": " + result.result ) );
-				plugin->styleCommitFilesStatus( details.status );
 				return;
 			}
 			std::string message = std::move( result.message );
@@ -3258,42 +3187,28 @@ void GitPlugin::CommitDetailsState::loadCommitFiles( GitPlugin& plugin, bool det
 			details.messageToggle->setText(
 				plugin->i18n( "git_expand_commit_description", "Expand Commit Description" ) );
 
-			int totalInserts = 0;
-			int totalDeletes = 0;
-			for ( const auto& file : result.files ) {
-				totalInserts += file.inserts;
-				totalDeletes += file.deletes;
-			}
 			if ( result.files.empty() ) {
 				details.status->setText(
 					plugin->i18n( "git_no_changed_files", "No changed files" ) );
 			} else {
-				details.status->setText( String::format(
-					plugin->i18n( "git_changed_files_summary", "Changed files (%zu)  +%d -%d" )
-						.toUtf8(),
-					result.files.size(), totalInserts, totalDeletes ) );
+				details.status->setVisible( false );
 			}
-			plugin->styleCommitFilesStatus( details.status );
 
 			details.url = std::move( result.commitURL );
 			details.gitHub->setVisible( !details.url.empty() );
 			details.diffContainer->closeAllChildren();
 			details.diff = nullptr;
 			if ( preparedDiff ) {
-				details.diff = UIDiffView::NewMultiFileDiffViewer( std::move( preparedDiff ), repo,
-																   details.viewMode );
+				details.diff = UIMultiDiffView::New( std::move( preparedDiff ), repo,
+													 UIDiffView::ViewMode::Unified, true );
 				details.diff->setLayoutSizePolicy( SizePolicy::MatchParent,
 												   SizePolicy::MatchParent );
 				details.diff->setParent( details.diffContainer );
-				for ( auto* diff : UIDiffView::multiFileDiffViews( details.diff ) ) {
-					diff->setInteractiveFileHeader( true );
+				for ( auto* diff : details.diff->getDiffViews() ) {
 					if ( const auto* scheme = plugin->getPluginContext()->getCurrentColorScheme() )
 						diff->setSyntaxColorScheme( *scheme );
 				}
 			}
-			const bool hasDiff = details.diff != nullptr;
-			details.filesToggle->setVisible( hasDiff );
-			details.modeToggle->setVisible( hasDiff );
 		} );
 	} );
 }
@@ -3494,6 +3409,16 @@ void GitPlugin::buildSidePanelTab() {
 		border-color: transparent;
 	}
 	#git_commit_details .git_commit_btn:hover {
+		border-color: var(--primary);
+	}
+	multidiffview .git_commit_btn {
+		lw: 20dp;
+		lh: 20dp;
+		padding: 0;
+		background-color: var(--list-back);
+		border-color: transparent;
+	}
+	multidiffview .git_commit_btn:hover {
 		border-color: var(--primary);
 	}
 	#git_commit_details #git_commit_author {

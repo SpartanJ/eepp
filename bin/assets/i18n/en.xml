@@ -1277,6 +1277,7 @@ Restart ecode to see the changes.</string>
 	<string name="git_history_no_additional_commits">No additional commits</string>
 	<string name="git_show_in_history">Show in Git History</string>
 	<string name="git_commit_history_title">Git Commit History - %s</string>
+	<string name="git_changed_files_summary">Changed files (%zu)  +%zu -%zu</string>
 	<string name="git_commit_sha">Commit SHA</string>
 	<string name="git_copy_commit_sha">Copy Commit SHA&#10;%s</string>
 	<string name="git_switch_to_split_diff">Switch to split diff view</string>

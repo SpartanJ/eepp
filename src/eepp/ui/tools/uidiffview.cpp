@@ -14,10 +14,12 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/window.hpp>
 
@@ -38,6 +40,8 @@ struct UIDiffView::PreparedPatch {
 class UIDiffView::PreparedMultiFileDiff {
   public:
 	std::vector<PreparedPatch> patches;
+	size_t addedLines{ 0 };
+	size_t removedLines{ 0 };
 };
 
 static bool imagesHaveSameDimensions( const std::string& oldFilePath,
@@ -158,6 +162,201 @@ void UIDiffView::setMultiFileViewMode( UIScrollView* multiDiff, ViewMode mode ) 
 void UIDiffView::setMultiFileCollapsed( UIScrollView* multiDiff, bool collapsed ) {
 	for ( auto* diff : multiFileDiffViews( multiDiff ) )
 		diff->setCollapsed( collapsed );
+}
+
+UIMultiDiffView* UIMultiDiffView::New( const std::string& patchText, const std::string& repoPath,
+									   UIDiffView::ViewMode viewMode,
+									   bool interactiveFileHeaders ) {
+	return New( UIDiffView::prepareMultiFileDiff( patchText ), repoPath, viewMode,
+				interactiveFileHeaders );
+}
+
+UIMultiDiffView*
+UIMultiDiffView::New( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+					  const std::string& repoPath, UIDiffView::ViewMode viewMode,
+					  bool interactiveFileHeaders ) {
+	if ( !preparedDiff )
+		return nullptr;
+	auto* view = eeNew( UIMultiDiffView, () );
+	view->load( std::move( preparedDiff ), repoPath, viewMode, interactiveFileHeaders );
+	return view;
+}
+
+UIMultiDiffView::UIMultiDiffView() : UILinearLayout( "multidiffview", UIOrientation::Vertical ) {
+	beginAttributesTransaction();
+
+	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+	mToolbar = UILinearLayout::NewHorizontal();
+	mToolbar->setParent( this );
+	mToolbar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	mToolbar->setPadding( Rectf( 8, 4, 8, 4 ) );
+
+	mFilesToggle = UIPushButton::New();
+	mFilesToggle->setParent( mToolbar );
+	mFilesToggle->addClass( "git_commit_btn" );
+	mFilesToggle->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	mFilesToggle->onClick( [this]( const Event* ) { setCollapsed( !mCollapsed ); } );
+
+	mModeToggle = UIPushButton::New();
+	mModeToggle->setParent( mToolbar );
+	mModeToggle->addClass( "git_commit_btn" );
+	mModeToggle->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	mModeToggle->setLayoutMarginLeft( 4 );
+	mModeToggle->setTextAsFallback( true );
+	mModeToggle->onClick( [this]( const Event* ) {
+		setViewMode( mViewMode == UIDiffView::ViewMode::Unified ? UIDiffView::ViewMode::SideBySide
+																: UIDiffView::ViewMode::Unified );
+	} );
+
+	mFilesStatus = UITextView::New();
+	mFilesStatus->setParent( mToolbar );
+	mFilesStatus->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	mFilesStatus->setLayoutWeight( 1 );
+	mFilesStatus->setLayoutMarginLeft( 8 );
+	mFilesStatus->setGravity( UI_VALIGN_CENTER );
+	mFilesStatus->setLayoutGravity( UI_VALIGN_CENTER );
+	mFilesStatus->setUsingCustomStyling( true );
+
+	mScrollView = UIScrollView::New();
+	mScrollView->setParent( this );
+	mScrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	mScrollView->setLayoutWeight( 1 );
+
+	endAttributesTransaction();
+}
+
+void UIMultiDiffView::load( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+							const std::string& repoPath, UIDiffView::ViewMode viewMode,
+							bool interactiveFileHeaders ) {
+	auto* uiSceneNode = SceneManager::instance()->getUISceneNode();
+	const bool wasLoading = uiSceneNode && uiSceneNode->isLoading();
+	if ( uiSceneNode )
+		uiSceneNode->setIsLoading( true );
+
+	mViewMode = viewMode;
+	mFileCount = preparedDiff->patches.size();
+	mAddedLines = preparedDiff->addedLines;
+	mRemovedLines = preparedDiff->removedLines;
+	auto* content = UILinearLayout::NewVertical();
+	content->setParent( mScrollView );
+	content->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	mDiffViews.reserve( preparedDiff->patches.size() );
+	for ( auto& patch : preparedDiff->patches ) {
+		auto* diffView = UIDiffView::New();
+		diffView->setViewMode( viewMode );
+		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+		diffView->setParent( content );
+		diffView->setHeadersVisible( true );
+		diffView->setViewModeToggleVisible( false );
+		diffView->setCompleteViewToggleVisible( false );
+		diffView->setInteractiveFileHeader( interactiveFileHeaders );
+		diffView->loadPreparedPatch( std::move( patch ), "", "", repoPath );
+		mDiffViews.emplace_back( diffView );
+	}
+
+	updateFilesToggle();
+	updateModeToggle();
+	updateStatus();
+	if ( uiSceneNode ) {
+		uiSceneNode->setIsLoading( wasLoading );
+		if ( !wasLoading ) {
+			uiSceneNode->invalidateStyle( this, true );
+			uiSceneNode->invalidateStyleState( this, true, true );
+		}
+	}
+}
+
+void UIMultiDiffView::setViewMode( UIDiffView::ViewMode mode ) {
+	if ( mViewMode == mode )
+		return;
+	mViewMode = mode;
+	for ( auto* diff : mDiffViews )
+		diff->setViewMode( mode );
+	updateModeToggle();
+}
+
+void UIMultiDiffView::setCollapsed( bool collapsed ) {
+	if ( mCollapsed == collapsed )
+		return;
+	mCollapsed = collapsed;
+	for ( auto* diff : mDiffViews )
+		diff->setCollapsed( collapsed );
+	updateFilesToggle();
+}
+
+void UIMultiDiffView::setToolbarVisible( bool visible ) {
+	mToolbar->setVisible( visible );
+}
+
+bool UIMultiDiffView::isToolbarVisible() const {
+	return mToolbar->isVisible();
+}
+
+void UIMultiDiffView::updateFilesToggle() {
+	const String text = mCollapsed ? i18n( "git_expand_all_files", "Expand All Files" )
+								   : i18n( "git_collapse_all_files", "Collapse All Files" );
+	mFilesToggle->setTooltipText( text );
+	if ( auto* scene = getUISceneNode() ) {
+		if ( auto* icon = scene->findIcon( mCollapsed ? "expand-all" : "collapse-all" ) )
+			mFilesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	}
+	mFilesToggle->setText( mFilesToggle->hasIcon() ? String{} : text );
+}
+
+void UIMultiDiffView::updateModeToggle() {
+	const bool unified = mViewMode == UIDiffView::ViewMode::Unified;
+	mModeToggle->setText( unified ? i18n( "git_split_diff", "Split" )
+								  : i18n( "git_unified_diff", "Unified" ) );
+	mModeToggle->setTooltipText(
+		unified ? i18n( "git_switch_to_split_diff", "Switch to split diff view" )
+				: i18n( "git_switch_to_unified_diff", "Switch to unified diff view" ) );
+	if ( auto* scene = getUISceneNode() ) {
+		if ( auto* icon = scene->findIcon( unified ? "split-horizontal" : "layout" ) )
+			mModeToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	}
+}
+
+void UIMultiDiffView::updateStatus() {
+	mFilesStatus->setText( String::format(
+		i18n( "git_changed_files_summary", "Changed files (%zu)  +%zu -%zu" ).toUtf8(), mFileCount,
+		mAddedLines, mRemovedLines ) );
+	if ( auto* scene = getUISceneNode();
+		 scene && scene->getRoot() && scene->getRoot()->getUIStyle() ) {
+		auto* root = scene->getRoot();
+		auto font = root->getUIStyle()->getVariable( "--font" );
+		auto warning = root->getUIStyle()->getVariable( "--theme-warning" );
+		auto success = root->getUIStyle()->getVariable( "--theme-success" );
+		auto error = root->getUIStyle()->getVariable( "--theme-error" );
+		std::vector<SyntaxPattern> patterns;
+		patterns.emplace_back( SyntaxPattern( { ".*%((%d+)%)%s+(%+%d+)%s+(%-%d+)" },
+											  { "normal", "warning", "keyword", "type" } ) );
+		SyntaxDefinition definition( "multi_diff_files_status", {}, std::move( patterns ) );
+		SyntaxColorScheme scheme(
+			"multi_diff_files_status",
+			{ { "normal"_sst,
+				{ font.isEmpty() ? mFilesStatus->getFontColor()
+								 : Color::fromString( font.getValue() ) } },
+			  { "warning"_sst,
+				{ warning.isEmpty() ? Color( 220, 170, 0 )
+									: Color::fromString( warning.getValue() ) } },
+			  { "keyword"_sst,
+				{ success.isEmpty() ? Color( 0, 180, 60 )
+									: Color::fromString( success.getValue() ) } },
+			  { "type"_sst,
+				{ error.isEmpty() ? Color( 220, 50, 70 )
+								  : Color::fromString( error.getValue() ) } } },
+			{} );
+		SyntaxTokenizer::tokenizeText( definition, scheme, mFilesStatus->getTextCache() );
+		mFilesStatus->invalidateDraw();
+	}
+}
+
+void UIMultiDiffView::onThemeLoaded() {
+	UILinearLayout::onThemeLoaded();
+	updateFilesToggle();
+	updateModeToggle();
+	updateStatus();
 }
 
 class UIDiffEditorPlugin : public UICodeEditorPlugin {
@@ -1410,8 +1609,12 @@ UIDiffView::prepareMultiFileDiff( const std::string& patchText,
 	for ( const auto& diff : diffs ) {
 		if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
 			return {};
-		prepared->patches.emplace_back(
-			preparePatch( diff, "", SubLineDiffAlgorithm::LCS, cancelled ) );
+		auto patch = preparePatch( diff, "", SubLineDiffAlgorithm::LCS, cancelled );
+		for ( const auto& line : patch.lines ) {
+			prepared->addedLines += line.type == DiffLineType::Added;
+			prepared->removedLines += line.type == DiffLineType::Removed;
+		}
+		prepared->patches.emplace_back( std::move( patch ) );
 	}
 
 	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )

@@ -140,7 +140,7 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 		secondaryUI->getWindow()->getInput()->beginInputFrame();
 		primaryWindow->getInput()->processEventForWindow( &textEvent );
 		secondaryUI->getWindow()->getInput()->endInputFrame();
-		EXPECT_STREQ( textInput->getText().toUtf8().c_str(), "x" );
+		EXPECT_STDSTREQ( textInput->getText().toUtf8(), "x" );
 	}
 
 	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
