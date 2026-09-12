@@ -162,6 +162,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Haiku's SDL2 driver shows the window during creation even when SDL_WINDOW_HIDDEN was
+	// requested. Transition it through SDL's visible state so SDL_HideWindow can reach the native
+	// driver and restore the hidden context-host contract used by terminal mode and tests.
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden ) {
+		SDL_ShowWindow( mSDLWindow );
+		SDL_HideWindow( mSDLWindow );
+	}
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	Log::notice( "Choosing GL Version from: %d", Context.Version );
 

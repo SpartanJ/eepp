@@ -73,10 +73,34 @@ Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
 namespace {
 
 void configureRuntimeVideoDriver() {
-	if ( !Runtime::isOffscreen() )
+	if ( Runtime::mode() == RuntimeMode::Headless ) {
+		Sys::setEnv( "SDL_VIDEODRIVER", "offscreen" );
+		Sys::setEnv( "SDL_VIDEO_DRIVER", "offscreen" );
+		return;
+	}
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		// Terminal mode still needs a real OpenGL context host. These native SDL drivers are the
+		// supported OpenGL paths on their platforms, while the offscreen driver is unavailable or
+		// unusable there.
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		constexpr char nativeVideoDriver[] = "cocoa";
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+		constexpr char nativeVideoDriver[] = "windows";
+#else
+		constexpr char nativeVideoDriver[] = "haiku";
+#endif
+		Sys::setEnv( "SDL_VIDEODRIVER", nativeVideoDriver );
+		Sys::setEnv( "SDL_VIDEO_DRIVER", nativeVideoDriver );
+	}
+#else
+	if ( Runtime::mode() != RuntimeMode::Terminal )
 		return;
 	Sys::setEnv( "SDL_VIDEODRIVER", "offscreen" );
 	Sys::setEnv( "SDL_VIDEO_DRIVER", "offscreen" );
+#endif
 }
 
 } // namespace
@@ -270,6 +294,14 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 		TerminalRuntime& terminal = TerminalRuntime::instance();
 		if ( !terminal.initialize() )
 			return nullptr;
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+		// Terminal mode presents through Kitty, not through the native window manager. Keep the
+		// native context host hidden and avoid asking the native window manager to enter
+		// fullscreen.
+		Settings.Style |= WindowStyle::Hidden;
+		Settings.Style &= ~( WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution );
+#endif
 		const Sizei terminalSize = terminal.pixelSize();
 		if ( terminalSize.x > 0 && terminalSize.y > 0 ) {
 			Settings.Width = terminalSize.x;
