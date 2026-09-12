@@ -2033,6 +2033,8 @@ workspace "eepp"
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter "system:haiku"
+			links { "bsd", "network" }
 		filter {}
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )

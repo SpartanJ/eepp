@@ -2011,6 +2011,9 @@ solution "eepp"
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
+		if os.is("haiku") then
+			links { "bsd", "network" }
+		end
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/plugins/git/git.cpp",

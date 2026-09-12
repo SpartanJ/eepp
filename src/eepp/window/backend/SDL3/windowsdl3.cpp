@@ -188,19 +188,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 #endif
 
+	// Sharing window contexts is independent from supporting an auxiliary context on a worker
+	// thread. Platforms without threaded GL contexts still need shared object namespaces for
+	// resources used by multiple native windows.
+	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
+						 mWindow.ContextConfig.SharedGLContext ? 1 : 0 );
 #ifdef SDL3_THREADED_GLCONTEXT
-	if ( mWindow.ContextConfig.SharedGLContext ) {
-		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
-
+	if ( mWindow.ContextConfig.SharedGLContext )
 		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	} else {
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	}
-#else
-	mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	mWindow.ContextConfig.SharedGLContext = false;
 #endif
+	mGLContext = SDL_GL_CreateContext( mSDLWindow );
 
 	if ( nullptr == mGLContext
 #ifdef SDL3_THREADED_GLCONTEXT
