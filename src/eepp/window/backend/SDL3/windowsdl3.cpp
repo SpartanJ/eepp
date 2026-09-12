@@ -619,6 +619,8 @@ void WindowSDL::minimize() {
 }
 
 void WindowSDL::maximize() {
+	if ( Runtime::isOffscreen() )
+		return;
 	SDL_MaximizeWindow( mSDLWindow );
 }
 
