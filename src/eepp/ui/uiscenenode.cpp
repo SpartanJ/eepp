@@ -443,7 +443,7 @@ void UISceneNode::updateHostUISceneNode() {
 
 	if ( mHostUISceneNode ) {
 		mAccessibilityManager.reset();
-		mHasActiveAccessibilityClients = false;
+		mAccessibilityState &= AccessibilityPolicyMask;
 		mHostUISceneNode->registerChildUISceneNode( this );
 	}
 }
@@ -1203,11 +1203,15 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
 
-	if ( !mHostUISceneNode && !mAccessibilityManager )
+	if ( !mHostUISceneNode && !mAccessibilityManager &&
+		 getAccessibilityPolicy() != AccessibilityPolicy::Disabled )
 		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	if ( mAccessibilityManager ) {
 		mAccessibilityManager->update();
-		mHasActiveAccessibilityClients = mAccessibilityManager->hasActiveNativeClients();
+		if ( mAccessibilityManager->hasActiveNativeClients() )
+			mAccessibilityState |= AccessibilityClientActive;
+		else
+			mAccessibilityState &= ~AccessibilityClientActive;
 	}
 
 	drainAsyncResourceMainThreadQueue();
@@ -1277,6 +1281,14 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 	}
 }
 
+void UISceneNode::onWidgetAccessibilitySourceDelete( UIWidget* widget ) {
+	if ( mHostUISceneNode ) {
+		mHostUISceneNode->onWidgetAccessibilitySourceDelete( widget );
+	} else if ( mAccessibilityManager ) {
+		mAccessibilityManager->onWidgetAccessibilitySourceDelete( widget );
+	}
+}
+
 bool UISceneNode::isLoading() const {
 	return mIsLoading;
 }
@@ -1312,6 +1324,24 @@ AccessibilityManager* UISceneNode::getAccessibilityManager() {
 const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
 	return mHostUISceneNode ? mHostUISceneNode->getAccessibilityManager()
 							: mAccessibilityManager.get();
+}
+
+UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
+	if ( mHostUISceneNode ) {
+		mHostUISceneNode->setAccessibilityPolicy( policy );
+		return this;
+	}
+	if ( getAccessibilityPolicy() == policy )
+		return this;
+	mAccessibilityManager.reset();
+	mAccessibilityState = static_cast<Uint8>( policy );
+	return this;
+}
+
+AccessibilityPolicy UISceneNode::getAccessibilityPolicy() const {
+	return mHostUISceneNode
+			   ? mHostUISceneNode->getAccessibilityPolicy()
+			   : static_cast<AccessibilityPolicy>( mAccessibilityState & AccessibilityPolicyMask );
 }
 
 template <typename DirtyContainer>

@@ -8,6 +8,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -87,12 +88,19 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f,
 									  true );
 	settings.threadPool = threadPool;
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
 	TestUIApplication app( WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,
 										   WindowBackend::Default, 32, {}, 1, false, true ),
 						   settings, ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	ASSERT_TRUE( app.getWindow() != nullptr );
 	ASSERT_TRUE( app.getUI() != nullptr );
 	EXPECT_TRUE( app.getUI()->getThreadPool() == threadPool );
+	EXPECT_EQ( app.getUI()->getAccessibilityPolicy(), AccessibilityPolicy::Disabled );
+	app.tickOnce();
+	EXPECT_TRUE( static_cast<const UISceneNode*>( app.getUI() )->getAccessibilityManager() ==
+				 nullptr );
+	app.getUI()->getAccessibilityManager()->update();
+	EXPECT_FALSE( app.getUI()->getAccessibilityManager()->isBackendAvailable() );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	ASSERT_TRUE( app.getUI()->getUIIconThemeManager()->getCurrentTheme() != nullptr );
 	EXPECT_TRUE( app.getUI()->getUIIconThemeManager()->findIcon( "go-up" ) != nullptr );
@@ -116,6 +124,7 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	ASSERT_TRUE( secondaryUI != nullptr );
 	EXPECT_TRUE( secondaryUI->getThreadPool() == threadPool );
+	EXPECT_EQ( secondaryUI->getAccessibilityPolicy(), AccessibilityPolicy::Disabled );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	EXPECT_EQ( app.getWindowCount(), 2u );
 	EXPECT_EQ( app.getUI( secondaryUI->getWindow() ), secondaryUI );

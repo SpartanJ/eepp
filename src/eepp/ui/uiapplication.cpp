@@ -102,6 +102,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	defaultFontService.setAntialiasing( appSettings.fontAntialiasing );
 
 	mUISceneNode = UISceneNode::New( mWindow, true, appSettings.threadPool );
+	mUISceneNode->setAccessibilityPolicy( appSettings.accessibilityPolicy );
 	FontService& uiFontService = mUISceneNode->getResourceScope()->getFontService();
 	uiFontService.setHinting( appSettings.fontHinting );
 	uiFontService.setAntialiasing( appSettings.fontAntialiasing );
@@ -199,6 +200,7 @@ UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 
 	auto* ui = UISceneNode::New(
 		window, true, mUISceneNode ? mUISceneNode->getThreadPool() : mSettings.threadPool );
+	ui->setAccessibilityPolicy( mSettings.accessibilityPolicy );
 	SceneManager::instance()->add( ui );
 	mWindows.push_back( { window, ui, primary, false } );
 	configureUIScene( ui );

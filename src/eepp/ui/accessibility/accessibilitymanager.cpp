@@ -267,14 +267,16 @@ bool AccessibilityManager::hasActiveNativeClients() const {
 
 void AccessibilityManager::onNativeClientObserved() {
 	if ( mScene )
-		mScene->mHasActiveAccessibilityClients = true;
+		mScene->mAccessibilityState |= UISceneNode::AccessibilityClientActive;
 }
 
 void AccessibilityManager::update() {
 	if ( !mBackend ) {
-		mBackend = std::getenv( "EEPP_DISABLE_ACCESSIBILITY" )
-					   ? createNullAccessibilityBackend()
-					   : createAccessibilityBackend( *this );
+		const bool disabled =
+			std::getenv( "EEPP_DISABLE_ACCESSIBILITY" ) ||
+			( mScene && mScene->getAccessibilityPolicy() == AccessibilityPolicy::Disabled );
+		mBackend =
+			disabled ? createNullAccessibilityBackend() : createAccessibilityBackend( *this );
 	}
 	if ( mBackend ) {
 		mBackend->update();
@@ -360,14 +362,19 @@ void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
 	}
 }
 
-void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
+void AccessibilityManager::onWidgetAccessibilitySourceDelete( UIWidget* widget ) {
 	auto source = mWidgetSources.find( widget );
 	if ( source != mWidgetSources.end() ) {
 		if ( mBackend )
 			mBackend->onSourceInvalidated( source->second );
 		mSources.erase( source->second );
 		mWidgetSources.erase( source );
+		invalidateChildren();
 	}
+}
+
+void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
+	onWidgetAccessibilitySourceDelete( widget );
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() )
 		return;

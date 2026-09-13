@@ -63,6 +63,8 @@ class EE_API AccessibilityManager {
 
 	void onWidgetRemovedFromParent( UIWidget* widget );
 
+	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
+
 	void onWidgetDelete( UIWidget* widget );
 
   private:

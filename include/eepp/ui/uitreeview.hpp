@@ -40,6 +40,8 @@ class EE_API UITreeView : public UIAbstractTableView {
   public:
 	static UITreeView* New();
 
+	virtual ~UITreeView();
+
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;

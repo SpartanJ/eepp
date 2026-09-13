@@ -60,9 +60,17 @@ void UIEventDispatcher::checkTabPress( Uint32 KeyCode, Uint32 mod ) {
 		mod = Input::sanitizeMod( mod );
 		Window::Window* win = mFocusNode->getSceneNode()->getWindow();
 		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
-			auto tabMod = ( mFocusNode->asType<UIWidget>()->getFlags() & UI_USES_TAB_MOD ) != 0
-							  ? KeyMod::getDefaultModifier()
-							  : 0;
+			Uint32 tabMod = 0;
+			if ( ( mFocusNode->asType<UIWidget>()->getFlags() & UI_USES_TAB_MOD ) != 0 ) {
+				// AppKit uses Control+Tab and Control+Shift+Tab to leave a multiline text
+				// view. Command+Tab is reserved by macOS for switching applications, while
+				// Option+Tab inserts a tab while bypassing the field editor.
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+				tabMod = KEYMOD_CTRL;
+#else
+				tabMod = KeyMod::getDefaultModifier();
+#endif
+			}
 			if ( mod == ( KEYMOD_SHIFT | tabMod ) ) {
 				mFocusNode->asType<UIWidget>()->onFocusPrevWidget();
 			} else if ( mod == tabMod ) {

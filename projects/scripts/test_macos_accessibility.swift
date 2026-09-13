@@ -711,19 +711,18 @@ func run() throws {
 	}
 
 	progress("checking primary window removal")
-	guard let secondary = elementsAttribute(application, kAXWindowsAttribute as CFString).first(
-		where: {
+	guard
+		elementsAttribute(application, kAXWindowsAttribute as CFString).contains(where: {
 			stringAttribute($0, kAXTitleAttribute as CFString)
 				== "eepp - Accessibility Secondary"
 		})
 	else {
 		try fail("could not find the secondary window by title")
 	}
-	guard let closePrimary = findElement(
-		in: secondary, role: kAXButtonRole, name: "Close primary window")
-	else {
-		try fail("could not find primary-window close button")
-	}
+	guard let closePrimaryValue = optionalAttribute(primary, kAXCloseButtonAttribute as CFString),
+		CFGetTypeID(closePrimaryValue) == AXUIElementGetTypeID()
+	else { try fail("primary window did not expose its native close button") }
+	let closePrimary = closePrimaryValue as! AXUIElement
 	try stressQueriesDuringAction(
 		staleElement: save, actionElement: closePrimary, timeout: arguments.timeout)
 	let survivingWindow: AXUIElement = try waitFor(

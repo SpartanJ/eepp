@@ -153,6 +153,13 @@ UTEST( AccessibilityMacOS, ApplicationWindowBridgeIdentityActionTextAndLifecycle
 	EXPECT_EQ( replacementRows.count, 1u );
 	EXPECT_TRUE( replacementRows.firstObject != staleRow );
 	EXPECT_TRUE( [[replacementRows.firstObject accessibilityValue] isEqualToString:@"Gamma"] );
+	NSObject<NSAccessibility>* finalRow = replacementRows.firstObject;
+	[finalRow retain];
+	AccessibilityNodeRef tableRef = manager->getNodeRef( table );
+	eeDelete( table );
+	EXPECT_FALSE( manager->isValid( tableRef ) );
+	EXPECT_FALSE( finalRow.isAccessibilityElement );
+	[finalRow release];
 
 	AccessibilityNodeRef buttonRef = manager->getNodeRef( button );
 	eeDelete( button );

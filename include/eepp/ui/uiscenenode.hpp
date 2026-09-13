@@ -8,6 +8,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/drawableresolver.hpp>
@@ -514,9 +515,14 @@ class EE_API UISceneNode : public SceneNode {
 
 	const AccessibilityManager* getAccessibilityManager() const;
 
+	/** Selects native accessibility for this root scene. Nested scenes delegate to their host. */
+	UISceneNode* setAccessibilityPolicy( AccessibilityPolicy policy );
+
+	AccessibilityPolicy getAccessibilityPolicy() const;
+
 	bool hasActiveAccessibilityClients() const {
 		return mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
-								: mHasActiveAccessibilityClients;
+								: ( mAccessibilityState & AccessibilityClientActive ) != 0;
 	}
 
 	/**
@@ -1006,10 +1012,12 @@ class EE_API UISceneNode : public SceneNode {
 	Translator mTranslator;
 	std::vector<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
+	static constexpr Uint8 AccessibilityPolicyMask = 0x03;
+	static constexpr Uint8 AccessibilityClientActive = 0x04;
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
 	bool mStyleDuringLoad{ false };
-	bool mHasActiveAccessibilityClients{ false };
+	Uint8 mAccessibilityState{ static_cast<Uint8>( AccessibilityPolicy::Auto ) };
 	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
 	bool mHTTPStyleSheetChanged{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
@@ -1275,6 +1283,8 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param node The node that was deleted.
 	 */
 	void onWidgetDelete( Node* node );
+
+	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
 	/**
 	 * @brief Recursively resets tooltips for a node and its children.

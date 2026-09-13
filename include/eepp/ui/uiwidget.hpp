@@ -1954,6 +1954,8 @@ class EE_API UIWidget : public UINode {
 	String resolveAccessibilityDescription() const;
 
 	void notifyAccessibilityEvent( AccessibilityEvent event );
+
+	void detachAccessibilitySource();
 };
 
 }} // namespace EE::UI

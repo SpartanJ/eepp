@@ -10,6 +10,16 @@ namespace EE { namespace UI {
 
 using AccessibilitySourceId = Uint64;
 
+/** Controls whether a root UI scene installs its native accessibility backend. */
+enum class AccessibilityPolicy : Uint8 {
+	/** Uses the platform default. Currently accessibility is enabled on supported platforms. */
+	Auto,
+	/** Requests the native backend. EEPP_DISABLE_ACCESSIBILITY still takes precedence. */
+	Enabled,
+	/** Keeps the scene on the null backend and avoids native accessibility integration. */
+	Disabled,
+};
+
 enum class AccessibilityRole : Uint8 {
 	None,
 	Application,

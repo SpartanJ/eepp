@@ -30,7 +30,11 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	} );
 }
 
-UIAbstractTableView::~UIAbstractTableView() {}
+UIAbstractTableView::~UIAbstractTableView() {
+	// Tree views detach earlier, while members used by their accessibility source are alive. Keep
+	// this idempotent fallback for table views and custom subclasses.
+	detachAccessibilitySource();
+}
 
 Uint32 UIAbstractTableView::getType() const {
 	return UI_TYPE_ABSTRACTTABLEVIEW;

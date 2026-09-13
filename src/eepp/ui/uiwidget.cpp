@@ -233,6 +233,11 @@ void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
 	manager->notify( manager->getNodeRef( target ), event );
 }
 
+void UIWidget::detachAccessibilitySource() {
+	if ( mUISceneNode )
+		mUISceneNode->onWidgetAccessibilitySourceDelete( this );
+}
+
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentNode ) {
 		mDistToBorder = Rect( mPosition.x, mPosition.y,

@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/window/window.hpp>
 
 #include <memory>
@@ -56,6 +57,8 @@ class EE_API UIApplication {
 		//! Loads the bundled icon fonts and initializes IconManager when base resources are
 		//! enabled.
 		bool loadIconResources{ true };
+		//! Controls native accessibility for every application-owned UI scene.
+		AccessibilityPolicy accessibilityPolicy{ AccessibilityPolicy::Auto };
 		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will
 		//! look at "assets/fonts/NotoSans-Regular.ttf" )
 		Font* baseFont{ nullptr };

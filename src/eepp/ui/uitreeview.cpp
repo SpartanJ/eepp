@@ -27,6 +27,10 @@ UITreeView::UITreeView() :
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
 }
 
+UITreeView::~UITreeView() {
+	detachAccessibilitySource();
+}
+
 Uint32 UITreeView::getType() const {
 	return UI_TYPE_TREEVIEW;
 }

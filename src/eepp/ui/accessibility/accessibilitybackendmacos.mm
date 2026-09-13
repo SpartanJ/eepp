@@ -285,15 +285,7 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 			markAccessibilityClientObserved();
 	}
 
-	void invalidate() {
-		mAlive = false;
-		mManager = nullptr;
-		mNativeWindow = nil;
-		mWindowElement = nil;
-		mElements.clear();
-		if ( mRetainedElements )
-			[mRetainedElements removeAllObjects];
-	}
+	void invalidate();
 
 	EEPPMacAccessibilityElement* elementFor( AccessibilityNodeRef ref );
 	EEPPMacAccessibilityElement* cachedElementFor( AccessibilityNodeRef ref ) const;
@@ -364,10 +356,21 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 }
 - (void)configureWithState:(const std::shared_ptr<MacAccessibilityState>&)state
 					   ref:(AccessibilityNodeRef)ref;
+- (void)invalidate;
 @end
 
+void MacAccessibilityState::invalidate() {
+	mAlive = false;
+	mManager = nullptr;
+	mNativeWindow = nil;
+	mWindowElement = nil;
+	mElements.clear();
+	if ( mRetainedElements )
+		[mRetainedElements removeAllObjects];
+}
+
 EEPPMacAccessibilityElement* MacAccessibilityState::elementFor( AccessibilityNodeRef ref ) {
-	if ( !mAlive || !isMainThread() || !mManager || !ref.isValid() || !mManager->isValid( ref ) )
+	if ( !isValid( ref ) )
 		return nil;
 	const NodeKey key{ ref.source, ref.id };
 	auto found = mElements.find( key );
@@ -402,6 +405,7 @@ void MacAccessibilityState::evict( AccessibilityNodeRef ref ) {
 	if ( found == mElements.end() )
 		return;
 	EEPPMacAccessibilityElement* element = found->second;
+	[element invalidate];
 	mElements.erase( found );
 	[mRetainedElements removeObject:element];
 }
@@ -409,9 +413,13 @@ void MacAccessibilityState::evict( AccessibilityNodeRef ref ) {
 void MacAccessibilityState::evictSource( AccessibilitySourceId source ) {
 	for ( auto it = mElements.begin(); it != mElements.end(); ) {
 		if ( it->first.source == source ) {
+			// NSAccessibilityPostNotification() may synchronously query its target. The manager
+			// detaches model-view sources while their concrete view is still fully alive, then the
+			// wrapper is invalidated immediately after AppKit accepts the destruction event.
 			if ( hasActiveClient() )
 				NSAccessibilityPostNotification( it->second,
 												 NSAccessibilityUIElementDestroyedNotification );
+			[it->second invalidate];
 			[mRetainedElements removeObject:it->second];
 			it = mElements.erase( it );
 		} else
@@ -427,6 +435,7 @@ void MacAccessibilityState::evictInvalidElements() {
 			if ( hasActiveClient() )
 				NSAccessibilityPostNotification( it->second,
 												 NSAccessibilityUIElementDestroyedNotification );
+			[it->second invalidate];
 			[mRetainedElements removeObject:it->second];
 			it = mElements.erase( it );
 		} else
@@ -435,12 +444,11 @@ void MacAccessibilityState::evictInvalidElements() {
 }
 
 AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref ) const {
-	return mManager && mAlive && isMainThread() ? mManager->getNodeInfo( ref )
-												: AccessibilityNodeInfo();
+	return isValid( ref ) ? mManager->getNodeInfo( ref ) : AccessibilityNodeInfo();
 }
 
 NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref ) {
-	if ( !manager() )
+	if ( !isValid( ref ) )
 		return nil;
 	const auto& children = mManager->getChildren( ref );
 	NSMutableArray* result = [[NSMutableArray alloc] initWithCapacity:children.size()];
@@ -453,7 +461,7 @@ NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref ) {
 
 NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref, NSUInteger index,
 											 NSUInteger maxCount ) {
-	if ( !manager() || maxCount == 0 )
+	if ( !isValid( ref ) || maxCount == 0 )
 		return @[];
 	const auto& children = mManager->getChildren( ref );
 	if ( index >= children.size() )
@@ -468,11 +476,11 @@ NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref, NSUIntege
 }
 
 NSUInteger MacAccessibilityState::childCountFor( AccessibilityNodeRef ref ) {
-	return manager() ? mManager->getChildCount( ref ) : 0;
+	return isValid( ref ) ? mManager->getChildCount( ref ) : 0;
 }
 
 NSUInteger MacAccessibilityState::indexOfChild( AccessibilityNodeRef parent, id child ) {
-	if ( !manager() || !child )
+	if ( !isValid( parent ) || !child )
 		return NSNotFound;
 	const auto& children = mManager->getChildren( parent );
 	for ( NSUInteger index = 0; index < children.size(); ++index ) {
@@ -483,7 +491,7 @@ NSUInteger MacAccessibilityState::indexOfChild( AccessibilityNodeRef parent, id 
 }
 
 NSArray* MacAccessibilityState::selectedChildrenFor( AccessibilityNodeRef ref ) {
-	if ( !manager() )
+	if ( !isValid( ref ) )
 		return nil;
 	const auto& children = mManager->getChildren( ref );
 	NSMutableArray* result = [[NSMutableArray alloc] init];
@@ -497,7 +505,7 @@ NSArray* MacAccessibilityState::selectedChildrenFor( AccessibilityNodeRef ref ) 
 }
 
 AccessibilityNodeRef MacAccessibilityState::parentFor( AccessibilityNodeRef ref ) {
-	return manager() ? mManager->getParent( ref ) : AccessibilityNodeRef{};
+	return isValid( ref ) ? mManager->getParent( ref ) : AccessibilityNodeRef{};
 }
 
 AccessibilityNodeRef MacAccessibilityState::hitTest( NSPoint point ) {
@@ -522,7 +530,7 @@ AccessibilityNodeRef MacAccessibilityState::focused() const {
 
 bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityAction action,
 									 const String& value ) {
-	if ( !manager() )
+	if ( !isValid( ref ) )
 		return false;
 	if ( action == AccessibilityAction::Focus && mNativeWindow && ![mNativeWindow isKeyWindow] )
 		[mNativeWindow makeKeyAndOrderFront:nil];
@@ -750,6 +758,11 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 					   ref:(AccessibilityNodeRef)ref {
 	_state = state;
 	_ref = ref;
+}
+
+- (void)invalidate {
+	_state.reset();
+	_ref = {};
 }
 
 - (std::shared_ptr<MacAccessibilityState>)accessibilityState {
@@ -1629,6 +1642,10 @@ class MacAccessibilityRegistry {
 		EEPPMacAccessibilityWindowElement* element = state->windowElement();
 		NSWindow* nativeWindow = state->nativeWindow();
 		const bool observed = gAccessibilityClientObserved;
+		// UISceneNode destroys its widgets before its AccessibilityManager member reaches this
+		// path. Disconnect every native wrapper before AppKit can synchronously query a
+		// destruction notification and re-enter that dead scene tree.
+		state->invalidate();
 		if ( observed && element )
 			NSAccessibilityPostNotification( element,
 											 NSAccessibilityUIElementDestroyedNotification );
@@ -1640,7 +1657,6 @@ class MacAccessibilityRegistry {
 				break;
 			}
 		}
-		state->invalidate();
 		const auto changes = syncApplication( gAccessibilityClientObserved );
 		if ( element )
 			[mRetainedWindows removeObject:element];
