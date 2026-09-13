@@ -25,6 +25,8 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
 
+#include <algorithm>
+
 namespace EE { namespace UI {
 
 namespace {
@@ -54,6 +56,43 @@ AccessibilityState baseState( const UIWidget* widget ) {
 
 AccessibilityActions baseActions( const UIWidget* widget ) {
 	return widget->isTabFocusable() ? accessibilityActionMask( AccessibilityAction::Focus ) : 0;
+}
+
+Int32 documentOffset( const Doc::TextDocument& document, const Doc::TextPosition& position ) {
+	if ( !position.isValid() )
+		return 0;
+	Int64 offset = 0;
+	for ( Int64 line = 0;
+		  line < position.line() && line < static_cast<Int64>( document.linesCount() ); ++line )
+		offset += static_cast<Int64>( document.line( static_cast<size_t>( line ) ).size() );
+	offset += position.column();
+	return static_cast<Int32>( std::max<Int64>( 0, offset ) );
+}
+
+AccessibilityTextInfo getDocumentText( const Doc::TextDocument& document ) {
+	auto selection = document.getSelection( true );
+	return { documentOffset( document, document.getSelection().end() ),
+			 documentOffset( document, selection.start() ),
+			 documentOffset( document, selection.end() ), true };
+}
+
+bool parseSelection( const String& value, Int32& start, Int32& end ) {
+	auto parts = String::split( value, ':' );
+	return parts.size() == 2 && String::fromString( start, parts[0].toUtf8() ) &&
+		   String::fromString( end, parts[1].toUtf8() );
+}
+
+Doc::TextPosition documentPosition( const Doc::TextDocument& document, Int32 offset ) {
+	Int64 remaining = std::max<Int32>( 0, offset );
+	for ( size_t line = 0; line < document.linesCount(); ++line ) {
+		const Int64 length = static_cast<Int64>( document.line( line ).size() );
+		if ( line + 1 == document.linesCount() )
+			return { static_cast<Int64>( line ), std::min( remaining, length ) };
+		if ( remaining < length )
+			return { static_cast<Int64>( line ), remaining };
+		remaining -= length;
+	}
+	return { 0, 0 };
 }
 
 } // namespace
@@ -160,15 +199,15 @@ AccessibilityRangeInfo AccessibilityWidgetResolver::getRange( const UIWidget* wi
 }
 
 AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget ) {
-	if ( !widget->isType( UI_TYPE_TEXTINPUT ) ||
-		 static_cast<const UITextInput*>( widget )->getMode() ==
-			 UITextInput::TextInputMode::Password )
-		return {};
-	const auto& document = static_cast<const UITextInput*>( widget )->getDocument();
-	auto selection = document.getSelection( true );
-	return { static_cast<Int32>( document.getSelection().end().column() ),
-			 static_cast<Int32>( selection.start().column() ),
-			 static_cast<Int32>( selection.end().column() ), true };
+	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
+		return getDocumentText( static_cast<const UITextEdit*>( widget )->getDocument() );
+	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
+		const auto* input = static_cast<const UITextInput*>( widget );
+		return input->getMode() == UITextInput::TextInputMode::Password
+				   ? AccessibilityTextInfo{}
+				   : getDocumentText( input->getDocument() );
+	}
+	return {};
 }
 
 AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget ) {
@@ -201,6 +240,9 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 		state |= static_cast<const UITextInput*>( widget )->isEditingAllowed()
 					 ? AccessibilityState::Editable
 					 : AccessibilityState::ReadOnly;
+		if ( static_cast<const UITextInput*>( widget )->getMode() ==
+			 UITextInput::TextInputMode::Password )
+			state |= AccessibilityState::Protected;
 	}
 	return state;
 }
@@ -219,6 +261,8 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		actions |= accessibilityActionMask( AccessibilityAction::Select );
 	} else if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 		actions |= accessibilityActionMask( AccessibilityAction::Press );
+	} else if ( widget->isType( UI_TYPE_MENUITEM ) ) {
+		actions |= accessibilityActionMask( AccessibilityAction::Press );
 	}
 	if ( widget->isType( UI_TYPE_CHECKBOX ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
@@ -230,6 +274,13 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 	else if ( widget->isType( UI_TYPE_TEXTINPUT ) &&
 			  static_cast<const UITextInput*>( widget )->isEditingAllowed() )
 		actions |= accessibilityActionMask( AccessibilityAction::SetText );
+	if ( ( widget->isType( UI_TYPE_TEXTINPUT ) &&
+		   static_cast<const UITextInput*>( widget )->isEditingAllowed() &&
+		   static_cast<const UITextInput*>( widget )->getMode() !=
+			   UITextInput::TextInputMode::Password ) ||
+		 ( widget->isType( UI_TYPE_TEXTEDIT ) &&
+		   !static_cast<const UITextEdit*>( widget )->isLocked() ) )
+		actions |= accessibilityActionMask( AccessibilityAction::SetTextSelection );
 	if ( widget->isType( UI_TYPE_COMBOBOX ) ) {
 		actions |= accessibilityActionMask(
 			static_cast<const UIComboBox*>( widget )->getListBox()->isVisible()
@@ -295,6 +346,19 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 	}
 	if ( request.action == AccessibilityAction::SetText && widget->isType( UI_TYPE_TEXTEDIT ) ) {
 		static_cast<UITextEdit*>( widget )->setText( request.value );
+		return true;
+	}
+	if ( request.action == AccessibilityAction::SetTextSelection &&
+		 ( widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_TEXTEDIT ) ) ) {
+		Int32 start = 0;
+		Int32 end = 0;
+		if ( !parseSelection( request.value, start, end ) )
+			return false;
+		auto& document = widget->isType( UI_TYPE_TEXTEDIT )
+							 ? static_cast<UITextEdit*>( widget )->getDocument()
+							 : static_cast<UITextInput*>( widget )->getDocument();
+		document.setSelection( documentPosition( document, start ),
+							   documentPosition( document, end ) );
 		return true;
 	}
 	if ( ( request.action == AccessibilityAction::Expand ||

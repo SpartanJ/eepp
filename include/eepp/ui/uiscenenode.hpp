@@ -989,6 +989,7 @@ class EE_API UISceneNode : public SceneNode {
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
+	friend class EE::UI::AccessibilityManager;
 	friend class EE::Window::Engine;
 
 	// Engine lifecycle boundary for process-static main-thread resource deliveries. Shutdown first

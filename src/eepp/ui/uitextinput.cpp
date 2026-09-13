@@ -533,6 +533,7 @@ void UITextInput::onDocumentCursorChange( const TextPosition& ) {
 
 void UITextInput::onDocumentSelectionChange( const TextRange& ) {
 	onSelectionChange();
+	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 }
 
 void UITextInput::onDocumentLineCountChange( const size_t&, const size_t& ) {}

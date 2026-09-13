@@ -118,11 +118,30 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	textInput->setText( "Project" );
 	textInput->getDocument().setSelection( { 0, 3 } );
 	textInput->setParent( scene->getRoot() );
-	auto textInputInfo = manager->getNodeInfo( manager->getNodeRef( textInput ) );
+	auto textInputRef = manager->getNodeRef( textInput );
+	auto textInputInfo = manager->getNodeInfo( textInputRef );
 	EXPECT_TRUE( textInputInfo.text.valid );
 	EXPECT_EQ( textInputInfo.text.caretOffset, 3 );
 	EXPECT_EQ( textInputInfo.text.selectionStart, 3 );
 	EXPECT_EQ( textInputInfo.text.selectionEnd, 3 );
+	textInput->setText( String::fromUtf8( std::string( "A😀é" ) ) );
+	textInput->getDocument().setSelection( { 0, 4 } );
+	textInputInfo = manager->getNodeInfo( textInputRef );
+	EXPECT_EQ( textInputInfo.text.caretOffset, 4 );
+	EXPECT_TRUE( textInputInfo.actions &
+				 accessibilityActionMask( AccessibilityAction::SetTextSelection ) );
+	EXPECT_TRUE( manager->performAction(
+		textInputRef, { AccessibilityAction::SetTextSelection, String( "2:4" ) } ) );
+	textInputInfo = manager->getNodeInfo( textInputRef );
+	EXPECT_EQ( textInputInfo.text.selectionStart, 2 );
+	EXPECT_EQ( textInputInfo.text.selectionEnd, 4 );
+	textInput->setMode( UITextInput::TextInputMode::Password );
+	textInputInfo = manager->getNodeInfo( textInputRef );
+	EXPECT_TRUE( static_cast<Uint64>( textInputInfo.states ) &
+				 static_cast<Uint64>( AccessibilityState::Protected ) );
+	EXPECT_FALSE( textInputInfo.text.valid );
+	EXPECT_FALSE( textInputInfo.actions &
+				  accessibilityActionMask( AccessibilityAction::SetTextSelection ) );
 
 	UITextEdit* textEdit = UITextEdit::New();
 	textEdit->setParent( scene->getRoot() );
@@ -133,6 +152,24 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( manager->getNodeInfo( textEditRef ).value == String( "Notes" ) );
 	EXPECT_TRUE( manager->getNodeInfo( textEditRef ).name.empty() );
 	EXPECT_TRUE( manager->getNodeInfo( textEditRef, false ).value.empty() );
+	textEdit->setText( "first\nsecond" );
+	textEdit->getDocument().setSelection( { 0, 2 }, { 1, 3 } );
+	auto textEditInfo = manager->getNodeInfo( textEditRef );
+	EXPECT_TRUE( textEditInfo.text.valid );
+	EXPECT_EQ( textEditInfo.text.selectionStart, 2 );
+	EXPECT_EQ( textEditInfo.text.selectionEnd, 9 );
+	EXPECT_TRUE( manager->performAction(
+		textEditRef, { AccessibilityAction::SetTextSelection, String( "6:8" ) } ) );
+	auto textEditSelection = textEdit->getDocument().getSelection( true );
+	EXPECT_EQ( textEditSelection.start().line(), 1 );
+	EXPECT_EQ( textEditSelection.start().column(), 0 );
+	EXPECT_EQ( textEditSelection.end().line(), 1 );
+	EXPECT_EQ( textEditSelection.end().column(), 2 );
+	EXPECT_TRUE( manager->performAction(
+		textEditRef, { AccessibilityAction::SetTextSelection, String( "12:12" ) } ) );
+	textEditSelection = textEdit->getDocument().getSelection( true );
+	EXPECT_EQ( textEditSelection.start().line(), 1 );
+	EXPECT_EQ( textEditSelection.start().column(), 6 );
 	textEdit->setLocked( true );
 	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( textEditRef ).states ) &
 				 static_cast<Uint64>( AccessibilityState::ReadOnly ) );

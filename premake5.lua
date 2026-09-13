@@ -1675,7 +1675,8 @@ workspace "eepp"
 		language "C++"
 		cppdialect "C++20"
 		incdirs { "include", "src" }
-		files { "src/eepp/ui/platform/macos/macosmenubar.mm" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
+				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )
@@ -2038,6 +2039,10 @@ workspace "eepp"
 				"src/tools/ecode/plugins/git/git.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
+		if os.istarget("macosx") then
+			files { "src/tests/unit_tests/accessibility_macos_tests.mm" }
+			links { "Cocoa.framework" }
+		end
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter {}

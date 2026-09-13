@@ -45,6 +45,9 @@ class EE_API AccessibilityManager {
 
 	bool hasActiveNativeClients() const;
 
+	/** Updates the scene's cached fast-path flag after an actual native accessibility query. */
+	void onNativeClientObserved();
+
 	void update();
 
 	UISceneNode* getSceneNode() const;

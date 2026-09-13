@@ -9,6 +9,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool multiWindow = false;
 	bool closePrimary = false;
 	bool benchmark = false;
+	bool benchmarkVisible = false;
 	bool benchmarkInactive = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
@@ -16,6 +17,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		multiWindow |= std::string_view( argv[i] ) == "--multi-window";
 		closePrimary |= std::string_view( argv[i] ) == "--close-primary";
 		benchmark |= std::string_view( argv[i] ) == "--benchmark";
+		benchmarkVisible |= std::string_view( argv[i] ) == "--benchmark-visible";
 		benchmarkInactive |= std::string_view( argv[i] ) == "--benchmark-inactive";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
@@ -24,11 +26,12 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 	UIApplication::Settings settings;
 	settings.threadPool = ThreadPool::createShared( 1 );
-	UIApplication app( { 1280, 720, "eepp - Accessibility",
-						 static_cast<Uint32>( benchmark || benchmarkInactive
-												  ? WindowStyle::Default | WindowStyle::Hidden
-												  : WindowStyle::Default ) },
-					   settings );
+	UIApplication app(
+		{ 1280, 720, "eepp - Accessibility",
+		  static_cast<Uint32>( ( benchmark && !benchmarkVisible ) || benchmarkInactive
+								   ? WindowStyle::Default | WindowStyle::Hidden
+								   : WindowStyle::Default ) },
+		settings );
 	multiWindow |= closePrimary;
 	if ( closePrimary )
 		app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
@@ -37,6 +40,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		<vbox lw="mp" lh="mp" padding="16dp" padding="8dp">
 			<TextView text="Accessibility settings" font-size="22dp" />
 			<TextInput id="project-name" aria-label="Project name" text="eepp" lw="mp" />
+			<TextInput id="account-password" aria-label="Account password" text="secret" input-mode="password" lw="mp" />
 			<TextEdit id="description" aria-label="Description" aria-description="Multiline editor. Press Mod Tab to move to the next control." text="Accessible UI" lw="mp" lh="80dp" />
 			<CheckBox id="autosave" aria-label="Enable autosave" text="Enable autosave" />
 			<RadioButton id="light-theme" aria-label="Light Theme" text="Light theme" />
@@ -62,6 +66,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<hbox lw="mp" lh="wc" margin-top="8dp">
 				<PushButton id="save" text="Save settings" />
 				<PushButton id="inspect" text="Open inspector" />
+				<PushButton id="update-metadata" text="Update accessible metadata" />
+				<PushButton id="replace-projects" text="Replace project model" />
 				<PushButton id="open-window" text="Open accessibility window" />
 			</hbox>
 			<TextView id="status" text="Ready" />
@@ -109,6 +115,18 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		[status]( auto ) { status->setText( "Settings saved" ); } );
 	content->find<UIPushButton>( "inspect" )->onClick( [scene]( auto ) {
 		EE::UI::Tools::UIWidgetInspector::create( scene );
+	} );
+	auto metadataButton = content->find<UIPushButton>( "update-metadata" );
+	metadataButton->onClick( [metadataButton]( auto ) {
+		metadataButton->setAccessibilityLabel( "Updated metadata control" );
+		metadataButton->setAccessibilityDescription( "Updated accessibility help" );
+	} );
+	content->find<UIPushButton>( "replace-projects" )->onClick( [table]( auto ) {
+		auto replacement = Models::ItemPairListOwnerModel<std::string, std::string>::create(
+			{ { "Gamma", "Updated" } } );
+		replacement->setColumnName( 0, "Project" );
+		replacement->setColumnName( 1, "Status" );
+		table->setModel( replacement );
 	} );
 	content->find<UIPushButton>( "open-window" )->onClick( [&app]( auto ) {
 		auto* extra = app.createWindow( { 400, 180, "eepp - Accessibility Dynamic" } );

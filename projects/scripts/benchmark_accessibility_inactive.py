@@ -3,8 +3,10 @@
 import argparse
 import json
 import os
+from pathlib import Path
 import statistics
 import subprocess
+import sys
 import time
 
 
@@ -15,6 +17,14 @@ def check(condition, message):
 
 def run_sample(args, disabled):
 	environment = os.environ.copy()
+	if sys.platform == "darwin":
+		executable_directory = str(Path(args.executable).resolve().parent)
+		current_library_path = environment.get("DYLD_LIBRARY_PATH")
+		environment["DYLD_LIBRARY_PATH"] = (
+			executable_directory
+			if not current_library_path
+			else executable_directory + os.pathsep + current_library_path
+		)
 	if disabled:
 		environment["EEPP_DISABLE_ACCESSIBILITY"] = "1"
 	else:
@@ -55,7 +65,7 @@ def main():
 	parser.add_argument("--samples", type=int, default=5)
 	parser.add_argument("--timeout", type=float, default=10)
 	parser.add_argument("--max-initialization-ms", type=float, default=250)
-	parser.add_argument("--max-notification-ratio", type=float, default=1.1)
+	parser.add_argument("--max-notification-ratio", type=float, default=1.01)
 	parser.add_argument("--max-wall-ratio", type=float, default=1.25)
 	parser.add_argument("--json", action="store_true")
 	args = parser.parse_args()
@@ -85,6 +95,8 @@ def main():
 	output = {
 		"disabled": disabled,
 		"enabled": enabled,
+		"raw_disabled": disabled_samples,
+		"raw_enabled": enabled_samples,
 		"notification_ratio": notification_ratio,
 		"wall_ratio": wall_ratio,
 	}

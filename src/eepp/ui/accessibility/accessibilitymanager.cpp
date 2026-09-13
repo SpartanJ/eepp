@@ -73,10 +73,12 @@ UIWidget* hitSemanticWidget( Node* parent, const Math::Vector2f& point ) {
 		if ( widget && ( widget->isAccessibilityHidden() || !widget->hasVisibility() ||
 						 !widget->getWorldBounds().contains( point ) ) )
 			continue;
-		if ( auto child = hitSemanticWidget( node, point ) )
-			return child;
+		// An accessible widget is a semantic boundary: getChildren() does not expose its
+		// implementation children, so hit testing must not return one of those hidden descendants.
 		if ( widget && widget->isAccessibilityElement() )
 			return widget;
+		if ( auto child = hitSemanticWidget( node, point ) )
+			return child;
 	}
 	return nullptr;
 }
@@ -263,6 +265,11 @@ bool AccessibilityManager::hasActiveNativeClients() const {
 	return mBackend && mBackend->hasActiveClients();
 }
 
+void AccessibilityManager::onNativeClientObserved() {
+	if ( mScene )
+		mScene->mHasActiveAccessibilityClients = true;
+}
+
 void AccessibilityManager::update() {
 	if ( !mBackend ) {
 		mBackend = std::getenv( "EEPP_DISABLE_ACCESSIBILITY" )
@@ -295,9 +302,11 @@ void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent 
 			if ( source != mWidgetSources.end() ) {
 				auto found = mSources.find( source->second );
 				if ( found != mSources.end() ) {
-					if ( event == AccessibilityEvent::ModelChanged )
+					if ( event == AccessibilityEvent::ModelChanged ) {
+						if ( mBackend )
+							mBackend->onSourceInvalidated( source->second );
 						found->second->reset();
-					else
+					} else
 						found->second->invalidate();
 				}
 			}
@@ -354,6 +363,8 @@ void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	auto source = mWidgetSources.find( widget );
 	if ( source != mWidgetSources.end() ) {
+		if ( mBackend )
+			mBackend->onSourceInvalidated( source->second );
 		mSources.erase( source->second );
 		mWidgetSources.erase( source );
 	}

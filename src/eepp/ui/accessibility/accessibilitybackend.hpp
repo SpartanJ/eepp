@@ -19,6 +19,9 @@ class AccessibilityBackend {
 	virtual void update() {}
 
 	virtual void onEvent( const AccessibilityPendingEvent& event ) = 0;
+
+	/** Evicts native wrappers for a model source whose identity is no longer valid. */
+	virtual void onSourceInvalidated( AccessibilitySourceId ) {}
 };
 
 std::unique_ptr<AccessibilityBackend> createAccessibilityBackend( AccessibilityManager& manager );

@@ -88,6 +88,8 @@ class EE_API UITextEdit : public UICodeEditor {
 							 const TextPosition& cursor );
 
 	virtual void onTextHintsChanged();
+
+	virtual void onDocumentSelectionChange( const Doc::TextRange& );
 };
 
 }} // namespace EE::UI

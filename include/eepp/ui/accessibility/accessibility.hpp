@@ -57,6 +57,7 @@ enum class AccessibilityState : Uint64 {
 	Showing = 1ull << 8,
 	Expanded = 1ull << 9,
 	Active = 1ull << 10,
+	Protected = 1ull << 11,
 };
 
 inline AccessibilityState operator|( AccessibilityState left, AccessibilityState right ) {
@@ -81,6 +82,7 @@ enum class AccessibilityAction : Uint8 {
 	Expand,
 	Collapse,
 	ScrollTo,
+	SetTextSelection,
 };
 
 using AccessibilityActions = Uint32;

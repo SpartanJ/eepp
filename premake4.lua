@@ -1644,7 +1644,8 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src" }
-		files { "src/eepp/ui/platform/macos/macosmenubar.mm" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
+				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
 			buildoptions{ "-std=c++20" }
@@ -2023,6 +2024,10 @@ solution "eepp"
 				"src/tools/ecode/plugins/git/git.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
+		if os.is("macosx") then
+			files { "src/tests/unit_tests/accessibility_macos_tests.mm" }
+			links { "Cocoa.framework" }
+		end
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
 
