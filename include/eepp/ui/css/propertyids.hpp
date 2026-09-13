@@ -162,6 +162,7 @@ enum class PropertyId : Uint16 {
 	AllowFloat,
 	TouchDrag,
 	TouchDragDeceleration,
+	ScrollBehavior,
 	WindowTitle,
 	WindowOpacity,
 	WindowButtonsOffset,

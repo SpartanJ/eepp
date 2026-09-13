@@ -1130,6 +1130,8 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="scrollbar_type">Type de barre de défilement</string>
 	<string name="scroll_outside_tooltip">La barre de défilement occupe son propre espace et ne recouvre jamais le contenu.</string>
 	<string name="scroll_overlay_tooltip">La barre de défilement apparaît par-dessus le contenu.</string>
+	<string name="smooth_scroll">Défilement fluide</string>
+	<string name="smooth_scroll_desc">Anime le défilement avec la molette de la souris et le pavé tactile.</string>
 	<string name="set_screenshot_save_path">Chemin d'enregistrement des captures d'écran</string>
 	<string name="slight">Léger</string>
 	<string name="steady_bar">Barre fixe</string>

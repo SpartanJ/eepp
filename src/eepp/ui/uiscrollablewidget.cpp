@@ -1,11 +1,13 @@
+#include <cmath>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
 
 UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
-	UIWidget( tag ),
+	UITouchDraggableWidget( tag ),
 	mScrollViewType( ScrollViewType::Outside ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
@@ -29,7 +31,7 @@ Uint32 UIScrollableWidget::getType() const {
 }
 
 bool UIScrollableWidget::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIWidget::isType( type );
+	return UIScrollableWidget::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
 void UIScrollableWidget::onSizeChange() {
@@ -239,6 +241,8 @@ void UIScrollableWidget::onScrollChange() {}
 
 void UIScrollableWidget::onValueChangeCb( const Event* ) {
 	updateScroll();
+	if ( !mApplyingScrollController )
+		stopScrollController();
 }
 
 std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* propertyDef,
@@ -261,12 +265,12 @@ std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* pro
 		case PropertyId::ScrollBarMode:
 			return getViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UIScrollableWidget::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
 	auto local = { PropertyId::VScrollMode, PropertyId::HScrollMode, PropertyId::ScrollBarStyle,
 				   PropertyId::ScrollBarMode };
 	props.insert( props.end(), local.begin(), local.end() );
@@ -358,7 +362,7 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -366,34 +370,6 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 
 Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			bool moved = false;
-			if ( mVScroll->isEnabled() ) {
-
-				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
-					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
-					moved = true;
-				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
-					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
-					moved = true;
-				}
-			}
-
-			if ( mHScroll->isEnabled() ) {
-				if ( Msg->getFlags() & EE_BUTTON_WLMASK ) {
-					mHScroll->setValue( mHScroll->getValue() - mHScroll->getClickStep() );
-					moved = true;
-				} else if ( Msg->getFlags() & EE_BUTTON_WRMASK ) {
-					mHScroll->setValue( mHScroll->getValue() + mHScroll->getClickStep() );
-					moved = true;
-				}
-			}
-
-			if ( moved )
-				return 1;
-
-			break;
-		}
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
 				Node* focusNode = getEventDispatcher()->getFocusNode();
@@ -408,7 +384,48 @@ Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 			break;
 		}
 	}
-	return UIWidget::onMessage( Msg );
+	return UITouchDraggableWidget::onMessage( Msg );
+}
+
+Uint32 UIScrollableWidget::onMouseWheel( const Vector2f& offset, bool ) {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	Vector2f delta;
+	Float durationScale = 1.f;
+	if ( getInput()->isModState( KEYMOD_SHIFT ) && offset.y != 0.f && mHScroll->isEnabled() ) {
+		const Float factor = getWheelScrollFactor( offset.y );
+		delta.x = -factor * mHScroll->getClickStep() * maxPosition.x;
+		durationScale = std::abs( factor );
+	} else {
+		if ( offset.y != 0.f && mVScroll->isEnabled() ) {
+			const Float factor = getWheelScrollFactor( offset.y );
+			delta.y = -factor * mVScroll->getClickStep() * maxPosition.y;
+			durationScale = std::abs( factor );
+		} else if ( offset.x != 0.f && mHScroll->isEnabled() ) {
+			const Float factor = getWheelScrollFactor( offset.x );
+			delta.x = factor * mHScroll->getClickStep() * maxPosition.x;
+			durationScale = std::abs( factor );
+		}
+	}
+	return scrollBy( delta, durationScale ) ? 1 : 0;
+}
+
+bool UIScrollableWidget::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UIScrollableWidget::getScrollControllerPosition() const {
+	return mScrollOffset;
+}
+
+Vector2f UIScrollableWidget::getScrollControllerMaxPosition() const {
+	const Sizef area( getScrollableArea() );
+	return { eemax( 0.f, area.x ), eemax( 0.f, area.y ) };
+}
+
+void UIScrollableWidget::setScrollControllerPosition( const Vector2f& position ) {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	mHScroll->setValue( maxPosition.x > 0.f ? position.x / maxPosition.x : 0.f );
+	mVScroll->setValue( maxPosition.y > 0.f ? position.y / maxPosition.y : 0.f );
 }
 
 }} // namespace EE::UI

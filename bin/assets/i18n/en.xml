@@ -1131,6 +1131,8 @@ Restart ecode to see the changes.</string>
 	<string name="scrollbar_type">Scrollbar Type</string>
 	<string name="scroll_outside_tooltip">The scrollbar has its own space and never covers content.</string>
 	<string name="scroll_overlay_tooltip">The scrollbar appears over content.</string>
+	<string name="smooth_scroll">Smooth Scrolling</string>
+	<string name="smooth_scroll_desc">Animate scrolling from mouse wheels and trackpads.</string>
 	<string name="set_screenshot_save_path">Screenshot Save Path</string>
 	<string name="slight">Slight</string>
 	<string name="steady_bar">Steady Bar</string>

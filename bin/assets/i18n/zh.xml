@@ -924,6 +924,8 @@ file in the directory tree.</string>
 	<string name="scrollbar_type">滚动条类型</string>
 	<string name="scroll_outside_tooltip">滚动条占用独立空间，不会覆盖内容。</string>
 	<string name="scroll_overlay_tooltip">滚动条叠加显示在内容上方。</string>
+	<string name="smooth_scroll">平滑滚动</string>
+	<string name="smooth_scroll_desc">为鼠标滚轮和触控板触发的滚动添加动画。</string>
 	<string name="session_snapshot">会话快照与定期备份</string>
 	<string name="session_snapshot_desc">保留会话之间未保存的文档更改。</string>
 	<string name="set_screenshot_save_path">截图保存路径</string>

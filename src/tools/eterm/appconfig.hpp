@@ -38,6 +38,10 @@ struct TerminalConfig {
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 };
 
+struct UIConfig {
+	bool smoothScroll{ false };
+};
+
 struct FontConfig {
 	std::string path;
 	std::string fallbackPath;
@@ -76,6 +80,7 @@ struct AppConfig {
 	FontConfig font;
 	WindowConfig window;
 	ThemeConfig theme;
+	UIConfig ui;
 	WindowStateConfig windowState;
 
 	explicit AppConfig( std::string configPath );

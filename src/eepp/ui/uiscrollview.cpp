@@ -1,6 +1,8 @@
+#include <cmath>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
 
@@ -302,6 +304,8 @@ void UIScrollView::updateScroll() {
 
 void UIScrollView::onValueChangeCb( const Event* ) {
 	updateScroll();
+	if ( !mApplyingScrollController )
+		stopScrollController();
 }
 
 void UIScrollView::onScrollViewSizeChange( const Event* ) {
@@ -445,22 +449,43 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			if ( mScrollView && mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
-				 isTouchOverAllowedChildren() && Msg->getSender()->isUINode() &&
-				 !Msg->getSender()->asType<UINode>()->isScrollable() ) {
-				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
-					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
-					return 1;
-				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
-					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
-					return 1;
-				}
-			}
-		}
-	}
 	return UITouchDraggableWidget::onMessage( Msg );
+}
+
+Uint32 UIScrollView::onMouseWheel( const Vector2f& offset, bool ) {
+	if ( !mScrollView || !mVScroll->isEnabled() || !isTouchOverAllowedChildren() )
+		return 0;
+
+	if ( offset.y == 0.f )
+		return 0;
+
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	const Float factor = getWheelScrollFactor( offset.y );
+	const Float delta = -factor * mVScroll->getClickStep() * maxPosition.y;
+	return scrollBy( { 0.f, delta }, std::abs( factor ) ) ? 1 : 0;
+}
+
+bool UIScrollView::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UIScrollView::getScrollControllerPosition() const {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	return { mHScroll->isEnabled() ? mHScroll->getValue() * maxPosition.x : 0.f,
+			 mVScroll->isEnabled() ? mVScroll->getValue() * maxPosition.y : 0.f };
+}
+
+Vector2f UIScrollView::getScrollControllerMaxPosition() const {
+	if ( !mScrollView )
+		return Vector2f::Zero;
+	return { eemax( 0.f, mScrollView->getPixelsSize().x - mContainer->getPixelsSize().x ),
+			 eemax( 0.f, mScrollView->getPixelsSize().y - mContainer->getPixelsSize().y ) };
+}
+
+void UIScrollView::setScrollControllerPosition( const Vector2f& position ) {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	mHScroll->setValue( maxPosition.x > 0.f ? position.x / maxPosition.x : 0.f );
+	mVScroll->setValue( maxPosition.y > 0.f ? position.y / maxPosition.y : 0.f );
 }
 
 bool UIScrollView::isAutoSetClipStep() const {

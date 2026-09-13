@@ -1,5 +1,6 @@
 #include "eepp/ui/uistyle.hpp"
 #include <algorithm>
+#include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -163,7 +164,7 @@ const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
 
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
-	UIWidget( elementTag ),
+	UITouchDraggableWidget( elementTag ),
 	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
 	mAsyncLifetime( this, this ),
@@ -272,7 +273,7 @@ Uint32 UICodeEditor::getType() const {
 }
 
 bool UICodeEditor::isType( const Uint32& type ) const {
-	return type == getType() || UIWidget::isType( type );
+	return type == getType() || UITouchDraggableWidget::isType( type );
 }
 
 void UICodeEditor::setTheme( UITheme* Theme ) {
@@ -486,7 +487,9 @@ void UICodeEditor::draw() {
 		clipSmartDisable();
 }
 
-void UICodeEditor::scheduledUpdate( const Time& ) {
+void UICodeEditor::scheduledUpdate( const Time& time ) {
+	UITouchDraggableWidget::scheduledUpdate( time );
+
 	if ( mDisableCursorBlinkingAfterAMinuteOfInactivity &&
 		 mLastActivity.getElapsedTime() > Seconds( 60 ) ) {
 		if ( !mCursorVisible ) {
@@ -775,7 +778,23 @@ Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 			setFocus();
 		}
 	}
-	return UIWidget::onMessage( msg );
+	return UITouchDraggableWidget::onMessage( msg );
+}
+
+bool UICodeEditor::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UICodeEditor::getScrollControllerPosition() const {
+	return mScroll;
+}
+
+Vector2f UICodeEditor::getScrollControllerMaxPosition() const {
+	return getMaxScroll();
+}
+
+void UICodeEditor::setScrollControllerPosition( const Vector2f& position ) {
+	setScroll( position );
 }
 
 void UICodeEditor::disableEditorFeatures( bool useDefaultStyle ) {
@@ -1887,23 +1906,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
-		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x + mMouseWheelScroll );
-		} else {
-			setScrollY( mScroll.y + mMouseWheelScroll );
 		}
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
-		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x - mMouseWheelScroll );
-		} else {
-			setScrollY( mScroll.y - mMouseWheelScroll );
 		}
-	} else if ( flags & EE_BUTTON_WRMASK ) {
-		setScrollX( mScroll.x + mMouseWheelScroll );
-	} else if ( flags & EE_BUTTON_WLMASK ) {
-		setScrollX( mScroll.x - mMouseWheelScroll );
 	} else if ( !minimapHover && ( flags & EE_BUTTON_RMASK ) ) {
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		if ( localPos.x >= mPaddingPx.Left + getGutterWidth() && localPos.y >= mPluginsTopSpace )
@@ -1912,6 +1919,31 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		return UIWidget::onMouseUp( position, flags );
 
 	return UIWidget::onMouseUp( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool ) {
+	Input* input = getInput();
+	if ( input->isKeyModPressed() )
+		return 1;
+
+	Vector2f delta;
+	Float durationScale = 1.f;
+	if ( input->isModState( KEYMOD_SHIFT ) && offset.y != 0.f ) {
+		const Float factor = getWheelScrollFactor( offset.y );
+		delta.x = -factor * mMouseWheelScroll;
+		durationScale = std::abs( factor );
+	} else {
+		if ( offset.y != 0.f ) {
+			const Float factor = getWheelScrollFactor( offset.y );
+			delta.y = -factor * mMouseWheelScroll;
+			durationScale = std::abs( factor );
+		} else if ( offset.x != 0.f ) {
+			const Float factor = getWheelScrollFactor( offset.x );
+			delta.x = factor * mMouseWheelScroll;
+			durationScale = std::abs( factor );
+		}
+	}
+	return scrollBy( delta, durationScale ) ? 1 : 0;
 }
 
 Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags ) {
@@ -2641,6 +2673,8 @@ void UICodeEditor::showMinimap( bool showMinimap ) {
 }
 
 bool UICodeEditor::setScrollX( const Float& val, bool emitEvent ) {
+	if ( !mApplyingScrollController )
+		stopScrollController();
 	Float oldVal = mScroll.x;
 	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
@@ -2656,6 +2690,8 @@ bool UICodeEditor::setScrollX( const Float& val, bool emitEvent ) {
 }
 
 bool UICodeEditor::setScrollY( const Float& val, bool emitEvent ) {
+	if ( !mApplyingScrollController )
+		stopScrollController();
 	Float oldVal = mScroll.y;
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
@@ -3196,7 +3232,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -3250,12 +3286,12 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::Text:
 			return mDoc->getLineTextUtf8( 0 );
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
 	auto local = { PropertyId::Locked,
 				   PropertyId::Color,
 				   PropertyId::TextShadowColor,
@@ -5910,7 +5946,7 @@ TextDirection UICodeEditor::getTextDirection() const {
 void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	UIWidget::loadFromXmlNode( node );
+	UITouchDraggableWidget::loadFromXmlNode( node );
 
 	std::string text;
 	bool hasElementChildren = false;

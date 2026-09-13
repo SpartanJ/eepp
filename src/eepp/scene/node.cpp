@@ -388,7 +388,7 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseWheel( const Vector2f&, bool ) {
-	return 1;
+	return 0;
 }
 
 Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {

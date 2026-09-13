@@ -106,6 +106,16 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	virtual bool isTouchOverAllowedChildren();
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
+
 	virtual void onParentChange();
 
 	void listenParent();

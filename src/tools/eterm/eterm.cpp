@@ -724,6 +724,7 @@ int App::run( int argc, char* argv[] ) {
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
 		return EXIT_FAILURE;
+	scene->setSmoothScrollEnabled( config->ui.smoothScroll );
 	settingsActions = std::make_unique<SettingsActions>( this );
 	keybindingsPath = config->getConfigPath() + "keybindings.cfg";
 	loadKeybindings();

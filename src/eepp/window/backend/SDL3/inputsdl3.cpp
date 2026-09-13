@@ -301,17 +301,24 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			Uint8 button;
 			float x = SDLEvent.wheel.x;
 			float y = SDLEvent.wheel.y;
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+			const Sint32 integerX = SDLEvent.wheel.integer_x;
+			const Sint32 integerY = SDLEvent.wheel.integer_y;
+#else
+			const Sint32 integerX = x > 0.f ? 1 : ( x < 0.f ? -1 : 0 );
+			const Sint32 integerY = y > 0.f ? 1 : ( y < 0.f ? -1 : 0 );
+#endif
 
-			if ( y == 0 && x == 0 )
+			if ( integerY == 0 && integerX == 0 )
 				break;
 
-			if ( y > 0 ) {
+			if ( integerY > 0 ) {
 				button = EE_BUTTON_WHEELUP;
-			} else if ( y < 0 ) {
+			} else if ( integerY < 0 ) {
 				button = EE_BUTTON_WHEELDOWN;
-			} else if ( x > 0 ) {
+			} else if ( integerX > 0 ) {
 				button = EE_BUTTON_WHEELRIGHT;
-			} else if ( x < 0 ) {
+			} else if ( integerX < 0 ) {
 				button = EE_BUTTON_WHEELLEFT;
 			} else {
 				return;

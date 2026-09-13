@@ -77,8 +77,9 @@ void SettingsPanel::create( Scope scope ) {
 		addProjectSettings( state );
 	}
 	state.panel->build();
-	state.connections += state.window->connect(
-		Event::OnWindowReady, [&state]( const Event* ) { state.panel->focusSearch(); } );
+	state.connections += state.window->connect( Event::OnWindowReady, [&state]( const Event* ) {
+		state.panel->runOnMainThread( [&state] { state.panel->focusSearch(); } );
+	} );
 	state.connections +=
 		state.window->connect( Event::OnWindowClose, [this, &state, scope]( const Event* ) {
 			for ( const auto& document : state.documents ) {
@@ -203,6 +204,13 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			   mApp->i18n( "quick_preview_images_tooltip",
 						   "Preview images without opening a permanent editor tab." ) },
 			 &mApp->getConfig().ui.imagesQuickPreview );
+	addBool(
+		panel,
+		{ "smoothScroll", "general.behavior", mApp->i18n( "smooth_scroll", "Smooth Scrolling" ),
+		  mApp->i18n( "smooth_scroll_desc",
+					  "Animate scrolling from mouse wheels and trackpads." ) },
+		&mApp->getConfig().ui.smoothScroll,
+		[this]( bool value ) { mApp->getUISceneNode()->setSmoothScrollEnabled( value, true ); } );
 
 	addCategory( panel, "editor.appearance", mApp->i18n( "editor", "Editor" ),
 				 mApp->i18n( "appearance", "Appearance" ) );
@@ -1157,7 +1165,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this, monitorRefreshRate, unlimitedFrameRate] {
 			const auto value = mApp->getConfig().context.FrameRateLimit;
 			return value == ContextSettings::FrameRateLimitScreenRefreshRate ? monitorRefreshRate
-				   : value == 0 ? unlimitedFrameRate
+				   : value == 0												 ? unlimitedFrameRate
 								: String( String::toString( value ) );
 		},
 		[this, monitorRefreshRate, unlimitedFrameRate]( const String& selection ) {

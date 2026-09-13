@@ -35,11 +35,25 @@ Always regenerate the project files before compiling or running tests after maki
 *   **Tool:** Use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
 *   **Linker Flag (`--with-mold-linker`):** This flag is conditional. If the `mold` linker is installed on the system, you **must** include it to speed up linking. If `mold` is not installed, omit the flag.
 
-**Command (if `mold` is installed):**
+Choose the generator command from the configuration that will be built. Debug builds use AddressSanitizer; release builds do not.
+
+**Release command (if `mold` is installed):**
+`premake4 --disable-static-build --with-mold-linker --with-debug-symbols gmake`
+
+**Release command (if `mold` is NOT installed):**
+`premake4 --disable-static-build --with-debug-symbols gmake`
+
+**Debug command (if `mold` is installed):**
 `premake4 --disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake`
 
-**Command (if `mold` is NOT installed):**
+**Debug command (if `mold` is NOT installed):**
 `premake4 --disable-static-build --with-debug-symbols --address-sanitizer gmake`
+
+Never add `--address-sanitizer` when generating project files for a release build, and never omit it
+when generating project files for a debug build. Always regenerate immediately before building so
+the generated files match the intended configuration. Generator options are not tracked as object
+dependencies, so when switching sanitizer mode, clean the affected configuration before rebuilding
+to avoid mixing instrumented and uninstrumented C++ objects.
 
 ## Step 1a: Format Changed Files
 After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** run `clang-format` on all modified files to ensure consistent formatting with the project's style (defined in `.clang-format` at the repository root).
@@ -60,6 +74,12 @@ Always use all processors reported by the platform when selecting the parallel j
 and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
 such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.
 
+On macOS in a managed or sandboxed environment, request elevated permission before invoking
+`sysctl` or running any command that needs access to host display services. Read and validate
+`sysctl -n hw.ncpu` separately before starting the build, then pass the verified positive value as a
+literal `-jN` argument. If the query fails, returns zero, or returns an empty value, stop and request
+permission; never allow an empty command substitution to turn `-j` into unbounded parallelism.
+
 The valid OS directory names are: `windows`, `macosx`, `linux`, `bsd`, `haiku`.
 
 Run the following command, replacing `<os_name>` with the correct environment:
@@ -67,7 +87,8 @@ Run the following command, replacing `<os_name>` with the correct environment:
 
 **Examples:**
 *   Linux: `make -C make/linux -j$(nproc)`
-*   macOS: `make -C make/macosx -j$(sysctl -n hw.ncpu)`
+*   macOS: after an approved `sysctl -n hw.ncpu` returns a value such as `10`, run
+    `make -C make/macosx -j10` using that exact verified value.
 *   Windows: `make -C make/windows -j%NUMBER_OF_PROCESSORS%`
 
 ## Running GUI Examples Under Xvfb

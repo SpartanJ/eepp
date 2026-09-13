@@ -14,6 +14,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/runtime.hpp>
 
 #include <atomic>
@@ -74,6 +75,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		std::cerr << "Could not create window, exiting" << std::endl;
 		return;
 	}
+	Engine::instance()->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
 	mWindow->setDeferNativeResourceDestructionOnClose( true );
 
 	mDidRun = true;

@@ -160,6 +160,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollcontroller.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiskin.hpp>

@@ -72,6 +72,7 @@ struct UIConfig {
 	bool nativeFileDialogs{ false };
 	bool imagesQuickPreview{ false };
 	bool editorFontInInputFields{ true };
+	bool smoothScroll{ false };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string sansSerifFont;
 	std::string monospaceFont;

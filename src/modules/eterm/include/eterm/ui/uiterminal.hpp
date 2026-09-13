@@ -4,7 +4,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
 using namespace EE::UI;
@@ -14,7 +14,7 @@ namespace eterm { namespace UI {
 
 class UITerminalFind;
 
-class UITerminal : public UIWidget {
+class UITerminal : public UITouchDraggableWidget {
   public:
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							const std::string& program = "",
@@ -157,6 +157,8 @@ class UITerminal : public UIWidget {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual void onPositionChange();
 
 	virtual void onSizeChange();
@@ -191,6 +193,14 @@ class UITerminal : public UIWidget {
 	virtual void updateScrollPosition();
 
 	virtual void onScrollChange();
+
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
 
 	void registerNewTerminal();
 };

@@ -1146,6 +1146,8 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="scrollbar_type">Bildlaufleistentyp</string>
 	<string name="scroll_outside_tooltip">Die Bildlaufleiste hat eigenen Platz und verdeckt nie den Inhalt.</string>
 	<string name="scroll_overlay_tooltip">Die Bildlaufleiste wird über dem Inhalt angezeigt.</string>
+	<string name="smooth_scroll">Sanftes Scrollen</string>
+	<string name="smooth_scroll_desc">Animiert das Scrollen mit Mausrad und Trackpad.</string>
 	<string name="set_screenshot_save_path">Speicherpfad für Bildschirmfotos</string>
 	<string name="slight">Leicht</string>
 	<string name="steady_bar">Statischer Balken</string>

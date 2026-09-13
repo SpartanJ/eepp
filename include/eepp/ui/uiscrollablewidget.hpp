@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class UIScrollBar;
 
-class EE_API UIScrollableWidget : public UIWidget {
+class EE_API UIScrollableWidget : public UITouchDraggableWidget {
   public:
 	virtual Uint32 getType() const;
 
@@ -89,6 +89,16 @@ class EE_API UIScrollableWidget : public UIWidget {
 	virtual void updateScroll();
 
 	virtual void onScrollChange();
+
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
 };
 
 }} // namespace EE::UI

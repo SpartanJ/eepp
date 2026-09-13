@@ -33,6 +33,8 @@ void AppConfig::load() {
 	terminal.closeOnExit = mIni.getValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	terminal.initialTabs = mIni.getValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	terminal.exclusiveMode = mIni.getValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
+	ui.smoothScroll = mIni.getValueB(
+		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
 		mIni.getValue( "terminal", "new_terminal_behavior", "current" );
 	terminal.newTerminalBehavior =
@@ -104,6 +106,8 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	mIni.setValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	mIni.setValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
+	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
+	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",
 				   terminal.newTerminalBehavior == NewTerminalBehavior::VerticalSplit ? "vertical"
 				   : terminal.newTerminalBehavior == NewTerminalBehavior::HorizontalSplit
