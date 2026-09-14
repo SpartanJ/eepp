@@ -81,6 +81,56 @@ class TestUIApplication : public UIApplication {
 	void tickOnce() { tick(); }
 };
 
+UTEST( UIApplication, RoutesNativeMouseWheelExactlyOnceToTargetWindow ) {
+	TestUIApplication app( WindowSettings( 320, 240, "Primary Wheel Routing", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f, true ),
+						   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Secondary Wheel Routing", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+
+	auto* primaryInput = app.getWindow()->getInput();
+	auto* secondaryInput = secondaryUI->getWindow()->getInput();
+	const Uint32 targetWindowId = secondaryUI->getWindow()->getWindowID();
+	int primaryWheelEvents = 0;
+	int secondaryWheelEvents = 0;
+	Vector2f secondaryWheelOffset;
+	Uint32 receivedWindowId = 0;
+	const Uint32 primaryCallback = primaryInput->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type == InputEvent::MouseWheel )
+			++primaryWheelEvents;
+	} );
+	const Uint32 secondaryCallback = secondaryInput->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type == InputEvent::MouseWheel ) {
+			++secondaryWheelEvents;
+			secondaryWheelOffset = { event->wheel.x, event->wheel.y };
+			receivedWindowId = event->WinID;
+		}
+	} );
+
+	InputEvent event{};
+	event.Type = InputEvent::MouseWheel;
+	event.WinID = targetWindowId;
+	event.wheel.x = 0.f;
+	event.wheel.y = -1.f;
+	event.wheel.direction = InputEvent::WheelEvent::Normal;
+	ASSERT_TRUE( primaryInput->pushEvent( event ) );
+	Engine::instance()->updateInput();
+
+	EXPECT_EQ( primaryWheelEvents, 0 );
+	EXPECT_EQ( secondaryWheelEvents, 1 );
+	EXPECT_EQ( receivedWindowId, targetWindowId );
+	EXPECT_EQ( secondaryWheelOffset.x, 0.f );
+	EXPECT_EQ( secondaryWheelOffset.y, -1.f );
+	primaryInput->popCallback( primaryCallback );
+	secondaryInput->popCallback( secondaryCallback );
+}
+
 UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 	TestUIApplication app(
 		WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,

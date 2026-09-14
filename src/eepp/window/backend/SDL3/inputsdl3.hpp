@@ -30,6 +30,8 @@ class EE_API InputSDL : public Input {
 
 	bool isMouseCaptured() const;
 
+	bool pushEvent( const InputEvent& event );
+
 	std::string getKeyName( const Keycode& keycode ) const;
 
 	Keycode getKeyFromName( const std::string& keycode ) const;

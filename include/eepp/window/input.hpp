@@ -233,6 +233,10 @@ class EE_API Input {
 	/** Send an input event to the window */
 	void sendEvent( InputEvent* Event );
 
+	/** Injects an input event through the backend event translation path and routes it according to
+	 * InputEvent::WinID. */
+	virtual bool pushEvent( const InputEvent& event );
+
 	/** @return The joystick manager */
 	JoystickManager* getJoystickManager() const;
 
