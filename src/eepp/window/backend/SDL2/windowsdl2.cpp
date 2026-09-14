@@ -162,6 +162,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Haiku's SDL2 driver shows the window during creation even when SDL_WINDOW_HIDDEN was
+	// requested. Transition it through SDL's visible state so SDL_HideWindow can reach the native
+	// driver and restore the hidden context-host contract used by terminal mode and tests.
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden ) {
+		SDL_ShowWindow( mSDLWindow );
+		SDL_HideWindow( mSDLWindow );
+	}
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	Log::notice( "Choosing GL Version from: %d", Context.Version );
 
@@ -207,19 +217,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 			SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 0 );
 	}
 
+	// Sharing window contexts is independent from supporting an auxiliary context on a worker
+	// thread. Platforms without threaded GL contexts still need shared object namespaces for
+	// resources used by multiple native windows.
+	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
+						 mWindow.ContextConfig.SharedGLContext ? 1 : 0 );
 #ifdef SDL2_THREADED_GLCONTEXT
-	if ( mWindow.ContextConfig.SharedGLContext ) {
-		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
-
+	if ( mWindow.ContextConfig.SharedGLContext )
 		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	} else {
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	}
-#else
-	mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	mWindow.ContextConfig.SharedGLContext = false;
 #endif
+	mGLContext = SDL_GL_CreateContext( mSDLWindow );
 
 	if ( nullptr == mGLContext
 #ifdef SDL2_THREADED_GLCONTEXT
@@ -680,6 +687,8 @@ void WindowSDL::minimize() {
 }
 
 void WindowSDL::maximize() {
+	if ( Runtime::isOffscreen() )
+		return;
 	SDL_MaximizeWindow( mSDLWindow );
 }
 

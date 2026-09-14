@@ -11,7 +11,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -197,7 +197,7 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 	std::string newLang;
 };
 
-class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
+class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::Client {
   public:
 	struct MinimapConfig {
 		Float width{ 100 }; // dp width
@@ -1087,6 +1087,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
@@ -1186,6 +1188,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onFoldRegionsUpdated( size_t oldCount, size_t newCount );
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
+
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
 
 	void checkMouseOverColor( const Vector2i& position );
 

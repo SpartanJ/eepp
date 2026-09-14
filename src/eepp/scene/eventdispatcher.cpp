@@ -80,8 +80,7 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		case InputEvent::MouseWheel:
 			sendMouseWheel( { event->wheel.x, event->wheel.y },
-							event->wheel.direction == InputEvent::WheelEvent::Normal ? true
-																					 : false );
+							event->wheel.direction == InputEvent::WheelEvent::Flipped );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -288,7 +287,7 @@ void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scanc
 }
 
 void EventDispatcher::sendMouseWheel( const Vector2f& offset, bool flipped ) {
-	Node* node = mFocusNode;
+	Node* node = nullptr != mOverNode ? mOverNode : mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onMouseWheel( offset, flipped ) )
 			break;

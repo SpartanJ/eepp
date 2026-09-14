@@ -28,6 +28,7 @@
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -54,10 +55,6 @@ using namespace std::literals;
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
-
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-#include "macos/macos.hpp"
-#endif
 
 namespace ecode {
 
@@ -2159,77 +2156,85 @@ static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryMo
 KeyBindings::ShortcutMap App::getLocalKeybindings() {
 	return {
 		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
-		{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
-		  "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
-		{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
+			  "fullscreen-toggle" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
+			{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KeyMod::getDefaultSecondaryModifier() }, "switch-side-panel" },
-		{ { KEY_J,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "terminal-split-left" },
-		{ { KEY_L,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "terminal-split-right" },
-		{ { KEY_I,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "terminal-split-top" },
-		{ { KEY_K,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "terminal-split-bottom" },
-		{ { KEY_S,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "terminal-split-swap" },
-		{ { KEY_T,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-		  "reopen-closed-tab" },
-		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
-		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
-		{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
-		{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
-		{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
-		{ { KEY_O, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
-		{ { KEY_N, KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() }, "create-new-window" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KeyMod::getDefaultSecondaryModifier() }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
+						   KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
+			{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
+			{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
+			{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
+			{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "project-build-start-cancel" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
+			{ { KEY_O, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+			  "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() },
+			  "create-new-window" },
 	};
 }
 
 // Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
-			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
-			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
-			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
-			 { "switch-to-last-tab", "alt+0" },
+	return {
+		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			 { "menu-toggle", "mod+shift+m" },
+			{ "menu-toggle", "mod+shift+m" },
 #endif
-			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
-			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
+			{ "lock-toggle", "mod+shift+l" }, { "debug-widget-tree-view", "f11" },
+			{ "project-build-and-run", "f5" }, {
+			"project-build-start", "mod+shift+b"
+		}
+	};
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -4518,8 +4523,8 @@ void App::tintTitleBar() {
 						   ->getVariableByName( "--back" );
 		if ( !backVar.isEmpty() ) {
 			auto backColor( Color::fromString( backVar.getValue() ) );
-			macOS_changeTitleBarColor( mWindow->getWindowHandler(), backColor.r / 255.f,
-									   backColor.g / 255.f, backColor.b / 255.f );
+			Engine::instance()->getPlatformHelper()->setWindowTitleBarColor(
+				mWindow->getWindowHandler(), backColor.r, backColor.g, backColor.b );
 		}
 	}
 #endif
@@ -4748,8 +4753,9 @@ void App::init( InitParameters& params ) {
 	EE_PLATFORM == EE_PLATFORM_BSD
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		macOS_enableScrollMomentum();
-		macOS_removeTitleBarSeparator( mWindow->getWindowHandler() );
+		engine->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
+		engine->getPlatformHelper()->setWindowTitleBarSeparatorVisible( mWindow->getWindowHandler(),
+																		false );
 #endif
 
 		mThreadPool->run( [this]() {
@@ -4953,6 +4959,8 @@ void App::init( InitParameters& params ) {
 
 		mUISceneNode = UISceneNode::New( nullptr, true, mThreadPool );
 		mLifetime.setDispatcher( mUISceneNode );
+		mUISceneNode->setThreadPool( mThreadPool );
+		mUISceneNode->setSmoothScrollEnabled( mConfig.ui.smoothScroll );
 		mUIColorScheme = mConfig.ui.colorScheme;
 
 		if ( params.language.empty() )

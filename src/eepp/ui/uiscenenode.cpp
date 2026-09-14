@@ -23,6 +23,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -393,6 +394,33 @@ void UISceneNode::setDefaultTextHints( Uint32 textHints ) {
 
 Uint32 UISceneNode::getDefaultTextHints() const {
 	return mDefaultTextHints;
+}
+
+UISceneNode* UISceneNode::setSmoothScrollEnabled( bool enabled, bool applyNow ) {
+	UISceneNode* rootScene = this;
+	while ( rootScene->mHostUISceneNode )
+		rootScene = rootScene->mHostUISceneNode;
+
+	rootScene->mSmoothScrollEnabled = enabled;
+	if ( applyNow ) {
+		const auto applyToScene = [enabled]( auto&& self, UISceneNode* scene ) -> void {
+			for ( auto* widget : scene->findAllByType<UITouchDraggableWidget>(
+					 UI_TYPE_TOUCH_DRAGGABLE_WIDGET ) )
+				widget->setSmoothScrollEnabled( enabled );
+			for ( auto* childScene : scene->mChildUISceneNodes )
+				self( self, childScene );
+		};
+		applyToScene( applyToScene, rootScene );
+	}
+
+	return this;
+}
+
+bool UISceneNode::isSmoothScrollEnabled() const {
+	const UISceneNode* rootScene = this;
+	while ( rootScene->mHostUISceneNode )
+		rootScene = rootScene->mHostUISceneNode;
+	return rootScene->mSmoothScrollEnabled;
 }
 
 Uint32 UISceneNode::resolveTextHints( Uint32 defaultHints, Uint32 overrideValue,

@@ -1676,6 +1676,7 @@ workspace "eepp"
 		cppdialect "C++20"
 		incdirs { "include", "src" }
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
+				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
@@ -1909,26 +1910,6 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
-	if os.istarget("macosx") then
-	project "ecode-macos-helper-static"
-		kind "StaticLib"
-		language "C++"
-		target_dir_thirdparty()
-		filter "system:macosx"
-			files { "src/tools/ecode/macos/*.m" }
-		filter { "configurations:debug*", "action:not vs*" }
-			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
-			symbols "On"
-			buildoptions{ "-Wall" }
-			targetname ( "ecode-macos-helper-static-debug" )
-		filter { "configurations:release*", "action:not vs*" }
-			defines { "NDEBUG" }
-			optimize "Speed"
-			targetname ( "ecode-macos-helper-static" )
-		filter { "configurations:release*", "action:not vs*", "options:with-debug-symbols" }
-			symbols "On"
-	end
-
 	project "ecode"
 		set_kind()
 		language "C++"
@@ -1951,7 +1932,6 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.x64.res" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
-			links { "ecode-macos-helper-static" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
@@ -2045,6 +2025,8 @@ workspace "eepp"
 		end
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter "system:haiku"
+			links { "bsd", "network" }
 		filter {}
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )

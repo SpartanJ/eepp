@@ -428,6 +428,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( PropertyId::TouchDrag, "touch-drag", "" ).setType( PropertyType::Bool );
 	registerProperty( PropertyId::TouchDragDeceleration, "touch-drag-deceleration", "" )
 		.setType( PropertyType::NumberFloat );
+	registerProperty( PropertyId::ScrollBehavior, "scroll-behavior", "instant" )
+		.setType( PropertyType::String );
 
 	registerProperty( PropertyId::WindowTitle, "window-title", "" ).setType( PropertyType::String );
 	registerProperty( PropertyId::WindowOpacity, "window-opacity", "" )

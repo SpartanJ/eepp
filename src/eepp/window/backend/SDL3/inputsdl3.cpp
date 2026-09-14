@@ -11,6 +11,14 @@ namespace {
 char WakeEventMarker;
 }
 
+static Float getEventWindowScale( EE::Window::Window* pollingWindow, Uint32 windowId ) {
+	if ( windowId == 0 || windowId == pollingWindow->getWindowID() )
+		return pollingWindow->getScale();
+	if ( auto* eventWindow = Engine::instance()->getWindowID( windowId ) )
+		return eventWindow->getScale();
+	return pollingWindow->getScale();
+}
+
 InputSDL::InputSDL( Window* window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) ), mDPIScale( 1.f ) {
 #if defined( EE_X11_PLATFORM )
@@ -88,6 +96,26 @@ bool InputSDL::isMouseCaptured() const {
 	return SDL_GetWindowFlags( win ) & SDL_WINDOW_MOUSE_CAPTURE;
 }
 
+bool InputSDL::pushEvent( const InputEvent& event ) {
+	if ( event.Type != InputEvent::MouseWheel )
+		return Input::pushEvent( event );
+
+	SDL_Event sdlEvent{};
+	sdlEvent.type = SDL_EVENT_MOUSE_WHEEL;
+	sdlEvent.wheel.windowID = event.WinID;
+	sdlEvent.wheel.x = event.wheel.x;
+	sdlEvent.wheel.y = event.wheel.y;
+	sdlEvent.wheel.direction = event.wheel.direction == InputEvent::WheelEvent::Normal
+								   ? SDL_MOUSEWHEEL_NORMAL
+								   : SDL_MOUSEWHEEL_FLIPPED;
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+	sdlEvent.wheel.integer_x = static_cast<Sint32>( event.wheel.x );
+	sdlEvent.wheel.integer_y = static_cast<Sint32>( event.wheel.y );
+#endif
+	sendEvent( sdlEvent );
+	return true;
+}
+
 std::string InputSDL::getKeyName( const Keycode& keycode ) const {
 	return std::string( SDL_GetKeyName( static_cast<SDL_Keycode>( keycode ) ) );
 }
@@ -158,9 +186,11 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_EVENT_WINDOW_RESIZED: {
 			event.Type = InputEvent::VideoResize;
 			event.WinID = SDLEvent.window.windowID;
-			mDPIScale = mWindow->getScale();
-			event.resize.w = static_cast<int>( SDLEvent.window.data1 * mDPIScale );
-			event.resize.h = static_cast<int>( SDLEvent.window.data2 * mDPIScale );
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.window.windowID );
+			if ( SDLEvent.window.windowID == mWindow->getWindowID() )
+				mDPIScale = eventWindowScale;
+			event.resize.w = static_cast<int>( SDLEvent.window.data1 * eventWindowScale );
+			event.resize.h = static_cast<int>( SDLEvent.window.data2 * eventWindowScale );
 			break;
 		}
 		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
@@ -281,51 +311,62 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_EVENT_MOUSE_MOTION: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.motion.windowID );
 			event.Type = InputEvent::MouseMotion;
 			event.motion.which = SDLEvent.motion.windowID;
 			event.motion.state = SDLEvent.motion.state;
-			event.motion.x = static_cast<Int16>( SDLEvent.motion.x * mDPIScale );
-			event.motion.y = static_cast<Int16>( SDLEvent.motion.y * mDPIScale );
-			event.motion.xrel = static_cast<Int16>( SDLEvent.motion.xrel * mDPIScale );
-			event.motion.yrel = static_cast<Int16>( SDLEvent.motion.yrel * mDPIScale );
+			event.motion.x = static_cast<Int16>( SDLEvent.motion.x * eventWindowScale );
+			event.motion.y = static_cast<Int16>( SDLEvent.motion.y * eventWindowScale );
+			event.motion.xrel = static_cast<Int16>( SDLEvent.motion.xrel * eventWindowScale );
+			event.motion.yrel = static_cast<Int16>( SDLEvent.motion.yrel * eventWindowScale );
 			event.WinID = SDLEvent.motion.windowID;
 			break;
 		}
 		case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.button.windowID );
 			event.Type = InputEvent::MouseButtonDown;
 			event.button.button = SDLEvent.button.button;
 			event.button.which = SDLEvent.button.windowID;
 			event.button.state = SDLEvent.button.down ? 1 : 0;
-			event.button.x = static_cast<Int16>( SDLEvent.button.x * mDPIScale );
-			event.button.y = static_cast<Int16>( SDLEvent.button.y * mDPIScale );
+			event.button.x = static_cast<Int16>( SDLEvent.button.x * eventWindowScale );
+			event.button.y = static_cast<Int16>( SDLEvent.button.y * eventWindowScale );
 			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
 		case SDL_EVENT_MOUSE_BUTTON_UP: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.button.windowID );
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.button = SDLEvent.button.button;
 			event.button.which = SDLEvent.button.windowID;
 			event.button.state = SDLEvent.button.down ? 1 : 0;
-			event.button.x = static_cast<Int16>( SDLEvent.button.x * mDPIScale );
-			event.button.y = static_cast<Int16>( SDLEvent.button.y * mDPIScale );
+			event.button.x = static_cast<Int16>( SDLEvent.button.x * eventWindowScale );
+			event.button.y = static_cast<Int16>( SDLEvent.button.y * eventWindowScale );
 			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
 		case SDL_EVENT_MOUSE_WHEEL: {
 			Uint8 button;
-			float x = SDLEvent.wheel.x;
-			float y = SDLEvent.wheel.y;
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.wheel.windowID );
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+			const Sint32 integerX = SDLEvent.wheel.integer_x;
+			const Sint32 integerY = SDLEvent.wheel.integer_y;
+#else
+			const Sint32 integerX =
+				SDLEvent.wheel.x > 0.f ? 1 : ( SDLEvent.wheel.x < 0.f ? -1 : 0 );
+			const Sint32 integerY =
+				SDLEvent.wheel.y > 0.f ? 1 : ( SDLEvent.wheel.y < 0.f ? -1 : 0 );
+#endif
 
-			if ( y == 0 && x == 0 )
+			if ( integerY == 0 && integerX == 0 )
 				break;
 
-			if ( y > 0 ) {
+			if ( integerY > 0 ) {
 				button = EE_BUTTON_WHEELUP;
-			} else if ( y < 0 ) {
+			} else if ( integerY < 0 ) {
 				button = EE_BUTTON_WHEELDOWN;
-			} else if ( x > 0 ) {
+			} else if ( integerX > 0 ) {
 				button = EE_BUTTON_WHEELRIGHT;
-			} else if ( x < 0 ) {
+			} else if ( integerX < 0 ) {
 				button = EE_BUTTON_WHEELLEFT;
 			} else {
 				return;
@@ -333,8 +374,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			// Get mouse position from the event (mouse_x, mouse_y are in window coordinates)
 			event.button.button = button;
-			event.button.x = static_cast<Int16>( SDLEvent.wheel.mouse_x * mDPIScale );
-			event.button.y = static_cast<Int16>( SDLEvent.wheel.mouse_y * mDPIScale );
+			event.button.x = static_cast<Int16>( SDLEvent.wheel.mouse_x * eventWindowScale );
+			event.button.y = static_cast<Int16>( SDLEvent.wheel.mouse_y * eventWindowScale );
 			event.button.which = SDLEvent.wheel.windowID;
 			event.WinID = SDLEvent.wheel.windowID;
 
@@ -353,7 +394,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 										: InputEvent::WheelEvent::Flipped;
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
-			processEventForWindow( &event );
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_AXIS_MOTION: {

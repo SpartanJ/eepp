@@ -234,6 +234,14 @@ UIWindow* SettingsPanel::create( App& app ) {
 				[value]( UITerminal* terminal ) { terminal->setExclusiveMode( value ); } );
 			app.savePreferences();
 		} );
+	panel->addBool( { "smoothScroll", "terminal.behavior",
+					  app.i18n( "smooth_scroll", "Smooth Scrolling" ),
+					  app.i18n( "smooth_scroll_desc",
+								"Animate scrolling from mouse wheels and trackpads." ) },
+					&app.config->ui.smoothScroll, [&app]( bool value ) {
+						app.scene->setSmoothScrollEnabled( value, true );
+						app.savePreferences();
+					} );
 	panel->addBool(
 		{ "closeTerminalTabOnExit", "terminal.behavior",
 		  app.i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),

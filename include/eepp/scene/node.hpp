@@ -2124,8 +2124,8 @@ class EE_API Node : public Transformable {
 	/**
 	 * @brief Handles mouse wheel scroll events.
 	 *
-	 * Called when the mouse wheel is scrolled. Default implementation returns 1
-	 * to stop propagation but does not forward the event.
+	 * Called when the mouse wheel is scrolled. Default implementation returns 0 so the event can
+	 * bubble to an ancestor that implements scrolling.
 	 *
 	 * @param offset Scroll offset vector.
 	 * @param flipped Whether the scroll direction is flipped (e.g., on Mac).

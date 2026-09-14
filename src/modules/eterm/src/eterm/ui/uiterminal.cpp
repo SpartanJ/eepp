@@ -1,3 +1,4 @@
+#include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -42,7 +43,7 @@ Uint32 UITerminal::getType() const {
 }
 
 bool UITerminal::isType( const Uint32& type ) const {
-	return getType() == type || UIWidget::isType( type );
+	return getType() == type || UITouchDraggableWidget::isType( type );
 }
 
 void UITerminal::draw() {
@@ -81,7 +82,7 @@ void UITerminal::registerNewTerminal() {
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
-	UIWidget( "terminal" ),
+	UITouchDraggableWidget( "terminal" ),
 	mKeyBindings( getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
@@ -265,12 +266,12 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::ScrollBarMode:
 			return getScrollViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UITerminal::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
 	auto local = { PropertyId::VScrollMode, PropertyId::ScrollBarStyle, PropertyId::ScrollBarMode };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -332,7 +333,7 @@ bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -342,7 +343,8 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 	return mTerm;
 }
 
-void UITerminal::scheduledUpdate( const Time& ) {
+void UITerminal::scheduledUpdate( const Time& time ) {
+	UITouchDraggableWidget::scheduledUpdate( time );
 	if ( !mTerm )
 		return;
 	auto terminal = mTerm;
@@ -558,8 +560,60 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		onCreateContextMenu( position, flags );
 		return 1;
 	}
+	const Uint32 modifiers = getInput()->getSanitizedModState();
+	if ( ( modifiers == 0 || modifiers == KEYMOD_SHIFT ) &&
+		 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK | EE_BUTTON_WLMASK | EE_BUTTON_WRMASK ) ) )
+		return 1;
 	mTerm->onMouseUp( position, flags );
 	return 1;
+}
+
+Uint32 UITerminal::onMouseWheel( const Vector2f& offset, bool ) {
+	const Uint32 modifiers = getInput()->getSanitizedModState();
+	if ( modifiers != 0 && modifiers != KEYMOD_SHIFT )
+		return 1;
+	if ( offset.y == 0.f )
+		return 0;
+
+	const Float rows = modifiers == KEYMOD_SHIFT ? getVisibleArea() : 1.f;
+	const Float multiplier = rows * mTerm->getLineHeight();
+	const Float factor = getWheelScrollFactor( offset.y );
+	return scrollBy( { 0.f, -factor * multiplier }, std::abs( factor ) ) ? 1 : 0;
+}
+
+bool UITerminal::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UITerminal::getScrollControllerPosition() const {
+	const int scrollableArea = eemax( 0, getScrollableArea() );
+	const Float lineHeight = mTerm ? mTerm->getLineHeight() : 0.f;
+	return { 0.f, mTerm ? eeclamp( static_cast<Float>( scrollableArea ) -
+									   static_cast<Float>( mTerm->scrollPosition() ),
+								   0.f, static_cast<Float>( scrollableArea ) ) *
+							  lineHeight
+						: 0.f };
+}
+
+Vector2f UITerminal::getScrollControllerMaxPosition() const {
+	return { 0.f, static_cast<Float>( eemax( 0, getScrollableArea() ) ) *
+					  ( mTerm ? mTerm->getLineHeight() : 0.f ) };
+}
+
+void UITerminal::setScrollControllerPosition( const Vector2f& position ) {
+	const int scrollableArea = getScrollableArea();
+	const Float lineHeight = mTerm ? mTerm->getLineHeight() : 0.f;
+	if ( scrollableArea <= 0 || lineHeight <= 0.f )
+		return;
+
+	const int scrollOffset = static_cast<int>(
+		eefloor( eeclamp( position.y / lineHeight, 0.f, static_cast<Float>( scrollableArea ) ) ) );
+	if ( scrollOffset == mScrollOffset )
+		return;
+
+	mScrollOffset = scrollOffset;
+	mVScroll->setValue( static_cast<Float>( mScrollOffset ) / scrollableArea, false );
+	onScrollChange();
 }
 
 void UITerminal::onPositionChange() {

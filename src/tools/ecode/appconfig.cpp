@@ -157,6 +157,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
 	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
+	ui.smoothScroll = ini.getValueB(
+		"ui", "smooth_scroll",
+		ini.getValueB( "editor", "smooth_scroll",
+					   ini.getValueB( "terminal", "smooth_scroll", false ) ) );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.sansSerifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -374,6 +378,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
 	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
 	ini.setValueB( "ui", "images_quick_preview", ui.imagesQuickPreview );
+	ini.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
+	ini.deleteValue( "editor", "smooth_scroll" );
+	ini.deleteValue( "terminal", "smooth_scroll" );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.sansSerifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
@@ -479,7 +486,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  term.scrollBarMode == ScrollBarMode::Auto
 					  ? "auto"sv
 					  : ( term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off" ) );
-
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );

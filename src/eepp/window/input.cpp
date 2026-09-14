@@ -61,6 +61,12 @@ void Input::sendEvent( InputEvent* Event ) {
 	}
 }
 
+bool Input::pushEvent( const InputEvent& event ) {
+	InputEvent eventCopy( event );
+	processEventForWindow( &eventCopy );
+	return true;
+}
+
 void Input::processEvent( InputEvent* Event ) {
 	mLastEvent.restart();
 

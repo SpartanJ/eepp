@@ -15,6 +15,14 @@ namespace {
 char WakeEventMarker;
 }
 
+static Float getEventWindowScale( EE::Window::Window* pollingWindow, Uint32 windowId ) {
+	if ( windowId == 0 || windowId == pollingWindow->getWindowID() )
+		return pollingWindow->getScale();
+	if ( auto* eventWindow = Engine::instance()->getWindowID( windowId ) )
+		return eventWindow->getScale();
+	return pollingWindow->getScale();
+}
+
 InputSDL::InputSDL( EE::Window::Window* window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) ), mDPIScale( 1.f ) {
 #if defined( EE_X11_PLATFORM )
@@ -97,6 +105,26 @@ bool InputSDL::isMouseCaptured() const {
 		   SDL_WINDOW_MOUSE_CAPTURE;
 }
 
+bool InputSDL::pushEvent( const InputEvent& event ) {
+	if ( event.Type != InputEvent::MouseWheel )
+		return Input::pushEvent( event );
+
+	SDL_Event sdlEvent{};
+	sdlEvent.type = SDL_MOUSEWHEEL;
+	sdlEvent.wheel.windowID = event.WinID;
+	sdlEvent.wheel.x = static_cast<Sint32>( event.wheel.x );
+	sdlEvent.wheel.y = static_cast<Sint32>( event.wheel.y );
+	sdlEvent.wheel.direction = event.wheel.direction == InputEvent::WheelEvent::Normal
+								   ? SDL_MOUSEWHEEL_NORMAL
+								   : SDL_MOUSEWHEEL_FLIPPED;
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+	sdlEvent.wheel.preciseX = event.wheel.x;
+	sdlEvent.wheel.preciseY = event.wheel.y;
+#endif
+	sendEvent( sdlEvent );
+	return true;
+}
+
 std::string InputSDL::getKeyName( const Keycode& keyCode ) const {
 	return std::string( SDL_GetKeyName( keyCode ) );
 }
@@ -137,9 +165,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
 					event.WinID = SDLEvent.window.windowID;
-					mDPIScale = mWindow->getScale();
-					event.resize.w = SDLEvent.window.data1 * mDPIScale;
-					event.resize.h = SDLEvent.window.data2 * mDPIScale;
+					const Float eventWindowScale =
+						getEventWindowScale( mWindow, SDLEvent.window.windowID );
+					if ( SDLEvent.window.windowID == mWindow->getWindowID() )
+						mDPIScale = eventWindowScale;
+					event.resize.w = SDLEvent.window.data1 * eventWindowScale;
+					event.resize.h = SDLEvent.window.data2 * eventWindowScale;
 					break;
 				}
 				case SDL_WINDOWEVENT_HIT_TEST: {
@@ -305,13 +336,14 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_MOUSEMOTION: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.motion.windowID );
 			event.Type = InputEvent::MouseMotion;
 			event.motion.which = SDLEvent.motion.windowID;
 			event.motion.state = SDLEvent.motion.state;
-			event.motion.x = SDLEvent.motion.x * mDPIScale;
-			event.motion.y = SDLEvent.motion.y * mDPIScale;
-			event.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
-			event.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
+			event.motion.x = SDLEvent.motion.x * eventWindowScale;
+			event.motion.y = SDLEvent.motion.y * eventWindowScale;
+			event.motion.xrel = SDLEvent.motion.xrel * eventWindowScale;
+			event.motion.yrel = SDLEvent.motion.yrel * eventWindowScale;
 			event.WinID = SDLEvent.motion.windowID;
 			break;
 		}
@@ -384,7 +416,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
 #endif
-			processEventForWindow( &event );
 			break;
 		}
 		case SDL_FINGERMOTION: {

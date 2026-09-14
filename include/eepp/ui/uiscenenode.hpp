@@ -793,6 +793,18 @@ class EE_API UISceneNode : public SceneNode {
 
 	Uint32 getDefaultTextHints() const;
 
+	/**
+	 * @brief Sets the default smooth-scrolling policy for this UI scene hierarchy.
+	 *
+	 * Embedded UI scenes inherit the value from their root host scene. New scrollable widgets
+	 * snapshot this value when they are created and can override it individually. When applyNow is
+	 * true, all existing scrollable widgets in the hierarchy are updated too.
+	 */
+	UISceneNode* setSmoothScrollEnabled( bool enabled, bool applyNow = false );
+
+	/** @return The smooth-scrolling default inherited from the root host UI scene. */
+	bool isSmoothScrollEnabled() const;
+
 	static Uint32 resolveTextHints( Uint32 defaultHints, Uint32 overrideValue,
 									Uint32 overrideMask );
 
@@ -1057,6 +1069,7 @@ class EE_API UISceneNode : public SceneNode {
 	Sizef mLayoutViewportPixelsSize;
 	bool mHasLayoutViewportPixelsSize{ false };
 	bool mFollowParentSize{ true };
+	bool mSmoothScrollEnabled{ false };
 	bool mOwnsEventDispatcher{ true };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
