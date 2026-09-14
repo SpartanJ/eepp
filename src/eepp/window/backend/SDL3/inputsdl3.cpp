@@ -299,8 +299,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 		case SDL_EVENT_MOUSE_WHEEL: {
 			Uint8 button;
-			float x = SDLEvent.wheel.x;
-			float y = SDLEvent.wheel.y;
 #if SDL_VERSION_ATLEAST( 3, 2, 12 )
 			const Sint32 integerX = SDLEvent.wheel.integer_x;
 			const Sint32 integerY = SDLEvent.wheel.integer_y;
@@ -346,7 +344,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 										: InputEvent::WheelEvent::Flipped;
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
-			processEventForWindow( &event );
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
