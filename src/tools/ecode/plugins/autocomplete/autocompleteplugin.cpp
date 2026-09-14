@@ -2436,18 +2436,18 @@ bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& posi
 	return false;
 }
 
-bool AutoCompletePlugin::onMouseUp( UICodeEditor* editor, const Vector2i& position,
-									const Uint32& flags ) {
+bool AutoCompletePlugin::onMouseWheel( UICodeEditor* editor, const Vector2i& position,
+									   const Vector2f& offset, bool ) {
 	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor )
 		return false;
 
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
 	if ( mBoxRect.contains( localPos ) ) {
-		if ( flags & EE_BUTTON_WUMASK ) {
+		if ( offset.y > 0.f ) {
 			mSuggestionsStartIndex = eemax( 0, mSuggestionsStartIndex - mSuggestionsMaxVisible );
 			editor->invalidateDraw();
 			return true;
-		} else if ( flags & EE_BUTTON_WDMASK ) {
+		} else if ( offset.y < 0.f ) {
 			mSuggestionsStartIndex =
 				eemax( 0, eemin( (int)mSuggestions.size() - mSuggestionsMaxVisible,
 								 mSuggestionsStartIndex + mSuggestionsMaxVisible ) );

@@ -87,6 +87,10 @@ class UICodeEditorPlugin {
 
 	virtual bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 
+	virtual bool onMouseWheel( UICodeEditor*, const Vector2i&, const Vector2f&, bool ) {
+		return false;
+	}
+
 	virtual bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 
 	virtual bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) {

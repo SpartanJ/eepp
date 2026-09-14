@@ -643,9 +643,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		}
 	} );
 	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
-	mModelBtn->on( Event::MouseUp, [this]( const Event* event ) {
-		const auto mouseEvent = event->asMouseEvent();
-		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+	mModelBtn->on( Event::MouseWheel, [this]( const Event* event ) {
+		const auto wheelEvent = event->asMouseWheelEvent();
+		if ( wheelEvent->getOffset().y == 0.f )
 			return;
 
 		if ( nullptr == mLocateModelTable->getModel() ) {
@@ -656,9 +656,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			selectModel( mCurModel );
 		}
 
-		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+		if ( wheelEvent->getOffset().y > 0.f ) {
 			mLocateModelTable->moveSelection( -1 );
-		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+		} else {
 			mLocateModelTable->moveSelection( 1 );
 		}
 
@@ -674,9 +674,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
 	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
 	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigWindow(); } );
-	mAgentBtn->on( Event::MouseUp, [this]( const Event* event ) {
-		const auto mouseEvent = event->asMouseEvent();
-		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+	mAgentBtn->on( Event::MouseWheel, [this]( const Event* event ) {
+		const auto wheelEvent = event->asMouseWheelEvent();
+		if ( wheelEvent->getOffset().y == 0.f )
 			return;
 
 		if ( nullptr == mLocateAgentTable->getModel() ) {
@@ -687,9 +687,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			selectModel( mCurModel );
 		}
 
-		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+		if ( wheelEvent->getOffset().y > 0.f ) {
 			mLocateAgentTable->moveSelection( -1 );
-		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+		} else {
 			mLocateAgentTable->moveSelection( 1 );
 		}
 

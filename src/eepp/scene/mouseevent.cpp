@@ -17,4 +17,20 @@ const Uint32& MouseEvent::getFlags() const {
 	return mFlags;
 }
 
+MouseWheelEvent::MouseWheelEvent( Node* node, const Vector2i& position, const Vector2f& offset,
+								  bool flipped ) :
+	Event( node, Event::MouseWheel ), mPosition( position ), mOffset( offset ), mFlipped( flipped ) {}
+
+const Vector2i& MouseWheelEvent::getPosition() const {
+	return mPosition;
+}
+
+const Vector2f& MouseWheelEvent::getOffset() const {
+	return mOffset;
+}
+
+bool MouseWheelEvent::isFlipped() const {
+	return mFlipped;
+}
+
 }} // namespace EE::Scene

@@ -13,6 +13,7 @@ namespace EE { namespace Scene {
 
 class Node;
 class MouseEvent;
+class MouseWheelEvent;
 class KeyEvent;
 class DropEvent;
 class TextEvent;
@@ -135,6 +136,7 @@ class EE_API Event {
 		OnShowFindReplace,
 		OnHideFindReplace,
 		OnTooltipCreated,
+		MouseWheel,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -149,6 +151,8 @@ class EE_API Event {
 	const Uint32& getCallbackId() const;
 
 	const MouseEvent* asMouseEvent() const;
+
+	const MouseWheelEvent* asMouseWheelEvent() const;
 
 	const KeyEvent* asKeyEvent() const;
 

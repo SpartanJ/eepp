@@ -25,6 +25,10 @@ const MouseEvent* Event::asMouseEvent() const {
 	return static_cast<const MouseEvent*>( this );
 }
 
+const MouseWheelEvent* Event::asMouseWheelEvent() const {
+	return static_cast<const MouseWheelEvent*>( this );
+}
+
 const KeyEvent* Event::asKeyEvent() const {
 	return static_cast<const KeyEvent*>( this );
 }

@@ -22,6 +22,22 @@ class EE_API MouseEvent : public Event {
 	Uint32 mFlags;
 };
 
+class EE_API MouseWheelEvent : public Event {
+  public:
+	MouseWheelEvent( Node* node, const Vector2i& position, const Vector2f& offset, bool flipped );
+
+	const Vector2i& getPosition() const;
+
+	const Vector2f& getOffset() const;
+
+	bool isFlipped() const;
+
+  protected:
+	Vector2i mPosition;
+	Vector2f mOffset;
+	bool mFlipped;
+};
+
 }} // namespace EE::Scene
 
 #endif

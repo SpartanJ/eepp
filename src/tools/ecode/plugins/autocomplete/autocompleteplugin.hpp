@@ -117,7 +117,7 @@ class AutoCompletePlugin : public Plugin {
 
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 
-	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+	bool onMouseWheel( UICodeEditor*, const Vector2i&, const Vector2f&, bool ) override;
 
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 

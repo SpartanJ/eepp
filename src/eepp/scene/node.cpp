@@ -387,8 +387,18 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 Node::onMouseWheel( const Vector2f&, bool ) {
-	return 0;
+Uint32 Node::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	if ( !hasEventsOfType( Event::MouseWheel ) )
+		return 0;
+
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
+	MouseWheelEvent event( this, position, offset, flipped );
+	sendEvent( &event );
+
+	// A registered listener consumes the wheel event. Overrides can intentionally avoid calling
+	// this implementation to handle the wheel without dispatching the generic event callback.
+	return 1;
 }
 
 Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {

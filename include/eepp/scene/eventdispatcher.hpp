@@ -6,6 +6,7 @@
 #include <eepp/scene/nodefocusreason.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/window/keycodes.hpp>
+#include <vector>
 
 using namespace EE::System;
 using namespace EE::Math;
@@ -147,6 +148,11 @@ class EE_API EventDispatcher {
 	Time mElapsed;
 	Uint32 mCurFocusId{ 0 };
 	std::map<Uint32, FocusCallback> mFocusCbs;
+	struct PendingMouseWheelEvent {
+		Vector2f offset;
+		bool flipped;
+	};
+	std::vector<PendingMouseWheelEvent> mPendingMouseWheelEvents;
 
 	virtual void inputCallback( InputEvent* event );
 };
