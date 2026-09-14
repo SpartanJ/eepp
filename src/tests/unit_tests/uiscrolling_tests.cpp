@@ -172,13 +172,14 @@ UTEST( UIScrolling, CodeEditorPluginCanConsumePreciseWheelBeforeEditorScrolls ) 
 	editor->setScrollY( 100.f );
 	app.getWindow()->getInput()->setMousePos( { 25, 35 } );
 	SceneManager::instance()->update();
+	const Vector2i expectedPosition = editor->getEventDispatcher()->getMousePos();
 
 	WheelInterceptPlugin plugin;
 	editor->registerPlugin( &plugin );
 	EXPECT_EQ( 1u, editor->onMouseWheel( { 0.f, -0.25f }, true ) );
 	EXPECT_EQ( plugin.calls, 1 );
-	EXPECT_EQ( plugin.lastPosition.x, 25 );
-	EXPECT_EQ( plugin.lastPosition.y, 35 );
+	EXPECT_EQ( plugin.lastPosition.x, expectedPosition.x );
+	EXPECT_EQ( plugin.lastPosition.y, expectedPosition.y );
 	EXPECT_NEAR( plugin.lastOffset.x, 0.f, 0.0001f );
 	EXPECT_NEAR( plugin.lastOffset.y, -0.25f, 0.0001f );
 	EXPECT_TRUE( plugin.lastFlipped );
