@@ -602,7 +602,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	} );
 
 	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ), false, getKeybind( "lock-toggle" ) )
-		->setId( "read_only" );
+		->setId( "lock-toggle" );
 
 	mDocMenu
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
@@ -641,8 +641,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				doc.setForceNewLineAtEndOfFile( item->isActive() );
 			} else if ( "write_bom_cur" == id ) {
 				doc.setBOM( item->isActive() );
-			} else if ( "read_only" == id ) {
-				mSplitter->getCurEditor()->setLocked( item->isActive() );
+			} else if ( "lock-toggle" == id ) {
+				runCommand( id );
 			}
 		}
 	} );
@@ -1196,7 +1196,7 @@ void SettingsMenu::updateDocumentMenu() {
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
-	mDocMenu->find( "read_only" )
+	mDocMenu->find( "lock-toggle" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mSplitter->getCurEditor()->isLocked() );
 }
