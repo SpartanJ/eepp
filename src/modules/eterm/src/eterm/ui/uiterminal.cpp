@@ -561,7 +561,7 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		return 1;
 	}
 	const Uint32 modifiers = getInput()->getSanitizedModState();
-	if ( ( modifiers == 0 || modifiers == KEYMOD_SHIFT ) &&
+	if ( ( modifiers == 0 || modifiers == KEYMOD_SHIFT ) && supportsScrollController() &&
 		 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK | EE_BUTTON_WLMASK | EE_BUTTON_WRMASK ) ) )
 		return 1;
 	mTerm->onMouseUp( position, flags );
@@ -575,7 +575,8 @@ Uint32 UITerminal::onMouseWheel( const Vector2f& offset, bool ) {
 	if ( offset.y == 0.f )
 		return 0;
 
-	const Float rows = modifiers == KEYMOD_SHIFT ? getVisibleArea() : 1.f;
+	const Float rows =
+		modifiers == KEYMOD_SHIFT ? getVisibleArea() : ( mTerm ? mTerm->getClickStep() : 1.f );
 	const Float multiplier = rows * mTerm->getLineHeight();
 	const Float factor = getWheelScrollFactor( offset.y );
 	return scrollBy( { 0.f, -factor * multiplier }, std::abs( factor ) ) ? 1 : 0;
