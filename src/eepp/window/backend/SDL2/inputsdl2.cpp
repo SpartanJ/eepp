@@ -370,7 +370,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
 #endif
-			processEventForWindow( &event );
 			break;
 		}
 		case SDL_FINGERMOTION: {
