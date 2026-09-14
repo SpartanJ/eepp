@@ -41,9 +41,6 @@ Node::~Node() {
 
 		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate( this );
-
-		if ( isMouseOverMeOrChildren() )
-			mSceneNode->removeMouseOverNode( this );
 	}
 
 	childDeleteAll();
@@ -291,8 +288,6 @@ void Node::update( const Time& time ) {
 		childLoop->update( time );
 		childLoop = childLoop->mNext;
 	}
-
-	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
 void Node::sendMouseEvent( const Uint32& event, const Vector2i& pos, const Uint32& flags ) {
@@ -973,9 +968,6 @@ Node* Node::overFind( const Vector2f& point ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
 			Node* child = mChildLast;
 
 			while ( NULL != child ) {

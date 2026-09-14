@@ -94,8 +94,6 @@ Node* UITableView::overFind( const Vector2f& point ) {
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	updateWorldPolygon();
 	if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-		writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-		mSceneNode->addMouseOverNode( this );
 		if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
 			return pOver;
 		if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )

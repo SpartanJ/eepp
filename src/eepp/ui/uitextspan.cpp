@@ -725,9 +725,6 @@ Node* UITextSpan::overFind( const Vector2f& point ) {
 			}
 
 			if ( hit ) {
-				writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-				mSceneNode->addMouseOverNode( this );
-
 				Node* child = mChildLast;
 
 				while ( NULL != child ) {

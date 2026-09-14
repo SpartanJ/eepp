@@ -62,7 +62,6 @@ enum NodeFlags {
 	NODE_FLAG_MOUSEOVER = ( 1 << 7 ),
 	NODE_FLAG_HAS_FOCUS = ( 1 << 8 ),
 	NODE_FLAG_SELECTED = ( 1 << 9 ),
-	NODE_FLAG_MOUSEOVER_ME_OR_CHILD = ( 1 << 10 ),
 	NODE_FLAG_DRAGGING = ( 1 << 11 ),
 	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
 	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
@@ -633,12 +632,22 @@ class EE_API Node : public Transformable {
 	inline bool isMouseOver() const { return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER ); }
 
 	/**
-	 * @brief Checks if the mouse is over this node or any of its children.
+	 * @brief Checks if this node is the current mouse-over target or one of its ancestors.
+	 *
+	 * This reflects the event dispatcher's last completed hit test and remains valid between scene
+	 * updates.
 	 *
 	 * @return True if the mouse is over this node or any descendant, false otherwise.
 	 */
 	inline bool isMouseOverMeOrChildren() const {
-		return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
+		EventDispatcher* dispatcher = getEventDispatcher();
+		Node* overNode = dispatcher ? dispatcher->getMouseOverNode() : nullptr;
+		while ( overNode ) {
+			if ( overNode == this )
+				return true;
+			overNode = overNode->mParentNode;
+		}
+		return false;
 	}
 
 	/**
