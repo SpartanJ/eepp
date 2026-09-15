@@ -350,6 +350,9 @@ ecode will try to open an external terminal.</string>
 	<string name="git_confirm_branch_delete">Are you sure you want to delete the branch "%s"?</string>
 	<string name="git_confirm_branch_merge">Are you sure you want to merge from branch "%s"?</string>
 	<string name="git_confirm_discard_changes">Are you sure you want to discard the changes in file: "%s"?</string>
+	<string name="git_confirm_delete_untracked_item">Are you sure you want to permanently delete the untracked item:
+%s?</string>
+	<string name="git_confirm_delete_untracked_items">Are you sure you want to permanently delete %d untracked items?</string>
 	<string name="git_confirm_drop_stash">Do you want to drop the selected stash?</string>
 	<string name="git_confirm_push_changes">Are you sure you want to push the local changes to the remote server?</string>
 	<string name="git_create_branch">Create Branch</string>
@@ -357,6 +360,7 @@ ecode will try to open an external terminal.</string>
 Enter the name for the branch:</string>
 	<string name="git_create_local_branch">Create local branch?</string>
 	<string name="git_delete_branch">Delete</string>
+	<string name="git_delete_untracked_failed">Could not delete the following untracked items:</string>
 	<string name="git_diff_head">Diff HEAD</string>
 	<string name="git_diff_changed">Diff Changed</string>
 	<string name="git_diff_staged">Diff Staged</string>

@@ -314,6 +314,8 @@ class GitPlugin : public PluginBase {
 
 	void unstage( const std::vector<std::string>& files );
 
+	void deleteUntrackedFiles( std::vector<std::string> files );
+
 	enum class FileOperation { Stage, Unstage, Discard, RestoreHead };
 
 	void runFileOperation( std::vector<std::string> files, FileOperation operation );

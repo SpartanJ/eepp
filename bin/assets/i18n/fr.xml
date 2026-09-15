@@ -349,6 +349,9 @@ ecode tentera d'ouvrir un terminal externe.</string>
 	<string name="git_confirm_branch_delete">Êtes-vous sûr de vouloir supprimer la branche "%s" ?</string>
 	<string name="git_confirm_branch_merge">Êtes-vous sûr de vouloir fusionner à partir de la branche "%s" ?</string>
 	<string name="git_confirm_discard_changes">Êtes-vous sûr de vouloir annuler les modifications du fichier: "%s" ?</string>
+	<string name="git_confirm_delete_untracked_item">Êtes-vous sûr de vouloir supprimer définitivement l’élément non suivi :
+%s ?</string>
+	<string name="git_confirm_delete_untracked_items">Êtes-vous sûr de vouloir supprimer définitivement %d éléments non suivis ?</string>
 	<string name="git_confirm_drop_stash">Voulez-vous supprimer le stash sélectionné ?</string>
 	<string name="git_confirm_push_changes">Êtes-vous sûr de vouloir envoyer les modifications locales vers le serveur distant ?</string>
 	<string name="git_create_branch">Créer une branche</string>
@@ -356,6 +359,7 @@ ecode tentera d'ouvrir un terminal externe.</string>
 Entrez le nom de la branche :</string>
 	<string name="git_create_local_branch">Créer une branche locale ?</string>
 	<string name="git_delete_branch">Supprimer</string>
+	<string name="git_delete_untracked_failed">Impossible de supprimer les éléments non suivis suivants :</string>
 	<string name="git_diff_head">Diff HEAD</string>
 	<string name="git_diff_changed">Diff des modifications</string>
 	<string name="git_diff_staged">Diff Staged</string>

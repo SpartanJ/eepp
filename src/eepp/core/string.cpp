@@ -614,9 +614,10 @@ Int64 String::BMH::find( std::string_view haystack, std::string_view needle,
 	return find( haystack, needle, haystackOffset, occ, caseInsensitive );
 }
 
-String String::escape( const String& str ) {
-	String output;
-	for ( size_t i = 0; i < str.size(); i++ ) {
+template <typename Output, typename Input> static Output escapeStringSequence( const Input& str ) {
+	Output output;
+	output.reserve( str.size() );
+	for ( size_t i = 0; i < str.size(); ++i ) {
 		switch ( str[i] ) {
 			case '\r':
 				output += "\\r";
@@ -646,6 +647,14 @@ String String::escape( const String& str ) {
 		}
 	}
 	return output;
+}
+
+String String::escape( const String& str ) {
+	return escapeStringSequence<String>( str );
+}
+
+std::string String::escape( std::string_view str ) {
+	return escapeStringSequence<std::string>( str );
 }
 
 String String::unescape( const String& str ) {
@@ -766,6 +775,63 @@ String String::unescape( const String& str ) {
 		}
 
 		lastWasEscape = str[i] == '\\';
+	}
+	return output;
+}
+
+std::string String::unescape( std::string_view str ) {
+	std::string output;
+	output.reserve( str.size() );
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		if ( str[i] != '\\' || i + 1 >= str.size() ) {
+			output += str[i];
+			continue;
+		}
+
+		const char escaped = str[++i];
+		switch ( escaped ) {
+			case '\\':
+			case '\'':
+			case '"':
+			case '?':
+				output += escaped;
+				break;
+			case 'r':
+				output += '\r';
+				break;
+			case 't':
+				output += '\t';
+				break;
+			case 'n':
+				output += '\n';
+				break;
+			case 'a':
+				output += '\a';
+				break;
+			case 'b':
+				output += '\b';
+				break;
+			case 'f':
+				output += '\f';
+				break;
+			case 'v':
+				output += '\v';
+				break;
+			default:
+				if ( escaped < '0' || escaped > '7' ) {
+					output += '\\';
+					output += escaped;
+					break;
+				}
+				unsigned char value = static_cast<unsigned char>( escaped - '0' );
+				for ( int digit = 1;
+					  digit < 3 && i + 1 < str.size() && str[i + 1] >= '0' && str[i + 1] <= '7';
+					  ++digit ) {
+					value = static_cast<unsigned char>( value * 8 + str[++i] - '0' );
+				}
+				output += static_cast<char>( value );
+				break;
+		}
 	}
 	return output;
 }

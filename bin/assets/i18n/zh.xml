@@ -271,6 +271,9 @@
 	<string name="git_confirm_branch_delete">Are you sure you want to delete the branch "%s"?</string>
 	<string name="git_confirm_branch_merge">Are you sure you want to merge from branch "%s"?</string>
 	<string name="git_confirm_discard_changes">Are you sure you want to discard the changes in file: "%s"?</string>
+	<string name="git_confirm_delete_untracked_item">确定要永久删除以下未跟踪项吗？
+%s</string>
+	<string name="git_confirm_delete_untracked_items">确定要永久删除 %d 个未跟踪项吗？</string>
 	<string name="git_confirm_drop_stash">Do you want to drop the selected stash?</string>
 	<string name="git_confirm_push_changes">Are you sure you want to push the local changes to the remote server?</string>
 	<string name="git_create_branch">创建分支</string>
@@ -278,6 +281,7 @@
 Enter the name for the branch:</string>
 	<string name="git_create_local_branch">新建本地分支？</string>
 	<string name="git_delete_branch">删除</string>
+	<string name="git_delete_untracked_failed">无法删除以下未跟踪项：</string>
 	<string name="git_diff_changed">更改差异</string>
 	<string name="git_discard">Discard</string>
 	<string name="git_drop_stash">Drop Stash</string>
