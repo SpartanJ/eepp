@@ -653,9 +653,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
@@ -2030,6 +2030,16 @@ workspace "eepp"
 		filter {}
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
+
+	if os.istarget("windows") then
+		project "eepp-windows-accessibility-tests"
+			kind "ConsoleApp"
+			targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+			language "C++"
+			files { "src/tests/windows_accessibility/*.cpp" }
+			links { "uiautomationcore", "ole32", "oleaut32" }
+			build_link_configuration( "eepp-windows-accessibility-tests", true )
+	end
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

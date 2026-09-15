@@ -98,6 +98,12 @@ jobs:
         GALLIUM_DRIVER: llvmpipe
       run: |
         bin\unit_tests\eepp-unit_tests.exe
+    - name: Windows UI Automation accessibility tests
+      shell: cmd
+      env:
+        GALLIUM_DRIVER: llvmpipe
+      run: |
+        bin\unit_tests\eepp-windows-accessibility-tests.exe bin\eepp-ui-accessibility.exe
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4

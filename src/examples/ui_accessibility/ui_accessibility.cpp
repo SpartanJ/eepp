@@ -70,6 +70,11 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 				<PushButton id="replace-projects" text="Replace project model" />
 				<PushButton id="open-window" text="Open accessibility window" />
 			</hbox>
+			<hbox lw="mp" lh="wc">
+				<PushButton id="mutable-control" text="Mutable control" />
+				<PushButton id="toggle-enabled" text="Toggle mutable enabled" />
+				<PushButton id="toggle-visible" text="Toggle mutable visibility" />
+			</hbox>
 			<TextView id="status" text="Ready" />
 		</vbox>
 	)xml" );
@@ -127,6 +132,13 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		replacement->setColumnName( 0, "Project" );
 		replacement->setColumnName( 1, "Status" );
 		table->setModel( replacement );
+	} );
+	auto mutableControl = content->find<UIPushButton>( "mutable-control" );
+	content->find<UIPushButton>( "toggle-enabled" )->onClick( [mutableControl]( auto ) {
+		mutableControl->setEnabled( !mutableControl->isEnabled() );
+	} );
+	content->find<UIPushButton>( "toggle-visible" )->onClick( [mutableControl]( auto ) {
+		mutableControl->setVisible( !mutableControl->isVisible() );
 	} );
 	content->find<UIPushButton>( "open-window" )->onClick( [&app]( auto ) {
 		auto* extra = app.createWindow( { 400, 180, "eepp - Accessibility Dynamic" } );
