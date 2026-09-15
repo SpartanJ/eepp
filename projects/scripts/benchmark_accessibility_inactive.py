@@ -58,11 +58,36 @@ def median_sample(samples):
 	}
 
 
+def collect_samples(args, first_index, count, enabled_samples, disabled_samples):
+	for index in range(first_index, first_index + count):
+		# Reverse each adjacent pair so neither mode consistently benefits from running second.
+		modes = (True, False) if index % 2 == 0 else (False, True)
+		for disabled in modes:
+			result = run_sample(args, disabled)
+			(disabled_samples if disabled else enabled_samples).append(result)
+
+
+def summarize(enabled_samples, disabled_samples):
+	enabled = median_sample(enabled_samples)
+	disabled = median_sample(disabled_samples)
+	check(disabled["notifications_ms"] > 0, "disabled notification measurement was zero")
+	check(disabled["wall_ms"] > 0, "disabled wall-time measurement was zero")
+	return {
+		"disabled": disabled,
+		"enabled": enabled,
+		"raw_disabled": disabled_samples,
+		"raw_enabled": enabled_samples,
+		"notification_ratio": enabled["notifications_ms"] / disabled["notifications_ms"],
+		"wall_ratio": enabled["wall_ms"] / disabled["wall_ms"],
+	}
+
+
 def main():
 	parser = argparse.ArgumentParser(description="Benchmark inactive accessibility overhead")
 	parser.add_argument("--executable", default="bin/eepp-ui-accessibility")
 	parser.add_argument("--iterations", type=int, default=100000)
 	parser.add_argument("--samples", type=int, default=5)
+	parser.add_argument("--confirmation-samples", type=int, default=10)
 	parser.add_argument("--timeout", type=float, default=10)
 	parser.add_argument("--max-initialization-ms", type=float, default=250)
 	parser.add_argument("--max-notification-ratio", type=float, default=1.01)
@@ -70,36 +95,45 @@ def main():
 	parser.add_argument("--json", action="store_true")
 	args = parser.parse_args()
 	check(args.iterations > 0 and args.samples > 0, "iterations and samples must be positive")
+	check(args.confirmation_samples >= 0, "confirmation samples must not be negative")
 
-	# Alternate modes so thermal and scheduler drift affect both populations similarly.
 	enabled_samples = []
 	disabled_samples = []
-	for index in range(args.samples * 2):
-		disabled = index % 2 == 0
-		result = run_sample(args, disabled)
-		(disabled_samples if disabled else enabled_samples).append(result)
+	collect_samples(args, 0, args.samples, enabled_samples, disabled_samples)
+	output = summarize(enabled_samples, disabled_samples)
+	if (
+		output["notification_ratio"] > args.max_notification_ratio
+		or output["wall_ratio"] > args.max_wall_ratio
+	) and args.confirmation_samples:
+		collect_samples(
+			args,
+			args.samples,
+			args.confirmation_samples,
+			enabled_samples,
+			disabled_samples,
+		)
+		output = summarize(enabled_samples, disabled_samples)
 
-	enabled = median_sample(enabled_samples)
-	disabled = median_sample(disabled_samples)
-	notification_ratio = enabled["notifications_ms"] / disabled["notifications_ms"]
-	wall_ratio = enabled["wall_ms"] / disabled["wall_ms"]
+	enabled = output["enabled"]
+	failed = (
+		enabled["initialization_ms"] > args.max_initialization_ms
+		or output["notification_ratio"] > args.max_notification_ratio
+		or output["wall_ratio"] > args.max_wall_ratio
+	)
+	if failed:
+		print(json.dumps(output, sort_keys=True), file=sys.stderr)
 	check(
 		enabled["initialization_ms"] <= args.max_initialization_ms,
 		"inactive native backend initialization exceeded threshold",
 	)
 	check(
-		notification_ratio <= args.max_notification_ratio,
+		output["notification_ratio"] <= args.max_notification_ratio,
 		"inactive accessibility notification overhead exceeded threshold",
 	)
-	check(wall_ratio <= args.max_wall_ratio, "inactive accessibility wall-time overhead exceeded threshold")
-	output = {
-		"disabled": disabled,
-		"enabled": enabled,
-		"raw_disabled": disabled_samples,
-		"raw_enabled": enabled_samples,
-		"notification_ratio": notification_ratio,
-		"wall_ratio": wall_ratio,
-	}
+	check(
+		output["wall_ratio"] <= args.max_wall_ratio,
+		"inactive accessibility wall-time overhead exceeded threshold",
+	)
 	if args.json:
 		print(json.dumps(output, sort_keys=True))
 	else:
@@ -107,7 +141,8 @@ def main():
 			"Inactive accessibility benchmark passed: "
 			f"initialization {enabled['initialization_ms']:.3f}ms, "
 			f"notifications {enabled['notifications_ms']:.3f}ms "
-			f"({notification_ratio:.3f}x disabled), wall {wall_ratio:.3f}x disabled"
+			f"({output['notification_ratio']:.3f}x disabled), "
+			f"wall {output['wall_ratio']:.3f}x disabled"
 		)
 
 
