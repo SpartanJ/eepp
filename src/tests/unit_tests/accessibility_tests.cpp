@@ -32,6 +32,8 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 	auto scene = app.getUI();
+	if ( !scene )
+		UTEST_SKIP( "UIApplication initialization failed: a usable graphical display is required" );
 	auto manager = scene->getAccessibilityManager();
 
 	UIWidget* ignoredContainer = UIWidget::New();

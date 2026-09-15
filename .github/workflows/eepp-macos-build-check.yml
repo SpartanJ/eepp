@@ -110,6 +110,12 @@ jobs:
           echo "::endgroup::"
         fi
         exit "$status"
+    - name: macOS accessibility semantic and lifecycle tests
+      timeout-minutes: 5
+      run: |
+        swift projects/scripts/test_macos_accessibility.swift \
+          --executable bin/eepp-ui-accessibility \
+          --timeout 15
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4

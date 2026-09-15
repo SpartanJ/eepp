@@ -756,18 +756,24 @@ class UIAutomationTextRange final : public ITextRangeProvider {
 		const bool hasRectangle = current.first != current.second && snapshot.boundsValid &&
 								  IsWindowVisible( mContext->window() ) &&
 								  !IsIconic( mContext->window() );
+		POINT origin{};
+		if ( hasRectangle && !ClientToScreen( mContext->window(), &origin ) )
+			return UIA_E_ELEMENTNOTAVAILABLE;
 		*rectangles = SafeArrayCreateVector( VT_R8, 0, hasRectangle ? 4 : 0 );
 		if ( !*rectangles )
 			return E_OUTOFMEMORY;
 		if ( !hasRectangle )
 			return S_OK;
-		POINT origin{};
-		if ( !ClientToScreen( mContext->window(), &origin ) )
-			return UIA_E_ELEMENTNOTAVAILABLE;
 		double values[] = { origin.x + snapshot.bounds.Left, origin.y + snapshot.bounds.Top,
 							snapshot.bounds.getWidth(), snapshot.bounds.getHeight() };
-		for ( LONG index = 0; index < 4; ++index )
-			SafeArrayPutElement( *rectangles, &index, &values[index] );
+		for ( LONG index = 0; index < 4; ++index ) {
+			const HRESULT result = SafeArrayPutElement( *rectangles, &index, &values[index] );
+			if ( FAILED( result ) ) {
+				SafeArrayDestroy( *rectangles );
+				*rectangles = nullptr;
+				return result;
+			}
+		}
 		return S_OK;
 	}
 
