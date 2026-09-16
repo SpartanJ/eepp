@@ -652,6 +652,19 @@ Int32 TerminalDisplay::getCurrentSearchMatch() const {
 	return mSnapshot ? mSnapshot->currentSearchMatch : -1;
 }
 
+bool TerminalDisplay::getVisibleCurrentSearchMatch( Vector2i& start, Vector2i& end ) const {
+	if ( !mSnapshot )
+		return false;
+	for ( const auto& match : mSnapshot->visibleSearchMatches ) {
+		if ( match.active ) {
+			start = match.start;
+			end = match.end;
+			return true;
+		}
+	}
+	return false;
+}
+
 Uint64 TerminalDisplay::getSearchRequestId() const {
 	return mSnapshot ? mSnapshot->searchRequestId : 0;
 }

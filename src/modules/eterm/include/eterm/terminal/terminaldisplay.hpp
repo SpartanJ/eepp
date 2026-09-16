@@ -268,6 +268,8 @@ class TerminalDisplay {
 
 	Int32 getCurrentSearchMatch() const;
 
+	bool getVisibleCurrentSearchMatch( Vector2i& start, Vector2i& end ) const;
+
 	Uint64 getSearchRequestId() const;
 
 	std::string getSelection();

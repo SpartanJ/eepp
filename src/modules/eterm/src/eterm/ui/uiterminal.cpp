@@ -86,6 +86,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mKeyBindings( getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
+	setClipType( ClipType::ContentBox );
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
 		return;
@@ -631,8 +632,7 @@ void UITerminal::onSizeChange() {
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
 	if ( mFindBar && mFindBar->isVisible() )
-		mFindBar->setPosition( eemax( 0.f, getSize().getWidth() - mFindBar->getSize().getWidth() ),
-							   0 );
+		mFindBar->updatePosition();
 	UIWidget::onSizeChange();
 }
 
