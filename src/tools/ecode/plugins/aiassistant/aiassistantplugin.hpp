@@ -93,6 +93,8 @@ class AIAssistantPlugin : public PluginBase {
 
 	void onRegisterDocument( TextDocument* doc ) override;
 
+	void unregisterEditors() override;
+
 	void initUI();
 
 	void displayBrokenUserConfigFileWarning();

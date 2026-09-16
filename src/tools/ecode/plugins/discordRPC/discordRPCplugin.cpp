@@ -62,11 +62,6 @@ DiscordRPCplugin::~DiscordRPCplugin() {
 	if ( mIPC.isConnected() )
 		mIPC.clearActivity();
 	mShuttingDown = true;
-
-	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
-		onUnregisterEditor( editor.first );
-	}
 }
 
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
@@ -218,6 +213,11 @@ void DiscordRPCplugin::onRegisterEditor( UICodeEditor* editor ) {
 void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeUnlockedCommands( DiscordRPCCommandList );
 	editor->removeActionsByTag( DebounceUniqueId );
+}
+
+void DiscordRPCplugin::onUnregisterDocument( TextDocument* doc ) {
+	doc->removeCommand( "discordrpc-reconnect" );
+	PluginBase::onUnregisterDocument( doc );
 }
 
 void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {

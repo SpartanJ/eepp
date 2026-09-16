@@ -71,6 +71,8 @@ class DiscordRPCplugin : public PluginBase {
 
 	virtual void onUnregisterEditor( UICodeEditor* editor ) override;
 
+	virtual void onUnregisterDocument( TextDocument* doc ) override;
+
 	DiscordRPCplugin( PluginManager* pluginManager, bool sync );
 
 	void loadDiscordRPCConfig( const std::string& path, bool updateConfigFile );

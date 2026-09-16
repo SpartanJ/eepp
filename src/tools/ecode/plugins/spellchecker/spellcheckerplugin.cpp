@@ -230,6 +230,7 @@ void SpellCheckerPlugin::goToPrevError( UICodeEditor* editor ) {
 
 void SpellCheckerPlugin::onUnregisterDocument( TextDocument* doc ) {
 	mDirtyDoc.erase( doc );
+	PluginBase::onUnregisterDocument( doc );
 }
 
 void SpellCheckerPlugin::onDocumentChanged( UICodeEditor*, TextDocument* oldDoc ) {

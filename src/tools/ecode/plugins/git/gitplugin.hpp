@@ -97,6 +97,8 @@ class GitPlugin : public PluginBase {
 
 	void onUnregister( UICodeEditor* ) override;
 
+	void unregisterEditors() override;
+
 	bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i& position,
 							  const Uint32& flags ) override;
 

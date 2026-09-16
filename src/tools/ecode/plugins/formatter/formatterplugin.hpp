@@ -101,6 +101,8 @@ class FormatterPlugin : public Plugin {
 
 	void load( PluginManager* pluginManager );
 
+	virtual void unregisterEditors();
+
 	void loadFormatterConfig( const std::string& path, bool updateConfigFile );
 
 	void formatDoc( UICodeEditor* editor );

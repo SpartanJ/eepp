@@ -210,27 +210,8 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 GitPlugin::~GitPlugin() {
-	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mCommitDetails.cancelDiffPreparation();
-	mDetachedHistory.details.cancelDiffPreparation();
-	mConflictViewCloseConnection.disconnect();
-	mConflictView = nullptr;
-	mConflictSessions.clear();
-	if ( mStatusButton )
-		mStatusButton->close();
-
-	if ( mSidePanel && mTab )
-		mSidePanel->removeTab( mTab );
-
-	endModelStyler();
-
-	if ( getUISceneNode() )
-		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
-
-	if ( mStatusBar && mRepositionCbId )
-		mStatusBar->removeEventListener( mRepositionCbId );
 
 	{
 		Lock l( mGitBranchMutex );
@@ -257,6 +238,31 @@ GitPlugin::~GitPlugin() {
 
 	while ( *mRunningAsyncTasks )
 		Sys::sleep( Milliseconds( 1.f ) );
+}
+
+void GitPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	mCommitDetails.cancelDiffPreparation();
+	mDetachedHistory.details.cancelDiffPreparation();
+	mConflictViewCloseConnection.disconnect();
+	mConflictView = nullptr;
+	mConflictSessions.clear();
+	if ( mStatusButton ) {
+		mStatusButton->close();
+		mStatusButton = nullptr;
+	}
+	if ( mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab );
+		mTab = nullptr;
+	}
+	endModelStyler();
+	if ( getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+	if ( mStatusBar && mRepositionCbId ) {
+		mStatusBar->removeEventListener( mRepositionCbId );
+		mRepositionCbId = 0;
+	}
+	PluginBase::unregisterEditors();
 }
 
 void GitPlugin::onSaveState( IniFile* state ) {
@@ -2413,7 +2419,16 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
+	TextDocument* doc = editor->getDocumentRef().get();
 	PluginBase::onUnregister( editor );
+	if ( mDocs.find( doc ) == mDocs.end() ) {
+		doc->removeCommand( "show-source-control-tab" );
+		doc->removeCommand( "git-pull" );
+		doc->removeCommand( "git-push" );
+		doc->removeCommand( "git-fetch" );
+		doc->removeCommand( "git-commit" );
+		doc->removeCommand( "git-show-history" );
+	}
 }
 
 bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vector2i& /*position*/,

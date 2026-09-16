@@ -740,6 +740,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mFirstInstance{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
+	bool mClosing{ false };
 	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
 	bool mIncognito{ false };
@@ -830,6 +831,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool isAnyTerminalDirty() const;
 
 	bool onCloseRequestCallback( EE::Window::Window* );
+
+	void beginClosing();
 
 	void addRemainingTabWidgets( Node* widget );
 

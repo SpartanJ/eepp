@@ -115,6 +115,8 @@ bool App::isAnyTerminalDirty() const {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	if ( mClosing )
+		return true;
 	if ( mSplitter->isAnyEditorDirty() &&
 		 ( !mConfig.workspace.sessionSnapshot || mCurrentProject.empty() ) ) {
 		if ( mCloseMsgBox )
@@ -127,6 +129,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
 			saveConfig();
+			beginClosing();
 			mWindow->close();
 		} );
 		mCloseMsgBox->on( Event::OnWindowClose, [this]( auto ) { mCloseMsgBox = nullptr; } );
@@ -147,6 +150,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
 			saveConfig();
+			beginClosing();
 			mWindow->close();
 		} );
 		mCloseMsgBox->on( Event::OnWindowClose, [this]( auto ) { mCloseMsgBox = nullptr; } );
@@ -158,8 +162,17 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	} else {
 		saveProject();
 		saveConfig();
+		beginClosing();
 		return true;
 	}
+}
+
+void App::beginClosing() {
+	if ( mClosing )
+		return;
+	mClosing = true;
+	if ( mPluginManager )
+		mPluginManager->beginShutdown();
 }
 
 void App::saveDoc() {
@@ -756,9 +769,16 @@ void App::initPluginManager() {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
-			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
-				mLifetime.weakHandle().run( [plugin]( App* app ) {
-					app->onPluginEnabled( static_cast<Plugin*>( plugin ) );
+			const std::string pluginId( plugin->getId() );
+			plugin->addOnReadyCallback( [lifetime = mLifetime.weakHandle(), pluginId](
+											UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+				Plugin* readyPlugin = static_cast<Plugin*>( plugin );
+				lifetime.run( [pluginId, readyPlugin]( App* app ) {
+					Plugin* currentPlugin =
+						app->mPluginManager ? app->mPluginManager->get( pluginId ) : nullptr;
+					if ( currentPlugin == readyPlugin && !app->mPluginManager->isClosing() &&
+						 currentPlugin->isReady() )
+						app->onPluginEnabled( currentPlugin );
 				} );
 				plugin->removeReadyCallback( cbId );
 			} );
@@ -911,6 +931,8 @@ std::shared_ptr<ThreadPool> App::getThreadPool() const {
 }
 
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
+	if ( mClosing || !mWindow || !mWindow->isRunning() )
+		return false;
 	if ( mSplitter->curEditorExistsAndFocused() ) {
 		std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );

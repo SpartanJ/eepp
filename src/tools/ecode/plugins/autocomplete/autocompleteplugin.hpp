@@ -280,6 +280,8 @@ class AutoCompletePlugin : public Plugin {
 
 	void load( PluginManager* pluginManager );
 
+	void unregisterEditors() override;
+
 	void resetSuggestions( UICodeEditor* editor );
 
 	void updateSuggestions( const std::string& symbol, UICodeEditor* editor );

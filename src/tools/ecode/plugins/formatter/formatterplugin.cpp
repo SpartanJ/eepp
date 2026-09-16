@@ -48,23 +48,16 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 FormatterPlugin::~FormatterPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	unsubscribeFileSystemListener();
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
 		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
+}
 
-	for ( auto& editor : mEditors ) {
-		for ( auto& kb : mKeyBindings ) {
-			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor.first->hasDocument() )
-				editor.first->getDocument().removeCommand( kb.first );
-		}
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
+void FormatterPlugin::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
@@ -115,8 +108,10 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	auto cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
 
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
@@ -126,11 +121,8 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 		if ( editorIt.second == doc )
 			return;
 
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
 }
 
 bool FormatterPlugin::getAutoFormatOnSave() const {

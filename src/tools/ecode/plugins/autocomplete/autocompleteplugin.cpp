@@ -316,26 +316,9 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	unregisterSnippetLocatorProvider();
-	mManager->unsubscribeMessages( this );
-	unsubscribeFileSystemListener();
 	while ( mSnippetJobs > 0 )
 		Sys::sleep( Milliseconds( 1 ) );
-	for ( auto& client : mSnippetClients )
-		client.second->detach();
-	mSnippetClients.clear();
 	mSnippetSessions.clear();
-
-	{
-		Lock l( mDocMutex );
-		Lock l2( mLangSymbolsMutex );
-		Lock l3( mSuggestionsMutex );
-		for ( const auto& editor : mEditors ) {
-			for ( auto listener : editor.second )
-				editor.first->removeEventListener( listener );
-			editor.first->unregisterPlugin( this );
-		}
-	}
 
 	bool isUpdating = false;
 	do {
@@ -347,6 +330,15 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 		if ( isUpdating )
 			Sys::sleep( Milliseconds( 1 ) );
 	} while ( isUpdating );
+}
+
+void AutoCompletePlugin::unregisterEditors() {
+	unregisterSnippetLocatorProvider();
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
+	for ( auto& client : mSnippetClients )
+		client.second->detach();
+	mSnippetClients.clear();
 }
 
 void AutoCompletePlugin::load( PluginManager* pluginManager ) {
@@ -834,7 +826,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 	if ( mSuggestionsEditor == editor )
 		resetSuggestions( editor );
@@ -854,6 +846,7 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 		for ( auto ceditor : mEditorDocs )
 			if ( ceditor.second == doc )
 				return;
+		doc->removeCommand( "autocomplete-from-current-doc-symbols" );
 		detachSnippetClient( doc );
 		mDocs.erase( doc );
 		mDocCache.erase( doc );

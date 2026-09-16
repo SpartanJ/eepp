@@ -43,11 +43,6 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 XMLToolsPlugin::~XMLToolsPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
 }
 
 bool XMLToolsPlugin::getHighlightMatch() const {
@@ -122,8 +117,20 @@ void XMLToolsPlugin::onRegisterDocument( TextDocument* doc ) {
 
 void XMLToolsPlugin::onUnregisterDocument( TextDocument* doc ) {
 	Lock l( mClientsMutex );
-	doc->unregisterClient( mClients[doc].get() );
-	mClients.erase( doc );
+	auto client = mClients.find( doc );
+	if ( client != mClients.end() ) {
+		doc->unregisterClient( client->second.get() );
+		mClients.erase( client );
+	}
+	PluginBase::onUnregisterDocument( doc );
+}
+
+void XMLToolsPlugin::unregisterEditors() {
+	PluginBase::unregisterEditors();
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
+		client.first->unregisterClient( client.second.get() );
+	mClients.clear();
 }
 
 bool XMLToolsPlugin::isOverMatch( TextDocument* doc, const Int64& index ) const {

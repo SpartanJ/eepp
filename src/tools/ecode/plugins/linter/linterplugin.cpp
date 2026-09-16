@@ -85,8 +85,6 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 LinterPlugin::~LinterPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mManager->unsubscribeMessages( this );
-	unsubscribeFileSystemListener();
 
 	{
 		std::lock_guard l( mRunningProcessesMutex );
@@ -98,17 +96,11 @@ LinterPlugin::~LinterPlugin() {
 
 	std::unique_lock<std::mutex> lock( mWorkMutex );
 	mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
+}
 
-	for ( const auto& editor : mEditors ) {
-		for ( auto& kb : mKeyBindings ) {
-			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor.first->hasDocument() )
-				editor.first->getDocument().removeCommand( kb.first );
-		}
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
+void LinterPlugin::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& patterns ) {
@@ -753,7 +745,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 
 	Lock l( mDocMutex );
@@ -761,17 +753,17 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 	auto cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
 	for ( auto editorIt : mEditorDocs )
 		if ( editorIt.second == doc )
 			return;
 
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
+	doc->removeCommand( "linter-copy-error-message" );
 
 	mDocs.erase( doc );
 	mDirtyDoc.erase( doc );

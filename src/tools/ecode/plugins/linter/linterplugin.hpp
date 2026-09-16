@@ -170,6 +170,8 @@ class LinterPlugin : public Plugin {
 
 	void load( PluginManager* pluginManager );
 
+	virtual void unregisterEditors();
+
 	void lintDoc( std::shared_ptr<TextDocument> doc );
 
 	void runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,

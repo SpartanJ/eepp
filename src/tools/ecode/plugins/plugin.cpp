@@ -27,6 +27,17 @@ bool Plugin::isShuttingDown() const {
 	return mShuttingDown;
 }
 
+void Plugin::shutdown() {
+	if ( mShuttingDown.exchange( true ) )
+		return;
+	waitUntilLoaded();
+	unsubscribeFileSystemListener();
+	mManager->unsubscribeMessages( this );
+	mUnregistering = true;
+	unregisterEditors();
+	mUnregistering = false;
+}
+
 bool Plugin::hasFileConfig() {
 	return !mConfigPath.empty();
 }
@@ -249,13 +260,6 @@ void Plugin::createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
 
 PluginBase::~PluginBase() {
 	mShuttingDown = true;
-	unsubscribeFileSystemListener();
-
-	for ( auto editor : mEditors ) {
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
 }
 
 void PluginBase::onRegister( UICodeEditor* editor ) {
@@ -306,7 +310,7 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 
 void PluginBase::onUnregister( UICodeEditor* editor ) {
 	onBeforeUnregister( editor );
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 	Lock l( mMutex );
 	TextDocument* doc = mEditorDocs[editor];
@@ -340,6 +344,11 @@ void PluginBase::onRegisterEditor( UICodeEditor* editor ) {
 void PluginBase::onUnregisterDocument( TextDocument* doc ) {
 	for ( auto& kb : mKeyBindings )
 		doc->removeCommand( kb.first );
+}
+
+void PluginBase::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 } // namespace ecode
