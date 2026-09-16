@@ -1921,7 +1921,13 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	return UIWidget::onMouseUp( position, flags );
 }
 
-Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool ) {
+Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	const Vector2i position = getEventDispatcher() ? getEventDispatcher()->getMousePos()
+											  : Vector2i::Zero;
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseWheel( this, position, offset, flipped ) )
+			return 1;
+
 	Input* input = getInput();
 	if ( input->isKeyModPressed() )
 		return 1;

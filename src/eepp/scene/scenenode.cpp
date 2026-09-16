@@ -160,14 +160,8 @@ void SceneNode::update( const Time& time ) {
 			node->scheduledUpdate( time );
 	}
 
-	if ( mUpdateAllChildren ) {
+	if ( mUpdateAllChildren )
 		Node::update( time );
-	} else {
-		for ( auto& nodeOver : mMouseOverNodes )
-			nodeOver->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
-	}
-
-	mMouseOverNodes.clear();
 }
 
 void SceneNode::onSizeChange() {
@@ -486,14 +480,6 @@ void SceneNode::unsubscribeScheduledUpdate( Node* node ) {
 
 bool SceneNode::isSubscribedForScheduledUpdate( Node* node ) {
 	return mScheduledUpdate.count( node ) > 0;
-}
-
-void SceneNode::addMouseOverNode( Node* node ) {
-	mMouseOverNodes.insert( node );
-}
-
-void SceneNode::removeMouseOverNode( Node* node ) {
-	mMouseOverNodes.erase( node );
 }
 
 bool SceneNode::getUpdateAllChildren() const {

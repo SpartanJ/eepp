@@ -145,6 +145,12 @@ void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
 	if ( mErasingClients.find( id ) != mErasingClients.end() )
 		return;
 	mErasingClients.insert( id );
+	{
+		Lock l( mClientsMutex );
+		auto it = mClients.find( id );
+		if ( it != mClients.end() )
+			it->second->detachDocuments();
+	}
 	mThreadPool->run( [this, id]() {
 		Lock l( mClientsMutex );
 		auto it = mClients.find( id );
@@ -156,6 +162,12 @@ void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
 			mErasingClients.erase( id );
 		}
 	} );
+}
+
+void LSPClientServerManager::detachDocuments() {
+	Lock l( mClientsMutex );
+	for ( const auto& server : mClients )
+		server.second->detachDocuments();
 }
 
 void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {

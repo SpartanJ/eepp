@@ -37,6 +37,65 @@ UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
 }
 
+UTEST( UISceneNode, MouseOverAncestryUsesCommittedOverNode ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Mouse Over Ancestry" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	auto* parent = UIWidget::New();
+	parent->setPixelsSize( 200, 100 );
+	parent->setParent( scene->getRoot() );
+	auto* firstChild = UIWidget::New();
+	firstChild->setPixelsSize( 80, 80 );
+	firstChild->setParent( parent );
+	auto* secondChild = UIWidget::New();
+	secondChild->setPixelsPosition( 100, 0 );
+	secondChild->setPixelsSize( 80, 80 );
+	secondChild->setParent( parent );
+	scene->flushDirtyStyleAndLayout();
+
+	Input* input = app.getWindow()->getInput();
+	input->setMousePos( firstChild->convertToWorldSpace( { 20.f, 20.f } ).asInt() );
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), firstChild );
+	EXPECT_TRUE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( firstChild->isMouseOver() );
+	EXPECT_TRUE( parent->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( parent->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+
+	const Vector2i secondChildPosition = secondChild->convertToWorldSpace( { 20.f, 20.f } ).asInt();
+	EXPECT_EQ( scene->overFind( secondChildPosition.asFloat() ), secondChild );
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), firstChild );
+	EXPECT_TRUE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( firstChild->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+
+	input->setMousePos( secondChildPosition );
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), secondChild );
+	EXPECT_FALSE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( firstChild->isMouseOver() );
+	EXPECT_TRUE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( secondChild->isMouseOver() );
+	EXPECT_TRUE( parent->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( parent->isMouseOver() );
+
+	input->setMousePos( { 280, 180 } );
+	SceneManager::instance()->update();
+
+	EXPECT_FALSE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( firstChild->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+	EXPECT_FALSE( parent->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( parent->isMouseOver() );
+}
+
 UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
 	auto* engine = Engine::instance();
 	auto* window = engine->getCurrentWindow();

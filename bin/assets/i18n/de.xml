@@ -366,6 +366,9 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="git_confirm_branch_delete">Sind Sie sicher, dass Sie Zweig "%s" löschen möchten?</string>
 	<string name="git_confirm_branch_merge">Sind Sie sicher, dass Sie aus Zweig "%s" vereinigen möchten?</string>
 	<string name="git_confirm_discard_changes">Sind Sie sicher, dass Sie alle Änderungen verwerfen möchten in: "%s"?</string>
+	<string name="git_confirm_delete_untracked_item">Möchten Sie das folgende nicht versionierte Element wirklich dauerhaft löschen:
+%s?</string>
+	<string name="git_confirm_delete_untracked_items">Möchten Sie wirklich %d nicht versionierte Elemente dauerhaft löschen?</string>
 	<string name="git_confirm_drop_stash">Sind Sie sicher, dass Sie den ausgewählten Stash fallen lassen möchten?</string>
 	<string name="git_confirm_push_changes">Sind Sie sicher, dass Sie lokale Änderungen gen Remoteserver pushen wollen?</string>
 	<string name="git_create_branch">Zweig erstellen</string>
@@ -373,6 +376,7 @@ ecode versucht, externes Terminal zu öffnen.</string>
 Zweignamen eingeben:</string>
 	<string name="git_create_local_branch">Lokalen Zweig erstellen?</string>
 	<string name="git_delete_branch">Löschen</string>
+	<string name="git_delete_untracked_failed">Die folgenden nicht versionierten Elemente konnten nicht gelöscht werden:</string>
 	<string name="git_diff_head">HEAD-Diff</string>
 	<string name="git_diff_changed">Änderungs-Diff</string>
 	<string name="git_diff_staged">Stage-Diff</string>

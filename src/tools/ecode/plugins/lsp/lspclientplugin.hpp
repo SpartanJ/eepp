@@ -162,6 +162,8 @@ class LSPClientPlugin : public Plugin {
 
 	void load( PluginManager* pluginManager );
 
+	virtual void unregisterEditors();
+
 	void loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
 						bool updateConfigFile );
 

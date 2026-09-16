@@ -78,6 +78,23 @@ static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
+static constexpr const char* LSPDocumentCommands[] = {
+	"lsp-go-to-definition",
+	"lsp-go-to-declaration",
+	"lsp-go-to-implementation",
+	"lsp-go-to-type-definition",
+	"lsp-switch-header-source",
+	"lsp-symbol-info",
+	"lsp-symbol-references",
+	"lsp-memory-usage",
+	"lsp-symbol-code-action",
+	"lsp-rename-symbol-under-cursor",
+	"lsp-refresh-semantic-highlighting",
+	"lsp-format-range",
+	"lsp-plugin-restart",
+	"lsp-show-document-symbols",
+};
+
 static json getURIAndPositionJSON( UICodeEditor* editor ) {
 	json data;
 	auto doc = editor->getDocumentRef();
@@ -292,31 +309,15 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
-	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mManager->unsubscribeMessages( this );
-	unsubscribeFileSystemListener();
-	{
-		Lock l( mDocMutex );
-		for ( const auto& editor : mEditors ) {
-			UICodeEditor* codeEditor = editor.first;
-			for ( auto& kb : mKeyBindings ) {
-				codeEditor->getKeyBindings().removeCommandKeybind( kb.first );
-				if ( codeEditor->hasDocument() )
-					codeEditor->getDocument().removeCommand( kb.first );
-			}
-			for ( auto listener : editor.second )
-				codeEditor->removeEventListener( listener );
-			if ( mBreadcrumb )
-				codeEditor->unregisterTopSpace( this );
-			codeEditor->unregisterPlugin( this );
-			if ( mManager->getSplitter()->editorExists( codeEditor ) )
-				codeEditor->removeActionsByTag( getMouseMoveHash( codeEditor ) );
-		}
-		if ( nullptr == mManager->getSplitter() )
-			return;
-	}
+}
+
+void LSPClientPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
+	mClientManager.detachDocuments();
 }
 
 void LSPClientPlugin::update( UICodeEditor* ) {
@@ -1157,21 +1158,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = { "lsp-go-to-definition",
-					  "lsp-go-to-declaration",
-					  "lsp-go-to-implementation",
-					  "lsp-go-to-type-definition",
-					  "lsp-switch-header-source",
-					  "lsp-symbol-info",
-					  "lsp-symbol-references",
-					  "lsp-memory-usage",
-					  "lsp-symbol-code-action",
-					  "lsp-rename-symbol-under-cursor",
-					  "lsp-refresh-semantic-highlighting",
-					  "lsp-format-range",
-					  "lsp-plugin-restart",
-					  "lsp-show-document-symbols" };
-		for ( const auto& key : list ) {
+		for ( const auto* key : LSPDocumentCommands ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
 					mKeyBindings[key] = kb[key];
@@ -1525,7 +1512,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 				static_cast<UICodeEditor*>( client )->getDocumentRef() );
 		} );
 
-		doc.setCommand( "lsp-plugin-restart", [this] { mManager->reload( getId() ); } );
+		doc.setCommand( "lsp-plugin-restart", [lifetime = mLifetime.weakHandle()] {
+			lifetime.run(
+				[]( LSPClientPlugin* plugin ) { plugin->mManager->reload( plugin->getId() ); } );
+		} );
 
 		doc.setCommand( "lsp-show-document-symbols", [this]( TextDocument::Client* client ) {
 			showDocumentSymbols( static_cast<UICodeEditor*>( client ) );
@@ -1603,7 +1593,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( auto& kb : mKeyBindings )
 		editor->getKeyBindings().removeCommandKeybind( kb.first );
 
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 
 	editor->removeActionsByTag( getMouseMoveHash( editor ) );
@@ -1628,8 +1618,8 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 		}
 
 		if ( editor->hasDocument() )
-			for ( auto& kb : mKeyBindings )
-				editor->getDocument().removeCommand( kb.first );
+			for ( const auto* command : LSPDocumentCommands )
+				editor->getDocument().removeCommand( command );
 
 		{
 			Lock lds( mDocSymbolsMutex );

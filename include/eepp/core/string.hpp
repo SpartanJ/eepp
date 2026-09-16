@@ -114,8 +114,26 @@ class EE_API String {
 	/** Escape string sequence */
 	static String escape( const String& str );
 
+	/** Escape byte string sequence */
+	static std::string escape( std::string_view str );
+
+	static std::string escape( const std::string& str ) {
+		return escape( std::string_view{ str } );
+	}
+
+	static std::string escape( const char* str ) { return escape( std::string_view{ str } ); }
+
 	/** Unescape string sequence */
 	static String unescape( const String& str );
+
+	/** Unescape byte string sequence */
+	static std::string unescape( std::string_view str );
+
+	static std::string unescape( const std::string& str ) {
+		return unescape( std::string_view{ str } );
+	}
+
+	static std::string unescape( const char* str ) { return unescape( std::string_view{ str } ); }
 
 	/** @return string hash */
 	static String::HashType hash( const std::string& str );

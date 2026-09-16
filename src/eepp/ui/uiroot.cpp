@@ -31,11 +31,6 @@ Node* UIRoot::overFind( const Vector2f& point ) {
 				child = child->getPrevNode();
 			}
 
-			if ( nullptr != pOver || selfHit ) {
-				writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-				mSceneNode->addMouseOverNode( this );
-			}
-
 			if ( nullptr == pOver && selfHit )
 				pOver = this;
 		}

@@ -131,6 +131,8 @@ class XMLToolsPlugin : public PluginBase {
 
 	virtual void onUnregisterDocument( TextDocument* doc ) override;
 
+	void unregisterEditors() override;
+
 	bool isOverMatch( TextDocument* doc, const Int64& index ) const;
 
 	bool isVisibleInRange( TextDocument* doc, const DocumentLineRange& docLineRange );

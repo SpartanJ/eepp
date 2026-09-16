@@ -69,6 +69,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		bool disablePlugins{ false };
 		bool redirectToFirstInstance{ false };
 		bool diff{ false };
+		bool readOnly{ false };
 	};
 
 	void init( InitParameters& );
@@ -735,9 +736,11 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mBenchmarkMode{ false };
 	bool mDisablePlugins{ false };
 	bool mRedirectToFirstInstance{ false };
+	bool mFileToOpenReadOnly{ false };
 	bool mFirstInstance{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
+	bool mClosing{ false };
 	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
 	bool mIncognito{ false };
@@ -805,7 +808,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void initProjectTreeViewUI();
 
-	void initProjectTreeView( std::vector<std::string>&& paths, bool openClean );
+	void initProjectTreeView( std::vector<std::string>&& paths, bool openClean, bool readOnly );
 
 	void initImageView();
 
@@ -828,6 +831,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool isAnyTerminalDirty() const;
 
 	bool onCloseRequestCallback( EE::Window::Window* );
+
+	void beginClosing();
 
 	void addRemainingTabWidgets( Node* widget );
 
@@ -912,7 +917,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void createWelcomeTab();
 
-	bool needsRedirectToRunningProcess( std::string file );
+	bool needsRedirectToRunningProcess( std::string file, bool readOnly );
 
 	std::function<void( UICodeEditor*, const std::string& )>
 	getForcePositionFn( TextPosition initialPosition );

@@ -858,9 +858,6 @@ Node* UIHTMLWidget::overFind( const Vector2f& point ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
 			const auto& sortedChildren = getPaintOrder();
 
 			// Drawing and hit-testing share one sequence; reverse it so the last painted node wins.

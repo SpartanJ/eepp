@@ -79,8 +79,9 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 							 event->textediting.length );
 			break;
 		case InputEvent::MouseWheel:
-			sendMouseWheel( { event->wheel.x, event->wheel.y },
-							event->wheel.direction == InputEvent::WheelEvent::Flipped );
+			mPendingMouseWheelEvents.push_back(
+				{ { event->wheel.x, event->wheel.y },
+				  event->wheel.direction == InputEvent::WheelEvent::Flipped } );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -122,6 +123,13 @@ void EventDispatcher::update( const Time& time ) {
 			mOverNode->onMouseMove( mMousePosi, mInput->getPressTrigger() );
 			sendMsg( mOverNode, NodeMessage::MouseMove, mInput->getPressTrigger() );
 		}
+	}
+
+	if ( !mPendingMouseWheelEvents.empty() ) {
+		std::vector<PendingMouseWheelEvent> pendingMouseWheelEvents;
+		pendingMouseWheelEvents.swap( mPendingMouseWheelEvents );
+		for ( const auto& event : pendingMouseWheelEvents )
+			sendMouseWheel( event.offset, event.flipped );
 	}
 
 	if ( mDisableMousePress || mJustDisabledMousePress ) {

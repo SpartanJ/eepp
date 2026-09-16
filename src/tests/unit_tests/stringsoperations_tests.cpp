@@ -1,4 +1,4 @@
-#include "utest.h"
+#include "utest.hpp"
 #include <cstdlib>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -107,6 +107,19 @@ UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	text.toUtf8( reusableUtf8 );
 	EXPECT_STREQ( "áβ中", reusableUtf8.c_str() );
 	EXPECT_EQ( utf8Storage, reusableUtf8.data() );
+}
+
+UTEST( String, byteStringEscapeAndUnescape ) {
+	const std::string raw = "line one\r\nline two\t\a\b\f\v";
+	const std::string escaped = String::escape( raw );
+	EXPECT_STDSTREQ( "line one\\r\\nline two\\t\\a\\b\\f\\v", escaped );
+	const std::string unescaped = String::unescape( escaped );
+	EXPECT_STDSTREQ( raw, unescaped );
+	const std::string quoted = String::unescape( R"(quoted\" slash\\ unknown\q)" );
+	EXPECT_STDSTREQ( "quoted\" slash\\ unknown\\q", quoted );
+
+	const std::string utf8Bytes = String::unescape( std::string_view{ R"(\303\261)" } );
+	EXPECT_STDSTREQ( "ñ", utf8Bytes );
 }
 
 UTEST( FileSystem, fileCountLines ) {

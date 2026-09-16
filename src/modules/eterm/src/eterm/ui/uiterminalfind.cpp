@@ -13,6 +13,7 @@ using namespace eterm::Terminal;
 namespace eterm { namespace UI {
 
 static constexpr auto SEARCH_DEBOUNCE_TAG = String::hash( "UITerminalFind::search" );
+static constexpr auto VISIBILITY_TRANSITION_TAG = String::hash( "UITerminalFind::visibility" );
 
 static constexpr char FIND_LAYOUT[] = R"xml(
 <hbox class="ce_find_replace_box" layout_width="wrap_content" lh="wc" layout_gravity="right|top" margin_right="32dp">
@@ -106,11 +107,20 @@ void UITerminalFind::show() {
 		return;
 	}
 	if ( !isVisible() ) {
+		removeActionsByTag( VISIBILITY_TRANSITION_TAG );
 		setVisible( true );
-		const Float startX = eemax( 0.f, mTerminal->getSize().getWidth() - getSize().getWidth() );
-		setPosition( startX, -getSize().getHeight() );
-		runAction( Actions::Move::New( { startX, getPosition().y }, { startX, 0 }, Seconds( 0.2f ),
-									   Ease::QuadraticIn ) );
+		updatePosition();
+		const Vector2f destination = getPosition();
+		setPosition( destination.x, -getSize().getHeight() );
+		mTransitioning = true;
+		auto* transition = Actions::Sequence::New(
+			Actions::Move::New( getPosition(), destination, Seconds( 0.2f ), Ease::QuadraticIn ),
+			Actions::Runnable::New( [this] {
+				mTransitioning = false;
+				updatePosition();
+			} ) );
+		transition->setTag( VISIBILITY_TRANSITION_TAG );
+		runAction( transition );
 	}
 	mInput->getDocument().selectAll();
 	mInput->setFocus();
@@ -121,10 +131,17 @@ void UITerminalFind::show() {
 void UITerminalFind::hide() {
 	mInput->removeActionsByTag( SEARCH_DEBOUNCE_TAG );
 	mQueryPending = false;
-	runAction( Actions::Sequence::New(
+	removeActionsByTag( VISIBILITY_TRANSITION_TAG );
+	mTransitioning = true;
+	auto* transition = Actions::Sequence::New(
 		Actions::Move::New( getPosition(), { getPosition().x, -getSize().getHeight() },
 							Seconds( 0.2f ), Ease::QuadraticOut ),
-		Actions::Visible::New( false ) ) );
+		Actions::Runnable::New( [this] {
+			setVisible( false );
+			mTransitioning = false;
+		} ) );
+	transition->setTag( VISIBILITY_TRANSITION_TAG );
+	runAction( transition );
 	mTerminal->getTerm()->clearSearch();
 	mTerminal->setFocus();
 }
@@ -170,6 +187,25 @@ void UITerminalFind::refreshStatus() {
 		mInput->addClass( "error" );
 	else
 		mInput->removeClass( "error" );
+	updatePosition();
+}
+
+void UITerminalFind::updatePosition() {
+	if ( mTransitioning )
+		return;
+	const Float x = eemax( 0.f, mTerminal->getSize().getWidth() - getSize().getWidth() );
+	Float y = 0;
+	Vector2i start;
+	Vector2i end;
+	auto term = mTerminal->getTerm();
+	if ( term->getVisibleCurrentSearchMatch( start, end ) && start.y <= 1 ) {
+		const Sizei cellSize = term->getCellPixelSize();
+		const Rectf& padding = term->getPadding();
+		y = padding.Top + ( end.y + 1 ) * cellSize.getHeight();
+	}
+	const Vector2f position( x, y );
+	if ( getPosition() != position )
+		setPosition( position );
 }
 
 Uint32 UITerminalFind::onKeyDown( const KeyEvent& event ) {

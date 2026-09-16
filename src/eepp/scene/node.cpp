@@ -41,9 +41,6 @@ Node::~Node() {
 
 		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate( this );
-
-		if ( isMouseOverMeOrChildren() )
-			mSceneNode->removeMouseOverNode( this );
 	}
 
 	childDeleteAll();
@@ -291,8 +288,6 @@ void Node::update( const Time& time ) {
 		childLoop->update( time );
 		childLoop = childLoop->mNext;
 	}
-
-	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
 void Node::sendMouseEvent( const Uint32& event, const Vector2i& pos, const Uint32& flags ) {
@@ -387,8 +382,18 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 Node::onMouseWheel( const Vector2f&, bool ) {
-	return 0;
+Uint32 Node::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	if ( !hasEventsOfType( Event::MouseWheel ) )
+		return 0;
+
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
+	MouseWheelEvent event( this, position, offset, flipped );
+	sendEvent( &event );
+
+	// A registered listener consumes the wheel event. Overrides can intentionally avoid calling
+	// this implementation to handle the wheel without dispatching the generic event callback.
+	return 1;
 }
 
 Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
@@ -963,9 +968,6 @@ Node* Node::overFind( const Vector2f& point ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
 			Node* child = mChildLast;
 
 			while ( NULL != child ) {

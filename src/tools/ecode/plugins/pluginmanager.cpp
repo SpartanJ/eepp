@@ -23,16 +23,25 @@ PluginManager::PluginManager( const std::string& resourcesPath, const std::strin
 	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
-	mClosing = true;
+	beginShutdown();
 	for ( auto& plugin : mPlugins ) {
 		Log::debug( "PluginManager: unloading plugin %s", plugin.second->getTitle() );
-		eeDelete( plugin.second );
+		unloadPlugin( plugin.second );
 	}
-	unsubscribeFileSystemListener();
+	std::unique_lock<std::mutex> lock( mPendingUnloadsMutex );
+	mPendingUnloadsCondition.wait( lock, [this] { return mPendingUnloads == 0; } );
 }
 
 bool PluginManager::isClosing() const {
 	return mClosing;
+}
+
+void PluginManager::beginShutdown() {
+	if ( mClosing )
+		return;
+	mClosing = true;
+	mPluginReloadEnabled = false;
+	unsubscribeFileSystemListener();
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
@@ -55,6 +64,8 @@ Plugin* ecode::PluginManager::get( const std::string& id ) {
 }
 
 bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) {
+	if ( mClosing )
+		return false;
 	mPluginsEnabled[id] = enable;
 	Plugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
@@ -69,12 +80,8 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 	}
 	if ( !enable && plugin != nullptr ) {
 		Log::debug( "PluginManager: unloading plugin %s", mDefinitions[id].name );
-		mThreadPool->run( [plugin]() { eeDelete( plugin ); } );
-		{
-			Lock l( mSubscribedPluginsMutex );
-			mSubscribedPlugins.erase( id );
-		}
 		mPlugins.erase( id );
+		unloadPlugin( plugin );
 	}
 	return false;
 }
@@ -84,6 +91,8 @@ bool PluginManager::isEnabled( const std::string& id ) const {
 }
 
 bool PluginManager::reload( const std::string& id ) {
+	if ( mClosing )
+		return false;
 	if ( !isPluginReloadEnabled() ) {
 		Log::warning( "PluginManager: tried to reload a plugin but plugin reload is not enabled." );
 		return false;
@@ -381,6 +390,33 @@ void PluginManager::registerFileSystemListener( Plugin* plugin ) {
 	}
 	if ( removeListener )
 		mFileSystemListener->removeListener( listenerId );
+}
+
+void PluginManager::unloadPlugin( Plugin* plugin ) {
+	// Complete all application-facing teardown while virtual dispatch still reaches the complete
+	// plugin type. The destructor below may run on a worker and must only release owned resources.
+	unsubscribeFileSystemListener( plugin );
+	{
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins.erase( plugin->getId() );
+	}
+	plugin->shutdown();
+	if ( mClosing ) {
+		eeDelete( plugin );
+		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock( mPendingUnloadsMutex );
+		++mPendingUnloads;
+	}
+	mThreadPool->run( [this, plugin] {
+		eeDelete( plugin );
+		{
+			std::lock_guard<std::mutex> lock( mPendingUnloadsMutex );
+			--mPendingUnloads;
+		}
+		mPendingUnloadsCondition.notify_one();
+	} );
 }
 
 void PluginManager::sendBroadcast( const PluginMessageType& notification,

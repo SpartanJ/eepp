@@ -23,6 +23,8 @@ class UITerminalFind : public UILinearLayout {
 
 	void refreshStatus();
 
+	void updatePosition();
+
   protected:
 	explicit UITerminalFind( UITerminal* terminal );
 
@@ -52,6 +54,7 @@ class UITerminalFind : public UILinearLayout {
 	bool mReady{ false };
 	bool mChangingPattern{ false };
 	bool mQueryPending{ false };
+	bool mTransitioning{ false };
 };
 
 }} // namespace eterm::UI

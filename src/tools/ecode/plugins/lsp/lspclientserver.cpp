@@ -1289,11 +1289,6 @@ LSPClientServer::~LSPClientServer() {
 		mProcess.kill();
 
 	eeSAFE_DELETE( mSocket );
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
 }
 
 bool LSPClientServer::socketConnect() {
@@ -1412,6 +1407,12 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 
 	doc->registerClient( mClients[doc.get()].get() );
 	return true;
+}
+
+void LSPClientServer::detachDocuments() {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
+		client.second->detach();
 }
 
 void LSPClientServer::notifyServerInitialized() {

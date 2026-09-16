@@ -310,6 +310,8 @@ class DebuggerPlugin : public PluginBase {
 
 	virtual void onUnregisterDocument( TextDocument* doc ) override;
 
+	void unregisterEditors() override;
+
 	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
 							 const Int64& numLines );
 

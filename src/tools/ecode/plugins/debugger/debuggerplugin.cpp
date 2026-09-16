@@ -164,46 +164,11 @@ DebuggerPlugin::DebuggerPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 DebuggerPlugin::~DebuggerPlugin() {
-	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
 
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
-
-	if ( mSidePanel && mTab ) {
-		if ( Engine::isMainThread() )
-			mSidePanel->removeTab( mTab );
-		else {
-			auto sidePanel = mSidePanel;
-			auto tab = mTab;
-			mSidePanel->runOnMainThread( [sidePanel, tab] { sidePanel->removeTab( tab ); } );
-		}
-	}
-
-	if ( getPluginContext()->getStatusBar() )
-		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
-
-	mManager->unsubscribeMessages( this );
-
-	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
-		onUnregisterEditor( editor.first );
-	}
-
 	mDebugger.reset();
 	mListener.reset();
-
-	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
-		 getPluginContext() && getPluginContext()->getMainLayout() ) {
-		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
-
-		for ( const auto& kb : mKeyBindings )
-			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
-	}
 }
 
 void DebuggerPlugin::onSaveState( IniFile* state ) {
@@ -1578,8 +1543,37 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 
 void DebuggerPlugin::onUnregisterDocument( TextDocument* doc ) {
 	Lock l( mClientsMutex );
-	doc->unregisterClient( mClients[doc].get() );
-	mClients.erase( doc );
+	auto client = mClients.find( doc );
+	if ( client != mClients.end() ) {
+		doc->unregisterClient( client->second.get() );
+		mClients.erase( client );
+	}
+	PluginBase::onUnregisterDocument( doc );
+	doc->removeCommand( "show-debugger-tab" );
+}
+
+void DebuggerPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	PluginBase::unregisterEditors();
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+		mClients.clear();
+	}
+	if ( mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab );
+		mTab = nullptr;
+	}
+	if ( getPluginContext()->getStatusBar() )
+		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+		 getPluginContext() && getPluginContext()->getMainLayout() ) {
+		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
+
+		for ( const auto& kb : mKeyBindings )
+			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
+	}
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {

@@ -352,23 +352,6 @@ class EE_API SceneNode : public Node {
 	bool isSubscribedForScheduledUpdate( Node* node );
 
 	/**
-	 * @brief Adds a node to the mouse-over tracking list.
-	 *
-	 * This is used internally to track which nodes are currently under
-	 * the mouse cursor.
-	 *
-	 * @param node Pointer to the node to track.
-	 */
-	void addMouseOverNode( Node* node );
-
-	/**
-	 * @brief Removes a node from the mouse-over tracking list.
-	 *
-	 * @param node Pointer to the node to stop tracking.
-	 */
-	void removeMouseOverNode( Node* node );
-
-	/**
 	 * @brief Gets whether all children are updated each frame.
 	 *
 	 * When enabled, all children receive update() calls. When disabled,
@@ -442,7 +425,6 @@ class EE_API SceneNode : public Node {
 	Time mElapsed;
 	UnorderedSet<Node*> mScheduledUpdate;
 	UnorderedSet<Node*> mScheduledUpdateRemove;
-	UnorderedSet<Node*> mMouseOverNodes;
 	Float mDPI;
 
 	virtual void onSizeChange();

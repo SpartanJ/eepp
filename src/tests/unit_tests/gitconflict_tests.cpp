@@ -1,4 +1,4 @@
-#include "utest.h"
+#include "utest.hpp"
 
 #include "../../tools/ecode/plugins/git/git.hpp"
 #include <chrono>
@@ -24,6 +24,26 @@ struct GitTempDirectory {
 };
 
 } // namespace
+
+UTEST( GitStatus, DecodesQuotedUntrackedPaths ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	ASSERT_EQ( EXIT_SUCCESS,
+			   git.git( std::vector<std::string>{ "init" }, temp.path.string(), output ) );
+	const std::string relativePath = "Untitled 1--conversation doc.yjs";
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / relativePath ).string(), "test" ) );
+
+	auto status = git.status( false, temp.path.string() );
+	ASSERT_EQ( 1u, status.files.size() );
+	ASSERT_EQ( 1u, status.files.begin()->second.size() );
+	EXPECT_STDSTREQ( relativePath, status.files.begin()->second.front().file );
+	EXPECT_EQ( Git::GitStatusType::Untracked, status.files.begin()->second.front().report.type );
+}
 
 UTEST( GitConflict, ParsesNulDelimitedStageRecordsAndUnusualPaths ) {
 	if ( Sys::which( "git" ).empty() )

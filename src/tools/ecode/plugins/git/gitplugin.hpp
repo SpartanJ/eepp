@@ -97,6 +97,8 @@ class GitPlugin : public PluginBase {
 
 	void onUnregister( UICodeEditor* ) override;
 
+	void unregisterEditors() override;
+
 	bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i& position,
 							  const Uint32& flags ) override;
 
@@ -313,6 +315,8 @@ class GitPlugin : public PluginBase {
 	void stage( const std::vector<std::string>& files );
 
 	void unstage( const std::vector<std::string>& files );
+
+	void deleteUntrackedFiles( std::vector<std::string> files );
 
 	enum class FileOperation { Stage, Unstage, Discard, RestoreHead };
 

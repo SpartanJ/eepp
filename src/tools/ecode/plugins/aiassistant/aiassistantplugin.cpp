@@ -271,10 +271,19 @@ AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) 
 AIAssistantPlugin::~AIAssistantPlugin() {
 	{
 		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
+		mModelCatalog.reset();
+	}
+
+	waitUntilLoaded();
+	mShuttingDown = true;
+}
+
+void AIAssistantPlugin::unregisterEditors() {
+	{
+		std::lock_guard<std::mutex> lock( mModelCatalogMutex );
 		mModelCatalogCancelled->store( true );
 		if ( mModelCatalog )
 			mModelCatalog->cancel();
-		mModelCatalog.reset();
 	}
 	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
 		 getPluginContext() && getPluginContext()->getSplitter() ) {
@@ -284,15 +293,17 @@ AIAssistantPlugin::~AIAssistantPlugin() {
 				chat->setManager( nullptr );
 			} );
 	}
-
-	waitUntilLoaded();
-	mShuttingDown = true;
-	unsubscribeFileSystemListener();
-
+	if ( getPluginContext() && getPluginContext()->getMainLayout() ) {
+		getPluginContext()->getMainLayout()->unsetCommand( "new-ai-assistant" );
+		getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind(
+			"new-ai-assistant" );
+	}
+	PluginBase::unregisterEditors();
 	if ( mAIChatButton ) {
 		if ( mAIChatButtonPosCbId )
 			mAIChatButton->getParent()->removeEventListener( mAIChatButtonPosCbId );
 		mAIChatButton->close();
+		mAIChatButton = nullptr;
 	}
 	getPluginContext()->getConfig().removeTabWidgetType( "llm_chatui" );
 }

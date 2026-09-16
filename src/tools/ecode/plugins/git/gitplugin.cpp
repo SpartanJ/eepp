@@ -210,27 +210,8 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 GitPlugin::~GitPlugin() {
-	mLifetime.invalidate();
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mCommitDetails.cancelDiffPreparation();
-	mDetachedHistory.details.cancelDiffPreparation();
-	mConflictViewCloseConnection.disconnect();
-	mConflictView = nullptr;
-	mConflictSessions.clear();
-	if ( mStatusButton )
-		mStatusButton->close();
-
-	if ( mSidePanel && mTab )
-		mSidePanel->removeTab( mTab );
-
-	endModelStyler();
-
-	if ( getUISceneNode() )
-		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
-
-	if ( mStatusBar && mRepositionCbId )
-		mStatusBar->removeEventListener( mRepositionCbId );
 
 	{
 		Lock l( mGitBranchMutex );
@@ -257,6 +238,31 @@ GitPlugin::~GitPlugin() {
 
 	while ( *mRunningAsyncTasks )
 		Sys::sleep( Milliseconds( 1.f ) );
+}
+
+void GitPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	mCommitDetails.cancelDiffPreparation();
+	mDetachedHistory.details.cancelDiffPreparation();
+	mConflictViewCloseConnection.disconnect();
+	mConflictView = nullptr;
+	mConflictSessions.clear();
+	if ( mStatusButton ) {
+		mStatusButton->close();
+		mStatusButton = nullptr;
+	}
+	if ( mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab );
+		mTab = nullptr;
+	}
+	endModelStyler();
+	if ( getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+	if ( mStatusBar && mRepositionCbId ) {
+		mStatusBar->removeEventListener( mRepositionCbId );
+		mRepositionCbId = 0;
+	}
+	PluginBase::unregisterEditors();
 }
 
 void GitPlugin::onSaveState( IniFile* state ) {
@@ -1442,6 +1448,56 @@ void GitPlugin::unstage( const std::vector<std::string>& files ) {
 	runFileOperation( files, FileOperation::Unstage );
 }
 
+void GitPlugin::deleteUntrackedFiles( std::vector<std::string> files ) {
+	std::string projectPath = this->projectPath();
+	if ( files.empty() || projectPath.empty() )
+		return;
+
+	String message =
+		files.size() == 1
+			? String::fromUtf8( String::format(
+				  i18n( "git_confirm_delete_untracked_item",
+						"Are you sure you want to permanently delete the untracked item:\n%s?" )
+					  .toUtf8(),
+				  files.front() ) )
+			: String::fromUtf8( String::format(
+				  i18n( "git_confirm_delete_untracked_items",
+						"Are you sure you want to permanently delete %d untracked items?" )
+					  .toUtf8(),
+				  static_cast<int>( files.size() ) ) );
+	std::string failureMessage =
+		i18n( "git_delete_untracked_failed", "Could not delete the following untracked items:" )
+			.toUtf8();
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, message );
+	msgBox->on(
+		Event::OnConfirm, [this, files = std::move( files ), projectPath = std::move( projectPath ),
+						   failureMessage = std::move( failureMessage )]( const Event* ) mutable {
+			runAsync(
+				[files = std::move( files ), projectPath = std::move( projectPath ),
+				 failureMessage = std::move( failureMessage )]() {
+					Git::Result result;
+					for ( const auto& file : files ) {
+						const std::string path = isPath( file ) ? file : projectPath + file;
+						FileInfo info( path, true );
+						const bool removed = info.isDirectory() ? FileSystem::dirRemoveAll( path )
+																: FileSystem::fileRemove( path );
+						if ( !removed ) {
+							result.returnCode = EXIT_FAILURE;
+							if ( result.result.empty() )
+								result.result = failureMessage;
+							result.result += "\n" + file;
+						}
+					}
+					return result;
+				},
+				true, false, false, false, true );
+		} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "delete", "Delete" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
 void GitPlugin::runFileOperation( std::vector<std::string> files, FileOperation operation ) {
 	if ( files.empty() )
 		return;
@@ -2363,7 +2419,16 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
+	TextDocument* doc = editor->getDocumentRef().get();
 	PluginBase::onUnregister( editor );
+	if ( mDocs.find( doc ) == mDocs.end() ) {
+		doc->removeCommand( "show-source-control-tab" );
+		doc->removeCommand( "git-pull" );
+		doc->removeCommand( "git-push" );
+		doc->removeCommand( "git-fetch" );
+		doc->removeCommand( "git-commit" );
+		doc->removeCommand( "git-show-history" );
+	}
 }
 
 bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vector2i& /*position*/,
@@ -3723,6 +3788,8 @@ void GitPlugin::buildSidePanelTab() {
 							 type == Git::GitStatusType::Changed )
 							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ),
 									 "diff-added" );
+						if ( type == Git::GitStatusType::Untracked )
+							menuAdd( menu, "git-delete-untracked", i18n( "delete", "Delete" ) );
 
 						if ( type == Git::GitStatusType::Changed ) {
 							menuAdd( menu, "git-diff-changed",
@@ -3750,6 +3817,10 @@ void GitPlugin::buildSidePanelTab() {
 							} else if ( id == "git-unstage-all" ) {
 								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
+							} else if ( id == "git-delete-untracked" ) {
+								deleteUntrackedFiles( model->getFiles(
+									repoFullName( repoPath ),
+									static_cast<Uint32>( Git::GitStatusType::Untracked ) ) );
 							} else if ( id == "git-discard-all" ) {
 								auto discardFiles = model->getFiles( repoFullName( repoPath ),
 																	 static_cast<Uint32>( type ) );
@@ -3954,10 +4025,12 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 	bool hasStaged = false;
 	bool hasUnstaged = false;
 	bool hasUnmerged = false;
+	bool allUntracked = true;
 	for ( const auto& file : files ) {
 		hasStaged |= file.report.type == Git::GitStatusType::Staged;
 		hasUnstaged |= file.report.type != Git::GitStatusType::Staged;
 		hasUnmerged |= file.report.type == Git::GitStatusType::Unmerged;
+		allUntracked &= file.report.type == Git::GitStatusType::Untracked;
 	}
 	if ( hasUnmerged ) {
 		if ( !multiple ) {
@@ -4003,13 +4076,18 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 	if ( hasStaged )
 		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ), "diff-removed" );
 
-	menu->addSeparator();
-
 	const bool hasDiscardable = std::any_of( files.begin(), files.end(), []( const auto& file ) {
 		return file.report.type == Git::GitStatusType::Changed;
 	} );
+
+	if ( hasDiscardable || allUntracked )
+		menu->addSeparator();
+
 	if ( hasDiscardable )
 		menuAdd( menu, "git-discard", i18n( "git_discard", "Discard" ) );
+
+	if ( allUntracked )
+		menuAdd( menu, "git-delete-untracked", i18n( "delete", "Delete" ) );
 
 	menu->on( Event::OnItemClicked,
 			  [this, files = std::move( files )]( const Event* event ) mutable {
@@ -4037,6 +4115,10 @@ void GitPlugin::openFileStatusMenu( std::vector<Git::DiffFile> files ) {
 						  discard( paths.front() );
 					  else
 						  discard( paths );
+				  } else if ( id == "git-delete-untracked" ) {
+					  for ( const auto& file : files )
+						  paths.emplace_back( file.file );
+					  deleteUntrackedFiles( std::move( paths ) );
 				  } else if ( id == "git-open-file" ) {
 					  for ( const auto& file : files )
 						  openFile( file.file );

@@ -115,6 +115,8 @@ bool App::isAnyTerminalDirty() const {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	if ( mClosing )
+		return true;
 	if ( mSplitter->isAnyEditorDirty() &&
 		 ( !mConfig.workspace.sessionSnapshot || mCurrentProject.empty() ) ) {
 		if ( mCloseMsgBox )
@@ -127,6 +129,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
 			saveConfig();
+			beginClosing();
 			mWindow->close();
 		} );
 		mCloseMsgBox->on( Event::OnWindowClose, [this]( auto ) { mCloseMsgBox = nullptr; } );
@@ -147,6 +150,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
 			saveConfig();
+			beginClosing();
 			mWindow->close();
 		} );
 		mCloseMsgBox->on( Event::OnWindowClose, [this]( auto ) { mCloseMsgBox = nullptr; } );
@@ -158,8 +162,17 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	} else {
 		saveProject();
 		saveConfig();
+		beginClosing();
 		return true;
 	}
+}
+
+void App::beginClosing() {
+	if ( mClosing )
+		return;
+	mClosing = true;
+	if ( mPluginManager )
+		mPluginManager->beginShutdown();
 }
 
 void App::saveDoc() {
@@ -756,9 +769,16 @@ void App::initPluginManager() {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
-			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
-				mLifetime.weakHandle().run( [plugin]( App* app ) {
-					app->onPluginEnabled( static_cast<Plugin*>( plugin ) );
+			const std::string pluginId( plugin->getId() );
+			plugin->addOnReadyCallback( [lifetime = mLifetime.weakHandle(), pluginId](
+											UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+				Plugin* readyPlugin = static_cast<Plugin*>( plugin );
+				lifetime.run( [pluginId, readyPlugin]( App* app ) {
+					Plugin* currentPlugin =
+						app->mPluginManager ? app->mPluginManager->get( pluginId ) : nullptr;
+					if ( currentPlugin == readyPlugin && !app->mPluginManager->isClosing() &&
+						 currentPlugin->isReady() )
+						app->onPluginEnabled( currentPlugin );
 				} );
 				plugin->removeReadyCallback( cbId );
 			} );
@@ -911,6 +931,8 @@ std::shared_ptr<ThreadPool> App::getThreadPool() const {
 }
 
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
+	if ( mClosing || !mWindow || !mWindow->isRunning() )
+		return false;
 	if ( mSplitter->curEditorExistsAndFocused() ) {
 		std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
@@ -1872,6 +1894,7 @@ void App::loadFileDelayed() {
 	if ( mFileToOpen.empty() )
 		return;
 
+	const bool readOnly = mFileToOpenReadOnly;
 	auto fileAndPos = getPathAndPosition( mFileToOpen );
 	auto tab = mSplitter->isDocumentOpen( fileAndPos.first, false, true );
 
@@ -1879,6 +1902,8 @@ void App::loadFileDelayed() {
 		tab->getTabWidget()->setTabSelected( tab );
 		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( readOnly )
+				editor->setLocked( true );
 			if ( editor->getDocument().isLoading() ) {
 				Uint32 cb =
 					editor->on( Event::OnDocumentLoaded, [this, fileAndPos]( const Event* event ) {
@@ -1903,8 +1928,10 @@ void App::loadFileDelayed() {
 		}
 	} else {
 		loadFileFromPath( fileAndPos.first, true, nullptr,
-						  [this, fileAndPos]( UICodeEditor* editor, const std::string& ) {
-							  editor->runOnMainThread( [this, editor, fileAndPos] {
+						  [this, fileAndPos, readOnly]( UICodeEditor* editor, const std::string& ) {
+							  editor->runOnMainThread( [this, editor, fileAndPos, readOnly] {
+								  if ( readOnly )
+									  editor->setLocked( true );
 								  editor->goToLine( fileAndPos.second );
 								  mSplitter->addEditorPositionToNavigationHistory( editor );
 								  UITab* tab = mSplitter->tabFromEditor( editor );
@@ -1916,6 +1943,7 @@ void App::loadFileDelayed() {
 	}
 
 	mFileToOpen.clear();
+	mFileToOpenReadOnly = false;
 }
 
 const std::string& App::getThemesPath() const {
@@ -2156,85 +2184,77 @@ static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryMo
 KeyBindings::ShortcutMap App::getLocalKeybindings() {
 	return {
 		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
-			{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
-			  "fullscreen-toggle" },
-			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-			{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
-			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-			{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
-			{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
-			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+		{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
+		  "fullscreen-toggle" },
+		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
+		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
+		{ { KEY_COMMA, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-project-settings" },
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-			{ { KEY_F9, KeyMod::getDefaultSecondaryModifier() }, "switch-side-panel" },
-			{ { KEY_J, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "terminal-split-left" },
-			{ { KEY_L, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "terminal-split-right" },
-			{ { KEY_I, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "terminal-split-top" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "terminal-split-bottom" },
-			{ { KEY_S, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "terminal-split-swap" },
-			{ { KEY_T, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() |
-						   KEYMOD_SHIFT },
-			  "reopen-closed-tab" },
-			{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
-			{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
-			{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
-			{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
-			{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
-			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "project-build-start-cancel" },
-			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-			{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
-			{ { KEY_O, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
-			  "show-open-documents" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-workspace-symbol-search" },
-			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-document-symbol-search" },
-			{ { KEY_N, KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() },
-			  "create-new-window" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+		{ { KEY_F9, KeyMod::getDefaultSecondaryModifier() }, "switch-side-panel" },
+		{ { KEY_J,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "terminal-split-left" },
+		{ { KEY_L,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "terminal-split-right" },
+		{ { KEY_I,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "terminal-split-top" },
+		{ { KEY_K,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "terminal-split-bottom" },
+		{ { KEY_S,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "terminal-split-swap" },
+		{ { KEY_T,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "reopen-closed-tab" },
+		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
+		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
+		{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
+		{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
+		{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
+		{ { KEY_O, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
+		{ { KEY_N, KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() }, "create-new-window" },
 	};
 }
 
 // Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return {
-		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
-			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
-			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
-			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
-			{ "switch-to-last-tab", "alt+0" },
+	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
+			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
+			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
+			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
+			 { "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ "menu-toggle", "mod+shift+m" },
+			 { "menu-toggle", "mod+shift+m" },
 #endif
-			{ "lock-toggle", "mod+shift+l" }, { "debug-widget-tree-view", "f11" },
-			{ "project-build-and-run", "f5" }, {
-			"project-build-start", "mod+shift+b"
-		}
-	};
+			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
+			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -4039,7 +4059,7 @@ void App::discardEmptyTab() {
 	}
 };
 
-void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean ) {
+void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean, bool readOnly ) {
 	initProjectTreeViewUI();
 
 	const auto getInitialPosition = []( std::string& path ) -> TextPosition {
@@ -4068,9 +4088,13 @@ void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean 
 						String::startsWith( path, "http://" ) ) {
 				if ( !openedFolder )
 					loadFolder( "." );
-				loadFileFromPath( path, inNewTab );
+				loadFileFromPath( path, inNewTab, nullptr,
+								  [readOnly]( UICodeEditor* editor, const std::string& ) {
+									  if ( readOnly )
+										  editor->setLocked( true );
+								  } );
 			} else {
-				std::string rpath( FileSystem::getRealPath( paths[0] ) );
+				std::string rpath( FileSystem::getRealPath( path ) );
 				std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
 
 				if ( !inNewTab && FileSystem::isDirectory( folderPath ) ) {
@@ -4093,9 +4117,11 @@ void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean 
 					if ( mFileSystemListener )
 						mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-					auto forcePosition = getForcePositionFn( getInitialPosition( paths[0] ) );
-					auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
-														   const std::string& path ) {
+					auto forcePosition = getForcePositionFn( getInitialPosition( path ) );
+					auto onLoaded = [this, forcePosition, readOnly]( UICodeEditor* codeEditor,
+																	 const std::string& path ) {
+						if ( readOnly )
+							codeEditor->setLocked( true );
 						if ( forcePosition )
 							forcePosition( codeEditor, path );
 						syncProjectTreeWithEditor( mSplitter->getCurEditor() );
@@ -4112,8 +4138,10 @@ void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean 
 					mSettings->updateProjectSettingsMenu();
 				} else {
 					auto forcePosition = getForcePositionFn( getInitialPosition( path ) );
-					auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
-														   const std::string& path ) {
+					auto onLoaded = [this, forcePosition, readOnly]( UICodeEditor* codeEditor,
+																	 const std::string& path ) {
+						if ( readOnly )
+							codeEditor->setLocked( true );
 						if ( forcePosition )
 							forcePosition( codeEditor, path );
 						syncProjectTreeWithEditor( mSplitter->getCurEditor() );
@@ -4458,7 +4486,7 @@ std::string App::firstInstanceIndicatorPath() const {
 	return mConfigPath + "first-instance";
 }
 
-bool App::needsRedirectToRunningProcess( std::string file ) {
+bool App::needsRedirectToRunningProcess( std::string file, bool readOnly ) {
 	if ( mConfig.ui.openFilesInNewWindow || file.empty() )
 		return false;
 
@@ -4496,6 +4524,8 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 			   } );
 
 	json message{ { "type", "open" }, { "path", finfo.getFilepath() } };
+	if ( readOnly )
+		message["read_only"] = true;
 	if ( position.isValid() ) {
 		message["line"] = position.line();
 		message["column"] = position.column();
@@ -4578,7 +4608,7 @@ void App::init( InitParameters& params ) {
 		return;
 
 	if ( !params.openClean && params.files.size() == 1 &&
-		 needsRedirectToRunningProcess( params.files[0] ) )
+		 needsRedirectToRunningProcess( params.files[0], params.readOnly ) )
 		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
@@ -5152,15 +5182,24 @@ void App::init( InitParameters& params ) {
 					return;
 				std::string path = message["path"].get<std::string>();
 				TextPosition initialPosition;
+				bool readOnly = message.value( "read_only", false );
 				if ( message.contains( "line" ) && message["line"].is_number_integer() ) {
 					initialPosition = TextPosition( message["line"].get<Int64>(),
 													message.value<Int64>( "column", 0 ) );
 				}
 				if ( FileSystem::fileExists( path ) ) {
 					mUISceneNode->runOnMainThread(
-						[this, path = std::move( path ), initialPosition] {
-							loadFileFromPathOrFocus( path, true, nullptr,
-													 getForcePositionFn( initialPosition ) );
+						[this, path = std::move( path ), initialPosition, readOnly] {
+							loadFileFromPathOrFocus(
+								path, true, nullptr,
+								[this, initialPosition, readOnly]( UICodeEditor* editor,
+																   const std::string& path ) {
+									if ( readOnly )
+										editor->setLocked( true );
+									auto forcePosition = getForcePositionFn( initialPosition );
+									if ( forcePosition )
+										forcePosition( editor, path );
+								} );
 							if ( !mWindow->hasFocus() ) {
 								if ( mWindow->isMinimized() )
 									mWindow->restore();
@@ -5241,10 +5280,11 @@ void App::init( InitParameters& params ) {
 			loadDiffFromPaths( params.files[0], params.files[1] );
 			discardEmptyTab();
 		} else {
-			initProjectTreeView( std::move( params.files ), params.openClean );
+			initProjectTreeView( std::move( params.files ), params.openClean, params.readOnly );
 		}
 
 		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
+		mFileToOpenReadOnly = params.readOnly;
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
@@ -5347,6 +5387,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "css" } );
 	args::Flag terminal( parser, "terminal", "Open a new terminal / Open ecode in terminal mode",
 						 { 't', "terminal" } );
+	args::Flag readOnly( parser, "read-only", "Open input files in read-only mode",
+						 { 'r', "read-only" } );
 	args::MapFlag<std::string, LogLevel> logLevel(
 		parser, "log-level", "The level of details that the application will emit logs.",
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
@@ -5516,6 +5558,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	params.disablePlugins = disablePlugins.Get();
 	params.redirectToFirstInstance = redirectToFirstInstance.Get();
 	params.diff = diff.Get();
+	params.readOnly = readOnly.Get();
 
 	if ( params.diff ) {
 		if ( params.files.size() != 2 ) {

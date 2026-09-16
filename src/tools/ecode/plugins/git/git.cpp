@@ -1300,6 +1300,19 @@ std::string Git::repoPath( const std::string& file ) {
 	return mProjectPath;
 }
 
+static void appendDecodedGitPath( std::string& decoded, std::string_view path ) {
+	if ( path.size() < 2 || path.front() != '"' || path.back() != '"' ) {
+		decoded.append( path );
+		return;
+	}
+
+	auto unescaped = String::unescape( path.substr( 1, path.size() - 2 ) );
+	if ( decoded.empty() )
+		decoded = std::move( unescaped );
+	else
+		decoded += unescaped;
+}
+
 Git::Result Git::gitSimple( const std::string& cmd, const std::string& projectDir ) {
 	std::string buf;
 	int retCode = git( cmd, projectDir, buf );
@@ -1381,7 +1394,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
 				}
 
-				std::string filePath = subModulePath + file;
+				std::string filePath{ subModulePath };
+				appendDecodedGitPath( filePath, file );
 				auto repo = repoName( filePath, false, projectDir );
 				auto repoIt = s.files.find( repo );
 				bool found = false;
@@ -1449,7 +1463,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 							   file.substr( matches[3].start, matches[3].end - matches[3].start );
 					}
 
-					auto filePath = subModulePath + file;
+					std::string filePath{ subModulePath };
+					appendDecodedGitPath( filePath, file );
 					auto repo = repoName( filePath, false, projectDir );
 					auto repoIt = s.files.find( repo );
 					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,

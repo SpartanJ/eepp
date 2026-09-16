@@ -652,6 +652,21 @@ Int32 TerminalDisplay::getCurrentSearchMatch() const {
 	return mSnapshot ? mSnapshot->currentSearchMatch : -1;
 }
 
+bool TerminalDisplay::getVisibleCurrentSearchMatch( Vector2i& start, Vector2i& end ) const {
+	if ( !mSnapshot )
+		return false;
+	bool found = false;
+	for ( const auto& match : mSnapshot->visibleSearchMatches ) {
+		if ( match.active ) {
+			if ( !found )
+				start = match.start;
+			end = match.end;
+			found = true;
+		}
+	}
+	return found;
+}
+
 Uint64 TerminalDisplay::getSearchRequestId() const {
 	return mSnapshot ? mSnapshot->searchRequestId : 0;
 }
@@ -1252,6 +1267,18 @@ static inline Color termColor( unsigned int terminalColor, const std::vector<Col
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
 }
 
+static inline void applySearchHighlight( Int32 mode, const std::vector<Color>& colors, Color& fg,
+										 Color& bg ) {
+	if ( mode & ATTR_SEARCH_ACTIVE ) {
+		fg = termColor( 0, colors );
+		bg = termColor( 3, colors );
+	} else if ( mode & ATTR_SEARCH_MATCH ) {
+		Color highlight = termColor( 3, colors );
+		highlight.a = 90;
+		bg = Color::blend( highlight, bg );
+	}
+}
+
 void TerminalDisplay::drawrect( const Color& col, const float& x, const float& y, const float& w,
 								const float& h ) {
 	if ( mVBStyles.empty() ) {
@@ -1471,11 +1498,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			if ( glyph.mode & ATTR_REVERSE )
 				bg = fg;
-			if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
-				Color highlight = mColorScheme.getCursor();
-				highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
-				bg = Color::blend( highlight, bg );
-			}
+			applySearchHighlight( glyph.mode, mColors, fg, bg );
 
 			bool isWide = glyph.mode & ATTR_WIDE;
 
@@ -1530,11 +1553,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				}
 				if ( glyph.mode & ATTR_REVERSE )
 					background = foreground;
-				if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
-					Color highlight = mColorScheme.getCursor();
-					highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
-					background = Color::blend( highlight, background );
-				}
+				applySearchHighlight( glyph.mode, mColors, foreground, background );
 				const bool wide = glyph.mode & ATTR_WIDE;
 				const Float advance = spaceCharAdvanceX * ( wide ? 2.0f : 1.0f );
 				if ( background != defaultBg ) {
@@ -1592,11 +1611,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				fg = bg;
 				bg = temp;
 			}
-			if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) ) {
-				Color highlight = mColorScheme.getCursor();
-				highlight.a = glyph.mode & ATTR_SEARCH_ACTIVE ? 190 : 90;
-				bg = Color::blend( highlight, bg );
-			}
+			applySearchHighlight( glyph.mode, mColors, fg, bg );
 
 			if ( glyph.mode & ATTR_BLINK && ( mMode & MODE_BLINK ) )
 				fg = bg;
