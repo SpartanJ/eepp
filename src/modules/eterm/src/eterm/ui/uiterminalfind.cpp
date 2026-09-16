@@ -198,13 +198,10 @@ void UITerminalFind::updatePosition() {
 	Vector2i start;
 	Vector2i end;
 	auto term = mTerminal->getTerm();
-	if ( term->getVisibleCurrentSearchMatch( start, end ) && start.y == 0 ) {
+	if ( term->getVisibleCurrentSearchMatch( start, end ) && start.y <= 1 ) {
 		const Sizei cellSize = term->getCellPixelSize();
 		const Rectf& padding = term->getPadding();
-		const Float matchLeft = padding.Left + start.x * cellSize.getWidth();
-		const Float matchRight = padding.Left + ( end.x + 1 ) * cellSize.getWidth();
-		if ( matchRight > x && matchLeft < x + getSize().getWidth() )
-			y = padding.Top + cellSize.getHeight();
+		y = padding.Top + ( end.y + 1 ) * cellSize.getHeight();
 	}
 	const Vector2f position( x, y );
 	if ( getPosition() != position )
