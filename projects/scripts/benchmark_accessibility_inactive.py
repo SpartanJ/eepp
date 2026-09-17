@@ -47,6 +47,7 @@ def run_sample(args, disabled):
 	result = json.loads(completed.stdout)
 	result["wall_ms"] = wall_ms
 	result["initialization_ms"] = result.pop("initialization_us") / 1000
+	result["readiness_ms"] = result.pop("readiness_us") / 1000
 	result["notifications_ms"] = result.pop("notifications_us") / 1000
 	return result
 

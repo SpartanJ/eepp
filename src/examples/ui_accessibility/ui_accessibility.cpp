@@ -104,14 +104,25 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	auto status = content->find<UITextView>( "status" );
 	if ( benchmarkInactive ) {
+		auto manager = scene->getAccessibilityManager();
 		Clock clock;
-		scene->getAccessibilityManager()->update();
+		manager->update();
 		const auto initializationUs = clock.getElapsedTime().asMicroseconds();
+		clock.restart();
+		if ( !std::getenv( "EEPP_DISABLE_ACCESSIBILITY" ) ) {
+			while ( !manager->isBackendInitializationComplete() &&
+					clock.getElapsedTime() < Seconds( 1 ) ) {
+				Sys::sleep( Milliseconds( 1 ) );
+				manager->update();
+			}
+		}
+		const auto readinessUs = clock.getElapsedTime().asMicroseconds();
 		clock.restart();
 		for ( size_t i = 0; i < benchmarkIterations; ++i )
 			status->setText( i & 1 ? "Ready" : "Idle" );
 		const auto notificationsUs = clock.getElapsedTime().asMicroseconds();
 		std::cout << "{\"initialization_us\":" << initializationUs
+				  << ",\"readiness_us\":" << readinessUs
 				  << ",\"iterations\":" << benchmarkIterations
 				  << ",\"notifications_us\":" << notificationsUs << "}\n";
 		return EXIT_SUCCESS;

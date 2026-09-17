@@ -302,6 +302,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		return mInitialized.load( std::memory_order_acquire ) && mConnection != nullptr;
 	}
 
+	bool isInitialized() const { return mInitialized.load( std::memory_order_acquire ); }
+
 	bool hasActiveClients() const { return mHasActiveClients.load( std::memory_order_acquire ); }
 
 	void update() {
@@ -1586,6 +1588,10 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 	}
 
 	bool isAvailable() const { return mApplication && mApplication->isAvailable(); }
+
+	bool isInitializationComplete() const override {
+		return mApplication && mApplication->isInitialized();
+	}
 
 	bool hasActiveClients() const { return mApplication && mApplication->hasActiveClients(); }
 

@@ -14,6 +14,8 @@ class AccessibilityBackend {
 
 	virtual bool isAvailable() const = 0;
 
+	virtual bool isInitializationComplete() const { return true; }
+
 	virtual bool hasActiveClients() const { return false; }
 
 	virtual void update() {}

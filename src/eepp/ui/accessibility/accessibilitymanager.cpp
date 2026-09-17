@@ -261,6 +261,10 @@ bool AccessibilityManager::isBackendAvailable() const {
 	return mBackend && mBackend->isAvailable();
 }
 
+bool AccessibilityManager::isBackendInitializationComplete() const {
+	return mBackend && mBackend->isInitializationComplete();
+}
+
 bool AccessibilityManager::hasActiveNativeClients() const {
 	return mBackend && mBackend->hasActiveClients();
 }

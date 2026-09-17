@@ -210,6 +210,7 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 				 nullptr );
 	app.getUI()->getAccessibilityManager()->update();
 	EXPECT_FALSE( app.getUI()->getAccessibilityManager()->isBackendAvailable() );
+	EXPECT_TRUE( app.getUI()->getAccessibilityManager()->isBackendInitializationComplete() );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	ASSERT_TRUE( app.getUI()->getUIIconThemeManager()->getCurrentTheme() != nullptr );
 	EXPECT_TRUE( app.getUI()->getUIIconThemeManager()->findIcon( "go-up" ) != nullptr );

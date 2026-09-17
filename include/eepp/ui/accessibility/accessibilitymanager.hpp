@@ -43,6 +43,8 @@ class EE_API AccessibilityManager {
 
 	bool isBackendAvailable() const;
 
+	bool isBackendInitializationComplete() const;
+
 	bool hasActiveNativeClients() const;
 
 	/** Updates the scene's cached fast-path flag after an actual native accessibility query. */
