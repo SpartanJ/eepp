@@ -890,6 +890,14 @@ file in the directory tree.</string>
 	<string name="enable_exclusive_mode_by_default">默认启用独占模式</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">在新建终端中禁用全局快捷键。</string>
 	<string name="file_associations">文件关联</string>
+	<string name="apply">应用</string>
+	<string name="extension">扩展名</string>
+	<string name="registered">已注册</string>
+	<string name="install_desktop_entry">安装应用程序启动器</string>
+	<string name="system_file_associations">系统文件关联</string>
+	<string name="system_file_associations_desc">让 ecode 可用于所选文件扩展名。操作系统可能仍会要求确认默认应用程序。</string>
+	<string name="file_associations_updated">文件关联已更新。</string>
+	<string name="file_associations_update_failed">无法更新文件关联。</string>
 	<string name="folds_refresh_freq">折叠区域刷新频率</string>
 	<string name="full">完全</string>
 	<string name="grayscale">灰度</string>

@@ -10,6 +10,7 @@
 #include <eepp/system/container.hpp>
 #include <eepp/system/cpu.hpp>
 #include <eepp/system/directorypack.hpp>
+#include <eepp/system/fileassociation.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/filemapped.hpp>
 #include <eepp/system/filesystem.hpp>

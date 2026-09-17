@@ -657,7 +657,7 @@ function generate_os_links()
 	elseif os.istarget("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then

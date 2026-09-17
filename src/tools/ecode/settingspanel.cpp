@@ -6,9 +6,186 @@
 #include "settingsdocument.hpp"
 #include "settingspage.hpp"
 #include "uitreeviewfs.hpp"
+#include <atomic>
+#include <eepp/system/fileassociation.hpp>
 #include <limits>
+#include <unordered_set>
 
 namespace ecode {
+
+class FileAssociationsModel final : public Model {
+  public:
+	enum Columns { Registered, Extension, Count };
+
+	struct Entry {
+		std::string extension;
+		bool registered{ false };
+	};
+
+	FileAssociationsModel( std::vector<std::string> extensions,
+						   const std::vector<std::string>& registered, String registeredColumn,
+						   String extensionColumn ) :
+		mRegisteredColumn( std::move( registeredColumn ) ),
+		mExtensionColumn( std::move( extensionColumn ) ) {
+		std::unordered_set<std::string> registeredSet( registered.begin(), registered.end() );
+		mEntries.reserve( extensions.size() );
+		for ( auto& extension : extensions )
+			mEntries.push_back( { extension, registeredSet.contains( extension ) } );
+	}
+
+	size_t rowCount( const ModelIndex& = {} ) const { return mEntries.size(); }
+
+	size_t columnCount( const ModelIndex& = {} ) const { return Count; }
+
+	std::string columnName( const size_t& column ) const {
+		return column == Registered ? mRegisteredColumn.toUtf8() : mExtensionColumn.toUtf8();
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		if ( !index.isValid() || static_cast<size_t>( index.row() ) >= mEntries.size() )
+			return {};
+		const auto& entry = mEntries[index.row()];
+		if ( role == ModelRole::Data && index.column() == Registered )
+			return Variant( entry.registered );
+		if ( role == ModelRole::Display && index.column() == Extension )
+			return Variant( '.' + entry.extension );
+		return {};
+	}
+
+	void setRegistered( size_t row, bool registered ) {
+		if ( row < mEntries.size() )
+			mEntries[row].registered = registered;
+	}
+
+	void setAllRegistered( bool registered ) {
+		for ( auto& entry : mEntries )
+			entry.registered = registered;
+		invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+	}
+
+	std::vector<std::string> extensions() const {
+		std::vector<std::string> extensions;
+		extensions.reserve( mEntries.size() );
+		for ( const auto& entry : mEntries )
+			extensions.emplace_back( entry.extension );
+		return extensions;
+	}
+
+	std::vector<std::string> registeredExtensions() const {
+		std::vector<std::string> extensions;
+		for ( const auto& entry : mEntries ) {
+			if ( entry.registered )
+				extensions.emplace_back( entry.extension );
+		}
+		return extensions;
+	}
+
+  private:
+	std::vector<Entry> mEntries;
+	String mRegisteredColumn;
+	String mExtensionColumn;
+};
+
+class FileAssociationTableCell final : public UITableCell {
+  public:
+	static FileAssociationTableCell* New( const std::string& tag, FileAssociationsModel* model,
+										  ModelIndex index ) {
+		return eeNew( FileAssociationTableCell, ( tag, model, index ) );
+	}
+
+	FileAssociationTableCell( const std::string& tag, FileAssociationsModel* model,
+							  ModelIndex index ) :
+		UITableCell( tag,
+					 [model, index]( UIPushButton* ) -> UITextView* {
+						 auto* check = UICheckBox::New();
+						 check->setCheckMode( UICheckBox::Button );
+						 check->setChecked( model->data( index, ModelRole::Data ).asBool() );
+						 return check;
+					 } ),
+		mModel( model ) {}
+
+	void updateCell( Model* model ) {
+		if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
+			auto* check = mTextBox->asType<UICheckBox>();
+			mUpdating = true;
+			check->setChecked( model->data( getCurIndex(), ModelRole::Data ).asBool() );
+			mUpdating = false;
+			if ( !mListening ) {
+				check->on( Event::OnValueChange, [this, check]( const Event* ) {
+					if ( !mUpdating )
+						mModel->setRegistered( getCurIndex().row(), check->isChecked() );
+				} );
+				mListening = true;
+			}
+		}
+	}
+
+  private:
+	FileAssociationsModel* mModel{ nullptr };
+	bool mUpdating{ false };
+	bool mListening{ false };
+};
+
+class UIFileAssociationsTableView final : public UITableView {
+  public:
+	static UIFileAssociationsTableView* New() { return eeNew( UIFileAssociationsTableView, () ); }
+
+	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+		if ( index.column() == FileAssociationsModel::Registered ) {
+			auto* cell = FileAssociationTableCell::New(
+				mTag + "::cell", static_cast<FileAssociationsModel*>( getModel() ), index );
+			cell->getTextView()->setEnabled( true );
+			cell->setDontAutoHideEmptyTextBox( true );
+			return setupCell( cell, rowWidget, index );
+		}
+		return UITableView::createCell( rowWidget, index );
+	}
+
+  private:
+	UIFileAssociationsTableView() : UITableView() {}
+};
+
+struct FileAssociationsViewState {
+	std::shared_ptr<FileAssociationsModel> model;
+	std::atomic<bool> applying{ false };
+	UIWidget* layout{ nullptr };
+	UICheckBox* desktopEntry{ nullptr };
+	UIFileAssociationsTableView* table{ nullptr };
+	UIPushButton* selectAll{ nullptr };
+	UIPushButton* clear{ nullptr };
+	UIPushButton* apply{ nullptr };
+
+	void setControlsEnabled( bool enabled ) {
+		if ( desktopEntry )
+			desktopEntry->setEnabled( enabled );
+		if ( table )
+			table->setEnabled( enabled );
+		if ( selectAll )
+			selectAll->setEnabled( enabled );
+		if ( clear )
+			clear->setEnabled( enabled );
+		if ( apply )
+			apply->setEnabled( enabled );
+	}
+
+	void clearControls() {
+		layout = nullptr;
+		desktopEntry = nullptr;
+		table = nullptr;
+		selectAll = nullptr;
+		clear = nullptr;
+		apply = nullptr;
+	}
+};
+
+static FileAssociationApplication fileAssociationApplication( App* app ) {
+	auto executablePath = Sys::getProcessFilePath();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return { "ecode", "ecode", executablePath, "\"" + executablePath + "\",0" };
+#else
+	return { "ecode", "ecode", std::move( executablePath ), app->resPath() + "icon/ecode.png" };
+#endif
+}
 
 SettingsPanel::SettingsPanel( App* app ) :
 	mApp( app ), mLifetime( this, app ? app->getUISceneNode() : nullptr ) {}
@@ -160,6 +337,11 @@ void SettingsPanel::addAction( PanelState& state, SettingDescriptor binding,
 	state.panel->addAction( std::move( binding ), buttonText, std::move( action ) );
 }
 
+void SettingsPanel::addCustomWidget( PanelState& state, SettingDescriptor binding,
+									 std::function<UIWidget*( UIWidget* parent )> create ) {
+	state.panel->addCustomWidget( std::move( binding ), std::move( create ) );
+}
+
 void SettingsPanel::refreshTextSetting( PanelState& state, const std::string& id ) {
 	state.panel->refreshTextSetting( id );
 }
@@ -211,6 +393,119 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 					  "Animate scrolling from mouse wheels and trackpads." ) },
 		&mApp->getConfig().ui.smoothScroll,
 		[this]( bool value ) { mApp->getUISceneNode()->setSmoothScrollEnabled( value, true ); } );
+
+	if ( FileAssociation::isSupported() ) {
+		addCategory( panel, "general.file_associations", mApp->i18n( "general", "General" ),
+					 mApp->i18n( "file_associations", "File Associations" ) );
+		auto application = fileAssociationApplication( mApp );
+		auto extensions = SyntaxDefinitionManager::instance()->getFileExtensions();
+		FileAssociation association( application );
+		auto registered = association.getRegisteredExtensions( extensions );
+		auto viewState = std::make_shared<FileAssociationsViewState>();
+		viewState->model = std::make_shared<FileAssociationsModel>(
+			std::move( extensions ), registered, mApp->i18n( "registered", "Registered" ),
+			mApp->i18n( "extension", "Extension" ) );
+		const bool desktopEntryInstalled = association.isDesktopEntryInstalled();
+		addCustomWidget(
+			panel,
+			{ "systemFileAssociations", "general.file_associations",
+			  mApp->i18n( "system_file_associations", "System File Associations" ),
+			  mApp->i18n(
+				  "system_file_associations_desc",
+				  "Make ecode available for the selected file extensions. The operating system may "
+				  "still ask you to confirm the default application." ) },
+			[this, application = std::move( application ), viewState,
+			 desktopEntryInstalled]( UIWidget* parent ) {
+				static constexpr const char* layoutSource = R"xml(
+<vbox id="file_associations_container" lw="mp" lh="wc">
+	<CheckBox id="install_desktop_entry" lw="wc" lh="wc" margin-bottom="6dp" />
+	<vbox id="file_associations_table_container" lw="mp" lh="320dp" />
+	<hbox lw="mp" lh="wc" margin-top="8dp" gravity="right">
+		<PushButton id="select_all_associations" lw="wc" lh="wc" margin-right="4dp" />
+		<PushButton id="clear_associations" lw="wc" lh="wc" margin-right="4dp" />
+		<PushButton id="apply_associations" lw="wc" lh="wc" />
+	</hbox>
+</vbox>
+)xml";
+				auto* layout =
+					parent->getUISceneNode()->loadLayoutFromString( layoutSource, parent );
+				auto* desktopEntry = layout->find<UICheckBox>( "install_desktop_entry" );
+				viewState->layout = layout;
+				viewState->desktopEntry = desktopEntry;
+				layout->on( Event::OnClose, [viewState, layout]( const Event* ) {
+					if ( viewState->layout == layout )
+						viewState->clearControls();
+				} );
+				desktopEntry->setText(
+					mApp->i18n( "install_desktop_entry", "Install application launcher" ) );
+				desktopEntry->setChecked( desktopEntryInstalled );
+				desktopEntry->setVisible( FileAssociation::supportsDesktopEntries() );
+
+				auto* table = UIFileAssociationsTableView::New();
+				viewState->table = table;
+				table->setParent( layout->find<UIWidget>( "file_associations_table_container" ) );
+				table->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+				table->setColumnWidthMode( UIAbstractTableView::ColumnWidthMode::Percentage );
+				table->setColumnsWidthPercentage( { 0.2f, 0.8f } );
+				table->setModel( viewState->model );
+				table->setHeadersVisible( true );
+
+				auto* selectAll = layout->find<UIPushButton>( "select_all_associations" );
+				viewState->selectAll = selectAll;
+				selectAll->setText( mApp->i18n( "select_all", "Select All" ) );
+				selectAll->onClick( [viewState]( const MouseEvent* ) {
+					viewState->model->setAllRegistered( true );
+				} );
+				auto* clear = layout->find<UIPushButton>( "clear_associations" );
+				viewState->clear = clear;
+				clear->setText( mApp->i18n( "clear", "Clear" ) );
+				clear->onClick( [viewState]( const MouseEvent* ) {
+					viewState->model->setAllRegistered( false );
+				} );
+				auto* apply = layout->find<UIPushButton>( "apply_associations" );
+				viewState->apply = apply;
+				apply->setText( mApp->i18n( "apply", "Apply" ) );
+				apply->onClick( [this, application, viewState]( const MouseEvent* ) {
+					if ( viewState->applying.exchange( true ) )
+						return;
+					viewState->setControlsEnabled( false );
+					auto selected = viewState->model->registeredExtensions();
+					auto supported = viewState->model->extensions();
+					const bool installDesktopEntry =
+						( viewState->desktopEntry && viewState->desktopEntry->isChecked() ) ||
+						( FileAssociation::supportsDesktopEntries() && !selected.empty() );
+					auto lifetime = mLifetime.weakHandle();
+					mApp->getThreadPool()->run( [application, selected = std::move( selected ),
+												 supported = std::move( supported ),
+												 installDesktopEntry, viewState,
+												 lifetime]() mutable {
+						FileAssociation fileAssociation( std::move( application ) );
+						const bool success = fileAssociation.setRegisteredExtensions(
+							selected, supported, installDesktopEntry );
+						auto error = fileAssociation.getLastError();
+						viewState->applying = false;
+						lifetime.run( [success, installDesktopEntry, viewState,
+									   error = std::move( error )]( SettingsPanel* settings ) {
+							viewState->setControlsEnabled( true );
+							if ( success ) {
+								if ( viewState->desktopEntry )
+									viewState->desktopEntry->setChecked( installDesktopEntry );
+								settings->mApp->getNotificationCenter()->addNotification(
+									settings->mApp->i18n( "file_associations_updated",
+														  "File associations updated." ) );
+							} else {
+								settings->mApp->errorMsgBox(
+									settings->mApp->i18n( "file_associations_update_failed",
+														  "Could not update file associations." ) +
+									( error.empty() ? String{}
+													: "\n" + String::fromUtf8( error ) ) );
+							}
+						} );
+					} );
+				} );
+				return layout;
+			} );
+	}
 
 	addCategory( panel, "editor.appearance", mApp->i18n( "editor", "Editor" ),
 				 mApp->i18n( "appearance", "Appearance" ) );
@@ -1165,7 +1460,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this, monitorRefreshRate, unlimitedFrameRate] {
 			const auto value = mApp->getConfig().context.FrameRateLimit;
 			return value == ContextSettings::FrameRateLimitScreenRefreshRate ? monitorRefreshRate
-				   : value == 0												 ? unlimitedFrameRate
+				   : value == 0 ? unlimitedFrameRate
 								: String( String::toString( value ) );
 		},
 		[this, monitorRefreshRate, unlimitedFrameRate]( const String& selection ) {

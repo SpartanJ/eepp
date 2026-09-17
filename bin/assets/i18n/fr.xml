@@ -1104,6 +1104,14 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="enable_exclusive_mode_by_default">Activer le mode exclusif par défaut</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">Désactive les raccourcis globaux dans les nouveaux terminaux.</string>
 	<string name="file_associations">Associations de fichiers</string>
+	<string name="apply">Appliquer</string>
+	<string name="extension">Extension</string>
+	<string name="registered">Associé</string>
+	<string name="install_desktop_entry">Installer le lanceur d’application</string>
+	<string name="system_file_associations">Associations de fichiers système</string>
+	<string name="system_file_associations_desc">Rendre ecode disponible pour les extensions sélectionnées. Le système d’exploitation peut encore demander de confirmer l’application par défaut.</string>
+	<string name="file_associations_updated">Associations de fichiers mises à jour.</string>
+	<string name="file_associations_update_failed">Impossible de mettre à jour les associations de fichiers.</string>
 	<string name="full">Complet</string>
 	<string name="grayscale">Niveaux de gris</string>
 	<string name="hide_tabbar">Masquer la barre d'onglets</string>

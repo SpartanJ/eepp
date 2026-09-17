@@ -20,6 +20,7 @@
 #include <eepp/ui/doc/languages/xml.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
+#include <cctype>
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 
@@ -704,6 +705,60 @@ std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported
 		vexts.emplace_back( std::move( ext ) );
 	std::sort( vexts.begin(), vexts.end() );
 	return vexts;
+}
+
+static std::vector<std::string> fileExtensionsFromPattern( std::string_view pattern ) {
+	if ( pattern.size() < 4 || !pattern.starts_with( "%." ) || pattern.back() != '$' )
+		return {};
+	pattern.remove_prefix( 2 );
+	pattern.remove_suffix( 1 );
+	std::vector<std::string> extensions( 1 );
+	for ( size_t i = 0; i < pattern.size(); ++i ) {
+		char character = pattern[i];
+		if ( character == '%' ) {
+			if ( ++i >= pattern.size() || std::isalnum( static_cast<unsigned char>( pattern[i] ) ) )
+				return {};
+			character = pattern[i];
+		} else if ( !std::isalnum( static_cast<unsigned char>( character ) ) && character != '_' ) {
+			return {};
+		}
+		for ( auto& extension : extensions )
+			extension += character;
+		if ( i + 1 < pattern.size() && pattern[i + 1] == '?' ) {
+			const auto variants = extensions.size();
+			for ( size_t variant = 0; variant < variants; ++variant ) {
+				auto withoutOptional = extensions[variant];
+				withoutOptional.pop_back();
+				extensions.emplace_back( std::move( withoutOptional ) );
+			}
+			++i;
+		}
+	}
+	return extensions;
+}
+
+std::vector<std::string> SyntaxDefinitionManager::getFileExtensions() const {
+	Lock l( mMutex );
+	std::unordered_set<std::string> extensions;
+	auto addPatterns = [&extensions]( const auto& definition ) {
+		for ( const auto& pattern : definition.getFiles() ) {
+			for ( auto& extension : fileExtensionsFromPattern( pattern ) ) {
+				String::toLowerInPlace( extension );
+				extensions.emplace( std::move( extension ) );
+			}
+		}
+	};
+	for ( const auto& definition : mDefinitions )
+		addPatterns( *definition );
+	for ( const auto& definition : mPreDefinitions )
+		addPatterns( definition );
+
+	std::vector<std::string> sortedExtensions;
+	sortedExtensions.reserve( extensions.size() );
+	for ( auto& extension : extensions )
+		sortedExtensions.emplace_back( std::move( extension ) );
+	std::sort( sortedExtensions.begin(), sortedExtensions.end() );
+	return sortedExtensions;
 }
 
 const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::string& name ) const {

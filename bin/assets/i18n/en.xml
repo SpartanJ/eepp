@@ -1106,6 +1106,14 @@ Restart ecode to see the changes.</string>
 	<string name="enable_exclusive_mode_by_default">Enable Exclusive Mode by Default</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">Disable global keybindings in newly created terminals.</string>
 	<string name="file_associations">File Associations</string>
+	<string name="apply">Apply</string>
+	<string name="extension">Extension</string>
+	<string name="registered">Registered</string>
+	<string name="install_desktop_entry">Install application launcher</string>
+	<string name="system_file_associations">System File Associations</string>
+	<string name="system_file_associations_desc">Make ecode available for the selected file extensions. The operating system may still ask you to confirm the default application.</string>
+	<string name="file_associations_updated">File associations updated.</string>
+	<string name="file_associations_update_failed">Could not update file associations.</string>
 	<string name="full">Full</string>
 	<string name="grayscale">Grayscale</string>
 	<string name="hide_tabbar">Hide Tab Bar</string>

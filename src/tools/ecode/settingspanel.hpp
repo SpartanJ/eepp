@@ -77,6 +77,9 @@ class SettingsPanel {
 	void addAction( PanelState& state, SettingDescriptor binding, const String& buttonText,
 					std::function<void()> action );
 
+	void addCustomWidget( PanelState& state, SettingDescriptor binding,
+						  std::function<UIWidget*( UIWidget* parent )> create );
+
 	void refreshTextSetting( PanelState& state, const std::string& id );
 
 	void setCategoryEnabled( PanelState& state, const std::string& category, bool enabled,

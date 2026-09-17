@@ -1121,6 +1121,14 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="enable_exclusive_mode_by_default">Exklusivmodus standardmäßig aktivieren</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">Deaktiviert globale Tastenkürzel in neu erstellten Terminals.</string>
 	<string name="file_associations">Dateizuordnungen</string>
+	<string name="apply">Anwenden</string>
+	<string name="extension">Erweiterung</string>
+	<string name="registered">Registriert</string>
+	<string name="install_desktop_entry">Anwendungsstarter installieren</string>
+	<string name="system_file_associations">System-Dateizuordnungen</string>
+	<string name="system_file_associations_desc">Ecode für die ausgewählten Dateierweiterungen verfügbar machen. Das Betriebssystem kann weiterhin eine Bestätigung der Standardanwendung verlangen.</string>
+	<string name="file_associations_updated">Dateizuordnungen aktualisiert.</string>
+	<string name="file_associations_update_failed">Dateizuordnungen konnten nicht aktualisiert werden.</string>
 	<string name="full">Voll</string>
 	<string name="grayscale">Graustufen</string>
 	<string name="hide_tabbar">Tableiste ausblenden</string>
