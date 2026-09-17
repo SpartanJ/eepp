@@ -293,6 +293,28 @@ UTEST( eterm_session, focus_reporting_is_ordered_on_worker ) {
 	EXPECT_STDSTREQ( "\033[I", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 }
 
+UTEST( eterm_session, focus_commands_do_not_clear_selection ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "persistent selection";
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.cells.empty() && snapshot.cells[0].u == 'p';
+				 } ) != nullptr );
+
+	session->selectionStart( 0, 0, 0 );
+	session->selectionExtend( 9, 0, SEL_REGULAR, false );
+	auto selected = session->requestSelection();
+	ASSERT_TRUE( selected.has_value() );
+	ASSERT_STDSTREQ( "persistent", *selected );
+
+	session->setFocus( false );
+	session->setFocus( true );
+	auto afterFocusChange = session->requestSelection();
+	ASSERT_TRUE( afterFocusChange.has_value() );
+	EXPECT_STDSTREQ( "persistent", *afterFocusChange );
+}
+
 UTEST( eterm_session, replaceable_events_coalesce_without_losing_ordered_events ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
@@ -421,6 +443,7 @@ class MockDisplay : public ITerminalDisplay {
   public:
 	int mDrawLines{ 0 };
 	int mDrawEnds{ 0 };
+	std::vector<int> mPublishedScrollPositions;
 	uint32_t mFirstMode{ 0 };
 	uint32_t mSecondMode{ 0 };
 	TerminalGlyph mFirstGlyph;
@@ -440,7 +463,11 @@ class MockDisplay : public ITerminalDisplay {
 		}
 	}
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
-	void drawEnd() override { ++mDrawEnds; }
+	void drawEnd() override {
+		++mDrawEnds;
+		if ( mEmulator )
+			mPublishedScrollPositions.emplace_back( mEmulator->scrollPos() );
+	}
 	void resetColors() override { ++mResetColorsCount; }
 	void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
 					   std::vector<TerminalGraphicsUpdate> ) override {
@@ -1048,6 +1075,34 @@ UTEST( eterm, kitty_keyboard_protocol_encodes_worker_key_without_duplicate_text 
 	EXPECT_STDSTREQ( "\033[97;1u\033[13;5u", ptyPtr->mWrites );
 }
 
+UTEST( eterm, kitty_modifier_key_does_not_scroll_to_bottom ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[>8u";
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+	ptyPtr->mLoopWrites = false;
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	ptyPtr->mWrites.clear();
+
+	term->keyEvent( { KEY_LCTRL, SCANCODE_LCTRL, 0, KEYMOD_LCTRL, KittyKeyEventType::Press } );
+	EXPECT_FALSE( ptyPtr->mWrites.empty() );
+	EXPECT_EQ( 5, term->scrollPos() );
+
+	term->keyEvent( { KEY_A, SCANCODE_A, 0, KEYMOD_LCTRL, KittyKeyEventType::Press } );
+	EXPECT_EQ( 0, term->scrollPos() );
+}
+
 UTEST( eterm, kitty_keyboard_protocol_preserves_altgr_text ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[>15u";
@@ -1462,6 +1517,33 @@ UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {
 	term->selstart( 0, 0, 0 );
 	term->selextend( 7, 0, SEL_REGULAR, false );
 	EXPECT_STDSTREQ( "complete", term->getSelection() );
+}
+
+UTEST( eterm, pty_parsing_does_not_publish_temporary_bottom_viewport ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int line = 0; line < 40; ++line ) {
+		const std::string output = "history " + std::to_string( line ) + "\r\n";
+		term->write( output.data(), output.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	ASSERT_EQ( 5, term->scrollPos() );
+	display->mPublishedScrollPositions.clear();
+
+	const char synchronizedOutput[] = "\033[?2026hnew output\r\n\033[?2026l";
+	term->write( synchronizedOutput, sizeof( synchronizedOutput ) - 1 );
+	term->update();
+
+	ASSERT_FALSE( display->mPublishedScrollPositions.empty() );
+	for ( int scrollPosition : display->mPublishedScrollPositions )
+		EXPECT_TRUE( scrollPosition > 0 );
+	EXPECT_EQ( 6, display->mPublishedScrollPositions.back() );
 }
 
 UTEST( eterm, sgr_colon_subparameters_preserve_groups_and_optional_color_space ) {
@@ -2270,6 +2352,88 @@ UTEST( eterm, scroll_position_after_ttyread ) {
 	term->selstart( 0, 22, 0 ); // "New output" is at row 22 because of \r\n
 	term->selextend( 9, 22, 1, 0 );
 	EXPECT_STDSTREQ( "New output", term->getSelection() );
+}
+
+UTEST( eterm, ttyread_keeps_scrolled_selection_attached_to_text ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	term->selstart( 0, 23, 0 );
+	term->selextend( 6, 23, SEL_REGULAR, false );
+	ASSERT_STDSTREQ( "Line 35", term->getSelection() );
+
+	term->write( "New output\r\n", 12 );
+	term->update();
+
+	EXPECT_EQ( 6, term->scrollPos() );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
+}
+
+UTEST( eterm, ttyread_restores_viewport_after_history_ring_wrap ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 4 );
+
+	for ( int i = 0; i < 28; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 2 );
+	term->kscrollup( &scroll );
+	ASSERT_EQ( 2, term->scrollPos() );
+
+	// One PTY read pushes exactly histsize rows, wrapping histi back to its original index.
+	// The viewport must still account for all four pushed rows and clamp to the oldest history.
+	const char burst[] = "Burst 0\r\nBurst 1\r\nBurst 2\r\nBurst 3\r\n";
+	term->write( burst, sizeof( burst ) - 1 );
+	term->update();
+	EXPECT_EQ( 4, term->scrollPos() );
+
+	TerminalArg bottom( INT_MAX );
+	term->kscrolldown( &bottom );
+	term->selstart( 0, 22, 0 );
+	term->selextend( 6, 22, SEL_REGULAR, false );
+	EXPECT_STDSTREQ( "Burst 3", term->getSelection() );
+}
+
+UTEST( eterm, absolute_scrolling_keeps_selection_attached_to_text ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollto( &scroll );
+	term->selstart( 0, 23, 0 );
+	term->selextend( 6, 23, SEL_REGULAR, false );
+	ASSERT_STDSTREQ( "Line 35", term->getSelection() );
+
+	scroll.i = 10;
+	term->kscrollto( &scroll );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
+
+	scroll.i = 2;
+	term->kscrollto( &scroll );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
 }
 
 UTEST( eterm, history_corruption_on_resize ) {

@@ -170,8 +170,10 @@ class UITerminal : public UITouchDraggableWidget {
 	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
+	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	virtual void updateScroll();
+	void syncScrollOffset();
 
 	virtual void onContentSizeChange();
 

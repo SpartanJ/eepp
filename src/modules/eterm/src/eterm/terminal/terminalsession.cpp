@@ -135,12 +135,6 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			if ( auto* process = mEmulator->getProcess() )
 				snapshot->processId = process->pid();
 		}
-		if ( snapshot->historyLength != mLastHistoryLength ) {
-			mLastHistoryLength = snapshot->historyLength;
-			Event event{ EventType::HistoryLength };
-			event.value = mLastHistoryLength;
-			mSession.enqueueEvent( std::move( event ), true );
-		}
 		mSession.publishSnapshot( std::move( snapshot ) );
 	}
 
@@ -239,8 +233,6 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		mSession.enqueueEvent( std::move( event ), false );
 	}
 
-	void onScrollPositionChange() { mSession.enqueueEvent( { EventType::ScrollPosition }, true ); }
-
 	void setPalette( TerminalColorPalette palette ) {
 		mInitialPalette = palette;
 		mPalette = std::move( palette );
@@ -284,7 +276,6 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 	TerminalGlyph mCursorGlyph;
 	int mColumns{ 0 };
 	int mRows{ 0 };
-	int mLastHistoryLength{ -1 };
 	Uint32 mPresentationRate{ 60 };
 	bool mCursorVisible{ false };
 };
@@ -498,10 +489,9 @@ void TerminalSession::enqueueEvent( Event event, bool coalescable ) {
 	std::lock_guard<std::mutex> lock( mEventMutex );
 	if ( coalescable ) {
 		for ( auto it = mEvents.rbegin(); it != mEvents.rend(); ++it ) {
-			const bool replaceable =
-				it->type == EventType::Title || it->type == EventType::IconTitle ||
-				it->type == EventType::HistoryLength || it->type == EventType::ScrollPosition ||
-				it->type == EventType::SnapshotReady;
+			const bool replaceable = it->type == EventType::Title ||
+									 it->type == EventType::IconTitle ||
+									 it->type == EventType::SnapshotReady;
 			if ( !replaceable )
 				break;
 			if ( it->type == event.type ) {

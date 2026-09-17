@@ -371,6 +371,7 @@ class TerminalDisplay {
 	bool mAlreadyClickedMButton{ false };
 	bool mKeepAlive{ true };
 	bool mDraggingSel{ false };
+	bool mSelectionOverridesMouseCapture{ false };
 	int mMode{ MODE_VISIBLE | MODE_FOCUSED };
 	TerminalCursorMode mCursorMode{ SteadyUnderline };
 	Clock mClock;

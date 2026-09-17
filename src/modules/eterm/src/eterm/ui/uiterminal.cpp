@@ -93,7 +93,11 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	syncFontRenderingConfig();
 	registerNewTerminal();
 	mVScroll->setParent( this );
-	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mVScroll->on( Event::OnValueChange, [this]( const Event* ) {
+		updateScroll();
+		if ( !mApplyingScrollController )
+			stopScrollController();
+	} );
 
 	setCommand( "terminal-scroll-up-screen",
 				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
@@ -162,7 +166,9 @@ void UITerminal::onContentSizeChange() {
 	mPendingContentSizeChange = false;
 	updateScrollPosition();
 	mVScroll->setPageStep( contentSize > 0 ? ( visibleArea / (Float)contentSize ) : 1.f );
-	updateScroll();
+	// This is a worker-to-UI state synchronization, not a user scroll. Feeding it back through
+	// onScrollChange() queues a stale absolute position if the worker advances in the meantime.
+	syncScrollOffset();
 }
 
 const ScrollBarMode& UITerminal::getVerticalScrollMode() const {
@@ -225,15 +231,19 @@ int UITerminal::getScrollableArea() const {
 }
 
 void UITerminal::updateScroll() {
-	int totalScroll = getScrollableArea();
 	int initScroll( mScrollOffset );
+	syncScrollOffset();
+
+	if ( initScroll != mScrollOffset )
+		onScrollChange();
+}
+
+void UITerminal::syncScrollOffset() {
+	int totalScroll = getScrollableArea();
 	mScrollOffset = 0;
 
 	if ( mVScroll->isVisible() && totalScroll > 0 )
 		mScrollOffset = totalScroll * mVScroll->getValue();
-
-	if ( initScroll != mScrollOffset )
-		onScrollChange();
 }
 
 void UITerminal::onScrollChange() {
@@ -531,8 +541,7 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
-		bool visible =
-			!mTerm->isAltScr() && getContentSize() > getVisibleArea() && !mTerm->hasSelection();
+		bool visible = !mTerm->isAltScr() && getContentSize() > getVisibleArea();
 		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
@@ -647,10 +656,24 @@ Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 
 Uint32 UITerminal::onFocusLoss() {
 	getUISceneNode()->getWindow()->stopTextInput();
-	mTerm->clearSuppressedKeys();
-	mTerm->setFocus( false );
+	Node* focusNode = getEventDispatcher()->getFocusNode();
+	const bool scrollBarFocus = focusNode == mVScroll || mVScroll->isParentOf( focusNode );
+	if ( !scrollBarFocus ) {
+		mTerm->clearSuppressedKeys();
+		mTerm->setFocus( false );
+	}
 	invalidateDraw();
 	return UIWidget::onFocusLoss();
+}
+
+Uint32 UITerminal::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::Focus &&
+		 ( msg->getSender() == mVScroll || mVScroll->isParentOf( msg->getSender() ) ) ) {
+		// The scrollbar is part of the terminal. Keep keyboard/PTY focus on the terminal instead
+		// of reporting a transient focus-out/focus-in pair to the application.
+		setFocus();
+	}
+	return UITouchDraggableWidget::onMessage( msg );
 }
 
 void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {

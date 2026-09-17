@@ -947,28 +947,33 @@ size_t TerminalEmulator::ttyread( void ) {
 				mDataCb( mBuf + mBuflen, ret );
 
 			int old_scr = mTerm.scr;
-			int old_histi = mTerm.histi;
+			// Selection coordinates share the viewport's coordinate space. Translate them before
+			// the temporary live-screen switch so parser writes cannot mistake historical text for
+			// a live cell and clear the selection.
+			if ( old_scr > 0 )
+				selmove( -old_scr );
 			mTerm.scr = 0;
 
 			mBuflen += ret;
+			// Parsing must update the live screen at scr == 0, but that temporary viewport is not
+			// presentation state. In particular, DECRST 2026 can call draw() from inside twrite().
+			// Publishing there lets the asynchronous UI mistake the live-screen override for a user
+			// scroll and feed it back through the scrollbar before the viewport is restored below.
+			mPtyHistoryLinesPushed = 0;
+			mProcessingPtyInput = true;
 			written = twrite( mBuf, mBuflen, 0 );
+			mProcessingPtyInput = false;
 			mBuflen -= written;
 			/* keep any incomplete UTF-8 byte sequence for the next call */
 			if ( mBuflen > 0 )
 				memmove( mBuf, mBuf + written, mBuflen );
 
 			if ( old_scr > 0 ) {
-				int lines_pushed = 0;
-				if ( mTerm.histsize > 0 ) {
-					lines_pushed = ( mTerm.histi - old_histi + mTerm.histsize ) % mTerm.histsize;
-				}
+				const int lines_pushed = mPtyHistoryLinesPushed;
 				mTerm.scr = eemin( mTerm.histlen, old_scr + lines_pushed );
-				if ( lines_pushed > 0 ) {
-					mSel.ob.y += lines_pushed;
-					mSel.oe.y += lines_pushed;
-
+				selmove( mTerm.scr );
+				if ( mTerm.scr != old_scr )
 					onScrollPositionChange();
-				}
 			}
 
 			return ret;
@@ -1025,7 +1030,9 @@ void TerminalEmulator::kscrollto( const TerminalArg* a ) {
 	int n = a->i;
 
 	if ( 0 <= n && n <= mTerm.histlen ) {
+		int delta = n - mTerm.scr;
 		mTerm.scr = n;
+		selmove( delta );
 		tfulldirt();
 		onScrollPositionChange();
 	}
@@ -1117,10 +1124,17 @@ bool TerminalEmulator::isScrolling() const {
 }
 
 void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
+	ttywriteInternal( s, n, may_echo, true );
+}
+
+void TerminalEmulator::ttywriteInternal( const char* s, size_t n, int may_echo,
+										 bool scrollToBottom ) {
 	const char* next;
 
-	TerminalArg arg = { (int)mTerm.scr };
-	kscrolldown( &arg );
+	if ( scrollToBottom ) {
+		TerminalArg arg = { (int)mTerm.scr };
+		kscrolldown( &arg );
+	}
 
 	if ( may_echo && IS_SET( MODE_ECHO ) )
 		twrite( s, (int)n, 1 );
@@ -1147,6 +1161,22 @@ void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
 
 static Uint32 keyboardSanitizeMod( Uint32 mod ) {
 	return mod & KEYMOD_CTRL_SHIFT_ALT_META;
+}
+
+static bool isModifierKey( Keycode keycode ) {
+	switch ( keycode ) {
+		case KEY_LCTRL:
+		case KEY_LSHIFT:
+		case KEY_LALT:
+		case KEY_LGUI:
+		case KEY_RCTRL:
+		case KEY_RSHIFT:
+		case KEY_RALT:
+		case KEY_RGUI:
+			return true;
+		default:
+			return false;
+	}
 }
 
 static char legacyControlCharacter( Scancode scancode ) {
@@ -1181,7 +1211,8 @@ void TerminalEmulator::keyEvent( const KittyKeyEvent& event ) {
 	}
 	const auto enhanced = KittyKeyboardEncoder::encode( event, flags );
 	if ( enhanced.handled ) {
-		ttywrite( enhanced.bytes.data(), enhanced.bytes.size(), 1 );
+		ttywriteInternal( enhanced.bytes.data(), enhanced.bytes.size(), 1,
+						  !isModifierKey( event.keycode ) );
 		mExpectedTextInput = enhanced.expectedText;
 		return;
 	}
@@ -1470,6 +1501,8 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 
 		for ( i = 0; i < n; i++ )
 			historyStealPush( &mTerm.line[top + i], mTerm.col );
+		if ( mProcessingPtyInput )
+			mPtyHistoryLinesPushed += n;
 
 		if ( attop )
 			mTerm.scr = mTerm.histlen;
@@ -3874,8 +3907,9 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 
 void TerminalEmulator::draw() {
 	// DEC private mode 2026 makes the bytes between DECSET and DECRST one presentation unit.
-	// Parsing continues normally, but no partially cleared/rebuilt frame may reach the UI.
-	if ( mTerm.is_syncing )
+	// PTY parsing can also temporarily force scr to zero while updating the live screen. Neither
+	// state is a stable presentation boundary, so no partial frame or viewport may reach the UI.
+	if ( mTerm.is_syncing || mProcessingPtyInput )
 		return;
 
 	int cx = mTerm.c.x /*, ocx = term.ocx, ocy = term.ocy*/;

@@ -770,6 +770,7 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 		if ( !( mWindow->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			mWindow->getInput()->captureMouse( false );
 			mDraggingSel = false;
+			mSelectionOverridesMouseCapture = false;
 		} else if ( !isMouseOverMe ) {
 			onMouseMove( mWindow->getInput()->getMousePos(),
 						 mWindow->getInput()->getPressTrigger() );
@@ -809,6 +810,8 @@ void TerminalDisplay::consumeSnapshot() {
 		return;
 
 	const Vector2i previousCursor = mCursor;
+	const int previousHistoryLength = mSnapshot ? mSnapshot->historyLength : 0;
+	const int previousScrollPosition = mSnapshot ? mSnapshot->scrollPosition : 0;
 	const bool dimensionsChanged = snapshot->columns != static_cast<int>( mColumns ) ||
 								   snapshot->rows != static_cast<int>( mRows );
 	if ( dimensionsChanged ) {
@@ -857,6 +860,13 @@ void TerminalDisplay::consumeSnapshot() {
 		mMode |= MODE_BLINK;
 		mClock.restart();
 	}
+	// Scrollbar state must be announced only after the immutable state it describes has been
+	// adopted. Worker events can otherwise race publication and make the UI feed an older absolute
+	// position back into the session.
+	if ( previousScrollPosition != mSnapshot->scrollPosition )
+		sendEvent( { EventType::SCROLL_HISTORY } );
+	if ( previousHistoryLength != mSnapshot->historyLength )
+		sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
 	mDirty = true;
 }
 
@@ -870,9 +880,6 @@ void TerminalDisplay::drainSessionEvents() {
 				break;
 			case TerminalSession::EventType::IconTitle:
 				sendEvent( { EventType::ICON_TITLE, std::move( event.data ) } );
-				break;
-			case TerminalSession::EventType::ScrollPosition:
-				sendEvent( { EventType::SCROLL_HISTORY } );
 				break;
 			case TerminalSession::EventType::Bell:
 				sendEvent( { EventType::BELL } );
@@ -905,9 +912,6 @@ void TerminalDisplay::drainSessionEvents() {
 			case TerminalSession::EventType::Error:
 				Log::error( "Terminal worker error: %s", event.data.c_str() );
 				sendEvent( { EventType::WORKER_ERROR, std::move( event.data ) } );
-				break;
-			case TerminalSession::EventType::HistoryLength:
-				sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
 				break;
 			case TerminalSession::EventType::SnapshotReady:
 				break;
@@ -1139,9 +1143,13 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 }
 
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
-	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	const Uint32 modifiers = mWindow->getInput()->getModState();
+	const bool shiftPressed = ( modifiers & KEYMOD_SHIFT ) != 0;
 	auto mousePos = mWindow->getInput()->getRelativeMousePos();
-	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+	const bool appCapturingMouse = isAppCapturingMouse();
+	const bool selectionOverride =
+		mSelectionOverridesMouseCapture || ( appCapturingMouse && shiftPressed );
+	const bool isCapturingMouse = appCapturingMouse && !selectionOverride;
 
 	if ( !isAltScr() && !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mAlreadyClickedLButton ) {
@@ -1163,17 +1171,22 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 		 ( mDraggingSel || getSelectionMode() == SEL_EMPTY || getSelectionMode() == SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
 		mSession->selectionExtend(
-			gridPos.x, gridPos.y,
-			mWindow->getInput()->getModState() & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR,
-			false );
+			gridPos.x, gridPos.y, modifiers & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, false );
 	}
-	mSession->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ),
-						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
+	// Shift overrides application mouse capture so the user can select terminal text. Sending the
+	// same event to the application would make the override ineffective.
+	if ( !selectionOverride ) {
+		mSession->mouseReport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ),
+							   positionToPixel( pos ), flags, modifiers );
+	}
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
-	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
-	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+	const Uint32 modifiers = mWindow->getInput()->getModState();
+	const bool shiftPressed = ( modifiers & KEYMOD_SHIFT ) != 0;
+	const bool appCapturingMouse = isAppCapturingMouse();
+	const bool selectionOverride = appCapturingMouse && shiftPressed;
+	const bool isCapturingMouse = appCapturingMouse && !selectionOverride;
 
 	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel )
 		return;
@@ -1187,6 +1200,7 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		if ( !mDraggingSel ) {
 			mSession->selectionStart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
+			mSelectionOverridesMouseCapture = selectionOverride;
 			invalidateLines();
 			mWindow->getInput()->captureMouse( true );
 		}
@@ -1208,11 +1222,18 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mSession->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ),
-						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
+	if ( !selectionOverride ) {
+		mSession->mouseReport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ),
+							   positionToPixel( pos ), flags, modifiers );
+	}
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
+	const Uint32 modifiers = mWindow->getInput()->getModState();
+	const bool shiftPressed = ( modifiers & KEYMOD_SHIFT ) != 0;
+	const bool appCapturingMouse = isAppCapturingMouse();
+	const bool selectionOverride =
+		mSelectionOverridesMouseCapture || ( appCapturingMouse && shiftPressed );
 	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
 		mDraggingSel = false;
 	}
@@ -1221,11 +1242,12 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		mWindow->getClipboard()->setPrimarySelectionText( getSelection() );
 	}
 
-	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
+	Uint32 smod = sanitizeMod( modifiers );
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mAlreadyClickedLButton = false;
 		mWindow->getInput()->captureMouse( false );
+		mSelectionOverridesMouseCapture = false;
 	}
 
 	if ( flags & EE_BUTTON_MMASK )
@@ -1255,8 +1277,10 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
-						   positionToPixel( pos ), flags, mWindow->getInput()->getModState() );
+	if ( !selectionOverride ) {
+		mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
+							   positionToPixel( pos ), flags, modifiers );
+	}
 }
 
 static inline Color termColor( unsigned int terminalColor, const std::vector<Color>& colors ) {
