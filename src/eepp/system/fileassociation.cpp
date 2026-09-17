@@ -11,6 +11,9 @@
 #include <unordered_set>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 
 #include <shlobj.h>
@@ -653,7 +656,7 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 	const auto supported = normalizeExtensions( supportedExtensions );
 	const auto requested = normalizeExtensions( registeredExtensions );
 	std::vector<std::string> selected;
-	selected.reserve( std::min( requested.size(), supported.size() ) );
+	selected.reserve( (std::min)( requested.size(), supported.size() ) );
 	std::set_intersection( requested.begin(), requested.end(), supported.begin(), supported.end(),
 						   std::back_inserter( selected ) );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
