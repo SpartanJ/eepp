@@ -440,6 +440,17 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	mHeader->setVisible( visible );
 
 	updateColumnsWidth();
+
+	// Reflect the model's sort state in the header. The indicator is otherwise only produced by
+	// the header-click path, which leaves a programmatic sort (and the initial sort order of a
+	// freshly attached model) showing no indicator at all.
+	if ( model->isSortable() ) {
+		int keyColumn = model->keyColumn();
+		// A model with no key column is unsorted, and its reported sort order is meaningless.
+		SortOrder sortOrder = keyColumn < 0 ? SortOrder::None : model->sortOrder();
+		if ( keyColumn != mSortIndicatorColumn || sortOrder != mSortIndicatorOrder )
+			applySortIndicator( keyColumn < 0 ? 0 : static_cast<size_t>( keyColumn ), sortOrder );
+	}
 }
 
 Float UIAbstractTableView::getHeaderHeight() const {
@@ -1184,34 +1195,67 @@ void UIAbstractTableView::onRowCreated( UITableRow* row ) {
 	sendEvent( &rowEvent );
 }
 
+void UIAbstractTableView::applySortIndicator( const size_t& colIndex, const SortOrder& sortOrder ) {
+	// Clear any indicator left on another column.
+	for ( size_t i = 0; i < mColumn.size(); ++i ) {
+		if ( i == colIndex || !mColumn[i].widget )
+			continue;
+		UIImage* other = mColumn[i].widget->getExtraInnerWidget()->asType<UIImage>();
+		if ( !other )
+			continue;
+		other->setForegroundFillEnabled( false );
+		other->setDrawable( DrawablePtr{} );
+	}
+
+	if ( sortOrder == SortOrder::None || colIndex >= mColumn.size() || !mColumn[colIndex].widget ) {
+		mSortIndicatorColumn = -1;
+		mSortIndicatorOrder = SortOrder::None;
+		return;
+	}
+
+	UIPushButton* button = mColumn[colIndex].widget;
+	UIImage* image = button->getExtraInnerWidget()->asType<UIImage>();
+	if ( !image ) {
+		mSortIndicatorColumn = -1;
+		mSortIndicatorOrder = SortOrder::None;
+		return;
+	}
+
+	mSortIndicatorColumn = static_cast<int>( colIndex );
+	mSortIndicatorOrder = sortOrder;
+
+	std::string tag = button->getElementTag() + "::arrow";
+	image->setElementTag( sortOrder == SortOrder::Ascending ? tag + "-up" : tag + "-down" );
+	image->setForegroundFillEnabled( true );
+	image->reloadStyle();
+	if ( image->getForeground() )
+		image->getForeground()->setAlpha( 255 );
+	if ( image->getForeground() == nullptr ) {
+		DrawablePtr icon = mUISceneNode->findIconDrawable(
+			sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mSortIconSize );
+		if ( icon )
+			image->setDrawable( std::move( icon ) );
+	}
+}
+
+void UIAbstractTableView::sortByColumn( const size_t& colIndex, const SortOrder& sortOrder ) {
+	Model* model = getModel();
+	if ( !model || !model->isSortable() || !model->isColumnSortable( colIndex ) )
+		return;
+
+	// Sorting notifies the views, which refresh the header and pick the indicator up from the
+	// model's new state.
+	model->sort( colIndex, sortOrder );
+}
+
 void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 	Model* model = getModel();
 	if ( !model )
 		return;
 	if ( model->isSortable() && model->isColumnSortable( colIndex ) ) {
-		if ( -1 != model->keyColumn() && (Int64)colIndex != model->keyColumn() &&
-			 columnData( model->keyColumn() ).widget ) {
-			UIImage* image =
-				columnData( model->keyColumn() ).widget->getExtraInnerWidget()->asType<UIImage>();
-			image->setForegroundFillEnabled( false );
-			image->setDrawable( DrawablePtr{} );
-		}
 		SortOrder sortOrder = model->sortOrder() == SortOrder::Ascending ? SortOrder::Descending
 																		 : SortOrder::Ascending;
-		UIPushButton* button = columnData( colIndex ).widget;
-		UIImage* image = button->getExtraInnerWidget()->asType<UIImage>();
-		std::string tag = button->getElementTag() + "::arrow";
-		image->setElementTag( sortOrder == SortOrder::Ascending ? tag + "-up" : tag + "-down" );
-		image->setForegroundFillEnabled( true );
-		image->reloadStyle();
-		if ( image->getForeground() )
-			image->getForeground()->setAlpha( 255 );
-		if ( image && image->getForeground() == nullptr ) {
-			DrawablePtr icon = mUISceneNode->findIconDrawable(
-				sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mSortIconSize );
-			if ( icon )
-				image->setDrawable( std::move( icon ) );
-		}
+		applySortIndicator( colIndex, sortOrder );
 		model->sort( colIndex, sortOrder );
 	}
 }

@@ -139,28 +139,38 @@ void UIDropDown::alignPopUp( UIWidget* widget ) {
 	bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
 				  mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
 
-	Float width = widget->getSize().getWidth();
-	Float offsetX = center ? eefloor( ( getSize().getWidth() - width ) * 0.5f ) : 0;
+	// The placement is decided in screen pixels, where the field, the popup and the scene bounds
+	// are directly comparable. Deriving it from the node's own dp position previously mixed
+	// coordinate spaces (the candidate point was expressed in the parent's space but converted
+	// through the field's own nodeToWorld, shifting the test rectangle by the field's offset), so
+	// the "fits below" check failed for any field away from its parent's origin and the popup was
+	// flipped above the field even when there was no room there.
+	const Rectf field( getScreenRect() );
+	const Sizef popUpSize( widget->getPixelsSize() );
+	const Rectf sceneBounds( getUISceneNode()->getWorldBounds() );
 
-	Vector2f pos( mDpPos.x + offsetX, mDpPos.y + getSize().getHeight() );
-	Vector2f posCpy( pos );
-	nodeToWorld( posCpy );
+	Float x = center ? field.Left + eefloor( ( field.getWidth() - popUpSize.getWidth() ) * 0.5f )
+					 : field.Left;
 
-	if ( !getUISceneNode()->getWorldBounds().contains( Rectf( posCpy, widget->getSize() ) ) ) {
-		pos = Vector2f( mDpPos.x + offsetX, mDpPos.y - widget->getSize().getHeight() );
+	// Prefer below the field, fall back to above it, and only then clamp: the list is never placed
+	// partially off screen when the scene has room for it on either side.
+	Float y = field.Bottom;
+	if ( y + popUpSize.getHeight() > sceneBounds.Bottom ) {
+		Float above = field.Top - popUpSize.getHeight();
+		y = above >= sceneBounds.Top
+				? above
+				: eemax( sceneBounds.Top, sceneBounds.Bottom - popUpSize.getHeight() );
 	}
 
-	if ( mStyleConfig.PopUpToRoot ) {
-		getParent()->nodeToWorld( pos );
-		pos = PixelDensity::pxToDp( pos );
-	} else {
-		Node* parentNode = getParent();
-		Node* rp = getWindowContainer();
-		while ( rp != parentNode ) {
-			pos += parentNode->getPosition();
-			parentNode = parentNode->getParent();
-		}
-	}
+	// Keep the popup inside the scene horizontally as well; a list wider than its field used to
+	// run off the right edge.
+	x = eeclamp( x, sceneBounds.Left,
+				 eemax( sceneBounds.Left, sceneBounds.Right - popUpSize.getWidth() ) );
+
+	// World coordinates are pixels and worldToNode already converts back to dp, which is what
+	// setPosition expects; applying the density a second time would shift the popup.
+	Vector2f pos( x, y );
+	widget->getParent()->worldToNode( pos );
 
 	widget->setPosition( pos );
 	show();

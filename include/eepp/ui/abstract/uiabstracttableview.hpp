@@ -152,6 +152,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setAutoColumnsWidth( bool autoColumnsWidth );
 
+	/** Sorts @p colIndex through the model and reflects it in the header indicator, as if the user
+	 *  had clicked that column header. */
+	virtual void sortByColumn( const size_t& colIndex, const SortOrder& sortOrder );
+
 	const size_t& getMainColumn() const;
 
 	/** The main column is the column that should be prioritized to occupy as much space as
@@ -246,6 +250,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool mUpdatingColumnsForScrollbars{ false };
 	bool mAutoExpandedColumnUsesVerticalScroll{ false };
 	std::string mPendingSerializedColumnWidths;
+	// Last sort state drawn in the header, so the indicator is only touched when it changes.
+	int mSortIndicatorColumn{ -1 };
+	SortOrder mSortIndicatorOrder{ SortOrder::None };
 
 	virtual ~UIAbstractTableView();
 
@@ -295,6 +302,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onRowCreated( UITableRow* row );
 
 	virtual void onSortColumn( const size_t& colIndex );
+
+	/** Draws the sort indicator on @p colIndex, clearing any indicator left on another column.
+	 *  Pass SortOrder::None to clear the indicator entirely. */
+	void applySortIndicator( const size_t& colIndex, const SortOrder& sortOrder );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
