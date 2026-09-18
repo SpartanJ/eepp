@@ -4,6 +4,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <filesystem>
+#include <string_view>
+#include <vector>
 
 using namespace std::literals;
 
@@ -132,6 +134,163 @@ UTEST( String, trim ) {
 	EXPECT_TRUE( String::trim( String::View( U"  " ), String::View( U" " ) ).empty() );
 	EXPECT_TRUE( String::trim( String::View( U"  a  " ), String::View( U" " ) ) ==
 				 String::View( U"a" ) );
+}
+
+UTEST( String, lTrimAndRTrim ) {
+	// Only the requested side is removed and interior separators are kept.
+	EXPECT_TRUE( String::lTrim( std::string( "  a  " ) ) == std::string( "a  " ) );
+	EXPECT_TRUE( String::rTrim( std::string( "  a  " ) ) == std::string( "  a" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::rTrim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "xxa" ), 'x' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::rTrim( std::string( "axx" ), 'x' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "\t a " ), std::string_view( " \t" ) ) ==
+				 std::string( "a " ) );
+
+	// A string made only of separators has nothing left, as in trim().
+	EXPECT_TRUE( String::lTrim( std::string() ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string() ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( "   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( " \t\n " ), std::string_view( " \t\n" ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( " \t\n " ), std::string_view( " \t\n" ) ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string_view( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string_view( "   " ) ).empty() );
+
+	// The UTF-32 overloads are separate implementations.
+	EXPECT_TRUE( String::lTrim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( String( "  a  " ) ) == String( "a  " ) );
+	EXPECT_TRUE( String::rTrim( String( "  a  " ) ) == String( "  a" ) );
+	EXPECT_TRUE( String::lTrim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( String::View( U"  a  " ) ) == String::View( U"a  " ) );
+	EXPECT_TRUE( String::rTrim( String::View( U"  a  " ) ) == String::View( U"  a" ) );
+
+	// Trimming one side and then the other is what trim() does in one step.
+	EXPECT_TRUE( String::rTrim( String::lTrim( std::string( "  a b  " ) ) ) ==
+				 String::trim( std::string( "  a b  " ) ) );
+}
+
+UTEST( String, readBySeparator ) {
+	auto collect = []( const std::string& input, char sep ) {
+		std::vector<std::string> chunks;
+		String::readBySeparator(
+			input, [&]( std::string_view chunk ) { chunks.emplace_back( chunk ); }, sep );
+		return chunks;
+	};
+
+	// An empty buffer holds no chunks, so the callback is not handed a spurious empty one.
+	EXPECT_TRUE( collect( std::string(), '\n' ).empty() );
+
+	// A buffer without a separator is a single chunk.
+	{
+		auto chunks = collect( "abc", '\n' );
+		EXPECT_EQ( chunks.size(), 1ul );
+		EXPECT_TRUE( chunks[0] == std::string( "abc" ) );
+	}
+
+	// A trailing separator does not add an empty chunk.
+	{
+		auto chunks = collect( "a\n", '\n' );
+		EXPECT_EQ( chunks.size(), 1ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+	}
+
+	// Empty lines between separators are preserved, and a lone separator is one empty chunk.
+	{
+		auto chunks = collect( "a\n\nb", '\n' );
+		EXPECT_EQ( chunks.size(), 3ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+		EXPECT_TRUE( chunks[1].empty() );
+		EXPECT_TRUE( chunks[2] == std::string( "b" ) );
+	}
+	EXPECT_EQ( collect( "\n", '\n' ).size(), 1ul );
+
+	// The separator is configurable.
+	{
+		auto chunks = collect( "a;b;", ';' );
+		EXPECT_EQ( chunks.size(), 2ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+		EXPECT_TRUE( chunks[1] == std::string( "b" ) );
+	}
+
+	// The stoppable variant stops at the first chunk that asks it to, and skips empty buffers.
+	{
+		int seen = 0;
+		String::readBySeparatorStoppable( std::string( "a\nb\nc" ), [&]( std::string_view ) {
+			++seen;
+			return true;
+		} );
+		EXPECT_EQ( seen, 1 );
+
+		seen = 0;
+		String::readBySeparatorStoppable( std::string(), [&]( std::string_view ) {
+			++seen;
+			return false;
+		} );
+		EXPECT_EQ( seen, 0 );
+	}
+}
+
+UTEST( String, splitCb ) {
+	auto split = []( const std::string& input, const std::string& delims,
+					 const std::string& preserve = "", const std::string& quote = "\"",
+					 bool removeQuotes = false ) {
+		std::vector<std::string> tokens;
+		String::splitCb(
+			[&]( std::string_view token ) {
+				tokens.emplace_back( token );
+				return true;
+			},
+			input, delims, preserve, quote, removeQuotes );
+		return tokens;
+	};
+
+	// Tokens are split on any of the delimiter characters, and empty ones are dropped.
+	{
+		auto tokens = split( "a,b,c", "," );
+		EXPECT_EQ( tokens.size(), 3ul );
+		EXPECT_TRUE( tokens[0] == std::string( "a" ) );
+		EXPECT_TRUE( tokens[2] == std::string( "c" ) );
+	}
+	EXPECT_EQ( split( "a,,c", "," ).size(), 2ul );
+
+	// A buffer with no delimiter is one token, an empty buffer yields none.
+	EXPECT_EQ( split( "abc", "," ).size(), 1ul );
+	EXPECT_TRUE( split( "", "," ).empty() );
+
+	// A quoted token keeps its quotes unless removeQuotes is requested.
+	{
+		auto kept = split( "\"a\",\"b\"", "," );
+		EXPECT_EQ( kept.size(), 2ul );
+		EXPECT_TRUE( kept[0] == std::string( "\"a\"" ) );
+
+		auto stripped = split( "\"a\",\"b\"", ",", "", "\"", true );
+		EXPECT_EQ( stripped.size(), 2ul );
+		EXPECT_TRUE( stripped[0] == std::string( "a" ) );
+		EXPECT_TRUE( stripped[1] == std::string( "b" ) );
+	}
+
+	// delimsPreserve hands the preserved separator over as a token of its own.
+	{
+		auto tokens = split( "a;b", "", ";" );
+		EXPECT_EQ( tokens.size(), 3ul );
+		EXPECT_TRUE( tokens[0] == std::string( "a" ) );
+		EXPECT_TRUE( tokens[1] == std::string( ";" ) );
+		EXPECT_TRUE( tokens[2] == std::string( "b" ) );
+	}
+
+	// Brackets group only when they are part of the quote set, which is what code splitting needs.
+	EXPECT_EQ( split( "f(a,b),c", "," ).size(), 3ul );
+	{
+		auto tokens = split( "f(a,b),c", ",", "", "(" );
+		EXPECT_EQ( tokens.size(), 2ul );
+		EXPECT_TRUE( tokens[0] == std::string( "f(a,b)" ) );
+		EXPECT_TRUE( tokens[1] == std::string( "c" ) );
+	}
 }
 
 UTEST( String, reusableFormattingAndUtf8Assignment ) {

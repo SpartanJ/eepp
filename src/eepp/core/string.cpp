@@ -1205,12 +1205,16 @@ std::string String::join( const std::vector<const char*>& strArray, const Int8& 
 
 std::string String::lTrim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string String::rTrim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string String::trim( const std::string& str, char character ) {
@@ -1224,12 +1228,16 @@ std::string String::trim( const std::string& str, char character ) {
 
 std::string_view String::lTrim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string_view String::rTrim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string_view String::trim( const std::string_view& str, char character ) {
@@ -1243,12 +1251,16 @@ std::string_view String::trim( const std::string_view& str, char character ) {
 
 String::View String::lTrim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String::View String::rTrim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String::View String::trim( const String::View& str, char character ) {
@@ -1268,12 +1280,16 @@ void String::trimInPlace( std::string& str, char character ) {
 
 String String::lTrim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String String::rTrim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String String::trim( const String& str, char character ) {
@@ -1291,12 +1307,16 @@ void String::trimInPlace( String& str, char character ) {
 
 std::string String::lTrim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string String::rTrim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string String::trim( const std::string& str, std::string_view characters ) {
@@ -1310,12 +1330,16 @@ std::string String::trim( const std::string& str, std::string_view characters ) 
 
 std::string_view String::lTrim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string_view String::rTrim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string_view String::trim( const std::string_view& str, std::string_view characters ) {
@@ -1329,12 +1353,16 @@ std::string_view String::trim( const std::string_view& str, std::string_view cha
 
 String::View String::lTrim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String::View String::rTrim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String::View String::trim( const String::View& str, String::View characters ) {
@@ -1352,12 +1380,16 @@ void String::trimInPlace( std::string& str, std::string_view characters ) {
 
 String String::lTrim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String String::rTrim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String String::trim( const String& str, std::string_view characters ) {
@@ -2696,6 +2728,10 @@ size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer
 
 void String::readBySeparator( std::string_view buf,
 							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
+	// An empty buffer holds no chunks, so the callback is never handed a spurious empty one.
+	if ( buf.empty() )
+		return;
+
 	auto lastNL = 0;
 	auto nextNL = buf.find_first_of( sep );
 	if ( nextNL != std::string_view::npos ) {
@@ -2716,6 +2752,10 @@ void String::readBySeparator( std::string_view buf,
 void String::readBySeparatorStoppable( std::string_view buf,
 									   std::function<bool( std::string_view )> onSepChunkRead,
 									   char sep ) {
+	// An empty buffer holds no chunks, so the callback is never handed a spurious empty one.
+	if ( buf.empty() )
+		return;
+
 	auto lastNL = 0;
 	auto nextNL = buf.find_first_of( sep );
 	if ( nextNL != std::string_view::npos ) {

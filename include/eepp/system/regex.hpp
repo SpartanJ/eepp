@@ -2,31 +2,42 @@
 #define EE_SYSTEM_REGEX
 
 #include <eepp/core/containers.hpp>
+#include <eepp/core/lrucache.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/patternmatcher.hpp>
 #include <eepp/system/singleton.hpp>
+#include <memory>
 
 namespace EE { namespace System {
 
 class EE_API RegExCache {
 	SINGLETON_DECLARE_HEADERS( RegExCache )
   public:
-	~RegExCache();
+	/** A compiled pattern, shared by every RegEx that asked for the same pattern and options. The
+	 *  deleter stored inside it releases the pattern with the engine that compiled it, so a pattern
+	 *  stays valid for as long as a RegEx holds it, even after the cache evicts its entry. */
+	using CompiledPattern = std::shared_ptr<void>;
+
+	/** Cached patterns are evicted least-recently-used beyond this count. Syntax definitions are the
+	 *  bulk of the working set (every language contributes a few dozen patterns), so this keeps a
+	 *  whole session's worth resident while bounding the memory the cache can pin. */
+	static constexpr size_t MaxCachedPatterns = 8192;
 
 	bool isEnabled() const { return mEnabled; }
 
 	void setEnabled( bool enabled );
 
-	void insert( std::string_view, Uint32 options, void* cache );
+	void insert( std::string_view pattern, Uint32 options, CompiledPattern compiled );
 
-	void* find( std::string_view, Uint32 options );
+	CompiledPattern find( std::string_view pattern, Uint32 options );
+
+	size_t size();
 
 	void clear();
 
   protected:
 	bool mEnabled{ true };
-	std::unordered_map<size_t, void*> mCache;
-	std::unordered_map<size_t, Uint32> mCacheOpt;
+	DynamicLRU<MaxCachedPatterns, size_t, CompiledPattern> mCache;
 	Mutex mMutex;
 };
 
@@ -73,6 +84,11 @@ class EE_API RegEx : public PatternMatcher {
 	RegEx( std::string_view pattern, Uint32 options = Options::Utf | Options::AllowFallback,
 		   bool useCache = true );
 
+	/** Movable, not copyable: the compiled pattern and the match data are owned. Moving hands them
+	 *  over, copying would release them twice. */
+	RegEx( RegEx&& ) noexcept = default;
+	RegEx& operator=( RegEx&& ) noexcept = default;
+
 	virtual ~RegEx();
 
 	virtual bool isValid() const override { return mValid; }
@@ -80,6 +96,8 @@ class EE_API RegEx : public PatternMatcher {
 	virtual bool matches( const char* stringSearch, int stringStartOffset,
 						  PatternMatcher::Range* matchList, size_t stringLength ) const override;
 
+	/** @note Not thread-safe: the object keeps reusable match state (mMatchNum, mMatchData), so a
+	 *  single instance must not be used from several threads at once. Construct one per thread. */
 	virtual bool matches( const std::string& str, PatternMatcher::Range* matchList = nullptr,
 						  int stringStartOffset = 0 ) const override;
 
@@ -90,15 +108,27 @@ class EE_API RegEx : public PatternMatcher {
 	const std::string_view& getPattern() const override { return mPattern; }
 
   protected:
+	/** Releases match data with the engine that created it. Owning it through this type is what
+	 *  keeps a RegEx move-only: a copy would free the same block twice. */
+	struct MatchDataDeleter {
+		Uint32 options;
+
+		void operator()( void* matchData ) const;
+	};
+
 	std::string_view mPattern;
 	mutable size_t mMatchNum;
-	/** Compiled pattern, owned by the engine named in the Options::UseOniguruma bit of mOptions:
-	 *  pcre2_code* or OnigRegex respectively. The cache owns it when mCached is set. */
-	void* mCompiledPattern;
+	/** Compiled pattern: pcre2_code* or OnigRegex, according to the Options::UseOniguruma bit of
+	 *  mOptions. It owns the pattern and releases it with the engine that compiled it, so the cache
+	 *  may drop its entry while this object is still using the pattern. */
+	RegExCache::CompiledPattern mCompiledPattern;
+	/** Match data reused by every matches() call, opaque so the engine headers stay out of this
+	 *  one: pcre2_match_data* or OnigRegion*, according to the same option bit. It depends only on
+	 *  the compiled pattern, which never changes, so it is created once and owned by this object. */
+	mutable std::unique_ptr<void, MatchDataDeleter> mMatchData;
 	int mCaptureCount{ 0 };
 	Uint32 mOptions{ Options::Utf | Options::AllowFallback };
 	bool mValid : 1 { false };
-	bool mCached : 1 { false };
 	bool mFilterOutCaptures : 1 { false };
 
 	bool initWithOnigumura( std::string_view pattern, bool useCache );

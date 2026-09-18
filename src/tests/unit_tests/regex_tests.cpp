@@ -40,6 +40,44 @@ UTEST( RegEx, cacheHit ) {
 	RegExCache::destroySingleton();
 }
 
+UTEST( RegEx, cacheIsBounded ) {
+	// The cache is bounded and evicts the least recently used pattern. A pattern it drops has to
+	// stay valid for the RegEx still using it: patterns are shared with the cache, never borrowed.
+	RegExCache::destroySingleton();
+	const Uint32 options = RegEx::Options::Utf | RegEx::Options::AllowFallback;
+	const std::string subject( "evictme" );
+	RegEx evicted( subject, options );
+	EXPECT_TRUE( evicted.matches( subject ) );
+	EXPECT_TRUE( RegExCache::instance()->find( subject, options ) != nullptr );
+
+	// Filling the bound with placeholders is far cheaper than compiling that many patterns. The
+	// no-op deleter is safe because these are not engine patterns.
+	auto placeholder = std::shared_ptr<void>( reinterpret_cast<void*>( 1 ), []( void* ) {} );
+	auto insert = [&]( const std::string& key ) {
+		RegExCache::instance()->insert( key, options, placeholder );
+	};
+	for ( size_t i = 0; i < RegExCache::MaxCachedPatterns; ++i )
+		insert( "placeholder" + std::to_string( i ) );
+
+	EXPECT_TRUE( RegExCache::instance()->size() <= RegExCache::MaxCachedPatterns );
+	EXPECT_TRUE( RegExCache::instance()->find( subject, options ) == nullptr );
+	EXPECT_TRUE( evicted.matches( subject ) );
+	EXPECT_EQ( evicted.getNumMatches(), 1ul );
+
+	// `touched` goes in first, so it is the least recently used entry once the cache fills again.
+	// The lookup promotes it, which means the insert that follows has to drop `filler0` instead.
+	const std::string touched = "touched";
+	insert( touched );
+	for ( size_t i = 0; i < RegExCache::MaxCachedPatterns - 1; ++i )
+		insert( "filler" + std::to_string( i ) );
+	EXPECT_TRUE( RegExCache::instance()->find( touched, options ) != nullptr );
+	insert( "extra" );
+	EXPECT_TRUE( RegExCache::instance()->find( touched, options ) != nullptr );
+	EXPECT_TRUE( RegExCache::instance()->find( "filler0", options ) == nullptr );
+
+	RegExCache::destroySingleton();
+}
+
 UTEST( RegEx, captures ) {
 	RegEx regex( "(\\d+) and (\\d+)" );
 	EXPECT_EQ( regex.getCaptureCount(), 2 );
@@ -149,10 +187,9 @@ UTEST( RegExEngines, basicTest ) {
 }
 
 UTEST( RegExEngines, uncachedPatternIsFreedByItsOwnEngine ) {
-	// A pattern compiled by Oniguruma but not owned by the cache has to be released with onig_free().
-	// Releasing it with pcre2_code_free() corrupted the heap and crashed this test binary, so the
-	// engine that compiled a pattern decides its deallocator (the same split RegExCache::clear()
-	// makes for the patterns it owns).
+	// A pattern compiled by Oniguruma has to be released with onig_free(). Releasing it with
+	// pcre2_code_free() corrupted the heap and crashed this test binary, so every compiled pattern
+	// carries the deallocator of the engine that produced it, cached or not.
 	{
 		RegEx oniguruma( "a+", RegEx::Options::Utf | RegEx::Options::UseOniguruma, false );
 		EXPECT_EQ( oniguruma.isValid(), true );

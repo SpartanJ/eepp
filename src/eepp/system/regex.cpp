@@ -15,42 +15,48 @@ struct OnigInitializer {
 	~OnigInitializer() { onig_end(); }
 };
 
+/** Releases a compiled pattern with the engine that produced it. The cache stores one of these
+ *  inside every shared_ptr it hands out, which is what lets a RegEx keep using a pattern after the
+ *  cache has evicted the entry. */
+struct CompiledPatternDeleter {
+	Uint32 options;
+
+	void operator()( void* pattern ) const {
+		if ( options & RegEx::Options::UseOniguruma )
+			onig_free( static_cast<OnigRegex>( pattern ) );
+		else
+			pcre2_code_free( static_cast<pcre2_code*>( pattern ) );
+	}
+};
+
 static OnigInitializer globalOnigInitializer;
 
 } // namespace
 
 SINGLETON_DECLARE_IMPLEMENTATION( RegExCache )
 
-RegExCache::~RegExCache() {
-	clear();
-}
-
 inline size_t getCacheHash( std::string_view key, Uint32 options ) {
 	return hashCombine( std::hash<std::string_view>()( key ), options );
 }
 
-void RegExCache::insert( std::string_view key, Uint32 options, void* cache ) {
-	auto hash = getCacheHash( key, options );
+void RegExCache::insert( std::string_view pattern, Uint32 options, CompiledPattern compiled ) {
 	Lock l( mMutex );
-	mCache.insert( { hash, cache } );
-	mCacheOpt.insert( { hash, options } );
+	mCache.put( getCacheHash( pattern, options ), std::move( compiled ) );
 }
 
-void* RegExCache::find( std::string_view key, Uint32 options ) {
+RegExCache::CompiledPattern RegExCache::find( std::string_view pattern, Uint32 options ) {
 	Lock l( mMutex );
-	auto it = mCache.find( getCacheHash( key, options ) );
-	return ( it != mCache.end() ) ? it->second : nullptr;
+	auto cached = mCache.get( getCacheHash( pattern, options ) );
+	return cached ? std::move( *cached ) : CompiledPattern();
+}
+
+size_t RegExCache::size() {
+	Lock l( mMutex );
+	return mCache.size();
 }
 
 void RegExCache::clear() {
 	Lock l( mMutex );
-	for ( auto& cache : mCache ) {
-		auto opt = mCacheOpt.find( cache.first );
-		if ( opt->second & RegEx::Options::UseOniguruma )
-			onig_free( static_cast<OnigRegex>( cache.second ) );
-		else
-			pcre2_code_free( reinterpret_cast<pcre2_code*>( cache.second ) );
-	}
 	mCache.clear();
 }
 
@@ -58,7 +64,6 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	PatternMatcher( PatternType::PCRE ),
 	mPattern( pattern ),
 	mMatchNum( 0 ),
-	mCompiledPattern( nullptr ),
 	mCaptureCount( 0 ),
 	mOptions( options ),
 	mValid( true ),
@@ -70,7 +75,6 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	if ( useCache && RegExCache::instance()->isEnabled() &&
 		 ( mCompiledPattern = RegExCache::instance()->find( pattern, mOptions ) ) ) {
 		mValid = true;
-		mCached = true;
 		return;
 	}
 
@@ -79,7 +83,6 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		 ( mCompiledPattern =
 			   RegExCache::instance()->find( pattern, mOptions | Options::UseOniguruma ) ) ) {
 		mValid = true;
-		mCached = true;
 		mOptions |= Options::UseOniguruma;
 		return;
 	}
@@ -98,15 +101,15 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	if ( options & Options::UseOniguruma )
 		options &= ~Options::UseOniguruma;
 
-	mCompiledPattern = pcre2_compile( pattern_sptr,	  // the pattern
-									  pattern.size(), // the length of the pattern
-									  options,		  // default options
-									  &errornumber,	  // for error number
-									  &erroroffset,	  // for error offset
-									  NULL			  // use default compile context
+	auto* compiled = pcre2_compile( pattern_sptr,	// the pattern
+									pattern.size(), // the length of the pattern
+									options,		// default options
+									&errornumber,	// for error number
+									&erroroffset,	// for error offset
+									NULL			// use default compile context
 	);
 
-	if ( mCompiledPattern == NULL ) {
+	if ( compiled == NULL ) {
 		PCRE2_UCHAR buffer[256];
 		pcre2_get_error_message( errornumber, buffer, sizeof( buffer ) );
 		mValid = false;
@@ -119,33 +122,31 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		return;
 	}
 
+	mCompiledPattern =
+		RegExCache::CompiledPattern( compiled, CompiledPatternDeleter{ mOptions } );
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	pcre2_jit_compile( reinterpret_cast<pcre2_code*>( mCompiledPattern ), PCRE2_JIT_COMPLETE );
+	pcre2_jit_compile( static_cast<pcre2_code*>( mCompiledPattern.get() ), PCRE2_JIT_COMPLETE );
 #endif
 
-	int rc = pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
+	int rc = pcre2_pattern_info( static_cast<pcre2_code*>( mCompiledPattern.get() ),
 								 PCRE2_INFO_CAPTURECOUNT, &mCaptureCount );
 	if ( rc != 0 ) {
 		Log::debug( "PCRE2 pattern info failed with error code " + std::to_string( rc ) );
 		mValid = false;
 	} else if ( useCache && RegExCache::instance()->isEnabled() ) {
 		RegExCache::instance()->insert( pattern, mOptions, mCompiledPattern );
-		mCached = true;
 	}
 }
 
-RegEx::~RegEx() {
-	if ( mCached || mCompiledPattern == nullptr )
-		return;
-
-	// The pattern is owned by whichever engine compiled it, so it must be released with that
-	// engine's deallocator: freeing an Oniguruma pattern with pcre2_code_free() (or the reverse)
-	// corrupts the heap. The cache, which owns the patterns it hands out, does the same split.
-	if ( mOptions & Options::UseOniguruma )
-		onig_free( static_cast<OnigRegex>( mCompiledPattern ) );
+void RegEx::MatchDataDeleter::operator()( void* matchData ) const {
+	if ( options & Options::UseOniguruma )
+		onig_region_free( static_cast<OnigRegion*>( matchData ), 1 );
 	else
-		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
+		pcre2_match_data_free( static_cast<pcre2_match_data*>( matchData ) );
 }
+
+RegEx::~RegEx() = default;
 
 bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 					 PatternMatcher::Range* matchList, size_t stringLength ) const {
@@ -155,7 +156,10 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 	}
 
 	if ( mOptions & Options::UseOniguruma ) {
-		OnigRegion* region = onig_region_new();
+		if ( !mMatchData )
+			mMatchData = std::unique_ptr<void, MatchDataDeleter>( onig_region_new(),
+																  MatchDataDeleter{ mOptions } );
+		OnigRegion* region = static_cast<OnigRegion*>( mMatchData.get() );
 		if ( !region ) {
 			Log::error( "Onigumura: onig_region_new() failed." );
 			mMatchNum = 0;
@@ -169,15 +173,14 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		OnigOptionType searchOpt = ONIG_OPTION_NONE;
 
 		if ( stringStartOffset > static_cast<int>( stringLength ) ) {
-			onig_region_free( region, 1 );
 			mMatchNum = 0;
 			return false;
 		}
 
 		int ret = ( mOptions & Options::Anchored )
-					  ? onig_match( static_cast<OnigRegex>( mCompiledPattern ), subjectPtr,
+					  ? onig_match( static_cast<OnigRegex>( mCompiledPattern.get() ), subjectPtr,
 									subjectEnd, subjectStart, region, searchOpt )
-					  : onig_search( static_cast<OnigRegex>( mCompiledPattern ), subjectPtr,
+					  : onig_search( static_cast<OnigRegex>( mCompiledPattern.get() ), subjectPtr,
 									 subjectEnd, subjectStart, subjectEnd, region, searchOpt );
 
 		if ( ret >= 0 ) {
@@ -203,25 +206,33 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 					mMatchNum = curCap;
 			}
 
-			onig_region_free( region, 1 );
 			return mMatchNum > 0;
 
 		} else if ( ret == ONIG_MISMATCH ) { // No match
-			onig_region_free( region, 1 );
 			mMatchNum = 0;
 			return false;
 		} else { // Error
 			UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
 			onig_error_code_to_str( errBuf, ret );
 			Log::debug( "Onigumura search error: %s", reinterpret_cast<const char*>( errBuf ) );
-			onig_region_free( region, 1 );
 			mMatchNum = 0;
 			return false;
 		}
 	}
 
-	auto* compiledPattern = reinterpret_cast<pcre2_code*>( mCompiledPattern );
-	pcre2_match_data* match_data = pcre2_match_data_create_from_pattern( compiledPattern, NULL );
+	auto* compiledPattern = static_cast<pcre2_code*>( mCompiledPattern.get() );
+
+	// The ovector size is taken from the compiled pattern, so one match data block serves every
+	// call this object ever makes.
+	if ( !mMatchData )
+		mMatchData = std::unique_ptr<void, MatchDataDeleter>(
+			pcre2_match_data_create_from_pattern( compiledPattern, NULL ),
+			MatchDataDeleter{ mOptions } );
+	pcre2_match_data* match_data = static_cast<pcre2_match_data*>( mMatchData.get() );
+	if ( match_data == nullptr ) {
+		mMatchNum = 0;
+		return false;
+	}
 
 	PCRE2_SPTR subject = reinterpret_cast<PCRE2_SPTR>( stringSearch );
 
@@ -235,7 +246,6 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 	);
 
 	if ( rc < 0 ) {
-		pcre2_match_data_free( match_data );
 		mMatchNum = 0;
 		// if ( rc == PCRE2_ERROR_NOMATCH )
 		return false;
@@ -264,7 +274,6 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		mMatchNum = curCap;
 	}
 
-	pcre2_match_data_free( match_data );
 	return mMatchNum > 0;
 }
 
@@ -281,9 +290,9 @@ int RegEx::getCaptureCount() const {
 	if ( !mCompiledPattern )
 		return 0;
 	if ( mOptions & Options::UseOniguruma )
-		return onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern ) );
+		return onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern.get() ) );
 	int captureCount = 0;
-	return pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
+	return pcre2_pattern_info( static_cast<pcre2_code*>( mCompiledPattern.get() ),
 							   PCRE2_INFO_CAPTURECOUNT, &captureCount ) == 0
 			   ? captureCount
 			   : 0;
@@ -310,22 +319,18 @@ bool RegEx::initWithOnigumura( std::string_view pattern, bool useCache ) {
 		UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
 		onig_error_code_to_str( errBuf, ret, &err );
 		Log::info( "Onigumura compilation failed: %s", reinterpret_cast<const char*>( errBuf ) );
+		// onig_new() failed, so there is no pattern to release: mCompiledPattern is left null.
 		mValid = false;
-		if ( mCompiledPattern ) {
-			onig_free( regex );
-			mCompiledPattern = nullptr;
-		}
 		return false;
 	}
 
-	mCompiledPattern = regex;
-	mValid = true;
 	mOptions |= Options::UseOniguruma;
-	mCaptureCount = onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern ) );
+	mCompiledPattern = RegExCache::CompiledPattern( regex, CompiledPatternDeleter{ mOptions } );
+	mValid = true;
+	mCaptureCount = onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern.get() ) );
 
 	if ( useCache && RegExCache::instance()->isEnabled() ) {
 		RegExCache::instance()->insert( pattern, mOptions, mCompiledPattern );
-		mCached = true;
 	}
 
 	return false;
