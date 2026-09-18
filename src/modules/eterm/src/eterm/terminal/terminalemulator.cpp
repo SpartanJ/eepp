@@ -1228,15 +1228,19 @@ void TerminalEmulator::keyEvent( const KittyKeyEvent& event ) {
 	}
 
 	const Uint32 modifiers = keyboardSanitizeMod( event.modifiers );
-	auto writeMapped = [this, modifiers]( const auto& entries ) {
+	const auto dpy = mDpy.lock();
+	const bool appKeypad = dpy && dpy->getMode( MODE_APPKEYPAD );
+	const bool numLock = dpy && dpy->getMode( MODE_NUMLOCK );
+	const bool appCursor = dpy && dpy->getMode( MODE_APPCURSOR );
+	auto writeMapped = [this, modifiers, appKeypad, numLock, appCursor]( const auto& entries ) {
 		for ( const auto& entry : entries ) {
 			if ( entry.mask != KEYMOD_CTRL_SHIFT_ALT_META && entry.mask != modifiers )
 				continue;
-			if ( IS_SET( MODE_APPKEYPAD ) ? entry.appkey < 0 : entry.appkey > 0 )
+			if ( appKeypad ? entry.appkey < 0 : entry.appkey > 0 )
 				continue;
-			if ( IS_SET( MODE_NUMLOCK ) && entry.appkey == 2 )
+			if ( numLock && entry.appkey == 2 )
 				continue;
-			if ( IS_SET( MODE_APPCURSOR ) ? entry.appcursor < 0 : entry.appcursor > 0 )
+			if ( appCursor ? entry.appcursor < 0 : entry.appcursor > 0 )
 				continue;
 			if ( !entry.string.empty() ) {
 				ttywrite( entry.string.data(), entry.string.size(), 1 );

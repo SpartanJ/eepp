@@ -1103,6 +1103,22 @@ UTEST( eterm, kitty_modifier_key_does_not_scroll_to_bottom ) {
 	EXPECT_EQ( 0, term->scrollPos() );
 }
 
+UTEST( eterm, application_cursor_keys_are_written_to_pty ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+
+	term->keyEvent( { KEY_UP, SCANCODE_UP, 0, KEYMOD_NONE, KittyKeyEventType::Press } );
+	term->keyEvent( { KEY_DOWN, SCANCODE_DOWN, 0, KEYMOD_NONE, KittyKeyEventType::Press } );
+
+	EXPECT_STDSTREQ( "\033OA\033OB", ptyPtr->mWrites );
+}
+
 UTEST( eterm, kitty_keyboard_protocol_preserves_altgr_text ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[>15u";
