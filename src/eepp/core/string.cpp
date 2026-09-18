@@ -1215,9 +1215,11 @@ std::string String::rTrim( const std::string& str, char character ) {
 
 std::string String::trim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 std::string_view String::lTrim( const std::string_view& str, char character ) {
@@ -1232,9 +1234,11 @@ std::string_view String::rTrim( const std::string_view& str, char character ) {
 
 std::string_view String::trim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 String::View String::lTrim( const String::View& str, char character ) {
@@ -1249,9 +1253,11 @@ String::View String::rTrim( const String::View& str, char character ) {
 
 String::View String::trim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::View::npos )
+		return {};
 	String::View::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == String::View::npos ? 0 : pos1,
-					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( std::string& str, char character ) {
@@ -1272,9 +1278,11 @@ String String::rTrim( const String& str, char character ) {
 
 String String::trim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::InvalidPos )
+		return {};
 	StringType::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
-					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( String& str, char character ) {
@@ -1293,9 +1301,11 @@ std::string String::rTrim( const std::string& str, std::string_view characters )
 
 std::string String::trim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 std::string_view String::lTrim( const std::string_view& str, std::string_view characters ) {
@@ -1310,9 +1320,11 @@ std::string_view String::rTrim( const std::string_view& str, std::string_view ch
 
 std::string_view String::trim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 String::View String::lTrim( const String::View& str, String::View characters ) {
@@ -1327,9 +1339,11 @@ String::View String::rTrim( const String::View& str, String::View characters ) {
 
 String::View String::trim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::View::npos )
+		return {};
 	String::View::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == String::View::npos ? 0 : pos1,
-					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( std::string& str, std::string_view characters ) {
@@ -1348,9 +1362,11 @@ String String::rTrim( const String& str, std::string_view characters ) {
 
 String String::trim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::InvalidPos )
+		return {};
 	StringType::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
-					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( String& str, std::string_view characters ) {

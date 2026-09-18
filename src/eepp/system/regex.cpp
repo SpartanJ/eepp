@@ -135,9 +135,16 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 }
 
 RegEx::~RegEx() {
-	if ( !mCached && mCompiledPattern != nullptr ) {
+	if ( mCached || mCompiledPattern == nullptr )
+		return;
+
+	// The pattern is owned by whichever engine compiled it, so it must be released with that
+	// engine's deallocator: freeing an Oniguruma pattern with pcre2_code_free() (or the reverse)
+	// corrupts the heap. The cache, which owns the patterns it hands out, does the same split.
+	if ( mOptions & Options::UseOniguruma )
+		onig_free( static_cast<OnigRegex>( mCompiledPattern ) );
+	else
 		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
-	}
 }
 
 bool RegEx::matches( const char* stringSearch, int stringStartOffset,

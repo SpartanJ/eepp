@@ -85,6 +85,55 @@ UTEST( String, fromStringView ) {
 	EXPECT_EQ( 1234, intValue );
 }
 
+UTEST( String, trim ) {
+	// Separators are removed from both ends and interior ones are kept.
+	EXPECT_TRUE( String::trim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::trim( std::string( "  a  " ) ) == std::string( "a" ) );
+	// The char overload trims only that character, so tab and newline survive it; the
+	// string_view overload takes a whole separator set.
+	EXPECT_TRUE( String::trim( std::string( "\t a b \n" ) ) == std::string( "\t a b \n" ) );
+	EXPECT_TRUE( String::trim( std::string( "  a  " ), ' ' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::trim( std::string( "xxbxx" ), 'x' ) == std::string( "b" ) );
+	EXPECT_TRUE( String::trim( std::string( "\t\r\n a \t\r\n" ), std::string_view( " \t\r\n" ) ) ==
+				 std::string( "a" ) );
+
+	// A string made only of separators has nothing left once trimmed. It used to come back as a
+	// shorter string of separators instead of as an empty one.
+	EXPECT_TRUE( String::trim( std::string() ).empty() );
+	EXPECT_TRUE( String::trim( std::string( " " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "  " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "        " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "\t\r\n " ), std::string_view( " \t\r\n" ) ).empty() );
+
+	std::string inPlace = "   ";
+	String::trimInPlace( inPlace, ' ' );
+	EXPECT_TRUE( inPlace.empty() );
+	inPlace = "  a  ";
+	String::trimInPlace( inPlace, ' ' );
+	EXPECT_TRUE( inPlace == std::string( "a" ) );
+
+	// The view overloads must report the trimmed range, not a truncated one.
+	EXPECT_TRUE( String::trim( std::string_view() ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "     " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "  a  " ) ) == std::string_view( "a" ) );
+	EXPECT_TRUE( String::trim( std::string_view( "xx" ), std::string_view( "x" ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "xxa xx" ), std::string_view( "x " ) ) ==
+				 std::string_view( "a" ) );
+
+	// The UTF-32 overloads are separate implementations and had the same defect.
+	EXPECT_TRUE( String::trim( String() ).empty() );
+	EXPECT_TRUE( String::trim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::trim( String( "  a  " ) ) == String( "a" ) );
+	EXPECT_TRUE( String::trim( String( "xxx" ), std::string_view( "x" ) ).empty() );
+	EXPECT_TRUE( String::trim( String( "  a  " ), std::string_view( " " ) ) == String( "a" ) );
+	EXPECT_TRUE( String::trim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::trim( String::View( U"  a  " ) ) == String::View( U"a" ) );
+	EXPECT_TRUE( String::trim( String::View( U"  " ), String::View( U" " ) ).empty() );
+	EXPECT_TRUE( String::trim( String::View( U"  a  " ), String::View( U" " ) ) ==
+				 String::View( U"a" ) );
+}
+
 UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	std::string formatted;
 	formatted.reserve( 128 );

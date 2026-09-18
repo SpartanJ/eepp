@@ -147,3 +147,23 @@ UTEST( RegExEngines, basicTest ) {
 	EXPECT_EQ( 38, matchesOniguruma[0].end );
 	RegExCache::destroySingleton();
 }
+
+UTEST( RegExEngines, uncachedPatternIsFreedByItsOwnEngine ) {
+	// A pattern compiled by Oniguruma but not owned by the cache has to be released with onig_free().
+	// Releasing it with pcre2_code_free() corrupted the heap and crashed this test binary, so the
+	// engine that compiled a pattern decides its deallocator (the same split RegExCache::clear()
+	// makes for the patterns it owns).
+	{
+		RegEx oniguruma( "a+", RegEx::Options::Utf | RegEx::Options::UseOniguruma, false );
+		EXPECT_EQ( oniguruma.isValid(), true );
+		EXPECT_EQ( oniguruma.matches( std::string( "aaa" ) ), true );
+	}
+
+	{
+		RegEx pcre2( "a+", RegEx::Options::Utf | RegEx::Options::AllowFallback, false );
+		EXPECT_EQ( pcre2.isValid(), true );
+		EXPECT_EQ( pcre2.matches( std::string( "aaa" ) ), true );
+	}
+
+	RegExCache::destroySingleton();
+}

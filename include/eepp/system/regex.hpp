@@ -92,10 +92,11 @@ class EE_API RegEx : public PatternMatcher {
   protected:
 	std::string_view mPattern;
 	mutable size_t mMatchNum;
+	/** Compiled pattern, owned by the engine named in the Options::UseOniguruma bit of mOptions:
+	 *  pcre2_code* or OnigRegex respectively. The cache owns it when mCached is set. */
 	void* mCompiledPattern;
 	int mCaptureCount{ 0 };
 	Uint32 mOptions{ Options::Utf | Options::AllowFallback };
-	bool mOnigEngine : 1 { false };
 	bool mValid : 1 { false };
 	bool mCached : 1 { false };
 	bool mFilterOutCaptures : 1 { false };
