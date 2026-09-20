@@ -396,16 +396,26 @@ bool ProjectDirectoryTree::shouldIgnoreEntry( const std::string& directory,
 		if ( !mAllowedMatcher || !mAllowedMatcher->hasPatterns() )
 			return true;
 		std::string fullpath( directory + filename );
-		std::string_view localPath( fullpath );
+		size_t localPathOffset = 0;
 		if ( String::startsWith( directory, mAllowedMatcher->getPath() ) )
-			localPath.remove_prefix( mAllowedMatcher->getPath().size() );
+			localPathOffset = mAllowedMatcher->getPath().size();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::replace( fullpath.begin(), fullpath.end(), '\\', '/' );
+#endif
+		std::string_view localPath( fullpath );
+		localPath.remove_prefix( localPathOffset );
 		if ( !mAllowedMatcher->match( localPath ) )
 			return true;
 	} else if ( mDisallowedMatcher && mDisallowedMatcher->hasPatterns() ) {
 		std::string fullpath( directory + filename );
-		std::string_view localPath( fullpath );
+		size_t localPathOffset = 0;
 		if ( String::startsWith( directory, mDisallowedMatcher->getPath() ) )
-			localPath.remove_prefix( mDisallowedMatcher->getPath().size() );
+			localPathOffset = mDisallowedMatcher->getPath().size();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::replace( fullpath.begin(), fullpath.end(), '\\', '/' );
+#endif
+		std::string_view localPath( fullpath );
+		localPath.remove_prefix( localPathOffset );
 		if ( mDisallowedMatcher->match( localPath ) )
 			return true;
 	}

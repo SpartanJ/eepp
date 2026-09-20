@@ -131,7 +131,11 @@ bool IgnoreMatcherManager::match( const FileInfo& file ) const {
 		localPath.clear();
 		if ( String::startsWith( dirPath, matcher->getPath() ) )
 			localPath = dirPath.substr( matcher->getPath().size() );
-		if ( matcher->match( localPath + file.getFileName() ) )
+		localPath += file.getFileName();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::replace( localPath.begin(), localPath.end(), '\\', '/' );
+#endif
+		if ( matcher->match( localPath ) )
 			return true;
 	}
 	return false;
@@ -144,7 +148,11 @@ bool IgnoreMatcherManager::match( const std::string& dir, const std::string& val
 		localPath.clear();
 		if ( String::startsWith( dir, matcher->getPath() ) )
 			localPath = dir.substr( matcher->getPath().size() );
-		if ( matcher->match( localPath + value ) )
+		localPath += value;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::replace( localPath.begin(), localPath.end(), '\\', '/' );
+#endif
+		if ( matcher->match( localPath ) )
 			return true;
 	}
 	return false;

@@ -54,7 +54,11 @@ class ProjectDirectoryTreeTestDirectory {
 	}
 
 	std::string path( const std::string& relativePath = {} ) const {
-		return relativePath.empty() ? mPath.string() : ( mPath / relativePath ).string();
+		std::filesystem::path path( mPath );
+		if ( !relativePath.empty() )
+			path /= relativePath;
+		path.make_preferred();
+		return path.string();
 	}
 
   private:
