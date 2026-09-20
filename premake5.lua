@@ -1982,6 +1982,7 @@ workspace "eepp"
 	project "eproc"
 		set_kind()
 		language "C++"
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		files {
 			"src/tools/eproc/appconfig.cpp",
 			"src/tools/eproc/eproc.cpp",
