@@ -28,6 +28,7 @@ src/thirdparty/SDL3-*
 bin/ee*
 bin/eepp-*
 bin/ecode*
+bin/eproc*
 ee.tag
 log.log
 /external_projects*.lua

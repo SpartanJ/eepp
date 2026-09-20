@@ -13,6 +13,7 @@
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #232629;
+	--list-back-alt: #1b1e20;
 	--separator: #31363b;
 	--item-hover: #284150;
 	--slider-back: #676a6e;
@@ -1215,6 +1216,7 @@ DiffView > SelectButton:focus {
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #ffffff;
+	--list-back-alt: #efefef;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
 	--slider-back: #e9e9e9;

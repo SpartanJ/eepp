@@ -354,7 +354,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.minHeight = col.widget->getPixelsSize().getHeight();
 		}
 		col.setWidth( eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
-												: eemax( col.width, col.minWidth ) ) );
+												: eemax( col.width, col.minWidth ) ),
+					  col.manuallySet );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
@@ -374,6 +375,10 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			if ( colIdx != mMainColumn && !isColumnHidden( colIdx ) ) {
 				Float colWidth = getMaxColumnContentWidth( colIdx, true );
 				auto& col = columnData( colIdx );
+				if ( col.manuallySet ) {
+					usedWidth += col.width;
+					continue;
+				}
 				if ( col.widget )
 					colWidth = eemax( colWidth, col.widget->getPixelsSize().getWidth() );
 				usedWidth += colWidth;
@@ -413,7 +418,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		if ( !col.visible )
 			continue;
 		col.setWidth( eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
-												: eemax( col.width, col.minWidth ) ) );
+												: eemax( col.width, col.minWidth ) ),
+					  col.manuallySet );
 		if ( col.widget ) {
 			col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 			col.widget->setPixelsSize( col.width, getHeaderHeight() );

@@ -80,8 +80,45 @@ Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32
 }
 
 Uint32 UITableHeaderColumn::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_RMASK ) && mView->isColumnWidthModeMenuEnabled() ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && mView->isColumnWidthModeMenuEnabled() &&
+		 mView->getModel() ) {
 		auto* menu = UIPopUpMenu::New();
+		const Model* model = mView->getModel();
+		const size_t columnCount = model->columnCount();
+		const auto columnLabel = [this, model]( size_t column ) {
+			std::string label = model->columnName( column );
+			if ( label.empty() )
+				label = String::format( i18n( "uitable_column_number", "Column %zu" ).toUtf8(),
+										column + 1 );
+			return label;
+		};
+		bool hasColumnVisibilityItems = false;
+		bool hasHiddenColumnItems = false;
+
+		if ( mView->visibleColumnCount() > 1 ) {
+			const std::string title =
+				String::format( i18n( "uitable_hide_column", "Hide Column '%s'" ).toUtf8(),
+								columnLabel( mColIndex ).c_str() );
+			menu->add( title )->setId( "hide-column" )->setData( mColIndex );
+			hasColumnVisibilityItems = true;
+		}
+
+		for ( size_t col = 0; col < columnCount; ++col ) {
+			if ( !mView->isColumnHidden( col ) )
+				continue;
+			if ( hasColumnVisibilityItems && !hasHiddenColumnItems )
+				menu->addSeparator();
+			const std::string title =
+				String::format( i18n( "uitable_show_column", "Show Column '%s'" ).toUtf8(),
+								columnLabel( col ).c_str() );
+			menu->add( title )->setId( "show-column" )->setData( col );
+			hasColumnVisibilityItems = true;
+			hasHiddenColumnItems = true;
+		}
+
+		if ( hasColumnVisibilityItems )
+			menu->addSeparator();
+
 		menu->addRadioButton( i18n( "uitable_fit_columns_to_view", "Fit Columns to View" ),
 							  mView->getColumnWidthMode() ==
 								  UIAbstractTableView::ColumnWidthMode::Percentage )
@@ -90,12 +127,34 @@ Uint32 UITableHeaderColumn::onMouseUp( const Vector2i& position, const Uint32& f
 							  mView->getColumnWidthMode() ==
 								  UIAbstractTableView::ColumnWidthMode::Pixels )
 			->setId( "pixels" );
-		menu->on( Event::OnItemClicked, [view = mView]( const Event* event ) {
+		menu->on( Event::OnItemClicked, [view = mView, columnCount]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
-			view->setColumnWidthMode( event->getNode()->getId() == "percentage"
-										  ? UIAbstractTableView::ColumnWidthMode::Percentage
-										  : UIAbstractTableView::ColumnWidthMode::Pixels );
+
+			const auto* item = event->getNode();
+			const std::string id( item->getId() );
+			const size_t column = static_cast<size_t>( item->getData() );
+			if ( id == "hide-column" ) {
+				if ( column < columnCount && view->visibleColumnCount() > 1 ) {
+					if ( view->getMainColumn() == column ) {
+						for ( size_t next = 0; next < columnCount; ++next ) {
+							if ( next != column && !view->isColumnHidden( next ) ) {
+								view->setMainColumn( next );
+								break;
+							}
+						}
+					}
+					view->setColumnHidden( column, true );
+				}
+			} else if ( id == "show-column" ) {
+				if ( column < columnCount )
+					view->setColumnHidden( column, false );
+			} else if ( id == "percentage" ) {
+				view->setColumnWidthMode( UIAbstractTableView::ColumnWidthMode::Percentage );
+			} else if ( id == "pixels" ) {
+				view->setAutoColumnsWidth( false );
+				view->setColumnWidthMode( UIAbstractTableView::ColumnWidthMode::Pixels );
+			}
 		} );
 		menu->setCloseOnHide( true );
 		menu->showAtScreenPosition( position.asFloat() );
@@ -107,7 +166,8 @@ Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
 									const Sizef& dragDiff ) {
 	Vector2f localPos( convertToNodeSpace( position ) );
 	if ( isDragging() || localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
-		setPixelsSize( mSize.x - dragDiff.x, mSize.getHeight() );
+		const Float width = eemax( mSize.x - dragDiff.x, mView->columnData( mColIndex ).minWidth );
+		setPixelsSize( width, mSize.getHeight() );
 		if ( mSize.getWidth() != mView->columnData( mColIndex ).width ) {
 			mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
 			mView->updateHeaderSize();

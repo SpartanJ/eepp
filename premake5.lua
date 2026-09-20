@@ -1975,6 +1975,29 @@ workspace "eepp"
 		files { "src/tools/eeiv/*.cpp" }
 		build_link_configuration( "eeiv", true )
 
+	project "eproc"
+		set_kind()
+		language "C++"
+		files {
+			"src/tools/eproc/appconfig.cpp",
+			"src/tools/eproc/eproc.cpp",
+			"src/tools/eproc/gui_window_tracker.cpp",
+			"src/tools/eproc/process_collector.cpp",
+			"src/tools/eproc/process_info.cpp",
+			"src/tools/eproc/process_model.cpp",
+		}
+		filter "system:linux"
+			files {
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+			}
+			-- The Programs Only filter reads window ownership from the X11 root window.
+			links { "pcap" }
+		filter {}
+		build_link_configuration( "eproc", true )
+
 	-- Tests
 	project "eepp-test"
 		set_kind()
