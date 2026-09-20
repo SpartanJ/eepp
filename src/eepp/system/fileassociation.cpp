@@ -21,6 +21,10 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+extern "C" CFStringRef eeppFileAssociationTypeIdentifierForExtension( const char* extension );
+#endif
+
 namespace EE::System {
 
 namespace {
@@ -557,11 +561,19 @@ static CFStringRef cfString( const std::string& value ) {
 }
 
 static CFStringRef typeForExtension( const std::string& extension ) {
-	CFRef extensionString( cfString( extension ) );
-	if ( !extensionString.get() )
-		return nullptr;
-	return UTTypeCreatePreferredIdentifierForTag(
-		kUTTagClassFilenameExtension, static_cast<CFStringRef>( extensionString.get() ), nullptr );
+	return eeppFileAssociationTypeIdentifierForExtension( extension.c_str() );
+}
+
+static CFStringRef applicationIdentifier( const FileAssociationApplication& application ) {
+	/* Launch Services uses the bundle identifier from the registered bundle. The cross-platform
+	 * application id is not necessarily that identifier (ecode, for example, uses ensoft.dev in
+	 * its macOS Info.plist). Prefer the bundle metadata when this process is running from a bundle,
+	 * and retain the supplied id as a fallback for non-bundled callers. */
+	if ( auto* bundle = CFBundleGetMainBundle() ) {
+		if ( auto identifier = CFBundleGetIdentifier( bundle ) )
+			return static_cast<CFStringRef>( CFRetain( identifier ) );
+	}
+	return cfString( application.id );
 }
 
 #endif
@@ -621,7 +633,7 @@ std::vector<std::string> FileAssociation::getRegisteredExtensions(
 			registered.emplace_back( extension );
 	}
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	CFRef applicationId( cfString( mApplication.id ) );
+	CFRef applicationId( applicationIdentifier( mApplication ) );
 	if ( !applicationId.get() ) {
 		mLastError = "The application identifier is not valid UTF-8.";
 		return {};
@@ -656,7 +668,7 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 	const auto supported = normalizeExtensions( supportedExtensions );
 	const auto requested = normalizeExtensions( registeredExtensions );
 	std::vector<std::string> selected;
-	selected.reserve( (std::min)( requested.size(), supported.size() ) );
+	selected.reserve( ( std::min )( requested.size(), supported.size() ) );
 	std::set_intersection( requested.begin(), requested.end(), supported.begin(), supported.end(),
 						   std::back_inserter( selected ) );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
@@ -712,7 +724,7 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 		mLastError = "Launch Services could not register the application bundle.";
 		return false;
 	}
-	CFRef applicationId( cfString( mApplication.id ) );
+	CFRef applicationId( applicationIdentifier( mApplication ) );
 	if ( !applicationId.get() ) {
 		mLastError = "The application identifier is not valid UTF-8.";
 		return false;

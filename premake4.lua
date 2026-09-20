@@ -593,6 +593,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	if os.is_real("macosx") then
+		linkoptions { "-weak_framework UniformTypeIdentifiers" }
+	end
+
 	if _OPTIONS["with-mold-linker"] then
 		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
 			linkoptions { "-fuse-ld=mold" }
@@ -1644,7 +1648,8 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src" }
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
-				"src/eepp/window/platform/macos/platformhelper.mm" }
+				"src/eepp/window/platform/macos/platformhelper.mm",
+				"src/eepp/system/fileassociation_macos.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
 			buildoptions{ "-std=c++20" }

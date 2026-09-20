@@ -538,6 +538,9 @@ function build_link_configuration( package_name, use_ee_icon )
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
 
+	filter "system:macosx"
+		linkoptions { "-weak_framework UniformTypeIdentifiers" }
+
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			if type(userelativelinks) == "function" then
@@ -1675,7 +1678,8 @@ workspace "eepp"
 		cppdialect "C++20"
 		incdirs { "include", "src" }
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
-				"src/eepp/window/platform/macos/platformhelper.mm" }
+				"src/eepp/window/platform/macos/platformhelper.mm",
+				"src/eepp/system/fileassociation_macos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )
