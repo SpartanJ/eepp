@@ -1,14 +1,14 @@
 #include "process_network_monitor.hpp"
 
 #include <eepp/system/log.hpp>
+#include <eepp/system/sys.hpp>
 
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
-#include <pcap/pcap.h>
-#include <pcap/sll.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -28,12 +28,101 @@ constexpr Uint8 kIPv4 = 4;
 constexpr Uint8 kIPv6 = 6;
 constexpr size_t kProcPathCapacity = 64;
 constexpr size_t kFdTargetCapacity = 128;
+constexpr size_t kPcapErrorBufferSize = 256;
 
-#ifndef DLT_LINUX_SLL2
-constexpr int kLinuxSll2 = 276;
-#else
-constexpr int kLinuxSll2 = DLT_LINUX_SLL2;
-#endif
+// These are stable libpcap link-layer and error-code values. Keeping the small ABI surface here
+// lets eproc build without libpcap development headers; the library itself is loaded at runtime.
+constexpr int kDltNull = 0;
+constexpr int kDltEthernet = 1;
+constexpr int kDltRaw = 12;
+constexpr int kDltLoop = 108;
+constexpr int kDltLinuxSll = 113;
+constexpr int kDltLinuxSll2 = 276;
+constexpr int kPcapError = -1;
+constexpr int kPcapErrorBreak = -2;
+constexpr Uint32 kPcapNetmaskUnknown = 0xffffffffu;
+
+struct PcapHandle;
+
+struct PcapPacketHeader {
+	timeval timestamp;
+	Uint32 capturedLength;
+	Uint32 wireLength;
+};
+
+struct PcapBpfProgram {
+	Uint32 instructionCount;
+	void* instructions;
+};
+
+class PcapApi {
+  public:
+	using CreateFn = PcapHandle* ( * )( const char*, char* );
+	using SetSnaplenFn = int ( * )( PcapHandle*, int );
+	using SetPromiscFn = int ( * )( PcapHandle*, int );
+	using SetTimeoutFn = int ( * )( PcapHandle*, int );
+	using ActivateFn = int ( * )( PcapHandle* );
+	using GetErrorFn = char* ( * )( PcapHandle* );
+	using CloseFn = void ( * )( PcapHandle* );
+	using CompileFn = int ( * )( PcapHandle*, PcapBpfProgram*, const char*, int, Uint32 );
+	using SetFilterFn = int ( * )( PcapHandle*, PcapBpfProgram* );
+	using FreeCodeFn = void ( * )( PcapBpfProgram* );
+	using DataLinkFn = int ( * )( PcapHandle* );
+	using NextExFn = int ( * )( PcapHandle*, PcapPacketHeader**, const Uint8** );
+
+	~PcapApi() {
+		if ( library )
+			Sys::unloadObject( library );
+	}
+
+	template <typename Function> Function resolve( const char* name ) {
+		return reinterpret_cast<Function>( Sys::loadFunction( library, name ) );
+	}
+
+	bool load() {
+		library = Sys::loadObject( "libpcap.so.1" );
+		if ( !library )
+			library = Sys::loadObject( "libpcap.so" );
+
+		if ( !library )
+			return false;
+
+		create = resolve<CreateFn>( "pcap_create" );
+		setSnaplen = resolve<SetSnaplenFn>( "pcap_set_snaplen" );
+		setPromisc = resolve<SetPromiscFn>( "pcap_set_promisc" );
+		setTimeout = resolve<SetTimeoutFn>( "pcap_set_timeout" );
+		activate = resolve<ActivateFn>( "pcap_activate" );
+		getError = resolve<GetErrorFn>( "pcap_geterr" );
+		close = resolve<CloseFn>( "pcap_close" );
+		compile = resolve<CompileFn>( "pcap_compile" );
+		setFilter = resolve<SetFilterFn>( "pcap_setfilter" );
+		freeCode = resolve<FreeCodeFn>( "pcap_freecode" );
+		dataLink = resolve<DataLinkFn>( "pcap_datalink" );
+		nextEx = resolve<NextExFn>( "pcap_next_ex" );
+
+		if ( create && setSnaplen && setPromisc && setTimeout && activate && getError && close &&
+			 compile && setFilter && freeCode && dataLink && nextEx )
+			return true;
+
+		Sys::unloadObject( library );
+		library = nullptr;
+		return false;
+	}
+
+	void* library{ nullptr };
+	CreateFn create{ nullptr };
+	SetSnaplenFn setSnaplen{ nullptr };
+	SetPromiscFn setPromisc{ nullptr };
+	SetTimeoutFn setTimeout{ nullptr };
+	ActivateFn activate{ nullptr };
+	GetErrorFn getError{ nullptr };
+	CloseFn close{ nullptr };
+	CompileFn compile{ nullptr };
+	SetFilterFn setFilter{ nullptr };
+	FreeCodeFn freeCode{ nullptr };
+	DataLinkFn dataLink{ nullptr };
+	NextExFn nextEx{ nullptr };
+};
 
 inline Uint16 readBigEndian16( const Uint8* data ) {
 	return static_cast<Uint16>( data[0] << 8 | data[1] );
@@ -289,7 +378,7 @@ bool ProcessNetworkMonitor::parsePacket( int dataLink, const Uint8* data, size_t
 	Uint16 etherType = 0;
 
 	switch ( dataLink ) {
-		case DLT_EN10MB:
+		case kDltEthernet:
 			if ( length < 14 )
 				return false;
 			networkOffset = 14;
@@ -301,22 +390,22 @@ bool ProcessNetworkMonitor::parsePacket( int dataLink, const Uint8* data, size_t
 				networkOffset += 4;
 			}
 			break;
-		case DLT_LINUX_SLL:
+		case kDltLinuxSll:
 			if ( length < 16 )
 				return false;
 			networkOffset = 16;
 			etherType = readBigEndian16( data + 14 );
 			break;
-		case kLinuxSll2:
+		case kDltLinuxSll2:
 			if ( length < 20 )
 				return false;
 			networkOffset = 20;
 			etherType = readBigEndian16( data );
 			break;
-		case DLT_RAW:
+		case kDltRaw:
 			networkOffset = 0;
 			break;
-		case DLT_NULL: {
+		case kDltNull: {
 			if ( length < 4 )
 				return false;
 			Uint32 linkFamily = 0;
@@ -332,7 +421,7 @@ bool ProcessNetworkMonitor::parsePacket( int dataLink, const Uint8* data, size_t
 			networkOffset = 4;
 			break;
 		}
-		case DLT_LOOP: {
+		case kDltLoop: {
 			if ( length < 4 )
 				return false;
 			const Uint32 linkFamily = readBigEndian32( data );
@@ -482,61 +571,64 @@ void ProcessNetworkMonitor::applyRates( std::vector<ProcessInfo>& processes ) {
 }
 
 void ProcessNetworkMonitor::captureLoop() {
-	char errorBuffer[PCAP_ERRBUF_SIZE] = {};
-	pcap_t* capture = pcap_create( nullptr, errorBuffer );
+	PcapApi api;
+	if ( !api.load() )
+		return;
+
+	char errorBuffer[kPcapErrorBufferSize] = {};
+	PcapHandle* capture = api.create( nullptr, errorBuffer );
 	if ( !capture ) {
 		Log::warning( "eproc: could not start per-process network capture: %s", errorBuffer );
 		return;
 	}
 
-	pcap_set_snaplen( capture, 256 );
-	pcap_set_promisc( capture, 0 );
-	pcap_set_timeout( capture, 250 );
-	int result = pcap_activate( capture );
+	api.setSnaplen( capture, 256 );
+	api.setPromisc( capture, 0 );
+	api.setTimeout( capture, 250 );
+	int result = api.activate( capture );
 	if ( result < 0 ) {
 		Log::warning( "eproc: per-process network capture is unavailable: %s",
-					  pcap_geterr( capture ) );
-		pcap_close( capture );
+					  api.getError( capture ) );
+		api.close( capture );
 		return;
 	}
 
-	bpf_program filter;
-	const int compileResult =
-		pcap_compile( capture, &filter, "tcp or udp", 1, PCAP_NETMASK_UNKNOWN );
+	PcapBpfProgram filter{};
+	const int compileResult = api.compile( capture, &filter, "tcp or udp", 1, kPcapNetmaskUnknown );
 	if ( compileResult < 0 ) {
 		Log::warning( "eproc: could not install the per-process network capture filter: %s",
-					  pcap_geterr( capture ) );
-		pcap_close( capture );
+					  api.getError( capture ) );
+		api.close( capture );
 		return;
 	}
-	if ( pcap_setfilter( capture, &filter ) < 0 ) {
+	if ( api.setFilter( capture, &filter ) < 0 ) {
 		Log::warning( "eproc: could not install the per-process network capture filter: %s",
-					  pcap_geterr( capture ) );
-		pcap_freecode( &filter );
-		pcap_close( capture );
+					  api.getError( capture ) );
+		api.freeCode( &filter );
+		api.close( capture );
 		return;
 	}
-	pcap_freecode( &filter );
+	api.freeCode( &filter );
 
-	mDataLink = pcap_datalink( capture );
+	mDataLink = api.dataLink( capture );
 	if ( mDataLink < 0 ) {
-		pcap_close( capture );
+		api.close( capture );
 		return;
 	}
 
 	mAvailable.store( true );
 	while ( mRunning.load() ) {
-		pcap_pkthdr* header = nullptr;
-		const u_char* data = nullptr;
-		result = pcap_next_ex( capture, &header, &data );
+		PcapPacketHeader* header = nullptr;
+		const Uint8* data = nullptr;
+		result = api.nextEx( capture, &header, &data );
 		if ( result == 1 )
-			processPacket( mDataLink, data, header->caplen, header->len );
-		else if ( result == PCAP_ERROR_BREAK || result == PCAP_ERROR )
+			processPacket( mDataLink, data, header->capturedLength, header->wireLength );
+		else if ( result == kPcapErrorBreak || result == kPcapError )
 			break;
 	}
 
 	mAvailable.store( false );
-	pcap_close( capture );
+	api.close( capture );
 }
 
 } // namespace eproc

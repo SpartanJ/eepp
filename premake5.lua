@@ -1997,8 +1997,7 @@ workspace "eepp"
 				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
-			-- The Programs Only filter reads window ownership from the X11 root window.
-			links { "pcap" }
+			-- Per-process network capture loads libpcap at runtime when it is available.
 		filter {}
 		build_link_configuration( "eproc", true )
 
