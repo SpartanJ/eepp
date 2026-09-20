@@ -70,8 +70,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				for ( const auto& strPattern : acceptedPatterns )
 					mAcceptedPatterns.emplace_back( std::string{ strPattern } );
 				std::set<std::string> info;
-				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
+				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -101,8 +100,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				}
 			} else {
 				std::set<std::string> info;
-				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher,
-								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
+				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
 			}
 			mIsReady = true;
 			if ( mPluginManager ) {
@@ -342,8 +340,7 @@ bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
 void ProjectDirectoryTree::getDirectoryFiles(
 	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
 	std::set<std::string> currentDirs, const bool& ignoreHidden,
-	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher,
-	GitIgnoreMatcher* disallowedMatcher, bool initialScan ) {
+	IgnoreMatcherManager& ignoreMatcher, bool initialScan ) {
 	if ( mClosing || ( initialScan && !mRunning ) )
 		return;
 	currentDirs.insert( directory );
@@ -351,23 +348,8 @@ void ProjectDirectoryTree::getDirectoryFiles(
 		FileSystem::filesGetInPath( directory, false, false, ignoreHidden );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
-		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
-			if ( !allowedMatcher || !allowedMatcher->hasPatterns() )
-				continue;
-			std::string_view localPath( fullpath );
-			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
-				localPath = std::string_view{ fullpath }.substr( allowedMatcher->getPath().size() );
-			if ( !allowedMatcher->match( localPath ) )
-				continue;
-		} else if ( disallowedMatcher && disallowedMatcher->hasPatterns() ) {
-			std::string_view localPath( fullpath );
-			if ( String::startsWith( directory, disallowedMatcher->getPath() ) ) {
-				localPath =
-					std::string_view{ fullpath }.substr( disallowedMatcher->getPath().size() );
-			}
-			if ( disallowedMatcher->match( localPath ) )
-				continue;
-		}
+		if ( shouldIgnoreEntry( directory, file, ignoreMatcher ) )
+			continue;
 
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
@@ -395,7 +377,7 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				ignoreMatcher.addChild( childMatch );
 			}
 			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
-							   allowedMatcher, disallowedMatcher, initialScan );
+							   initialScan );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -405,6 +387,29 @@ void ProjectDirectoryTree::getDirectoryFiles(
 			names.emplace_back( file );
 		}
 	}
+}
+
+bool ProjectDirectoryTree::shouldIgnoreEntry( const std::string& directory,
+											  const std::string& filename,
+											  IgnoreMatcherManager& ignoreMatcher ) const {
+	if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, filename ) ) {
+		if ( !mAllowedMatcher || !mAllowedMatcher->hasPatterns() )
+			return true;
+		std::string fullpath( directory + filename );
+		std::string_view localPath( fullpath );
+		if ( String::startsWith( directory, mAllowedMatcher->getPath() ) )
+			localPath.remove_prefix( mAllowedMatcher->getPath().size() );
+		if ( !mAllowedMatcher->match( localPath ) )
+			return true;
+	} else if ( mDisallowedMatcher && mDisallowedMatcher->hasPatterns() ) {
+		std::string fullpath( directory + filename );
+		std::string_view localPath( fullpath );
+		if ( String::startsWith( directory, mDisallowedMatcher->getPath() ) )
+			localPath.remove_prefix( mDisallowedMatcher->getPath().size() );
+		if ( mDisallowedMatcher->match( localPath ) )
+			return true;
+	}
+	return false;
 }
 
 void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
@@ -433,24 +438,25 @@ void ProjectDirectoryTree::resetPluginManager() {
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 	if ( mIgnoreHidden && file.isHidden() )
 		return;
+	std::string directory( file.getDirectoryPath() );
+	FileSystem::dirAddSlashAtEnd( directory );
 	IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
-	if ( !matcher.foundMatch() || !matcher.match( file ) ) {
-		bool foundPattern = mAcceptedPatterns.empty();
-		for ( auto& pattern : mAcceptedPatterns ) {
-			if ( pattern.matches( file.getFilepath() ) ) {
-				foundPattern = true;
-				break;
-			}
+	if ( shouldIgnoreEntry( directory, file.getFileName(), matcher ) )
+		return;
+	bool foundPattern = mAcceptedPatterns.empty();
+	for ( auto& pattern : mAcceptedPatterns ) {
+		if ( pattern.matches( file.getFilepath() ) ) {
+			foundPattern = true;
+			break;
 		}
-		if ( foundPattern ) {
-			Lock rl( mMatchingMutex );
-			Lock l( mFilesMutex );
-			auto exists =
-				std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
-			if ( !exists ) {
-				mFiles.emplace_back( file.getFilepath() );
-				mNames.emplace_back( file.getFileName() );
-			}
+	}
+	if ( foundPattern ) {
+		Lock rl( mMatchingMutex );
+		Lock l( mFilesMutex );
+		auto exists = std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
+		if ( !exists ) {
+			mFiles.emplace_back( file.getFilepath() );
+			mNames.emplace_back( file.getFileName() );
 		}
 	}
 }
@@ -462,25 +468,27 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		if ( mIgnoreHidden && file.isHidden() )
 			return;
 		Lock rl( mMatchingMutex );
-		const std::string& directoryEntry = file.getFilepath();
-		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( directoryEntry ) );
-		if ( matcher.foundMatch() && matcher.match( file ) ) {
-			if ( !mAllowedMatcher || !mAllowedMatcher->hasPatterns() )
-				return;
-			std::string_view localPath( directoryEntry );
-			if ( String::startsWith( directoryEntry, mAllowedMatcher->getPath() ) )
-				localPath.remove_prefix( mAllowedMatcher->getPath().size() );
-			if ( !mAllowedMatcher->match( localPath ) )
-				return;
-		} else if ( mDisallowedMatcher && mDisallowedMatcher->hasPatterns() ) {
-			std::string_view localPath( directoryEntry );
-			if ( String::startsWith( directoryEntry, mDisallowedMatcher->getPath() ) )
-				localPath.remove_prefix( mDisallowedMatcher->getPath().size() );
-			if ( mDisallowedMatcher->match( localPath ) )
+		std::string directoryEntry( file.getFilepath() );
+		FileSystem::dirRemoveSlashAtEnd( directoryEntry );
+		std::string parentDirectory( FileSystem::fileRemoveFileName( directoryEntry ) );
+		FileSystem::dirAddSlashAtEnd( parentDirectory );
+		{
+			Lock ld( mDirectoriesMutex );
+			if ( std::find( mDirectories.begin(), mDirectories.end(), parentDirectory ) ==
+				 mDirectories.end() )
 				return;
 		}
+		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( directoryEntry ) );
+		if ( shouldIgnoreEntry( parentDirectory, file.getFileName(), matcher ) )
+			return;
 		std::string directory( directoryEntry );
 		FileSystem::dirAddSlashAtEnd( directory );
+		IgnoreMatcherManager directoryMatcher( directory );
+		IgnoreMatcher* childMatch = nullptr;
+		if ( directoryMatcher.foundMatch() ) {
+			childMatch = directoryMatcher.popMatcher( 0 );
+			matcher.addChild( childMatch );
+		}
 		Lock l( mFilesMutex );
 		std::vector<std::string> files;
 		std::vector<std::string> names;
@@ -489,8 +497,11 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			Lock ld( mDirectoriesMutex );
 			mDirectories.emplace_back( directory );
 		}
-		getDirectoryFiles( files, names, directory, info, mIgnoreHidden, matcher,
-						   mAllowedMatcher.get(), mDisallowedMatcher.get(), false );
+		getDirectoryFiles( files, names, directory, info, mIgnoreHidden, matcher, false );
+		if ( childMatch ) {
+			matcher.removeChild( childMatch );
+			eeSAFE_DELETE( childMatch );
+		}
 		for ( size_t i = 0; i < files.size(); ++i ) {
 			bool accepted = mAcceptedPatterns.empty();
 			for ( const auto& pattern : mAcceptedPatterns ) {

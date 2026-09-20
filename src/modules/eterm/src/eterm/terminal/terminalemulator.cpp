@@ -1300,6 +1300,13 @@ void TerminalEmulator::clearPendingKeyboardInput() {
 	mHasPendingTextKey = false;
 }
 
+void TerminalEmulator::reportFocus( bool focused ) {
+	if ( !focused )
+		clearPendingKeyboardInput();
+	if ( xgetmode( MODE_FOCUS ) )
+		ttywriteInternal( focused ? "\033[I" : "\033[O", 3, false, false );
+}
+
 void TerminalEmulator::ttywriteraw( const char* s, size_t n ) {
 	if ( mPty->write( s, n ) < (int)n ) {
 		_die( "Failed to write to TTY" );

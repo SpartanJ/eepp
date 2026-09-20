@@ -267,28 +267,39 @@ UTEST( eterm_session, presentation_rate_is_applied_on_the_worker ) {
 UTEST( eterm_session, focus_reporting_is_ordered_on_worker ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[?1004h";
+	for ( int line = 0; line < 40; ++line )
+		pty->mBuffer += "Line " + std::to_string( line ) + "\r\n";
 	pty->mLoopWrites = false;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
 	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
 	auto enabled = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
-		return snapshot.windowMode & MODE_FOCUS;
+		return snapshot.windowMode & MODE_FOCUS && snapshot.historyLength >= 5;
 	} );
 	ASSERT_TRUE( enabled != nullptr );
+	const Uint64 scrollCommand = session->scrollTo( 5 );
+	auto scrolled = waitForSnapshot( session, [scrollCommand]( const TerminalSnapshot& snapshot ) {
+		return snapshot.lastAppliedScrollCommand == scrollCommand;
+	} );
+	ASSERT_TRUE( scrolled != nullptr );
+	ASSERT_EQ( 5, scrolled->scrollPosition );
 
 	session->setFocus( false );
-	auto unfocused = waitForSnapshot( session, [enabled]( const TerminalSnapshot& snapshot ) {
-		return snapshot.generation > enabled->generation && !( snapshot.windowMode & MODE_FOCUSED );
+	auto unfocused = waitForSnapshot( session, [scrolled]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > scrolled->generation &&
+			   !( snapshot.windowMode & MODE_FOCUSED );
 	} );
 	ASSERT_TRUE( unfocused != nullptr );
+	EXPECT_EQ( 5, unfocused->scrollPosition );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
 	EXPECT_STDSTREQ( "\033[O", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 
 	session->setFocus( true );
-	ASSERT_TRUE( waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
-					 return snapshot.generation > unfocused->generation &&
-							snapshot.windowMode & MODE_FOCUSED;
-				 } ) != nullptr );
+	auto refocused = waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > unfocused->generation && snapshot.windowMode & MODE_FOCUSED;
+	} );
+	ASSERT_TRUE( refocused != nullptr );
+	EXPECT_EQ( 5, refocused->scrollPosition );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
 	EXPECT_STDSTREQ( "\033[I", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 }

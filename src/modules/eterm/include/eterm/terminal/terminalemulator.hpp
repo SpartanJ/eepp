@@ -253,6 +253,8 @@ class TerminalEmulator final {
 
 	void clearPendingKeyboardInput();
 
+	void reportFocus( bool focused );
+
 	int tisaltscr();
 
 	int scrollSize() const;

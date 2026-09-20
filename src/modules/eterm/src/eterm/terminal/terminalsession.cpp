@@ -583,10 +583,7 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->mousereport( value.type, value.cellPosition, value.pixelPosition,
 										value.flags, value.modifiers );
 			} else if constexpr ( std::is_same_v<T, FocusCommand> ) {
-				if ( !value.value )
-					mEmulator->clearPendingKeyboardInput();
-				if ( mWorkerDisplay->getMode( MODE_FOCUS ) )
-					mEmulator->ttywrite( value.value ? "\033[I" : "\033[O", 3, false );
+				mEmulator->reportFocus( value.value );
 				mWorkerDisplay->setFocused( value.value );
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, CursorModeCommand> ) {

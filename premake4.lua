@@ -2019,7 +2019,9 @@ solution "eepp"
 			links { "bsd", "network" }
 		end
 		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/ecode/ignorematcher.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/projectdirectorytree.cpp",
 				"src/tools/ecode/plugins/git/git.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
