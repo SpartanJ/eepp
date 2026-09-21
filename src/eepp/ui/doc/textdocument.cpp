@@ -338,8 +338,14 @@ TextDocument::~TextDocument() {
 		mHighlighter->setStopTokenizingAsync();
 
 	// TODO: Use a condition variable to wait the thread pool to finish
-	while ( !mStopFlags.empty() )
+	while ( true ) {
+		{
+			Lock l( mStopFlagsMutex );
+			if ( mStopFlags.empty() )
+				break;
+		}
 		Sys::sleep( Milliseconds( 0.1 ) );
+	}
 
 	if ( mLoading ) {
 		mLoading = false;
@@ -3722,7 +3728,7 @@ TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosit
 void TextDocument::stopActiveFindAll() {
 	Lock l( mStopFlagsMutex );
 	for ( const auto& stopFlag : mStopFlags )
-		*stopFlag.second.get() = true;
+		stopFlag.second->store( true, std::memory_order_relaxed );
 }
 
 bool TextDocument::isDoingTextInput() const {
@@ -3739,8 +3745,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 	SearchResults all;
 	TextDocument::SearchResult found;
 	TextPosition from = startOfDoc();
-	auto stopFlagUP = std::make_unique<bool>( false );
-	bool* stopFlag = stopFlagUP.get();
+	auto stopFlagUP = std::make_unique<std::atomic_bool>( false );
+	std::atomic_bool* stopFlag = stopFlagUP.get();
 	{
 		Lock l( mStopFlagsMutex );
 		mStopFlags.insert( { stopFlag, std::move( stopFlagUP ) } );
@@ -3755,7 +3761,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 				break;
 			from = found.result.end();
 			all.push_back( found );
-			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
+			if ( ( maxResults != 0 && all.size() >= maxResults ) ||
+				 stopFlag->load( std::memory_order_relaxed ) )
 				break;
 		}
 	} while ( found.isValid() );

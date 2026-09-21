@@ -1,8 +1,10 @@
 #include "utest.hpp"
 #include <algorithm>
+#include <atomic>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <thread>
 
 using namespace EE::UI::Doc;
 using namespace EE::System;
@@ -169,6 +171,38 @@ UTEST( TextDocument, insertLargeMultilineBlock ) {
 	EXPECT_STRINGEQ( "row\n", doc.line( insertedLineCount ).getText() );
 	EXPECT_STRINGEQ( "lastdle\n", doc.line( insertedLineCount + 1 ).getText() );
 	EXPECT_STRINGEQ( "tail\n", doc.line( insertedLineCount + 2 ).getText() );
+}
+
+UTEST( TextDocument, findAllCanBeCancelledConcurrently ) {
+	constexpr size_t lineCount = 65536;
+	String text;
+	text.reserve( lineCount * 48 );
+	for ( size_t i = 0; i < lineCount; ++i )
+		text.append( "needle xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" );
+
+	TextDocument doc;
+	doc.textInput( text );
+	TextDocument::SearchResults results;
+	std::atomic_bool started{ false };
+	std::atomic_bool finished{ false };
+	std::thread worker( [&] {
+		started.store( true, std::memory_order_release );
+		results = doc.findAll( "needle" );
+		finished.store( true, std::memory_order_release );
+	} );
+
+	while ( !started.load( std::memory_order_acquire ) )
+		Sys::sleep( Milliseconds( 0.1 ) );
+	while ( !finished.load( std::memory_order_acquire ) ) {
+		doc.stopActiveFindAll();
+		Sys::sleep( Milliseconds( 0.1 ) );
+	}
+	worker.join();
+
+	EXPECT_TRUE( results.size() <= lineCount );
+	EXPECT_TRUE( results.empty() || results.isSorted() );
+	for ( const auto& result : results )
+		EXPECT_TRUE( result.isValid() );
 }
 
 UTEST( TextDocument, multilineInsertCursorEndsBeforeExistingSuffix ) {

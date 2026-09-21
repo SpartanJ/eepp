@@ -245,11 +245,6 @@ UICodeEditor::~UICodeEditor() {
 	// Remember to stop all the async find jobs
 	mDoc->stopActiveFindAll();
 
-	// TODO: Use a condition variable to wait the thread pool to finish
-	// Wait to end all the async find jobs
-	while ( mHighlightWordProcessing )
-		Sys::sleep( Milliseconds( 0.1 ) );
-
 	mDocView.setDocument( nullptr );
 	std::size_t clientsOfTypeCount = mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
 	long useCount = mDoc.use_count();
@@ -3968,6 +3963,16 @@ const TextSearchParams& UICodeEditor::getHighlightWord() const {
 }
 
 void UICodeEditor::updateHighlightWordCache() {
+	struct HighlightSearchJob {
+		HighlightSearchJob( std::shared_ptr<TextDocument> searchedDocument,
+							TextSearchParams searchedParams ) :
+			document( std::move( searchedDocument ) ), params( std::move( searchedParams ) ) {}
+
+		const std::shared_ptr<TextDocument> document;
+		const TextSearchParams params;
+		TextRanges ranges;
+	};
+
 	if ( mHighlightWord.isEmpty() )
 		return;
 
@@ -3976,33 +3981,43 @@ void UICodeEditor::updateHighlightWordCache() {
 		removeActionsByTag( tag );
 		runOnMainThread(
 			[this, tag]() {
-				getUISceneNode()->getThreadPool()->removeWithTag( tag );
-				getUISceneNode()->getThreadPool()->run(
-					[this]() {
-						if ( mDoc->isRunningTransaction() )
+				auto threadPool = getUISceneNode()->getThreadPool();
+				threadPool->removeWithTag( tag );
+				auto search = std::make_shared<HighlightSearchJob>( mDoc, mHighlightWord );
+				const auto lifetime = mAsyncLifetime.weakHandle();
+				threadPool->run(
+					[search, lifetime]() {
+						if ( search->document->isRunningTransaction() )
 							return;
 						Clock docSearch;
-						mHighlightWordProcessing++;
-						mDoc->stopActiveFindAll();
+						search->document->stopActiveFindAll();
 
-						auto wordCache = mDoc->findAll(
-							mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
-														   : mHighlightWord.text,
-							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-							mHighlightWord.type, mHighlightWord.range );
-
-						{
-							Lock l( mHighlightWordCacheMutex );
-							mHighlightWordCache = wordCache.ranges();
-						}
+						const String searchedText = search->params.escapeSequences
+														? String::unescape( search->params.text )
+														: search->params.text;
+						search->ranges = search->document
+											 ->findAll( searchedText, search->params.caseSensitive,
+														search->params.wholeWord,
+														search->params.type, search->params.range )
+											 .ranges();
 
 						Log::info( "Document search triggered in document: \"%s\", searched for "
 								   "\"%s\" and took %.2f ms",
-								   mDoc->getFilename().c_str(),
-								   mHighlightWord.text.toUtf8().c_str(),
+								   search->document->getFilename(), search->params.text.toUtf8(),
 								   docSearch.getElapsedTime().asMilliseconds() );
+
+						lifetime.run( [search]( UICodeEditor* editor ) {
+							if ( editor->mDoc != search->document ||
+								 editor->mHighlightWord != search->params )
+								return;
+							{
+								Lock l( editor->mHighlightWordCacheMutex );
+								editor->mHighlightWordCache = std::move( search->ranges );
+							}
+							editor->invalidateDraw();
+						} );
 					},
-					[this]( const auto& ) { mHighlightWordProcessing--; }, tag );
+					{}, tag );
 			},
 			Milliseconds( 16 ), tag );
 	} else {

@@ -833,7 +833,7 @@ class EE_API TextDocument {
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
-	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
+	UnorderedMap<std::atomic_bool*, std::unique_ptr<std::atomic_bool>> mStopFlags;
 	FoldRangeService mFoldRangeService;
 
 	void initializeCommands();

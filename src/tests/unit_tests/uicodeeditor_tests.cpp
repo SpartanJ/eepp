@@ -1,4 +1,5 @@
-#include "utest.h"
+#include "utest.hpp"
+#include <atomic>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -23,7 +24,47 @@ class TestableCodeEditor : public UICodeEditor {
 	bool isLongestLineWidthDirtyForTest() const { return mLongestLineWidthDirty; }
 
 	void clearLongestLineWidthDirtyForTest() { mLongestLineWidthDirty = false; }
+
+	TextRanges getHighlightWordCacheForTest() {
+		Lock l( mHighlightWordCacheMutex );
+		return mHighlightWordCache;
+	}
+
+	void clearHighlightWordCacheForTest() {
+		Lock l( mHighlightWordCacheMutex );
+		mHighlightWordCache.clear();
+	}
 };
+
+template <typename Predicate>
+static bool waitForCondition( Predicate&& predicate, const Time& timeout = Seconds( 10 ) ) {
+	Clock clock;
+	while ( !predicate() && clock.getElapsedTime() < timeout )
+		Sys::sleep( Milliseconds( 1 ) );
+	return predicate();
+}
+
+static bool waitForThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
+	auto completed = std::make_shared<std::atomic_bool>( false );
+	threadPool->run( [completed] { completed->store( true, std::memory_order_release ); } );
+	return waitForCondition( [completed] { return completed->load( std::memory_order_acquire ); } );
+}
+
+static void dispatchDebouncedEditorWork() {
+	Sys::sleep( Milliseconds( 20 ) );
+	SceneManager::instance()->update();
+}
+
+static String makeLargeMarkdownDocument() {
+	constexpr size_t blockCount = 16384;
+	String text;
+	text.reserve( blockCount * 80 );
+	for ( size_t i = 0; i < blockCount; ++i ) {
+		text.append( "## Heading\nInline `code` and ``span``.\n```cpp\nvalue\n```\n" );
+	}
+	text.append( "unique-final-token\n" );
+	return text;
+}
 
 UTEST( SyntaxColorScheme, CopiesShareStorageAndDetachOnMutation ) {
 	auto defaults = SyntaxColorScheme::getDefaultDark();
@@ -131,6 +172,87 @@ UTEST( UICodeEditor, DefersLongestLineMeasurementForLargeChanges ) {
 	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
 
 	eeDelete( editor );
+}
+
+UTEST( UICodeEditor, AsyncHighlightRejectsStaleResultsAfterLargePaste ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - async highlight test" } );
+	auto threadPool = ThreadPool::createShared( 1 );
+	app.getUI()->setThreadPool( threadPool );
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->getDocument().textInput( makeLargeMarkdownDocument() );
+
+	editor->clearHighlightWordCacheForTest();
+	editor->setHighlightWord( { "`" } );
+	dispatchDebouncedEditorWork();
+	ASSERT_TRUE( waitForThreadPool( threadPool ) );
+
+	// The old result is already queued for the main thread. Changing the query before pumping that
+	// callback must make the result stale and leave the cache untouched.
+	editor->setHighlightWord( { "unique-final-token" } );
+	SceneManager::instance()->update();
+	EXPECT_TRUE( editor->getHighlightWordCacheForTest().empty() );
+
+	dispatchDebouncedEditorWork();
+	ASSERT_TRUE( waitForThreadPool( threadPool ) );
+	SceneManager::instance()->update();
+	auto ranges = editor->getHighlightWordCacheForTest();
+	ASSERT_EQ( size_t{ 1 }, ranges.size() );
+
+	// Reproduce the #956 workload: a fresh multiline paste followed by rapid literal backtick
+	// queries while an earlier highlight scan can still be publishing its result.
+	for ( size_t i = 0; i < 4; ++i ) {
+		editor->setHighlightWord( { "`" } );
+		dispatchDebouncedEditorWork();
+		editor->setHighlightWord( { "``" } );
+		editor->setHighlightWord( { "```" } );
+		dispatchDebouncedEditorWork();
+		ASSERT_TRUE( waitForThreadPool( threadPool ) );
+		SceneManager::instance()->update();
+	}
+
+	EXPECT_STDSTREQ( "```", editor->getHighlightWord().text.toUtf8() );
+	auto expected = editor->getDocument().findAll( "```" ).ranges();
+	EXPECT_TRUE( expected == editor->getHighlightWordCacheForTest() );
+
+	eeDelete( editor );
+	app.getUI()->setThreadPool( nullptr );
+	threadPool.reset();
+}
+
+UTEST( UICodeEditor, AsyncHighlightSurvivesEditorDestruction ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - async highlight destruction test" } );
+	auto threadPool = ThreadPool::createShared( 1 );
+	app.getUI()->setThreadPool( threadPool );
+	std::atomic_bool blockerStarted{ false };
+	std::atomic_bool releaseBlocker{ false };
+	threadPool->run( [&] {
+		blockerStarted.store( true, std::memory_order_release );
+		while ( !releaseBlocker.load( std::memory_order_acquire ) )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+	const bool started =
+		waitForCondition( [&] { return blockerStarted.load( std::memory_order_acquire ); } );
+	if ( !started )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( started );
+
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->getDocument().textInput( makeLargeMarkdownDocument() );
+
+	editor->setHighlightWord( { "missing-highlight-value" } );
+	dispatchDebouncedEditorWork();
+	const Uint64 tag = reinterpret_cast<Uint64>( editor );
+	const bool searchQueued = threadPool->existsTagInQueue( tag );
+	releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( searchQueued );
+	ASSERT_TRUE( waitForCondition( [&] { return !threadPool->existsTagInQueue( tag ); } ) );
+	eeDelete( editor );
+
+	app.getUI()->setThreadPool( nullptr );
+	threadPool.reset();
+	SceneManager::instance()->update();
 }
 
 UTEST( UICodeEditor, DefaultKeybindingCacheTracksConfiguredModifiers ) {
