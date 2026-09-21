@@ -15,6 +15,29 @@ namespace EE { namespace UI { namespace Abstract {
 
 static constexpr String::HashType onModelUpdateTag = String::hash( "onModelUpdate" );
 
+template <typename Callback> static void consumeVariantText( const Variant& value, Callback&& cb ) {
+	switch ( value.getType() ) {
+		case Variant::Type::String:
+			cb( value.asString() );
+			break;
+		case Variant::Type::StringPtr:
+			cb( value.asStringPtr() );
+			break;
+		case Variant::Type::StdString:
+			cb( value.asStdString() );
+			break;
+		case Variant::Type::StdStringPtr:
+			cb( value.asStdStringPtr() );
+			break;
+		case Variant::Type::cstr:
+			cb( value.asCStr() );
+			break;
+		default:
+			cb( value.toString() );
+			break;
+	}
+}
+
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	UIAbstractView( tag ),
 	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
@@ -1009,19 +1032,26 @@ void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelInd
 		Variant cls( getModel()->data( index, ModelRole::Class ) );
 		cell->setLoadingState( true );
 		if ( cls.isValid() ) {
-			bool hasClass = false;
-
-			hasClass =
-				( cls.is( Variant::Type::cstr ) &&
-				  cell->hasClass( std::string_view{ cls.asCStr() } ) ) ||
-				( cls.is( Variant::Type::StdString ) && cell->hasClass( cls.asStdString() ) ) ||
-				cell->hasClass( cls.toString() );
+			const bool isStdStringLike = cls.isStdStringLike();
+			std::string convertedClass;
+			const std::string_view className =
+				isStdStringLike ? cls.asStdStringView()
+								: std::string_view{ convertedClass = cls.toString() };
+			const bool hasClass = cell->hasClass( className );
 
 			needsReloadStyle =
 				cell->getClasses().empty() || cell->getClasses().size() != 1 || !hasClass;
 
-			if ( !hasClass )
-				cell->setClass( cls.toString() );
+			if ( !hasClass ) {
+				if ( cls.is( Variant::Type::StdString ) )
+					cell->setClass( cls.asStdString() );
+				else if ( cls.is( Variant::Type::StdStringPtr ) )
+					cell->setClass( cls.asStdStringPtr() );
+				else if ( isStdStringLike )
+					cell->setClass( std::string{ className } );
+				else
+					cell->setClass( std::move( convertedClass ) );
+			}
 		} else {
 			needsReloadStyle = !cell->getClasses().empty();
 			cell->resetClass();
@@ -1033,25 +1063,14 @@ void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelInd
 
 	if ( getModel()->tooltipModelRoleEnabled() ) {
 		Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
-		if ( tooltip.isValid() ) {
-			if ( tooltip.is( Variant::Type::String ) )
-				cell->setTooltipText( tooltip.asString() );
-			else if ( tooltip.is( Variant::Type::StringPtr ) )
-				cell->setTooltipText( tooltip.asStringPtr() );
-			else
-				cell->setTooltipText( tooltip.toString() );
-		}
+		if ( tooltip.isValid() )
+			consumeVariantText( tooltip,
+								[cell]( const auto& text ) { cell->setTooltipText( text ); } );
 	}
 
 	Variant txt( getModel()->data( index, ModelRole::Display ) );
-	if ( txt.isValid() ) {
-		if ( txt.is( Variant::Type::String ) )
-			cell->setText( txt.asString() );
-		else if ( txt.is( Variant::Type::StringPtr ) )
-			cell->setText( txt.asStringPtr() );
-		else
-			cell->setText( txt.toString() );
-	}
+	if ( txt.isValid() )
+		consumeVariantText( txt, [cell]( const auto& text ) { cell->setText( text ); } );
 }
 
 void UIAbstractTableView::moveSelection( int steps ) {

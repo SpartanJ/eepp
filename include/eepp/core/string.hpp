@@ -762,6 +762,11 @@ class EE_API String {
 	**/
 	String( const String& str );
 
+	/** @brief Move constructor
+	** @param str Instance to move
+	**/
+	String( String&& str ) noexcept;
+
 	/** @brief Copy constructor
 	** @param str Instance to copy
 	**/

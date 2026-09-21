@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cmath>
+#include <string_view>
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
 #include <unistd.h>
@@ -153,6 +154,21 @@ const char* usernameClass( const ProcessInfo& process ) {
 	return "eproc-process-username-other";
 }
 
+void setCellClassEnabled( UITableCell& cell, std::string_view className, bool enabled ) {
+	const bool hasClass = cell.hasClass( className );
+	if ( enabled == hasClass )
+		return;
+	if ( enabled )
+		cell.addClass( std::string{ className } );
+	else
+		cell.removeClass( std::string{ className } );
+}
+
+constexpr std::array<std::string_view, 5> kUsernameClasses = {
+	"eproc-process-username-ended",	 "eproc-process-username-traced", "eproc-process-username-own",
+	"eproc-process-username-system", "eproc-process-username-other",
+};
+
 } // namespace
 
 App::App() {
@@ -174,7 +190,7 @@ App::App() {
 	mApp = std::make_unique<UIApplication>( ws );
 	if ( mApp->getUI() && mApp->getWindow() )
 		mApp->getWindow()->setTitle(
-			mApp->getUI()->i18n( "eproc_window_title", "System Monitor" ) );
+			mApp->getUI()->i18n( "eproc_window_title", "eproc - System Monitor" ) );
 }
 
 App::~App() {}
@@ -504,6 +520,8 @@ void App::setupUI() {
 			UIWidgetInspector::create( mApp->getUI() );
 		}
 	} );
+
+	mSearchInput->setFocus();
 }
 
 void App::setupProcessTable() {
@@ -515,23 +533,20 @@ void App::setupProcessTable() {
 		mTableView->setColumnsHidden(
 			std::vector<size_t>( kOptionalProcessColumns.begin(), kOptionalProcessColumns.end() ),
 			true );
-		mTableView->setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
-			if ( !cell || !model )
+		mTableView->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
+			if ( !cell )
 				return;
 
 			const ModelIndex index = cell->getCurIndex();
 			const ProcessInfo* process = processForProxyIndex( index );
-			const Variant columnClass = model->data( index, ModelRole::Class );
-			std::vector<std::string> classes;
-			if ( columnClass.isValid() )
-				classes.emplace_back( columnClass.toString() );
-			if ( process ) {
-				if ( process->status == ProcessStatus::Ended )
-					classes.emplace_back( "eproc-process-ended" );
-				if ( index.column() == ProcessModel::ColUsername )
-					classes.emplace_back( usernameClass( *process ) );
-			}
-			cell->setClasses( classes );
+			setCellClassEnabled( *cell, "eproc-process-ended",
+								 process && process->status == ProcessStatus::Ended );
+
+			const std::string_view desiredUsernameClass =
+				process && index.column() == ProcessModel::ColUsername ? usernameClass( *process )
+																	   : std::string_view{};
+			for ( const auto className : kUsernameClasses )
+				setCellClassEnabled( *cell, className, className == desiredUsernameClass );
 		} );
 		mTableView->setRowHeight( 28 );
 		// The flexible column is Name; the icon column is fixed so every row lines up.

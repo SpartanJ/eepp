@@ -2081,6 +2081,8 @@ String::String( const StringType& utf32String ) : mString( utf32String ) {}
 
 String::String( const String& str ) : mString( str.mString ) {}
 
+String::String( String&& str ) noexcept : mString( std::move( str.mString ) ) {}
+
 String::String( const String::View& utf32String ) : mString( utf32String ) {}
 
 String String::fromUtf16( const char* utf16String, const size_t& utf16StringSize,

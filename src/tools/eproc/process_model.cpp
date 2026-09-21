@@ -193,15 +193,13 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 
 	switch ( index.column() ) {
 		case ColName:
-			return Variant( proc->name );
+			return Variant::fromRef( proc->name );
 		case ColPid:
 			return Variant( String::toString( static_cast<Int64>( proc->pid ) ) );
 		case ColUsername:
-			return Variant( proc->username );
-		case ColCpu: {
-			std::string cpu = proc->formatCpu();
-			return Variant( cpu );
-		}
+			return Variant::fromRef( proc->username );
+		case ColCpu:
+			return Variant( proc->formatCpu() );
 		case ColMemory:
 			return Variant( proc->formatMemory() );
 		case ColSharedMem:
@@ -215,7 +213,7 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		case ColUpload:
 			return Variant( proc->formatUpload() );
 		case ColCommand:
-			return Variant( proc->command );
+			return Variant::fromRef( proc->command );
 		case ColTotalMemory:
 			return Variant( formatKiB( proc->vmRSS ) );
 		case ColVirtualSize:
@@ -228,7 +226,7 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 			return Variant( proc->formatRelativeStartTime( mSystemInfo.uptimeSeconds,
 														   mSystemInfo.clockTicksPerSecond ) );
 		case ColTty:
-			return Variant( proc->tty );
+			return Variant::fromRef( proc->tty );
 		case ColIoRead:
 			return Variant( formatBytes( proc->ioReadBytes ) );
 		case ColIoWrite:

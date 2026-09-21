@@ -11,6 +11,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <stack>
+#include <string_view>
 
 namespace EE { namespace UI {
 
@@ -811,19 +812,22 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
 		Variant var = model->data( index );
 		if ( var.isValid() ) {
+			std::string convertedValue;
+			const std::string_view value =
+				var.isStdStringLike() ? var.asStdStringView()
+									  : std::string_view{ convertedValue = var.toString() };
 			bool matches = false;
 			switch ( matchKind ) {
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Equals:
-					matches = var.toString() == text;
+					matches = value == text;
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::StartsWith:
-					matches = String::startsWith( caseSensitive ? var.toString()
-																: String::toLower( var.toString() ),
-												  caseSensitive ? text : String::toLower( text ) );
+					matches = caseSensitive ? String::startsWith( value, text )
+											: String::istartsWith( value, text );
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Contains:
-					matches = caseSensitive ? String::contains( var.toString(), text )
-											: String::icontains( var.toString(), text );
+					matches = caseSensitive ? String::contains( value, text )
+											: String::icontains( value, text );
 					break;
 			}
 
@@ -847,18 +851,21 @@ ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree
 		ModelIndex foundIndex = {};
 		const auto& part = pathTree[i];
 
-		traverseTree(
-			[&model, &foundIndex, &part, &parentIndex,
-			 i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
-				Variant var = model->data( index );
-				if ( i == indentLevel && var.isValid() && var.toString() == part ) {
-					if ( !parentIndex.isValid() || parentIndex == index.parent() ) {
-						foundIndex = index;
-						return IterationDecision::Stop;
-					}
+		traverseTree( [&model, &foundIndex, &part, &parentIndex,
+					   i]( const int&, const ModelIndex& index, const size_t& indentLevel,
+						   const Float& ) {
+			Variant var = model->data( index );
+			const bool matches =
+				i == indentLevel && var.isValid() &&
+				( var.isStdStringLike() ? var.asStdStringView() == part : var.toString() == part );
+			if ( matches ) {
+				if ( !parentIndex.isValid() || parentIndex == index.parent() ) {
+					foundIndex = index;
+					return IterationDecision::Stop;
 				}
-				return IterationDecision::Continue;
-			} );
+			}
+			return IterationDecision::Continue;
+		} );
 
 		if ( foundIndex == ModelIndex() )
 			break;

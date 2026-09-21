@@ -218,13 +218,13 @@ bool SortingProxyModel::lessThan( const ModelIndex& index1, const ModelIndex& in
 	auto data1 = mSource->data( index1, mSortRole );
 	auto data2 = mSource->data( index2, mSortRole );
 	if ( data1.isString() && data2.isString() ) {
-		if ( data1.is( Variant::Type::StdString ) && data2.is( Variant::Type::StdString ) )
-			return String::toLower( data1.asStdString() ) < String::toLower( data2.asStdString() );
+		if ( data1.isStdStringLike() && data2.isStdStringLike() )
+			return String::toLower( std::string{ data1.asStdStringView() } ) <
+				   String::toLower( std::string{ data2.asStdStringView() } );
 		if ( data1.is( Variant::Type::String ) && data2.is( Variant::Type::String ) )
 			return String::toLower( data1.asString() ) < String::toLower( data2.asString() );
-		if ( data1.is( Variant::Type::cstr ) && data2.is( Variant::Type::cstr ) )
-			return String::toLower( std::string( data1.asCStr() ) ) <
-				   String::toLower( std::string( data2.asCStr() ) );
+		if ( data1.is( Variant::Type::StringPtr ) && data2.is( Variant::Type::StringPtr ) )
+			return String::toLower( data1.asStringPtr() ) < String::toLower( data2.asStringPtr() );
 	}
 	return data1 < data2;
 }

@@ -6,6 +6,7 @@
 #include <eepp/ui/uitableview.hpp>
 
 #include <cmath>
+#include <string_view>
 
 namespace EE { namespace UI {
 
@@ -392,19 +393,22 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 										: ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ) );
 		Variant var = model->data( index );
 		if ( var.isValid() ) {
+			std::string convertedValue;
+			const std::string_view value =
+				var.isStdStringLike() ? var.asStdStringView()
+									  : std::string_view{ convertedValue = var.toString() };
 			bool matches = false;
 			switch ( matchKind ) {
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Equals:
-					matches = var.toString() == text;
+					matches = value == text;
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::StartsWith:
-					matches = String::startsWith( caseSensitive ? var.toString()
-																: String::toLower( var.toString() ),
-												  caseSensitive ? text : String::toLower( text ) );
+					matches = caseSensitive ? String::startsWith( value, text )
+											: String::istartsWith( value, text );
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Contains:
-					matches = caseSensitive ? String::contains( var.toString(), text )
-											: String::icontains( var.toString(), text );
+					matches = caseSensitive ? String::contains( value, text )
+											: String::icontains( value, text );
 					break;
 			}
 
