@@ -5,6 +5,7 @@
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include <thirdparty/fts_fuzzy_match/fts_fuzzy_match.h>
+#include <thirdparty/simdutf/simdutf.h>
 #include <thirdparty/utf8cpp/utf8.h>
 
 #include <algorithm>
@@ -53,6 +54,41 @@
 #endif
 
 namespace EE {
+
+static constexpr std::size_t SimdUtfConversionThreshold = 32;
+
+static bool hasUtf8Bom( std::string_view string ) {
+	return string.size() >= 3 && static_cast<Uint8>( string[0] ) == 0xEF &&
+		   static_cast<Uint8>( string[1] ) == 0xBB && static_cast<Uint8>( string[2] ) == 0xBF;
+}
+
+static void decodeUtf8( std::string_view input, String::StringType& output, bool skipBom ) {
+	if ( skipBom && hasUtf8Bom( input ) )
+		input.remove_prefix( 3 );
+
+	output.clear();
+	if ( input.empty() )
+		return;
+
+	if ( input.size() < SimdUtfConversionThreshold ) {
+		output.reserve( input.size() + 1 );
+		Utf8::toUtf32( input.begin(), input.end(), std::back_inserter( output ) );
+		return;
+	}
+
+	// UTF-32 cannot contain more code units than the UTF-8 input contains bytes.
+	output.resize( input.size() );
+	const std::size_t written =
+		simdutf::convert_utf8_to_utf32( input.data(), input.size(), output.data() );
+	if ( written != 0 ) {
+		output.resize( written );
+		return;
+	}
+
+	// Preserve the existing permissive behavior for malformed UTF-8.
+	output.clear();
+	Utf8::toUtf32( input.begin(), input.end(), std::back_inserter( output ) );
+}
 
 template <typename T> static bool _fromString( T& t, std::string_view s, int base = 10 ) {
 	const char* begin = s.data();
@@ -1985,70 +2021,27 @@ String::String( StringBaseType utf32Char ) {
 String::String( size_t count, StringBaseType utf32Char ) : mString( count, utf32Char ) {}
 
 String::String( const char* utf8String ) {
-	if ( utf8String ) {
-		std::size_t length = strlen( utf8String );
-
-		if ( length > 0 ) {
-			mString.reserve( length + 1 );
-
-			Utf8::toUtf32( utf8String, utf8String + length, std::back_inserter( mString ) );
-		}
-	}
+	if ( utf8String )
+		decodeUtf8( utf8String, mString, false );
 }
 
 String::String( const char* utf8String, const size_t& utf8StringSize ) {
-	if ( utf8String && utf8StringSize > 0 ) {
-		mString.reserve( utf8StringSize + 1 );
-
-		int skip = 0;
-		// Skip BOM
-		if ( utf8StringSize >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-			 (char)0xbf == utf8String[2] ) {
-			skip = 3;
-		}
-
-		Utf8::toUtf32( utf8String + skip, utf8String + utf8StringSize,
-					   std::back_inserter( mString ) );
-	}
+	if ( utf8String )
+		decodeUtf8( std::string_view{ utf8String, utf8StringSize }, mString, true );
 }
 
 String::String( const std::string& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8( utf8String, mString, true );
 }
 
 String::String( const std::basic_string<char8_t>& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char8_t)0xef == utf8String[0] &&
-		 (char8_t)0xbb == utf8String[1] && (char8_t)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8(
+		std::string_view{ reinterpret_cast<const char*>( utf8String.data() ), utf8String.size() },
+		mString, true );
 }
 
 String::String( const std::string_view& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8( utf8String, mString, true );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -2112,37 +2105,11 @@ String String::fromLatin1( const char* str, const size_t& stringSize ) {
 }
 
 String String::fromUtf8( const std::string& utf8String ) {
-	String::StringType utf32;
-
-	// Skip BOM
-	int skip = 0;
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	utf32.reserve( utf8String.length() + 1 );
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
-
-	return String( utf32 );
+	return String( utf8String );
 }
 
 String String::fromUtf8( const std::string_view& utf8String ) {
-	String::StringType utf32;
-
-	// Skip BOM
-	int skip = 0;
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	utf32.reserve( utf8String.length() + 1 );
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
-
-	return String( utf32 );
+	return String( utf8String );
 }
 
 #define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
@@ -2160,12 +2127,18 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 	return i;
 }
 
+static inline size_t utf8LengthImpl( const char* data, std::size_t size ) {
+	if ( size >= SimdUtfConversionThreshold )
+		return simdutf::count_utf8( data, size );
+	return utf8_length( data, data + size );
+}
+
 size_t String::utf8Length( const std::string& utf8String ) {
-	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+	return utf8LengthImpl( utf8String.data(), utf8String.size() );
 }
 
 size_t String::utf8Length( const std::string_view& utf8String ) {
-	return utf8_length( utf8String.data(), utf8String.data() + utf8String.length() );
+	return utf8LengthImpl( utf8String.data(), utf8String.size() );
 }
 
 Uint32 String::utf8Next( char*& utf8String ) {
@@ -2235,8 +2208,44 @@ std::string String::toUtf8() const {
 
 void String::toUtf8( std::string& output ) const {
 	output.clear();
-	output.reserve( mString.length() + 1 );
-	Utf32::toUtf8( mString.begin(), mString.end(), std::back_inserter( output ) );
+	appendUtf8( mString, output );
+}
+
+std::size_t String::utf8EncodedLength( View string, Uint32 textHints ) {
+	if ( textHints & TextHints::AllAscii )
+		return string.size();
+	return simdutf::utf8_length_from_utf32( string.data(), string.size() );
+}
+
+void String::appendUtf8( View string, std::string& output, Uint32 textHints ) {
+	static constexpr std::size_t SimdThreshold = 32;
+	if ( textHints & TextHints::AllAscii ) {
+		const std::size_t initialSize = output.size();
+		output.resize( initialSize + string.size() );
+		char* destination = output.data() + initialSize;
+		for ( std::size_t i = 0; i < string.size(); ++i )
+			destination[i] = static_cast<char>( string[i] );
+		return;
+	}
+
+	if ( string.size() < SimdThreshold ) {
+		output.reserve( output.size() + string.size() );
+		Utf32::toUtf8( string.begin(), string.end(), std::back_inserter( output ) );
+		return;
+	}
+
+	const std::size_t initialSize = output.size();
+	const std::size_t outputSize = utf8EncodedLength( string, textHints );
+	output.resize( initialSize + outputSize );
+	char* destination = output.data() + initialSize;
+	const std::size_t written =
+		simdutf::convert_utf32_to_utf8( string.data(), string.size(), destination );
+	if ( written == outputSize )
+		return;
+
+	// Preserve conversion for malformed UTF-32 without penalizing valid text.
+	output.resize( initialSize );
+	Utf32::toUtf8( string.begin(), string.end(), std::back_inserter( output ) );
 }
 
 std::basic_string<char16_t> String::toUtf16() const {
@@ -2437,12 +2446,7 @@ String& String::assign( const char* s ) {
 }
 
 String& String::assignUtf8( std::string_view utf8String ) {
-	if ( utf8String.empty() ) {
-		mString.clear();
-		return *this;
-	}
-	mString.resize( utf8Length( utf8String ) );
-	toUtf32( utf8String, mString.data(), mString.size() );
+	decodeUtf8( utf8String, mString, false );
 	return *this;
 }
 

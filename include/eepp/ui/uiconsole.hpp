@@ -164,7 +164,7 @@ class EE_API UIConsole : public UIWidget,
   protected:
 	struct TextCache {
 		Text text;
-		String::HashType hash;
+		String::HashType hash{ 0 };
 	};
 	struct CommandLogCache {
 		String log;
@@ -237,6 +237,8 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
@@ -286,6 +288,8 @@ class EE_API UIConsole : public UIWidget,
 	void cut();
 
 	void paste();
+
+	bool scrollByLines( Int32 lines );
 
 	void createDefaultCommands();
 

@@ -797,6 +797,7 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
+			"simdutf-static",
 			"libzip-static",
 			"jpeg-compressor-static",
 			"zlib-static",
@@ -1227,6 +1228,14 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+
+	project "simdutf-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/simdutf/simdutf.cpp" }
+		includedirs { "src/thirdparty/simdutf" }
+		build_base_cpp_configuration( "simdutf" )
 
 	project "zlib-static"
 		kind "StaticLib"
@@ -2023,6 +2032,7 @@ solution "eepp"
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/projectdirectorytree.cpp",
 				"src/tools/ecode/plugins/git/git.cpp",
+				"src/tools/ecode/plugins/git/gitdiff.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		eepp_module_backward_add( false )

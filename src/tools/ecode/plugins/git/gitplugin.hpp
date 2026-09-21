@@ -4,6 +4,7 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include "gitdiff.hpp"
 #include "githistorymodel.hpp"
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/mainthreadlifetime.hpp>
@@ -131,12 +132,15 @@ class GitPlugin : public PluginBase {
 	std::string mHighlightStyleColor;
 
 	Time mRefreshFreq{ Seconds( 5 ) };
+	Time mDiffGutterDebounceDelay{ Milliseconds( 750 ) };
 	bool mGitFound{ false };
 	bool mTooltipInfoShowing{ false };
 	bool mStatusBarDisplayBranch{ true };
 	bool mStatusBarDisplayModifications{ true };
 	bool mStatusRecurseSubmodules{ true };
 	bool mFileTreeHighlightChanges{ true };
+	static constexpr bool DEFAULT_DIFF_GUTTER_ENABLED = false;
+	bool mDiffGutterEnabled{ DEFAULT_DIFF_GUTTER_ENABLED };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
@@ -276,6 +280,28 @@ class GitPlugin : public PluginBase {
 	Uint32 mModelChangedId{ 0 };
 	Uint32 mModelStylerId{ 0 };
 
+	enum class GitBaselineState : Uint8 { Pending, Loading, Loaded, Unavailable };
+
+	struct GitDocumentDiff {
+		std::string path;
+		std::string repoPath;
+		std::shared_ptr<const std::string> baseline;
+		std::vector<GitLineDecoration> lines;
+		Uint64 generation{ 0 };
+		Uint64 baselineGeneration{ 0 };
+		GitBaselineState baselineState{ GitBaselineState::Pending };
+		bool deletedAtEOF{ false };
+		bool diffRunning{ false };
+		bool diffPending{ false };
+		Uint32 identity{ 0 };
+	};
+	UnorderedMap<TextDocument*, GitDocumentDiff> mDocumentDiffs;
+	std::string mDiffSnapshotBuffer;
+	Uint32 mNextDocumentDiffIdentity{ 0 };
+	Color mDiffAddedColor{ 0, 150, 32, 80 };
+	Color mDiffModifiedColor{ 220, 170, 0, 80 };
+	Color mDiffDeletedColor{ 180, 0, 32, 80 };
+
 	GitPlugin( PluginManager* pluginManager, bool sync );
 
 	void load( PluginManager* pluginManager );
@@ -288,7 +314,49 @@ class GitPlugin : public PluginBase {
 
 	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
 
+	void onDocumentLoaded( TextDocument* doc ) override;
+
+	void onDocumentChanged( UICodeEditor*, TextDocument* oldDoc ) override;
+
+	void onUnregisterDocument( TextDocument* doc ) override;
+
+	void onRegisterEditor( UICodeEditor* editor ) override;
+
+	void onUnregisterEditor( UICodeEditor* editor ) override;
+
+	void drawGutter( UICodeEditor* editor, const Int64& index, const Vector2f& screenStart,
+					 const Float& lineHeight, const Float& gutterWidth,
+					 const Float& fontSize ) override;
+
+	void minimapDrawBefore( UICodeEditor* editor, const DocumentLineRange& docLineRange,
+							const DocumentViewLineRange& docViewRange, const Vector2f& linePos,
+							const Vector2f& lineSize, const Float& charWidth,
+							const Float& gutterWidth,
+							const DrawTextRangesFn& drawTextRanges ) override;
+
 	Color getVarColor( const std::string& var );
+
+	void updateDiffGutterColors();
+
+	const Color& getDiffGutterColor( GitLineChange change, bool deleted = false ) const;
+
+	void initializeDiffGutter();
+
+	void ensureDocumentDiff( TextDocument* doc );
+
+	void loadDocumentDiffBaseline( TextDocument* doc );
+
+	void scheduleDocumentDiff( TextDocument* doc );
+
+	bool isDocumentAddedInGit( const GitDocumentDiff& state );
+
+	void resolveAddedDocumentDiffs();
+
+	void resetDocumentDiff( TextDocument* doc, GitDocumentDiff& state );
+
+	void invalidateAllDocumentDiffBaselines();
+
+	void redrawDocumentDiff( TextDocument* doc );
 
 	void blame( UICodeEditor* editor );
 

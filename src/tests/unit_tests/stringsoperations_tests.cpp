@@ -1,6 +1,7 @@
 #include "utest.hpp"
 #include <cstdlib>
 #include <eepp/core/string.hpp>
+#include <eepp/core/utf.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <filesystem>
@@ -315,6 +316,58 @@ UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	text.toUtf8( reusableUtf8 );
 	EXPECT_STREQ( "áβ中", reusableUtf8.c_str() );
 	EXPECT_EQ( utf8Storage, reusableUtf8.data() );
+}
+
+UTEST( String, acceleratedUtf8Conversion ) {
+	const std::string ascii( 256, 'a' );
+	const String asciiText( ascii );
+	EXPECT_STDSTREQ( ascii, asciiText.toUtf8() );
+	EXPECT_EQ( ascii.size(),
+			   String::utf8EncodedLength( asciiText.getString(), TextHints::AllAscii ) );
+	std::string asciiOutput;
+	String::appendUtf8( asciiText.getString(), asciiOutput, TextHints::AllAscii );
+	EXPECT_STDSTREQ( ascii, asciiOutput );
+
+	const std::string unicode = std::string( 64, 'a' ) + "áβ中🙂" + std::string( 64, 'z' );
+	const String unicodeText = String::fromUtf8( unicode );
+	EXPECT_STDSTREQ( unicode, unicodeText.toUtf8() );
+	EXPECT_EQ( unicode.size(), String::utf8EncodedLength( unicodeText.getString() ) );
+
+	std::string appended = "prefix:";
+	String::appendUtf8( unicodeText.getString(), appended );
+	EXPECT_STDSTREQ( "prefix:" + unicode, appended );
+
+	String::StringType malformed( 64, U'a' );
+	malformed.push_back( static_cast<char32_t>( 0x110000 ) );
+	malformed.append( 64, U'z' );
+	const String malformedText( malformed );
+	EXPECT_STDSTREQ( std::string( 64, 'a' ) + std::string( 64, 'z' ), malformedText.toUtf8() );
+}
+
+UTEST( String, acceleratedUtf8Decoding ) {
+	const std::string ascii( 256, 'a' );
+	const String asciiText( ascii );
+	EXPECT_EQ( ascii.size(), asciiText.size() );
+	EXPECT_STDSTREQ( ascii, asciiText.toUtf8() );
+
+	const std::string unicode = std::string( 64, 'a' ) + "áβ中🙂" + std::string( 64, 'z' );
+	String reused;
+	reused.assignUtf8( unicode );
+	EXPECT_STDSTREQ( unicode, reused.toUtf8() );
+	EXPECT_EQ( reused.size(), String::utf8Length( unicode ) );
+
+	const std::string withBom = "\xEF\xBB\xBF" + ascii;
+	EXPECT_STDSTREQ( ascii, String( withBom ).toUtf8() );
+	reused.assignUtf8( withBom );
+	ASSERT_TRUE( !reused.empty() );
+	EXPECT_EQ( static_cast<Uint32>( 0xFEFF ), static_cast<Uint32>( reused.front() ) );
+
+	std::string malformed( 64, 'a' );
+	malformed.append( "\xF0\x28\x8C\x28", 4 );
+	malformed.append( 64, 'z' );
+	String::StringType expected;
+	Utf8::toUtf32( malformed.begin(), malformed.end(), std::back_inserter( expected ) );
+	EXPECT_TRUE( String( malformed ).getString() == expected );
 }
 
 UTEST( String, byteStringEscapeAndUnescape ) {

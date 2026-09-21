@@ -805,6 +805,12 @@ class EE_API String {
 	/** Convert the string to UTF-8, reusing the output buffer capacity. */
 	void toUtf8( std::string& output ) const;
 
+	/** Return the UTF-8 size of a UTF-32 string. Text hints can avoid rescanning known ASCII. */
+	static std::size_t utf8EncodedLength( View string, Uint32 textHints = 0 );
+
+	/** Append a UTF-32 string as UTF-8. Text hints can enable faster known-safe paths. */
+	static void appendUtf8( View string, std::string& output, Uint32 textHints = 0 );
+
 	/** Convert the string to a UTF-16 string */
 	std::basic_string<char16_t> toUtf16() const;
 
@@ -1393,8 +1399,8 @@ struct TextHints {
 		ContextualAlternates = 1 << 4,
 		ContextualLigatures = 1 << 5,
 		DiscretionaryLigatures = 1 << 6,
-		OpenTypeFeatures =
-			StandardLigatures | ContextualAlternates | ContextualLigatures | DiscretionaryLigatures,
+		OpenTypeFeatures = StandardLigatures | ContextualAlternates | ContextualLigatures |
+			DiscretionaryLigatures,
 	};
 };
 

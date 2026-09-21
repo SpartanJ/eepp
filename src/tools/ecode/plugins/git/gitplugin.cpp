@@ -5,8 +5,8 @@
 #include "githistorymodel.hpp"
 #include "githistorytreeview.hpp"
 #include "gitstatusmodel.hpp"
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
-#include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -131,6 +131,19 @@ void GitPlugin::registerSettings( SettingsPage& page ) {
 				  i18n( "git_filetree_highlight_changes_desc",
 						"Highlight files with Git changes in the file tree." ),
 				  true );
+	page.addBool( "diff-gutter", "/config/diff_gutter",
+				  i18n( "git_diff_gutter", "Show Git Diff Gutter" ),
+				  i18n( "git_diff_gutter_desc",
+						"Show added, modified and deleted line indicators in the editor gutter." ),
+				  DEFAULT_DIFF_GUTTER_ENABLED );
+	page.addText( "diff-gutter-debounce-delay", "/config/diff_gutter_debounce_delay",
+				  i18n( "git_diff_gutter_debounce_delay", "Git Diff Gutter Update Delay" ),
+				  i18n( "git_diff_gutter_debounce_delay_desc",
+						"How long to wait after editing before updating Git diff indicators." ),
+				  mDiffGutterDebounceDelay.toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
 	page.addText( "filetree-highlight-style-color", "/config/filetree_highlight_style_color",
 				  i18n( "git_filetree_highlight_style_color", "File Tree Highlight Color" ),
 				  i18n( "git_filetree_highlight_style_color_desc",
@@ -152,6 +165,34 @@ void GitPlugin::registerSettings( SettingsPage& page ) {
 
 static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
 static constexpr auto GIT_STATUS_UPDATE_TAG = String::hash( "git::status-update" );
+static constexpr auto GIT_DIFF_BASELINE_DEBOUNCE_DELAY = Milliseconds( 100 );
+static constexpr auto GIT_DIFF_BASELINE_UPDATE_TAG =
+	String::hash( "GitPlugin::diff-baseline-update" );
+static constexpr Float GIT_DIFF_GUTTER_WIDTH_DP = 3;
+
+static Action::UniqueID getDiffGutterDebounceTag( TextDocument* doc ) {
+	return hashCombine( String::hash( "GitPlugin::diff-gutter-" ),
+						reinterpret_cast<Action::UniqueID>( doc ) );
+}
+
+static const std::shared_ptr<const std::string>& emptyGitDiffBaseline() {
+	static const auto baseline = std::make_shared<const std::string>();
+	return baseline;
+}
+
+static bool gitHeadMetadataChanged( const FileInfo& file ) {
+	const std::string& path = file.getFilepath();
+	const std::string& name = file.getFileName();
+	if ( name == "HEAD" || name == "packed-refs" )
+		return true;
+	return path.find( "/refs/" ) != std::string::npos ||
+		   path.find( "/reftable/" ) != std::string::npos
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		   || path.find( "\\refs\\" ) != std::string::npos ||
+		   path.find( "\\reftable\\" ) != std::string::npos
+#endif
+		;
+}
 
 static std::string writeGitBlobTempFile( const std::string& contents,
 										 const std::string& sourceFilePath ) {
@@ -258,11 +299,18 @@ void GitPlugin::unregisterEditors() {
 	endModelStyler();
 	if ( getUISceneNode() )
 		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+	if ( mDiffGutterEnabled && getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( GIT_DIFF_BASELINE_UPDATE_TAG );
 	if ( mStatusBar && mRepositionCbId ) {
 		mStatusBar->removeEventListener( mRepositionCbId );
 		mRepositionCbId = 0;
 	}
+	if ( mDiffGutterEnabled && getUISceneNode() ) {
+		for ( const auto& [doc, _] : mDocumentDiffs )
+			getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( doc ) );
+	}
 	PluginBase::unregisterEditors();
+	mDocumentDiffs.clear();
 }
 
 void GitPlugin::onSaveState( IniFile* state ) {
@@ -309,6 +357,11 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 
 	bool updateConfigFile = false;
 
+	if ( !j.contains( "config" ) || !j["config"].is_object() ) {
+		j["config"] = json::object();
+		updateConfigFile = true;
+	}
+
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 
@@ -330,6 +383,22 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			mFileTreeHighlightChanges = config.value( "filetree_highlight_changes", true );
 		else {
 			config["filetree_highlight_changes"] = mFileTreeHighlightChanges;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "diff_gutter" ) && config["diff_gutter"].is_boolean() )
+			mDiffGutterEnabled = config["diff_gutter"].get<bool>();
+		else {
+			mDiffGutterEnabled = DEFAULT_DIFF_GUTTER_ENABLED;
+			config["diff_gutter"] = mDiffGutterEnabled;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "diff_gutter_debounce_delay" ) ) {
+			mDiffGutterDebounceDelay =
+				Time::fromString( config.value( "diff_gutter_debounce_delay", "750ms" ) );
+		} else {
+			config["diff_gutter_debounce_delay"] = mDiffGutterDebounceDelay.toString();
 			updateConfigFile = true;
 		}
 
@@ -412,6 +481,8 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
+	if ( mDiffGutterEnabled && getUISceneNode() )
+		mLifetime.weakHandle().run( []( GitPlugin* plugin ) { plugin->initializeDiffGutter(); } );
 }
 
 void GitPlugin::initModelStyler() {
@@ -538,14 +609,13 @@ void GitPlugin::updateStatusBarSync() {
 								? i18n( "git_operation_ready_commit", "%s · Ready to commit" )
 								: i18n( "git_operation_ready", "%s · Ready to continue" ) )
 							  .toUtf8(),
-						  operation.toUtf8().c_str() )
+						  operation.toUtf8() )
 					: String::format(
 						  ( conflictSession->files.size() == 1
 								? i18n( "git_operation_conflict", "%s · %d conflict" )
 								: i18n( "git_operation_conflicts", "%s · %d conflicts" ) )
 							  .toUtf8(),
-						  operation.toUtf8().c_str(),
-						  static_cast<int>( conflictSession->files.size() ) ) );
+						  operation.toUtf8(), static_cast<int>( conflictSession->files.size() ) ) );
 			const bool canContinue = conflictSession->files.empty() &&
 									 conflictSession->operation != Git::GitOperation::None &&
 									 conflictSession->operation != Git::GitOperation::StashApply;
@@ -621,7 +691,7 @@ void GitPlugin::updateStatusBarSync() {
 		Lock l( mGitStatusMutex );
 		text = mStatusBarDisplayModifications &&
 					   ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
-				   ? String::format( "%s (+%d / -%d)", gitBranch().c_str(), mGitStatus.totalInserts,
+				   ? String::format( "%s (+%d / -%d)", gitBranch(), mGitStatus.totalInserts,
 									 mGitStatus.totalDeletions )
 				   : gitBranch();
 	}
@@ -737,6 +807,7 @@ void GitPlugin::updateStatus( bool force ) {
 
 			lifetime.run(
 				[conflictStates = std::move( conflictStates )]( GitPlugin* plugin ) mutable {
+					plugin->resolveAddedDocumentDiffs();
 					const bool selectStatusPanel = plugin->updateConflictSessions( conflictStates );
 					plugin->updateStatusBarSync();
 					if ( plugin->mHistoryLoaded && plugin->mHistoryModel ) {
@@ -795,6 +866,8 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 					Lock l( mRepoMutex );
 					mProjectPath = mRepoSelected = mGit->getProjectPath();
 				}
+				if ( mDiffGutterEnabled )
+					invalidateAllDocumentDiffBaselines();
 
 				{
 					Lock l( mReposMutex );
@@ -827,6 +900,8 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
 			mStatusCustomTokenizer.reset();
+			if ( mDiffGutterEnabled )
+				updateDiffGutterColors();
 			updateUINow( true );
 			break;
 		}
@@ -853,6 +928,17 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( inGitFolder && file.getExtension() == "lock" )
 		return;
 
+	// Ignore index, object and log churn: only reference metadata can change the HEAD baseline.
+	if ( mDiffGutterEnabled && inGitFolder && gitHeadMetadataChanged( file ) && getUISceneNode() ) {
+		const auto lifetime = mLifetime.weakHandle();
+		getUISceneNode()->debounce(
+			[lifetime] {
+				lifetime.run(
+					[]( GitPlugin* plugin ) { plugin->invalidateAllDocumentDiffBaselines(); } );
+			},
+			GIT_DIFF_BASELINE_DEBOUNCE_DELAY, GIT_DIFF_BASELINE_UPDATE_TAG );
+	}
+
 	updateUI();
 }
 
@@ -876,12 +962,11 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 
 	String str( blame.error.empty()
 					? String::format( "%s: %s (%s)\n%s: %s (%s)\n%s: %s\n\n%s",
-									  i18n( "commit", "Commit" ).toUtf8().c_str(),
-									  blame.commitHash.c_str(), blame.commitShortHash.c_str(),
-									  i18n( "author", "Author" ).toUtf8().c_str(),
-									  blame.author.c_str(), blame.authorEmail.c_str(),
-									  i18n( "date", "Date" ).toUtf8().c_str(), blame.date.c_str(),
-									  blame.commitMessage.c_str() )
+									  i18n( "commit", "Commit" ).toUtf8(), blame.commitHash,
+									  blame.commitShortHash, i18n( "author", "Author" ).toUtf8(),
+									  blame.author, blame.authorEmail,
+									  i18n( "date", "Date" ).toUtf8(), blame.date,
+									  blame.commitMessage )
 					: blame.error );
 
 	Text::hardWrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
@@ -965,11 +1050,433 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 		if ( mTooltipInfoShowing )
 			hideTooltip( editor );
 	} ) );
+	if ( !mDiffGutterEnabled )
+		return;
+	listeners.push_back( editor->on( Event::OnTextChanged, [this, editor]( const Event* ) {
+		if ( !editor->hasDocument() )
+			return;
+
+		TextDocument* doc = editor->getDocumentRef().get();
+		auto it = mDocumentDiffs.find( doc );
+		if ( it == mDocumentDiffs.end() ) {
+			ensureDocumentDiff( doc );
+			it = mDocumentDiffs.find( doc );
+			if ( it == mDocumentDiffs.end() )
+				return;
+		}
+		++it->second.generation;
+		if ( it->second.baselineState != GitBaselineState::Loaded || !getUISceneNode() )
+			return;
+
+		const auto lifetime = mLifetime.weakHandle();
+		getUISceneNode()->debounce(
+			[lifetime, doc] {
+				lifetime.run( [doc]( GitPlugin* plugin ) { plugin->scheduleDocumentDiff( doc ); } );
+			},
+			mDiffGutterDebounceDelay, getDiffGutterDebounceTag( doc ) );
+	} ) );
+	listeners.push_back( editor->on( Event::OnDocumentMoved, [this]( const Event* event ) {
+		const auto* docEvent = static_cast<const DocEvent*>( event );
+		ensureDocumentDiff( docEvent->getDoc() );
+	} ) );
 }
 
 Color GitPlugin::getVarColor( const std::string& var ) {
 	return Color::fromString(
 		getUISceneNode()->getRoot()->getUIStyle()->getVariable( var ).getValue() );
+}
+
+void GitPlugin::updateDiffGutterColors() {
+	const auto resolve = [this]( const char* variable, Color fallback ) {
+		Color color = getVarColor( variable );
+		return color.a == 0 ? fallback : Color( color, 80 );
+	};
+	mDiffAddedColor = resolve( "--theme-success", Color( 0, 150, 32, 80 ) );
+	mDiffModifiedColor = resolve( "--theme-warning", Color( 220, 170, 0, 80 ) );
+	mDiffDeletedColor = resolve( "--theme-error", Color( 180, 0, 32, 80 ) );
+}
+
+const Color& GitPlugin::getDiffGutterColor( GitLineChange change, bool deleted ) const {
+	if ( deleted )
+		return mDiffDeletedColor;
+	return change == GitLineChange::Added ? mDiffAddedColor : mDiffModifiedColor;
+}
+
+void GitPlugin::initializeDiffGutter() {
+	if ( !mDiffGutterEnabled || !mGit || !mGitFound )
+		return;
+	updateDiffGutterColors();
+
+	for ( const auto& [editor, doc] : mEditorDocs ) {
+		if ( editor && editor->hasDocument() ) {
+			editor->registerGutterSpace( this, PixelDensity::dpToPxI( GIT_DIFF_GUTTER_WIDTH_DP ),
+										 0 );
+			ensureDocumentDiff( doc );
+		}
+	}
+}
+
+void GitPlugin::ensureDocumentDiff( TextDocument* doc ) {
+	if ( !mDiffGutterEnabled || !mGit || !mGitFound || !doc )
+		return;
+
+	if ( !doc->hasFilepath() || doc->getFilePath().empty() ) {
+		auto found = mDocumentDiffs.find( doc );
+		if ( found != mDocumentDiffs.end() ) {
+			if ( getUISceneNode() )
+				getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( doc ) );
+			mDocumentDiffs.erase( found );
+			redrawDocumentDiff( doc );
+		}
+		return;
+	}
+	const std::string& path = doc->getFilePath();
+
+	auto found = mDocumentDiffs.find( doc );
+	if ( found != mDocumentDiffs.end() && found->second.path == path ) {
+		if ( found->second.baselineState == GitBaselineState::Pending )
+			loadDocumentDiffBaseline( doc );
+		return;
+	}
+
+	auto [it, inserted] = mDocumentDiffs.try_emplace( doc );
+	auto& state = it->second;
+	if ( inserted )
+		state.identity = ++mNextDocumentDiffIdentity;
+	else
+		resetDocumentDiff( doc, state );
+	state.path = path;
+	state.repoPath = mGit->repoPath( path );
+
+	if ( state.baselineState == GitBaselineState::Pending )
+		loadDocumentDiffBaseline( doc );
+}
+
+void GitPlugin::loadDocumentDiffBaseline( TextDocument* doc ) {
+	auto it = mDocumentDiffs.find( doc );
+	if ( it == mDocumentDiffs.end() || it->second.baselineState != GitBaselineState::Pending ||
+		 !mGit || !mGitFound )
+		return;
+
+	auto& state = it->second;
+	state.baselineState = GitBaselineState::Loading;
+	const Uint64 baselineGeneration = ++state.baselineGeneration;
+	const Uint32 documentDiffIdentity = state.identity;
+	const auto git = mGit;
+	const auto lifetime = mLifetime.weakHandle();
+	mThreadPool->run( [git, path = state.path, repoPath = state.repoPath, doc, baselineGeneration,
+					   documentDiffIdentity, lifetime]() mutable {
+		auto result = git->showFile( path, "HEAD", repoPath );
+		if ( result.success() )
+			normalizeGitDiffText( result.result );
+		lifetime.run( [doc, baselineGeneration, documentDiffIdentity,
+					   result = std::move( result )]( GitPlugin* plugin ) mutable {
+			auto it = plugin->mDocumentDiffs.find( doc );
+			if ( it == plugin->mDocumentDiffs.end() ||
+				 it->second.identity != documentDiffIdentity ||
+				 it->second.baselineGeneration != baselineGeneration )
+				return;
+
+			auto& state = it->second;
+			const bool addedFile = result.fail() && plugin->isDocumentAddedInGit( state );
+			state.baselineState = result.success() || addedFile ? GitBaselineState::Loaded
+																: GitBaselineState::Unavailable;
+			state.baseline.reset();
+			state.lines.clear();
+			state.deletedAtEOF = false;
+			++state.generation;
+			if ( state.baselineState == GitBaselineState::Loaded ) {
+				state.baseline =
+					result.success()
+						? std::make_shared<const std::string>( std::move( result.result ) )
+						: emptyGitDiffBaseline();
+				plugin->scheduleDocumentDiff( doc );
+			} else {
+				plugin->redrawDocumentDiff( doc );
+			}
+		} );
+	} );
+}
+
+void GitPlugin::scheduleDocumentDiff( TextDocument* doc ) {
+	if ( !mDiffGutterEnabled )
+		return;
+
+	auto it = mDocumentDiffs.find( doc );
+	if ( it == mDocumentDiffs.end() || it->second.baselineState != GitBaselineState::Loaded ||
+		 !it->second.baseline )
+		return;
+
+	auto& state = it->second;
+	if ( state.diffRunning ) {
+		state.diffPending = true;
+		return;
+	}
+	state.diffRunning = true;
+	state.diffPending = false;
+	const Uint64 generation = state.generation;
+	const Uint32 documentDiffIdentity = state.identity;
+	auto baseline = state.baseline;
+	std::string current = std::move( mDiffSnapshotBuffer );
+	doc->toUtf8String( current );
+	const auto lifetime = mLifetime.weakHandle();
+	mThreadPool->run( [baseline = std::move( baseline ), current = std::move( current ), doc,
+					   generation, documentDiffIdentity, lifetime]() mutable {
+		ComputedGitLineDiff result;
+		if ( *baseline != current )
+			result = computeGitLineDiff( *baseline, current );
+		lifetime.run( [doc, generation, documentDiffIdentity, current = std::move( current ),
+					   result = std::move( result )]( GitPlugin* plugin ) mutable {
+			if ( current.capacity() > plugin->mDiffSnapshotBuffer.capacity() )
+				plugin->mDiffSnapshotBuffer = std::move( current );
+			auto it = plugin->mDocumentDiffs.find( doc );
+			if ( it == plugin->mDocumentDiffs.end() || it->second.identity != documentDiffIdentity )
+				return;
+
+			auto& state = it->second;
+			state.diffRunning = false;
+			if ( state.generation == generation &&
+				 state.baselineState == GitBaselineState::Loaded ) {
+				state.lines = std::move( result.lines );
+				state.deletedAtEOF = result.deletedAtEOF;
+				plugin->redrawDocumentDiff( doc );
+			}
+			if ( state.diffPending && state.baselineState == GitBaselineState::Loaded ) {
+				state.diffPending = false;
+				plugin->scheduleDocumentDiff( doc );
+			}
+		} );
+	} );
+}
+
+bool GitPlugin::isDocumentAddedInGit( const GitDocumentDiff& state ) {
+	std::string relativePath = state.path;
+	{
+		Lock l( mRepoMutex );
+		if ( mProjectPath.empty() )
+			return false;
+		FileSystem::filePathRemoveBasePath( mProjectPath, relativePath );
+	}
+
+	Lock l( mGitStatusMutex );
+	for ( const auto& [_, files] : mGitStatus.files ) {
+		for ( const auto& file : files ) {
+			if ( file.file == relativePath &&
+				 ( file.report.status == Git::GitStatus::Index_Added ||
+				   file.report.status == Git::GitStatus::WorkingTree_IntentToAdd ||
+				   file.report.status == Git::GitStatus::Untracked ) )
+				return true;
+		}
+	}
+	return false;
+}
+
+void GitPlugin::resolveAddedDocumentDiffs() {
+	if ( !mDiffGutterEnabled )
+		return;
+	for ( auto& [doc, state] : mDocumentDiffs ) {
+		if ( state.baselineState != GitBaselineState::Unavailable ||
+			 !isDocumentAddedInGit( state ) )
+			continue;
+		state.baseline = emptyGitDiffBaseline();
+		state.baselineState = GitBaselineState::Loaded;
+		++state.generation;
+		scheduleDocumentDiff( doc );
+	}
+}
+
+void GitPlugin::resetDocumentDiff( TextDocument* doc, GitDocumentDiff& state ) {
+	if ( getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( doc ) );
+	++state.baselineGeneration;
+	++state.generation;
+	state.baseline.reset();
+	state.lines.clear();
+	state.deletedAtEOF = false;
+	state.baselineState = GitBaselineState::Pending;
+	state.diffPending = false;
+	redrawDocumentDiff( doc );
+}
+
+void GitPlugin::invalidateAllDocumentDiffBaselines() {
+	if ( !mDiffGutterEnabled )
+		return;
+	for ( auto& [doc, state] : mDocumentDiffs ) {
+		state.repoPath = mGit ? mGit->repoPath( state.path ) : std::string{};
+		resetDocumentDiff( doc, state );
+	}
+	for ( const auto& [doc, _] : mDocumentDiffs )
+		loadDocumentDiffBaseline( doc );
+}
+
+void GitPlugin::redrawDocumentDiff( TextDocument* doc ) {
+	for ( const auto& [editor, editorDoc] : mEditorDocs ) {
+		if ( editorDoc == doc && editor )
+			editor->invalidateDraw();
+	}
+}
+
+void GitPlugin::onDocumentLoaded( TextDocument* doc ) {
+	if ( mDiffGutterEnabled )
+		ensureDocumentDiff( doc );
+}
+
+void GitPlugin::onDocumentChanged( UICodeEditor* editor, TextDocument* oldDoc ) {
+	if ( !mDiffGutterEnabled )
+		return;
+	if ( oldDoc ) {
+		bool stillRegistered = false;
+		for ( const auto& [_, doc] : mEditorDocs ) {
+			if ( doc == oldDoc ) {
+				stillRegistered = true;
+				break;
+			}
+		}
+		if ( !stillRegistered ) {
+			if ( getUISceneNode() )
+				getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( oldDoc ) );
+			mDocumentDiffs.erase( oldDoc );
+		}
+	}
+	if ( editor && editor->hasDocument() )
+		ensureDocumentDiff( editor->getDocumentRef().get() );
+}
+
+void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
+	if ( mDiffGutterEnabled ) {
+		if ( getUISceneNode() )
+			getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( doc ) );
+		mDocumentDiffs.erase( doc );
+	}
+	PluginBase::onUnregisterDocument( doc );
+}
+
+void GitPlugin::onRegisterEditor( UICodeEditor* editor ) {
+	if ( mDiffGutterEnabled ) {
+		editor->registerGutterSpace( this, PixelDensity::dpToPxI( GIT_DIFF_GUTTER_WIDTH_DP ), 0 );
+		if ( editor->hasDocument() )
+			ensureDocumentDiff( editor->getDocumentRef().get() );
+	}
+	PluginBase::onRegisterEditor( editor );
+}
+
+void GitPlugin::onUnregisterEditor( UICodeEditor* editor ) {
+	if ( mDiffGutterEnabled ) {
+		editor->unregisterGutterSpace( this );
+		editor->invalidateDraw();
+	}
+}
+
+void GitPlugin::drawGutter( UICodeEditor* editor, const Int64& index, const Vector2f& screenStart,
+							const Float& lineHeight, const Float& gutterWidth,
+							const Float& /*fontSize*/ ) {
+	if ( !mDiffGutterEnabled || !editor || !editor->hasDocument() || index < 0 )
+		return;
+
+	TextDocument* doc = editor->getDocumentRef().get();
+	auto it = mDocumentDiffs.find( doc );
+	if ( it == mDocumentDiffs.end() || it->second.baselineState != GitBaselineState::Loaded )
+		return;
+
+	const auto& state = it->second;
+	const size_t lineIndex = static_cast<size_t>( index );
+	if ( lineIndex >= state.lines.size() )
+		return;
+
+	const GitLineDecoration& decoration = state.lines[lineIndex];
+	const bool deletedAtEOF = state.deletedAtEOF && lineIndex + 1 == state.lines.size();
+	if ( decoration.change == GitLineChange::None && !decoration.deletedBefore && !deletedAtEOF )
+		return;
+
+	GlobalBatchRenderer* batchRenderer = GlobalBatchRenderer::instance();
+	batchRenderer->setTexture( nullptr );
+	batchRenderer->setBlendMode( BlendMode::Alpha() );
+	batchRenderer->quadsBegin();
+	if ( decoration.change != GitLineChange::None ) {
+		Color color = getDiffGutterColor( decoration.change );
+		color.blendAlpha( editor->getAlpha() );
+		batchRenderer->quadsSetColor( color );
+		batchRenderer->batchQuad( Rectf( screenStart, { gutterWidth, lineHeight } ) );
+	}
+
+	if ( decoration.deletedBefore || deletedAtEOF ) {
+		Color color( getDiffGutterColor( GitLineChange::None, true ), 255 );
+		color.blendAlpha( editor->getAlpha() );
+		batchRenderer->quadsSetColor( color );
+		const Float markerHeight = PixelDensity::dpToPxI( 2 );
+		const Float markerY = deletedAtEOF && !decoration.deletedBefore
+								  ? screenStart.y + lineHeight - markerHeight
+								  : screenStart.y;
+		batchRenderer->batchQuad(
+			Rectf( { screenStart.x, markerY }, { gutterWidth, markerHeight } ) );
+	}
+}
+
+void GitPlugin::minimapDrawBefore( UICodeEditor* editor, const DocumentLineRange& docLineRange,
+								   const DocumentViewLineRange& docViewRange,
+								   const Vector2f& linePos, const Vector2f& /*lineSize*/,
+								   const Float& /*charWidth*/, const Float& gutterWidth,
+								   const DrawTextRangesFn& /*drawTextRanges*/ ) {
+	if ( !mDiffGutterEnabled || !editor || !editor->hasDocument() )
+		return;
+
+	TextDocument* doc = editor->getDocumentRef().get();
+	auto it = mDocumentDiffs.find( doc );
+	if ( it == mDocumentDiffs.end() || it->second.baselineState != GitBaselineState::Loaded )
+		return;
+
+	const Int64 firstVisibleIndex = static_cast<Int64>( docViewRange.first );
+	const Int64 lastVisibleIndex = static_cast<Int64>( docViewRange.second );
+	if ( firstVisibleIndex > lastVisibleIndex || docLineRange.first > docLineRange.second )
+		return;
+
+	const auto& state = it->second;
+	const Float markerWidth =
+		eemin( gutterWidth, static_cast<Float>( PixelDensity::dpToPxI( 2 ) ) );
+	if ( markerWidth <= 0 )
+		return;
+
+	const Float markerX = linePos.x + gutterWidth - markerWidth;
+	const Float lineSpacing = editor->getMinimapLineSpacing();
+	const Float boundaryHeight =
+		eemin( lineSpacing, static_cast<Float>( PixelDensity::dpToPxI( 1 ) ) );
+	GlobalBatchRenderer* batchRenderer = GlobalBatchRenderer::instance();
+	for ( Int64 visibleIndex = firstVisibleIndex; visibleIndex <= lastVisibleIndex;
+		  ++visibleIndex ) {
+		const Int64 line = editor->getDocumentView()
+							   .getVisibleIndexPosition( static_cast<VisibleIndex>( visibleIndex ) )
+							   .line();
+		if ( line < docLineRange.first || line > docLineRange.second || line < 0 )
+			continue;
+
+		const size_t lineIndex = static_cast<size_t>( line );
+		if ( lineIndex >= state.lines.size() )
+			continue;
+
+		const GitLineDecoration& decoration = state.lines[lineIndex];
+		const bool deletedAtEOF = state.deletedAtEOF && lineIndex + 1 == state.lines.size();
+		if ( decoration.change == GitLineChange::None && !decoration.deletedBefore &&
+			 !deletedAtEOF )
+			continue;
+
+		const Float markerY = linePos.y + ( visibleIndex - firstVisibleIndex ) * lineSpacing;
+		if ( decoration.change != GitLineChange::None ) {
+			Color color = getDiffGutterColor( decoration.change );
+			color.blendAlpha( editor->getAlpha() );
+			batchRenderer->quadsSetColor( color );
+			batchRenderer->batchQuad( { { markerX, markerY }, { markerWidth, lineSpacing } } );
+		}
+
+		if ( decoration.deletedBefore || deletedAtEOF ) {
+			Color color( getDiffGutterColor( GitLineChange::None, true ), 255 );
+			color.blendAlpha( editor->getAlpha() );
+			batchRenderer->quadsSetColor( color );
+			const Float boundaryY = deletedAtEOF && !decoration.deletedBefore
+										? markerY + lineSpacing - boundaryHeight
+										: markerY;
+			batchRenderer->batchQuad( { { markerX, boundaryY }, { markerWidth, boundaryHeight } } );
+		}
+	}
 }
 
 void GitPlugin::blame( UICodeEditor* editor ) {

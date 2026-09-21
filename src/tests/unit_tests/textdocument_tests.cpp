@@ -77,6 +77,19 @@ UTEST( TextDocument, insertSingleLineAtDifferentPositions ) {
 	EXPECT_EQ( 1u, doc.linesCount() );
 }
 
+UTEST( TextDocument, toUtf8StringReusesOutputStorage ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "alpha\nbeta" );
+
+	std::string output( 4096, 'x' );
+	output.reserve( 8192 );
+	const size_t capacity = output.capacity();
+	doc.toUtf8String( output );
+
+	EXPECT_TRUE( output == doc.toUtf8String() );
+	EXPECT_EQ( capacity, output.capacity() );
+}
+
 UTEST( TextDocument, insertNewLinesIntoEmptyDocument ) {
 	{
 		TextDocument doc;

@@ -958,8 +958,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 	mLoadingAsync = true;
 
 	Http::getAsync(
-		[this, onLoaded = std::move( onLoaded ),
-		 uri = std::move( uri )]( const Http&, Http::Request&, Http::Response& response ) {
+		[this, onLoaded = std::move( onLoaded ), uri]( const Http&, Http::Request&,
+													   Http::Response& response ) {
 			if ( response.getStatus() <= Http::Response::Ok ) {
 				std::string path( URI::getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
@@ -1462,22 +1462,23 @@ String TextDocument::toString() {
 	return stream;
 }
 
-std::string TextDocument::toUtf8String() {
+void TextDocument::toUtf8String( std::string& stream ) {
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
-	std::string stream;
-	std::size_t totalCodepoints = 0;
+	std::size_t utf8Size = 0;
 	for ( const auto& line : mLines )
-		totalCodepoints += line.size();
+		utf8Size += String::utf8EncodedLength( line.getText().getString(), line.getTextHints() );
 
-	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
-	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+	stream.clear();
+	stream.reserve( utf8Size );
 
-	for ( const auto& line : mLines ) {
-		const String& text = line.getText();
-		// Low-level conversion directly into the stream buffer
-		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
-	}
+	for ( const auto& line : mLines )
+		String::appendUtf8( line.getText().getString(), stream, line.getTextHints() );
+}
+
+std::string TextDocument::toUtf8String() {
+	std::string stream;
+	toUtf8String( stream );
 	return stream;
 }
 

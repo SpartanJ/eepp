@@ -1235,6 +1235,10 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="discordrpc_language_icons_desc">Display an icon for the active document language.</string>
 	<string name="formatter_auto_format_on_save">Format on Save</string>
 	<string name="formatter_auto_format_on_save_desc">Automatically format supported documents when saving.</string>
+	<string name="git_diff_gutter">Show Git Diff Gutter</string>
+	<string name="git_diff_gutter_desc">Show added, modified and deleted line indicators in the editor gutter.</string>
+	<string name="git_diff_gutter_debounce_delay">Git Diff Gutter Update Delay</string>
+	<string name="git_diff_gutter_debounce_delay_desc">How long to wait after editing before updating Git diff indicators.</string>
 	<string name="git_filetree_highlight_changes">Highlight File Tree Changes</string>
 	<string name="git_filetree_highlight_changes_desc">Highlight files with Git changes in the file tree.</string>
 	<string name="git_filetree_highlight_style_color">File Tree Highlight Color</string>

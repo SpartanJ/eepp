@@ -757,6 +757,7 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
+			"simdutf-static",
 			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
@@ -1264,6 +1265,14 @@ workspace "eepp"
 		language "C++"
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+		target_dir_thirdparty()
+
+	project "simdutf-static"
+		kind "StaticLib"
+		language "C++"
+		files { "src/thirdparty/simdutf/simdutf.cpp" }
+		includedirs { "src/thirdparty/simdutf" }
+		build_base_cpp_configuration( "simdutf" )
 		target_dir_thirdparty()
 
 	project "zlib-static"
@@ -2038,6 +2047,7 @@ workspace "eepp"
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/projectdirectorytree.cpp",
 				"src/tools/ecode/plugins/git/git.cpp",
+				"src/tools/ecode/plugins/git/gitdiff.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		filter { "system:not windows", "system:not haiku" }

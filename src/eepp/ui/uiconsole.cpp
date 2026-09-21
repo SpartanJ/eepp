@@ -477,7 +477,8 @@ void UIConsole::privPushText( String&& str ) {
 		String::replaceAll( str, "\r", "" );
 	if ( str.empty() )
 		return;
-	mCmdLog.push_back( { std::move( str ), String::hash( str ) } );
+	const String::HashType hash = String::hash( str );
+	mCmdLog.push_back( { std::move( str ), hash } );
 	if ( mVisible )
 		invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
@@ -939,15 +940,11 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	}
 
 	if ( event.getMod() & KEYMOD_SHIFT ) {
-		if ( event.getKeyCode() == KEY_UP && mCon.min - mCon.modif > 0 ) {
-			mCon.modif++;
-			invalidateDraw();
+		if ( event.getKeyCode() == KEY_UP && scrollByLines( 1 ) ) {
 			return 1;
 		}
 
-		if ( event.getKeyCode() == KEY_DOWN && mCon.modif > 0 ) {
-			mCon.modif--;
-			invalidateDraw();
+		if ( event.getKeyCode() == KEY_DOWN && scrollByLines( -1 ) ) {
 			return 1;
 		}
 
@@ -971,20 +968,12 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 		}
 
 		if ( event.getKeyCode() == KEY_PAGEUP ) {
-			if ( mCon.min - mCon.modif - linesOnScreen() / 2 > 0 )
-				mCon.modif += linesOnScreen() / 2;
-			else
-				mCon.modif = mCon.min;
-			invalidateDraw();
+			scrollByLines( eemax( 1, linesOnScreen() / 2 ) );
 			return 1;
 		}
 
 		if ( event.getKeyCode() == KEY_PAGEDOWN ) {
-			if ( mCon.modif - linesOnScreen() / 2 > 0 )
-				mCon.modif -= linesOnScreen() / 2;
-			else
-				mCon.modif = 0;
-			invalidateDraw();
+			scrollByLines( -eemax( 1, linesOnScreen() / 2 ) );
 			return 1;
 		}
 	} else {
@@ -1221,19 +1210,7 @@ Uint32 UIConsole::onMouseDoubleClick( const Vector2i& position, const Uint32& fl
 }
 
 Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( flags == EE_BUTTON_WUMASK ) {
-		if ( mCon.min - mCon.modif - 6 > 0 ) {
-			mCon.modif += 6;
-		} else {
-			mCon.modif = mCon.min;
-		}
-	} else if ( flags == EE_BUTTON_WDMASK ) {
-		if ( mCon.modif - 6 > 0 ) {
-			mCon.modif -= 6;
-		} else {
-			mCon.modif = 0;
-		}
-	} else if ( flags & EE_BUTTON_LMASK ) {
+	if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMouseDown ) {
 			mMouseDown = false;
 			getInput()->captureMouse( false );
@@ -1242,6 +1219,21 @@ Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		onCreateContextMenu( position, flags );
 	}
 	return UIWidget::onMouseUp( position, flags );
+}
+
+Uint32 UIConsole::onMouseWheel( const Vector2f& offset, bool ) {
+	if ( offset.y == 0.f )
+		return 0;
+	return scrollByLines( offset.y > 0.f ? 6 : -6 ) ? 1 : 0;
+}
+
+bool UIConsole::scrollByLines( Int32 lines ) {
+	const Int32 previousOffset = mCon.modif;
+	mCon.modif = eeclamp( mCon.modif + lines, 0, mCon.min );
+	if ( previousOffset == mCon.modif )
+		return false;
+	invalidateDraw();
+	return true;
 }
 
 void UIConsole::onDocumentTextChanged( const DocumentContentChange& ) {

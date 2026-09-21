@@ -770,6 +770,9 @@ class EE_API TextDocument {
 
 	String toString();
 
+	/** Convert the document to UTF-8, reusing the output buffer capacity. */
+	void toUtf8String( std::string& stream );
+
 	std::string toUtf8String();
 
   protected:
