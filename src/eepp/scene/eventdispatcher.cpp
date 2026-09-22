@@ -137,8 +137,12 @@ void EventDispatcher::update( const Time& time ) {
 		return;
 	}
 
-	if ( NULL != mNodeDragging )
+	mJustFinishDragging = false;
+
+	if ( NULL != mNodeDragging ) {
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
+		mJustFinishDragging = mNodeDragging == NULL;
+	}
 
 	mJustPressed = false;
 
@@ -238,6 +242,8 @@ void EventDispatcher::update( const Time& time ) {
 	} else if ( nodeWasDragging && !isNodeDragging() ) {
 		mInput->captureMouse( false );
 	}
+
+	mJustFinishDragging = false;
 }
 
 void EventDispatcher::onMouseOverNodeChange( Node* ) {}

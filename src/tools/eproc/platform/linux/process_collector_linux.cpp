@@ -375,12 +375,8 @@ void ProcessCollectorLinux::readProcessCmdline( ProcessInfo& proc, long pid ) {
 	if ( proc.commandLine.empty() )
 		return;
 
-	// argv entries are NUL separated. Keep the executable separately for the table, then replace
-	// the separators with spaces for a useful clipboard command line.
-	proc.command.clear();
-	const size_t firstArgEnd = proc.commandLine.find( '\0' );
-	proc.command.assign( proc.commandLine.data(),
-						 firstArgEnd == std::string::npos ? proc.commandLine.size() : firstArgEnd );
+	// argv entries are NUL separated. Replace the separators with spaces to reconstruct the
+	// command line as ksysguard6 shows it in its command column (and for the clipboard).
 	for ( char& character : proc.commandLine ) {
 		if ( character == '\0' )
 			character = ' ';

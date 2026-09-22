@@ -70,10 +70,10 @@ struct ProcessInfo {
 	// Other
 	int niceLevel{ 0 };
 	int numThreads{ 0 };
-	// The complete command line, reconstructed from argv. The command column uses only the
-	// executable name, while this value is used by actions that need the original arguments.
+	// The complete command line, reconstructed from argv (NUL separators replaced by spaces).
+	// Shown in the command column, like ksysguard6 does, and used by actions that need the
+	// original arguments (such as copying the command line).
 	std::string commandLine;
-	std::string command;
 	// Controlling terminal device number, 0 when the process has none.
 	long ttyNr{ 0 };
 	// Friendly Linux tty name (for example, "pts/2"). Empty when there is no controlling tty.

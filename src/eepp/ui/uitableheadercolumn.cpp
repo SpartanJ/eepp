@@ -72,6 +72,7 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 	if ( ( flags & EE_BUTTON_LMASK ) && !isDragging() &&
+		 !getEventDispatcher()->justFinishDragging() &&
 		 localPos.x < mSize.getWidth() - mView->getDragBorderDistance() ) {
 		mView->onSortColumn( mColIndex );
 		return 1;

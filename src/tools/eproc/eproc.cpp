@@ -187,10 +187,13 @@ App::App() {
 		storedSize.getHeight() > 0 ? static_cast<Uint32>( storedSize.getHeight() ) : 720;
 	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
 					   32, Sys::getProcessPath() + "assets/icon/ee.png" );
-	mApp = std::make_unique<UIApplication>( ws );
-	if ( mApp->getUI() && mApp->getWindow() )
+	ContextSettings ctx;
+	ctx.Multisamples = 4;
+	mApp = std::make_unique<UIApplication>( ws, UIApplication::Settings{}, ctx );
+	if ( mApp->getUI() && mApp->getWindow() ) {
 		mApp->getWindow()->setTitle(
 			mApp->getUI()->i18n( "eproc_window_title", "eproc - System Monitor" ) );
+	}
 }
 
 App::~App() {}
@@ -242,7 +245,7 @@ bool App::init() {
 		background-color: #029A3632;
 	}
 	tableview::cell.eproc-process-username-traced {
-		background-color: #FFFF00;
+		background-color: #FFFF0088;
 	}
 	tableview::cell.eproc-process-username-ended {
 		background-color: #D3D3D3;

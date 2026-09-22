@@ -213,7 +213,7 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		case ColUpload:
 			return Variant( proc->formatUpload() );
 		case ColCommand:
-			return Variant::fromRef( proc->command );
+			return Variant::fromRef( proc->commandLine );
 		case ColTotalMemory:
 			return Variant( formatKiB( proc->vmRSS ) );
 		case ColVirtualSize:
@@ -345,14 +345,14 @@ bool ProcessModel::matchesText( const ProcessInfo& proc ) const {
 
 	if ( mTextRegex ) {
 		// Each column is matched on its own, so an anchored pattern applies to every one of them.
-		return mTextRegex->matches( proc.name ) || mTextRegex->matches( proc.command ) ||
+		return mTextRegex->matches( proc.name ) || mTextRegex->matches( proc.commandLine ) ||
 			   mTextRegex->matches( proc.username ) ||
 			   mTextRegex->matches( pidBuffer, 0, nullptr, pidSize );
 	}
 
 	const std::string_view pid( pidBuffer, pidSize );
 	return containsIgnoreCase( proc.name, mTextLiteral ) ||
-		   containsIgnoreCase( proc.command, mTextLiteral ) ||
+		   containsIgnoreCase( proc.commandLine, mTextLiteral ) ||
 		   containsIgnoreCase( proc.username, mTextLiteral ) ||
 		   containsIgnoreCase( pid, mTextLiteral );
 }

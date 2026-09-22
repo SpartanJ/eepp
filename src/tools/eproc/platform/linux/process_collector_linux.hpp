@@ -5,7 +5,6 @@
 #include "gpu_reader_nvidia.hpp"
 #include "process_icon_resolver.hpp"
 #include "process_network_monitor.hpp"
-#include <unordered_map>
 
 namespace eproc {
 
