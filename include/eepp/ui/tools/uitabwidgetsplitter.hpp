@@ -270,6 +270,10 @@ class EE_API UITabWidgetSplitter {
 
 	virtual void onTabClosed( const TabEvent* tabEvent );
 
+	void attachWidgetEvents( UIWidget* widget );
+
+	void detachWidgetEvents( UIWidget* widget );
+
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 
 	void updateTabWidgetVisualSplitting();

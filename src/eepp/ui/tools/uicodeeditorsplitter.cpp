@@ -29,8 +29,7 @@ Uint32 UICodeEditorSplitter::getDefaultSwitchToTabModifier() {
 	return DefaultSwitchToTabModifier;
 }
 
-const KeyBindings::ShortcutMap
-UICodeEditorSplitter::getLocalDefaultKeybindings() {
+const KeyBindings::ShortcutMap UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
 		{ { KEY_S, KeyMod::getDefaultModifier() }, "save-doc" },
 		{ { KEY_T, KeyMod::getDefaultModifier() }, "create-new" },
@@ -129,24 +128,11 @@ UICodeEditorSplitter::~UICodeEditorSplitter() {
 
 		tabWidget->setTabTryCloseCallback( nullptr );
 		tabWidget->setSplitFunction( nullptr, mVisualSplitEdgePercent );
-		auto tabWidgetCbsIt = mEventCbs.find( tabWidget );
-		if ( tabWidgetCbsIt != mEventCbs.end() )
-			tabWidget->removeEventListener( tabWidgetCbsIt->second );
-
-		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
-			UITab* tab = tabWidget->getTab( i );
-			if ( nullptr == tab || nullptr == tab->getOwnedWidget() ||
-				 !tab->getOwnedWidget()->isWidget() )
-				continue;
-
-			UIWidget* widget = tab->getOwnedWidget()->asType<UIWidget>();
-			auto widgetCbsIt = mEventCbs.find( widget );
-			if ( widgetCbsIt != mEventCbs.end() )
-				widget->removeEventListener( widgetCbsIt->second );
-		}
 	}
 
+	// Destroying the connections disconnects the listeners from still-alive nodes.
 	mEventCbs.clear();
+	mEditorCloseCbs.clear();
 	mCurEditor = nullptr;
 	mCurWidget = nullptr;
 	mClient = nullptr;
@@ -296,41 +282,10 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	registerSplitterCommands( doc );
 	/* Splitter commands */
 
-	mEventCbs[editor].push_back( editor->on( Event::OnFocus, [this]( const Event* event ) {
-		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-		UICodeEditor* prevEditor = mCurEditor;
-		if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor &&
-			 !prevEditor->hasFocus() )
-			saveEditorSelection( prevEditor );
-		setCurrentWidget( editor );
-		if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor )
-			restoreEditorSelection( editor );
-	} ) );
-	mEventCbs[editor].push_back( editor->on( Event::OnFocusLoss, [this]( const Event* event ) {
-		if ( mRestoreEditorSelectionOnFocus )
-			saveEditorSelection( event->getNode()->asType<UICodeEditor>() );
-	} ) );
-	mEventCbs[editor].push_back( editor->on( Event::OnTextChanged, [this]( const Event* event ) {
-		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
-									 event->getNode()->asType<UICodeEditor>()->getDocument() );
-	} ) );
-	mEventCbs[editor].push_back(
-		editor->on( Event::OnSelectionChanged, [this]( const Event* event ) {
-			mClient->onDocumentSelectionChange(
-				event->getNode()->asType<UICodeEditor>(),
-				event->getNode()->asType<UICodeEditor>()->getDocument() );
-		} ) );
-	mEventCbs[editor].push_back(
-		editor->on( Event::OnCursorPosChange, [this]( const Event* event ) {
-			mClient->onDocumentCursorPosChange(
-				event->getNode()->asType<UICodeEditor>(),
-				event->getNode()->asType<UICodeEditor>()->getDocument() );
-		} ) );
-	mEventCbs[editor].push_back(
-		editor->on( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
-			mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
-										 event->getNode()->asType<UICodeEditor>()->getDocument() );
-		} ) );
+	mEditorCloseCbs[editor] = editor->connect( Event::OnClose, [this, editor]( const Event* ) {
+		mEditorSelections.erase( editor );
+		mEditorCloseCbs.erase( editor );
+	} );
 	editor->addKeyBinds( getLocalDefaultKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
 
@@ -612,12 +567,6 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 		return std::make_pair( (UITab*)nullptr, (UICodeEditor*)nullptr );
 	UICodeEditor* editor = createCodeEditor();
 	mAboutToAddEditor = editor;
-	mEventCbs[editor].push_back(
-		editor->on( Event::OnDocumentChanged, [this]( const Event* event ) {
-			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-			mEditorSelections.erase( editor );
-			mClient->onDocumentStateChanged( editor, editor->getDocument() );
-		} ) );
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
 	editor->setData( (UintPtr)tab );
 	DocEvent docEvent( editor, &editor->getDocument(), Event::OnEditorTabReady );
@@ -658,23 +607,6 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	// We use both events because there was an strange behavior that sometimes OnFocusWithin was not
-	// enough, so this is just in case.
-	mEventCbs[widget].push_back( widget->on( Event::OnFocus, [this]( const Event* event ) {
-		setCurrentWidget( event->getNode()->asType<UIWidget>() );
-	} ) );
-	mEventCbs[widget].push_back( widget->on( Event::OnFocusWithin, [this]( const Event* event ) {
-		setCurrentWidget( event->getNode()->asType<UIWidget>() );
-	} ) );
-	mEventCbs[widget].push_back( widget->on( Event::OnTitleChange, [this]( const Event* event ) {
-		const TextEvent* tevent = static_cast<const TextEvent*>( event );
-		UIWidget* widget = event->getNode()->asType<UIWidget>();
-		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-		UITab* tab = tabWidget->getTabFromOwnedWidget( widget );
-		if ( !tab )
-			return;
-		tab->setText( tevent->getText() );
-	} ) );
 	if ( focus )
 		tabWidget->setTabSelected( tab );
 	mClient->onTabCreated( tab, widget );
@@ -757,8 +689,8 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 			},
 			mVisualSplitEdgePercent );
 	}
-	mEventCbs[tabWidget].push_back( tabWidget->on( Event::OnTabSelected, [this](
-																			 const Event* event ) {
+	auto& tabWidgetCbs = mEventCbs[tabWidget];
+	tabWidgetCbs += tabWidget->connect( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		eeASSERT( nullptr != tabWidget && nullptr != tabWidget->getTabSelected() &&
 				  nullptr != tabWidget->getTabSelected()->getOwnedWidget() );
@@ -772,7 +704,7 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 		} else {
 			setCurrentWidget( tabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
 		}
-	} ) );
+	} );
 	tabWidget->setTabTryCloseCallback(
 		[this]( UITab* tab, UITabWidget::FocusTabBehavior focusTabBehavior ) -> bool {
 			if ( tab->getOwnedWidget() &&
@@ -782,10 +714,15 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 			}
 			return false;
 		} );
-	mEventCbs[tabWidget].push_back(
-		tabWidget->on( Event::OnTabClosed, [this]( const Event* event ) {
-			onTabClosed( static_cast<const TabEvent*>( event ) );
-		} ) );
+	tabWidgetCbs += tabWidget->connect( Event::OnTabAdded, [this]( const Event* event ) {
+		const auto* tabEvent = static_cast<const TabEvent*>( event );
+		Node* ownedNode = tabEvent->getTab()->getOwnedWidget();
+		if ( ownedNode && ownedNode->isWidget() )
+			attachWidgetEvents( ownedNode->asType<UIWidget>() );
+	} );
+	tabWidgetCbs += tabWidget->connect( Event::OnTabClosed, [this]( const Event* event ) {
+		onTabClosed( static_cast<const TabEvent*>( event ) );
+	} );
 	if ( mOnTabWidgetCreateCb )
 		mOnTabWidgetCreateCb( tabWidget );
 	Lock l( mTabWidgetMutex );
@@ -1885,25 +1822,88 @@ void UICodeEditorSplitter::closeSplitter( UISplitter* splitter ) {
 	closeTabWidgets( splitter );
 }
 
+void UICodeEditorSplitter::attachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget || mEventCbs.find( widget ) != mEventCbs.end() )
+		return;
+
+	auto& connections = mEventCbs[widget];
+
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		UICodeEditor* editor = widget->asType<UICodeEditor>();
+		connections += editor->connect( Event::OnFocus, [this]( const Event* event ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			UICodeEditor* prevEditor = mCurEditor;
+			if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor &&
+				 !prevEditor->hasFocus() )
+				saveEditorSelection( prevEditor );
+			setCurrentWidget( editor );
+			if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor )
+				restoreEditorSelection( editor );
+		} );
+		connections += editor->connect( Event::OnFocusLoss, [this]( const Event* event ) {
+			if ( mRestoreEditorSelectionOnFocus )
+				saveEditorSelection( event->getNode()->asType<UICodeEditor>() );
+		} );
+		connections += editor->connect( Event::OnTextChanged, [this]( const Event* event ) {
+			mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
+										 event->getNode()->asType<UICodeEditor>()->getDocument() );
+		} );
+		connections += editor->connect( Event::OnSelectionChanged, [this]( const Event* event ) {
+			mClient->onDocumentSelectionChange(
+				event->getNode()->asType<UICodeEditor>(),
+				event->getNode()->asType<UICodeEditor>()->getDocument() );
+		} );
+		connections += editor->connect( Event::OnCursorPosChange, [this]( const Event* event ) {
+			mClient->onDocumentCursorPosChange(
+				event->getNode()->asType<UICodeEditor>(),
+				event->getNode()->asType<UICodeEditor>()->getDocument() );
+		} );
+		connections += editor->connect( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
+			mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
+										 event->getNode()->asType<UICodeEditor>()->getDocument() );
+		} );
+		connections += editor->connect( Event::OnDocumentChanged, [this]( const Event* event ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			mEditorSelections.erase( editor );
+			mClient->onDocumentStateChanged( editor, editor->getDocument() );
+		} );
+	} else {
+		// We use both events because there was an strange behavior that sometimes OnFocusWithin was
+		// not enough, so this is just in case.
+		connections += widget->connect( Event::OnFocus, [this]( const Event* event ) {
+			setCurrentWidget( event->getNode()->asType<UIWidget>() );
+		} );
+		connections += widget->connect( Event::OnFocusWithin, [this]( const Event* event ) {
+			setCurrentWidget( event->getNode()->asType<UIWidget>() );
+		} );
+		connections += widget->connect( Event::OnTitleChange, [this]( const Event* event ) {
+			const TextEvent* tevent = static_cast<const TextEvent*>( event );
+			UIWidget* widget = event->getNode()->asType<UIWidget>();
+			UITab* tab = getTabFromWidget( widget );
+			if ( !tab )
+				return;
+			tab->setText( tevent->getText() );
+		} );
+	}
+}
+
+void UICodeEditorSplitter::detachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget )
+		return;
+
+	// Destroying the connection list disconnects the listeners.
+	mEventCbs.erase( widget );
+}
+
 void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 	UIWidget* widget = tabEvent->getTab()->getOwnedWidget()->asType<UIWidget>();
 	UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
-	auto widgetCbsIt = mEventCbs.find( widget );
-	if ( widgetCbsIt != mEventCbs.end() ) {
-		widget->removeEventListener( widgetCbsIt->second );
-		mEventCbs.erase( widgetCbsIt );
-	}
-	if ( widget && widget->isType( UI_TYPE_CODEEDITOR ) )
-		mEditorSelections.erase( widget->asType<UICodeEditor>() );
+	detachWidgetEvents( widget );
 	if ( tabWidget->getTabCount() == 0 ) {
 		UISplitter* splitter = splitterFromWidget( widget );
 		if ( splitter ) {
 			if ( splitter->isFull() ) {
-				auto tabWidgetCbsIt = mEventCbs.find( tabWidget );
-				if ( tabWidgetCbsIt != mEventCbs.end() ) {
-					tabWidget->removeEventListener( tabWidgetCbsIt->second );
-					mEventCbs.erase( tabWidgetCbsIt );
-				}
+				mEventCbs.erase( tabWidget );
 				tabWidget->close();
 				auto itWidget = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 				if ( itWidget != mTabWidgets.end() ) {

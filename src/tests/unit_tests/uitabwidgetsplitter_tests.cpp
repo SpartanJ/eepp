@@ -1,3 +1,4 @@
+#include "tabtransfer.hpp"
 #include "utest.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -736,4 +737,102 @@ UTEST( UITabWidgetSplitter, Serialization ) {
 		eeDelete( splitter1 );
 		eeDelete( splitter2 );
 	}
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedBetweenSplitsKeepsFocusAndTitleTracking ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto tabAndWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Moved", false );
+	UITab* tabW = tabAndWidget.first;
+	UIWidget* widgetW = tabAndWidget.second;
+	auto* secondTabWidget = splitter->splitTabWidget( SplitDirection::Right, firstTabWidget );
+	splitter->createWidgetInTabWidget( secondTabWidget, UIWidget::New(), "Other", false );
+
+	transferTabTo( tabW, secondTabWidget );
+
+	keepWidget->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+
+	widgetW->setFocus();
+	EXPECT_EQ( splitter->getCurWidget(), widgetW );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Renamed" );
+	EXPECT_TRUE( tabW->getText() == "Renamed" );
+
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedOutsideSplitterStopsNotifyingSplitter ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto tabAndWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Moved", false );
+	UITab* tabW = tabAndWidget.first;
+	UIWidget* widgetW = tabAndWidget.second;
+	auto* external = UITabWidget::New();
+	external->setParent( app.getUI() );
+	external->setAllowDragAndDropTabs( true );
+
+	transferTabTo( tabW, external );
+
+	keepWidget->setFocus();
+	int focusChanges = client.focusChangeCount;
+
+	widgetW->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+	EXPECT_EQ( client.focusChangeCount, focusChanges );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Stale" );
+	EXPECT_FALSE( tabW->getText() == "Stale" );
+
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedIntoSplitterStartsNotifyingSplitter ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto* external = UITabWidget::New();
+	external->setParent( app.getUI() );
+	external->setAllowDragAndDropTabs( true );
+	auto* widgetW = UIWidget::New();
+	UITab* tabW = external->add( "External", widgetW );
+	widgetW->setData( (UintPtr)tabW );
+
+	transferTabTo( tabW, firstTabWidget );
+
+	keepWidget->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+
+	widgetW->setFocus();
+	EXPECT_EQ( splitter->getCurWidget(), widgetW );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Renamed" );
+	EXPECT_TRUE( tabW->getText() == "Renamed" );
+
+	eeDelete( splitter );
 }
