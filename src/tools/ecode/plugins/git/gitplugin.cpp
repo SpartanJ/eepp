@@ -1075,6 +1075,24 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 			},
 			mDiffGutterDebounceDelay, getDiffGutterDebounceTag( doc ) );
 	} ) );
+	listeners.push_back( editor->on( Event::OnDocumentReloaded, [this]( const Event* event ) {
+		// Reload replaces the document lines without emitting OnTextChanged.
+		TextDocument* doc = static_cast<const DocEvent*>( event )->getDoc();
+		ensureDocumentDiff( doc );
+		auto it = mDocumentDiffs.find( doc );
+		if ( it == mDocumentDiffs.end() )
+			return;
+
+		auto& state = it->second;
+		++state.generation;
+		state.lines.clear();
+		state.deletedAtEOF = false;
+		redrawDocumentDiff( doc );
+		if ( getUISceneNode() )
+			getUISceneNode()->removeActionsByTag( getDiffGutterDebounceTag( doc ) );
+		if ( state.baselineState == GitBaselineState::Loaded )
+			scheduleDocumentDiff( doc );
+	} ) );
 	listeners.push_back( editor->on( Event::OnDocumentMoved, [this]( const Event* event ) {
 		const auto* docEvent = static_cast<const DocEvent*>( event );
 		ensureDocumentDiff( docEvent->getDoc() );
