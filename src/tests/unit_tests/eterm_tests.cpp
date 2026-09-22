@@ -233,6 +233,46 @@ UTEST( eterm_session, resize_and_output_are_serialized ) {
 	EXPECT_EQ( static_cast<size_t>( 40 * 12 ), snapshot->cells.size() );
 }
 
+UTEST( eterm_session, closing_a_tab_resize_keeps_surviving_session_alive ) {
+	auto survivorPty = std::make_unique<MockPty>();
+	survivorPty->mCols = 151;
+	survivorPty->mRows = 52;
+	for ( int line = 0; line < 200; ++line )
+		survivorPty->mBuffer += "survivor history " + std::to_string( line ) + "\r\n";
+	auto survivorProcess = std::make_unique<MockProcess>();
+	auto survivor =
+		TerminalSession::create( std::move( survivorPty ), std::move( survivorProcess ), 1000 );
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 52 &&
+							snapshot.historyLength >= 100;
+				 } ) != nullptr );
+
+	auto temporaryPty = std::make_unique<MockPty>();
+	temporaryPty->mCols = 151;
+	temporaryPty->mRows = 52;
+	auto temporaryProcess = std::make_unique<MockProcess>();
+	auto temporary =
+		TerminalSession::create( std::move( temporaryPty ), std::move( temporaryProcess ), 1000 );
+
+	survivor->resize( 151, 50 );
+	temporary->resize( 151, 50 );
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 50;
+				 } ) != nullptr );
+	ASSERT_TRUE( waitForSnapshot( temporary, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 50;
+				 } ) != nullptr );
+
+	/* Queue the surviving resize before closing the temporary session so both workers can release
+	 * and reallocate equal-sized terminal rows concurrently. */
+	survivor->resize( 151, 52 );
+	temporary.reset();
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 52 &&
+							snapshot.historyLength >= 100;
+				 } ) != nullptr );
+}
+
 UTEST( eterm_session, scroll_snapshots_acknowledge_the_latest_ordered_command ) {
 	auto pty = std::make_unique<MockPty>();
 	for ( int line = 0; line < 80; ++line )
@@ -2522,6 +2562,50 @@ UTEST( eterm, history_corruption_on_resize ) {
 
 		EXPECT_STDSTREQ( expected_lines[expected_idx], sel );
 	}
+}
+
+UTEST( eterm, repeated_resize_keeps_screen_row_ownership ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 1000 );
+
+	term->resize( 151, 50 );
+	for ( int line = 0; line < 200; ++line ) {
+		const std::string text = "terminal output " + std::to_string( line ) + "\r\n";
+		term->write( text.c_str(), text.size() );
+		term->update();
+	}
+	for ( int iteration = 0; iteration < 100; ++iteration ) {
+		term->resize( 151, 52 );
+		term->resize( 151, 50 );
+	}
+	const Vector2i finalSize = term->getSize();
+	EXPECT_EQ( 151, finalSize.x );
+	EXPECT_EQ( 50, finalSize.y );
+	EXPECT_TRUE( term->scrollSize() > 0 );
+}
+
+UTEST( eterm, history_capacity_tracks_narrow_and_wide_resize ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mCols = 151;
+	pty->mRows = 50;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 10 );
+
+	for ( int line = 0; line < 100; ++line ) {
+		const std::string text = "short " + std::to_string( line ) + "\r\n";
+		term->write( text.c_str(), text.size() );
+		term->update();
+	}
+	EXPECT_TRUE( term->scrollSize() > 0 );
+
+	term->resize( 80, 50 );
+	term->resize( 151, 50 );
+	const Vector2i finalSize = term->getSize();
+	EXPECT_EQ( 151, finalSize.x );
+	EXPECT_EQ( 50, finalSize.y );
 }
 
 UTEST( eterm_search, logical_lines_options_and_cell_mapping ) {

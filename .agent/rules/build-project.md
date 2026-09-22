@@ -4,6 +4,29 @@ The build configurations in `.ecode/project_build.json` are the source of truth 
 developer's local build workflows. Check that file before selecting a generator, backend, or
 build flags. In particular, do not use an AddressSanitizer build to evaluate runtime performance.
 
+## macOS Builds (Required Workflow)
+
+On a macOS host, the scripts in `projects/macos` override the generic Premake and Make instructions
+below. They regenerate and build the project with the same options used by the developer and must be
+used for debug, release, unit-test, targeted, and clean builds. Do not invoke `premake4`, `premake5`,
+or `make -C make/macosx` directly on macOS, because doing so can regenerate the shared build tree
+with incompatible options and cause subsequent local builds to fail.
+
+Before building, read `.ecode/project_build.json` and use the configuration and target selected
+there. From the repository root, run `projects/macos/make_no_fw.sh` first, forwarding the exact
+`config=<build_type>`, target, and action arguments required by the task. Examples:
+
+* Debug: `projects/macos/make_no_fw.sh config=debug`
+* Release: `projects/macos/make_no_fw.sh config=release`
+* Debug unit tests: `projects/macos/make_no_fw.sh config=debug eepp-unit_tests`
+* Release unit tests: `projects/macos/make_no_fw.sh config=release eepp-unit_tests`
+* Clean: `projects/macos/make_no_fw.sh config=<build_type> clean`
+
+If `make_no_fw.sh` fails, retry once with `projects/macos/make.sh`, preserving the exact same
+arguments. Do not add sanitizer, linker, framework, generator, architecture, or parallelism flags
+outside the scripts unless `.ecode/project_build.json` itself requires them. Do not fall back to a
+hand-written Premake or direct Make command.
+
 ## Release Performance Builds (Linux)
 
 For performance investigations, use the `eepp-linux-ninja` configuration from
@@ -27,12 +50,13 @@ release Ninja build required for performance work.
 
 ## Debug and Unit-Test Builds
 
-All build commands must be executed from the **root project directory**. Follow these steps to build the project:
+All build commands must be executed from the **root project directory**. On macOS, follow the
+required script workflow above. The generic steps below apply to other hosts.
 
 ## Step 1: Regenerate Project Files
 Always regenerate the project files before compiling or running tests after making changes. Do this even for edits to existing files, because the checked-in makefiles can be stale and may reference removed files or miss recently added targets.
 
-*   **Tool:** Use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
+*   **Tool:** On non-macOS hosts, use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
 *   **Linker Flag (`--with-mold-linker`):** This flag is conditional. If the `mold` linker is installed on the system, you **must** include it to speed up linking. If `mold` is not installed, omit the flag.
 
 Choose the generator command from the configuration that will be built. Debug builds use AddressSanitizer; release builds do not.
@@ -74,11 +98,8 @@ Always use all processors reported by the platform when selecting the parallel j
 and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
 such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.
 
-On macOS in a managed or sandboxed environment, request elevated permission before invoking
-`sysctl` or running any command that needs access to host display services. Read and validate
-`sysctl -n hw.ncpu` separately before starting the build, then pass the verified positive value as a
-literal `-jN` argument. If the query fails, returns zero, or returns an empty value, stop and request
-permission; never allow an empty command substitution to turn `-j` into unbounded parallelism.
+On macOS, do not query `sysctl` or select a job count separately; the required scripts above own
+parallelism and invoke the platform query themselves.
 
 The valid OS directory names are: `windows`, `macosx`, `linux`, `bsd`, `haiku`.
 
@@ -87,8 +108,7 @@ Run the following command, replacing `<os_name>` with the correct environment:
 
 **Examples:**
 *   Linux: `make -C make/linux -j$(nproc)`
-*   macOS: after an approved `sysctl -n hw.ncpu` returns a value such as `10`, run
-    `make -C make/macosx -j10` using that exact verified value.
+*   macOS: use `projects/macos/make_no_fw.sh config=<build_type>` as documented above.
 *   Windows: `make -C make/windows -j%NUMBER_OF_PROCESSORS%`
 
 ## Running GUI Examples Under Xvfb

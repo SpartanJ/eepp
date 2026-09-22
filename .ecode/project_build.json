@@ -658,6 +658,12 @@
         "command": "${project_root}/bin/eepp-ui-markdownview-debug",
         "name": "eepp-ui-markdownview-debug",
         "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eterm-debug",
+        "name": "eterm-debug",
+        "working_dir": "${project_root}/bin/"
       }
     ],
     "var": {
