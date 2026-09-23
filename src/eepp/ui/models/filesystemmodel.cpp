@@ -386,6 +386,7 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 	mThreadPool( threadPool ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this, threadPool );
 	mInitOK = true;
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	setupColumnNames( translator );
 	invalidate();
 }
@@ -403,6 +404,7 @@ const std::string& FileSystemModel::getRootPath() const {
 void FileSystemModel::setRootPath( const std::string& rootPath ) {
 	mRootPath = rootPath;
 	mRealRootPath = FileSystem::getRealPath( mRootPath );
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	update();
 }
 
