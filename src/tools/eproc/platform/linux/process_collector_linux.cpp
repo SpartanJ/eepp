@@ -513,6 +513,7 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	mGpuMemory.clear();
 	if ( mGpuReader.isAvailable() )
 		mGpuReader.query( mGpuUsage, mGpuMemory );
+	mDrmGpuReader.beginSample();
 
 	// Network packet capture runs continuously in its own thread; this refresh only joins the
 	// current procfs socket ownership with the endpoints seen by that capture thread.
@@ -604,6 +605,15 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 		auto memoryIt = mGpuMemory.find( pid );
 		if ( memoryIt != mGpuMemory.end() )
 			proc.gpuMemory = memoryIt->second;
+		if ( proc.gpuUsage < 0 || proc.gpuMemory < 0 ) {
+			int drmUsage = -1;
+			long drmMemory = -1;
+			mDrmGpuReader.query( pid, proc.startTime, drmUsage, drmMemory );
+			if ( proc.gpuUsage < 0 )
+				proc.gpuUsage = drmUsage;
+			if ( proc.gpuMemory < 0 )
+				proc.gpuMemory = drmMemory;
+		}
 
 		// Icons are resolved once per process, not once per pass: the executable behind a pid does
 		// not change, and the resolver walks the desktop index on a miss. A pid that was reused by

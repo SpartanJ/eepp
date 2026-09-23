@@ -2,9 +2,11 @@
 #define EPROC_PROCESS_INFO_HPP
 
 #include <eepp/core/core.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <string>
 
 using namespace EE;
+using namespace EE::Graphics;
 
 namespace eproc {
 
@@ -85,6 +87,8 @@ struct ProcessInfo {
 	long long startTime{ 0 };
 	// Resolved icon file for this process, empty when none could be found.
 	std::string iconPath;
+	// X11 window icon used only when no desktop-entry icon was found.
+	DrawablePtr windowIcon;
 
 	// Sorting helpers
 	/** Private memory when known, otherwise plain RSS. */

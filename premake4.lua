@@ -1978,10 +1978,12 @@ solution "eepp"
 			"src/tools/eproc/process_collector.cpp",
 			"src/tools/eproc/process_info.cpp",
 			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/window_icon.cpp",
 		}
 		if os.is_real("linux") then
 			files {
 				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
 				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
 				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
@@ -2028,6 +2030,9 @@ solution "eepp"
 			links { "bsd", "network" }
 		end
 		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/eproc/process_info.cpp",
+				"src/tools/eproc/process_model.cpp",
+				"src/tools/eproc/window_icon.cpp",
 				"src/tools/ecode/ignorematcher.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
 				"src/tools/ecode/projectdirectorytree.cpp",

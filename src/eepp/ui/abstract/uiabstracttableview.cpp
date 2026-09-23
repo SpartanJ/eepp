@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -14,6 +15,43 @@
 namespace EE { namespace UI { namespace Abstract {
 
 static constexpr String::HashType onModelUpdateTag = String::hash( "onModelUpdate" );
+
+class TableHeaderLayout : public UILinearLayout {
+  public:
+	TableHeaderLayout( const std::string& tag ) :
+		UILinearLayout( tag, UIOrientation::Horizontal ) {}
+
+	void updateLayout() override {
+		UITableHeaderColumn* dragged = nullptr;
+		Vector2f dragPosition;
+		for ( Node* child = getFirstChild(); child; child = child->getNextNode() ) {
+			auto* header = static_cast<UITableHeaderColumn*>( child );
+			if ( header->isDragging() ) {
+				dragged = header;
+				dragPosition = header->getPixelsPosition();
+				break;
+			}
+		}
+		UILinearLayout::updateLayout();
+		if ( dragged )
+			dragged->setPixelsPosition( dragPosition );
+	}
+
+  protected:
+	void drawChildren() override {
+		Node* dragged = nullptr;
+		for ( Node* child = getFirstChild(); child; child = child->getNextNode() ) {
+			if ( static_cast<UITableHeaderColumn*>( child )->isDragging() ) {
+				dragged = child;
+				continue;
+			}
+			if ( child->isVisible() )
+				child->nodeDraw();
+		}
+		if ( dragged && dragged->isVisible() )
+			dragged->nodeDraw();
+	}
+};
 
 template <typename Callback> static void consumeVariantText( const Variant& value, Callback&& cb ) {
 	switch ( value.getType() ) {
@@ -43,7 +81,7 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
 	mIconSize( PixelDensity::dpToPxI( 12 ) ),
 	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
-	mHeader = UILinearLayout::NewWithTag( mTag + "::header", UIOrientation::Horizontal );
+	mHeader = eeNew( TableHeaderLayout, ( mTag + "::header" ) );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this )->setVisible( true )->setEnabled( true );
 	mHeader->setUpdateLayoutEvenIfNotVisible( true );
@@ -289,11 +327,13 @@ void UIAbstractTableView::restorePendingColumnWidths() {
 }
 
 void UIAbstractTableView::selectAll() {
-	getSelection().clear();
-	for ( size_t itemIndex = 0; itemIndex < getItemCount(); ++itemIndex ) {
-		auto index = getModel()->index( itemIndex );
-		getSelection().add( index );
-	}
+	if ( !getModel() )
+		return;
+	std::vector<ModelIndex> indexes;
+	indexes.reserve( getItemCount() );
+	for ( size_t itemIndex = 0; itemIndex < getItemCount(); ++itemIndex )
+		indexes.push_back( getModel()->index( itemIndex ) );
+	getSelection().set( indexes );
 }
 
 std::vector<ModelIndex> UIAbstractTableView::getSelectionRange( const ModelIndex& start,
@@ -351,6 +391,18 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		return;
 
 	size_t count = model->columnCount();
+	bool orderChanged = mColumnOrder.size() != count;
+	if ( orderChanged ) {
+		mColumnOrder.erase( std::remove_if( mColumnOrder.begin(), mColumnOrder.end(),
+											[count]( size_t column ) { return column >= count; } ),
+							mColumnOrder.end() );
+		mColumnOrder.reserve( count );
+		for ( size_t column = 0; column < count; ++column ) {
+			if ( std::find( mColumnOrder.begin(), mColumnOrder.end(), column ) ==
+				 mColumnOrder.end() )
+				mColumnOrder.push_back( column );
+		}
+	}
 	Float totalWidth = 0;
 	auto visibleColCount = visibleColumnCount();
 
@@ -360,6 +412,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		if ( !col.widget ) {
+			orderChanged = true;
 			col.widget = eeNew( UITableHeaderColumn, ( mTag, this, i ) );
 			col.widget->setParent( mHeader );
 			col.widget->setEnabled( true );
@@ -461,6 +514,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			}
 		}
 	}
+	if ( orderChanged )
+		applyColumnOrder();
 
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 	bool visible = mHeader->isVisible();
@@ -596,12 +651,16 @@ void UIAbstractTableView::updatePercentageColumnWidths() {
 int UIAbstractTableView::adjacentVisibleColumn( size_t column ) const {
 	if ( !getModel() )
 		return -1;
-	for ( size_t i = column + 1; i < getModel()->columnCount(); ++i )
-		if ( !isColumnHidden( i ) )
-			return i;
-	for ( size_t i = column; i > 0; --i )
-		if ( !isColumnHidden( i - 1 ) )
-			return i - 1;
+	auto current = std::find( mColumnOrder.begin(), mColumnOrder.end(), column );
+	if ( current == mColumnOrder.end() )
+		return -1;
+	for ( auto it = current + 1; it != mColumnOrder.end(); ++it )
+		if ( !isColumnHidden( *it ) )
+			return static_cast<int>( *it );
+	for ( auto it = current; it != mColumnOrder.begin(); ) {
+		if ( !isColumnHidden( *--it ) )
+			return static_cast<int>( *it );
+	}
 	return -1;
 }
 
@@ -754,6 +813,91 @@ void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, 
 	createOrUpdateColumns( false );
 }
 
+void UIAbstractTableView::setColumnReorderingEnabled( bool enabled ) {
+	mColumnReorderingEnabled = enabled;
+}
+
+bool UIAbstractTableView::isColumnReorderingEnabled() const {
+	return mColumnReorderingEnabled;
+}
+
+const std::vector<size_t>& UIAbstractTableView::getColumnOrder() const {
+	return mColumnOrder;
+}
+
+bool UIAbstractTableView::setColumnOrder( std::vector<size_t> order ) {
+	if ( !getModel() || order.size() != getModel()->columnCount() )
+		return false;
+	std::vector<bool> seen( order.size(), false );
+	for ( size_t column : order ) {
+		if ( column >= order.size() || seen[column] )
+			return false;
+		seen[column] = true;
+	}
+	if ( order == mColumnOrder )
+		return true;
+	mColumnOrder = std::move( order );
+	applyColumnOrder();
+	return true;
+}
+
+bool UIAbstractTableView::moveColumn( size_t column, size_t position ) {
+	if ( position >= mColumnOrder.size() )
+		return false;
+	auto from = std::find( mColumnOrder.begin(), mColumnOrder.end(), column );
+	if ( from == mColumnOrder.end() )
+		return false;
+	auto to = mColumnOrder.begin() + position;
+	if ( from == to )
+		return false;
+	if ( from < to )
+		std::rotate( from, from + 1, to + 1 );
+	else
+		std::rotate( to, from, from + 1 );
+	applyColumnOrder();
+	return true;
+}
+
+void UIAbstractTableView::applyColumnOrder() {
+	for ( size_t position = 0; position < mColumnOrder.size(); ++position ) {
+		auto* header = columnData( mColumnOrder[position] ).widget;
+		if ( header )
+			header->toPosition( static_cast<Uint32>( position ) );
+	}
+	mHeader->updateLayout();
+	invalidateDraw();
+}
+
+void UIAbstractTableView::reorderColumnAt( size_t column, Float centerX ) {
+	auto found = std::find( mColumnOrder.begin(), mColumnOrder.end(), column );
+	if ( found == mColumnOrder.end() )
+		return;
+	const size_t current = static_cast<size_t>( found - mColumnOrder.begin() );
+	size_t target = current;
+	for ( size_t i = current; i > 0; --i ) {
+		const auto& previous = columnData( mColumnOrder[i - 1] );
+		if ( !previous.visible || !previous.widget )
+			continue;
+		const Float midpoint = previous.widget->getPixelsPosition().x + previous.width * 0.5f;
+		if ( centerX >= midpoint )
+			break;
+		target = i - 1;
+	}
+	if ( target == current ) {
+		for ( size_t i = current + 1; i < mColumnOrder.size(); ++i ) {
+			const auto& next = columnData( mColumnOrder[i] );
+			if ( !next.visible || !next.widget )
+				continue;
+			const Float midpoint = next.widget->getPixelsPosition().x + next.width * 0.5f;
+			if ( centerX <= midpoint )
+				break;
+			target = i;
+		}
+	}
+	if ( target != current )
+		moveColumn( column, target );
+}
+
 void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns ) {
 	if ( !getModel() )
 		return;
@@ -819,8 +963,18 @@ UITableRow* UIAbstractTableView::createRow() {
 																		  EE_BUTTON_RMASK ) )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
-		if ( mSelectionKind == SelectionKind::Single &&
-			 ( getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_RMASK ) {
+			bool selectedRow = false;
+			for ( const auto& selected : getSelection().indexes() ) {
+				if ( selected.row() == index.row() && selected.parent() == index.parent() ) {
+					selectedRow = true;
+					break;
+				}
+			}
+			if ( !selectedRow )
+				getSelection().set( index );
+		} else if ( mSelectionKind == SelectionKind::Single &&
+					( getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) ) {
 			getSelection().remove( index );
 		} else {
 			if ( mSelectionKind == SelectionKind::Multiple &&

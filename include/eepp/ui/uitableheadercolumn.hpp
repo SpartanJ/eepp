@@ -21,6 +21,10 @@ class EE_API UITableHeaderColumn : public UIPushButton {
 	UIAbstractTableView* mView;
 	size_t mColIndex;
 	mutable UIImage* mImage{ nullptr };
+	enum class DragMode : Uint8 { None, Resize, ReorderPending, Reorder };
+	DragMode mDragMode{ DragMode::None };
+	Float mReorderGrabX{ 0 };
+	Vector2f mReorderPressPos;
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

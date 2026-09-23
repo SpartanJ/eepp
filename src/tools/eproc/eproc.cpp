@@ -1,5 +1,6 @@
 #include "eproc.hpp"
 
+#include <args/args.hxx>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
@@ -7,6 +8,7 @@
 
 #include <array>
 #include <cmath>
+#include <iostream>
 #include <string_view>
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
@@ -20,11 +22,13 @@ namespace eproc {
 
 namespace {
 
-constexpr int kProcessTableStateVersion = 3;
-constexpr int kPreviousProcessTableStateVersion = 2;
+constexpr int kProcessTableStateVersion = 4;
+constexpr int kPreviousProcessTableStateVersion = 3;
+constexpr int kLegacyProcessTableStateVersion = 2;
+constexpr size_t kPreviousProcessColumnCount = 20;
 constexpr size_t kPreviousCommandColumn = 11;
 
-constexpr std::array<size_t, 8> kOptionalProcessColumns = { {
+constexpr std::array<size_t, 10> kOptionalProcessColumns = { {
 	ProcessModel::ColTotalMemory,
 	ProcessModel::ColVirtualSize,
 	ProcessModel::ColCpuTime,
@@ -33,6 +37,8 @@ constexpr std::array<size_t, 8> kOptionalProcessColumns = { {
 	ProcessModel::ColTty,
 	ProcessModel::ColIoRead,
 	ProcessModel::ColIoWrite,
+	ProcessModel::ColThreads,
+	ProcessModel::ColMemoryPercent,
 } };
 
 const char* sortOrderName( SortOrder order ) {
@@ -95,13 +101,14 @@ size_t remapPreviousProcessTableColumn( size_t column ) {
 bool migratePreviousProcessTableState( nlohmann::json& state ) {
 	if ( !state.contains( "widths" ) || !state["widths"].is_object() ||
 		 !state["widths"].contains( "widths" ) || !state["widths"]["widths"].is_array() ||
-		 state["widths"]["widths"].size() != ProcessModel::ColCount )
+		 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
 		return false;
 
 	nlohmann::json remappedWidths = nlohmann::json::array();
-	for ( size_t column = 0; column < ProcessModel::ColCount; ++column )
+	for ( size_t column = 0; column < kPreviousProcessColumnCount; ++column )
 		remappedWidths.push_back( 0 );
-	for ( size_t previousColumn = 0; previousColumn < ProcessModel::ColCount; ++previousColumn ) {
+	for ( size_t previousColumn = 0; previousColumn < kPreviousProcessColumnCount;
+		  ++previousColumn ) {
 		remappedWidths[remapPreviousProcessTableColumn( previousColumn )] =
 			state["widths"]["widths"][previousColumn];
 	}
@@ -114,7 +121,7 @@ bool migratePreviousProcessTableState( nlohmann::json& state ) {
 				continue;
 			const Int64 previousColumn = column.get<Int64>();
 			if ( previousColumn >= 0 &&
-				 static_cast<size_t>( previousColumn ) < ProcessModel::ColCount )
+				 static_cast<size_t>( previousColumn ) < kPreviousProcessColumnCount )
 				remappedHiddenColumns.push_back(
 					remapPreviousProcessTableColumn( static_cast<size_t>( previousColumn ) ) );
 		}
@@ -124,11 +131,31 @@ bool migratePreviousProcessTableState( nlohmann::json& state ) {
 	if ( state.contains( "sort" ) && state["sort"].is_object() &&
 		 state["sort"].contains( "column" ) && state["sort"]["column"].is_number_integer() ) {
 		const Int64 previousColumn = state["sort"]["column"].get<Int64>();
-		if ( previousColumn >= 0 && static_cast<size_t>( previousColumn ) < ProcessModel::ColCount )
+		if ( previousColumn >= 0 &&
+			 static_cast<size_t>( previousColumn ) < kPreviousProcessColumnCount )
 			state["sort"]["column"] =
 				remapPreviousProcessTableColumn( static_cast<size_t>( previousColumn ) );
 	}
 
+	state["version"] = kPreviousProcessTableStateVersion;
+	return true;
+}
+
+bool migrateProcessTableState( nlohmann::json& state ) {
+	if ( state["version"] == kLegacyProcessTableStateVersion &&
+		 !migratePreviousProcessTableState( state ) )
+		return false;
+	if ( state["version"] != kPreviousProcessTableStateVersion || !state.contains( "widths" ) ||
+		 !state["widths"].is_object() || !state["widths"].contains( "widths" ) ||
+		 !state["widths"]["widths"].is_array() ||
+		 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
+		return false;
+	state["widths"]["widths"].push_back( 0 );
+	state["widths"]["widths"].push_back( 0 );
+	if ( !state.contains( "hidden_columns" ) || !state["hidden_columns"].is_array() )
+		state["hidden_columns"] = nlohmann::json::array();
+	state["hidden_columns"].push_back( ProcessModel::ColThreads );
+	state["hidden_columns"].push_back( ProcessModel::ColMemoryPercent );
 	state["version"] = kProcessTableStateVersion;
 	return true;
 }
@@ -169,36 +196,46 @@ constexpr std::array<std::string_view, 5> kUsernameClasses = {
 	"eproc-process-username-system", "eproc-process-username-other",
 };
 
+constexpr std::array<std::string_view, 11> kCpuFillClasses = {
+	"eproc-cpu-fill-0",	 "eproc-cpu-fill-10", "eproc-cpu-fill-20",	"eproc-cpu-fill-30",
+	"eproc-cpu-fill-40", "eproc-cpu-fill-50", "eproc-cpu-fill-60",	"eproc-cpu-fill-70",
+	"eproc-cpu-fill-80", "eproc-cpu-fill-90", "eproc-cpu-fill-100",
+};
+
 } // namespace
 
 App::App() {
 	mConfig = std::make_unique<AppConfig>( Sys::getConfigPath( "eproc" ) );
 	mConfig->load();
-
-	// Scanning /proc takes long enough to race the first frame, which would leave the table briefly
-	// empty. Kick the worker off before the window exists so the first snapshot is already staged
-	// by the time the scene is rendered.
-	startCollection();
-
-	const Sizei storedSize = mConfig->windowState.size;
-	const Uint32 windowWidth =
-		storedSize.getWidth() > 0 ? static_cast<Uint32>( storedSize.getWidth() ) : 1280;
-	const Uint32 windowHeight =
-		storedSize.getHeight() > 0 ? static_cast<Uint32>( storedSize.getHeight() ) : 720;
-	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
-					   32, Sys::getProcessPath() + "assets/icon/ee.png" );
-	ContextSettings ctx;
-	ctx.Multisamples = 4;
-	mApp = std::make_unique<UIApplication>( ws, UIApplication::Settings{}, ctx );
-	if ( mApp->getUI() && mApp->getWindow() ) {
-		mApp->getWindow()->setTitle(
-			mApp->getUI()->i18n( "eproc_window_title", "eproc - System Monitor" ) );
-	}
 }
 
 App::~App() {}
 
-int App::run() {
+int App::run( int argc, char* argv[] ) {
+	args::ArgumentParser parser( "eproc" );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<Float> pixelDensity( parser, "pixel-density",
+										 "Set default application pixel density",
+										 { 'd', "pixel-density" } );
+	try {
+		parser.ParseCLI( argc, argv );
+	} catch ( const args::Help& ) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch ( const args::ParseError& error ) {
+		std::cerr << error.what() << '\n' << parser;
+		return EXIT_FAILURE;
+	} catch ( const args::ValidationError& error ) {
+		std::cerr << error.what() << '\n' << parser;
+		return EXIT_FAILURE;
+	}
+	if ( pixelDensity ) {
+		if ( !std::isfinite( pixelDensity.Get() ) || pixelDensity.Get() <= 0 ) {
+			std::cerr << "Pixel density must be a positive finite number\n";
+			return EXIT_FAILURE;
+		}
+		mPixelDensity = pixelDensity.Get();
+	}
 	if ( !init() )
 		return EXIT_FAILURE;
 	const int result = mApp->run();
@@ -208,6 +245,25 @@ int App::run() {
 }
 
 bool App::init() {
+	// Start collection before creating the window so the first frame can use the staged snapshot.
+	startCollection();
+	const Sizei storedSize = mConfig->windowState.size;
+	const Uint32 windowWidth =
+		storedSize.getWidth() > 0 ? static_cast<Uint32>( storedSize.getWidth() ) : 1280;
+	const Uint32 windowHeight =
+		storedSize.getHeight() > 0 ? static_cast<Uint32>( storedSize.getHeight() ) : 720;
+	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
+					   32, Sys::getProcessPath() + "assets/icon/eproc.png" );
+	ContextSettings ctx;
+	ctx.Multisamples = 4;
+	UIApplication::Settings settings;
+	settings.pixelDensity = mPixelDensity;
+	mApp = std::make_unique<UIApplication>( ws, settings, ctx );
+	if ( mApp->getUI() && mApp->getWindow() ) {
+		mApp->getWindow()->setTitle(
+			mApp->getUI()->i18n( "eproc_window_title", "eproc - System Monitor" ) );
+	}
+
 	auto* ui = mApp->getUI();
 	if ( !ui )
 		return false;
@@ -224,50 +280,126 @@ bool App::init() {
 
 	mRoot = ui->loadLayoutFromString( R"xml(
 	<style>
-	tableview::cell {
+	tableview::cell,
+	treeview::cell {
 		background-color: transparent;
 		text-align: left;
 	}
 	tableview::cell.eproc-process-column-icon,
+	treeview::cell.eproc-process-column-icon,
 	tableview::cell.eproc-process-column-username,
-	tableview::cell.eproc-process-column-cpu {
+	treeview::cell.eproc-process-column-username,
+	tableview::cell.eproc-process-column-cpu,
+	treeview::cell.eproc-process-column-cpu {
 		text-align: center;
 	}
-	tableview::cell.eproc-process-username-own {
+	tableview::cell.eproc-cpu-fill-0,
+	treeview::cell.eproc-cpu-fill-0 {
+		background-image: none;
+		background-size: 100% 0%;
+	}
+	tableview::cell.eproc-cpu-fill-10,
+	treeview::cell.eproc-cpu-fill-10,
+	tableview::cell.eproc-cpu-fill-20,
+	treeview::cell.eproc-cpu-fill-20,
+	tableview::cell.eproc-cpu-fill-30,
+	treeview::cell.eproc-cpu-fill-30,
+	tableview::cell.eproc-cpu-fill-40,
+	treeview::cell.eproc-cpu-fill-40,
+	tableview::cell.eproc-cpu-fill-50,
+	treeview::cell.eproc-cpu-fill-50,
+	tableview::cell.eproc-cpu-fill-60,
+	treeview::cell.eproc-cpu-fill-60,
+	tableview::cell.eproc-cpu-fill-70,
+	treeview::cell.eproc-cpu-fill-70,
+	tableview::cell.eproc-cpu-fill-80,
+	treeview::cell.eproc-cpu-fill-80,
+	tableview::cell.eproc-cpu-fill-90,
+	treeview::cell.eproc-cpu-fill-90,
+	tableview::cell.eproc-cpu-fill-100,
+	treeview::cell.eproc-cpu-fill-100 {
+		background-image: rectangle(solid, #264358);
+		background-position: left bottom;
+	}
+	tableview::cell.eproc-cpu-fill-10,
+	treeview::cell.eproc-cpu-fill-10 { background-size: 100% 10%; }
+	tableview::cell.eproc-cpu-fill-20,
+	treeview::cell.eproc-cpu-fill-20 { background-size: 100% 20%; }
+	tableview::cell.eproc-cpu-fill-30,
+	treeview::cell.eproc-cpu-fill-30 { background-size: 100% 30%; }
+	tableview::cell.eproc-cpu-fill-40,
+	treeview::cell.eproc-cpu-fill-40 { background-size: 100% 40%; }
+	tableview::cell.eproc-cpu-fill-50,
+	treeview::cell.eproc-cpu-fill-50 { background-size: 100% 50%; }
+	tableview::cell.eproc-cpu-fill-60,
+	treeview::cell.eproc-cpu-fill-60 { background-size: 100% 60%; }
+	tableview::cell.eproc-cpu-fill-70,
+	treeview::cell.eproc-cpu-fill-70 { background-size: 100% 70%; }
+	tableview::cell.eproc-cpu-fill-80,
+	treeview::cell.eproc-cpu-fill-80 { background-size: 100% 80%; }
+	tableview::cell.eproc-cpu-fill-90,
+	treeview::cell.eproc-cpu-fill-90 { background-size: 100% 90%; }
+	tableview::cell.eproc-cpu-fill-100,
+	treeview::cell.eproc-cpu-fill-100 { background-size: 100% 100%; }
+	tableview::cell.eproc-process-username-own,
+	treeview::cell.eproc-process-username-own {
 		background-color: #00D0D432;
 		border-top: 1dprd solid rgba(0, 255, 255, 0.026);
 		border-bottom: 1dprd solid rgba(0, 255, 255, 0.085);
 	}
-	tableview::cell.eproc-process-username-system {
+	tableview::cell.eproc-process-username-system,
+	treeview::cell.eproc-process-username-system {
 		background-color: #DADCD732;
 	}
-	tableview::cell.eproc-process-username-other {
+	tableview::cell.eproc-process-username-other,
+	treeview::cell.eproc-process-username-other {
 		background-color: #029A3632;
 	}
-	tableview::cell.eproc-process-username-traced {
+	tableview::cell.eproc-process-username-traced,
+	treeview::cell.eproc-process-username-traced {
 		background-color: #FFFF0088;
 	}
-	tableview::cell.eproc-process-username-ended {
+	tableview::cell.eproc-process-username-ended,
+	treeview::cell.eproc-process-username-ended {
 		background-color: #D3D3D3;
 	}
-	tableview::cell.eproc-process-ended {
+	tableview::cell.eproc-process-ended,
+	treeview::cell.eproc-process-ended {
 		color: #808080;
 		tint: #808080;
 	}
 	tableview::cell.eproc-process-column-pid,
+	treeview::cell.eproc-process-column-pid,
+	tableview::cell.eproc-process-column-threads,
+	treeview::cell.eproc-process-column-threads,
+	tableview::cell.eproc-process-column-memory-percent,
+	treeview::cell.eproc-process-column-memory-percent,
 	tableview::cell.eproc-process-column-memory,
+	treeview::cell.eproc-process-column-memory,
 	tableview::cell.eproc-process-column-shared-memory,
+	treeview::cell.eproc-process-column-shared-memory,
 	tableview::cell.eproc-process-column-gpu-usage,
+	treeview::cell.eproc-process-column-gpu-usage,
 	tableview::cell.eproc-process-column-gpu-memory,
+	treeview::cell.eproc-process-column-gpu-memory,
 	tableview::cell.eproc-process-column-download,
+	treeview::cell.eproc-process-column-download,
 	tableview::cell.eproc-process-column-upload,
+	treeview::cell.eproc-process-column-upload,
 	tableview::cell.eproc-process-column-total-memory,
+	treeview::cell.eproc-process-column-total-memory,
 	tableview::cell.eproc-process-column-virtual-size,
+	treeview::cell.eproc-process-column-virtual-size,
 	tableview::cell.eproc-process-column-cpu-time,
+	treeview::cell.eproc-process-column-cpu-time,
 	tableview::cell.eproc-process-column-niceness,
+	treeview::cell.eproc-process-column-niceness,
 	tableview::cell.eproc-process-column-relative-start-time,
+	treeview::cell.eproc-process-column-relative-start-time,
 	tableview::cell.eproc-process-column-io-read,
-	tableview::cell.eproc-process-column-io-write {
+	treeview::cell.eproc-process-column-io-read,
+	tableview::cell.eproc-process-column-io-write,
+	treeview::cell.eproc-process-column-io-write {
 		text-align: right;
 	}
 	tableview::row:nth-child(even),
@@ -294,6 +426,9 @@ bool App::init() {
 					<DropDownList id="filter_dropdown" lw="120dp" lh="wc" margin-right="4dp" />
 				</hbox>
 				<TableView id="process_table" lw="mp" lh="0" lw8="1"
+					 column-width-mode-menu="true"
+					 table-flags="headers|row-search|focus-on-selection|auto-columns" />
+				<TreeView id="process_tree" lw="mp" lh="0" lw8="1" visible="false"
 					 column-width-mode-menu="true"
 					 table-flags="headers|row-search|focus-on-selection|auto-columns" />
 				<hbox id="status_bar" lw="mp" lh="wc" padding="4dp">
@@ -373,6 +508,10 @@ void App::saveWindowState() {
 
 	if ( mTableView && mSortProxy )
 		mConfig->processTableState = serializeProcessTableState();
+	if ( mProcessModel ) {
+		mConfig->filterMode = mProcessModel->getFilter();
+		mConfig->treeView = mConfig->filterMode == ProcessModel::AllProcessesInTreeForm;
+	}
 	mConfig->captureWindowState( mApp->getWindow() );
 	if ( !mConfig->saveWindowState() )
 		Log::error( "Could not save eproc window state to %s", mConfig->getConfigPath() );
@@ -380,20 +519,75 @@ void App::saveWindowState() {
 		mWindowStateSaved = true;
 }
 
+static nlohmann::json serializeProcessColumns( const UIAbstractTableView& view,
+											   size_t columnCount ) {
+	nlohmann::json state;
+	state["widths"] = view.serializeColumnWidths();
+	state["column_order"] = view.getColumnOrder();
+	state["hidden_columns"] = nlohmann::json::array();
+	for ( size_t column = 0; column < columnCount; ++column ) {
+		if ( view.isColumnHidden( column ) )
+			state["hidden_columns"].push_back( column );
+	}
+	return state;
+}
+
+static void restoreProcessColumns( UIAbstractTableView& view, const nlohmann::json& state,
+								   size_t columnCount ) {
+	if ( state.contains( "hidden_columns" ) && state["hidden_columns"].is_array() ) {
+		std::vector<bool> hidden( columnCount, false );
+		for ( const auto& column : state["hidden_columns"] ) {
+			if ( !column.is_number_integer() )
+				continue;
+			const Int64 index = column.get<Int64>();
+			if ( index >= 0 && static_cast<size_t>( index ) < columnCount )
+				hidden[static_cast<size_t>( index )] = true;
+		}
+		std::vector<size_t> visible;
+		visible.reserve( columnCount );
+		for ( size_t column = 0; column < columnCount; ++column ) {
+			if ( !hidden[column] )
+				visible.push_back( column );
+		}
+		// Always leave one column visible, even if a malformed state hides everything.
+		if ( !visible.empty() )
+			view.setColumnsVisible( visible );
+	}
+
+	if ( state.contains( "widths" ) &&
+		 isValidProcessTableWidthState( state["widths"], columnCount, view ) ) {
+		// Pixel restoration sets each width separately, so disable automatic sizing first.
+		const bool pixelWidths = state["widths"]["mode"] == "pixels";
+		if ( pixelWidths )
+			view.setAutoColumnsWidth( false );
+		if ( !view.unserializeColumnWidths( state["widths"] ) && pixelWidths )
+			view.setAutoColumnsWidth( true );
+	}
+
+	if ( state.contains( "column_order" ) && state["column_order"].is_array() &&
+		 state["column_order"].size() == columnCount ) {
+		std::vector<size_t> order;
+		order.reserve( columnCount );
+		for ( const auto& column : state["column_order"] ) {
+			if ( !column.is_number_integer() || column.get<Int64>() < 0 )
+				break;
+			order.push_back( static_cast<size_t>( column.get<Int64>() ) );
+		}
+		if ( order.size() == columnCount )
+			view.setColumnOrder( std::move( order ) );
+	}
+}
+
 std::string App::serializeProcessTableState() const {
 	if ( !mTableView || !mSortProxy )
 		return {};
 
-	nlohmann::json state;
+	nlohmann::json state = serializeProcessColumns( *mTableView, mSortProxy->columnCount() );
 	state["version"] = kProcessTableStateVersion;
-	state["widths"] = mTableView->serializeColumnWidths();
-	state["hidden_columns"] = nlohmann::json::array();
-	for ( size_t column = 0; column < mSortProxy->columnCount(); ++column ) {
-		if ( mTableView->isColumnHidden( column ) )
-			state["hidden_columns"].push_back( column );
-	}
 	state["sort"]["column"] = mSortProxy->keyColumn();
 	state["sort"]["order"] = sortOrderName( mSortProxy->sortOrder() );
+	if ( mTreeView )
+		state["tree"] = serializeProcessColumns( *mTreeView, mTreeModel->columnCount() );
 	return state.dump();
 }
 
@@ -408,8 +602,9 @@ void App::restoreProcessTableState() {
 		return;
 
 	const int stateVersion = state["version"].get<int>();
-	if ( stateVersion == kPreviousProcessTableStateVersion ) {
-		if ( !migratePreviousProcessTableState( state ) )
+	if ( stateVersion == kLegacyProcessTableStateVersion ||
+		 stateVersion == kPreviousProcessTableStateVersion ) {
+		if ( !migrateProcessTableState( state ) )
 			return;
 	} else if ( stateVersion != kProcessTableStateVersion ) {
 		return;
@@ -420,35 +615,7 @@ void App::restoreProcessTableState() {
 		 !isValidProcessTableWidthState( state["widths"], columnCount, *mTableView ) )
 		return;
 
-	if ( state.contains( "hidden_columns" ) && state["hidden_columns"].is_array() ) {
-		std::vector<bool> hidden( columnCount, false );
-		for ( const auto& column : state["hidden_columns"] ) {
-			if ( !column.is_number_integer() )
-				continue;
-			const Int64 index = column.get<Int64>();
-			if ( index >= 0 && static_cast<size_t>( index ) < columnCount )
-				hidden[static_cast<size_t>( index )] = true;
-		}
-
-		std::vector<size_t> visible;
-		visible.reserve( columnCount );
-		for ( size_t column = 0; column < columnCount; ++column ) {
-			if ( !hidden[column] )
-				visible.push_back( column );
-		}
-		// Always leave one column visible, even if a malformed or old state hides everything.
-		if ( !visible.empty() )
-			mTableView->setColumnsVisible( visible );
-	}
-
-	// Pixel restoration calls setColumnWidth() once per column. Automatic sizing must already be
-	// disabled, otherwise each call immediately recalculates all columns and overwrites the saved
-	// width with content-based sizing.
-	const bool pixelWidths = state["widths"]["mode"] == "pixels";
-	if ( pixelWidths )
-		mTableView->setAutoColumnsWidth( false );
-	if ( !mTableView->unserializeColumnWidths( state["widths"] ) && pixelWidths )
-		mTableView->setAutoColumnsWidth( true );
+	restoreProcessColumns( *mTableView, state, columnCount );
 
 	if ( state.contains( "sort" ) && state["sort"].is_object() ) {
 		const auto& sort = state["sort"];
@@ -464,6 +631,9 @@ void App::restoreProcessTableState() {
 			 mSortProxy->isColumnSortable( column ) )
 			mTableView->sortByColumn( static_cast<size_t>( column ), order );
 	}
+
+	if ( mTreeView && state.contains( "tree" ) && state["tree"].is_object() )
+		restoreProcessColumns( *mTreeView, state["tree"], columnCount );
 }
 
 bool App::closeWindow( EE::Window::Window* ) {
@@ -477,6 +647,7 @@ void App::setupUI() {
 	mSearchInput = mRoot->find<UITextInput>( "search_input" );
 	mFilterDropdown = mRoot->find<UIDropDownList>( "filter_dropdown" );
 	mTableView = mRoot->find<UITableView>( "process_table" );
+	mTreeView = mRoot->find<UITreeView>( "process_tree" );
 	mStatusText = mRoot->find<UITextView>( "process_count" );
 	mCpuText = mRoot->find<UITextView>( "cpu_text" );
 	mMemText = mRoot->find<UITextView>( "mem_text" );
@@ -485,7 +656,7 @@ void App::setupUI() {
 	auto* ui = mApp->getUI();
 	mRoot->find<UITab>( "tab_process_table" )
 		->setText( ui->i18n( "eproc_process_table_tab", "Process Table" ) );
-	mEndProcessBtn->setText( ui->i18n( "eproc_end_process_button", "End Process..." ) );
+	mEndProcessBtn->setText( ui->i18n( "eproc_end_processes", "End Processes" ) );
 	mSearchInput->setHint( ui->i18n( "eproc_quick_search_hint", "Quick search" ) );
 	mStatusText->setText( ui->i18n( "eproc_process_count", "0 processes" ) );
 	mCpuText->setText( ui->i18n( "eproc_cpu_status", "CPU: 0%" ) );
@@ -494,10 +665,10 @@ void App::setupUI() {
 
 	// Tabs are declared in the XML layout via Tab elements with owns= attributes.
 
-	// Filter entries mirror the original's ProcessFilter::State order (flat variants only; the
-	// tree variants need a hierarchical model).
+	// Filter entries mirror the original's ProcessFilter::State order.
 	static const std::pair<const char*, const char*> filters[] = {
 		{ "eproc_filter_all_processes", "All Processes" },
+		{ "eproc_filter_all_processes_tree", "All Processes, Tree" },
 		{ "eproc_filter_system_processes", "System Processes" },
 		{ "eproc_filter_user_processes", "User Processes" },
 		{ "eproc_filter_own_processes", "Own Processes" },
@@ -529,19 +700,29 @@ void App::setupUI() {
 
 void App::setupProcessTable() {
 	mProcessModel = ProcessModel::create( mApp->getUI() );
+	mProcessModel->setDivideCpuUsage( mConfig->divideCpuUsage );
+	mTreeModel = ProcessTreeModel::create( mProcessModel );
 	mSortProxy = SortingProxyModel::New( mProcessModel );
 
-	if ( mTableView ) {
-		mTableView->setModel( mSortProxy );
-		mTableView->setColumnsHidden(
+	for ( UIAbstractTableView* view : { static_cast<UIAbstractTableView*>( mTableView ),
+										static_cast<UIAbstractTableView*>( mTreeView ) } ) {
+		if ( !view )
+			continue;
+		view->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
+		view->setColumnReorderingEnabled( true );
+		if ( view == mTreeView )
+			view->setModel( mTreeModel );
+		else
+			view->setModel( mSortProxy );
+		view->setColumnsHidden(
 			std::vector<size_t>( kOptionalProcessColumns.begin(), kOptionalProcessColumns.end() ),
 			true );
-		mTableView->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
+		view->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
 			if ( !cell )
 				return;
 
 			const ModelIndex index = cell->getCurIndex();
-			const ProcessInfo* process = processForProxyIndex( index );
+			const ProcessInfo* process = processForIndex( index );
 			setCellClassEnabled( *cell, "eproc-process-ended",
 								 process && process->status == ProcessStatus::Ended );
 
@@ -550,16 +731,49 @@ void App::setupProcessTable() {
 																	   : std::string_view{};
 			for ( const auto className : kUsernameClasses )
 				setCellClassEnabled( *cell, className, className == desiredUsernameClass );
+			const int cpuUsage = process && index.column() == ProcessModel::ColCpu
+									 ? mProcessModel->displayedCpuUsage( *process )
+									 : 0;
+			const size_t fillIndex =
+				cpuUsage > 0 ? static_cast<size_t>( std::min( 10, ( cpuUsage + 9 ) / 10 ) ) : 0;
+			// A removed class does not reset its CSS background image, so every reused cell
+			// must receive an explicit fill class, including the 0% state.
+			for ( size_t i = 0; i < kCpuFillClasses.size(); ++i ) {
+				if ( i != fillIndex )
+					setCellClassEnabled( *cell, kCpuFillClasses[i], false );
+			}
+			setCellClassEnabled( *cell, kCpuFillClasses[fillIndex], true );
 		} );
-		mTableView->setRowHeight( 28 );
+		view->setOnHeaderContextMenuCb( [this]( UIPopUpMenu* menu, size_t column ) {
+			if ( column != ProcessModel::ColCpu )
+				return;
+			menu->addSeparator();
+			menu->addCheckBox( mApp->getUI()->i18n( "eproc_divide_cpu_usage",
+													"Divide CPU usage by number of CPUs" ),
+							   mConfig->divideCpuUsage )
+				->setId( "divide-cpu-usage" );
+			menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+				if ( event->getNode()->getId() != "divide-cpu-usage" )
+					return;
+				std::vector<long> selected = selectedPids();
+				captureTreeExpansion();
+				if ( mTreeView )
+					mTreeView->clearViewMetadata();
+				mConfig->divideCpuUsage = !mConfig->divideCpuUsage;
+				mProcessModel->setDivideCpuUsage( mConfig->divideCpuUsage );
+				restoreTreeExpansion();
+				restoreSelection( selected );
+			} );
+		} );
+		view->setRowHeight( 28 );
 		// The flexible column is Name; the icon column is fixed so every row lines up.
-		mTableView->setMainColumn( ProcessModel::ColName );
-		mTableView->setSortIconSize( 12 );
-		mTableView->setIconSize( PixelDensity::dpToPxI( 16 ) );
-		mTableView->setColumnWidth( ProcessModel::ColIcon, PixelDensity::dpToPx( 26 ) );
+		view->setMainColumn( ProcessModel::ColName );
+		view->setSortIconSize( 12 );
+		view->setIconSize( PixelDensity::dpToPxI( 16 ) );
+		view->setColumnWidth( ProcessModel::ColIcon, PixelDensity::dpToPx( 26 ) );
 
-		mTableView->setOnSelectionChange( [this]() { onSelectionChange(); } );
-		mTableView->onModelEvent( [this]( const ModelEvent* event ) {
+		view->setOnSelectionChange( [this]() { onSelectionChange(); } );
+		view->onModelEvent( [this]( const ModelEvent* event ) {
 			if ( event->getModelEventType() == ModelEventType::OpenMenu )
 				showProcessContextMenu( event->getModelIndex() );
 		} );
@@ -569,6 +783,12 @@ void App::setupProcessTable() {
 	// instead of the kernel threads that /proc happens to enumerate first. Sorting through the
 	// view (not the model directly) also renders the sort indicator in the header.
 	mTableView->sortByColumn( ProcessModel::ColMemory, SortOrder::Descending );
+	if ( mConfig->filterMode > ProcessModel::AllProcesses &&
+		 mConfig->filterMode < ProcessModel::FilterModeCount ) {
+		mFilterDropdown->getListBox()->setSelected( mConfig->filterMode );
+		if ( mProcessModel->getFilter() != mConfig->filterMode )
+			onFilterChanged();
+	}
 }
 
 void App::startCollection() {
@@ -667,12 +887,19 @@ void App::publishStagedSnapshot() {
 	if ( mProcessModel ) {
 		mGuiWindows.refresh();
 		mProcessModel->setGuiWindowPids( UnorderedSet<long>( mGuiWindows.windowPids() ) );
+		for ( auto& process : processes ) {
+			if ( process.iconPath.empty() && mGuiWindows.hasWindowForPid( process.pid ) )
+				process.windowIcon = mGuiWindows.iconForPid( process.pid );
+		}
 	}
 
 	// A full model reset clears the view's selection (SortingProxyModel drops it on every
-	// invalidation), so the chosen process is remembered by PID and re-selected afterwards. PIDs
+	// invalidation), so selected processes are remembered by PID and re-selected afterwards. PIDs
 	// are stable across snapshots while row indexes are not: the table re-sorts on every update.
-	long selectedPid = getSelectedPid();
+	std::vector<long> selected = selectedPids();
+	captureTreeExpansion();
+	if ( mTreeView )
+		mTreeView->clearViewMetadata();
 
 	if ( mProcessModel )
 		mProcessModel->applySnapshot( std::move( processes ), sysInfo );
@@ -690,33 +917,84 @@ void App::publishStagedSnapshot() {
 	}
 
 	updateStatusBar();
-	restoreSelection( selectedPid );
+	restoreTreeExpansion();
+	restoreSelection( selected );
 }
 
-long App::getSelectedPid() const {
-	if ( !mTableView || !mProcessModel )
-		return -1;
-
-	ModelIndex proxyIndex = mTableView->getSelection().first();
-	if ( !proxyIndex.isValid() )
-		return -1;
-
-	ModelIndex sourceIndex = mSortProxy ? mSortProxy->mapToSource( proxyIndex ) : proxyIndex;
-	const ProcessInfo* proc = mProcessModel->getProcessByRow( sourceIndex.row() );
-	return proc ? proc->pid : -1;
+UIAbstractTableView* App::activeProcessView() const {
+	return mTreeMode ? static_cast<UIAbstractTableView*>( mTreeView )
+					 : static_cast<UIAbstractTableView*>( mTableView );
 }
 
-void App::restoreSelection( long pid ) {
-	if ( pid < 0 || !mTableView || !mProcessModel || !mSortProxy )
+void App::captureTreeExpansion() {
+	if ( !mTreeMode || !mTreeExpansionInitialized || !mTreeView || !mTreeModel || !mProcessModel ||
+		 mTreeSearchActive )
+		return;
+	mExpandedTreePids.clear();
+	for ( size_t row = 0; row < mProcessModel->visibleCount(); ++row ) {
+		const ProcessInfo* process = mProcessModel->getProcessByRow( static_cast<int>( row ) );
+		if ( process && mTreeView->isExpanded( mTreeModel->indexForPid( process->pid ) ) )
+			mExpandedTreePids.push_back( process->pid );
+	}
+}
+
+void App::restoreTreeExpansion() {
+	if ( !mTreeMode || !mTreeView || !mTreeModel )
+		return;
+	std::vector<ModelIndex> indexes;
+	if ( mTreeSearchActive ) {
+		for ( long pid : mProcessModel->textMatchedPids() ) {
+			ModelIndex parent = mTreeModel->indexForPid( pid ).parent();
+			while ( parent.isValid() ) {
+				indexes.push_back( parent );
+				parent = parent.parent();
+			}
+		}
+		if ( !indexes.empty() )
+			mTreeView->setExpanded( indexes, true );
+		return;
+	}
+	if ( !mTreeExpansionInitialized ) {
+		for ( size_t row = 0; row < mTreeModel->rowCount(); ++row )
+			indexes.push_back(
+				mTreeModel->index( static_cast<int>( row ), mTreeModel->treeColumn() ) );
+		mTreeExpansionInitialized = !indexes.empty();
+	} else {
+		indexes.reserve( mExpandedTreePids.size() );
+		for ( long pid : mExpandedTreePids ) {
+			ModelIndex index = mTreeModel->indexForPid( pid );
+			if ( index.isValid() )
+				indexes.push_back( index );
+		}
+	}
+	if ( !indexes.empty() )
+		mTreeView->setExpanded( indexes, true );
+}
+
+void App::restoreSelection( const std::vector<long>& pids ) {
+	UIAbstractTableView* view = activeProcessView();
+	if ( pids.empty() || !view || !mProcessModel )
 		return;
 
-	int row = mProcessModel->rowForPid( pid );
-	if ( row < 0 )
-		return; // the process exited, or the filter no longer matches it
-
-	ModelIndex proxyIndex = mSortProxy->mapToProxy( mProcessModel->index( row, 0 ) );
-	if ( proxyIndex.isValid() )
-		mTableView->setSelection( proxyIndex, false );
+	std::vector<ModelIndex> indexes;
+	indexes.reserve( pids.size() );
+	for ( long pid : pids ) {
+		ModelIndex index;
+		if ( mTreeMode ) {
+			index = mTreeModel->indexForPid( pid );
+		} else {
+			int row = mProcessModel->rowForPid( pid );
+			if ( row >= 0 )
+				index = mSortProxy->mapToProxy( mProcessModel->index( row, 0 ) );
+		}
+		if ( index.isValid() )
+			indexes.push_back( index );
+	}
+	if ( !indexes.empty() ) {
+		view->getSelection().set( indexes );
+		if ( mTreeMode )
+			mTreeView->openModelIndexParentTree( indexes.front() );
+	}
 }
 
 void App::updateStatusBar() {
@@ -750,49 +1028,81 @@ void App::updateStatusBar() {
 void App::onEndProcess() {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	requestSignal( selectedPids(), SIGTERM,
-				   mApp->getUI()->i18n( "eproc_end_process", "End Process" ).toUtf8(), true );
+				   mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ).toUtf8(), true );
 #endif
 }
 
 void App::onSearchChanged() {
 	if ( mSearchInput && mProcessModel ) {
-		mProcessModel->setTextFilter( mSearchInput->getText().toUtf8() );
+		std::vector<long> selected = selectedPids();
+		captureTreeExpansion();
+		if ( mTreeView )
+			mTreeView->clearViewMetadata();
+		const std::string text = mSearchInput->getText().toUtf8();
+		mTreeSearchActive = !text.empty();
+		mProcessModel->setTextFilter( text );
+		restoreTreeExpansion();
+		restoreSelection( selected );
 		updateStatusBar();
 	}
 }
 
 void App::onFilterChanged() {
 	if ( mFilterDropdown && mProcessModel ) {
-		// The dropdown is built in the same order as the enum, so the index maps directly.
 		Uint32 selected = mFilterDropdown->getListBox()->getItemSelectedIndex();
-		if ( selected < ProcessModel::FilterModeCount )
-			mProcessModel->setFilter( static_cast<ProcessModel::FilterMode>( selected ) );
+		if ( selected >= ProcessModel::FilterModeCount )
+			return;
+		std::vector<long> selectedPidsBeforeSwitch = selectedPids();
+		captureTreeExpansion();
+		if ( mTreeView )
+			mTreeView->clearViewMetadata();
+		mProcessModel->setFilter( static_cast<ProcessModel::FilterMode>( selected ) );
+		mTreeMode = selected == ProcessModel::AllProcessesInTreeForm;
+		mTableView->setVisible( !mTreeMode );
+		mTreeView->setVisible( mTreeMode );
+		restoreTreeExpansion();
+		restoreSelection( selectedPidsBeforeSwitch );
 		updateStatusBar();
 	}
 }
 
 void App::onSelectionChange() {
 	// Update End Process button state
-	if ( mEndProcessBtn && mTableView ) {
-		mEndProcessBtn->setEnabled( !selectedPids().empty() );
+	UIAbstractTableView* view = activeProcessView();
+	if ( mEndProcessBtn && view ) {
+		bool hasProcess = false;
+		for ( const auto& index : view->getSelection().indexes() ) {
+			const ProcessInfo* proc = processForIndex( index );
+			if ( proc && proc->status != ProcessStatus::Ended ) {
+				hasProcess = true;
+				break;
+			}
+		}
+		mEndProcessBtn->setEnabled( hasProcess );
 	}
 }
 
-const ProcessInfo* App::processForProxyIndex( const ModelIndex& proxyIndex ) const {
-	if ( !mProcessModel || !mSortProxy || !proxyIndex.isValid() )
+const ProcessInfo* App::processForIndex( const ModelIndex& index ) const {
+	if ( !mProcessModel || !index.isValid() )
 		return nullptr;
-
-	return mProcessModel->getProcessByRow( mSortProxy->mapToSource( proxyIndex ).row() );
+	if ( index.model() == mTreeModel.get() )
+		return mTreeModel->processForIndex( index );
+	if ( index.model() == mSortProxy.get() )
+		return mProcessModel->getProcessByRow( mSortProxy->mapToSource( index ).row() );
+	return nullptr;
 }
 
 std::vector<long> App::selectedPids() const {
 	std::vector<long> pids;
 
-	if ( !mProcessModel || !mTableView )
+	UIAbstractTableView* view = activeProcessView();
+	if ( !mProcessModel || !view )
 		return pids;
 
-	for ( const auto& proxyIndex : mTableView->getSelection().indexes() ) {
-		const ProcessInfo* proc = processForProxyIndex( proxyIndex );
+	const auto indexes = view->getSelection().indexes();
+	pids.reserve( indexes.size() );
+	for ( const auto& proxyIndex : indexes ) {
+		const ProcessInfo* proc = processForIndex( proxyIndex );
 		if ( proc && proc->status != ProcessStatus::Ended )
 			pids.push_back( proc->pid );
 	}
@@ -801,7 +1111,8 @@ std::vector<long> App::selectedPids() const {
 }
 
 void App::selectProcess( long pid ) {
-	if ( pid <= 0 || !mProcessModel || !mSortProxy || !mTableView )
+	UIAbstractTableView* view = activeProcessView();
+	if ( pid <= 0 || !mProcessModel || !view )
 		return;
 
 	int row = mProcessModel->rowForPid( pid );
@@ -809,17 +1120,22 @@ void App::selectProcess( long pid ) {
 	// The active filter may be hiding the target, so drop it instead of silently doing nothing
 	// (the original clears its text filter for the same reason).
 	if ( row < 0 && mSearchInput && !mSearchInput->getText().empty() ) {
-		mProcessModel->setTextFilter( "" );
 		mSearchInput->setText( "" );
+		if ( mTreeSearchActive )
+			onSearchChanged();
 		row = mProcessModel->rowForPid( pid );
 	}
 
 	if ( row < 0 )
 		return;
 
-	ModelIndex proxyIndex = mSortProxy->mapToProxy( mProcessModel->index( row, 0 ) );
-	if ( proxyIndex.isValid() )
-		mTableView->setSelection( proxyIndex );
+	ModelIndex index = mTreeMode ? mTreeModel->indexForPid( pid )
+								 : mSortProxy->mapToProxy( mProcessModel->index( row, 0 ) );
+	if ( index.isValid() ) {
+		if ( mTreeMode )
+			mTreeView->openModelIndexParentTree( index );
+		view->setSelection( index );
+	}
 }
 
 void App::requestSignal( std::vector<long> pids, int signal, const std::string& actionLabel,
@@ -827,7 +1143,9 @@ void App::requestSignal( std::vector<long> pids, int signal, const std::string& 
 	if ( pids.empty() )
 		return;
 
-	auto send = [pids, signal]() {
+	const size_t processCount = pids.size();
+	const long firstPid = pids.front();
+	auto send = [pids = std::move( pids ), signal]() {
 		for ( long pid : pids )
 			sendProcessSignal( pid, signal );
 	};
@@ -838,12 +1156,12 @@ void App::requestSignal( std::vector<long> pids, int signal, const std::string& 
 	}
 
 	const std::string target =
-		pids.size() == 1
+		processCount == 1
 			? String::format( mApp->getUI()->i18n( "eproc_process_target", "process %ld" ).toUtf8(),
-							  pids.front() )
+							  firstPid )
 			: String::format(
 				  mApp->getUI()->i18n( "eproc_processes_target", "%zu processes" ).toUtf8(),
-				  pids.size() );
+				  processCount );
 	const std::string message =
 		String::format( mApp->getUI()->i18n( "eproc_confirm_action", "%s %s?" ).toUtf8(),
 						actionLabel.c_str(), target.c_str() );
@@ -856,19 +1174,31 @@ void App::requestSignal( std::vector<long> pids, int signal, const std::string& 
 }
 
 void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
-	if ( !mTableView )
+	UIAbstractTableView* view = activeProcessView();
+	if ( !view )
 		return;
 
 	// Right-clicking outside the selection moves the selection to the clicked row, as the
 	// original does, so the menu always acts on what the user pointed at.
-	if ( proxyIndex.isValid() && !mTableView->getSelection().contains( proxyIndex ) )
-		mTableView->setSelection( proxyIndex, false );
+	if ( const ProcessInfo* clicked = processForIndex( proxyIndex ) ) {
+		bool alreadySelected = false;
+		for ( const auto& selected : view->getSelection().indexes() ) {
+			const ProcessInfo* process = processForIndex( selected );
+			if ( process && process->pid == clicked->pid ) {
+				alreadySelected = true;
+				break;
+			}
+		}
+		if ( !alreadySelected )
+			view->setSelection( proxyIndex, false );
+	}
 
 	const std::vector<long> pids = selectedPids();
 	if ( pids.empty() )
 		return;
 
-	const ProcessInfo* proc = processForProxyIndex( proxyIndex );
+	const bool singleProcess = view->getSelection().size() == 1;
+	const ProcessInfo* proc = singleProcess ? processForIndex( proxyIndex ) : nullptr;
 	const long parentPid = proc ? proc->parentPid : 0;
 	const long tracerPid = proc ? proc->tracerPid : 0;
 	std::string copyCommandLine = proc ? proc->commandLine : std::string();
@@ -906,21 +1236,23 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 	menu->addSubMenu( mApp->getUI()->i18n( "eproc_send_signal", "Send Signal" ), nullptr,
 					  signalMenu )
 		->setId( "send-signal" );
-	menu->add( mApp->getUI()->i18n( "eproc_jump_to_parent", "Jump to Parent Process" ) )
-		->setId( "jump-parent" );
-
-	if ( tracerPid > 0 )
-		menu->add( mApp->getUI()->i18n( "eproc_jump_to_tracer",
-										"Jump to Process Debugging This One" ) )
-			->setId( "jump-tracer" );
-
-	menu->add( mApp->getUI()->i18n( "eproc_copy_command_line", "Copy Command Line" ) )
-		->setId( "copy-command-line" );
+	if ( singleProcess && proc ) {
+		menu->add( mApp->getUI()->i18n( "eproc_jump_to_parent", "Jump to Parent Process" ) )
+			->setId( "jump-parent" );
+		if ( tracerPid > 0 ) {
+			menu->add( mApp->getUI()->i18n( "eproc_jump_to_tracer",
+											"Jump to Process Debugging This One" ) )
+				->setId( "jump-tracer" );
+		}
+		menu->add( mApp->getUI()->i18n( "eproc_copy_command_line", "Copy Command Line" ) )
+			->setId( "copy-command-line" );
+	}
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	menu->addSeparator();
-	menu->add( mApp->getUI()->i18n( "eproc_end_process", "End Process" ) )->setId( "end-process" );
-	menu->add( mApp->getUI()->i18n( "eproc_forcibly_kill_process", "Forcibly Kill Process" ) )
+	menu->add( mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ) )
+		->setId( "end-process" );
+	menu->add( mApp->getUI()->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" ) )
 		->setId( "kill-process" );
 #endif
 
@@ -943,12 +1275,12 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 		} else if ( id == "end-process" ) {
 			requestSignal( pids, SIGTERM,
-						   mApp->getUI()->i18n( "eproc_end_process", "End Process" ).toUtf8(),
+						   mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ).toUtf8(),
 						   true );
 		} else if ( id == "kill-process" ) {
 			requestSignal( pids, SIGKILL,
 						   mApp->getUI()
-							   ->i18n( "eproc_forcibly_kill_process", "Forcibly Kill Process" )
+							   ->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" )
 							   .toUtf8(),
 						   true );
 #endif
@@ -975,7 +1307,7 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 
 } // namespace eproc
 
-EE_MAIN_FUNC int main( int, char*[] ) {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	eproc::App app;
-	return app.run();
+	return app.run( argc, argv );
 }

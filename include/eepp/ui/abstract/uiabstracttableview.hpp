@@ -15,6 +15,7 @@ namespace EE { namespace UI {
 class UIPushButton;
 class UILinearLayout;
 class UIDropDownModelList;
+class UIPopUpMenu;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace Abstract {
@@ -60,6 +61,20 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );
 
+	/** Enables dragging column headers to reorder them. Disabled by default. */
+	void setColumnReorderingEnabled( bool enabled );
+
+	bool isColumnReorderingEnabled() const;
+
+	/** Model column IDs in left-to-right display order, including hidden columns. */
+	const std::vector<size_t>& getColumnOrder() const;
+
+	/** Sets a complete permutation of the current model's column IDs. Returns false if invalid. */
+	bool setColumnOrder( std::vector<size_t> order );
+
+	/** Moves a model column to a position in the complete display order. */
+	bool moveColumn( size_t column, size_t position );
+
 	virtual void selectAll();
 
 	virtual std::vector<ModelIndex> getSelectionRange( const ModelIndex& start,
@@ -99,6 +114,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool isColumnWidthModeMenuEnabled() const;
 
 	void setColumnWidthModeMenuEnabled( bool enabled );
+
+	/** Lets a view append application-specific items to a column header's context menu. */
+	void setOnHeaderContextMenuCb( std::function<void( UIPopUpMenu*, size_t )> callback ) {
+		mOnHeaderContextMenuCb = std::move( callback );
+	}
 
 	void setColumnWidthPercentage( const size_t& colIndex, Float percentage );
 
@@ -226,6 +246,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
+	// Visual order only. ColumnData and ModelIndex remain keyed by model column ID.
+	std::vector<size_t> mColumnOrder;
 	mutable std::vector<UnorderedMap<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader{ nullptr };
 	UILinearLayout* mRowHeader{ nullptr };
@@ -243,10 +265,12 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
 	std::function<void( UITableCell*, Model* )> mOnUpdateCellCb;
 	std::function<void( UITableCell* )> mSetupCellCb;
+	std::function<void( UIPopUpMenu*, size_t )> mOnHeaderContextMenuCb;
 	Float mRowHeaderWidth{ 0 };
 	Uint32 mTableFlags{ UITABLE_DEFAULT_FLAGS };
 	ColumnWidthMode mColumnWidthMode{ ColumnWidthMode::Pixels };
 	bool mColumnWidthModeMenuEnabled{ false };
+	bool mColumnReorderingEnabled{ false };
 	bool mUpdatingColumnsForScrollbars{ false };
 	bool mAutoExpandedColumnUsesVerticalScroll{ false };
 	std::string mPendingSerializedColumnWidths;
@@ -259,6 +283,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	UIAbstractTableView( const std::string& tag );
 
 	ColumnData& columnData( const size_t& column ) const;
+
+	void applyColumnOrder();
+
+	void reorderColumnAt( size_t column, Float centerX );
 
 	virtual size_t getItemCount() const;
 

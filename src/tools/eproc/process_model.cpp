@@ -29,6 +29,10 @@ const char* processColumnClass( size_t column ) {
 			return "eproc-process-column-username";
 		case ProcessModel::ColCpu:
 			return "eproc-process-column-cpu";
+		case ProcessModel::ColThreads:
+			return "eproc-process-column-threads";
+		case ProcessModel::ColMemoryPercent:
+			return "eproc-process-column-memory-percent";
 		case ProcessModel::ColMemory:
 			return "eproc-process-column-memory";
 		case ProcessModel::ColSharedMem:
@@ -90,6 +94,10 @@ std::string ProcessModel::columnName( const size_t& column ) const {
 			return mUI->i18n( "eproc_column_username", "Username" ).toUtf8();
 		case ColCpu:
 			return mUI->i18n( "eproc_column_cpu", "CPU %" ).toUtf8();
+		case ColThreads:
+			return mUI->i18n( "eproc_column_threads", "Threads" ).toUtf8();
+		case ColMemoryPercent:
+			return mUI->i18n( "eproc_column_memory_percent", "Memory %" ).toUtf8();
 		case ColMemory:
 			return mUI->i18n( "eproc_column_memory", "Memory" ).toUtf8();
 		case ColSharedMem:
@@ -137,9 +145,9 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		// The icon lives in its own column so that every icon lines up, instead of padding the
 		// name text.
 		const auto* proc = getProcessByRow( index.row() );
-		if ( !proc || index.column() != ColIcon || proc->iconPath.empty() )
+		if ( !proc || index.column() != ColIcon )
 			return Variant();
-		return Variant( iconFor( proc->iconPath ) );
+		return Variant( !proc->iconPath.empty() ? iconFor( proc->iconPath ) : proc->windowIcon );
 	}
 
 	if ( role == ModelRole::Sort ) {
@@ -151,6 +159,10 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 				return Variant( static_cast<Int64>( proc->pid ) );
 			case ColCpu:
 				return Variant( static_cast<Int64>( proc->getCpuForSort() ) );
+			case ColThreads:
+				return Variant( static_cast<Int64>( proc->numThreads ) );
+			case ColMemoryPercent:
+				return Variant( static_cast<Int64>( proc->getMemoryForSort() ) );
 			case ColMemory:
 				return Variant( static_cast<Int64>( proc->getMemoryForSort() ) );
 			case ColSharedMem:
@@ -199,7 +211,16 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		case ColUsername:
 			return Variant::fromRef( proc->username );
 		case ColCpu:
-			return Variant( proc->formatCpu() );
+			return displayedCpuUsage( *proc ) > 0
+					   ? Variant( std::to_string( displayedCpuUsage( *proc ) ) + "%" )
+					   : Variant( EMPTY );
+		case ColThreads:
+			return Variant( String::toString( static_cast<Int64>( proc->numThreads ) ) );
+		case ColMemoryPercent:
+			return mSystemInfo.totalMemory > 0
+					   ? Variant( String::format( "%.1f%%", proc->getMemoryForSort() * 100.0 /
+																mSystemInfo.totalMemory ) )
+					   : Variant( EMPTY );
 		case ColMemory:
 			return Variant( proc->formatMemory() );
 		case ColSharedMem:
@@ -360,6 +381,7 @@ bool ProcessModel::matchesText( const ProcessInfo& proc ) const {
 bool ProcessModel::accepts( const ProcessInfo& proc ) const {
 	switch ( mFilterMode ) {
 		case AllProcesses:
+		case AllProcessesInTreeForm:
 			return true;
 
 		case SystemProcesses:
@@ -381,18 +403,10 @@ bool ProcessModel::accepts( const ProcessInfo& proc ) const {
 			return proc.uid == own || proc.euid == own || proc.suid == own || proc.fsuid == own;
 		}
 
-		case ProgramsOnly: {
-			// A "program" owns a terminal or a GUI window. login/getty *are* the tty rather than
-			// something started from it, so the original hides them as well.
-			if ( proc.ttyNr == 0 && mGuiPids.count( proc.pid ) == 0 )
-				return false;
-			if ( proc.parentPid == 1 &&
-				 ( proc.name == "login" ||
-				   proc.name.compare( std::max<int>( 0, (int)proc.name.size() - 5 ), 5, "getty" ) ==
-					   0 ) )
-				return false;
-			return true;
-		}
+		case ProgramsOnly:
+			// A controlling terminal also belongs to shells and short-lived commands. Keep only
+			// processes that own a managed or embedded GUI window, including XEmbed tray icons.
+			return mGuiPids.count( proc.pid ) != 0;
 
 		default:
 			return true;
@@ -402,6 +416,32 @@ bool ProcessModel::accepts( const ProcessInfo& proc ) const {
 void ProcessModel::applyFilters() {
 	mFilteredProcesses.clear();
 	mFilteredProcesses.reserve( mProcesses.size() );
+	mTextMatchedPids.clear();
+	if ( mFilterMode == AllProcessesInTreeForm && ( mTextRegex || !mTextLiteral.empty() ) ) {
+		UnorderedMap<long, ProcessInfo*> byPid;
+		byPid.reserve( mProcesses.size() );
+		for ( auto& process : mProcesses )
+			byPid.emplace( process.pid, &process );
+		UnorderedSet<ProcessInfo*> visible;
+		visible.reserve( mProcesses.size() );
+		for ( auto& process : mProcesses ) {
+			if ( !matchesText( process ) )
+				continue;
+			mTextMatchedPids.push_back( process.pid );
+			for ( ProcessInfo* ancestor = &process; ancestor; ) {
+				if ( !visible.insert( ancestor ).second )
+					break;
+				auto parent = byPid.find( ancestor->parentPid );
+				ancestor =
+					parent != byPid.end() && parent->second != ancestor ? parent->second : nullptr;
+			}
+		}
+		for ( auto& process : mProcesses ) {
+			if ( visible.count( &process ) )
+				mFilteredProcesses.push_back( &process );
+		}
+		return;
+	}
 
 	for ( auto& proc : mProcesses ) {
 		if ( !accepts( proc ) || !matchesText( proc ) )
@@ -520,6 +560,129 @@ int ProcessModel::rowForPid( long pid ) const {
 			return static_cast<int>( i );
 	}
 	return -1;
+}
+
+ProcessTreeModel::ProcessTreeModel( std::shared_ptr<ProcessModel> source ) :
+	mSource( std::move( source ) ) {
+	mSource->registerClient( this );
+	rebuild();
+}
+
+ProcessTreeModel::~ProcessTreeModel() {
+	mSource->unregisterClient( this );
+}
+
+void ProcessTreeModel::onModelUpdated( unsigned ) {
+	rebuild();
+	onModelUpdate();
+}
+
+void ProcessTreeModel::rebuild() {
+	mRoots.clear();
+	mNodeForPid.clear();
+	const size_t count = mSource->visibleCount();
+	mNodes.resize( count );
+	for ( auto& node : mNodes ) {
+		node.children.clear();
+		node.parent = -1;
+		node.rowInParent = -1;
+	}
+	mRoots.reserve( count );
+	mNodeForPid.reserve( count );
+	for ( size_t row = 0; row < count; ++row ) {
+		const ProcessInfo* process = mSource->getProcessByRow( static_cast<int>( row ) );
+		mNodes[row].sourceRow = static_cast<int>( row );
+		if ( process )
+			mNodeForPid.emplace( process->pid, static_cast<int>( row ) );
+	}
+	for ( size_t row = 0; row < count; ++row ) {
+		const ProcessInfo* process = mSource->getProcessByRow( static_cast<int>( row ) );
+		int parent = -1;
+		if ( process && process->parentPid != process->pid ) {
+			auto found = mNodeForPid.find( process->parentPid );
+			if ( found != mNodeForPid.end() ) {
+				parent = found->second;
+				for ( int ancestor = parent; ancestor >= 0; ancestor = mNodes[ancestor].parent ) {
+					if ( ancestor == static_cast<int>( row ) ) {
+						parent = -1;
+						break;
+					}
+				}
+			}
+		}
+		Node& node = mNodes[row];
+		node.parent = parent;
+		if ( parent >= 0 ) {
+			auto& siblings = mNodes[parent].children;
+			node.rowInParent = static_cast<int>( siblings.size() );
+			siblings.push_back( static_cast<int>( row ) );
+		} else {
+			node.rowInParent = static_cast<int>( mRoots.size() );
+			mRoots.push_back( static_cast<int>( row ) );
+		}
+	}
+}
+
+size_t ProcessTreeModel::rowCount( const ModelIndex& parent ) const {
+	if ( !parent.isValid() )
+		return mRoots.size();
+	if ( parent.model() != this || !parent.internalData() )
+		return 0;
+	return static_cast<const Node*>( parent.internalData() )->children.size();
+}
+
+size_t ProcessTreeModel::columnCount( const ModelIndex& ) const {
+	return mSource->columnCount();
+}
+
+std::string ProcessTreeModel::columnName( const size_t& column ) const {
+	return mSource->columnName( column );
+}
+
+ModelIndex ProcessTreeModel::index( int row, int column, const ModelIndex& parent ) const {
+	if ( row < 0 || column < 0 || static_cast<size_t>( column ) >= columnCount() )
+		return {};
+	const auto* children = &mRoots;
+	if ( parent.isValid() ) {
+		if ( parent.model() != this || !parent.internalData() )
+			return {};
+		children = &static_cast<const Node*>( parent.internalData() )->children;
+	}
+	if ( static_cast<size_t>( row ) >= children->size() )
+		return {};
+	return createIndex( row, column, const_cast<Node*>( &mNodes[( *children )[row]] ) );
+}
+
+ModelIndex ProcessTreeModel::parentIndex( const ModelIndex& index ) const {
+	if ( index.model() != this || !index.internalData() )
+		return {};
+	const Node& node = *static_cast<const Node*>( index.internalData() );
+	if ( node.parent < 0 )
+		return {};
+	const Node& parent = mNodes[node.parent];
+	return createIndex( parent.rowInParent, treeColumn(), const_cast<Node*>( &parent ) );
+}
+
+Variant ProcessTreeModel::data( const ModelIndex& index, ModelRole role ) const {
+	if ( index.model() != this || !index.internalData() )
+		return {};
+	const Node& node = *static_cast<const Node*>( index.internalData() );
+	return mSource->data( mSource->index( node.sourceRow, index.column() ), role );
+}
+
+ModelIndex ProcessTreeModel::indexForPid( long pid, int column ) const {
+	auto found = mNodeForPid.find( pid );
+	if ( found == mNodeForPid.end() || column < 0 ||
+		 static_cast<size_t>( column ) >= columnCount() )
+		return {};
+	const Node& node = mNodes[found->second];
+	return createIndex( node.rowInParent, column, const_cast<Node*>( &node ) );
+}
+
+const ProcessInfo* ProcessTreeModel::processForIndex( const ModelIndex& index ) const {
+	if ( index.model() != this || !index.internalData() )
+		return nullptr;
+	return mSource->getProcessByRow( static_cast<const Node*>( index.internalData() )->sourceRow );
 }
 
 } // namespace eproc

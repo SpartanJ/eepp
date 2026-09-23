@@ -40,7 +40,7 @@ void UITableView::drawChildren() {
 			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), getItemCount() );
 		Float yOffset = 0;
 		Float xOffset;
-		auto colCount = getModel()->columnCount();
+		const auto& columnOrder = getColumnOrder();
 		auto headerHeight = getHeaderHeight();
 		for ( size_t i = start; i < end; i++ ) {
 			xOffset = 0;
@@ -53,7 +53,7 @@ void UITableView::drawChildren() {
 			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
 			rowNode->setChildrenVisibility( false, false );
 			realColIndex = 0;
-			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
+			for ( size_t colIndex : columnOrder ) {
 				auto& colData = columnData( colIndex );
 				if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
 					if ( colData.visible )

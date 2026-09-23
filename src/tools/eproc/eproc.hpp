@@ -22,6 +22,7 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <memory>
 
 using namespace EE;
@@ -36,7 +37,7 @@ class App {
 	App();
 	~App();
 
-	int run();
+	int run( int argc, char* argv[] );
 
   private:
 	bool init();
@@ -58,8 +59,7 @@ class App {
 	/** Saves the state before the primary window is closed. */
 	bool closeWindow( EE::Window::Window* window );
 
-	/** Creates the collector and worker, and dispatches the first sample. Called from the
-	 *  constructor so collection overlaps window creation. */
+	/** Creates the collector and worker, and dispatches the first sample before window creation. */
 	void startCollection();
 
 	/** Starts the poll/dispatch timer. Requires the UI to exist. */
@@ -80,12 +80,14 @@ class App {
 	 *  only. */
 	void publishStagedSnapshot();
 
-	/** PID of the currently selected process, or -1. */
-	long getSelectedPid() const;
+	/** Re-selects surviving processes after a snapshot, when row indexes may have changed. */
+	void restoreSelection( const std::vector<long>& pids );
 
-	/** Re-selects the process with @p pid after a snapshot, so a refresh is invisible to the
-	 *  user. Does nothing when that process is gone. */
-	void restoreSelection( long pid );
+	UIAbstractTableView* activeProcessView() const;
+
+	void captureTreeExpansion();
+
+	void restoreTreeExpansion();
 
 	void updateStatusBar();
 	void onEndProcess();
@@ -100,7 +102,7 @@ class App {
 	std::vector<long> selectedPids() const;
 
 	/** Maps a proxy index to the process behind it, or nullptr. */
-	const ProcessInfo* processForProxyIndex( const ModelIndex& proxyIndex ) const;
+	const ProcessInfo* processForIndex( const ModelIndex& index ) const;
 
 	/** Sends @p signal to every pid in @p pids, asking for confirmation first when @p confirm. */
 	void requestSignal( std::vector<long> pids, int signal, const std::string& actionLabel,
@@ -110,6 +112,7 @@ class App {
 	void selectProcess( long pid );
 
 	std::unique_ptr<AppConfig> mConfig;
+	std::optional<Float> mPixelDensity;
 	std::unique_ptr<UIApplication> mApp;
 	UIWidget* mRoot{ nullptr };
 	UITabWidget* mTabWidget{ nullptr };
@@ -119,13 +122,19 @@ class App {
 	UITextInput* mSearchInput{ nullptr };
 	UIDropDownList* mFilterDropdown{ nullptr };
 	UITableView* mTableView{ nullptr };
+	UITreeView* mTreeView{ nullptr };
 	UITextView* mStatusText{ nullptr };
 	UITextView* mCpuText{ nullptr };
 	UITextView* mMemText{ nullptr };
 	UITextView* mSwapText{ nullptr };
 
 	std::shared_ptr<ProcessModel> mProcessModel;
+	std::shared_ptr<ProcessTreeModel> mTreeModel;
 	std::shared_ptr<SortingProxyModel> mSortProxy;
+	std::vector<long> mExpandedTreePids;
+	bool mTreeMode{ false };
+	bool mTreeExpansionInitialized{ false };
+	bool mTreeSearchActive{ false };
 	bool mProcessTableStateRestored{ false };
 	bool mProcessTableStateRestoreScheduled{ false };
 	bool mWindowStateSaved{ false };

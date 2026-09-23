@@ -2,6 +2,7 @@
 #define EPROC_PROCESS_COLLECTOR_LINUX_HPP
 
 #include "../../process_collector.hpp"
+#include "gpu_reader_drm.hpp"
 #include "gpu_reader_nvidia.hpp"
 #include "process_icon_resolver.hpp"
 #include "process_network_monitor.hpp"
@@ -78,6 +79,7 @@ class ProcessCollectorLinux : public ProcessCollector {
 	// internally), and GPU figures come from NVML when an NVIDIA driver is present.
 	ProcessIconResolver mIconResolver;
 	NvidiaGpuReader mGpuReader;
+	DrmGpuReader mDrmGpuReader;
 	ProcessNetworkMonitor mNetworkMonitor;
 };
 

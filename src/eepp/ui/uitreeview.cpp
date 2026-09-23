@@ -308,8 +308,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				DrawablePtr drawable =
-					icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
+				DrawablePtr drawable = icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );
@@ -396,7 +395,7 @@ void UITreeView::drawChildren() {
 		UITableRow* rowNode = updateRow( v.realRowIndex, index, yOffset );
 		rowNode->setChildrenVisibility( false, false );
 		v.realColIndex = 0;
-		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
+		for ( size_t colIndex : getColumnOrder() ) {
 			auto& colData = columnData( colIndex );
 			if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
 				if ( colData.visible )
@@ -477,7 +476,10 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 }
 
 bool UITreeView::isExpanded( const ModelIndex& index ) const {
-	return getIndexMetadata( index ).open;
+	if ( !index.isValid() )
+		return false;
+	auto found = mViewMetadata.find( index.internalData() );
+	return found != mViewMetadata.end() && found->second.open;
 }
 
 void UITreeView::setExpanded( const std::vector<ModelIndex>& indexes, bool expanded ) {

@@ -35,6 +35,9 @@ class AppConfig {
 	WindowStateConfig windowState;
 	// Serialized process table columns, widths, and sorting state.
 	std::string processTableState;
+	bool divideCpuUsage{ false };
+	bool treeView{ false };
+	int filterMode{ 0 };
 
   private:
 	std::string mConfigPath;

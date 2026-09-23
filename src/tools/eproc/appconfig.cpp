@@ -24,6 +24,11 @@ void AppConfig::load() {
 		mState.getValueI( "window", "display_index", windowState.displayIndex );
 	windowState.maximized = mState.getValueB( "window", "maximized", windowState.maximized );
 	processTableState = mState.getValue( "process_table", "state", processTableState );
+	divideCpuUsage =
+		mState.getValueB( "process_table", "divide_cpu_usage",
+						  mState.getValueB( "window", "divide_cpu_usage", divideCpuUsage ) );
+	treeView = mState.getValueB( "process_table", "tree_view", treeView );
+	filterMode = mState.getValueI( "process_table", "filter_mode", treeView ? 1 : filterMode );
 }
 
 bool AppConfig::saveWindowState() {
@@ -37,6 +42,9 @@ bool AppConfig::saveWindowState() {
 	mState.setValueI( "window", "display_index", windowState.displayIndex );
 	mState.setValueB( "window", "maximized", windowState.maximized );
 	mState.setValue( "process_table", "state", processTableState );
+	mState.setValueB( "process_table", "divide_cpu_usage", divideCpuUsage );
+	mState.setValueB( "process_table", "tree_view", treeView );
+	mState.setValueI( "process_table", "filter_mode", filterMode );
 	return mState.writeFile();
 }
 

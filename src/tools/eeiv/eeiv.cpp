@@ -184,7 +184,7 @@ bool App::init() {
 	contextSettings.FrameRateLimit = mConfig.FrameLimit;
 	contextSettings.SharedGLContext = true;
 	windowSettings.Title = "eeiv";
-	windowSettings.Icon = Sys::getProcessPath() + "assets/eeiv.png";
+	windowSettings.Icon = Sys::getProcessPath() + "assets/icon/eeiv.png";
 	if ( !FileSystem::fileExists( windowSettings.Icon ) )
 		windowSettings.Icon = Sys::getProcessPath() + "assets/icon/ee.png";
 

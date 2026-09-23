@@ -51,13 +51,15 @@ class ProcessModel : public Model {
 		ColIoRead,
 		ColIoWrite,
 		ColCommand,
+		ColThreads,
+		ColMemoryPercent,
 		ColCount
 	};
 
-	/** Mirrors ksysguard6's ProcessFilter::State, minus the two tree variants (this model is
-	 *  flat). The numeric order matches the original enum so the dropdown maps directly. */
+	/** Mirrors ksysguard6's ProcessFilter::State. The numeric order matches the dropdown. */
 	enum FilterMode {
 		AllProcesses = 0,
+		AllProcessesInTreeForm,
 		SystemProcesses,
 		UserProcesses,
 		OwnProcesses,
@@ -92,10 +94,21 @@ class ProcessModel : public Model {
 	void setGuiWindowPids( UnorderedSet<long>&& pids );
 
 	FilterMode getFilter() const { return mFilterMode; }
+	void setDivideCpuUsage( bool divide ) {
+		mDivideCpuUsage = divide;
+		onModelUpdate();
+	}
+
+	int displayedCpuUsage( const ProcessInfo& proc ) const {
+		const int usage = proc.getCpuForSort();
+		return mDivideCpuUsage && mSystemInfo.cpuCount > 0 ? usage / mSystemInfo.cpuCount : usage;
+	}
 	const SystemInfo& getSystemInfo() const { return mSystemInfo; }
 
 	/** Number of rows currently visible after filtering. */
 	size_t visibleCount() const { return mFilteredProcesses.size(); }
+
+	const std::vector<long>& textMatchedPids() const { return mTextMatchedPids; }
 
 	const ProcessInfo* getProcessByRow( int row ) const;
 
@@ -126,9 +139,11 @@ class ProcessModel : public Model {
 
 	std::vector<ProcessInfo> mProcesses;
 	std::vector<ProcessInfo*> mFilteredProcesses;
+	std::vector<long> mTextMatchedPids;
 	UISceneNode* mUI{ nullptr };
 	SystemInfo mSystemInfo;
 	FilterMode mFilterMode{ AllProcesses };
+	bool mDivideCpuUsage{ false };
 	// Compiled once per filter change, never per row. Null means "no text filter".
 	std::unique_ptr<RegEx> mTextRegex;
 	// Set only when the typed text does not compile as a pattern (a group still open, a stray
@@ -137,6 +152,55 @@ class ProcessModel : public Model {
 	std::string mTextLiteral;
 	UnorderedSet<long> mGuiPids;
 	mutable UnorderedMap<std::string, DrawablePtr> mIconCache;
+};
+
+/** Hierarchical view of the visible rows owned by ProcessModel. */
+class ProcessTreeModel : public Model, private Model::Client {
+  public:
+	static std::shared_ptr<ProcessTreeModel> create( std::shared_ptr<ProcessModel> source ) {
+		return std::shared_ptr<ProcessTreeModel>( new ProcessTreeModel( std::move( source ) ) );
+	}
+
+	~ProcessTreeModel();
+
+	size_t rowCount( const ModelIndex& parent = {} ) const override;
+
+	size_t columnCount( const ModelIndex& parent = {} ) const override;
+
+	std::string columnName( const size_t& column ) const override;
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override;
+
+	ModelIndex index( int row, int column = 0, const ModelIndex& parent = {} ) const override;
+
+	ModelIndex parentIndex( const ModelIndex& index ) const override;
+
+	size_t treeColumn() const override { return ProcessModel::ColName; }
+
+	bool classModelRoleEnabled() override { return true; }
+
+	ModelIndex indexForPid( long pid, int column = ProcessModel::ColName ) const;
+
+	const ProcessInfo* processForIndex( const ModelIndex& index ) const;
+
+  private:
+	struct Node {
+		std::vector<int> children;
+		int sourceRow{ -1 };
+		int parent{ -1 };
+		int rowInParent{ -1 };
+	};
+
+	explicit ProcessTreeModel( std::shared_ptr<ProcessModel> source );
+
+	void onModelUpdated( unsigned flags ) override;
+
+	void rebuild();
+
+	std::shared_ptr<ProcessModel> mSource;
+	std::vector<Node> mNodes;
+	std::vector<int> mRoots;
+	UnorderedMap<long, int> mNodeForPid;
 };
 
 } // namespace eproc
