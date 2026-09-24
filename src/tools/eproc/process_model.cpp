@@ -1,3 +1,9 @@
+#include <eepp/config.hpp>
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+#define Rect AppleRect
+#include <ImageIO/ImageIO.h>
+#undef Rect
+#endif
 #include "process_model.hpp"
 
 #include <algorithm>
@@ -110,7 +116,11 @@ std::string ProcessModel::columnName( const size_t& column ) const {
 		case ColCommand:
 			return mUI->i18n( "eproc_column_command", "Command" ).toUtf8();
 		case ColTotalMemory:
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			return mUI->i18n( "eproc_column_real_memory", "Real Mem" ).toUtf8();
+#else
 			return mUI->i18n( "eproc_column_total_memory", "Total Memory" ).toUtf8();
+#endif
 		case ColVirtualSize:
 			return mUI->i18n( "eproc_column_virtual_size", "Virtual Size" ).toUtf8();
 		case ColCpuTime:
@@ -471,6 +481,51 @@ static bool isBlankIcon( const Image& image ) {
 // The original renders 16px icons in the name column.
 static constexpr int kIconSizeDp = 16;
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static Image loadMacIcon( const std::string& path, Uint32 iconPx ) {
+	Image image;
+	CFURLRef url = CFURLCreateFromFileSystemRepresentation(
+		kCFAllocatorDefault, reinterpret_cast<const UInt8*>( path.data() ),
+		static_cast<CFIndex>( path.size() ), false );
+	if ( !url )
+		return image;
+	CGImageSourceRef source = CGImageSourceCreateWithURL( url, nullptr );
+	CFRelease( url );
+	if ( !source )
+		return image;
+	const int maxSize = static_cast<int>( iconPx );
+	CFNumberRef size = CFNumberCreate( kCFAllocatorDefault, kCFNumberIntType, &maxSize );
+	const void* keys[] = { kCGImageSourceCreateThumbnailFromImageAlways,
+						   kCGImageSourceThumbnailMaxPixelSize };
+	const void* values[] = { kCFBooleanTrue, size };
+	CFDictionaryRef options =
+		CFDictionaryCreate( kCFAllocatorDefault, keys, values, 2, &kCFTypeDictionaryKeyCallBacks,
+							&kCFTypeDictionaryValueCallBacks );
+	CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex( source, 0, options );
+	CFRelease( options );
+	CFRelease( size );
+	CFRelease( source );
+	if ( !thumbnail )
+		return image;
+	CFMutableDataRef data = CFDataCreateMutable( kCFAllocatorDefault, 0 );
+	if ( data ) {
+		CGImageDestinationRef destination =
+			CGImageDestinationCreateWithData( data, CFSTR( "public.png" ), 1, nullptr );
+		if ( destination ) {
+			CGImageDestinationAddImage( destination, thumbnail, nullptr );
+			if ( CGImageDestinationFinalize( destination ) ) {
+				image = Image( CFDataGetBytePtr( data ),
+							   static_cast<unsigned int>( CFDataGetLength( data ) ), 4 );
+			}
+			CFRelease( destination );
+		}
+		CFRelease( data );
+	}
+	CGImageRelease( thumbnail );
+	return image;
+}
+#endif
+
 DrawablePtr ProcessModel::iconFor( const std::string& path ) const {
 	auto it = mIconCache.find( path );
 	if ( it != mIconCache.end() )
@@ -481,7 +536,12 @@ DrawablePtr ProcessModel::iconFor( const std::string& path ) const {
 	const Uint32 iconPx = static_cast<Uint32>( PixelDensity::dpToPxI( kIconSizeDp ) );
 	Image image;
 
-	if ( String::endsWith( path, ".svg" ) || String::endsWith( path, ".svgz" ) ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	if ( String::endsWith( path, ".icns" ) ) {
+		image = loadMacIcon( path, iconPx );
+	} else
+#endif
+		if ( String::endsWith( path, ".svg" ) || String::endsWith( path, ".svgz" ) ) {
 		// Scalable icons are rasterized before resizing, so the same high-quality image resampler
 		// is used for both SVG and bitmap icons.
 		std::ifstream file( path, std::ios::binary );

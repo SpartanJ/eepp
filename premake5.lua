@@ -1992,6 +1992,7 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.x64.res" }
+		filter {}
 		files { "src/tools/eeiv/*.cpp" }
 		build_link_configuration( "eeiv", false )
 
@@ -2006,6 +2007,7 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.x64.res" }
+		filter {}
 		files {
 			"src/tools/eproc/appconfig.cpp",
 			"src/tools/eproc/eproc.cpp",
@@ -2020,14 +2022,21 @@ workspace "eepp"
 				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
 				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
 				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
-				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
 		filter "system:windows"
 			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
 			links { "psapi", "advapi32" }
+		filter "system:macosx"
+			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+		filter "system:bsd"
+			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
 		filter {}
-		build_link_configuration( "eproc", true )
+		build_link_configuration( "eproc", false )
 
 	-- Tests
 	project "eepp-test"
@@ -2073,6 +2082,11 @@ workspace "eepp"
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		filter "system:haiku"
 			links { "bsd", "network" }
 		filter {}

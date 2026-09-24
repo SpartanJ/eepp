@@ -12,7 +12,7 @@ namespace eproc {
 /** Resolves the icon of a process to an absolute icon file path following the XDG desktop entry
  *  route: an executable name is mapped to a .desktop entry, and that entry's icon name to a file
  *  inside the installed icon themes. This resolver does not need a display connection; eproc's
- *  UI thread may use an X11 window icon when no desktop icon was found.
+ *  UI thread may use an X11 window icon when no desktop icon was found on X11.
  *
  *  The desktop index is built once, lazily, on the first iconFor() call. Every result - including
  *  the "no icon" ones - is cached under the queried exe/name pair, so the steady state is a couple
@@ -24,7 +24,7 @@ namespace eproc {
 class ProcessIconResolver {
   public:
 	/** Resolves the icon file for a process.
-	 *  @param exePath absolute path of /proc/<pid>/exe target (may be empty)
+	 *  @param exePath absolute executable path, when available (may be empty)
 	 *  @param name    process name (comm), used as a fallback key
 	 *  @return absolute path to a PNG/SVG/XPM icon, or empty string when none found.
 	 *          The returned reference stays valid for the resolver's lifetime. */

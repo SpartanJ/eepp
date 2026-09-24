@@ -6,6 +6,16 @@
 
 #include <signal.h>
 #include <sys/types.h>
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+#include "platform/macos/process_collector_macos.hpp"
+
+#include <signal.h>
+#include <sys/types.h>
+#elif EE_PLATFORM == EE_PLATFORM_BSD && defined( __FreeBSD__ )
+#include "platform/freebsd/process_collector_freebsd.hpp"
+
+#include <signal.h>
+#include <sys/types.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include "platform/windows/process_collector_windows.hpp"
 #ifndef NOMINMAX
@@ -17,6 +27,11 @@
 #include <windows.h>
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_BSD && !defined( __FreeBSD__ )
+#include <signal.h>
+#include <sys/types.h>
+#endif
+
 using namespace EE::System;
 
 namespace eproc {
@@ -24,6 +39,10 @@ namespace eproc {
 std::unique_ptr<ProcessCollector> ProcessCollector::create() {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	return std::make_unique<ProcessCollectorLinux>();
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return std::make_unique<ProcessCollectorMacOS>();
+#elif EE_PLATFORM == EE_PLATFORM_BSD && defined( __FreeBSD__ )
+	return std::make_unique<ProcessCollectorFreeBSD>();
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	return std::make_unique<ProcessCollectorWindows>();
 #else
@@ -33,8 +52,9 @@ std::unique_ptr<ProcessCollector> ProcessCollector::create() {
 }
 
 bool sendProcessSignal( Int64 pid, int signal ) {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	return ::kill( static_cast<pid_t>( pid ), signal ) == 0;
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
+	return pid > 0 && ::kill( static_cast<pid_t>( pid ), signal ) == 0;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	return signal == 9 && killProcess( pid );
 #else

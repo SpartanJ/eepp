@@ -1999,13 +1999,22 @@ solution "eepp"
 				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
 				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
 				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
-				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
 		end
 		if os.is("windows") then
 			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
 			links { "psapi", "advapi32" }
+		end
+		if os.is("macosx") then
+			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+		end
+		if os.is("bsd") then
+			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
 		end
 		build_link_configuration( "eproc", false )
 
@@ -2045,6 +2054,12 @@ solution "eepp"
 		end
 		if os.is("haiku") then
 			links { "bsd", "network" }
+		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		end
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eproc/process_info.cpp",

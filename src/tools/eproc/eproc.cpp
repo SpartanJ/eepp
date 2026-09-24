@@ -11,7 +11,8 @@
 #include <cmath>
 #include <iostream>
 #include <string_view>
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 #include <signal.h>
 #include <unistd.h>
 #endif
@@ -22,7 +23,8 @@ namespace {
 
 constexpr int kProcessTableStateVersion = 4;
 constexpr int kForceKillSignal = 9; // SIGKILL on Linux; TerminateProcess on Windows.
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 constexpr int kEndProcessSignal = SIGTERM;
 #else
 constexpr int kEndProcessSignal = kForceKillSignal;
@@ -65,6 +67,26 @@ constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
 	ProcessModel::ColVirtualSize,
 	ProcessModel::ColNiceness,
 	ProcessModel::ColTty,
+} };
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+constexpr std::array<size_t, 6> kUnavailableProcessColumns = { {
+	ProcessModel::ColSharedMem,
+	ProcessModel::ColGpuUsage,
+	ProcessModel::ColGpuMemory,
+	ProcessModel::ColDownload,
+	ProcessModel::ColUpload,
+	ProcessModel::ColTty,
+} };
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
+	ProcessModel::ColSharedMem,
+	ProcessModel::ColGpuUsage,
+	ProcessModel::ColGpuMemory,
+	ProcessModel::ColDownload,
+	ProcessModel::ColUpload,
+	ProcessModel::ColTty,
+	ProcessModel::ColIoRead,
+	ProcessModel::ColIoWrite,
 } };
 #else
 constexpr std::array<size_t, 0> kUnavailableProcessColumns{};
@@ -245,7 +267,11 @@ App::App() {
 	mConfig->load();
 }
 
-App::~App() {}
+App::~App() {
+	// The worker may still publish a snapshot through mStagingMutex. Join it before member
+	// destruction reaches the staging state and mutex.
+	mThreadPool.reset();
+}
 
 int App::run( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "eproc" );
@@ -760,6 +786,9 @@ void App::setupProcessTable() {
 		view->setColumnsHidden(
 			std::vector<size_t>( kOptionalProcessColumns.begin(), kOptionalProcessColumns.end() ),
 			true );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		view->setColumnHidden( ProcessModel::ColTotalMemory, false );
+#endif
 		hideUnsupportedProcessColumns( *view );
 		view->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
 			if ( !cell )
@@ -817,7 +846,7 @@ void App::setupProcessTable() {
 				restoreSelection( selected );
 			} );
 		} );
-		view->setRowHeight( 28 );
+		view->setRowHeight( PixelDensity::dpToPx( 18 ) );
 		// The flexible column is Name; the icon column is fixed so every row lines up.
 		view->setMainColumn( ProcessModel::ColName );
 		view->setSortIconSize( 12 );
@@ -857,8 +886,8 @@ void App::startCollection() {
 	// keeps /proc walking off the UI thread entirely.
 	//
 	// terminateOnClose must stay false: the pool destructor then joins the worker, which
-	// guarantees no in-flight collect() can outlive mCollector (destroyed after mThreadPool,
-	// since members are destroyed in reverse declaration order).
+	// guarantees no in-flight collect() can outlive mCollector. App's destructor explicitly
+	// joins the pool before destroying the staging mutex that the worker uses.
 	mThreadPool = ThreadPool::createShared( 1, false );
 
 	// Timed from this first dispatch so the next sample lands a full period later, giving the CPU
@@ -1075,10 +1104,15 @@ void App::updateStatusBar() {
 			formatKiBIEC( sys.getUsedMemoryKB() ).c_str(),
 			formatKiBIEC( sys.getTotalMemoryKB() ).c_str() ) );
 
-	if ( mSwapText )
-		mSwapText->setText( String::format(
-			mApp->getUI()->i18n( "eproc_swap_status_format", "Swap: %s / %s" ).toUtf8(),
-			formatKiBIEC( sys.getUsedSwapKB() ).c_str(), formatKiBIEC( sys.totalSwap ).c_str() ) );
+	if ( mSwapText ) {
+		mSwapText->setVisible( sys.totalSwap >= 0 );
+		if ( sys.totalSwap >= 0 ) {
+			mSwapText->setText( String::format(
+				mApp->getUI()->i18n( "eproc_swap_status_format", "Swap: %s / %s" ).toUtf8(),
+				formatKiBIEC( sys.getUsedSwapKB() ).c_str(),
+				formatKiBIEC( sys.totalSwap ).c_str() ) );
+		}
+	}
 }
 
 void App::onEndProcess() {
@@ -1269,7 +1303,8 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 	};
 
 // The same signal set the original offers, in the same order.
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 	static const std::array<SignalItem, 8> signalItems = { {
 		{ "signal-stop", "eproc_signal_suspend", "Suspend (STOP)", SIGSTOP },
 		{ "signal-cont", "eproc_signal_continue", "Continue (CONT)", SIGCONT },
@@ -1286,7 +1321,8 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "process_context_menu" );
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 	UIPopUpMenu* signalMenu = UIPopUpMenu::New();
 	signalMenu->setId( "process_signal_menu" );
 	for ( const auto& item : signalItems )
@@ -1307,7 +1343,8 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 			->setId( "copy-command-line" );
 	}
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD
 	menu->addSeparator();
 	menu->add( endProcessLabel( mApp->getUI(), pids.size() ) )->setId( "end-process" );
 	menu->add( forceKillLabel( mApp->getUI(), pids.size() ) )->setId( "kill-process" );

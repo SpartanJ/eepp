@@ -19,8 +19,13 @@ namespace eproc {
 // The icon themes probed for an icon name, in preference order. Every one of them is optional.
 static const char* kIconThemes[] = { "hicolor", "breeze", "Adwaita" };
 
-// The unthemed icon directory, searched after all the themes.
-static const char* kIconPixmapDir = "/usr/share/pixmaps/";
+// FreeBSD packages install icons below /usr/local/share; Linux distributions normally use
+// /usr/share. The other prefix remains a fallback on both systems.
+#ifdef __FreeBSD__
+static const char* kIconDataDirectories[] = { "/usr/local/share", "/usr/share" };
+#else
+static const char* kIconDataDirectories[] = { "/usr/share", "/usr/local/share" };
+#endif
 
 // Sizes present in a theme, and the extensions an icon file may use. The two extra large sizes at
 // the end are not part of the classic set but are the only ones a few applications ship.
@@ -46,8 +51,8 @@ static bool isGenericDirName( std::string_view name ) {
 	return false;
 }
 
-// Everything after the last separator. The kernel appends " (deleted)" to a /proc/<pid>/exe link
-// when the binary has been replaced or removed, which would never match an index key. The result is
+// Everything after the last separator. Linux appends " (deleted)" to a /proc/<pid>/exe link when
+// the binary has been replaced or removed, which would never match an index key. The result is
 // always a new string, so the argument is only ever read.
 static std::string baseName( std::string_view path ) {
 	std::string name( path );
@@ -106,8 +111,14 @@ static bool allowsExtension( const std::string& name, const char* extension ) {
 	return !hasIconExtension( name ) || String::endsWith( name, extension );
 }
 
-static std::string themeIconPath( const char* theme, const char* size, const std::string& name ) {
-	std::string path = "/usr/share/icons/";
+static std::string withIconExtension( const std::string& name, const char* extension ) {
+	return hasIconExtension( name ) ? name : name + extension;
+}
+
+static std::string themeIconPath( const char* dataDir, const char* theme, const char* size,
+								  const std::string& name ) {
+	std::string path = dataDir;
+	path += "/icons/";
 	path += theme;
 	path += '/';
 	path += size;
@@ -116,9 +127,9 @@ static std::string themeIconPath( const char* theme, const char* size, const std
 	return path;
 }
 
-// Maps an icon name to the icon file that backs it. Preference order: 32x32 PNG, then 48x48 PNG,
-// then the scalable SVG, then any other icon of any size and known extension, and finally the
-// unthemed /usr/share/pixmaps directory.
+// Maps an icon name to the icon file that backs it. Preference order: 24x24, 32x32 and 48x48 PNG,
+// then scalable SVG, then any other icon of a known size and extension, and finally the unthemed
+// pixmap directories.
 static std::string findIconFile( const std::string& iconName ) {
 	if ( iconName.empty() )
 		return {};
@@ -139,18 +150,24 @@ static std::string findIconFile( const std::string& iconName ) {
 	if ( allowsExtension( name, ".png" ) ) {
 		for ( const char* size : kPreferredPngSizes ) {
 			for ( const char* theme : kIconThemes ) {
-				std::string path = themeIconPath( theme, size, name + ".png" );
-				if ( FileInfo( path ).isRegularFile() )
-					return path;
+				for ( const char* dataDir : kIconDataDirectories ) {
+					std::string path =
+						themeIconPath( dataDir, theme, size, withIconExtension( name, ".png" ) );
+					if ( FileInfo( path ).isRegularFile() )
+						return path;
+				}
 			}
 		}
 	}
 
 	if ( allowsExtension( name, ".svg" ) ) {
 		for ( const char* theme : kIconThemes ) {
-			std::string path = themeIconPath( theme, "scalable", name + ".svg" );
-			if ( FileInfo( path ).isRegularFile() )
-				return path;
+			for ( const char* dataDir : kIconDataDirectories ) {
+				std::string path =
+					themeIconPath( dataDir, theme, "scalable", withIconExtension( name, ".svg" ) );
+				if ( FileInfo( path ).isRegularFile() )
+					return path;
+			}
 		}
 	}
 
@@ -159,9 +176,12 @@ static std::string findIconFile( const std::string& iconName ) {
 			for ( const char* extension : kIconExtensions ) {
 				if ( !allowsExtension( name, extension ) )
 					continue;
-				std::string path = themeIconPath( theme, size, name + extension );
-				if ( FileInfo( path ).isRegularFile() )
-					return path;
+				for ( const char* dataDir : kIconDataDirectories ) {
+					std::string path =
+						themeIconPath( dataDir, theme, size, withIconExtension( name, extension ) );
+					if ( FileInfo( path ).isRegularFile() )
+						return path;
+				}
 			}
 		}
 	}
@@ -169,15 +189,20 @@ static std::string findIconFile( const std::string& iconName ) {
 	for ( const char* extension : kIconExtensions ) {
 		if ( !allowsExtension( name, extension ) )
 			continue;
-		std::string path = std::string( kIconPixmapDir ) + name + extension;
-		if ( FileInfo( path ).isRegularFile() )
-			return path;
+		for ( const char* dataDir : kIconDataDirectories ) {
+			std::string path =
+				std::string( dataDir ) + "/pixmaps/" + withIconExtension( name, extension );
+			if ( FileInfo( path ).isRegularFile() )
+				return path;
+		}
 	}
 
 	// Some entries point straight at an extension-less file in the pixmap directory.
-	std::string nakedPath = std::string( kIconPixmapDir ) + name;
-	if ( FileInfo( nakedPath ).isRegularFile() )
-		return nakedPath;
+	for ( const char* dataDir : kIconDataDirectories ) {
+		std::string nakedPath = std::string( dataDir ) + "/pixmaps/" + name;
+		if ( FileInfo( nakedPath ).isRegularFile() )
+			return nakedPath;
+	}
 
 	return {};
 }
