@@ -69,8 +69,8 @@ APPS = {
     'ee': { 'svg': 'ee-icon.svg', 'ico': [16, 24, 32, 48, 64, 128, 256], 'icns': True, 'res': True },
     'ecode': { 'svg': 'ecode-icon.svg', 'ico': [256, 128, 64, 48, 32, 16], 'icns': True, 'res': True },
     'eterm': { 'svg': 'eterm-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
-    'eeiv': { 'svg': 'eeiv-icon.svg', 'ico': [], 'icns': False, 'res': False },
-    'eproc': { 'svg': 'eproc-icon.svg', 'ico': [], 'icns': False, 'res': False },
+    'eeiv': { 'svg': 'eeiv-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
+    'eproc': { 'svg': 'eproc-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
 }
 
 

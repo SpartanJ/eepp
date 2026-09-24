@@ -1985,13 +1985,27 @@ workspace "eepp"
 	project "eeiv"
 		set_kind()
 		language "C++"
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eeiv.rc", "bin/assets/icon/eeiv.ico" }
+			vpaths { ['Resources/*'] = { "eeiv.rc", "eeiv.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.x64.res" }
 		files { "src/tools/eeiv/*.cpp" }
-		build_link_configuration( "eeiv", true )
+		build_link_configuration( "eeiv", false )
 
 	project "eproc"
 		set_kind()
 		language "C++"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eproc.rc", "bin/assets/icon/eproc.ico" }
+			vpaths { ['Resources/*'] = { "eproc.rc", "eproc.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.x64.res" }
 		files {
 			"src/tools/eproc/appconfig.cpp",
 			"src/tools/eproc/eproc.cpp",
@@ -2009,7 +2023,6 @@ workspace "eepp"
 				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
-			-- Per-process network capture loads libpcap at runtime when it is available.
 		filter "system:windows"
 			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
 			links { "psapi", "advapi32" }

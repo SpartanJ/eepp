@@ -60,7 +60,7 @@ try {
 	# -----------------------------------------------------------------------
 	# Binaries: every release executable in bin\ is packaged (any new
 	# "eepp-*" binary is picked up automatically) plus the fixed tool set:
-	# ecode, eterm and eeiv. Unit tests live in bin\unit_tests and benchmarks
+	# ecode, eterm, eeiv and eproc. Unit tests live in bin\unit_tests and benchmarks
 	# in bin\benchmarks; they are never matched by this filter.
 	# -----------------------------------------------------------------------
 
@@ -83,6 +83,7 @@ try {
 	Add-Binary -Name "ecode.exe"
 	Add-Binary -Name "eterm.exe"
 	Add-Binary -Name "eeiv.exe"
+	Add-Binary -Name "eproc.exe"
 
 	# -----------------------------------------------------------------------
 	# Libraries: shared libraries required at runtime plus the import/static

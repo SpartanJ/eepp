@@ -1965,12 +1965,26 @@ solution "eepp"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/tools/eeiv/*.cpp" }
-		build_link_configuration( "eeiv", true )
+		if os.is("windows") and not is_vs() then
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eeiv.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eeiv.res" }
+			end
+		end
+		build_link_configuration( "eeiv", false )
 
 	project "eproc"
 		set_kind()
 		language "C++"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		if os.is("windows") and not is_vs() then
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eproc.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eproc.res" }
+			end
+		end
 		files {
 			"src/tools/eproc/appconfig.cpp",
 			"src/tools/eproc/eproc.cpp",
@@ -1988,13 +2002,12 @@ solution "eepp"
 				"src/tools/eproc/platform/linux/process_icon_resolver.cpp",
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
-			-- Per-process network capture loads libpcap at runtime when it is available.
 		end
 		if os.is("windows") then
 			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
 			links { "psapi", "advapi32" }
 		end
-		build_link_configuration( "eproc", true )
+		build_link_configuration( "eproc", false )
 
 	-- Tests
 	project "eepp-test"
