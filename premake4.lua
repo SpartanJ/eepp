@@ -151,6 +151,13 @@ newclangtoolchain {
 	cppflags = "-m64 -arch x86_64"
 }
 
+-- FreeBSD builds use clang: default the platform toolchain to clang so the
+-- generated makefiles never fall back to gcc and is_clang() reports the truth
+-- (LTO and linker flags depend on it). An explicit --platform still wins.
+if os.is("bsd") and not _OPTIONS.platform then
+	_OPTIONS.platform = "clang"
+end
+
 if _OPTIONS.platform then
 	-- overwrite the native platform with the options::platform
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
@@ -484,7 +491,7 @@ function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
-		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
+		elseif os.is("linux") or os.is("bsd") or os.is("haiku") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
@@ -701,7 +708,7 @@ function generate_os_links()
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
-	elseif os.is_real("freebsd") then
+	elseif os.is_real("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
@@ -710,7 +717,7 @@ function generate_os_links()
 	end
 
 	if _OPTIONS["without-mojoal"] then
-		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
+		if os.is_real("linux") or os.is_real("bsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			if os_ishost("msys") then
@@ -740,7 +747,8 @@ function parse_args()
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
-		if not os.is_real("macosx") then
+		-- clang links its own sanitizer runtimes, -ltsan is gcc only.
+		if not is_clang() then
 			links { "tsan" }
 		end
 	end
@@ -748,7 +756,8 @@ function parse_args()
 	if _OPTIONS["address-sanitizer"] then
 		buildoptions { "-fsanitize=address" }
 		linkoptions { "-fsanitize=address" }
-		if not os.is_real("macosx") then
+		-- clang links its own sanitizer runtimes, -lasan is gcc only.
+		if not is_clang() then
 			links { "asan" }
 		end
 	end
@@ -1180,6 +1189,13 @@ solution "eepp"
 	generate_os_links()
 	parse_args()
 	initialize_backends()
+
+	if os.is_real("bsd") then
+		-- The ports gcc searched /usr/local by default, clang (the default
+		-- toolchain on FreeBSD) must be pointed to the ports tree explicitly.
+		includedirs { "/usr/local/include" }
+		libdirs { "/usr/local/lib" }
+	end
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }
@@ -1900,9 +1916,11 @@ solution "eepp"
 		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 		end
-		if os.is_real("linux") then
+		if os.is_real("linux") or os.is_real("bsd") then
+			-- libutil provides openpty(3) on Linux and FreeBSD.
 			links { "util" }
-
+		end
+		if os.is_real("linux") then
 			if os_findlib("dw") then
 				links { "dw" }
 				defines { "EE_BACKWARD_HAS_DW" }
@@ -1936,8 +1954,12 @@ solution "eepp"
 		files { "src/tools/eterm/**.cpp" }
 		links { "efsw-static", "eterm-static" }
 		includedirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
-		if os.is_real("linux") then
+		if os.is_real("linux") or os.is_real("bsd") then
+			-- libutil provides openpty(3) on Linux and FreeBSD.
 			links { "util" }
+		end
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
 		end
 		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
@@ -2061,7 +2083,8 @@ solution "eepp"
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		end
-		if os.is("bsd") then
+		if os.is_real("bsd") then
+			-- libutil provides openpty(3) on FreeBSD.
 			links { "util" }
 		end
 		files { "src/tests/unit_tests/*.cpp",

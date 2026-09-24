@@ -111,7 +111,8 @@ bool ProcessCollectorFreeBSD::collect( std::vector<ProcessInfo>& processes, Syst
 												 ( now.tv_usec - bootTime.tv_usec ) / 1e6 )
 							: 0.0;
 
-	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL };
+	// KERN_PROC_ALL includes an entry for every thread. The table needs one row per process.
+	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC };
 	size_t bytes = 0;
 	if ( sysctl( mib, 3, nullptr, &bytes, nullptr, 0 ) != 0 )
 		return false;

@@ -167,6 +167,17 @@ function is_xcode()
 	return ( string.starts(_ACTION,"xcode") )
 end
 
+-- True when the configuration is built with clang. FreeBSD targets are forced
+-- to clang ( see the workspace "eepp" toolset filter ), macOS and iOS default
+-- to it.
+function is_clang()
+	if _OPTIONS["cc"] then
+		return _OPTIONS["cc"] == "clang"
+	end
+
+	return os.istarget("bsd") or os.istarget("macosx") or os.istarget("ios")
+end
+
 function set_kind()
 	if os.istarget("macosx") then
 		kind("ConsoleApp")
@@ -503,7 +514,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if _OPTIONS["with-mold-linker"] then
-		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+		if is_clang() then
 			linkoptions { "-fuse-ld=mold" }
 		else
 			gccversion = os.outputof( "gcc -dumpfullversion" )
@@ -702,7 +713,8 @@ function parse_args()
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -ltsan is gcc only.
+		if not is_clang() then
 			links { "tsan" }
 		end
 	end
@@ -710,7 +722,8 @@ function parse_args()
 	if _OPTIONS["address-sanitizer"] then
 		buildoptions { "-fsanitize=address" }
 		linkoptions { "-fsanitize=address" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -lasan is gcc only.
+		if not is_clang() then
 			links { "asan" }
 		end
 	end
@@ -1157,6 +1170,14 @@ workspace "eepp"
 		configurations { "debug", "release" }
 		platforms { "x86_64", "x86", "arm64" }
 	end
+
+	-- FreeBSD builds use clang: force the clang toolset so the generated project
+	-- files never fall back to the default gcc toolchain of the bsd system.
+	-- An explicitly requested compiler (--cc) still takes precedence.
+	filter { "system:bsd", "not options:cc" }
+		toolset "clang"
+	filter {}
+
 	rtti "On"
 	download_and_extract_dependencies()
 	select_backend()
@@ -1970,6 +1991,8 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.x64.res" }
 		filter "system:linux or system:bsd"
 			links { "util" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter "system:haiku"
