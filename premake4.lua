@@ -2061,6 +2061,9 @@ solution "eepp"
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		end
+		if os.is("bsd") then
+			links { "util" }
+		end
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eproc/process_info.cpp",
 				"src/tools/eproc/process_model.cpp",

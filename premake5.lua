@@ -2089,6 +2089,8 @@ workspace "eepp"
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		filter "system:haiku"
 			links { "bsd", "network" }
+		filter "system:bsd"
+			links { "util" }
 		filter {}
 		eepp_module_backward_add( false )
 		build_link_configuration( "eepp-unit_tests", true )
