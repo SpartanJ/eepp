@@ -91,7 +91,7 @@ class ProcessModel : public Model {
 
 	/** PIDs owning a top-level window, used by the Programs Only filter. Set this before
 	 *  applySnapshot so the filter sees current data. */
-	void setGuiWindowPids( UnorderedSet<long>&& pids );
+	void setGuiWindowPids( UnorderedSet<Int64>&& pids );
 
 	FilterMode getFilter() const { return mFilterMode; }
 	void setDivideCpuUsage( bool divide ) {
@@ -108,13 +108,13 @@ class ProcessModel : public Model {
 	/** Number of rows currently visible after filtering. */
 	size_t visibleCount() const { return mFilteredProcesses.size(); }
 
-	const std::vector<long>& textMatchedPids() const { return mTextMatchedPids; }
+	const std::vector<Int64>& textMatchedPids() const { return mTextMatchedPids; }
 
 	const ProcessInfo* getProcessByRow( int row ) const;
 
 	/** Row of the currently visible list holding @p pid, or -1 when it is filtered out or gone.
 	 *  Used to re-select a process by identity across a snapshot, since rows reorder. */
-	int rowForPid( long pid ) const;
+	int rowForPid( Int64 pid ) const;
 
 	/** The icon column carries no data of its own, so sorting it is meaningless. */
 	bool isColumnSortable( const size_t& columnIndex ) const override {
@@ -139,7 +139,7 @@ class ProcessModel : public Model {
 
 	std::vector<ProcessInfo> mProcesses;
 	std::vector<ProcessInfo*> mFilteredProcesses;
-	std::vector<long> mTextMatchedPids;
+	std::vector<Int64> mTextMatchedPids;
 	UISceneNode* mUI{ nullptr };
 	SystemInfo mSystemInfo;
 	FilterMode mFilterMode{ AllProcesses };
@@ -150,7 +150,7 @@ class ProcessModel : public Model {
 	// quantifier): it is then searched literally, lowercased, so a half-typed pattern does not
 	// blank the table. Empty when it is not in use.
 	std::string mTextLiteral;
-	UnorderedSet<long> mGuiPids;
+	UnorderedSet<Int64> mGuiPids;
 	mutable UnorderedMap<std::string, DrawablePtr> mIconCache;
 };
 
@@ -179,7 +179,7 @@ class ProcessTreeModel : public Model, private Model::Client {
 
 	bool classModelRoleEnabled() override { return true; }
 
-	ModelIndex indexForPid( long pid, int column = ProcessModel::ColName ) const;
+	ModelIndex indexForPid( Int64 pid, int column = ProcessModel::ColName ) const;
 
 	const ProcessInfo* processForIndex( const ModelIndex& index ) const;
 
@@ -200,7 +200,7 @@ class ProcessTreeModel : public Model, private Model::Client {
 	std::shared_ptr<ProcessModel> mSource;
 	std::vector<Node> mNodes;
 	std::vector<int> mRoots;
-	UnorderedMap<long, int> mNodeForPid;
+	UnorderedMap<Int64, int> mNodeForPid;
 };
 
 } // namespace eproc

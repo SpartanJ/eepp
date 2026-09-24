@@ -8,19 +8,20 @@
 namespace eproc {
 
 struct SystemInfo {
-	long totalMemory{ 0 };
-	long freeMemory{ 0 };
-	long availableMemory{ 0 };
-	long totalSwap{ 0 };
-	long freeSwap{ 0 };
+	Int64 totalMemory{ 0 };
+	Int64 freeMemory{ 0 };
+	Int64 availableMemory{ 0 };
+	Int64 totalSwap{ 0 };
+	Int64 freeSwap{ 0 };
 	int cpuCount{ 1 };
 	float cpuUsage{ 0.f };
-	long clockTicksPerSecond{ 100 };
+	// Number of units in ProcessInfo::{userTime,sysTime,startTime} per second.
+	Int64 clockTicksPerSecond{ 100 };
 	double uptimeSeconds{ 0.0 };
 
-	long getTotalMemoryKB() const { return totalMemory; }
-	long getUsedMemoryKB() const { return totalMemory - availableMemory; }
-	long getUsedSwapKB() const { return totalSwap - freeSwap; }
+	Int64 getTotalMemoryKB() const { return totalMemory; }
+	Int64 getUsedMemoryKB() const { return totalMemory - availableMemory; }
+	Int64 getUsedSwapKB() const { return totalSwap - freeSwap; }
 };
 
 class ProcessCollector {
@@ -33,6 +34,8 @@ class ProcessCollector {
 	 *  @return true on success. */
 	virtual bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) = 0;
 
+	virtual bool supportsProgramsOnly() const { return false; }
+
 	/** Returns the collector for the running OS, or nullptr when the platform is unsupported. */
 	static std::unique_ptr<ProcessCollector> create();
 
@@ -41,10 +44,10 @@ class ProcessCollector {
 };
 
 /** Sends a process signal (e.g. SIGTERM 15, SIGKILL 9) to @p pid. Returns true on success. */
-bool sendProcessSignal( long pid, int signal );
+bool sendProcessSignal( Int64 pid, int signal );
 
 /** Sends SIGKILL to @p pid. Returns true on success. */
-bool killProcess( long pid );
+bool killProcess( Int64 pid );
 
 } // namespace eproc
 

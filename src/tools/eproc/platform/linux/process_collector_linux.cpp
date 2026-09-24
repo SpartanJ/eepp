@@ -341,9 +341,13 @@ void ProcessCollectorLinux::readProcessStatus( ProcessInfo& proc, const char* co
 			if ( rss > 0 )
 				proc.vmRSS = rss;
 		} else if ( String::startsWith( line, "RssFile:" ) ) {
+			if ( !proc.hasSharedInfo )
+				proc.sharedMem = 0;
 			proc.sharedMem += parseLabeledLong( line );
 			proc.hasSharedInfo = true;
 		} else if ( String::startsWith( line, "RssShmem:" ) ) {
+			if ( !proc.hasSharedInfo )
+				proc.sharedMem = 0;
 			proc.sharedMem += parseLabeledLong( line );
 			proc.hasSharedInfo = true;
 		} else if ( String::startsWith( line, "Name:" ) ) {
@@ -454,6 +458,12 @@ void ProcessCollectorLinux::resolveUser( ProcessInfo& proc ) {
 	proc.username = real.name;
 	proc.canLogin = real.canLogin;
 	proc.euidCanLogin = proc.euid == proc.uid ? real.canLogin : mUserCache.at( proc.euid ).canLogin;
+	const Int64 own = static_cast<Int64>( getuid() );
+	proc.ownedByCurrentUser =
+		proc.uid == own || proc.euid == own || proc.suid == own || proc.fsuid == own;
+	proc.systemProcess = proc.uid < 100 || !proc.canLogin;
+	proc.userProcess =
+		( proc.uid >= 100 && proc.canLogin ) || ( proc.euid >= 100 && proc.euidCanLogin );
 }
 
 const ProcessCollectorLinux::UserInfo& ProcessCollectorLinux::userInfo( long uid ) {
@@ -566,7 +576,7 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 		// ksysguard's Memory column is the process's private memory: resident memory minus the
 		// pages it shares with other processes. Only derived when the kernel reported the shared
 		// breakdown; otherwise vmURSS stays -1 and the display falls back to RSS.
-		if ( proc.hasSharedInfo )
+		if ( proc.hasSharedInfo && proc.vmRSS >= 0 )
 			proc.vmURSS = proc.vmRSS - proc.sharedMem;
 
 		// CPU usage delta against the previous pass for this PID. Entries are updated in place and

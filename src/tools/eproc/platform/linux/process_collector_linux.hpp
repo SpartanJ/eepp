@@ -16,6 +16,8 @@ class ProcessCollectorLinux : public ProcessCollector {
 
 	bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) override;
 
+	bool supportsProgramsOnly() const override { return true; }
+
   private:
 	// Cached per-uid identity, since passwd lookups can hit NSS.
 	struct UserInfo {

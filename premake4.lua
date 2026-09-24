@@ -1990,6 +1990,10 @@ solution "eepp"
 			}
 			-- Per-process network capture loads libpcap at runtime when it is available.
 		end
+		if os.is("windows") then
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
+			links { "psapi", "advapi32" }
+		end
 		build_link_configuration( "eproc", true )
 
 	-- Tests

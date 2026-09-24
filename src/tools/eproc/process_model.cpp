@@ -9,9 +9,6 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <fstream>
 #include <string_view>
-#if EE_PLATFORM != EE_PLATFORM_WIN
-#include <unistd.h>
-#endif
 
 namespace eproc {
 
@@ -217,7 +214,7 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		case ColThreads:
 			return Variant( String::toString( static_cast<Int64>( proc->numThreads ) ) );
 		case ColMemoryPercent:
-			return mSystemInfo.totalMemory > 0
+			return mSystemInfo.totalMemory > 0 && proc->getMemoryForSort() >= 0
 					   ? Variant( String::format( "%.1f%%", proc->getMemoryForSort() * 100.0 /
 																mSystemInfo.totalMemory ) )
 					   : Variant( EMPTY );
@@ -266,7 +263,7 @@ void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes,
 	// Keep processes that disappeared from the latest snapshot for one more update. This mirrors
 	// ksysguard's Ended state and is especially useful when a process exits between two refreshes:
 	// its last known row remains visible, but is marked as ended by the view.
-	UnorderedMap<long, long long> currentStartTimes;
+	UnorderedMap<Int64, Int64> currentStartTimes;
 	currentStartTimes.reserve( processes.size() );
 	for ( const auto& process : processes )
 		currentStartTimes[process.pid] = process.startTime;
@@ -361,7 +358,8 @@ bool ProcessModel::matchesText( const ProcessInfo& proc ) const {
 	// The original lets the user search by PID too. The digits are formatted into a stack buffer
 	// because this runs for every process on every pass while a filter is active.
 	char pidBuffer[24];
-	int pidLength = snprintf( pidBuffer, sizeof( pidBuffer ), "%ld", proc.pid );
+	int pidLength =
+		snprintf( pidBuffer, sizeof( pidBuffer ), "%lld", static_cast<long long>( proc.pid ) );
 	size_t pidSize = pidLength > 0 ? static_cast<size_t>( pidLength ) : 0;
 
 	if ( mTextRegex ) {
@@ -385,23 +383,13 @@ bool ProcessModel::accepts( const ProcessInfo& proc ) const {
 			return true;
 
 		case SystemProcesses:
-			// System accounts are those below uid 100, or accounts that cannot log in.
-			return proc.uid < 100 || !proc.canLogin;
+			return proc.systemProcess;
 
 		case UserProcesses:
-			// Keep a process when either its real or effective id belongs to a login-capable
-			// account, mirroring the original's paired check.
-			return ( proc.uid >= 100 && proc.canLogin ) ||
-				   ( proc.euid >= 100 && proc.euidCanLogin );
+			return proc.userProcess;
 
-		case OwnProcesses: {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-			const long own = -1;
-#else
-			const long own = static_cast<long>( getuid() );
-#endif
-			return proc.uid == own || proc.euid == own || proc.suid == own || proc.fsuid == own;
-		}
+		case OwnProcesses:
+			return proc.ownedByCurrentUser;
 
 		case ProgramsOnly:
 			// A controlling terminal also belongs to shells and short-lived commands. Keep only
@@ -418,7 +406,7 @@ void ProcessModel::applyFilters() {
 	mFilteredProcesses.reserve( mProcesses.size() );
 	mTextMatchedPids.clear();
 	if ( mFilterMode == AllProcessesInTreeForm && ( mTextRegex || !mTextLiteral.empty() ) ) {
-		UnorderedMap<long, ProcessInfo*> byPid;
+		UnorderedMap<Int64, ProcessInfo*> byPid;
 		byPid.reserve( mProcesses.size() );
 		for ( auto& process : mProcesses )
 			byPid.emplace( process.pid, &process );
@@ -451,7 +439,7 @@ void ProcessModel::applyFilters() {
 	}
 }
 
-void ProcessModel::setGuiWindowPids( UnorderedSet<long>&& pids ) {
+void ProcessModel::setGuiWindowPids( UnorderedSet<Int64>&& pids ) {
 	mGuiPids = std::move( pids );
 }
 
@@ -554,7 +542,7 @@ const ProcessInfo* ProcessModel::getProcessByRow( int row ) const {
 	return mFilteredProcesses[row];
 }
 
-int ProcessModel::rowForPid( long pid ) const {
+int ProcessModel::rowForPid( Int64 pid ) const {
 	for ( size_t i = 0; i < mFilteredProcesses.size(); ++i ) {
 		if ( mFilteredProcesses[i]->pid == pid )
 			return static_cast<int>( i );
@@ -670,7 +658,7 @@ Variant ProcessTreeModel::data( const ModelIndex& index, ModelRole role ) const 
 	return mSource->data( mSource->index( node.sourceRow, index.column() ), role );
 }
 
-ModelIndex ProcessTreeModel::indexForPid( long pid, int column ) const {
+ModelIndex ProcessTreeModel::indexForPid( Int64 pid, int column ) const {
 	auto found = mNodeForPid.find( pid );
 	if ( found == mNodeForPid.end() || column < 0 ||
 		 static_cast<size_t>( column ) >= columnCount() )

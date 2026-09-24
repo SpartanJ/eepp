@@ -19,7 +19,7 @@ static std::string formatScaledIEC( double amount, const char* const* units, siz
 	return buf;
 }
 
-std::string formatBytesPerSecond( long bytes ) {
+std::string formatBytesPerSecond( Int64 bytes ) {
 	if ( bytes <= 0 )
 		return {};
 
@@ -29,7 +29,7 @@ std::string formatBytesPerSecond( long bytes ) {
 	return formatScaledIEC( static_cast<double>( bytes ) / 1024.0, units, 4 );
 }
 
-std::string formatBytes( long long bytes ) {
+std::string formatBytes( Int64 bytes ) {
 	if ( bytes < 0 )
 		return {};
 
@@ -43,7 +43,7 @@ std::string formatBytes( long long bytes ) {
 // Mirrors ksysguard6's ProcessModel::formatByteSize(): the unit is picked with a 0.9 hysteresis
 // threshold so a value never reads as "1.0" of a unit it barely exceeds, kilobytes stay integral,
 // and larger units keep one decimal. That is what produces "0 K", "853.8 M" and "4.2 G".
-std::string formatKiB( long kib ) {
+std::string formatKiB( Int64 kib ) {
 	if ( kib < 0 )
 		return {};
 
@@ -70,7 +70,7 @@ std::string formatKiB( long kib ) {
 
 // IEC form used by the status bar: "3.2 MiB", "62.7 GiB". Kilobyte amounts stay integral,
 // matching how the original renders small memory totals.
-std::string formatKiBIEC( long kib ) {
+std::string formatKiBIEC( Int64 kib ) {
 	if ( kib < 0 )
 		return {};
 
@@ -116,8 +116,8 @@ std::string ProcessInfo::formatUpload() const {
 	return formatBytesPerSecond( netUpload );
 }
 
-std::string ProcessInfo::formatCpuTime( long ticksPerSecond ) const {
-	const long long totalTicks = static_cast<long long>( userTime ) + sysTime;
+std::string ProcessInfo::formatCpuTime( Int64 ticksPerSecond ) const {
+	const Int64 totalTicks = userTime + sysTime;
 	if ( totalTicks < 0 || ticksPerSecond <= 0 )
 		return {};
 
@@ -128,7 +128,7 @@ std::string ProcessInfo::formatCpuTime( long ticksPerSecond ) const {
 }
 
 std::string ProcessInfo::formatRelativeStartTime( double uptimeSeconds,
-												  long ticksPerSecond ) const {
+												  Int64 ticksPerSecond ) const {
 	if ( startTime <= 0 || uptimeSeconds < 0 || ticksPerSecond <= 0 )
 		return {};
 

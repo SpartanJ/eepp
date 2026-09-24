@@ -6,16 +6,14 @@
 #include <eepp/ui/uimenuitem.hpp>
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
 #include <string_view>
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	EE_PLATFORM == EE_PLATFORM_BSD
-#include <unistd.h>
-#endif
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 #include <signal.h>
+#include <unistd.h>
 #endif
 
 namespace eproc {
@@ -23,6 +21,22 @@ namespace eproc {
 namespace {
 
 constexpr int kProcessTableStateVersion = 4;
+constexpr int kForceKillSignal = 9; // SIGKILL on Linux; TerminateProcess on Windows.
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+constexpr int kEndProcessSignal = SIGTERM;
+#else
+constexpr int kEndProcessSignal = kForceKillSignal;
+#endif
+
+String endProcessLabel( UISceneNode* ui, size_t count ) {
+	return count == 1 ? ui->i18n( "eproc_end_process", "End Process" )
+					  : ui->i18n( "eproc_end_processes", "End Processes" );
+}
+
+String forceKillLabel( UISceneNode* ui, size_t count ) {
+	return count == 1 ? ui->i18n( "eproc_forcibly_kill_process", "Forcibly Kill Process" )
+					  : ui->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" );
+}
 constexpr int kPreviousProcessTableStateVersion = 3;
 constexpr int kLegacyProcessTableStateVersion = 2;
 constexpr size_t kPreviousProcessColumnCount = 20;
@@ -40,6 +54,33 @@ constexpr std::array<size_t, 10> kOptionalProcessColumns = { {
 	ProcessModel::ColThreads,
 	ProcessModel::ColMemoryPercent,
 } };
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
+	ProcessModel::ColSharedMem,
+	ProcessModel::ColGpuUsage,
+	ProcessModel::ColGpuMemory,
+	ProcessModel::ColDownload,
+	ProcessModel::ColUpload,
+	ProcessModel::ColVirtualSize,
+	ProcessModel::ColNiceness,
+	ProcessModel::ColTty,
+} };
+#else
+constexpr std::array<size_t, 0> kUnavailableProcessColumns{};
+#endif
+
+bool isProcessColumnSupported( size_t column ) {
+	return std::find( kUnavailableProcessColumns.begin(), kUnavailableProcessColumns.end(),
+					  column ) == kUnavailableProcessColumns.end();
+}
+
+void hideUnsupportedProcessColumns( UIAbstractTableView& view ) {
+	if ( !kUnavailableProcessColumns.empty() )
+		view.setColumnsHidden( std::vector<size_t>( kUnavailableProcessColumns.begin(),
+													kUnavailableProcessColumns.end() ),
+							   true );
+}
 
 const char* sortOrderName( SortOrder order ) {
 	switch ( order ) {
@@ -160,21 +201,16 @@ bool migrateProcessTableState( nlohmann::json& state ) {
 	return true;
 }
 
-bool isCurrentUser( const ProcessInfo& process ) {
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	EE_PLATFORM == EE_PLATFORM_BSD
-	return process.uid == static_cast<long>( getuid() );
-#else
-	return false;
-#endif
-}
-
 const char* usernameClass( const ProcessInfo& process ) {
 	if ( process.status == ProcessStatus::Ended )
 		return "eproc-process-username-ended";
 	if ( process.tracerPid > 0 )
 		return "eproc-process-username-traced";
-	if ( isCurrentUser( process ) )
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( process.uid == static_cast<Int64>( getuid() ) )
+#else
+	if ( process.ownedByCurrentUser )
+#endif
 		return "eproc-process-username-own";
 	if ( process.uid < 100 || !process.canLogin )
 		return "eproc-process-username-system";
@@ -457,16 +493,17 @@ bool App::init() {
 	setupUI();
 	setupProcessTable();
 
-#if EE_PLATFORM != EE_PLATFORM_LINUX && EE_PLATFORM != EE_PLATFORM_BSD
-	UIMessageBox* platformMessage = UIMessageBox::New(
-		UIMessageBox::OK,
-		ui->i18n( "eproc_platform_wip_message",
-				  "eproc is currently a work in progress. This operating system is not implemented "
-				  "yet." ) );
-	platformMessage->setTitle( ui->i18n( "eproc_platform_wip_title", "Work in Progress" ) );
-	platformMessage->center();
-	platformMessage->showWhenReady();
-#endif
+	if ( !mCollector ) {
+		UIMessageBox* platformMessage = UIMessageBox::New(
+			UIMessageBox::OK,
+			ui->i18n(
+				"eproc_platform_wip_message",
+				"eproc is currently a work in progress. This operating system is not implemented "
+				"yet." ) );
+		platformMessage->setTitle( ui->i18n( "eproc_platform_wip_title", "Work in Progress" ) );
+		platformMessage->center();
+		platformMessage->showWhenReady();
+	}
 
 	// The first snapshot was requested before the window existed, so it is normally ready by now.
 	// Publishing it here (before the loop, so nothing is being drawn yet) means the very first
@@ -546,13 +583,14 @@ static void restoreProcessColumns( UIAbstractTableView& view, const nlohmann::js
 		std::vector<size_t> visible;
 		visible.reserve( columnCount );
 		for ( size_t column = 0; column < columnCount; ++column ) {
-			if ( !hidden[column] )
+			if ( !hidden[column] && isProcessColumnSupported( column ) )
 				visible.push_back( column );
 		}
 		// Always leave one column visible, even if a malformed state hides everything.
 		if ( !visible.empty() )
 			view.setColumnsVisible( visible );
 	}
+	hideUnsupportedProcessColumns( view );
 
 	if ( state.contains( "widths" ) &&
 		 isValidProcessTableWidthState( state["widths"], columnCount, view ) ) {
@@ -627,6 +665,7 @@ void App::restoreProcessTableState() {
 										  : "none";
 		SortOrder order = SortOrder::None;
 		if ( column >= 0 && static_cast<size_t>( column ) < columnCount &&
+			 isProcessColumnSupported( static_cast<size_t>( column ) ) &&
 			 parseSortOrder( orderName, order ) && order != SortOrder::None &&
 			 mSortProxy->isColumnSortable( column ) )
 			mTableView->sortByColumn( static_cast<size_t>( column ), order );
@@ -656,7 +695,7 @@ void App::setupUI() {
 	auto* ui = mApp->getUI();
 	mRoot->find<UITab>( "tab_process_table" )
 		->setText( ui->i18n( "eproc_process_table_tab", "Process Table" ) );
-	mEndProcessBtn->setText( ui->i18n( "eproc_end_processes", "End Processes" ) );
+	mEndProcessBtn->setText( endProcessLabel( ui, 0 ) );
 	mSearchInput->setHint( ui->i18n( "eproc_quick_search_hint", "Quick search" ) );
 	mStatusText->setText( ui->i18n( "eproc_process_count", "0 processes" ) );
 	mCpuText->setText( ui->i18n( "eproc_cpu_status", "CPU: 0%" ) );
@@ -675,8 +714,12 @@ void App::setupUI() {
 		{ "eproc_filter_programs_only", "Programs Only" },
 	};
 	auto* filterListBox = mFilterDropdown->getListBox();
-	for ( const auto& filter : filters )
-		filterListBox->addListBoxItem( ui->i18n( filter.first, filter.second ) );
+	for ( size_t i = 0; i < std::size( filters ); ++i ) {
+		if ( i == ProcessModel::ProgramsOnly &&
+			 ( !mCollector || !mCollector->supportsProgramsOnly() ) )
+			continue;
+		filterListBox->addListBoxItem( ui->i18n( filters[i].first, filters[i].second ) );
+	}
 	filterListBox->setSelected( 0 );
 
 	// Connect events
@@ -717,6 +760,7 @@ void App::setupProcessTable() {
 		view->setColumnsHidden(
 			std::vector<size_t>( kOptionalProcessColumns.begin(), kOptionalProcessColumns.end() ),
 			true );
+		hideUnsupportedProcessColumns( *view );
 		view->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
 			if ( !cell )
 				return;
@@ -745,6 +789,14 @@ void App::setupProcessTable() {
 			setCellClassEnabled( *cell, kCpuFillClasses[fillIndex], true );
 		} );
 		view->setOnHeaderContextMenuCb( [this]( UIPopUpMenu* menu, size_t column ) {
+			for ( Uint32 i = 0; i < menu->getCount(); ) {
+				const UIWidget* item = menu->getItem( i );
+				if ( item->getId() == "show-column" &&
+					 !isProcessColumnSupported( static_cast<size_t>( item->getData() ) ) )
+					menu->remove( i );
+				else
+					++i;
+			}
 			if ( column != ProcessModel::ColCpu )
 				return;
 			menu->addSeparator();
@@ -755,7 +807,7 @@ void App::setupProcessTable() {
 			menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 				if ( event->getNode()->getId() != "divide-cpu-usage" )
 					return;
-				std::vector<long> selected = selectedPids();
+				std::vector<Int64> selected = selectedPids();
 				captureTreeExpansion();
 				if ( mTreeView )
 					mTreeView->clearViewMetadata();
@@ -783,6 +835,9 @@ void App::setupProcessTable() {
 	// instead of the kernel threads that /proc happens to enumerate first. Sorting through the
 	// view (not the model directly) also renders the sort indicator in the header.
 	mTableView->sortByColumn( ProcessModel::ColMemory, SortOrder::Descending );
+	if ( mConfig->filterMode == ProcessModel::ProgramsOnly &&
+		 ( !mCollector || !mCollector->supportsProgramsOnly() ) )
+		mConfig->filterMode = ProcessModel::AllProcesses;
 	if ( mConfig->filterMode > ProcessModel::AllProcesses &&
 		 mConfig->filterMode < ProcessModel::FilterModeCount ) {
 		mFilterDropdown->getListBox()->setSelected( mConfig->filterMode );
@@ -884,9 +939,10 @@ void App::publishStagedSnapshot() {
 
 	// Window ownership is needed by the Programs Only filter, so it is refreshed on the UI thread
 	// once per published snapshot rather than per tick.
-	if ( mProcessModel ) {
+	if ( mProcessModel && mCollector && mCollector->supportsProgramsOnly() ) {
 		mGuiWindows.refresh();
-		mProcessModel->setGuiWindowPids( UnorderedSet<long>( mGuiWindows.windowPids() ) );
+		mProcessModel->setGuiWindowPids( UnorderedSet<Int64>( mGuiWindows.windowPids().begin(),
+															  mGuiWindows.windowPids().end() ) );
 		for ( auto& process : processes ) {
 			if ( process.iconPath.empty() && mGuiWindows.hasWindowForPid( process.pid ) )
 				process.windowIcon = mGuiWindows.iconForPid( process.pid );
@@ -896,7 +952,7 @@ void App::publishStagedSnapshot() {
 	// A full model reset clears the view's selection (SortingProxyModel drops it on every
 	// invalidation), so selected processes are remembered by PID and re-selected afterwards. PIDs
 	// are stable across snapshots while row indexes are not: the table re-sorts on every update.
-	std::vector<long> selected = selectedPids();
+	std::vector<Int64> selected = selectedPids();
 	captureTreeExpansion();
 	if ( mTreeView )
 		mTreeView->clearViewMetadata();
@@ -943,7 +999,7 @@ void App::restoreTreeExpansion() {
 		return;
 	std::vector<ModelIndex> indexes;
 	if ( mTreeSearchActive ) {
-		for ( long pid : mProcessModel->textMatchedPids() ) {
+		for ( Int64 pid : mProcessModel->textMatchedPids() ) {
 			ModelIndex parent = mTreeModel->indexForPid( pid ).parent();
 			while ( parent.isValid() ) {
 				indexes.push_back( parent );
@@ -961,7 +1017,7 @@ void App::restoreTreeExpansion() {
 		mTreeExpansionInitialized = !indexes.empty();
 	} else {
 		indexes.reserve( mExpandedTreePids.size() );
-		for ( long pid : mExpandedTreePids ) {
+		for ( Int64 pid : mExpandedTreePids ) {
 			ModelIndex index = mTreeModel->indexForPid( pid );
 			if ( index.isValid() )
 				indexes.push_back( index );
@@ -971,14 +1027,14 @@ void App::restoreTreeExpansion() {
 		mTreeView->setExpanded( indexes, true );
 }
 
-void App::restoreSelection( const std::vector<long>& pids ) {
+void App::restoreSelection( const std::vector<Int64>& pids ) {
 	UIAbstractTableView* view = activeProcessView();
 	if ( pids.empty() || !view || !mProcessModel )
 		return;
 
 	std::vector<ModelIndex> indexes;
 	indexes.reserve( pids.size() );
-	for ( long pid : pids ) {
+	for ( Int64 pid : pids ) {
 		ModelIndex index;
 		if ( mTreeMode ) {
 			index = mTreeModel->indexForPid( pid );
@@ -1026,15 +1082,14 @@ void App::updateStatusBar() {
 }
 
 void App::onEndProcess() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	requestSignal( selectedPids(), SIGTERM,
-				   mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ).toUtf8(), true );
-#endif
+	std::vector<Int64> pids = selectedPids();
+	const std::string label = endProcessLabel( mApp->getUI(), pids.size() ).toUtf8();
+	requestSignal( std::move( pids ), kEndProcessSignal, label, true );
 }
 
 void App::onSearchChanged() {
 	if ( mSearchInput && mProcessModel ) {
-		std::vector<long> selected = selectedPids();
+		std::vector<Int64> selected = selectedPids();
 		captureTreeExpansion();
 		if ( mTreeView )
 			mTreeView->clearViewMetadata();
@@ -1052,7 +1107,7 @@ void App::onFilterChanged() {
 		Uint32 selected = mFilterDropdown->getListBox()->getItemSelectedIndex();
 		if ( selected >= ProcessModel::FilterModeCount )
 			return;
-		std::vector<long> selectedPidsBeforeSwitch = selectedPids();
+		std::vector<Int64> selectedPidsBeforeSwitch = selectedPids();
 		captureTreeExpansion();
 		if ( mTreeView )
 			mTreeView->clearViewMetadata();
@@ -1071,14 +1126,16 @@ void App::onSelectionChange() {
 	UIAbstractTableView* view = activeProcessView();
 	if ( mEndProcessBtn && view ) {
 		bool hasProcess = false;
+		size_t processCount = 0;
 		for ( const auto& index : view->getSelection().indexes() ) {
 			const ProcessInfo* proc = processForIndex( index );
 			if ( proc && proc->status != ProcessStatus::Ended ) {
 				hasProcess = true;
-				break;
+				++processCount;
 			}
 		}
 		mEndProcessBtn->setEnabled( hasProcess );
+		mEndProcessBtn->setText( endProcessLabel( mApp->getUI(), processCount ) );
 	}
 }
 
@@ -1092,8 +1149,8 @@ const ProcessInfo* App::processForIndex( const ModelIndex& index ) const {
 	return nullptr;
 }
 
-std::vector<long> App::selectedPids() const {
-	std::vector<long> pids;
+std::vector<Int64> App::selectedPids() const {
+	std::vector<Int64> pids;
 
 	UIAbstractTableView* view = activeProcessView();
 	if ( !mProcessModel || !view )
@@ -1110,7 +1167,7 @@ std::vector<long> App::selectedPids() const {
 	return pids;
 }
 
-void App::selectProcess( long pid ) {
+void App::selectProcess( Int64 pid ) {
 	UIAbstractTableView* view = activeProcessView();
 	if ( pid <= 0 || !mProcessModel || !view )
 		return;
@@ -1138,15 +1195,15 @@ void App::selectProcess( long pid ) {
 	}
 }
 
-void App::requestSignal( std::vector<long> pids, int signal, const std::string& actionLabel,
+void App::requestSignal( std::vector<Int64> pids, int signal, const std::string& actionLabel,
 						 bool confirm ) {
 	if ( pids.empty() )
 		return;
 
 	const size_t processCount = pids.size();
-	const long firstPid = pids.front();
+	const Int64 firstPid = pids.front();
 	auto send = [pids = std::move( pids ), signal]() {
-		for ( long pid : pids )
+		for ( Int64 pid : pids )
 			sendProcessSignal( pid, signal );
 	};
 
@@ -1157,8 +1214,9 @@ void App::requestSignal( std::vector<long> pids, int signal, const std::string& 
 
 	const std::string target =
 		processCount == 1
-			? String::format( mApp->getUI()->i18n( "eproc_process_target", "process %ld" ).toUtf8(),
-							  firstPid )
+			? String::format(
+				  mApp->getUI()->i18n( "eproc_process_target", "process %lld" ).toUtf8(),
+				  static_cast<long long>( firstPid ) )
 			: String::format(
 				  mApp->getUI()->i18n( "eproc_processes_target", "%zu processes" ).toUtf8(),
 				  processCount );
@@ -1193,14 +1251,14 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 			view->setSelection( proxyIndex, false );
 	}
 
-	const std::vector<long> pids = selectedPids();
+	const std::vector<Int64> pids = selectedPids();
 	if ( pids.empty() )
 		return;
 
 	const bool singleProcess = view->getSelection().size() == 1;
 	const ProcessInfo* proc = singleProcess ? processForIndex( proxyIndex ) : nullptr;
-	const long parentPid = proc ? proc->parentPid : 0;
-	const long tracerPid = proc ? proc->tracerPid : 0;
+	const Int64 parentPid = proc ? proc->parentPid : 0;
+	const Int64 tracerPid = proc ? proc->tracerPid : 0;
 	std::string copyCommandLine = proc ? proc->commandLine : std::string();
 
 	struct SignalItem {
@@ -1226,16 +1284,17 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 	static const std::array<SignalItem, 0> signalItems{};
 #endif
 
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->setId( "process_context_menu" );
+#if EE_PLATFORM == EE_PLATFORM_LINUX
 	UIPopUpMenu* signalMenu = UIPopUpMenu::New();
 	signalMenu->setId( "process_signal_menu" );
 	for ( const auto& item : signalItems )
 		signalMenu->add( mApp->getUI()->i18n( item.key, item.label ) )->setId( item.id );
-
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->setId( "process_context_menu" );
 	menu->addSubMenu( mApp->getUI()->i18n( "eproc_send_signal", "Send Signal" ), nullptr,
 					  signalMenu )
 		->setId( "send-signal" );
+#endif
 	if ( singleProcess && proc ) {
 		menu->add( mApp->getUI()->i18n( "eproc_jump_to_parent", "Jump to Parent Process" ) )
 			->setId( "jump-parent" );
@@ -1248,12 +1307,10 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 			->setId( "copy-command-line" );
 	}
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
 	menu->addSeparator();
-	menu->add( mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ) )
-		->setId( "end-process" );
-	menu->add( mApp->getUI()->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" ) )
-		->setId( "kill-process" );
+	menu->add( endProcessLabel( mApp->getUI(), pids.size() ) )->setId( "end-process" );
+	menu->add( forceKillLabel( mApp->getUI(), pids.size() ) )->setId( "kill-process" );
 #endif
 
 	menu->on( Event::OnItemClicked, [this, pids, parentPid, tracerPid,
@@ -1272,18 +1329,12 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 		} else if ( id == "copy-command-line" ) {
 			if ( !copyCommandLine.empty() && mApp->getWindow()->getClipboard() )
 				mApp->getWindow()->getClipboard()->setText( copyCommandLine );
-#if EE_PLATFORM == EE_PLATFORM_LINUX
 		} else if ( id == "end-process" ) {
-			requestSignal( pids, SIGTERM,
-						   mApp->getUI()->i18n( "eproc_end_processes", "End Processes" ).toUtf8(),
-						   true );
+			requestSignal( pids, kEndProcessSignal,
+						   endProcessLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
 		} else if ( id == "kill-process" ) {
-			requestSignal( pids, SIGKILL,
-						   mApp->getUI()
-							   ->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" )
-							   .toUtf8(),
-						   true );
-#endif
+			requestSignal( pids, kForceKillSignal,
+						   forceKillLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
 		} else {
 			// Signals picked explicitly from the submenu are sent straight away: the original
 			// only asks for confirmation on End Process and Forcibly Kill.

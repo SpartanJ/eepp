@@ -81,7 +81,7 @@ class App {
 	void publishStagedSnapshot();
 
 	/** Re-selects surviving processes after a snapshot, when row indexes may have changed. */
-	void restoreSelection( const std::vector<long>& pids );
+	void restoreSelection( const std::vector<Int64>& pids );
 
 	UIAbstractTableView* activeProcessView() const;
 
@@ -99,17 +99,17 @@ class App {
 	void showProcessContextMenu( const ModelIndex& proxyIndex );
 
 	/** PIDs of the currently selected rows. */
-	std::vector<long> selectedPids() const;
+	std::vector<Int64> selectedPids() const;
 
 	/** Maps a proxy index to the process behind it, or nullptr. */
 	const ProcessInfo* processForIndex( const ModelIndex& index ) const;
 
 	/** Sends @p signal to every pid in @p pids, asking for confirmation first when @p confirm. */
-	void requestSignal( std::vector<long> pids, int signal, const std::string& actionLabel,
+	void requestSignal( std::vector<Int64> pids, int signal, const std::string& actionLabel,
 						bool confirm );
 
 	/** Selects the row holding @p pid and scrolls it into view. */
-	void selectProcess( long pid );
+	void selectProcess( Int64 pid );
 
 	std::unique_ptr<AppConfig> mConfig;
 	std::optional<Float> mPixelDensity;
@@ -131,7 +131,7 @@ class App {
 	std::shared_ptr<ProcessModel> mProcessModel;
 	std::shared_ptr<ProcessTreeModel> mTreeModel;
 	std::shared_ptr<SortingProxyModel> mSortProxy;
-	std::vector<long> mExpandedTreePids;
+	std::vector<Int64> mExpandedTreePids;
 	bool mTreeMode{ false };
 	bool mTreeExpansionInitialized{ false };
 	bool mTreeSearchActive{ false };

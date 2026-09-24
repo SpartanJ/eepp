@@ -2010,6 +2010,9 @@ workspace "eepp"
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
 			-- Per-process network capture loads libpcap at runtime when it is available.
+		filter "system:windows"
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
+			links { "psapi", "advapi32" }
 		filter {}
 		build_link_configuration( "eproc", true )
 
