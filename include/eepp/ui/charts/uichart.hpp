@@ -17,21 +17,25 @@ namespace EE { namespace UI { namespace Charts {
 
 using namespace EE::Graphics;
 
+/** Original sample selected by hover, before pixel-bucket reduction. */
 struct PointTooltipContext {
 	size_t index{ 0 };
 	double x{ 0.0 };
 	double y{ 0.0 };
 };
 
+/** Plain hover text. */
 struct TooltipText {
 	String text;
 };
 
+/** One name/value row in a structured hover tooltip. */
 struct TooltipField {
 	String label;
 	String value;
 };
 
+/** Structured hover tooltip with an optional title and description. */
 struct TooltipData {
 	String title;
 	SmallVector<TooltipField, 4> fields;
@@ -39,15 +43,43 @@ struct TooltipData {
 };
 
 using TooltipPayload = std::variant<TooltipText, TooltipData>;
+/** Return no value to use the default series/value tooltip. Called on hover, not during draw. */
 using PointTooltipProvider =
 	std::function<std::optional<TooltipPayload>( const PointTooltipContext& )>;
 
+/** Stroke corner treatment. Miter is bounded by LineSeries::miterLimit(). */
 enum class LineJoin : Uint8 { Miter, Bevel };
+
+/** Treatment of the first and last point in each continuous run. */
 enum class LineCap : Uint8 { Butt, Square };
 
-/** Chart measurements are in device-independent pixels. Colors left unset follow the UI theme. */
+/** Per-series connection method. MonotoneCubic avoids overshoot between ordered X samples. */
+enum class LineInterpolation : Uint8 { Linear, MonotoneCubic };
+
+/** Position along an X tick label that meets the tick after rotation. */
+enum class ChartTickLabelAnchor : Uint8 { Start, Center, End };
+
+/** AxisTicks and DataInterval follow the axis; ScreenInterval stays fixed in the plot. */
+enum class ChartGridMode : Uint8 { Disabled, AxisTicks, DataInterval, ScreenInterval };
+
+/** One grid direction. AxisTicks chooses nice data values near the requested dp spacing. */
+struct ChartGridStyle {
+	ChartGridMode mode{ ChartGridMode::Disabled };
+	double spacing{ 80.0 };			  //!< Target dp for ticks, axis units for data, dp for screen.
+	double offset{ 0.0 };			  //!< Data origin, or dp from the plot's left/top edge.
+	Float width{ 1.f };				  //!< Stroke width in dp.
+	std::optional<Color> color;		  //!< Unset follows the theme's axis color at reduced opacity.
+	const ChartAxis* axis{ nullptr }; //!< Non-owning; null selects the primary axis. A set axis
+									  //!< must belong to the model.
+};
+
+/**
+ * View appearance. Linear measurements use device-independent pixels (dp), including grid spacing
+ * in screen mode. Tick spacing is a target: the axis chooses readable intervals near that distance.
+ * Colors left unset follow the UI theme. The style does not own its optional font or grid axes.
+ */
 struct ChartStyle {
-	Font* font{ nullptr }; //!< Null uses the current UI theme font.
+	Font* font{ nullptr }; //!< Non-owning; null uses the current UI theme font.
 	Float fontSize{ 12.f };
 	Float tickLength{ 4.f };
 	Float tickLabelGap{ 6.f };
@@ -63,6 +95,10 @@ struct ChartStyle {
 	Float axisLabelPadding{ 12.f };
 	Float rightAxisLabelPadding{ 16.f };
 	Float xTickSpacing{ 80.f };
+	Float xTickLabelAngle{
+		0.f }; //!< Clockwise degrees, clamped to [-90, 90]; -90 reads bottom-to-top.
+	ChartTickLabelAnchor xTickLabelAnchor{
+		ChartTickLabelAnchor::Center }; //!< Label position attached to the X tick after rotation.
 	Float yTickSpacing{ 50.f };
 	Float hoverDistance{ 10.f };
 	Float axisWidth{ 1.f };
@@ -72,24 +108,33 @@ struct ChartStyle {
 	std::optional<Color> axisLabelColor;
 	std::optional<Color> hoverColor;
 	std::optional<Color> seriesColor;
+	ChartGridStyle verticalGrid{ ChartGridMode::Disabled, 80.0 };
+	ChartGridStyle horizontalGrid{ ChartGridMode::Disabled, 50.0 };
 };
 
+/**
+ * One model-owned line. Its axes are borrowed from the same ChartModel; neither this object nor
+ * a UIChart owns them separately. A series can share its data source with other series.
+ */
 class EE_API LineSeries {
   public:
 	const String& name() const { return mName; }
 
-	ChartAxis* xAxis() const { return mXAxis; }
+	ChartAxis& xAxis() const { return *mXAxis; }
 
-	ChartAxis* yAxis() const { return mYAxis; }
+	ChartAxis& yAxis() const { return *mYAxis; }
 
-	void setXAxis( ChartAxis* axis );
+	/** The axis must belong to this series' model and outlive the series. */
+	void setXAxis( ChartAxis& axis );
 
-	void setYAxis( ChartAxis* axis );
+	/** The axis must belong to this series' model and outlive the series. */
+	void setYAxis( ChartAxis& axis );
 
 	void setVisible( bool visible );
 
 	bool visible() const { return mVisible; }
 
+	/** Overrides the theme's default series color. */
 	void setColor( Color color );
 
 	Color color() const { return mColor; }
@@ -109,22 +154,33 @@ class EE_API LineSeries {
 
 	LineCap cap() const { return mCap; }
 
+	/** Changes line geometry; defaults to Linear. */
+	void setInterpolation( LineInterpolation interpolation );
+
+	LineInterpolation interpolation() const { return mInterpolation; }
+
+	/** Maximum miter extension as a multiple of half the line width. */
 	void setMiterLimit( Float limit );
 
 	Float miterLimit() const { return mMiterLimit; }
 
 	Uint64 geometryRevision() const { return mGeometryRevision; }
 
+	/** Replaces the samples with an owned data source, moving the vector when possible. */
 	void setPoints( std::vector<ChartPoint> points );
 
+	/** Copies paired X/Y samples into an owned data source. */
 	void setPoints( std::span<const double> xs, std::span<const double> ys );
 
+	/** Copies Y samples with generated X values: start + index * step. */
 	void setValues( std::span<const double> ys, double start = 0.0, double step = 1.0 );
 
+	/** Shares ownership of the source; it may be updated independently of the UIChart. */
 	void setDataSource( std::shared_ptr<XYDataSource> source );
 
 	std::shared_ptr<XYDataSource> dataSource() const { return mSource; }
 
+	/** Replaces the optional callback used for hover text. */
 	void setTooltipProvider( PointTooltipProvider provider ) {
 		mTooltipProvider = std::move( provider );
 		changed();
@@ -149,22 +205,31 @@ class EE_API LineSeries {
 	Float mMiterLimit{ 4.f };
 	LineJoin mJoin{ LineJoin::Miter };
 	LineCap mCap{ LineCap::Butt };
+	LineInterpolation mInterpolation{ LineInterpolation::Linear };
 	bool mVisible{ true };
 	Uint64 mGeometryRevision{ 0 };
 };
 
-/** Series and axis semantics, shareable by independent UIChart viewports. */
+/**
+ * Owns all axes and series. Its default X and Y axes always exist. Added objects are never removed,
+ * so references to them remain valid until the model is destroyed. UICharts may share one model
+ * while keeping independent ranges, layout, and hover state.
+ */
 class EE_API ChartModel {
   public:
 	ChartModel();
 
-	ChartAxis* addAxis( AxisPosition position );
+	/** Adds a model-owned axis and returns a borrowed reference. */
+	ChartAxis& addAxis( AxisPosition position );
 
-	LineSeries* addLineSeries( String name );
+	/** Adds a model-owned series and returns a borrowed reference. */
+	LineSeries& addLineSeries( String name );
 
-	ChartAxis* xAxis() const { return mAxes[0].get(); }
+	/** Borrowed reference to the default bottom axis. */
+	ChartAxis& xAxis() const { return *mAxes[0]; }
 
-	ChartAxis* yAxis() const { return mAxes[1].get(); }
+	/** Borrowed reference to the default left axis. */
+	ChartAxis& yAxis() const { return *mAxes[1]; }
 
 	const SmallVector<std::unique_ptr<ChartAxis>, 4>& axes() const { return mAxes; }
 
@@ -181,31 +246,48 @@ class EE_API ChartModel {
 	ObservableValue<Uint64> mRevision{ 0 };
 };
 
+/**
+ * Widget rendering one ChartModel. It owns a shared reference to the model. Views sharing that
+ * model still have independent viewport ranges and styles. As with other UIWidgets, the parent
+ * scene manages widget lifetime after it is attached to the tree.
+ */
 class EE_API UIChart : public UIWidget {
   public:
+	/** Creates a scene-owned widget using eepp's UIWidget construction convention. */
 	static UIChart* New();
 
-	ChartModel* model() const { return mModel.get(); }
+	/** Borrowed model reference; the chart always has a model. */
+	ChartModel& model() const { return *mModel; }
 
+	/** Owning shared handle for keeping the current model alive or sharing it with another chart.
+	 */
 	std::shared_ptr<ChartModel> sharedModel() const { return mModel; }
 
+	/** Replaces this view's model. Null creates a new empty model. Old references can expire. */
 	void setModel( std::shared_ptr<ChartModel> model );
 
-	LineSeries* addLineSeries( String name );
+	/** Returns a borrowed series reference, valid while the current model lives. */
+	LineSeries& addLineSeries( String name );
 
-	ChartAxis* xAxis() const { return mModel->xAxis(); }
+	/** Borrowed reference to the current model's default bottom axis. */
+	ChartAxis& xAxis() const { return mModel->xAxis(); }
 
-	ChartAxis* yAxis() const { return mModel->yAxis(); }
+	/** Borrowed reference to the current model's default left axis. */
+	ChartAxis& yAxis() const { return mModel->yAxis(); }
 
+	/** Fits each axis to visible series data and disables X follow mode. */
 	void fit();
 
-	DataRange axisRange( const ChartAxis* axis );
+	/** Returns this view's range for an axis owned by its current model. */
+	DataRange axisRange( const ChartAxis& axis );
 
-	void setAxisRange( ChartAxis* axis, DataRange range );
+	/** Sets a manual range on this view; axis must belong to its current model. */
+	void setAxisRange( ChartAxis& axis, DataRange range );
 
 	/** Follow the newest X while preserving a fixed data-space span; zero disables follow mode. */
 	void setFollowX( double span );
 
+	/** Replaces view appearance and invalidates cached layout and series geometry. */
 	void setChartStyle( ChartStyle style );
 
 	const ChartStyle& chartStyle() const { return mChartStyle; }
@@ -245,6 +327,7 @@ class EE_API UIChart : public UIWidget {
 		Uint64 viewRevision{ 0 };
 		Uint64 seriesRevision{ 0 };
 		std::vector<ReducedPoint> reduced;
+		std::vector<Vector2f> strokePoints;
 	};
 
 	struct Layout {
@@ -262,7 +345,10 @@ class EE_API UIChart : public UIWidget {
 		SmallVector<String, 8> yLabels;
 		SmallVector<Float, 8> xLabelWidths;
 		SmallVector<Float, 8> yLabelWidths;
+		SmallVector<double, 16> verticalGridTicks;
+		SmallVector<double, 16> horizontalGridTicks;
 		Float xAxisLabelWidth{ 0.f };
+		Float xTickLabelHeight{ 0.f };
 		std::vector<RightAxis> rightAxes;
 		Uint64 revision{ 0 };
 	};
@@ -279,15 +365,19 @@ class EE_API UIChart : public UIWidget {
 
 	void drawAxes();
 
-	void updateHover( Vector2f screenPosition );
+	void drawGrid();
+
+	const ChartAxis& gridAxis( const ChartGridStyle& grid, bool vertical ) const;
+
+	void updateHover( Vector2f screenPosition, bool invalidate = true );
 
 	void hideHoverTooltip();
 
 	void updateThemeColors();
 
-	AxisViewport& viewport( const ChartAxis* axis );
+	AxisViewport& viewport( const ChartAxis& axis );
 
-	const AxisViewport& viewport( const ChartAxis* axis ) const;
+	const AxisViewport& viewport( const ChartAxis& axis ) const;
 
 	std::shared_ptr<ChartModel> mModel;
 	ObservableValue<Uint64>::Connection mModelConnection;

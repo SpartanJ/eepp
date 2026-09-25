@@ -53,31 +53,48 @@ EE_MAIN_FUNC int main( int, char** ) {
 	)xml" );
 
 	auto* waves = layout->find<UIChart>( "waves" );
-	waves->xAxis()->setLabel( "Time (s)" );
-	waves->yAxis()->setLabel( "Amplitude" );
-	auto* sine = waves->addLineSeries( "Sine" );
-	sine->setColor( Color( 83, 179, 255 ) );
-	sine->setWidth( 3.f );
-	sine->setPoints( wave( 500, 0 ) );
-	sine->setTooltipProvider(
+	ChartStyle wavesStyle = waves->chartStyle();
+	wavesStyle.verticalGrid.mode = ChartGridMode::ScreenInterval;
+	wavesStyle.verticalGrid.spacing = 64.0;
+	wavesStyle.horizontalGrid.mode = ChartGridMode::AxisTicks;
+	wavesStyle.xTickLabelAngle = -45.f;
+	wavesStyle.xTickLabelAnchor = ChartTickLabelAnchor::End;
+	waves->setChartStyle( wavesStyle );
+	waves->xAxis().setLabel( "September 2026" );
+	waves->xAxis().setFormatter( []( double value, double ) {
+		return String::format( "2026-09-%02d", 1 + static_cast<int>( std::round( value ) ) );
+	} );
+	waves->yAxis().setLabel( "Amplitude" );
+	auto& sine = waves->addLineSeries( "Sine" );
+	sine.setColor( Color( 83, 179, 255 ) );
+	sine.setWidth( 3.f );
+	sine.setInterpolation( LineInterpolation::MonotoneCubic );
+	sine.setPoints( wave( 500, 0 ) );
+	sine.setTooltipProvider(
 		[]( const PointTooltipContext& point ) -> std::optional<TooltipPayload> {
 			return TooltipText{
-				String::format( "Sine at %.2f s\nAmplitude: %.3f", point.x, point.y ) };
+				String::format( "Sine at day %.2f\nAmplitude: %.3f", point.x, point.y ) };
 		} );
-	auto* cosine = waves->addLineSeries( "Cosine" );
-	cosine->setColor( Color( 255, 177, 77 ) );
-	cosine->setCap( LineCap::Square );
-	cosine->setPoints( wave( 500, 1.5707963267948966 ) );
+	auto& cosine = waves->addLineSeries( "Cosine" );
+	cosine.setColor( Color( 255, 177, 77 ) );
+	cosine.setCap( LineCap::Square );
+	cosine.setPoints( wave( 500, 1.5707963267948966 ) );
 	waves->fit();
 
 	auto* dual = layout->find<UIChart>( "dual" );
-	dual->xAxis()->setLabel( "Minute" );
-	dual->yAxis()->setLabel( "Load (%)" );
-	dual->yAxis()->setFormatter(
+	ChartStyle dualStyle = dual->chartStyle();
+	dualStyle.verticalGrid.mode = ChartGridMode::DataInterval;
+	dualStyle.verticalGrid.spacing = 20.0;
+	dualStyle.horizontalGrid.mode = ChartGridMode::DataInterval;
+	dualStyle.horizontalGrid.spacing = 25.0;
+	dual->setChartStyle( dualStyle );
+	dual->xAxis().setLabel( "Minute" );
+	dual->yAxis().setLabel( "Load (%)" );
+	dual->yAxis().setFormatter(
 		[]( double value, double ) { return String::format( "%.0f%%", value ); } );
-	auto* temperatureAxis = dual->model()->addAxis( AxisPosition::Right );
-	temperatureAxis->setLabel( "Temperature (C)" );
-	temperatureAxis->setFormatter(
+	auto& temperatureAxis = dual->model().addAxis( AxisPosition::Right );
+	temperatureAxis.setLabel( "Temperature (C)" );
+	temperatureAxis.setFormatter(
 		[]( double value, double ) { return String::format( "%.1f C", value ); } );
 	std::vector<ChartPoint> load;
 	std::vector<double> temperatureX;
@@ -92,10 +109,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 		temperatureY.push_back(
 			static_cast<Float>( 37.0 + 0.08 * x + 2.0 * std::sin( x * 0.12 ) ) );
 	}
-	auto* loadSeries = dual->addLineSeries( "Load" );
-	loadSeries->setColor( Color( 129, 211, 142 ) );
-	loadSeries->setPoints( std::move( load ) );
-	loadSeries->setTooltipProvider(
+	auto& loadSeries = dual->addLineSeries( "Load" );
+	loadSeries.setColor( Color( 129, 211, 142 ) );
+	loadSeries.setInterpolation( LineInterpolation::MonotoneCubic );
+	loadSeries.setPoints( std::move( load ) );
+	loadSeries.setTooltipProvider(
 		[]( const PointTooltipContext& point ) -> std::optional<TooltipPayload> {
 			TooltipData data;
 			data.title = "Load sample";
@@ -105,13 +123,13 @@ EE_MAIN_FUNC int main( int, char** ) {
 			data.fields.emplace_back( TooltipField{ "Load", String::format( "%.1f%%", point.y ) } );
 			return data;
 		} );
-	auto* temperatureSeries = dual->addLineSeries( "Temperature" );
-	temperatureSeries->setYAxis( temperatureAxis );
-	temperatureSeries->setColor( Color( 255, 113, 132 ) );
-	temperatureSeries->setDataSource( makeArrayXYDataSource(
+	auto& temperatureSeries = dual->addLineSeries( "Temperature" );
+	temperatureSeries.setYAxis( temperatureAxis );
+	temperatureSeries.setColor( Color( 255, 113, 132 ) );
+	temperatureSeries.setDataSource( makeArrayXYDataSource(
 		std::make_shared<const std::vector<double>>( std::move( temperatureX ) ),
 		std::make_shared<const std::vector<float>>( std::move( temperatureY ) ) ) );
-	temperatureSeries->setTooltipProvider(
+	temperatureSeries.setTooltipProvider(
 		[]( const PointTooltipContext& point ) -> std::optional<TooltipPayload> {
 			TooltipData data;
 			data.title = "Temperature sample";
@@ -127,9 +145,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 	ChartStyle denseStyle = dense->chartStyle();
 	denseStyle.hoverColor = Color( 182, 146, 255, 150 );
 	denseStyle.tickLabelColor = Color( 202, 193, 227 );
+	denseStyle.horizontalGrid.mode = ChartGridMode::AxisTicks;
+	denseStyle.horizontalGrid.color = Color( 125, 105, 160, 72 );
 	dense->setChartStyle( denseStyle );
-	dense->xAxis()->setLabel( "Sample" );
-	dense->yAxis()->setLabel( "Signal" );
+	dense->xAxis().setLabel( "Sample" );
+	dense->yAxis().setLabel( "Signal" );
 	std::vector<ChartPoint> samples;
 	samples.reserve( 250000 );
 	for ( size_t i = 0; i < 250000; ++i ) {
@@ -138,24 +158,29 @@ EE_MAIN_FUNC int main( int, char** ) {
 		samples.push_back(
 			{ x, 0.3 * std::sin( x * 0.004 ) + 0.12 * std::sin( x * 0.059 ) + spike } );
 	}
-	auto* signal = dense->addLineSeries( "Signal" );
-	signal->setColor( Color( 182, 146, 255 ) );
-	signal->setJoin( LineJoin::Bevel );
-	signal->setPoints( std::move( samples ) );
+	auto& signal = dense->addLineSeries( "Signal" );
+	signal.setColor( Color( 182, 146, 255 ) );
+	signal.setJoin( LineJoin::Bevel );
+	signal.setPoints( std::move( samples ) );
 	dense->fit();
 
 	auto* live = layout->find<UIChart>( "live" );
-	live->xAxis()->setLabel( "Sample" );
-	live->yAxis()->setLabel( "Value" );
+	ChartStyle liveStyle = live->chartStyle();
+	liveStyle.verticalGrid.mode = ChartGridMode::DataInterval;
+	liveStyle.verticalGrid.spacing = 50.0;
+	liveStyle.horizontalGrid.mode = ChartGridMode::AxisTicks;
+	live->setChartStyle( liveStyle );
+	live->xAxis().setLabel( "Sample" );
+	live->yAxis().setLabel( "Value" );
 	auto ring = std::make_shared<RingXYDataSource>( 1000 );
 	for ( size_t i = 0; i < 1000; ++i ) {
 		const double x = static_cast<double>( i );
 		ring->append( { x, std::sin( x * 0.03 ) + 0.2 * std::sin( x * 0.17 ) } );
 	}
-	auto* rolling = live->addLineSeries( "Rolling value" );
-	rolling->setColor( Color( 255, 207, 95 ) );
-	rolling->setDataSource( ring );
-	rolling->setTooltipProvider(
+	auto& rolling = live->addLineSeries( "Rolling value" );
+	rolling.setColor( Color( 255, 207, 95 ) );
+	rolling.setDataSource( ring );
+	rolling.setTooltipProvider(
 		[]( const PointTooltipContext& point ) -> std::optional<TooltipPayload> {
 			return TooltipText{
 				String::format( "Live sample %.0f\nValue: %.3f", point.x, point.y ) };
@@ -171,8 +196,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 	};
 	ui->setInterval( [appendSamples] { appendSamples( 1 ); }, Milliseconds( 100 ),
 					 String::hash( "chart-live-ring" ) );
-	ui->on( Event::KeyDown, [appendSamples, waves, dual, dense, live, cosine,
-							 temperatureSeries]( const Event* event ) {
+	ui->on( Event::KeyDown, [appendSamples, waves, dual, dense, live, &cosine,
+							 &temperatureSeries]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_R ) {
 			for ( auto* chart : { waves, dual, dense, live } )
 				chart->fit();
@@ -180,9 +205,9 @@ EE_MAIN_FUNC int main( int, char** ) {
 		} else if ( event->asKeyEvent()->getKeyCode() == KEY_SPACE ) {
 			appendSamples( 40 );
 		} else if ( event->asKeyEvent()->getKeyCode() == KEY_C ) {
-			cosine->setVisible( !cosine->visible() );
+			cosine.setVisible( !cosine.visible() );
 		} else if ( event->asKeyEvent()->getKeyCode() == KEY_T ) {
-			temperatureSeries->setVisible( !temperatureSeries->visible() );
+			temperatureSeries.setVisible( !temperatureSeries.visible() );
 		}
 	} );
 

@@ -9,6 +9,14 @@
 
 namespace EE { namespace UI {
 
+namespace {
+
+bool hasVisibleText( const String& text ) {
+	return !String::trim( text.view(), String::View{ U" \t\n\r\f\v" } ).empty();
+}
+
+} // namespace
+
 UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
 }
@@ -126,6 +134,11 @@ void UITooltip::autoPadding() {
 }
 
 void UITooltip::show() {
+	if ( !hasVisibleText( mTextCache->getString() ) ) {
+		clearActions();
+		setVisible( false );
+		return;
+	}
 	if ( !isVisible() || 0 == mAlpha ) {
 		setVisible( true );
 
@@ -155,7 +168,7 @@ void UITooltip::hide() {
 }
 
 void UITooltip::draw() {
-	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
+	if ( mVisible && 0.f != mAlpha && hasVisibleText( mTextCache->getString() ) ) {
 		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
@@ -192,6 +205,10 @@ const String& UITooltip::getText() {
 void UITooltip::setText( const String& text ) {
 	mStringBuffer = text;
 	mTextCache->setString( text );
+	if ( !hasVisibleText( text ) ) {
+		clearActions();
+		setVisible( false );
+	}
 	autoPadding();
 	autoWrap();
 	onAutoSize();
