@@ -6,6 +6,11 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/blocklayouter.hpp>
 #include <eepp/ui/border.hpp>
+#include <eepp/ui/charts/chartaxis.hpp>
+#include <eepp/ui/charts/chartreduction.hpp>
+#include <eepp/ui/charts/modelxydatasource.hpp>
+#include <eepp/ui/charts/uichart.hpp>
+#include <eepp/ui/charts/xydatasource.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>

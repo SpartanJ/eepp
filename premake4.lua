@@ -1756,6 +1756,12 @@ solution "eepp"
 		files { "src/examples/ui_custom_widget/*.cpp" }
 		build_link_configuration( "eepp-ui-custom-widget", true )
 
+	project "eepp-ui-charts"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_charts/*.cpp" }
+		build_link_configuration( "eepp-ui-charts", true )
+
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"

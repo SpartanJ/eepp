@@ -1,3 +1,4 @@
+#include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
@@ -194,6 +195,7 @@ RadioButton::active {
 void UIWidgetCreator::createBaseWidgetList() {
 	if ( !sBaseListCreated ) {
 		registeredWidget["widget"] = UIWidget::New;
+		registeredWidget["chart"] = Charts::UIChart::New;
 		registeredWidget["linearlayout"] = UILinearLayout::NewVertical;
 		registeredWidget["relativelayout"] = UIRelativeLayout::New;
 		registeredWidget["textview"] = UITextView::New;
