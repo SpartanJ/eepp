@@ -814,8 +814,14 @@ int App::run( int argc, char* argv[] ) {
 	}
 	UIApplication::Settings appSettings;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
-	appSettings.pixelDensity = config->window.pixelDensity > 0 ? config->window.pixelDensity
-															   : currentDisplay->getPixelDensity();
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( config->window.pixelDensity > 0 ) {
+		appSettings.pixelDensity = config->window.pixelDensity;
+	} else if ( environmentDensity > 0 ) {
+		appSettings.pixelDensity = environmentDensity;
+	} else {
+		appSettings.pixelDensity = currentDisplay->getPixelDensity();
+	}
 	appSettings.fontHinting = config->font.hinting;
 	appSettings.fontAntialiasing = config->font.antialiasing;
 	appSettings.baseFont = uiFont.get();

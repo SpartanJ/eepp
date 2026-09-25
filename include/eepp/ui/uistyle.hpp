@@ -63,6 +63,9 @@ class EE_API UIStyle : public UIState {
 
 	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
+	/** Resolve a color variable without copying its stored text. */
+	Color getColorVariable( const std::string& variable, Color fallback );
+
 	bool getForceReapplyProperties() const;
 
 	void setForceReapplyProperties( bool forceReapplyProperties );

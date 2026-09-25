@@ -80,8 +80,13 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 	mDidRun = true;
 
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	if ( appSettings.pixelDensity && *appSettings.pixelDensity > 0 ) {
 		PixelDensity::setPixelDensity( *appSettings.pixelDensity );
+	} else if ( windowSettings.PixelDensity > 0 ) {
+		PixelDensity::setPixelDensity( windowSettings.PixelDensity );
+	} else if ( environmentDensity > 0 ) {
+		PixelDensity::setPixelDensity( environmentDensity );
 	} else if ( offscreen ) {
 		PixelDensity::setPixelDensity( 1.f );
 	} else {

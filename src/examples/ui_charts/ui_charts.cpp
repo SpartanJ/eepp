@@ -81,7 +81,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		[]( double value, double ) { return String::format( "%.1f C", value ); } );
 	std::vector<ChartPoint> load;
 	std::vector<double> temperatureX;
-	std::vector<float> temperatureY;
+	std::vector<Float> temperatureY;
 	load.reserve( 120 );
 	temperatureX.reserve( 120 );
 	temperatureY.reserve( 120 );
@@ -90,7 +90,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		load.push_back( { x, 50.0 + 18.0 * std::sin( x * 0.14 ) + 5.0 * std::sin( x * 0.9 ) } );
 		temperatureX.push_back( x );
 		temperatureY.push_back(
-			static_cast<float>( 37.0 + 0.08 * x + 2.0 * std::sin( x * 0.12 ) ) );
+			static_cast<Float>( 37.0 + 0.08 * x + 2.0 * std::sin( x * 0.12 ) ) );
 	}
 	auto* loadSeries = dual->addLineSeries( "Load" );
 	loadSeries->setColor( Color( 129, 211, 142 ) );
@@ -124,6 +124,10 @@ EE_MAIN_FUNC int main( int, char** ) {
 	dual->fit();
 
 	auto* dense = layout->find<UIChart>( "dense" );
+	ChartStyle denseStyle = dense->chartStyle();
+	denseStyle.hoverColor = Color( 182, 146, 255, 150 );
+	denseStyle.tickLabelColor = Color( 202, 193, 227 );
+	dense->setChartStyle( denseStyle );
 	dense->xAxis()->setLabel( "Sample" );
 	dense->yAxis()->setLabel( "Signal" );
 	std::vector<ChartPoint> samples;

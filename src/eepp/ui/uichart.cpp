@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <cmath>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <limits>
@@ -51,8 +53,9 @@ std::optional<DataRange> axisExtent( const ChartModel& model, const ChartAxis* a
 	return extent;
 }
 
-float chartTextWidth( Font* font, const String& label ) {
-	return font ? Text::getTextWidth( font, 12, label, 0, 4, 0.f, label.getTextHints() ) : 0.f;
+Float chartTextWidth( Font* font, const String& label, Uint32 fontSize ) {
+	return font ? Text::getTextWidth( font, fontSize, label, 0, 4, 0.f, label.getTextHints() )
+				: 0.f;
 }
 
 } // namespace
@@ -88,14 +91,15 @@ void LineSeries::setVisible( bool visible ) {
 }
 
 void LineSeries::setColor( Color color ) {
-	if ( mColor != color ) {
+	if ( mColor != color || !mColorExplicit ) {
 		mColor = color;
+		mColorExplicit = true;
 		++mGeometryRevision;
 		changed();
 	}
 }
 
-void LineSeries::setWidth( float width ) {
+void LineSeries::setWidth( Float width ) {
 	width = std::max( 0.f, width );
 	if ( mWidth != width ) {
 		mWidth = width;
@@ -120,7 +124,7 @@ void LineSeries::setCap( LineCap cap ) {
 	}
 }
 
-void LineSeries::setMiterLimit( float limit ) {
+void LineSeries::setMiterLimit( Float limit ) {
 	limit = std::isfinite( limit ) ? std::max( 1.f, limit ) : 4.f;
 	if ( mMiterLimit != limit ) {
 		mMiterLimit = limit;
@@ -302,6 +306,35 @@ void UIChart::setFollowX( double span ) {
 	invalidateDraw();
 }
 
+void UIChart::setChartStyle( ChartStyle style ) {
+	mChartStyle = std::move( style );
+	++mLayoutRevision;
+	++mViewRevision;
+	invalidateDraw();
+}
+
+void UIChart::updateThemeColors() {
+	mAxisColor = mChartStyle.axisColor ? *mChartStyle.axisColor
+									   : themeColor( "--tab-line", { 125, 130, 138 } );
+	mTickColor = mChartStyle.tickColor.value_or( mAxisColor );
+	mTickLabelColor = mChartStyle.tickLabelColor ? *mChartStyle.tickLabelColor
+												 : themeColor( "--font-hint", { 190, 194, 201 } );
+	mAxisLabelColor = mChartStyle.axisLabelColor ? *mChartStyle.axisLabelColor
+												 : themeColor( "--font", { 210, 214, 220 } );
+	if ( mChartStyle.hoverColor ) {
+		mHoverColor = *mChartStyle.hoverColor;
+	} else {
+		mHoverColor = themeColor( "--primary", { 160, 165, 173 } );
+		mHoverColor.a = 140;
+	}
+	const Color series = mChartStyle.seriesColor ? *mChartStyle.seriesColor
+												 : themeColor( "--primary", { 48, 130, 220 } );
+	if ( mSeriesColor != series ) {
+		mSeriesColor = series;
+		++mViewRevision;
+	}
+}
+
 void UIChart::updateFollow() {
 	if ( mFollowSpan <= 0 )
 		return;
@@ -382,61 +415,75 @@ void UIChart::onSizeChange() {
 void UIChart::updateLayout() {
 	if ( mLayout.revision == mLayoutRevision )
 		return;
-	const float width = getPixelsSize().getWidth();
-	const float height = getPixelsSize().getHeight();
-	float leftMargin = 50.f;
-	const float bottomMargin = xAxis()->label().empty() ? 34.f : 52.f;
-	const float topMargin = yAxis()->label().empty() ? 12.f : 26.f;
-	Font* font =
-		getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont() : nullptr;
-	mLayout.xAxisLabelWidth = chartTextWidth( font, xAxis()->label() );
-	float rightMargin = 14.f;
+	const auto dp = []( Float value ) { return PixelDensity::dpToPx( value ); };
+	const Uint32 fontSize =
+		std::max( 1u, static_cast<Uint32>( std::round( dp( mChartStyle.fontSize ) ) ) );
+	const Float width = getPixelsSize().getWidth();
+	const Float height = getPixelsSize().getHeight();
+	Float leftMargin = dp( mChartStyle.leftMargin );
+	const Float bottomMargin = dp( xAxis()->label().empty() ? mChartStyle.bottomMargin
+															: mChartStyle.bottomMarginWithLabel );
+	const Float topMargin =
+		dp( yAxis()->label().empty() ? mChartStyle.topMargin : mChartStyle.topMarginWithLabel );
+	Font* font = mChartStyle.font	? mChartStyle.font
+				 : getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont()
+									: nullptr;
+	mLayout.xAxisLabelWidth = chartTextWidth( font, xAxis()->label(), fontSize );
+	Float rightMargin = dp( mChartStyle.rightMargin );
 	mLayout.rightAxes.clear();
 	for ( const auto& view : mAxes ) {
 		if ( view.axis->position() != AxisPosition::Right )
 			continue;
 		Layout::RightAxis axisLayout;
 		axisLayout.axis = view.axis;
-		axisLayout.ticks = linearTicks( view.viewport.range(),
-										std::max( 1.f, height - topMargin - bottomMargin ), 50.f );
+		axisLayout.ticks =
+			linearTicks( view.viewport.range(), std::max( 1.f, height - topMargin - bottomMargin ),
+						 dp( mChartStyle.yTickSpacing ) );
 		const double step =
 			axisLayout.ticks.size() > 1 ? axisLayout.ticks[1] - axisLayout.ticks[0] : 1.0;
-		float labelWidth = 0.f;
+		Float labelWidth = 0.f;
 		for ( double tick : axisLayout.ticks ) {
 			axisLayout.labels.emplace_back( axisLayout.axis->formatTick( tick, step ) );
-			labelWidth = std::max( labelWidth, chartTextWidth( font, axisLayout.labels.back() ) );
+			labelWidth =
+				std::max( labelWidth, chartTextWidth( font, axisLayout.labels.back(), fontSize ) );
 		}
-		axisLayout.width = std::max( 42.f, labelWidth + 16.f );
+		axisLayout.width = std::max( dp( mChartStyle.minimumAxisMargin ),
+									 labelWidth + dp( mChartStyle.rightAxisLabelPadding ) );
 		rightMargin += axisLayout.width;
 		mLayout.rightAxes.emplace_back( std::move( axisLayout ) );
 	}
 	for ( int pass = 0; pass < 2; ++pass ) {
-		const float plotWidth = std::max( 1.f, width - leftMargin - rightMargin );
-		const float plotHeight = std::max( 1.f, height - topMargin - bottomMargin );
+		const Float plotWidth = std::max( 1.f, width - leftMargin - rightMargin );
+		const Float plotHeight = std::max( 1.f, height - topMargin - bottomMargin );
 		mLayout.plot =
 			Rectf( leftMargin, topMargin, leftMargin + plotWidth, topMargin + plotHeight );
-		mLayout.xTicks = linearTicks( viewport( xAxis() ).range(), plotWidth );
-		mLayout.yTicks = linearTicks( viewport( yAxis() ).range(), plotHeight, 50.f );
+		mLayout.xTicks =
+			linearTicks( viewport( xAxis() ).range(), plotWidth, dp( mChartStyle.xTickSpacing ) );
+		mLayout.yTicks =
+			linearTicks( viewport( yAxis() ).range(), plotHeight, dp( mChartStyle.yTickSpacing ) );
 		mLayout.xLabels.clear();
 		mLayout.yLabels.clear();
 		mLayout.xLabelWidths.clear();
 		mLayout.yLabelWidths.clear();
-		float maximumLabelWidth = 0.f;
+		Float maximumLabelWidth = 0.f;
 		const double xStep =
 			mLayout.xTicks.size() > 1 ? mLayout.xTicks[1] - mLayout.xTicks[0] : 1.0;
 		const double yStep =
 			mLayout.yTicks.size() > 1 ? mLayout.yTicks[1] - mLayout.yTicks[0] : 1.0;
 		for ( double tick : mLayout.xTicks ) {
 			mLayout.xLabels.emplace_back( xAxis()->formatTick( tick, xStep ) );
-			mLayout.xLabelWidths.emplace_back( chartTextWidth( font, mLayout.xLabels.back() ) );
+			mLayout.xLabelWidths.emplace_back(
+				chartTextWidth( font, mLayout.xLabels.back(), fontSize ) );
 		}
 		for ( double tick : mLayout.yTicks ) {
 			mLayout.yLabels.emplace_back( yAxis()->formatTick( tick, yStep ) );
-			const float labelWidth = chartTextWidth( font, mLayout.yLabels.back() );
+			const Float labelWidth = chartTextWidth( font, mLayout.yLabels.back(), fontSize );
 			mLayout.yLabelWidths.emplace_back( labelWidth );
 			maximumLabelWidth = std::max( maximumLabelWidth, labelWidth );
 		}
-		const float measuredMargin = std::max( 42.f, maximumLabelWidth + 12.f );
+		const Float measuredMargin =
+			std::max( dp( mChartStyle.minimumAxisMargin ),
+					  maximumLabelWidth + dp( mChartStyle.axisLabelPadding ) );
 		if ( pass == 0 && std::abs( measuredMargin - leftMargin ) > 2.f )
 			leftMargin = measuredMargin;
 		else
@@ -478,16 +525,17 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 				chunk.xs, chunk.ys );
 		}
 	}
-	const float halfWidth = cache.series->width() * 0.5f;
+	const Float halfWidth = PixelDensity::dpToPx( cache.series->width() ) * 0.5f;
 	bool previousValid = false;
 	bool priorSegment = false;
 	Vector2f previous;
 	Vector2f priorDirection;
 	Vector2f priorNormal;
+	const Color seriesColor = cache.series->hasCustomColor() ? cache.series->color() : mSeriesColor;
 	auto addTriangle = [&]( Vector2f a, Vector2f b, Vector2f c ) {
 		for ( const auto& vertex : { a, b, c } ) {
 			cache.geometry->addVertex( vertex );
-			cache.geometry->addColor( cache.series->color() );
+			cache.geometry->addColor( seriesColor );
 		}
 	};
 	auto addSquareCap = [&]( Vector2f center, Vector2f direction, Vector2f normal, bool start ) {
@@ -506,14 +554,14 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 			continue;
 		}
 		const Vector2f current(
-			static_cast<float>( xView.toPixel( point.x, mLayout.plot.Left, mLayout.plot.getWidth(),
+			static_cast<Float>( xView.toPixel( point.x, mLayout.plot.Left, mLayout.plot.getWidth(),
 											   false, *cache.series->xAxis() ) ),
-			static_cast<float>( yView.toPixel( point.y, mLayout.plot.Top, mLayout.plot.getHeight(),
+			static_cast<Float>( yView.toPixel( point.y, mLayout.plot.Top, mLayout.plot.getHeight(),
 											   true, *cache.series->yAxis() ) ) );
 		if ( previousValid ) {
-			const float dx = current.x - previous.x;
-			const float dy = current.y - previous.y;
-			const float length = std::hypot( dx, dy );
+			const Float dx = current.x - previous.x;
+			const Float dy = current.y - previous.y;
+			const Float length = std::hypot( dx, dy );
 			if ( length > 0.001f ) {
 				const Vector2f direction( dx / length, dy / length );
 				const Vector2f normal( -dy / length * halfWidth, dx / length * halfWidth );
@@ -522,15 +570,17 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 				addTriangle( previous + normal, previous - normal, current + normal );
 				addTriangle( current + normal, previous - normal, current - normal );
 				if ( priorSegment ) {
-					const float cross =
+					const Float cross =
 						priorDirection.x * direction.y - priorDirection.y * direction.x;
 					if ( std::abs( cross ) > 0.0001f ) {
-						const float side = cross > 0 ? -1.f : 1.f;
+						const Float side = cross > 0 ? -1.f : 1.f;
 						const Vector2f outerA = priorNormal * side;
 						const Vector2f outerB = normal * side;
+						// The two segment quads leave this wedge empty at every turn.
+						addTriangle( previous + outerA, previous, previous + outerB );
 						const Vector2f sum = outerA + outerB;
-						const float sumLength = std::hypot( sum.x, sum.y );
-						const float divisor = sumLength > 0
+						const Float sumLength = std::hypot( sum.x, sum.y );
+						const Float divisor = sumLength > 0
 												  ? ( sum.x * outerB.x + sum.y * outerB.y ) /
 														( sumLength * halfWidth )
 												  : 0.f;
@@ -539,8 +589,6 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 							const Vector2f miter =
 								sum * ( 1.f / sumLength ) * ( halfWidth / divisor );
 							addTriangle( previous + outerA, previous + miter, previous + outerB );
-						} else {
-							addTriangle( previous + outerA, previous, previous + outerB );
 						}
 					}
 				}
@@ -557,89 +605,109 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 }
 
 void UIChart::drawAxes() {
+	const auto dp = []( Float value ) { return PixelDensity::dpToPx( value ); };
+	const Float tickLength = dp( mChartStyle.tickLength );
+	const Float tickLabelGap = dp( mChartStyle.tickLabelGap );
 	Primitives primitive;
-	primitive.setColor( Color( 125, 130, 138 ) );
+	primitive.setLineWidth( dp( mChartStyle.axisWidth ) );
+	primitive.setColor( mAxisColor );
 	const auto& plot = mLayout.plot;
 	const Vector2f origin( mScreenPos.x, mScreenPos.y );
 	primitive.drawLine( Line2f( { origin.x + plot.Left, origin.y + plot.Bottom },
 								{ origin.x + plot.Right, origin.y + plot.Bottom } ) );
 	primitive.drawLine( Line2f( { origin.x + plot.Left, origin.y + plot.Top },
 								{ origin.x + plot.Left, origin.y + plot.Bottom } ) );
-	Font* font =
-		getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont() : nullptr;
+	Font* font = mChartStyle.font	? mChartStyle.font
+				 : getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont()
+									: nullptr;
 	FontStyleConfig textStyle;
 	textStyle.Font = font;
-	textStyle.CharacterSize = 12;
-	textStyle.FontColor = Color( 190, 194, 201 );
+	textStyle.CharacterSize =
+		std::max( 1u, static_cast<Uint32>( std::round( dp( mChartStyle.fontSize ) ) ) );
+	textStyle.FontColor = mTickLabelColor;
+	auto drawText = [&]( const String& label, Vector2f position ) {
+		Text::draw( label, { std::round( position.x ), std::round( position.y ) }, textStyle, 4,
+					label.getTextHints() );
+	};
+	primitive.setColor( mTickColor );
 	for ( size_t i = 0; i < mLayout.xTicks.size(); ++i ) {
-		const float x = static_cast<float>( viewport( xAxis() ).toPixel(
+		const Float x = static_cast<Float>( viewport( xAxis() ).toPixel(
 			mLayout.xTicks[i], plot.Left, plot.getWidth(), false, *xAxis() ) );
 		primitive.drawLine( Line2f( { origin.x + x, origin.y + plot.Bottom },
-									{ origin.x + x, origin.y + plot.Bottom + 4 } ) );
+									{ origin.x + x, origin.y + plot.Bottom + tickLength } ) );
 		if ( font ) {
-			const float textWidth = mLayout.xLabelWidths[i];
+			const Float textWidth = mLayout.xLabelWidths[i];
 			const String& label = mLayout.xLabels[i];
-			Text::draw( label, { origin.x + x - textWidth * 0.5f, origin.y + plot.Bottom + 6 },
-						textStyle, 4, label.getTextHints() );
+			drawText( label,
+					  { origin.x + x - textWidth * 0.5f, origin.y + plot.Bottom + tickLabelGap } );
 		}
 	}
 	for ( size_t i = 0; i < mLayout.yTicks.size(); ++i ) {
-		const float y = static_cast<float>( viewport( yAxis() ).toPixel(
+		const Float y = static_cast<Float>( viewport( yAxis() ).toPixel(
 			mLayout.yTicks[i], plot.Top, plot.getHeight(), true, *yAxis() ) );
-		primitive.drawLine( Line2f( { origin.x + plot.Left - 4, origin.y + y },
+		primitive.drawLine( Line2f( { origin.x + plot.Left - tickLength, origin.y + y },
 									{ origin.x + plot.Left, origin.y + y } ) );
 		if ( font ) {
-			const float textWidth = mLayout.yLabelWidths[i];
+			const Float textWidth = mLayout.yLabelWidths[i];
 			const String& label = mLayout.yLabels[i];
-			Text::draw( label, { origin.x + plot.Left - 8 - textWidth, origin.y + y - 7 },
-						textStyle, 4, label.getTextHints() );
+			drawText( label, { origin.x + plot.Left - tickLength - tickLabelGap - textWidth,
+							   origin.y + y - textStyle.CharacterSize * 0.6f } );
 		}
 	}
-	float rightOffset = 0.f;
+	Float rightOffset = 0.f;
 	for ( const auto& axisLayout : mLayout.rightAxes ) {
-		const float axisX = plot.Right + rightOffset;
+		const Float axisX = plot.Right + rightOffset;
+		primitive.setColor( mAxisColor );
 		primitive.drawLine( Line2f( { origin.x + axisX, origin.y + plot.Top },
 									{ origin.x + axisX, origin.y + plot.Bottom } ) );
+		primitive.setColor( mTickColor );
 		for ( size_t i = 0; i < axisLayout.ticks.size(); ++i ) {
-			const float y =
-				static_cast<float>( viewport( axisLayout.axis )
+			const Float y =
+				static_cast<Float>( viewport( axisLayout.axis )
 										.toPixel( axisLayout.ticks[i], plot.Top, plot.getHeight(),
 												  true, *axisLayout.axis ) );
 			primitive.drawLine( Line2f( { origin.x + axisX, origin.y + y },
-										{ origin.x + axisX + 4, origin.y + y } ) );
+										{ origin.x + axisX + tickLength, origin.y + y } ) );
 			if ( font ) {
 				const String& label = axisLayout.labels[i];
-				Text::draw( label, { origin.x + axisX + 7, origin.y + y - 7 }, textStyle, 4,
-							label.getTextHints() );
+				drawText( label, { origin.x + axisX + tickLength + tickLabelGap,
+								   origin.y + y - textStyle.CharacterSize * 0.6f } );
 			}
 		}
 		rightOffset += axisLayout.width;
 	}
 	if ( font && !xAxis()->label().empty() ) {
-		textStyle.FontColor = Color( 210, 214, 220 );
+		textStyle.FontColor = mAxisLabelColor;
 		const String& label = xAxis()->label();
-		Text::draw( label,
-					{ origin.x + plot.Left + ( plot.getWidth() - mLayout.xAxisLabelWidth ) * 0.5f,
-					  origin.y + plot.Bottom + 25 },
-					textStyle, 4, label.getTextHints() );
+		drawText( label,
+				  { origin.x + plot.Left + ( plot.getWidth() - mLayout.xAxisLabelWidth ) * 0.5f,
+					origin.y + plot.Bottom + dp( mChartStyle.axisLabelGap ) } );
 	}
 	if ( font && !yAxis()->label().empty() ) {
-		textStyle.FontColor = Color( 210, 214, 220 );
+		textStyle.FontColor = mAxisLabelColor;
 		const String& label = yAxis()->label();
-		Text::draw( label, { origin.x + plot.Left, origin.y + 2 }, textStyle, 4,
-					label.getTextHints() );
+		drawText( label, { origin.x + plot.Left, origin.y + dp( mChartStyle.axisLabelInset ) } );
 	}
 }
 
 void UIChart::draw() {
 	UIWidget::draw();
-	if ( !mVisible || getPixelsSize().getWidth() < 20 || getPixelsSize().getHeight() < 20 )
+	if ( !mVisible || getPixelsSize().getWidth() < PixelDensity::dpToPx( 20.f ) ||
+		 getPixelsSize().getHeight() < PixelDensity::dpToPx( 20.f ) )
 		return;
+	const Float density = PixelDensity::getPixelDensity();
+	if ( mLastDensity != density ) {
+		mLastDensity = density;
+		++mLayoutRevision;
+		++mViewRevision;
+	}
+	updateThemeColors();
 	synchronize();
 	updateFollow();
 	updateAutoRanges();
-	Font* font =
-		getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont() : nullptr;
+	Font* font = mChartStyle.font	? mChartStyle.font
+				 : getUISceneNode() ? getUISceneNode()->getUIThemeManager()->getDefaultFont()
+									: nullptr;
 	if ( mLastXAxisLabel != xAxis()->label() || mLastYAxisLabel != yAxis()->label() ||
 		 mLastFont != font ) {
 		mLastXAxisLabel = xAxis()->label();
@@ -696,7 +764,8 @@ void UIChart::draw() {
 	}
 	if ( mHover ) {
 		Primitives primitive;
-		primitive.setColor( Color( 160, 165, 173, 140 ) );
+		primitive.setColor( mHoverColor );
+		primitive.setLineWidth( PixelDensity::dpToPx( mChartStyle.axisWidth ) );
 		primitive.drawLine( Line2f( { mLastMouse.x, mScreenPos.y + plot.Top },
 									{ mLastMouse.x, mScreenPos.y + plot.Bottom } ) );
 	}
@@ -713,7 +782,7 @@ void UIChart::updateHover( Vector2f screenPosition ) {
 		return;
 	}
 	mHover = true;
-	float bestDistance = 10.f;
+	Float bestDistance = PixelDensity::dpToPx( mChartStyle.hoverDistance );
 	LineSeries* bestSeries = nullptr;
 	ChartPoint bestPoint;
 	size_t bestIndex = 0;
@@ -734,23 +803,23 @@ void UIChart::updateHover( Vector2f screenPosition ) {
 					previous = nullptr;
 					continue;
 				}
-				const Vector2f pixel( static_cast<float>( xView.toPixel(
+				const Vector2f pixel( static_cast<Float>( xView.toPixel(
 										  point.x, mLayout.plot.Left, mLayout.plot.getWidth(),
 										  false, *series->xAxis() ) ),
-									  static_cast<float>( yView.toPixel(
+									  static_cast<Float>( yView.toPixel(
 										  point.y, mLayout.plot.Top, mLayout.plot.getHeight(), true,
 										  *series->yAxis() ) ) );
 				if ( previous ) {
 					const Vector2f segment = pixel - previousPixel;
-					const float lengthSquared = segment.x * segment.x + segment.y * segment.y;
-					const float t =
+					const Float lengthSquared = segment.x * segment.x + segment.y * segment.y;
+					const Float t =
 						lengthSquared > 0.0001f
 							? std::clamp( ( ( local.x - previousPixel.x ) * segment.x +
 											( local.y - previousPixel.y ) * segment.y ) /
 											  lengthSquared,
 										  0.f, 1.f )
 							: 0.f;
-					const float distance = std::hypot( previousPixel.x + t * segment.x - local.x,
+					const Float distance = std::hypot( previousPixel.x + t * segment.x - local.x,
 													   previousPixel.y + t * segment.y - local.y );
 					if ( distance < bestDistance ) {
 						const size_t candidate =
@@ -780,15 +849,15 @@ void UIChart::updateHover( Vector2f screenPosition ) {
 			const ChartPoint point = pointAt( read, candidate );
 			if ( !std::isfinite( point.x ) || !std::isfinite( point.y ) )
 				continue;
-			const float px = static_cast<float>( viewport( series->xAxis() )
+			const Float px = static_cast<Float>( viewport( series->xAxis() )
 													 .toPixel( point.x, mLayout.plot.Left,
 															   mLayout.plot.getWidth(), false,
 															   *series->xAxis() ) );
-			const float py = static_cast<float>( viewport( series->yAxis() )
+			const Float py = static_cast<Float>( viewport( series->yAxis() )
 													 .toPixel( point.y, mLayout.plot.Top,
 															   mLayout.plot.getHeight(), true,
 															   *series->yAxis() ) );
-			const float distance = std::hypot( px - local.x, py - local.y );
+			const Float distance = std::hypot( px - local.x, py - local.y );
 			if ( distance < bestDistance ) {
 				bestDistance = distance;
 				bestSeries = series;
@@ -882,8 +951,8 @@ Uint32 UIChart::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	if ( mPanning && ( flags & EE_BUTTON_LMASK ) && mLayout.plot.getWidth() > 0 &&
 		 mLayout.plot.getHeight() > 0 ) {
 		mFollowSpan = 0.0;
-		const float dx = mouse.x - mLastMouse.x;
-		const float dy = mouse.y - mLastMouse.y;
+		const Float dx = mouse.x - mLastMouse.x;
+		const Float dy = mouse.y - mLastMouse.y;
 		for ( auto& view : mAxes ) {
 			const bool horizontal = view.axis->position() == AxisPosition::Bottom ||
 									view.axis->position() == AxisPosition::Top;

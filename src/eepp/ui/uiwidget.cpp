@@ -1460,6 +1460,10 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
+Color UIWidget::themeColor( const std::string& variable, Color fallback ) const {
+	return mStyle ? mStyle->getColorVariable( variable, fallback ) : fallback;
+}
+
 void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool reportStateChange,
 							bool forceReApplyProperties, bool resetPropertyCache ) {
 	createStyle();

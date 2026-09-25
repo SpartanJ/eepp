@@ -423,6 +423,12 @@
         "command": "${project_root}/bin/eproc-debug",
         "name": "eproc-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-charts-debug",
+        "name": "eepp-ui-charts-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

@@ -15,6 +15,8 @@ class Font;
 
 namespace EE { namespace UI { namespace Charts {
 
+using namespace EE::Graphics;
+
 struct PointTooltipContext {
 	size_t index{ 0 };
 	double x{ 0.0 };
@@ -43,6 +45,35 @@ using PointTooltipProvider =
 enum class LineJoin : Uint8 { Miter, Bevel };
 enum class LineCap : Uint8 { Butt, Square };
 
+/** Chart measurements are in device-independent pixels. Colors left unset follow the UI theme. */
+struct ChartStyle {
+	Font* font{ nullptr }; //!< Null uses the current UI theme font.
+	Float fontSize{ 12.f };
+	Float tickLength{ 4.f };
+	Float tickLabelGap{ 6.f };
+	Float axisLabelGap{ 25.f };
+	Float axisLabelInset{ 2.f };
+	Float leftMargin{ 50.f };
+	Float rightMargin{ 14.f };
+	Float topMargin{ 12.f };
+	Float topMarginWithLabel{ 26.f };
+	Float bottomMargin{ 34.f };
+	Float bottomMarginWithLabel{ 52.f };
+	Float minimumAxisMargin{ 42.f };
+	Float axisLabelPadding{ 12.f };
+	Float rightAxisLabelPadding{ 16.f };
+	Float xTickSpacing{ 80.f };
+	Float yTickSpacing{ 50.f };
+	Float hoverDistance{ 10.f };
+	Float axisWidth{ 1.f };
+	std::optional<Color> axisColor;
+	std::optional<Color> tickColor;
+	std::optional<Color> tickLabelColor;
+	std::optional<Color> axisLabelColor;
+	std::optional<Color> hoverColor;
+	std::optional<Color> seriesColor;
+};
+
 class EE_API LineSeries {
   public:
 	const String& name() const { return mName; }
@@ -63,9 +94,12 @@ class EE_API LineSeries {
 
 	Color color() const { return mColor; }
 
-	void setWidth( float width );
+	bool hasCustomColor() const { return mColorExplicit; }
 
-	float width() const { return mWidth; }
+	/** Stroke width in device-independent pixels. */
+	void setWidth( Float width );
+
+	Float width() const { return mWidth; }
 
 	void setJoin( LineJoin join );
 
@@ -75,9 +109,9 @@ class EE_API LineSeries {
 
 	LineCap cap() const { return mCap; }
 
-	void setMiterLimit( float limit );
+	void setMiterLimit( Float limit );
 
-	float miterLimit() const { return mMiterLimit; }
+	Float miterLimit() const { return mMiterLimit; }
 
 	Uint64 geometryRevision() const { return mGeometryRevision; }
 
@@ -110,8 +144,9 @@ class EE_API LineSeries {
 	ChartAxis* mXAxis;
 	ChartAxis* mYAxis;
 	Color mColor{ 48, 130, 220 };
-	float mWidth{ 2.f };
-	float mMiterLimit{ 4.f };
+	bool mColorExplicit{ false };
+	Float mWidth{ 2.f };
+	Float mMiterLimit{ 4.f };
 	LineJoin mJoin{ LineJoin::Miter };
 	LineCap mCap{ LineCap::Butt };
 	bool mVisible{ true };
@@ -131,9 +166,9 @@ class EE_API ChartModel {
 
 	ChartAxis* yAxis() const { return mAxes[1].get(); }
 
-	const std::vector<std::unique_ptr<ChartAxis>>& axes() const { return mAxes; }
+	const SmallVector<std::unique_ptr<ChartAxis>, 4>& axes() const { return mAxes; }
 
-	const std::vector<std::unique_ptr<LineSeries>>& series() const { return mSeries; }
+	const SmallVector<std::unique_ptr<LineSeries>, 2>& series() const { return mSeries; }
 
 	Uint64 revision() const { return mRevision.get(); }
 
@@ -141,8 +176,8 @@ class EE_API ChartModel {
 	friend class UIChart;
 	void changed() { mRevision.set( mRevision.get() + 1 ); }
 
-	std::vector<std::unique_ptr<ChartAxis>> mAxes;
-	std::vector<std::unique_ptr<LineSeries>> mSeries;
+	SmallVector<std::unique_ptr<ChartAxis>, 4> mAxes;
+	SmallVector<std::unique_ptr<LineSeries>, 2> mSeries;
 	ObservableValue<Uint64> mRevision{ 0 };
 };
 
@@ -170,6 +205,10 @@ class EE_API UIChart : public UIWidget {
 
 	/** Follow the newest X while preserving a fixed data-space span; zero disables follow mode. */
 	void setFollowX( double span );
+
+	void setChartStyle( ChartStyle style );
+
+	const ChartStyle& chartStyle() const { return mChartStyle; }
 
 	void draw() override;
 
@@ -212,18 +251,18 @@ class EE_API UIChart : public UIWidget {
 		struct RightAxis {
 			ChartAxis* axis{ nullptr };
 			SmallVector<double, 16> ticks;
-			std::vector<String> labels;
-			float width{ 0.f };
+			SmallVector<String, 8> labels;
+			Float width{ 0.f };
 		};
 
 		Rectf plot;
 		SmallVector<double, 16> xTicks;
 		SmallVector<double, 16> yTicks;
-		std::vector<String> xLabels;
-		std::vector<String> yLabels;
-		std::vector<float> xLabelWidths;
-		std::vector<float> yLabelWidths;
-		float xAxisLabelWidth{ 0.f };
+		SmallVector<String, 8> xLabels;
+		SmallVector<String, 8> yLabels;
+		SmallVector<Float, 8> xLabelWidths;
+		SmallVector<Float, 8> yLabelWidths;
+		Float xAxisLabelWidth{ 0.f };
 		std::vector<RightAxis> rightAxes;
 		Uint64 revision{ 0 };
 	};
@@ -244,14 +283,16 @@ class EE_API UIChart : public UIWidget {
 
 	void hideHoverTooltip();
 
+	void updateThemeColors();
+
 	AxisViewport& viewport( const ChartAxis* axis );
 
 	const AxisViewport& viewport( const ChartAxis* axis ) const;
 
 	std::shared_ptr<ChartModel> mModel;
 	ObservableValue<Uint64>::Connection mModelConnection;
-	std::vector<ViewAxis> mAxes;
-	std::vector<SeriesCache> mCaches;
+	SmallVector<ViewAxis, 4> mAxes;
+	SmallVector<SeriesCache, 2> mCaches;
 	Layout mLayout;
 	Uint64 mViewRevision{ 1 };
 	Uint64 mLayoutRevision{ 1 };
@@ -267,7 +308,15 @@ class EE_API UIChart : public UIWidget {
 	Uint64 mAutoRevision{ std::numeric_limits<Uint64>::max() };
 	String mLastXAxisLabel;
 	String mLastYAxisLabel;
-	Graphics::Font* mLastFont{ nullptr };
+	Font* mLastFont{ nullptr };
+	ChartStyle mChartStyle;
+	Color mAxisColor{ 125, 130, 138 };
+	Color mTickColor{ 125, 130, 138 };
+	Color mTickLabelColor{ 190, 194, 201 };
+	Color mAxisLabelColor{ 210, 214, 220 };
+	Color mHoverColor{ 160, 165, 173, 140 };
+	Color mSeriesColor{ 48, 130, 220 };
+	Float mLastDensity{ 0.f };
 };
 
 }}} // namespace EE::UI::Charts

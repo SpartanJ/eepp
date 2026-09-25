@@ -4574,6 +4574,7 @@ void App::init( InitParameters& params ) {
 	mPortableMode = params.portable || !params.profile.empty();
 	mProfilePath = params.profile;
 	mDisplayDPI = currentDisplay->getDPI();
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	mUseFrameBuffer = params.frameBuffer;
 	mBenchmarkMode = params.benchmarkMode;
 	mDisablePlugins = params.disablePlugins;
@@ -4618,19 +4619,18 @@ void App::init( InitParameters& params ) {
 	mDisplayDPI = currentDisplay->getDPI();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	mConfig.windowState.pixelDensity =
-		params.pidelDensity > 0
-			? params.pidelDensity
-			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
-				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
-														: currentDisplay->getPixelDensity() );
+	const Float displayDensity = currentDisplay->getPixelDensity() > 2
+									 ? currentDisplay->getPixelDensity() / 2
+									 : currentDisplay->getPixelDensity();
 #else
-	mConfig.windowState.pixelDensity =
-		params.pidelDensity > 0
-			? params.pidelDensity
-			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
-													 : currentDisplay->getPixelDensity() );
+	const Float displayDensity = currentDisplay->getPixelDensity();
 #endif
+	if ( params.pidelDensity > 0 ) {
+		mConfig.windowState.pixelDensity = params.pidelDensity;
+	} else if ( mConfig.windowState.pixelDensity <= 0 ) {
+		mConfig.windowState.pixelDensity =
+			environmentDensity > 0 ? environmentDensity : displayDensity;
+	}
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();

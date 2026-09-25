@@ -1,3 +1,6 @@
+#include <cerrno>
+#include <cmath>
+#include <cstdlib>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 
@@ -63,6 +66,18 @@ PixelDensitySize PixelDensity::fromDPI( Float dpi ) {
 
 const Float& PixelDensity::getPixelDensity() {
 	return sPixelDensity;
+}
+
+Float PixelDensity::getEnvironmentPixelDensity() {
+	const char* value = std::getenv( "EEPP_PIXEL_DENSITY" );
+	if ( !value || !*value )
+		return 0.f;
+	char* end = nullptr;
+	errno = 0;
+	const Float density = std::strtof( value, &end );
+	return errno == 0 && end != value && *end == '\0' && std::isfinite( density ) && density > 0.f
+			   ? density
+			   : 0.f;
 }
 
 void PixelDensity::setPixelDensity( const Float& pixelDensity ) {

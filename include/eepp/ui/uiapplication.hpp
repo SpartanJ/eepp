@@ -43,7 +43,7 @@ class EE_API UIApplication {
 		//! By default it will use the current process path as the base path. This will set the
 		//! default working directory.
 		std::optional<std::string> basePath;
-		//! Not setting anything will automatically try to detect the main screen pixel density
+		//! If unset, uses EEPP_PIXEL_DENSITY when valid, otherwise the main display density.
 		std::optional<Float> pixelDensity;
 		//! Must be set to true in order to initialize the basic UI resources (font and UI theme).
 		//! Otherwise it will initialize with an empty UI scene node

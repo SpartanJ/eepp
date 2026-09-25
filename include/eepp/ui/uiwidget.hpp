@@ -1063,6 +1063,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIStyle* getUIStyle() const;
 
+	/** Resolve a CSS color variable, or return fallback when it is absent. */
+	Color themeColor( const std::string& variable, Color fallback ) const;
+
 	/**
 	 * @brief Reloads the widget's style.
 	 *

@@ -190,6 +190,11 @@ StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 	return resolved ? *resolved : StyleSheetVariable();
 }
 
+Color UIStyle::getColorVariable( const std::string& variable, Color fallback ) {
+	const StyleSheetVariable* resolved = getVariableRef( variable );
+	return resolved ? Color::fromString( resolved->getValue() ) : fallback;
+}
+
 const StyleSheetVariable* UIStyle::getVariableRef( const std::string& variable ) {
 	if ( NULL != mWidget && NULL != mWidget->getUISceneNode() )
 		resetGlobalDefinition();
