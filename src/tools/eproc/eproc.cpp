@@ -659,7 +659,11 @@ bool App::init() {
 		border: 1dp solid #40474b;
 		border-radius: 5dp;
 	}
-	.eproc-performance-card-selected { border: 2dp solid #39a9d6; }
+	.eproc-performance-card:hover {
+		border: 1dp solid var(--primary);
+	}
+	.eproc-performance-card-selected { border: 2dp solid var(--primary); }
+	.eproc-performance-card.eproc-performance-card-selected:hover { border: 3dp solid var(--primary); }
 	.eproc-performance-muted { color: #9aa4ab; }
 	.eproc-performance-chart { background-color: #202427; }
 	.eproc-performance-preview {
