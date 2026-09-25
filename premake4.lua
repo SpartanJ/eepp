@@ -1613,6 +1613,9 @@ solution "eepp"
 		else
 			buildoptions{ "/std:c++20" }
 		end
+		if os.is_real("mingw32") or os.is_real("mingw64") then
+			links { "winpthread" }
+		end
 		build_base_cpp_configuration( "eepp-physics-static" )
 
 	project "eepp-physics"

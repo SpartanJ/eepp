@@ -1631,6 +1631,8 @@ workspace "eepp"
 			build_base_cpp_configuration( "eepp-maps" )
 			postsymlinklib_arch( "eepp-maps" )
 			target_dir_lib("")
+			filter { "system:windows", "action:not vs*" }
+				links { "winpthread" }
 			filter "action:not vs*"
 				buildoptions { "-Wall" }
 	end
