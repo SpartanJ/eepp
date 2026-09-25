@@ -1318,6 +1318,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="git_history_error">Git-Verlauf konnte nicht geladen werden</string>
 	<string name="git_history_retry">Wiederholen</string>
 	<string name="git_local_branch">Lokal</string>
+	<string name="git_local_only">nur lokal</string>
 	<string name="git_remote_branch">Remote</string>
 	<string name="git_tag">Tag</string>
 </resources>

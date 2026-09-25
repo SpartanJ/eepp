@@ -1182,7 +1182,7 @@ static Git::Branch parseTag( std::string_view raw ) {
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
 													 const std::string& projectDir ) {
 	// clang-format off
-	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)	%(refname:lstrip=3)' --sort=v:refname" );
 	// clang-format on
 
 	if ( filterBranch.empty() ) {
@@ -1197,6 +1197,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	}
 
 	std::vector<Branch> branches;
+	// These views refer to buf and are used before it goes out of scope.
+	SmallVector<std::string_view, 16> remoteBranchNames;
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
@@ -1210,14 +1212,25 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 				auto parsedBranch = parseRemoteBranch( branch );
-				if ( !parsedBranch.isEmpty() )
+				if ( !parsedBranch.isEmpty() ) {
+					remoteBranchNames.emplace_back( branch.substr( branch.rfind( '\t' ) + 1 ) );
 					branches.emplace_back( std::move( parsedBranch ) );
+				}
 			} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
 				auto parsedBranch = parseTag( branch );
 				if ( !parsedBranch.isEmpty() )
 					branches.emplace_back( std::move( parsedBranch ) );
 			}
 		} );
+		if ( ref & RefType::Remote ) {
+			for ( auto& branch : branches ) {
+				if ( branch.type == RefType::Head ) {
+					branch.localOnly =
+						std::find( remoteBranchNames.begin(), remoteBranchNames.end(),
+								   branch.name ) == remoteBranchNames.end();
+				}
+			}
+		}
 	}
 
 	if ( ( ref & RefType::Stash ) &&
@@ -1432,8 +1445,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	}
 
 	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]( bool isStaged ) {
-		std::string ptrn( "([-%d]+)%s+([-%d]+)%s+(.+)" );
-		LuaPattern pattern( ptrn );
+		LuaPattern pattern( "([-%d]+)%s+([-%d]+)%s+(.+)" );
+		LuaPattern renamePattern( "(.*)%{.*%s=>%s(.*)%}(.*)" );
 		std::string subModulePath = "";
 		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[4];
@@ -1455,12 +1468,36 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				}
 
 				if ( isBinary || ( inserts || deletes ) ) {
-					std::string rptrn( "(.*)%{.*%s->%s(.*)%}(.*)" );
-					LuaPattern pattern( rptrn );
-					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
+					auto matchesStatusPath = [&]( std::string_view candidate ) {
+						std::string path{ subModulePath };
+						appendDecodedGitPath( path, candidate );
+						auto repo = s.files.find( repoName( path, false, projectDir ) );
+						return repo != s.files.end() &&
+							   std::any_of( repo->second.begin(), repo->second.end(),
+											[isStaged, &path]( const DiffFile& statusFile ) {
+												return statusFile.file == path &&
+													   ( statusFile.report.type ==
+														 GitStatusType::Staged ) == isStaged;
+											} );
+					};
+					if ( renamePattern.matches( file.data(), 0, matches, file.size() ) ) {
 						file = file.substr( matches[1].start, matches[1].end - matches[1].start ) +
 							   file.substr( matches[2].start, matches[2].end - matches[2].start ) +
 							   file.substr( matches[3].start, matches[3].end - matches[3].start );
+					} else if ( file.find( " => " ) != std::string::npos &&
+								!matchesStatusPath( file ) ) {
+						bool matched = false;
+						for ( size_t arrow = file.find( " => " ); arrow != std::string::npos;
+							  arrow = file.find( " => ", arrow + 4 ) ) {
+							if ( matchesStatusPath(
+									 std::string_view( file ).substr( arrow + 4 ) ) ) {
+								file.erase( 0, arrow + 4 );
+								matched = true;
+								break;
+							}
+						}
+						if ( !matched )
+							return;
 					}
 
 					std::string filePath{ subModulePath };

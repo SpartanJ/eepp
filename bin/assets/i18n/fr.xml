@@ -1302,6 +1302,7 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="git_history_error">Impossible de charger l’historique Git</string>
 	<string name="git_history_retry">Réessayer</string>
 	<string name="git_local_branch">Locale</string>
+	<string name="git_local_only">locale uniquement</string>
 	<string name="git_remote_branch">Distante</string>
 	<string name="git_tag">Tag</string>
 </resources>

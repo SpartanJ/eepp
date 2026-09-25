@@ -1107,6 +1107,7 @@ file in the directory tree.</string>
 	<string name="git_history_error">无法加载 Git 历史记录</string>
 	<string name="git_history_retry">重试</string>
 	<string name="git_local_branch">本地</string>
+	<string name="git_local_only">仅本地</string>
 	<string name="git_remote_branch">远程</string>
 	<string name="git_tag">标签</string>
 </resources>

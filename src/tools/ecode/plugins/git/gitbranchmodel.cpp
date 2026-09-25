@@ -8,7 +8,7 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 	for ( const auto& branch : branches )
 		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
 							String::hash( branch.lastCommit ), branch.type, branch.ahead,
-							branch.behind, String::hash( branch.date ) );
+							branch.behind, String::hash( branch.date ), branch.localOnly );
 	return hash;
 }
 
@@ -127,6 +127,10 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 					} else if ( branch.type == Git::Head && branch.gone ) {
 						return Variant( String::format(
 							"%s (%s)", branch.name, mPlugin->i18n( "gone", "gone" ).toUtf8() ) );
+					} else if ( branch.type == Git::Head && branch.localOnly ) {
+						return Variant( String::format(
+							"%s (%s)", branch.name,
+							mPlugin->i18n( "git_local_only", "local only" ).toUtf8() ) );
 					} else if ( branch.type == Git::Stash ) {
 						return Variant( String::format( "%s: %s", branch.date, branch.name ) );
 					}
