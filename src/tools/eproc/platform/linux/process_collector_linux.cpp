@@ -33,6 +33,9 @@ constexpr size_t kProcFileCapacity = 8192;
 /** How often (in passes) the per-pid caches are swept of processes that exited. A sweep walks the
  *  whole map, so it is amortised over many passes instead of running on every one. */
 constexpr Uint32 kCacheSweepInterval = 60;
+// smaps_rollup walks page tables. Refresh one PID bucket per pass to spread that work across
+// collections, while reading uncached values immediately.
+constexpr Uint32 kPssSampleInterval = 5;
 
 /** Formats "/proc/<pid>/<leaf>" into @p out. Returns the length, or 0 on overflow. */
 inline size_t formatProcPath( char* out, size_t capacity, long pid, const char* leaf ) {
@@ -177,24 +180,54 @@ ProcessCollectorLinux::ProcessCollectorLinux() {
 
 ProcessCollectorLinux::~ProcessCollectorLinux() {}
 
-bool ProcessCollectorLinux::readCpuTimes( long long& idle, long long& total ) {
+bool ProcessCollectorLinux::readCpuTimes( long long& idle, long long& total, SystemInfo& sysInfo ) {
 	idle = 0;
 	total = 0;
 
-	char buffer[kProcFileCapacity];
-	size_t length = 0;
-	if ( !readProcFile( "/proc/stat", buffer, sizeof( buffer ), length ) )
+	FILE* file = fopen( "/proc/stat", "r" );
+	if ( !file )
 		return false;
 
+	char buffer[256];
+	if ( !fgets( buffer, sizeof( buffer ), file ) ) {
+		fclose( file );
+		return false;
+	}
 	long long user = 0, nice = 0, system = 0, idleVal = 0, iowait = 0, irq = 0, softirq = 0,
 			  steal = 0;
 	// The leading "cpu" aggregate line has at least the first four counters on every kernel.
 	if ( sscanf( buffer, "cpu %lld %lld %lld %lld %lld %lld %lld %lld", &user, &nice, &system,
-				 &idleVal, &iowait, &irq, &softirq, &steal ) < 4 )
+				 &idleVal, &iowait, &irq, &softirq, &steal ) < 4 ) {
+		fclose( file );
 		return false;
+	}
 
 	idle = idleVal + iowait;
 	total = user + nice + system + idleVal + iowait + irq + softirq + steal;
+	while ( fgets( buffer, sizeof( buffer ), file ) && buffer[0] == 'c' && buffer[1] == 'p' &&
+			buffer[2] == 'u' && buffer[3] >= '0' && buffer[3] <= '9' ) {
+		unsigned int index = 0;
+		user = nice = system = idleVal = iowait = irq = softirq = steal = 0;
+		if ( sscanf( buffer, "cpu%u %lld %lld %lld %lld %lld %lld %lld %lld", &index, &user, &nice,
+					 &system, &idleVal, &iowait, &irq, &softirq, &steal ) < 5 ||
+			 index >= 4096 )
+			continue;
+		if ( index >= mCoreCpuSamples.size() )
+			mCoreCpuSamples.resize( index + 1 );
+		auto& previous = mCoreCpuSamples[index];
+		const long long coreIdle = idleVal + iowait;
+		const long long coreTotal = user + nice + system + idleVal + iowait + irq + softirq + steal;
+		const long long delta = coreTotal - previous.total;
+		if ( previous.total > 0 && delta >= mJiffiesPerSecond / 5 && coreIdle >= previous.idle )
+			previous.usage =
+				static_cast<float>( delta - ( coreIdle - previous.idle ) ) / delta * 100.f;
+		previous.idle = coreIdle;
+		previous.total = coreTotal;
+	}
+	fclose( file );
+	sysInfo.coreCpuUsage.resize( mCoreCpuSamples.size() );
+	for ( size_t i = 0; i < mCoreCpuSamples.size(); ++i )
+		sysInfo.coreCpuUsage[i] = mCoreCpuSamples[i].usage;
 	return true;
 }
 
@@ -497,7 +530,7 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	long long deltaTotal = 0;
 	long long deltaIdle = 0;
 
-	if ( readCpuTimes( idle, total ) ) {
+	if ( readCpuTimes( idle, total, sysInfo ) ) {
 		if ( mPrevTotalCpu > 0 && total > mPrevTotalCpu ) {
 			deltaTotal = total - mPrevTotalCpu;
 			deltaIdle = idle - mPrevIdleCpu;
@@ -578,6 +611,23 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 		// breakdown; otherwise vmURSS stays -1 and the display falls back to RSS.
 		if ( proc.hasSharedInfo && proc.vmRSS >= 0 )
 			proc.vmURSS = proc.vmRSS - proc.sharedMem;
+
+		if ( mCollectProportionalMemory ) {
+			PssEntry& pss = mProcessPss[pid];
+			if ( pss.startTime != proc.startTime || pss.value < 0 ||
+				 static_cast<Uint32>( pid ) % kPssSampleInterval == mPass % kPssSampleInterval ) {
+				pss.value = -1;
+				if ( 0 != formatProcPath( path, sizeof( path ), pid, "smaps_rollup" ) &&
+					 readProcFile( path, buffer, sizeof( buffer ), length ) ) {
+					const char* line = strstr( buffer, "\nPss:" );
+					if ( line )
+						pss.value = parseLabeledLong( line + 1 );
+				}
+				pss.startTime = proc.startTime;
+			}
+			pss.seenPass = mPass;
+			proc.vmPSS = pss.value;
+		}
 
 		// CPU usage delta against the previous pass for this PID. Entries are updated in place and
 		// swept periodically, so the steady state does not allocate. A pid whose start time
@@ -670,6 +720,12 @@ void ProcessCollectorLinux::pruneCaches() {
 	for ( auto it = mProcessIcons.begin(); it != mProcessIcons.end(); ) {
 		if ( it->second.pass != mPass )
 			it = mProcessIcons.erase( it );
+		else
+			++it;
+	}
+	for ( auto it = mProcessPss.begin(); it != mProcessPss.end(); ) {
+		if ( it->second.seenPass != mPass )
+			it = mProcessPss.erase( it );
 		else
 			++it;
 	}

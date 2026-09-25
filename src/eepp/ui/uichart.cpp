@@ -512,8 +512,10 @@ void UIChart::updateLayout() {
 			labelWidth =
 				std::max( labelWidth, chartTextWidth( font, axisLayout.labels.back(), fontSize ) );
 		}
-		axisLayout.width = std::max( dp( mChartStyle.minimumAxisMargin ),
-									 labelWidth + dp( mChartStyle.rightAxisLabelPadding ) );
+		axisLayout.width = labelWidth > 0.f
+							   ? std::max( dp( mChartStyle.minimumAxisMargin ),
+										   labelWidth + dp( mChartStyle.rightAxisLabelPadding ) )
+							   : 0.f;
 		rightMargin += axisLayout.width;
 		mLayout.rightAxes.emplace_back( std::move( axisLayout ) );
 	}
@@ -562,8 +564,10 @@ void UIChart::updateLayout() {
 			maximumLabelWidth = std::max( maximumLabelWidth, labelWidth );
 		}
 		const Float measuredMargin =
-			std::max( dp( mChartStyle.minimumAxisMargin ),
-					  maximumLabelWidth + dp( mChartStyle.axisLabelPadding ) );
+			maximumLabelWidth > 0.f
+				? std::max( dp( mChartStyle.minimumAxisMargin ),
+							maximumLabelWidth + dp( mChartStyle.axisLabelPadding ) )
+				: dp( mChartStyle.leftMargin );
 		if ( pass == 0 ) {
 			leftMargin = measuredMargin;
 		} else {

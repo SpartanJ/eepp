@@ -53,6 +53,8 @@ class ProcessModel : public Model {
 		ColCommand,
 		ColThreads,
 		ColMemoryPercent,
+		ColFamilyMemory,
+		ColFamilyMemoryPercent,
 		ColCount
 	};
 
@@ -129,6 +131,8 @@ class ProcessModel : public Model {
 
 	void applyFilters();
 
+	void buildFamilyMemory( std::vector<ProcessInfo>& processes );
+
 	/** Applies the active filter mode to a single process, mirroring the original's predicates. */
 	bool accepts( const ProcessInfo& proc ) const;
 
@@ -139,6 +143,10 @@ class ProcessModel : public Model {
 
 	std::vector<ProcessInfo> mProcesses;
 	std::vector<ProcessInfo*> mFilteredProcesses;
+	UnorderedMap<Int64, int> mFamilyRowForPid;
+	std::vector<int> mFamilyParents;
+	std::vector<int> mFamilyPendingChildren;
+	std::vector<size_t> mFamilyQueue;
 	std::vector<Int64> mTextMatchedPids;
 	UISceneNode* mUI{ nullptr };
 	SystemInfo mSystemInfo;
@@ -154,7 +162,8 @@ class ProcessModel : public Model {
 	mutable UnorderedMap<std::string, DrawablePtr> mIconCache;
 };
 
-/** Hierarchical view of the visible rows owned by ProcessModel. */
+/** Hierarchical view of the visible rows owned by ProcessModel. Sorting changes only sibling
+ *  indexes, leaving Node addresses stable for UITreeView's expansion metadata. */
 class ProcessTreeModel : public Model, private Model::Client {
   public:
 	static std::shared_ptr<ProcessTreeModel> create( std::shared_ptr<ProcessModel> source ) {
@@ -174,6 +183,18 @@ class ProcessTreeModel : public Model, private Model::Client {
 	ModelIndex index( int row, int column = 0, const ModelIndex& parent = {} ) const override;
 
 	ModelIndex parentIndex( const ModelIndex& index ) const override;
+
+	bool isSortable() override { return true; }
+
+	bool isColumnSortable( const size_t& column ) const override {
+		return mSource->isColumnSortable( column );
+	}
+
+	int keyColumn() const override { return mSortColumn; }
+
+	SortOrder sortOrder() const override { return mSortOrder; }
+
+	void sort( const size_t& column, const SortOrder& order ) override;
 
 	size_t treeColumn() const override { return ProcessModel::ColName; }
 
@@ -197,10 +218,14 @@ class ProcessTreeModel : public Model, private Model::Client {
 
 	void rebuild();
 
+	void sortChildren();
+
 	std::shared_ptr<ProcessModel> mSource;
 	std::vector<Node> mNodes;
 	std::vector<int> mRoots;
 	UnorderedMap<Int64, int> mNodeForPid;
+	int mSortColumn{ -1 };
+	SortOrder mSortOrder{ SortOrder::None };
 };
 
 } // namespace eproc

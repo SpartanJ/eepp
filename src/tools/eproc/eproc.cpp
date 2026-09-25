@@ -10,6 +10,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <string_view>
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
@@ -21,7 +22,10 @@ namespace eproc {
 
 namespace {
 
-constexpr int kProcessTableStateVersion = 4;
+constexpr size_t kPerformanceHistorySamples = 600;
+constexpr double kPerformanceVisibleSeconds = 60.0;
+
+constexpr int kProcessTableStateVersion = 6;
 constexpr int kForceKillSignal = 9; // SIGKILL on Linux; TerminateProcess on Windows.
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
@@ -41,10 +45,12 @@ String forceKillLabel( UISceneNode* ui, size_t count ) {
 }
 constexpr int kPreviousProcessTableStateVersion = 3;
 constexpr int kLegacyProcessTableStateVersion = 2;
+constexpr int kPriorProcessTableStateVersion = 4;
+constexpr int kFamilyProcessTableStateVersion = 5;
 constexpr size_t kPreviousProcessColumnCount = 20;
 constexpr size_t kPreviousCommandColumn = 11;
 
-constexpr std::array<size_t, 10> kOptionalProcessColumns = { {
+constexpr std::array<size_t, 12> kOptionalProcessColumns = { {
 	ProcessModel::ColTotalMemory,
 	ProcessModel::ColVirtualSize,
 	ProcessModel::ColCpuTime,
@@ -55,6 +61,8 @@ constexpr std::array<size_t, 10> kOptionalProcessColumns = { {
 	ProcessModel::ColIoWrite,
 	ProcessModel::ColThreads,
 	ProcessModel::ColMemoryPercent,
+	ProcessModel::ColFamilyMemory,
+	ProcessModel::ColFamilyMemoryPercent,
 } };
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -95,6 +103,89 @@ constexpr std::array<size_t, 0> kUnavailableProcessColumns{};
 bool isProcessColumnSupported( size_t column ) {
 	return std::find( kUnavailableProcessColumns.begin(), kUnavailableProcessColumns.end(),
 					  column ) == kUnavailableProcessColumns.end();
+}
+
+String processColumnTooltip( UISceneNode* ui, size_t column ) {
+	switch ( column ) {
+		case ProcessModel::ColIcon:
+			return ui->i18n( "eproc_tip_icon", "Application icon, when available." );
+		case ProcessModel::ColName:
+			return ui->i18n( "eproc_tip_name", "Process name reported by the operating system." );
+		case ProcessModel::ColPid:
+			return ui->i18n( "eproc_tip_pid", "Process identifier (PID)." );
+		case ProcessModel::ColUsername:
+			return ui->i18n( "eproc_tip_username", "User account that owns the process." );
+		case ProcessModel::ColCpu:
+			return ui->i18n( "eproc_tip_cpu", "CPU usage during the latest sampling interval." );
+		case ProcessModel::ColMemory:
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+			return ui->i18n(
+				"eproc_tip_memory_linux",
+				"Anonymous resident memory (RssAnon); falls back to RSS when unavailable." );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+			return ui->i18n(
+				"eproc_tip_memory_windows",
+				"Private committed memory; falls back to resident memory when unavailable." );
+#else
+			return ui->i18n( "eproc_tip_memory", "Resident memory of this process." );
+#endif
+		case ProcessModel::ColSharedMem:
+			return ui->i18n( "eproc_tip_shared_memory",
+							 "File-backed and shared resident memory (RssFile + RssShmem)." );
+		case ProcessModel::ColGpuUsage:
+			return ui->i18n( "eproc_tip_gpu_usage", "GPU engine usage reported for this process." );
+		case ProcessModel::ColGpuMemory:
+			return ui->i18n( "eproc_tip_gpu_memory", "GPU memory reported for this process." );
+		case ProcessModel::ColDownload:
+			return ui->i18n( "eproc_tip_download",
+							 "Estimated network receive rate for this process." );
+		case ProcessModel::ColUpload:
+			return ui->i18n( "eproc_tip_upload", "Estimated network send rate for this process." );
+		case ProcessModel::ColTotalMemory:
+			return ui->i18n( "eproc_tip_resident_memory",
+							 "Resident memory of this process (RSS or working set). Shared pages "
+							 "can appear in multiple processes." );
+		case ProcessModel::ColVirtualSize:
+			return ui->i18n( "eproc_tip_virtual_size",
+							 "Virtual address space reserved or mapped by this process." );
+		case ProcessModel::ColCpuTime:
+			return ui->i18n( "eproc_tip_cpu_time", "Total CPU time consumed by this process." );
+		case ProcessModel::ColNiceness:
+			return ui->i18n( "eproc_tip_niceness", "Scheduling nice value of this process." );
+		case ProcessModel::ColRelativeStartTime:
+			return ui->i18n( "eproc_tip_start_time", "Time elapsed since this process started." );
+		case ProcessModel::ColTty:
+			return ui->i18n( "eproc_tip_tty", "Controlling terminal of this process." );
+		case ProcessModel::ColIoRead:
+			return ui->i18n( "eproc_tip_io_read", "Bytes read by this process since it started." );
+		case ProcessModel::ColIoWrite:
+			return ui->i18n( "eproc_tip_io_write",
+							 "Bytes written by this process since it started." );
+		case ProcessModel::ColCommand:
+			return ui->i18n( "eproc_tip_command",
+							 "Executable path and arguments, when available." );
+		case ProcessModel::ColThreads:
+			return ui->i18n( "eproc_tip_threads", "Number of threads in this process." );
+		case ProcessModel::ColMemoryPercent:
+			return ui->i18n( "eproc_tip_memory_percent",
+							 "Memory column as a percentage of total physical memory." );
+		case ProcessModel::ColFamilyMemory:
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+			return ui->i18n(
+				"eproc_tip_family_memory_linux",
+				"Sum of proportional resident memory (PSS) for this process and all live "
+				"descendants. Shared pages are apportioned; blank if any member is unavailable." );
+#else
+			return ui->i18n( "eproc_tip_family_memory",
+							 "Sum of the Memory column for this process and all live descendants. "
+							 "Approximate application memory." );
+#endif
+		case ProcessModel::ColFamilyMemoryPercent:
+			return ui->i18n( "eproc_tip_family_memory_percent",
+							 "Family Memory as a percentage of total physical memory." );
+		default:
+			return {};
+	}
 }
 
 void hideUnsupportedProcessColumns( UIAbstractTableView& view ) {
@@ -208,17 +299,98 @@ bool migrateProcessTableState( nlohmann::json& state ) {
 	if ( state["version"] == kLegacyProcessTableStateVersion &&
 		 !migratePreviousProcessTableState( state ) )
 		return false;
-	if ( state["version"] != kPreviousProcessTableStateVersion || !state.contains( "widths" ) ||
-		 !state["widths"].is_object() || !state["widths"].contains( "widths" ) ||
-		 !state["widths"]["widths"].is_array() ||
-		 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
+	if ( state["version"] == kPreviousProcessTableStateVersion ) {
+		if ( !state.contains( "widths" ) || !state["widths"].is_object() ||
+			 !state["widths"].contains( "widths" ) || !state["widths"]["widths"].is_array() ||
+			 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
+			return false;
+		state["widths"]["widths"].push_back( 0 );
+		state["widths"]["widths"].push_back( 0 );
+		if ( !state.contains( "hidden_columns" ) || !state["hidden_columns"].is_array() )
+			state["hidden_columns"] = nlohmann::json::array();
+		state["hidden_columns"].push_back( ProcessModel::ColThreads );
+		state["hidden_columns"].push_back( ProcessModel::ColMemoryPercent );
+		if ( state.contains( "column_order" ) && state["column_order"].is_array() &&
+			 state["column_order"].size() == kPreviousProcessColumnCount ) {
+			state["column_order"].push_back( ProcessModel::ColThreads );
+			state["column_order"].push_back( ProcessModel::ColMemoryPercent );
+		}
+		state["version"] = kPriorProcessTableStateVersion;
+	}
+	if ( state["version"] == kPriorProcessTableStateVersion ) {
+		const auto addFamilyColumn = []( nlohmann::json& columns ) {
+			if ( !columns.contains( "widths" ) || !columns["widths"].is_object() ||
+				 !columns["widths"].contains( "widths" ) ||
+				 !columns["widths"]["widths"].is_array() ||
+				 columns["widths"]["widths"].size() != ProcessModel::ColFamilyMemory )
+				return false;
+			columns["widths"]["widths"].push_back( 0 );
+			if ( !columns.contains( "hidden_columns" ) || !columns["hidden_columns"].is_array() )
+				columns["hidden_columns"] = nlohmann::json::array();
+			columns["hidden_columns"].push_back( ProcessModel::ColFamilyMemory );
+			if ( columns.contains( "column_order" ) && columns["column_order"].is_array() &&
+				 columns["column_order"].size() == ProcessModel::ColFamilyMemory )
+				columns["column_order"].push_back( ProcessModel::ColFamilyMemory );
+			return true;
+		};
+		if ( !addFamilyColumn( state ) )
+			return false;
+		if ( state.contains( "tree" ) && state["tree"].is_object() &&
+			 !addFamilyColumn( state["tree"] ) )
+			state.erase( "tree" );
+		state["version"] = kFamilyProcessTableStateVersion;
+	}
+	if ( state["version"] != kFamilyProcessTableStateVersion )
 		return false;
-	state["widths"]["widths"].push_back( 0 );
-	state["widths"]["widths"].push_back( 0 );
-	if ( !state.contains( "hidden_columns" ) || !state["hidden_columns"].is_array() )
-		state["hidden_columns"] = nlohmann::json::array();
-	state["hidden_columns"].push_back( ProcessModel::ColThreads );
-	state["hidden_columns"].push_back( ProcessModel::ColMemoryPercent );
+	const auto addFamilyPercentColumn = []( nlohmann::json& columns ) {
+		if ( !columns.contains( "widths" ) || !columns["widths"].is_object() ||
+			 !columns["widths"].contains( "widths" ) || !columns["widths"]["widths"].is_array() ||
+			 columns["widths"]["widths"].size() != ProcessModel::ColFamilyMemoryPercent )
+			return false;
+		columns["widths"]["widths"].push_back( 0 );
+		if ( !columns.contains( "hidden_columns" ) || !columns["hidden_columns"].is_array() )
+			columns["hidden_columns"] = nlohmann::json::array();
+		columns["hidden_columns"].push_back( ProcessModel::ColFamilyMemoryPercent );
+		if ( columns.contains( "column_order" ) && columns["column_order"].is_array() &&
+			 columns["column_order"].size() == ProcessModel::ColFamilyMemoryPercent ) {
+			const auto& oldOrder = columns["column_order"];
+			bool naturalOrder = true;
+			for ( size_t i = 0; i < oldOrder.size(); ++i ) {
+				if ( !oldOrder[i].is_number_integer() ||
+					 oldOrder[i].get<Int64>() != static_cast<Int64>( i ) ) {
+					naturalOrder = false;
+					break;
+				}
+			}
+			nlohmann::json order = nlohmann::json::array();
+			if ( naturalOrder ) {
+				for ( size_t column = 0; column < ProcessModel::ColFamilyMemoryPercent; ++column ) {
+					if ( column != ProcessModel::ColCommand )
+						order.push_back( column );
+				}
+				order.push_back( ProcessModel::ColFamilyMemoryPercent );
+				order.push_back( ProcessModel::ColCommand );
+			} else {
+				bool inserted = false;
+				for ( const auto& column : oldOrder ) {
+					if ( column == ProcessModel::ColCommand ) {
+						order.push_back( ProcessModel::ColFamilyMemoryPercent );
+						inserted = true;
+					}
+					order.push_back( column );
+				}
+				if ( !inserted )
+					order.push_back( ProcessModel::ColFamilyMemoryPercent );
+			}
+			columns["column_order"] = std::move( order );
+		}
+		return true;
+	};
+	if ( !addFamilyPercentColumn( state ) )
+		return false;
+	if ( state.contains( "tree" ) && state["tree"].is_object() &&
+		 !addFamilyPercentColumn( state["tree"] ) )
+		state.erase( "tree" );
 	state["version"] = kProcessTableStateVersion;
 	return true;
 }
@@ -259,6 +431,10 @@ constexpr std::array<std::string_view, 11> kCpuFillClasses = {
 	"eproc-cpu-fill-40", "eproc-cpu-fill-50", "eproc-cpu-fill-60",	"eproc-cpu-fill-70",
 	"eproc-cpu-fill-80", "eproc-cpu-fill-90", "eproc-cpu-fill-100",
 };
+
+std::string formatPerformanceRate( Int64 bytes ) {
+	return bytes > 0 ? formatBytesPerSecond( bytes ) : "0 B/s";
+}
 
 } // namespace
 
@@ -477,6 +653,20 @@ bool App::init() {
 	treeview::row:nth-child(even):selected {
 		background-color: var(--primary);
 	}
+	.eproc-performance-sidebar { background-color: #282d31; }
+	.eproc-performance-card {
+		background-color: #202427;
+		border: 1dp solid #40474b;
+		border-radius: 5dp;
+	}
+	.eproc-performance-card-selected { border: 2dp solid #39a9d6; }
+	.eproc-performance-muted { color: #9aa4ab; }
+	.eproc-performance-chart { background-color: #202427; }
+	.eproc-performance-preview {
+		background-color: #202427;
+		border: 1dp solid #40474b;
+		border-radius: 4dp;
+	}
 	</style>
 	<vbox id="main_layout" lw="mp" lh="mp">
 		<TabWidget id="tab_widget" lw="mp" lh="mp">
@@ -500,14 +690,44 @@ bool App::init() {
 					<TextView id="swap_text" lw="0" lw8="0.25" lh="wc" />
 				</hbox>
 			</vbox>
-			<!-- System Load placeholder tab content -->
-			<!--
-			<TextView id="system_load_area" lw="mp" lh="mp"
-				text="System Load - Coming soon" />
-			-->
+			<hbox id="performance_area" lw="mp" lh="mp">
+				<vbox class="eproc-performance-sidebar" lw="276dp" lh="mp" padding="8dp">
+					<hbox id="perf_cpu_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
+						<Chart id="perf_cpu_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
+						<vbox lw="0" lw8="1" lh="mp"><TextView text="CPU" lw="mp" lh="wc" /><TextView id="perf_cpu_value" lw="mp" lh="wc" /></vbox>
+					</hbox>
+					<hbox id="perf_memory_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
+						<Chart id="perf_memory_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
+						<vbox lw="0" lw8="1" lh="mp"><TextView text="Memory" lw="mp" lh="wc" /><TextView id="perf_memory_value" lw="mp" lh="wc" /></vbox>
+					</hbox>
+					<hbox id="perf_gpu_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
+						<Chart id="perf_gpu_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
+						<vbox lw="0" lw8="1" lh="mp"><TextView text="GPU" lw="mp" lh="wc" /><TextView id="perf_gpu_value" lw="mp" lh="wc" /></vbox>
+					</hbox>
+					<hbox id="perf_network_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp">
+						<Chart id="perf_network_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
+						<vbox lw="0" lw8="1" lh="mp"><TextView text="Network" lw="mp" lh="wc" /><TextView id="perf_network_value" lw="mp" lh="wc" /></vbox>
+					</hbox>
+				</vbox>
+				<vbox lw="0" lw8="1" lh="mp" padding="14dp">
+					<hbox lw="mp" lh="wc" margin-bottom="8dp">
+						<TextView id="perf_title" lw="0" lw8="1" lh="wc" />
+						<hbox id="perf_cpu_mode" lw="wc" lh="wc">
+							<SelectButton id="perf_overall" text="Overall" lw="wc" lh="wc" margin-right="4dp" selected="true" />
+							<SelectButton id="perf_per_core" text="Per core" lw="wc" lh="wc" />
+						</hbox>
+					</hbox>
+					<TextView id="perf_summary" class="eproc-performance-muted" lw="mp" lh="wc" margin-bottom="8dp" />
+					<Chart id="perf_detail_chart" class="eproc-performance-chart" lw="mp" lh="0" lw8="1" />
+					<ScrollView id="perf_cores_scroll" lw="mp" lh="0" lw8="1" visible="false">
+						<StackLayout id="perf_cores_stack" lw="mp" lh="wc" row-valign="top" />
+					</ScrollView>
+					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" />
+				</vbox>
+			</hbox>
 			<!-- Tab definitions -->
 			<Tab id="tab_process_table" owns="process_table_area" />
-			<!-- <Tab id="tab_system_load" text="System Load" owns="system_load_area" /> -->
+			<Tab id="tab_performance" text="Performance" owns="performance_area" />
 		</TabWidget>
 	</vbox>
 	)xml" );
@@ -518,6 +738,7 @@ bool App::init() {
 
 	setupUI();
 	setupProcessTable();
+	setupPerformance();
 
 	if ( !mCollector ) {
 		UIMessageBox* platformMessage = UIMessageBox::New(
@@ -650,9 +871,32 @@ std::string App::serializeProcessTableState() const {
 	state["version"] = kProcessTableStateVersion;
 	state["sort"]["column"] = mSortProxy->keyColumn();
 	state["sort"]["order"] = sortOrderName( mSortProxy->sortOrder() );
-	if ( mTreeView )
+	if ( mTreeView ) {
 		state["tree"] = serializeProcessColumns( *mTreeView, mTreeModel->columnCount() );
+		state["tree"]["sort"]["column"] = mTreeModel->keyColumn();
+		state["tree"]["sort"]["order"] = sortOrderName( mTreeModel->sortOrder() );
+	}
 	return state.dump();
+}
+
+static void restoreProcessSort( UIAbstractTableView& view, const nlohmann::json& state,
+								size_t columnCount ) {
+	if ( !state.contains( "sort" ) || !state["sort"].is_object() )
+		return;
+	const auto& sort = state["sort"];
+	const int column = sort.contains( "column" ) && sort["column"].is_number_integer()
+						   ? sort["column"].get<int>()
+						   : -1;
+	const std::string orderName = sort.contains( "order" ) && sort["order"].is_string()
+									  ? sort["order"].get<std::string>()
+									  : "none";
+	SortOrder order = SortOrder::None;
+	Model* model = view.getModel();
+	if ( model && column >= 0 && static_cast<size_t>( column ) < columnCount &&
+		 isProcessColumnSupported( static_cast<size_t>( column ) ) &&
+		 parseSortOrder( orderName, order ) && order != SortOrder::None &&
+		 model->isColumnSortable( column ) )
+		view.sortByColumn( static_cast<size_t>( column ), order );
 }
 
 void App::restoreProcessTableState() {
@@ -667,7 +911,9 @@ void App::restoreProcessTableState() {
 
 	const int stateVersion = state["version"].get<int>();
 	if ( stateVersion == kLegacyProcessTableStateVersion ||
-		 stateVersion == kPreviousProcessTableStateVersion ) {
+		 stateVersion == kPreviousProcessTableStateVersion ||
+		 stateVersion == kPriorProcessTableStateVersion ||
+		 stateVersion == kFamilyProcessTableStateVersion ) {
 		if ( !migrateProcessTableState( state ) )
 			return;
 	} else if ( stateVersion != kProcessTableStateVersion ) {
@@ -680,25 +926,12 @@ void App::restoreProcessTableState() {
 		return;
 
 	restoreProcessColumns( *mTableView, state, columnCount );
+	restoreProcessSort( *mTableView, state, columnCount );
 
-	if ( state.contains( "sort" ) && state["sort"].is_object() ) {
-		const auto& sort = state["sort"];
-		const int column = sort.contains( "column" ) && sort["column"].is_number_integer()
-							   ? sort["column"].get<int>()
-							   : -1;
-		const std::string orderName = sort.contains( "order" ) && sort["order"].is_string()
-										  ? sort["order"].get<std::string>()
-										  : "none";
-		SortOrder order = SortOrder::None;
-		if ( column >= 0 && static_cast<size_t>( column ) < columnCount &&
-			 isProcessColumnSupported( static_cast<size_t>( column ) ) &&
-			 parseSortOrder( orderName, order ) && order != SortOrder::None &&
-			 mSortProxy->isColumnSortable( column ) )
-			mTableView->sortByColumn( static_cast<size_t>( column ), order );
-	}
-
-	if ( mTreeView && state.contains( "tree" ) && state["tree"].is_object() )
+	if ( mTreeView && state.contains( "tree" ) && state["tree"].is_object() ) {
 		restoreProcessColumns( *mTreeView, state["tree"], columnCount );
+		restoreProcessSort( *mTreeView, state["tree"], columnCount );
+	}
 }
 
 bool App::closeWindow( EE::Window::Window* ) {
@@ -721,6 +954,8 @@ void App::setupUI() {
 	auto* ui = mApp->getUI();
 	mRoot->find<UITab>( "tab_process_table" )
 		->setText( ui->i18n( "eproc_process_table_tab", "Process Table" ) );
+	mRoot->find<UITab>( "tab_performance" )
+		->setText( ui->i18n( "eproc_performance_tab", "Performance" ) );
 	mEndProcessBtn->setText( endProcessLabel( ui, 0 ) );
 	mSearchInput->setHint( ui->i18n( "eproc_quick_search_hint", "Quick search" ) );
 	mStatusText->setText( ui->i18n( "eproc_process_count", "0 processes" ) );
@@ -767,6 +1002,269 @@ void App::setupUI() {
 	mSearchInput->setFocus();
 }
 
+void App::setupPerformance() {
+	constexpr std::array<const char*, 4> ids = { "cpu", "memory", "gpu", "network" };
+	constexpr std::array<const char*, 4> names = { "CPU", "Memory", "GPU", "Network" };
+	const std::array<Color, 4> colors = { Color( 49, 178, 224 ), Color( 190, 151, 226 ),
+										  Color( 119, 203, 135 ), Color( 91, 196, 223 ) };
+	mPerformanceDetailChart = mRoot->find<UIChart>( "perf_detail_chart" );
+	mPerformanceTitle = mRoot->find<UITextView>( "perf_title" );
+	mPerformanceSummary = mRoot->find<UITextView>( "perf_summary" );
+	mPerformanceDetail = mRoot->find<UITextView>( "perf_detail" );
+	mCoreChartScroll = mRoot->find<UIWidget>( "perf_cores_scroll" );
+	mCoreChartStack = mRoot->find<UIWidget>( "perf_cores_stack" );
+	mCpuModeControls = mRoot->find<UIWidget>( "perf_cpu_mode" );
+	mOverallButton = mRoot->find<UISelectButton>( "perf_overall" );
+	mPerCoreButton = mRoot->find<UISelectButton>( "perf_per_core" );
+	mOverallButton->onClick( [this]( const MouseEvent* ) { setPerCoreView( false ); } );
+	mPerCoreButton->onClick( [this]( const MouseEvent* ) { setPerCoreView( true ); } );
+
+	ChartStyle detailStyle = mPerformanceDetailChart->chartStyle();
+	detailStyle.verticalGrid.mode = ChartGridMode::ScreenInterval;
+	detailStyle.verticalGrid.spacing = 64.0;
+	detailStyle.horizontalGrid.mode = ChartGridMode::AxisTicks;
+	detailStyle.verticalGrid.color = Color( 100, 113, 124, 45 );
+	detailStyle.horizontalGrid.color = Color( 100, 113, 124, 45 );
+	detailStyle.leftMargin = 68.f;
+	detailStyle.bottomMargin = 28.f;
+	detailStyle.minimumAxisMargin = 46.f;
+	mPerformanceDetailChart->setChartStyle( detailStyle );
+
+	for ( size_t i = 0; i < ids.size(); ++i ) {
+		auto& metric = mPerformanceMetrics[i];
+		const std::string prefix = std::string( "perf_" ) + ids[i];
+		metric.card = mRoot->find<UIWidget>( prefix + "_card" );
+		metric.preview = mRoot->find<UIChart>( prefix + "_preview" );
+		metric.value = mRoot->find<UITextView>( prefix + "_value" );
+		metric.primary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
+		auto& line = metric.preview->addLineSeries( names[i] );
+		line.setDataSource( metric.primary );
+		line.setColor( colors[i] );
+		metric.preview->xAxis().setFormatter(
+			[this]( double value, double ) { return formatPerformanceTime( value ); } );
+		if ( i == 3 ) {
+			metric.preview->yAxis().setFormatter( []( double value, double ) {
+				if ( !std::isfinite( value ) || value <= 0 )
+					return String( "0 B/s" );
+				return String( formatPerformanceRate( static_cast<Int64>( std::min(
+					value, static_cast<double>( std::numeric_limits<Int64>::max() ) ) ) ) );
+			} );
+		} else {
+			metric.preview->yAxis().setFormatter(
+				[]( double value, double ) { return String::format( "%.0f%%", value ); } );
+		}
+		if ( i == 3 ) {
+			metric.secondary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
+			auto& upload = metric.preview->addLineSeries( "Upload" );
+			upload.setDataSource( metric.secondary );
+			upload.setColor( Color( 236, 115, 103 ) );
+		}
+		ChartStyle smallStyle = metric.preview->chartStyle();
+		smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
+			smallStyle.bottomMargin = smallStyle.minimumAxisMargin = 2.f;
+		smallStyle.tickLength = 0.f;
+		smallStyle.axisColor = Color( 0, 0, 0, 0 );
+		smallStyle.tickColor = Color( 0, 0, 0, 0 );
+		smallStyle.tickLabelColor = Color( 0, 0, 0, 0 );
+		metric.preview->setChartStyle( smallStyle );
+		if ( i != 3 )
+			metric.preview->setAxisRange( metric.preview->yAxis(), { 0.0, 100.0 } );
+		metric.preview->setAxisRange( metric.preview->xAxis(),
+									  { -kPerformanceVisibleSeconds, 0.0 } );
+		// The chart and text are display-only. Let the card receive clicks anywhere inside it.
+		for ( Node* child = metric.card->getFirstChild(); child; child = child->getNextNode() )
+			child->writeNodeFlag( NODE_FLAG_OVER_FIND_ALLOWED, 0 );
+		metric.card->onClick( [this, i]( const MouseEvent* ) { selectPerformanceMetric( i ); } );
+		metric.value->setText( i < 2 ? "0%" : "Unavailable" );
+	}
+	selectPerformanceMetric( 0 );
+}
+
+String App::formatPerformanceTime( double value ) const {
+	const double elapsed = mPerformanceClock.getElapsedTime().asSeconds() - value;
+	if ( elapsed < 2.0 )
+		return "Now";
+	const int seconds = static_cast<int>( std::round( std::max( 0.0, elapsed ) ) );
+	return String::format( "-%d:%02d", seconds / 60, seconds % 60 );
+}
+
+void App::selectPerformanceMetric( size_t metric ) {
+	if ( metric >= mPerformanceMetrics.size() )
+		return;
+	mSelectedPerformanceMetric = metric;
+	for ( size_t i = 0; i < mPerformanceMetrics.size(); ++i ) {
+		auto* card = mPerformanceMetrics[i].card;
+		if ( i == metric )
+			card->addClass( "eproc-performance-card-selected" );
+		else
+			card->removeClass( "eproc-performance-card-selected" );
+	}
+	static const char* names[] = { "CPU", "Memory", "GPU", "Network" };
+	mPerformanceTitle->setText( names[metric] );
+	mPerformanceSummary->setText( mPerformanceSummaries[metric] );
+	mPerformanceDetail->setText( mPerformanceDetails[metric] );
+	mCpuModeControls->setVisible( metric == 0 && !mCoreHistory.empty() );
+	mPerformanceDetailChart->setModel( mPerformanceMetrics[metric].preview->sharedModel() );
+	if ( metric != 3 )
+		mPerformanceDetailChart->setAxisRange( mPerformanceDetailChart->yAxis(), { 0.0, 100.0 } );
+	const double now = mPerformanceClock.getElapsedTime().asSeconds();
+	mPerformanceDetailChart->setAxisRange( mPerformanceDetailChart->xAxis(),
+										   { now - kPerformanceVisibleSeconds, now } );
+	mPerformanceDetailChart->setVisible( metric != 0 || !mPerCoreView );
+	mCoreChartScroll->setVisible( metric == 0 && mPerCoreView );
+}
+
+void App::setPerCoreView( bool perCore ) {
+	mPerCoreView = perCore && !mCoreHistory.empty();
+	mConfig->performancePerCore = mPerCoreView;
+	mOverallButton->setSelected( !mPerCoreView );
+	mPerCoreButton->setSelected( mPerCoreView );
+	if ( mPerCoreView && mCoreCharts.size() != mCoreHistory.size() )
+		rebuildCoreCharts( mCoreHistory.size() );
+	mPerformanceDetailChart->setVisible( !mPerCoreView );
+	mCoreChartScroll->setVisible( mPerCoreView );
+}
+
+void App::rebuildCoreCharts( size_t count ) {
+	mCoreChartStack->closeAllChildren();
+	mCoreCharts.clear();
+	mCoreLabels.clear();
+	for ( size_t core = 0; core < count; ++core ) {
+		auto* panel = mApp->getUI()->loadLayoutFromString(
+			"<RelativeLayout lw=\"184dp\" lh=\"112dp\" margin-right=\"6dp\" "
+			"margin-bottom=\"6dp\"><Chart id=\"core_chart\" lw=\"mp\" "
+			"lh=\"mp\" /><TextView id=\"core_title\" lw=\"wc\" lh=\"wc\" "
+			"lg=\"top|left\" margin-left=\"5dp\" margin-top=\"4dp\" />"
+			"</RelativeLayout>",
+			mCoreChartStack );
+		auto* label = panel->find<UITextView>( "core_title" );
+		label->setText( String::format( "CPU %zu", core ) );
+		label->writeNodeFlag( NODE_FLAG_OVER_FIND_ALLOWED, 0 );
+		mCoreLabels.push_back( label );
+		auto* chart = panel->find<UIChart>( "core_chart" );
+		chart->addClass( "eproc-performance-chart" );
+		auto& line = chart->addLineSeries( String::format( "CPU %zu", core ) );
+		line.setDataSource( mCoreHistory[core] );
+		line.setColor( Color( 49, 178, 224 ) );
+		chart->xAxis().setFormatter( []( double, double ) { return String(); } );
+		chart->yAxis().setFormatter( []( double, double ) { return String(); } );
+		ChartStyle style = chart->chartStyle();
+		style.leftMargin = 0.f;
+		style.rightMargin = 0.f;
+		style.topMargin = 0.f;
+		style.bottomMargin = 0.f;
+		style.minimumAxisMargin = 0.f;
+		style.tickLength = 0.f;
+		style.axisColor = Color( 0, 0, 0, 0 );
+		style.tickColor = Color( 0, 0, 0, 0 );
+		style.tickLabelColor = Color( 0, 0, 0, 0 );
+		style.verticalGrid.mode = ChartGridMode::ScreenInterval;
+		style.verticalGrid.spacing = 24.0;
+		style.verticalGrid.color = Color( 100, 113, 124, 35 );
+		style.horizontalGrid.mode = ChartGridMode::DataInterval;
+		style.horizontalGrid.spacing = 25.0;
+		style.horizontalGrid.color = Color( 100, 113, 124, 35 );
+		chart->setChartStyle( style );
+		chart->setAxisRange( chart->yAxis(), { 0.0, 100.0 } );
+		const double now = mPerformanceClock.getElapsedTime().asSeconds();
+		chart->setAxisRange( chart->xAxis(), { now - kPerformanceVisibleSeconds, now } );
+		mCoreCharts.push_back( chart );
+	}
+}
+
+void App::updatePerformance( const SystemInfo& sysInfo,
+							 const std::vector<ProcessInfo>& processes ) {
+	const double now = mPerformanceClock.getElapsedTime().asSeconds();
+	const double memoryPercent =
+		sysInfo.totalMemory > 0 ? 100.0 * sysInfo.getUsedMemoryKB() / sysInfo.totalMemory : 0.0;
+	Int64 download = 0, upload = 0, gpuMemory = 0;
+	int gpuUsage = 0;
+	bool hasNetwork = false, hasGpu = false;
+	for ( const auto& process : processes ) {
+		if ( process.netDownload >= 0 ) {
+			download += process.netDownload;
+			hasNetwork = true;
+		}
+		if ( process.netUpload >= 0 ) {
+			upload += process.netUpload;
+			hasNetwork = true;
+		}
+		if ( process.gpuUsage >= 0 ) {
+			gpuUsage += process.gpuUsage;
+			hasGpu = true;
+		}
+		if ( process.gpuMemory >= 0 ) {
+			gpuMemory += process.gpuMemory;
+			hasGpu = true;
+		}
+	}
+	mPerformanceMetrics[0].primary->append( { now, sysInfo.cpuUsage } );
+	mPerformanceMetrics[1].primary->append( { now, memoryPercent } );
+	if ( hasGpu )
+		mPerformanceMetrics[2].primary->append(
+			{ now, static_cast<double>( std::min( gpuUsage, 100 ) ) } );
+	if ( hasNetwork ) {
+		mPerformanceMetrics[3].primary->append( { now, static_cast<double>( download ) } );
+		mPerformanceMetrics[3].secondary->append( { now, static_cast<double>( upload ) } );
+	}
+	mPerformanceMetrics[0].value->setText( String::format( "%.1f%%", sysInfo.cpuUsage ) );
+	mPerformanceMetrics[1].value->setText( String::format( "%.1f%%", memoryPercent ) );
+	mPerformanceMetrics[2].value->setText(
+		hasGpu ? String::format( "%d%% tracked", std::min( gpuUsage, 100 ) ) : "Unavailable" );
+	mPerformanceMetrics[3].value->setText(
+		hasNetwork ? String::format( "%s down", formatPerformanceRate( download ).c_str() )
+				   : "Unavailable" );
+
+	if ( mCoreHistory.size() < sysInfo.coreCpuUsage.size() ) {
+		mCoreHistory.reserve( sysInfo.coreCpuUsage.size() );
+		while ( mCoreHistory.size() < sysInfo.coreCpuUsage.size() )
+			mCoreHistory.push_back(
+				std::make_shared<RingXYDataSource>( kPerformanceHistorySamples ) );
+	}
+	for ( size_t i = 0; i < sysInfo.coreCpuUsage.size(); ++i )
+		mCoreHistory[i]->append( { now, sysInfo.coreCpuUsage[i] } );
+	if ( mConfig->performancePerCore && !mPerCoreView && !mCoreHistory.empty() )
+		setPerCoreView( true );
+	for ( auto& metric : mPerformanceMetrics )
+		metric.preview->setAxisRange( metric.preview->xAxis(),
+									  { now - kPerformanceVisibleSeconds, now } );
+	mPerformanceDetailChart->setAxisRange( mPerformanceDetailChart->xAxis(),
+										   { now - kPerformanceVisibleSeconds, now } );
+	for ( auto* chart : mCoreCharts )
+		chart->setAxisRange( chart->xAxis(), { now - kPerformanceVisibleSeconds, now } );
+	mCpuModeControls->setVisible( mSelectedPerformanceMetric == 0 && !mCoreHistory.empty() );
+	if ( mPerCoreView && mCoreCharts.size() != mCoreHistory.size() )
+		rebuildCoreCharts( mCoreHistory.size() );
+	for ( size_t i = 0; i < mCoreLabels.size() && i < sysInfo.coreCpuUsage.size(); ++i )
+		mCoreLabels[i]->setText(
+			String::format( "CPU %zu    %.1f%%", i, sysInfo.coreCpuUsage[i] ) );
+
+	mPerformanceSummaries[0] = String::format( "%.1f%% utilization", sysInfo.cpuUsage );
+	mPerformanceDetails[0] =
+		String::format( "%d logical processors    %zu processes    %.0f seconds up",
+						sysInfo.cpuCount, processes.size(), sysInfo.uptimeSeconds );
+	mPerformanceSummaries[1] = String::format( "%.1f%% physical memory", memoryPercent );
+	mPerformanceDetails[1] =
+		String::format( "In use  %s    Available  %s    Total  %s    Swap  %s / %s",
+						formatKiBIEC( sysInfo.getUsedMemoryKB() ).c_str(),
+						formatKiBIEC( sysInfo.availableMemory ).c_str(),
+						formatKiBIEC( sysInfo.totalMemory ).c_str(),
+						formatKiBIEC( sysInfo.getUsedSwapKB() ).c_str(),
+						formatKiBIEC( sysInfo.totalSwap ).c_str() );
+	mPerformanceSummaries[2] = "Tracked process GPU usage";
+	mPerformanceDetails[2] =
+		hasGpu ? String::format( "Usage  %d%%    Tracked GPU memory  %s", std::min( gpuUsage, 100 ),
+								 formatKiBIEC( gpuMemory ).c_str() )
+			   : "GPU data is unavailable on this system";
+	mPerformanceSummaries[3] = "Tracked process network traffic";
+	mPerformanceDetails[3] = hasNetwork ? String::format( "Download  %s    Upload  %s",
+														  formatPerformanceRate( download ).c_str(),
+														  formatPerformanceRate( upload ).c_str() )
+										: "Network data is unavailable on this system";
+	mPerformanceSummary->setText( mPerformanceSummaries[mSelectedPerformanceMetric] );
+	mPerformanceDetail->setText( mPerformanceDetails[mSelectedPerformanceMetric] );
+}
+
 void App::setupProcessTable() {
 	mProcessModel = ProcessModel::create( mApp->getUI() );
 	mProcessModel->setDivideCpuUsage( mConfig->divideCpuUsage );
@@ -783,6 +1281,11 @@ void App::setupProcessTable() {
 			view->setModel( mTreeModel );
 		else
 			view->setModel( mSortProxy );
+		view->moveColumn( ProcessModel::ColCommand, ProcessModel::ColCount - 1 );
+		for ( size_t column = 0; column < ProcessModel::ColCount; ++column ) {
+			if ( auto* header = view->getHeaderColumn( column ) )
+				header->setTooltipText( processColumnTooltip( mApp->getUI(), column ) );
+		}
 		view->setColumnsHidden(
 			std::vector<size_t>( kOptionalProcessColumns.begin(), kOptionalProcessColumns.end() ),
 			true );
@@ -921,6 +1424,14 @@ bool App::waitForFirstSnapshot( Uint32 timeoutMs ) {
 
 void App::onRefreshTick() {
 	publishStagedSnapshot();
+	if ( mCollectInFlight.load() )
+		return;
+	if ( mCollectFamilyMemoryAfterRestore ) {
+		mCollectFamilyMemoryAfterRestore = false;
+		mDispatchClock.getElapsedTimeAndReset();
+		collectAsync();
+		return;
+	}
 
 	if ( mDispatchClock.getElapsedTime().asMilliseconds() < mUpdateIntervalMs )
 		return;
@@ -937,6 +1448,10 @@ void App::collectAsync() {
 	// previous sample, so concurrent runs would corrupt it.
 	if ( mCollectInFlight.exchange( true ) )
 		return;
+	UIAbstractTableView* view = activeProcessView();
+	mCollector->setCollectProportionalMemory(
+		view && ( !view->isColumnHidden( ProcessModel::ColFamilyMemory ) ||
+				  !view->isColumnHidden( ProcessModel::ColFamilyMemoryPercent ) ) );
 
 	mThreadPool->run( [this] {
 		std::vector<ProcessInfo> processes;
@@ -945,7 +1460,7 @@ void App::collectAsync() {
 		if ( mCollector->collect( processes, sysInfo ) ) {
 			Lock lock( mStagingMutex );
 			mStagedProcesses = std::move( processes );
-			mStagedSystemInfo = sysInfo;
+			mStagedSystemInfo = std::move( sysInfo );
 			mStagedReady = true;
 		}
 
@@ -962,7 +1477,7 @@ void App::publishStagedSnapshot() {
 		if ( !mStagedReady )
 			return;
 		processes = std::move( mStagedProcesses );
-		sysInfo = mStagedSystemInfo;
+		sysInfo = std::move( mStagedSystemInfo );
 		mStagedReady = false;
 	}
 
@@ -986,6 +1501,8 @@ void App::publishStagedSnapshot() {
 	if ( mTreeView )
 		mTreeView->clearViewMetadata();
 
+	if ( mPerformanceDetailChart )
+		updatePerformance( sysInfo, processes );
 	if ( mProcessModel )
 		mProcessModel->applySnapshot( std::move( processes ), sysInfo );
 
@@ -996,6 +1513,10 @@ void App::publishStagedSnapshot() {
 			if ( !mProcessTableStateRestored ) {
 				restoreProcessTableState();
 				mProcessTableStateRestored = true;
+				UIAbstractTableView* view = activeProcessView();
+				mCollectFamilyMemoryAfterRestore =
+					view && ( !view->isColumnHidden( ProcessModel::ColFamilyMemory ) ||
+							  !view->isColumnHidden( ProcessModel::ColFamilyMemoryPercent ) );
 			}
 			mProcessTableStateRestoreScheduled = false;
 		} );
@@ -1040,10 +1561,10 @@ void App::restoreTreeExpansion() {
 		return;
 	}
 	if ( !mTreeExpansionInitialized ) {
-		for ( size_t row = 0; row < mTreeModel->rowCount(); ++row )
-			indexes.push_back(
-				mTreeModel->index( static_cast<int>( row ), mTreeModel->treeColumn() ) );
-		mTreeExpansionInitialized = !indexes.empty();
+		mTreeExpansionInitialized = mTreeModel->rowCount() > 0;
+		if ( mTreeExpansionInitialized )
+			mTreeView->expandAll();
+		return;
 	} else {
 		indexes.reserve( mExpandedTreePids.size() );
 		for ( Int64 pid : mExpandedTreePids ) {

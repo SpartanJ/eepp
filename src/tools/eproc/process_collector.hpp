@@ -15,6 +15,8 @@ struct SystemInfo {
 	Int64 freeSwap{ 0 };
 	int cpuCount{ 1 };
 	float cpuUsage{ 0.f };
+	// Per-logical-CPU usage, indexed by CPU number when the platform provides it.
+	std::vector<float> coreCpuUsage;
 	// Number of units in ProcessInfo::{userTime,sysTime,startTime} per second.
 	Int64 clockTicksPerSecond{ 100 };
 	double uptimeSeconds{ 0.0 };
@@ -33,6 +35,9 @@ class ProcessCollector {
 	 *  usage is derived from the delta against the previous sample held by the instance.
 	 *  @return true on success. */
 	virtual bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) = 0;
+
+	/** Enables the optional, more expensive proportional-memory reading where available. */
+	virtual void setCollectProportionalMemory( bool ) {}
 
 	virtual bool supportsProgramsOnly() const { return false; }
 

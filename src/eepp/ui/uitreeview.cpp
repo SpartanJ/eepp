@@ -798,11 +798,6 @@ void UITreeView::clearViewMetadata() {
 	mViewMetadata.clear();
 }
 
-void UITreeView::onSortColumn( const size_t& ) {
-	// Do nothing.
-	return;
-}
-
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										FindRowWithTextMatchKind matchKind ) const {
 	const Model* model = getModel();

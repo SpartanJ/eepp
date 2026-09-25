@@ -4,12 +4,14 @@
 #include "appconfig.hpp"
 #include "gui_window_tracker.hpp"
 #include "process_model.hpp"
+#include <array>
 #include <atomic>
 #include <eepp/ee.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -17,6 +19,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -29,6 +32,7 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Models;
+using namespace EE::UI::Charts;
 
 namespace eproc {
 
@@ -90,6 +94,12 @@ class App {
 	void restoreTreeExpansion();
 
 	void updateStatusBar();
+	void setupPerformance();
+	void updatePerformance( const SystemInfo& sysInfo, const std::vector<ProcessInfo>& processes );
+	void selectPerformanceMetric( size_t metric );
+	void setPerCoreView( bool perCore );
+	void rebuildCoreCharts( size_t count );
+	String formatPerformanceTime( double value ) const;
 	void onEndProcess();
 	void onSearchChanged();
 	void onFilterChanged();
@@ -127,6 +137,31 @@ class App {
 	UITextView* mCpuText{ nullptr };
 	UITextView* mMemText{ nullptr };
 	UITextView* mSwapText{ nullptr };
+	UIChart* mPerformanceDetailChart{ nullptr };
+	UIWidget* mCoreChartScroll{ nullptr };
+	UIWidget* mCoreChartStack{ nullptr };
+	UITextView* mPerformanceTitle{ nullptr };
+	UITextView* mPerformanceSummary{ nullptr };
+	UITextView* mPerformanceDetail{ nullptr };
+	UISelectButton* mOverallButton{ nullptr };
+	UISelectButton* mPerCoreButton{ nullptr };
+	UIWidget* mCpuModeControls{ nullptr };
+	struct PerformanceMetric {
+		UIWidget* card{ nullptr };
+		UIChart* preview{ nullptr };
+		UITextView* value{ nullptr };
+		std::shared_ptr<RingXYDataSource> primary;
+		std::shared_ptr<RingXYDataSource> secondary;
+	};
+	std::array<PerformanceMetric, 4> mPerformanceMetrics;
+	std::array<String, 4> mPerformanceSummaries;
+	std::array<String, 4> mPerformanceDetails;
+	std::vector<UIChart*> mCoreCharts;
+	std::vector<UITextView*> mCoreLabels;
+	std::vector<std::shared_ptr<RingXYDataSource>> mCoreHistory;
+	Clock mPerformanceClock;
+	size_t mSelectedPerformanceMetric{ 0 };
+	bool mPerCoreView{ false };
 
 	std::shared_ptr<ProcessModel> mProcessModel;
 	std::shared_ptr<ProcessTreeModel> mTreeModel;
@@ -137,6 +172,7 @@ class App {
 	bool mTreeSearchActive{ false };
 	bool mProcessTableStateRestored{ false };
 	bool mProcessTableStateRestoreScheduled{ false };
+	bool mCollectFamilyMemoryAfterRestore{ false };
 	bool mWindowStateSaved{ false };
 
 	// Window ownership backs the Programs Only filter. Refreshed on the UI thread, since Xlib is

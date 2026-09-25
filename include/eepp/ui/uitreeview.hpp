@@ -174,8 +174,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
-	virtual void onSortColumn( const size_t& colIndex );
-
 	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );
 
 	virtual UIWidget* setupCell( UITableCell* widget, UIWidget* rowWidget,

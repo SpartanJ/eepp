@@ -319,7 +319,6 @@ UTEST( UIChart, screenGridStaysFixedWhileDataGridPans ) {
 	chart->setParent( app.getUI()->getRoot() );
 	ChartStyle style;
 	style.leftMargin = style.rightMargin = style.topMargin = style.bottomMargin = 0.f;
-	style.minimumAxisMargin = style.axisLabelPadding = 0.f;
 	style.verticalGrid.mode = ChartGridMode::ScreenInterval;
 	style.verticalGrid.spacing = 50.0;
 	style.verticalGrid.width = 3.f;

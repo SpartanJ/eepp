@@ -16,6 +16,10 @@ class ProcessCollectorLinux : public ProcessCollector {
 
 	bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) override;
 
+	void setCollectProportionalMemory( bool enabled ) override {
+		mCollectProportionalMemory = enabled;
+	}
+
 	bool supportsProgramsOnly() const override { return true; }
 
   private:
@@ -41,6 +45,12 @@ class ProcessCollectorLinux : public ProcessCollector {
 		Uint32 pass{ 0 };
 	};
 
+	struct PssEntry {
+		Int64 value{ -1 };
+		long long startTime{ 0 };
+		Uint32 seenPass{ 0 };
+	};
+
 	// KiB per memory page (e.g. 4 for a 4096-byte page size)
 	long mPageSizeKb{ 4 };
 	int mProcessorCount{ 1 };
@@ -53,16 +63,24 @@ class ProcessCollectorLinux : public ProcessCollector {
 	// Machine-wide jiffies that must elapse before a CPU delta is trusted (~200ms across cores).
 	long long mMinSampleJiffies{ 0 };
 	float mLastCpuUsage{ 0.f };
+	struct CoreCpuSample {
+		long long idle{ 0 };
+		long long total{ 0 };
+		float usage{ 0.f };
+	};
+	std::vector<CoreCpuSample> mCoreCpuSamples;
 
 	UnorderedMap<long, TickEntry> mProcessTicks;
 	UnorderedMap<long, IconEntry> mProcessIcons;
+	UnorderedMap<long, PssEntry> mProcessPss;
 	Uint32 mPass{ 0 };
+	bool mCollectProportionalMemory{ false };
 
 	// Reused between passes so the GPU queries do not allocate a fresh map every second.
 	UnorderedMap<long, int> mGpuUsage;
 	UnorderedMap<long, long> mGpuMemory;
 
-	bool readCpuTimes( long long& idle, long long& total );
+	bool readCpuTimes( long long& idle, long long& total, SystemInfo& sysInfo );
 	bool readProcessStat( ProcessInfo& proc, const char* statLine );
 	void readProcessStatus( ProcessInfo& proc, const char* content, size_t length );
 	void readProcessCmdline( ProcessInfo& proc, long pid );

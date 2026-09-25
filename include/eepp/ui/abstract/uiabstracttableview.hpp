@@ -57,6 +57,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	bool isColumnHidden( const size_t& column ) const;
 
+	/** Returns the header widget for a model column, or nullptr before it is created. */
+	UITableHeaderColumn* getHeaderColumn( const size_t& column ) const;
+
 	void setColumnHidden( const size_t& column, bool hidden );
 
 	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );

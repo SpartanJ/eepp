@@ -268,3 +268,5 @@ Also is important to notice that for applications that wants to use the default 
 
 For applications with reactive state, typed input, validation, or observable collections, continue
 with the [UI Data Binding](uidatabinding.md) guide.
+
+For interactive line charts, live data, grids, and tooltip examples, see [UI Charts](uicharts.md).

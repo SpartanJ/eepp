@@ -273,13 +273,13 @@ void SortingProxyModel::sortMapping( SortingProxyModel::Mapping& mapping, int co
 	for ( int i = 0; i < rowCount; ++i )
 		mapping.sourceRows[i] = i;
 
-	std::stable_sort(
-		mapping.sourceRows.begin(), mapping.sourceRows.end(), [&]( auto row1, auto row2 ) -> bool {
-			bool isLessThan =
-				this->lessThan( mSource->index( row1, column, mapping.sourceParent ),
-								mSource->index( row2, column, mapping.sourceParent ) );
-			return sortOrder == SortOrder::Ascending ? isLessThan : !isLessThan;
-		} );
+	std::stable_sort( mapping.sourceRows.begin(), mapping.sourceRows.end(),
+					  [&]( auto row1, auto row2 ) -> bool {
+						  const auto first = mSource->index( row1, column, mapping.sourceParent );
+						  const auto second = mSource->index( row2, column, mapping.sourceParent );
+						  return sortOrder == SortOrder::Ascending ? lessThan( first, second )
+																   : lessThan( second, first );
+					  } );
 
 	for ( int i = 0; i < rowCount; ++i )
 		mapping.proxyRows[mapping.sourceRows[i]] = i;

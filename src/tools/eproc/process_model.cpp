@@ -12,6 +12,7 @@
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <fstream>
 #include <string_view>
@@ -36,7 +37,11 @@ const char* processColumnClass( size_t column ) {
 			return "eproc-process-column-threads";
 		case ProcessModel::ColMemoryPercent:
 			return "eproc-process-column-memory-percent";
+		case ProcessModel::ColFamilyMemoryPercent:
+			return "eproc-process-column-memory-percent";
 		case ProcessModel::ColMemory:
+			return "eproc-process-column-memory";
+		case ProcessModel::ColFamilyMemory:
 			return "eproc-process-column-memory";
 		case ProcessModel::ColSharedMem:
 			return "eproc-process-column-shared-memory";
@@ -103,6 +108,10 @@ std::string ProcessModel::columnName( const size_t& column ) const {
 			return mUI->i18n( "eproc_column_memory_percent", "Memory %" ).toUtf8();
 		case ColMemory:
 			return mUI->i18n( "eproc_column_memory", "Memory" ).toUtf8();
+		case ColFamilyMemory:
+			return mUI->i18n( "eproc_column_family_memory", "Family Memory" ).toUtf8();
+		case ColFamilyMemoryPercent:
+			return mUI->i18n( "eproc_column_family_memory_percent", "Family Memory %" ).toUtf8();
 		case ColSharedMem:
 			return mUI->i18n( "eproc_column_shared_memory", "Shared Mem" ).toUtf8();
 		case ColGpuUsage:
@@ -116,11 +125,7 @@ std::string ProcessModel::columnName( const size_t& column ) const {
 		case ColCommand:
 			return mUI->i18n( "eproc_column_command", "Command" ).toUtf8();
 		case ColTotalMemory:
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-			return mUI->i18n( "eproc_column_real_memory", "Real Mem" ).toUtf8();
-#else
-			return mUI->i18n( "eproc_column_total_memory", "Total Memory" ).toUtf8();
-#endif
+			return mUI->i18n( "eproc_column_resident_memory", "Resident Memory" ).toUtf8();
 		case ColVirtualSize:
 			return mUI->i18n( "eproc_column_virtual_size", "Virtual Size" ).toUtf8();
 		case ColCpuTime:
@@ -162,6 +167,12 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 		if ( !proc )
 			return Variant();
 		switch ( index.column() ) {
+			case ColName:
+				return Variant::fromRef( proc->name );
+			case ColUsername:
+				return Variant::fromRef( proc->username );
+			case ColCommand:
+				return Variant::fromRef( proc->commandLine );
 			case ColPid:
 				return Variant( static_cast<Int64>( proc->pid ) );
 			case ColCpu:
@@ -172,6 +183,9 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 				return Variant( static_cast<Int64>( proc->getMemoryForSort() ) );
 			case ColMemory:
 				return Variant( static_cast<Int64>( proc->getMemoryForSort() ) );
+			case ColFamilyMemory:
+			case ColFamilyMemoryPercent:
+				return Variant( proc->familyMemoryKB );
 			case ColSharedMem:
 				return Variant( static_cast<Int64>( proc->sharedMem ) );
 			case ColGpuUsage:
@@ -230,6 +244,13 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 					   : Variant( EMPTY );
 		case ColMemory:
 			return Variant( proc->formatMemory() );
+		case ColFamilyMemory:
+			return Variant( formatKiB( proc->familyMemoryKB ) );
+		case ColFamilyMemoryPercent:
+			return mSystemInfo.totalMemory > 0 && proc->familyMemoryKB >= 0
+					   ? Variant( String::format( "%.1f%%", proc->familyMemoryKB * 100.0 /
+																mSystemInfo.totalMemory ) )
+					   : Variant( EMPTY );
 		case ColSharedMem:
 			return Variant( proc->formatSharedMem() );
 		case ColGpuUsage:
@@ -268,8 +289,59 @@ ModelIndex ProcessModel::index( int row, int column, const ModelIndex& ) const {
 	return createIndex( row, column );
 }
 
+void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
+	const size_t count = processes.size();
+	mFamilyRowForPid.clear();
+	mFamilyRowForPid.reserve( count );
+	mFamilyParents.assign( count, -1 );
+	mFamilyPendingChildren.assign( count, 0 );
+	mFamilyQueue.clear();
+	mFamilyQueue.reserve( count );
+	for ( size_t row = 0; row < count; ++row ) {
+		auto& process = processes[row];
+		mFamilyRowForPid.emplace( process.pid, static_cast<int>( row ) );
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		// Zombies have no address space, so smaps_rollup is unavailable but their PSS is zero.
+		process.familyMemoryKB = process.vmPSS >= 0 ? process.vmPSS : process.vmRSS == 0 ? 0 : -1;
+#else
+		process.familyMemoryKB = process.getMemoryForSort();
+#endif
+	}
+	for ( size_t row = 0; row < count; ++row ) {
+		const auto& process = processes[row];
+		if ( process.parentPid <= 0 || process.parentPid == process.pid )
+			continue;
+		auto parent = mFamilyRowForPid.find( process.parentPid );
+		if ( parent == mFamilyRowForPid.end() )
+			continue;
+		mFamilyParents[row] = parent->second;
+		++mFamilyPendingChildren[parent->second];
+	}
+	for ( size_t row = 0; row < count; ++row ) {
+		if ( mFamilyPendingChildren[row] == 0 )
+			mFamilyQueue.push_back( row );
+	}
+	for ( size_t head = 0; head < mFamilyQueue.size(); ++head ) {
+		const size_t row = mFamilyQueue[head];
+		const int parentRow = mFamilyParents[row];
+		if ( parentRow < 0 )
+			continue;
+		auto& family = processes[parentRow].familyMemoryKB;
+		const Int64 childMemory = processes[row].familyMemoryKB;
+		family = family >= 0 && childMemory >= 0 ? family + childMemory : -1;
+		if ( --mFamilyPendingChildren[parentRow] == 0 )
+			mFamilyQueue.push_back( static_cast<size_t>( parentRow ) );
+	}
+	// A malformed parent cycle cannot produce a meaningful family total.
+	for ( size_t row = 0; row < count; ++row ) {
+		if ( mFamilyPendingChildren[row] > 0 )
+			processes[row].familyMemoryKB = -1;
+	}
+}
+
 void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes,
 								  const SystemInfo& sysInfo ) {
+	buildFamilyMemory( processes );
 	// Keep processes that disappeared from the latest snapshot for one more update. This mirrors
 	// ksysguard's Ended state and is especially useful when a process exits between two refreshes:
 	// its last known row remains visible, but is marked as ended by the view.
@@ -669,6 +741,77 @@ void ProcessTreeModel::rebuild() {
 			mRoots.push_back( static_cast<int>( row ) );
 		}
 	}
+	sortChildren();
+}
+
+void ProcessTreeModel::sortChildren() {
+	if ( mSortColumn < 0 || mSortOrder == SortOrder::None )
+		return;
+	const auto compare = [this]( int left, int right ) {
+		const Variant a =
+			mSource->data( mSource->index( mNodes[left].sourceRow, mSortColumn ), ModelRole::Sort );
+		const Variant b = mSource->data( mSource->index( mNodes[right].sourceRow, mSortColumn ),
+										 ModelRole::Sort );
+		if ( a.isStdStringLike() && b.isStdStringLike() ) {
+			const auto aText = a.asStdStringView();
+			const auto bText = b.asStdStringView();
+			for ( size_t i = 0; i < std::min( aText.size(), bText.size() ); ++i ) {
+				const int lhs = std::tolower( static_cast<unsigned char>( aText[i] ) );
+				const int rhs = std::tolower( static_cast<unsigned char>( bText[i] ) );
+				if ( lhs != rhs )
+					return lhs < rhs ? -1 : 1;
+			}
+			if ( aText.size() == bText.size() )
+				return 0;
+			return aText.size() < bText.size() ? -1 : 1;
+		}
+		if ( a < b )
+			return -1;
+		return b < a ? 1 : 0;
+	};
+	const auto sortSiblings = [this, &compare]( std::vector<int>& siblings ) {
+		if ( siblings.size() > 1 ) {
+			std::sort( siblings.begin(), siblings.end(), [&]( int left, int right ) {
+				const int result = compare( left, right );
+				if ( result == 0 )
+					return mNodes[left].sourceRow < mNodes[right].sourceRow;
+				return mSortOrder == SortOrder::Ascending ? result < 0 : result > 0;
+			} );
+		}
+		for ( size_t row = 0; row < siblings.size(); ++row )
+			mNodes[siblings[row]].rowInParent = static_cast<int>( row );
+	};
+	sortSiblings( mRoots );
+	for ( auto& node : mNodes )
+		sortSiblings( node.children );
+}
+
+void ProcessTreeModel::sort( const size_t& column, const SortOrder& order ) {
+	if ( column >= columnCount() || !isColumnSortable( column ) || order == SortOrder::None )
+		return;
+	struct ViewSelection {
+		UIAbstractView* view;
+		std::vector<ModelIndex> indexes;
+	};
+	std::vector<ViewSelection> selections;
+	forEachView( [&]( UIAbstractView* view ) {
+		auto indexes = view->getSelection().indexes();
+		if ( !indexes.empty() )
+			selections.push_back( { view, std::move( indexes ) } );
+	} );
+	mSortColumn = static_cast<int>( column );
+	mSortOrder = order;
+	sortChildren();
+	for ( auto& selection : selections ) {
+		for ( auto& index : selection.indexes ) {
+			const Node& node = *static_cast<const Node*>( index.internalData() );
+			index = createIndex( node.rowInParent, static_cast<int>( index.column() ),
+								 const_cast<Node*>( &node ) );
+		}
+		selection.view->getSelection().set( selection.indexes, false );
+		selection.view->notifySelectionChange();
+	}
+	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
 }
 
 size_t ProcessTreeModel::rowCount( const ModelIndex& parent ) const {

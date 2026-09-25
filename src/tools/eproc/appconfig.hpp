@@ -36,6 +36,7 @@ class AppConfig {
 	// Serialized process table columns, widths, and sorting state.
 	std::string processTableState;
 	bool divideCpuUsage{ false };
+	bool performancePerCore{ false };
 	bool treeView{ false };
 	int filterMode{ 0 };
 

@@ -800,6 +800,11 @@ bool UIAbstractTableView::isColumnHidden( const size_t& column ) const {
 	return !columnData( column ).visible;
 }
 
+UITableHeaderColumn* UIAbstractTableView::getHeaderColumn( const size_t& column ) const {
+	return column < mColumn.size() ? static_cast<UITableHeaderColumn*>( mColumn[column].widget )
+								   : nullptr;
+}
+
 void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;

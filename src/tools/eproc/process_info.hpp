@@ -55,6 +55,9 @@ struct ProcessInfo {
 	// shared pages; Windows provides private commit. -1 falls back to RSS.
 	Int64 vmURSS{ -1 };
 	Int64 vmPSS{ -1 };
+	// Sum of memory for this process and its live descendants (KiB). Linux uses PSS; other
+	// platforms use the value shown in the Memory column. -1 means a member was unavailable.
+	Int64 familyMemoryKB{ -1 };
 	Int64 sharedMem{ -1 };
 	// True when the kernel reported the shared-memory breakdown, so vmURSS could be derived.
 	bool hasSharedInfo{ false };
