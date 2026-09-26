@@ -3,6 +3,7 @@
 #include "settingspanel.hpp"
 
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
+#include <eepp/ui/tools/uisettingspanel.hpp>
 
 namespace eterm {
 
@@ -12,6 +13,8 @@ void SettingsActions::showSettings() {
 	if ( mSettingsWindow ) {
 		mSettingsWindow->show();
 		mSettingsWindow->toFront();
+		auto* panel = mSettingsWindow->find<Tools::UISettingsPanel>( "settings_panel_content" );
+		panel->runOnMainThread( [panel] { panel->focusSearch(); } );
 		return;
 	}
 	mSettingsWindow = SettingsPanel::create( *mApp );

@@ -1,6 +1,11 @@
 #include "appconfig.hpp"
 
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/ui/colorschemepreferences.hpp>
+
+#include <algorithm>
+#include <cmath>
 
 using namespace EE;
 using namespace EE::System;
@@ -30,9 +35,39 @@ void AppConfig::load() {
 	performancePerCore = mState.getValueB( "performance", "cpu_per_core", performancePerCore );
 	treeView = mState.getValueB( "process_table", "tree_view", treeView );
 	filterMode = mState.getValueI( "process_table", "filter_mode", treeView ? 1 : filterMode );
+	refreshIntervalMs =
+		std::clamp( mState.getValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs ),
+					MinRefreshIntervalMs, MaxRefreshIntervalMs );
+	const double savedDensity = mState.getValueF( "appearance", "pixel_density", pixelDensity );
+	if ( std::isfinite( savedDensity ) && savedDensity >= 0 && savedDensity <= 6 )
+		pixelDensity = static_cast<Float>( savedDensity );
+	const int savedHinting = mState.getValueI( "appearance", "font_hinting", 2 );
+	if ( savedHinting >= 0 && savedHinting <= 2 )
+		fontHinting = static_cast<FontHinting>( savedHinting );
+	const int savedAntialiasing = mState.getValueI( "appearance", "font_antialiasing", 1 );
+	if ( savedAntialiasing >= 0 && savedAntialiasing <= 2 )
+		fontAntialiasing = static_cast<FontAntialiasing>( savedAntialiasing );
+	const auto savedScheme = mState.getValue( "appearance", "color_scheme", "system" );
+	if ( savedScheme == "system" || savedScheme == "light" || savedScheme == "dark" )
+		colorScheme = EE::UI::ColorSchemePreferences::fromStringExt( savedScheme );
+	vsync = mState.getValueB( "renderer", "vsync", vsync );
+	frameRateLimit = static_cast<Uint32>( std::clamp(
+		mState.getValueI( "renderer", "frame_rate_limit", static_cast<int>( frameRateLimit ) ), 0,
+		ContextSettings::FrameRateLimitScreenRefreshRate ) );
+	const auto savedRenderer = mState.getValue( "renderer", "version", "" );
+	for ( auto version : Renderer::getAvailableGraphicsLibraryVersions() ) {
+		if ( savedRenderer == Renderer::graphicsLibraryVersionToString( version ) ) {
+			rendererVersion = version;
+			break;
+		}
+	}
+	const int savedMultisamples = mState.getValueI( "renderer", "multisamples", multisamples );
+	if ( savedMultisamples == 0 || savedMultisamples == 2 || savedMultisamples == 4 ||
+		 savedMultisamples == 8 || savedMultisamples == 16 )
+		multisamples = static_cast<Uint32>( savedMultisamples );
 }
 
-bool AppConfig::saveWindowState() {
+bool AppConfig::save() {
 	if ( !FileSystem::isDirectory( mConfigPath ) && !FileSystem::makeDir( mConfigPath, true ) )
 		return false;
 
@@ -47,6 +82,17 @@ bool AppConfig::saveWindowState() {
 	mState.setValueB( "performance", "cpu_per_core", performancePerCore );
 	mState.setValueB( "process_table", "tree_view", treeView );
 	mState.setValueI( "process_table", "filter_mode", filterMode );
+	mState.setValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs );
+	mState.setValueF( "appearance", "pixel_density", pixelDensity );
+	mState.setValueI( "appearance", "font_hinting", static_cast<int>( fontHinting ) );
+	mState.setValueI( "appearance", "font_antialiasing", static_cast<int>( fontAntialiasing ) );
+	mState.setValue( "appearance", "color_scheme",
+					 EE::UI::ColorSchemePreferences::toString( colorScheme ) );
+	mState.setValueB( "renderer", "vsync", vsync );
+	mState.setValueI( "renderer", "frame_rate_limit", frameRateLimit );
+	mState.setValue( "renderer", "version",
+					 Renderer::graphicsLibraryVersionToString( rendererVersion ) );
+	mState.setValueI( "renderer", "multisamples", multisamples );
 	return mState.writeFile();
 }
 

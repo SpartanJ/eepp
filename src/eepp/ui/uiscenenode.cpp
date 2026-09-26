@@ -9,10 +9,12 @@
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
@@ -30,6 +32,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 #include <mutex>
 
@@ -2148,6 +2151,24 @@ UIEventDispatcher* UISceneNode::getUIEventDispatcher() const {
 
 ColorSchemePreference UISceneNode::getColorSchemePreference() const {
 	return mColorSchemePreference;
+}
+
+void UISceneNode::updateWindowTitleBarColor() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	auto* window = getWindow();
+	if ( !window || ( mColorSchemePreference == ColorSchemePreference::Dark ) !=
+						Sys::isOSUsingDarkColorScheme() )
+		return;
+	const auto rootStyle = mStyleSheet.getStyleFromSelector( ":root", true );
+	if ( !rootStyle )
+		return;
+	const auto backVar = rootStyle->getVariableByName( "--back" );
+	if ( backVar.isEmpty() )
+		return;
+	const auto backColor = Color::fromString( backVar.getValue() );
+	Engine::instance()->getPlatformHelper()->setWindowTitleBarColor(
+		window->getWindowHandler(), backColor.r, backColor.g, backColor.b );
+#endif
 }
 
 void UISceneNode::setColorSchemePreference(

@@ -193,9 +193,10 @@ UTEST( UITooltip, emptyTextNeverBecomesVisible ) {
 
 UTEST( UIChart, styleUsesDeviceIndependentMeasurements ) {
 	const Float previousDensity = PixelDensity::getPixelDensity();
-	UIApplication app(
-		WindowSettings{ 480, 320, "Chart Density Test" },
-		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 2.f ) );
+	WindowSettings window( 480, 320, "Chart Density Test" );
+	window.DisableHiDPI = true;
+	UIApplication app( window, UIApplication::Settings(
+								   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 2.f ) );
 	auto* chart = UIChart::New();
 	chart->setPixelsSize( 400, 240 );
 	chart->setParent( app.getUI()->getRoot() );

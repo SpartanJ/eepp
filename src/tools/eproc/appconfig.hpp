@@ -1,9 +1,11 @@
 #ifndef EPROC_APPCONFIG_HPP
 #define EPROC_APPCONFIG_HPP
 
+#include <eepp/graphics/font.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/window/window.hpp>
 
 #include <string>
@@ -24,10 +26,13 @@ struct WindowStateConfig {
 
 class AppConfig {
   public:
+	static constexpr int MinRefreshIntervalMs = 250;
+	static constexpr int MaxRefreshIntervalMs = 60000;
+
 	explicit AppConfig( std::string configPath );
 
 	void load();
-	bool saveWindowState();
+	bool save();
 	void captureWindowState( EE::Window::Window* window );
 
 	const std::string& getConfigPath() const { return mConfigPath; }
@@ -38,7 +43,16 @@ class AppConfig {
 	bool divideCpuUsage{ false };
 	bool performancePerCore{ false };
 	bool treeView{ false };
+	bool vsync{ false };
 	int filterMode{ 0 };
+	int refreshIntervalMs{ 1000 };
+	Float pixelDensity{ 0 };
+	FontHinting fontHinting{ FontHinting::Full };
+	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
+	EE::UI::ColorSchemeExtPreference colorScheme{ EE::UI::ColorSchemeExtPreference::System };
+	Uint32 frameRateLimit{ ContextSettings::FrameRateLimitScreenRefreshRate };
+	GraphicsLibraryVersion rendererVersion{ GLv_default };
+	Uint32 multisamples{ 4 };
 
   private:
 	std::string mConfigPath;

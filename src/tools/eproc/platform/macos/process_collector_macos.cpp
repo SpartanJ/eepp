@@ -109,6 +109,43 @@ bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, System
 		mHasCpuSample = true;
 	}
 	sysInfo.cpuUsage = mLastCpuUsage;
+	processor_info_array_t coreInfo = nullptr;
+	mach_msg_type_number_t coreInfoCount = 0;
+	natural_t coreCount = 0;
+	if ( host_processor_info( host, PROCESSOR_CPU_LOAD_INFO, &coreCount, &coreInfo,
+							  &coreInfoCount ) == KERN_SUCCESS ) {
+		if ( coreInfo && coreCount > 0 &&
+			 coreInfoCount >= coreCount * PROCESSOR_CPU_LOAD_INFO_COUNT ) {
+			const bool havePrevious = mPrevCoreCpuTicks.size() == coreCount;
+			mPrevCoreCpuTicks.resize( coreCount );
+			if ( !havePrevious )
+				mLastCoreCpuUsage.assign( coreCount, 0.f );
+			const auto* cores = reinterpret_cast<processor_cpu_load_info_t>( coreInfo );
+			for ( natural_t core = 0; core < coreCount; ++core ) {
+				Uint64 totalDelta = 0;
+				Uint64 idleDelta = 0;
+				for ( int state = 0; state < CPU_STATE_MAX; ++state ) {
+					const Uint32 ticks = cores[core].cpu_ticks[state];
+					if ( havePrevious ) {
+						// Per-CPU Mach tick counters are also 32-bit and may wrap.
+						const Uint32 delta = ticks - mPrevCoreCpuTicks[core][state];
+						totalDelta += delta;
+						if ( state == CPU_STATE_IDLE )
+							idleDelta = delta;
+					}
+					mPrevCoreCpuTicks[core][state] = ticks;
+				}
+				if ( totalDelta > 0 )
+					mLastCoreCpuUsage[core] = static_cast<float>(
+						100.0 * static_cast<double>( totalDelta - idleDelta ) / totalDelta );
+			}
+			sysInfo.cpuCount = static_cast<int>( coreCount );
+			sysInfo.coreCpuUsage = mLastCoreCpuUsage;
+		}
+		if ( coreInfo )
+			vm_deallocate( mach_task_self(), reinterpret_cast<vm_address_t>( coreInfo ),
+						   static_cast<vm_size_t>( coreInfoCount ) * sizeof( integer_t ) );
+	}
 	mach_port_deallocate( mach_task_self(), host );
 
 	xsw_usage swap{};

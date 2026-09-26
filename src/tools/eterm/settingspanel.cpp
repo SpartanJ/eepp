@@ -22,6 +22,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 									 eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
 	settingsWindow->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( settingsWindow->getContainer() );
+	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( app.i18n( "search_results", "Search Results" ) );
 
 	panel->addCategory( "appearance.theme", app.i18n( "appearance", "Appearance" ),
@@ -46,6 +47,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 																   ColorSchemeExtPreference::Dark };
 			app.config->theme.uiColorScheme = values[std::min( selected, size_t{ 2 } )];
 			app.scene->setColorSchemePreference( app.config->theme.uiColorScheme );
+			app.scene->updateWindowTitleBarColor();
 			app.savePreferences();
 		} );
 	panel->addCategory( "appearance.fonts", app.i18n( "appearance", "Appearance" ),
@@ -234,14 +236,13 @@ UIWindow* SettingsPanel::create( App& app ) {
 				[value]( UITerminal* terminal ) { terminal->setExclusiveMode( value ); } );
 			app.savePreferences();
 		} );
-	panel->addBool( { "smoothScroll", "terminal.behavior",
-					  app.i18n( "smooth_scroll", "Smooth Scrolling" ),
-					  app.i18n( "smooth_scroll_desc",
-								"Animate scrolling from mouse wheels and trackpads." ) },
-					&app.config->ui.smoothScroll, [&app]( bool value ) {
-						app.scene->setSmoothScrollEnabled( value, true );
-						app.savePreferences();
-					} );
+	panel->addBool(
+		{ "smoothScroll", "terminal.behavior", app.i18n( "smooth_scroll", "Smooth Scrolling" ),
+		  app.i18n( "smooth_scroll_desc", "Animate scrolling from mouse wheels and trackpads." ) },
+		&app.config->ui.smoothScroll, [&app]( bool value ) {
+			app.scene->setSmoothScrollEnabled( value, true );
+			app.savePreferences();
+		} );
 	panel->addBool(
 		{ "closeTerminalTabOnExit", "terminal.behavior",
 		  app.i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
@@ -447,6 +448,9 @@ UIWindow* SettingsPanel::create( App& app ) {
 					} );
 
 	panel->build();
+	settingsWindow->on( Event::OnWindowReady, [panel]( const Event* ) {
+		panel->runOnMainThread( [panel] { panel->focusSearch(); } );
+	} );
 	settingsWindow->setKeyBindingCommand( "closeWindow",
 										  [settingsWindow] { settingsWindow->closeWindow(); } );
 	settingsWindow->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );

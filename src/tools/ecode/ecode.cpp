@@ -28,7 +28,6 @@
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
-#include <eepp/window/platformhelper.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -4544,20 +4543,7 @@ bool App::needsRedirectToRunningProcess( std::string file, bool readOnly ) {
 }
 
 void App::tintTitleBar() {
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-	auto colorScheme = ColorSchemePreferences::fromExt( mConfig.ui.colorScheme );
-	if ( ( Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Dark ) ||
-		 ( !Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Light ) ) {
-		auto backVar = mUISceneNode->getStyleSheet()
-						   .getStyleFromSelector( ":root", true )
-						   ->getVariableByName( "--back" );
-		if ( !backVar.isEmpty() ) {
-			auto backColor( Color::fromString( backVar.getValue() ) );
-			Engine::instance()->getPlatformHelper()->setWindowTitleBarColor(
-				mWindow->getWindowHandler(), backColor.r, backColor.g, backColor.b );
-		}
-	}
-#endif
+	mUISceneNode->updateWindowTitleBarColor();
 }
 
 void App::init( InitParameters& params ) {

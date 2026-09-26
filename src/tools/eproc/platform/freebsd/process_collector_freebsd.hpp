@@ -6,6 +6,7 @@
 #include "../posix/process_icon_resolver.hpp"
 #include <chrono>
 #include <unordered_map>
+#include <vector>
 
 namespace eproc {
 
@@ -26,6 +27,9 @@ class ProcessCollectorFreeBSD final : public ProcessCollector {
 	ProcessAccounts mAccounts;
 	ProcessIconResolver mIconResolver;
 	std::chrono::steady_clock::time_point mPrevSampleTime;
+	std::vector<long> mCoreCpuTicks;
+	std::vector<long> mPrevCoreCpuTicks;
+	std::vector<float> mLastCoreCpuUsage;
 	Uint64 mPrevTotalCpu{ 0 };
 	Uint64 mPrevIdleCpu{ 0 };
 	float mLastCpuUsage{ 0.f };

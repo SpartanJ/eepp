@@ -5,7 +5,9 @@
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 
 using namespace EE;
@@ -82,6 +84,11 @@ UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {
 	panel->build();
 
 	EXPECT_TRUE( panel->isBuilt() );
+	auto* search = panel->find<UITextInput>( "settings_filter" );
+	panel->focusSearch();
+	app.getUI()->update( Milliseconds( 16 ) );
+	app.getUI()->draw();
+	EXPECT_EQ( search, app.getUI()->getUIEventDispatcher()->getFocusNode() );
 	auto* firstRow = panel->find<UIWidget>( "setting_first" );
 	EXPECT_NE( nullptr, firstRow );
 	EXPECT_TRUE( firstRow->isVisible() );

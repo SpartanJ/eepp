@@ -859,6 +859,7 @@ int App::run( int argc, char* argv[] ) {
 	fileWatcher->addWatch( config->getConfigPath(), this );
 	fileWatcher->watch();
 	scene->setColorSchemePreference( config->theme.uiColorScheme );
+	scene->updateWindowTitleBarColor();
 	scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
 	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
 	appWindow->setClearColor( RGB( 0, 0, 0 ) );

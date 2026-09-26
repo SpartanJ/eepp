@@ -27,6 +27,7 @@ UTEST( EProcMacOSCollector, CollectsCurrentProcessAndUsesMicrosecondCpuTime ) {
 	ASSERT_TRUE( current != processes.end() );
 	EXPECT_EQ( system.clockTicksPerSecond, 1'000'000 );
 	EXPECT_TRUE( system.cpuCount > 0 );
+	ASSERT_EQ( system.coreCpuUsage.size(), static_cast<size_t>( system.cpuCount ) );
 	EXPECT_TRUE( system.totalMemory > 0 );
 	EXPECT_TRUE( current->ownedByCurrentUser );
 	EXPECT_TRUE( current->vmRSS > 0 );
@@ -53,6 +54,11 @@ UTEST( EProcMacOSCollector, CollectsCurrentProcessAndUsesMicrosecondCpuTime ) {
 	ASSERT_TRUE( second != processes.end() );
 	EXPECT_TRUE( second->getCpuForSort() > 0 );
 	EXPECT_TRUE( system.cpuUsage >= 0.f && system.cpuUsage <= 100.f );
+	ASSERT_EQ( system.coreCpuUsage.size(), static_cast<size_t>( system.cpuCount ) );
+	for ( float usage : system.coreCpuUsage )
+		EXPECT_TRUE( usage >= 0.f && usage <= 100.f );
+	EXPECT_TRUE( std::any_of( system.coreCpuUsage.begin(), system.coreCpuUsage.end(),
+							  []( float usage ) { return usage > 0.f; } ) );
 }
 
 UTEST( EProcMacOSCollector, ResolvesDeclaredBundleIcon ) {

@@ -7,6 +7,7 @@
 #include <array>
 #include <chrono>
 #include <unordered_map>
+#include <vector>
 
 namespace eproc {
 
@@ -31,6 +32,8 @@ class ProcessCollectorMacOS final : public ProcessCollector {
 	ProcessIconResolverMacOS mIconResolver;
 	std::chrono::steady_clock::time_point mPrevSampleTime;
 	std::array<Uint32, 4> mPrevCpuTicks{};
+	std::vector<std::array<Uint32, 4>> mPrevCoreCpuTicks;
+	std::vector<float> mLastCoreCpuUsage;
 	float mLastCpuUsage{ 0.f };
 	Uint32 mPass{ 0 };
 	bool mHasCpuSample{ false };

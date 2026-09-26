@@ -184,6 +184,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 }
 .settings_panel .settings_option_name {
 	font-style: normal;
+	word-wrap: true;
 }
 .settings_panel .settings_option_description {
 	color: var(--disabled-color);
@@ -646,7 +647,8 @@ void UISettingsPanel::setupCategories( Impl& panel ) {
 	panel.categoryModel = model;
 	panel.categories->setHeadersVisible( false );
 	panel.categories->setAutoExpandOnSingleColumn( true );
-	panel.categories->setFocusOnSelection( true );
+	// Category selection can finish after the search field gains focus.
+	panel.categories->setFocusOnSelection( false );
 	panel.categories->setModel( model );
 	panel.categories->expandAll();
 	panel.connections +=

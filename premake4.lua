@@ -2023,6 +2023,7 @@ solution "eepp"
 			"src/tools/eproc/process_collector.cpp",
 			"src/tools/eproc/process_info.cpp",
 			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/settingspanel.cpp",
 			"src/tools/eproc/window_icon.cpp",
 		}
 		if os.is_real("linux") then

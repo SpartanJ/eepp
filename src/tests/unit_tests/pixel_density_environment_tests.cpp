@@ -40,7 +40,9 @@ UTEST( PixelDensity, environmentDefaultAppliesToUIWithoutResizingWindow ) {
 	const Float priorDensity = PixelDensity::getPixelDensity();
 	EXPECT_TRUE( Sys::setEnv( "EEPP_PIXEL_DENSITY", "1.75" ) );
 	{
-		UIApplication app( WindowSettings{ 320, 240, "Environment Density Test" } );
+		WindowSettings window( 320, 240, "Environment Density Test" );
+		window.DisableHiDPI = true;
+		UIApplication app( window );
 		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.75f );
 		EXPECT_EQ( app.getWindow()->getWindowInfo()->WindowConfig.Width, 320u );
 		EXPECT_EQ( app.getWindow()->getWindowInfo()->WindowConfig.Height, 240u );

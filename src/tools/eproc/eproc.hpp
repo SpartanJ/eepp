@@ -36,6 +36,8 @@ using namespace EE::UI::Charts;
 
 namespace eproc {
 
+struct SettingsPanel;
+
 class App {
   public:
 	App();
@@ -44,8 +46,12 @@ class App {
 	int run( int argc, char* argv[] );
 
   private:
+	friend struct SettingsPanel;
+
 	bool init();
 	void setupUI();
+	void showSettings();
+	void savePreferences();
 	void setupProcessTable();
 
 	/** Restores the saved display, position, size, and maximized state. */
@@ -129,6 +135,7 @@ class App {
 	std::unique_ptr<UIApplication> mApp;
 	UIWidget* mRoot{ nullptr };
 	UITabWidget* mTabWidget{ nullptr };
+	UIWindow* mSettingsWindow{ nullptr };
 
 	UIWidget* mProcessTableLayout{ nullptr };
 	UIPushButton* mEndProcessBtn{ nullptr };

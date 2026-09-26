@@ -101,6 +101,45 @@ bool ProcessCollectorFreeBSD::collect( std::vector<ProcessInfo>& processes, Syst
 		mPrevIdleCpu = idle;
 	}
 	sysInfo.cpuUsage = mLastCpuUsage;
+	size_t coreBytes = 0;
+	if ( sysctlbyname( "kern.cp_times", nullptr, &coreBytes, nullptr, 0 ) == 0 &&
+		 coreBytes >= CPUSTATES * sizeof( long ) &&
+		 coreBytes % ( CPUSTATES * sizeof( long ) ) == 0 ) {
+		mCoreCpuTicks.resize( coreBytes / sizeof( long ) );
+		if ( sysctlbyname( "kern.cp_times", mCoreCpuTicks.data(), &coreBytes, nullptr, 0 ) == 0 &&
+			 coreBytes >= CPUSTATES * sizeof( long ) &&
+			 coreBytes % ( CPUSTATES * sizeof( long ) ) == 0 ) {
+			const size_t coreCount = coreBytes / ( CPUSTATES * sizeof( long ) );
+			const bool havePrevious = mPrevCoreCpuTicks.size() == coreCount * CPUSTATES;
+			mPrevCoreCpuTicks.resize( coreCount * CPUSTATES );
+			if ( !havePrevious )
+				mLastCoreCpuUsage.assign( coreCount, 0.f );
+			for ( size_t core = 0; core < coreCount; ++core ) {
+				Uint64 totalDelta = 0;
+				Uint64 idleDelta = 0;
+				bool valid = havePrevious;
+				for ( size_t state = 0; state < CPUSTATES; ++state ) {
+					const size_t index = core * CPUSTATES + state;
+					const long ticks = mCoreCpuTicks[index];
+					if ( valid && ticks >= mPrevCoreCpuTicks[index] ) {
+						const Uint64 delta =
+							static_cast<Uint64>( ticks - mPrevCoreCpuTicks[index] );
+						totalDelta += delta;
+						if ( state == CP_IDLE )
+							idleDelta = delta;
+					} else {
+						valid = false;
+					}
+					mPrevCoreCpuTicks[index] = ticks;
+				}
+				if ( valid && totalDelta > 0 )
+					mLastCoreCpuUsage[core] = static_cast<float>(
+						100.0 * static_cast<double>( totalDelta - idleDelta ) / totalDelta );
+			}
+			sysInfo.cpuCount = static_cast<int>( coreCount );
+			sysInfo.coreCpuUsage = mLastCoreCpuUsage;
+		}
+	}
 
 	timeval bootTime{};
 	readSysctl( "kern.boottime", bootTime );

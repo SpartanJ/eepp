@@ -733,6 +733,9 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	ColorSchemePreference getColorSchemePreference() const;
 
+	//! Updates the macOS titlebar from the active theme after changing the color scheme or style.
+	void updateWindowTitleBarColor();
+
 	/**
 	 * @brief Sets the color scheme preference from extended preference.
 	 *
