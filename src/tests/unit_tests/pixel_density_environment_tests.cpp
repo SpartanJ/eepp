@@ -1,8 +1,12 @@
 #include "utest.h"
 #include <cstdlib>
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 #include <string>
 
@@ -43,4 +47,41 @@ UTEST( PixelDensity, environmentDefaultAppliesToUIWithoutResizingWindow ) {
 	}
 	EXPECT_TRUE( Sys::setEnv( "EEPP_PIXEL_DENSITY", previous.c_str() ) );
 	PixelDensity::setPixelDensity( priorDensity );
+}
+
+UTEST( UIEnvironment, fontOverridesAcceptOnlyKnownValues ) {
+	const std::string previousHinting = Sys::getEnv( "EEPP_FONT_HINTING" );
+	const std::string previousAntialiasing = Sys::getEnv( "EEPP_FONT_ANTIALIASING" );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_HINTING", "slight" ) );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_ANTIALIASING", "subpixel" ) );
+	EXPECT_EQ( Font::fontHintingFromEnvironment( FontHinting::Full ), FontHinting::Slight );
+	EXPECT_EQ( Font::fontAntialiasingFromEnvironment( FontAntialiasing::Grayscale ),
+			   FontAntialiasing::Subpixel );
+	{
+		UIApplication app( WindowSettings{ 320, 240, "Environment Font Test" } );
+		ASSERT_TRUE( app.getUI() );
+		const auto& fonts = app.getUI()->getResourceScope()->getFontService();
+		EXPECT_EQ( fonts.getHinting(), FontHinting::Slight );
+		EXPECT_EQ( fonts.getAntialiasing(), FontAntialiasing::Subpixel );
+	}
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_HINTING", "unknown" ) );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_ANTIALIASING", "unknown" ) );
+	EXPECT_EQ( Font::fontHintingFromEnvironment( FontHinting::Full ), FontHinting::Full );
+	EXPECT_EQ( Font::fontAntialiasingFromEnvironment( FontAntialiasing::Grayscale ),
+			   FontAntialiasing::Grayscale );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_HINTING", previousHinting.c_str() ) );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_FONT_ANTIALIASING", previousAntialiasing.c_str() ) );
+}
+
+UTEST( UIEnvironment, colorSchemeOverridesApplicationPreference ) {
+	const std::string previous = Sys::getEnv( "EEPP_COLOR_SCHEME" );
+	EXPECT_TRUE( Sys::setEnv( "EEPP_COLOR_SCHEME", "light" ) );
+	{
+		UIApplication app( WindowSettings{ 320, 240, "Environment Theme Test" } );
+		ASSERT_TRUE( app.getUI() );
+		EXPECT_EQ( app.getUI()->getColorSchemePreference(), ColorSchemePreference::Light );
+		app.getUI()->setColorSchemePreference( ColorSchemePreference::Dark );
+		EXPECT_EQ( app.getUI()->getColorSchemePreference(), ColorSchemePreference::Light );
+	}
+	EXPECT_TRUE( Sys::setEnv( "EEPP_COLOR_SCHEME", previous.c_str() ) );
 }

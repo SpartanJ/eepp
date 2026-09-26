@@ -697,9 +697,14 @@ int App::run( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDensity( parser, "pixel-density",
 										 "Set default application pixel density",
 										 { 'd', "pixel-density" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
+		{ 'c', "prefers-color-scheme" } );
 	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
 	args::Flag closeOnExit( parser, "close-on-exit",
-							"close the application when the executable exits", { 'c', "close" } );
+							"close the application when the executable exits",
+							{ "close", "close-on-exit" } );
 	args::ValueFlag<std::string> executeInShell( parser, "execute-in-shell",
 												 "execute program in shell", { 'e', "execute" },
 												 config->terminal.executeInShell );
@@ -757,6 +762,14 @@ int App::run( int argc, char* argv[] ) {
 								 static_cast<int>( height.Get() ) };
 	if ( pixelDensity )
 		config->window.pixelDensity = pixelDensity.Get();
+	if ( prefersColorScheme ) {
+		const std::string& scheme = prefersColorScheme.Get();
+		if ( scheme != "light" && scheme != "dark" && scheme != "system" ) {
+			std::cerr << "Color scheme must be light, dark, or system\n";
+			return EXIT_FAILURE;
+		}
+		config->theme.uiColorScheme = ColorSchemePreferences::fromStringExt( scheme );
+	}
 	if ( wd )
 		config->terminal.workingDirectory = wd.Get();
 	config->terminal.executeInShell = executeInShell.Get();

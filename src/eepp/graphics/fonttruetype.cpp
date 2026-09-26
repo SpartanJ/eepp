@@ -228,6 +228,26 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 } // namespace
 
 namespace EE { namespace Graphics {
+
+FontHinting Font::fontHintingFromEnvironment( FontHinting fallback ) {
+	const char* value = std::getenv( "EEPP_FONT_HINTING" );
+	if ( !value )
+		return fallback;
+	const std::string_view setting( value );
+	return setting == "none" || setting == "slight" || setting == "full"
+			   ? fontHintingFromString( setting )
+			   : fallback;
+}
+
+FontAntialiasing Font::fontAntialiasingFromEnvironment( FontAntialiasing fallback ) {
+	const char* value = std::getenv( "EEPP_FONT_ANTIALIASING" );
+	if ( !value )
+		return fallback;
+	const std::string_view setting( value );
+	return setting == "none" || setting == "grayscale" || setting == "subpixel"
+			   ? fontAntialiasingFromString( setting )
+			   : fallback;
+}
 using std::move;
 
 static std::unordered_map<std::string, Uint32> fontsInternalIds;
@@ -1911,6 +1931,7 @@ FontAntialiasing FontTrueType::getAntialiasing() const {
 }
 
 void FontTrueType::setAntialiasing( FontAntialiasing antialiasing ) {
+	antialiasing = Font::fontAntialiasingFromEnvironment( antialiasing );
 	if ( antialiasing != mAntialiasing ) {
 		mAntialiasing = antialiasing;
 		clearCache();
@@ -1922,6 +1943,7 @@ FontHinting FontTrueType::getHinting() const {
 }
 
 void FontTrueType::setHinting( FontHinting hinting ) {
+	hinting = Font::fontHintingFromEnvironment( hinting );
 	if ( hinting != mHinting ) {
 		mHinting = hinting;
 		clearCache();

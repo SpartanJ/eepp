@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdlib>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -13,6 +14,7 @@
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -22,8 +24,8 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -191,6 +193,11 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
 	mUIThemeManager->setResourceScope( mResourceScope );
+	if ( const char* scheme = std::getenv( "EEPP_COLOR_SCHEME" ) ) {
+		const std::string_view value( scheme );
+		if ( value == "light" || value == "dark" || value == "system" )
+			setColorSchemePreference( ColorSchemePreferences::fromStringExt( value ) );
+	}
 
 	resizeNode( mWindow );
 }
@@ -2161,8 +2168,15 @@ void UISceneNode::setColorSchemePreference(
 }
 
 void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
-	if ( mColorSchemePreference != colorSchemePreference ) {
-		mColorSchemePreference = colorSchemePreference;
+	ColorSchemePreference effective = colorSchemePreference;
+	if ( const char* scheme = std::getenv( "EEPP_COLOR_SCHEME" ) ) {
+		const std::string_view value( scheme );
+		if ( value == "light" || value == "dark" || value == "system" )
+			effective =
+				ColorSchemePreferences::fromExt( ColorSchemePreferences::fromStringExt( value ) );
+	}
+	if ( mColorSchemePreference != effective ) {
+		mColorSchemePreference = effective;
 		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
 				mStyleSheet.invalidateCache();

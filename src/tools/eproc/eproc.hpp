@@ -123,6 +123,9 @@ class App {
 
 	std::unique_ptr<AppConfig> mConfig;
 	std::optional<Float> mPixelDensity;
+	FontHinting mFontHinting{ FontHinting::Full };
+	FontAntialiasing mFontAntialiasing{ FontAntialiasing::Grayscale };
+	ColorSchemeExtPreference mColorScheme{ ColorSchemeExtPreference::System };
 	std::unique_ptr<UIApplication> mApp;
 	UIWidget* mRoot{ nullptr };
 	UITabWidget* mTabWidget{ nullptr };

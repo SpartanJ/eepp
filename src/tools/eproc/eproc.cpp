@@ -12,6 +12,7 @@
 #include <iostream>
 #include <limits>
 #include <string_view>
+#include <unordered_map>
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
 #include <signal.h>
@@ -436,6 +437,11 @@ std::string formatPerformanceRate( Int64 bytes ) {
 	return bytes > 0 ? formatBytesPerSecond( bytes ) : "0 B/s";
 }
 
+Color themeColor( UISceneNode* ui, const char* name, Color fallback ) {
+	const auto value = ui->getRoot()->getUIStyle()->getVariable( name );
+	return value.isEmpty() ? fallback : Color::fromString( value.getValue() );
+}
+
 } // namespace
 
 App::App() {
@@ -455,6 +461,25 @@ int App::run( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDensity( parser, "pixel-density",
 										 "Set default application pixel density",
 										 { 'd', "pixel-density" } );
+	const std::unordered_map<std::string, FontHinting> fontHintingMap{
+		{ "none", FontHinting::None },
+		{ "slight", FontHinting::Slight },
+		{ "full", FontHinting::Full } };
+	args::MapFlag<std::string, FontHinting> fontHinting(
+		parser, "font-hinting", "Font hinting mode (accepted values: none, slight, full)",
+		{ "font-hinting" }, fontHintingMap, mFontHinting );
+	const std::unordered_map<std::string, FontAntialiasing> fontAntialiasingMap{
+		{ "none", FontAntialiasing::None },
+		{ "grayscale", FontAntialiasing::Grayscale },
+		{ "subpixel", FontAntialiasing::Subpixel } };
+	args::MapFlag<std::string, FontAntialiasing> fontAntialiasing(
+		parser, "font-antialiasing",
+		"Font antialiasing mode (accepted values: none, grayscale, subpixel)",
+		{ "font-antialiasing" }, fontAntialiasingMap, mFontAntialiasing );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
+		{ 'c', "prefers-color-scheme" } );
 	try {
 		parser.ParseCLI( argc, argv );
 	} catch ( const args::Help& ) {
@@ -473,6 +498,16 @@ int App::run( int argc, char* argv[] ) {
 			return EXIT_FAILURE;
 		}
 		mPixelDensity = pixelDensity.Get();
+	}
+	mFontHinting = fontHinting.Get();
+	mFontAntialiasing = fontAntialiasing.Get();
+	if ( prefersColorScheme ) {
+		const std::string& scheme = prefersColorScheme.Get();
+		if ( scheme != "light" && scheme != "dark" && scheme != "system" ) {
+			std::cerr << "Color scheme must be light, dark, or system\n";
+			return EXIT_FAILURE;
+		}
+		mColorScheme = ColorSchemePreferences::fromStringExt( scheme );
 	}
 	if ( !init() )
 		return EXIT_FAILURE;
@@ -496,6 +531,8 @@ bool App::init() {
 	ctx.Multisamples = 4;
 	UIApplication::Settings settings;
 	settings.pixelDensity = mPixelDensity;
+	settings.fontHinting = mFontHinting;
+	settings.fontAntialiasing = mFontAntialiasing;
 	mApp = std::make_unique<UIApplication>( ws, settings, ctx );
 	if ( mApp->getUI() && mApp->getWindow() ) {
 		mApp->getWindow()->setTitle(
@@ -505,6 +542,7 @@ bool App::init() {
 	auto* ui = mApp->getUI();
 	if ( !ui )
 		return false;
+	ui->setColorSchemePreference( mColorScheme );
 
 	restoreWindowState();
 	if ( mApp->getWindow() ) {
@@ -556,7 +594,7 @@ bool App::init() {
 	treeview::cell.eproc-cpu-fill-90,
 	tableview::cell.eproc-cpu-fill-100,
 	treeview::cell.eproc-cpu-fill-100 {
-		background-image: rectangle(solid, #264358);
+		background-image: rectangle(solid, var(--item-hover));
 		background-position: left bottom;
 	}
 	tableview::cell.eproc-cpu-fill-10,
@@ -603,8 +641,12 @@ bool App::init() {
 	}
 	tableview::cell.eproc-process-ended,
 	treeview::cell.eproc-process-ended {
-		color: #808080;
-		tint: #808080;
+		color: var(--disabled-color);
+		tint: var(--disabled-color);
+	}
+	tableview::cell.eproc-process-column-icon,
+	treeview::cell.eproc-process-column-icon {
+		tint: white;
 	}
 	tableview::cell.eproc-process-column-pid,
 	treeview::cell.eproc-process-column-pid,
@@ -653,10 +695,10 @@ bool App::init() {
 	treeview::row:nth-child(even):selected {
 		background-color: var(--primary);
 	}
-	.eproc-performance-sidebar { background-color: #282d31; }
+	.eproc-performance-sidebar { background-color: var(--tab-back); }
 	.eproc-performance-card {
-		background-color: #202427;
-		border: 1dp solid #40474b;
+		background-color: var(--list-back);
+		border: 1dp solid var(--button-border);
 		border-radius: 5dp;
 	}
 	.eproc-performance-card:hover {
@@ -664,11 +706,11 @@ bool App::init() {
 	}
 	.eproc-performance-card-selected { border: 2dp solid var(--primary); }
 	.eproc-performance-card.eproc-performance-card-selected:hover { border: 3dp solid var(--primary); }
-	.eproc-performance-muted { color: #9aa4ab; }
-	.eproc-performance-chart { background-color: #202427; }
+	.eproc-performance-muted { color: var(--font-hint); }
+	.eproc-performance-chart { background-color: var(--list-back); }
 	.eproc-performance-preview {
-		background-color: #202427;
-		border: 1dp solid #40474b;
+		background-color: var(--list-back);
+		border: 1dp solid var(--button-border);
 		border-radius: 4dp;
 	}
 	</style>
@@ -1009,8 +1051,15 @@ void App::setupUI() {
 void App::setupPerformance() {
 	constexpr std::array<const char*, 4> ids = { "cpu", "memory", "gpu", "network" };
 	constexpr std::array<const char*, 4> names = { "CPU", "Memory", "GPU", "Network" };
-	const std::array<Color, 4> colors = { Color( 49, 178, 224 ), Color( 190, 151, 226 ),
-										  Color( 119, 203, 135 ), Color( 91, 196, 223 ) };
+	const Color primary = themeColor( mApp->getUI(), "--primary", Color( 49, 178, 224 ) );
+	const Color gridColor =
+		Color( themeColor( mApp->getUI(), "--separator", Color( 100, 113, 124 ) ), 45 );
+	const std::array<Color, 4> colors = {
+		primary,
+		themeColor( mApp->getUI(), "--theme-warning", Color( 190, 151, 226 ) ),
+		themeColor( mApp->getUI(), "--theme-success", Color( 119, 203, 135 ) ),
+		themeColor( mApp->getUI(), "--font-highlight", Color( 91, 196, 223 ) ),
+	};
 	mPerformanceDetailChart = mRoot->find<UIChart>( "perf_detail_chart" );
 	mPerformanceTitle = mRoot->find<UITextView>( "perf_title" );
 	mPerformanceSummary = mRoot->find<UITextView>( "perf_summary" );
@@ -1027,8 +1076,8 @@ void App::setupPerformance() {
 	detailStyle.verticalGrid.mode = ChartGridMode::ScreenInterval;
 	detailStyle.verticalGrid.spacing = 64.0;
 	detailStyle.horizontalGrid.mode = ChartGridMode::AxisTicks;
-	detailStyle.verticalGrid.color = Color( 100, 113, 124, 45 );
-	detailStyle.horizontalGrid.color = Color( 100, 113, 124, 45 );
+	detailStyle.verticalGrid.color = gridColor;
+	detailStyle.horizontalGrid.color = gridColor;
 	detailStyle.leftMargin = 68.f;
 	detailStyle.bottomMargin = 28.f;
 	detailStyle.minimumAxisMargin = 46.f;
@@ -1061,7 +1110,7 @@ void App::setupPerformance() {
 			metric.secondary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
 			auto& upload = metric.preview->addLineSeries( "Upload" );
 			upload.setDataSource( metric.secondary );
-			upload.setColor( Color( 236, 115, 103 ) );
+			upload.setColor( themeColor( mApp->getUI(), "--theme-error", Color( 236, 115, 103 ) ) );
 		}
 		ChartStyle smallStyle = metric.preview->chartStyle();
 		smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
@@ -1149,7 +1198,7 @@ void App::rebuildCoreCharts( size_t count ) {
 		chart->addClass( "eproc-performance-chart" );
 		auto& line = chart->addLineSeries( String::format( "CPU %zu", core ) );
 		line.setDataSource( mCoreHistory[core] );
-		line.setColor( Color( 49, 178, 224 ) );
+		line.setColor( themeColor( mApp->getUI(), "--primary", Color( 49, 178, 224 ) ) );
 		chart->xAxis().setFormatter( []( double, double ) { return String(); } );
 		chart->yAxis().setFormatter( []( double, double ) { return String(); } );
 		ChartStyle style = chart->chartStyle();
@@ -1164,10 +1213,12 @@ void App::rebuildCoreCharts( size_t count ) {
 		style.tickLabelColor = Color( 0, 0, 0, 0 );
 		style.verticalGrid.mode = ChartGridMode::ScreenInterval;
 		style.verticalGrid.spacing = 24.0;
-		style.verticalGrid.color = Color( 100, 113, 124, 35 );
+		style.verticalGrid.color =
+			Color( themeColor( mApp->getUI(), "--separator", Color( 100, 113, 124 ) ), 35 );
 		style.horizontalGrid.mode = ChartGridMode::DataInterval;
 		style.horizontalGrid.spacing = 25.0;
-		style.horizontalGrid.color = Color( 100, 113, 124, 35 );
+		style.horizontalGrid.color =
+			Color( themeColor( mApp->getUI(), "--separator", Color( 100, 113, 124 ) ), 35 );
 		chart->setChartStyle( style );
 		chart->setAxisRange( chart->yAxis(), { 0.0, 100.0 } );
 		const double now = mPerformanceClock.getElapsedTime().asSeconds();

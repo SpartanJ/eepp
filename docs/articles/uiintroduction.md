@@ -270,3 +270,16 @@ For applications with reactive state, typed input, validation, or observable col
 with the [UI Data Binding](uidatabinding.md) guide.
 
 For interactive line charts, live data, grids, and tooltip examples, see [UI Charts](uicharts.md).
+
+## Environment overrides
+
+eepp UI applications accept these environment variables:
+
+| Variable | Accepted values |
+| --- | --- |
+| `EEPP_FONT_HINTING` | `none`, `slight`, `full` |
+| `EEPP_FONT_ANTIALIASING` | `none`, `grayscale`, `subpixel` |
+| `EEPP_COLOR_SCHEME` | `light`, `dark`, `system` |
+
+Valid environment values take precedence over application settings and command-line options.
+Unrecognized values are ignored. `system` follows the operating system color scheme.
