@@ -249,6 +249,64 @@ UTEST( UIChart, miterJoinFillsInnerWedgeAtHighDensity ) {
 	PixelDensity::setPixelDensity( previousDensity );
 }
 
+UTEST( UIChart, filledSeriesBlendAndStopAtGaps ) {
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	UIApplication app(
+		WindowSettings{ 220, 220, "Chart Area Test" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* chart = UIChart::New();
+	chart->setPixelsSize( 200, 200 );
+	chart->setParent( app.getUI()->getRoot() );
+	ChartStyle style;
+	style.leftMargin = style.rightMargin = style.topMargin = style.bottomMargin = 0.f;
+	style.minimumAxisMargin = style.axisLabelPadding = 0.f;
+	chart->setChartStyle( style );
+	chart->xAxis().setFormatter( []( double, double ) { return String(); } );
+	chart->yAxis().setFormatter( []( double, double ) { return String(); } );
+	chart->setAxisRange( chart->xAxis(), { 0, 100 } );
+	chart->setAxisRange( chart->yAxis(), { 0, 100 } );
+	auto& red = chart->addLineSeries( "Red" );
+	red.setColor( Color( 255, 0, 0 ) );
+	red.setFilled( true );
+	red.setPoints( std::vector<ChartPoint>{
+		{ 20, 75 },
+		{ 40, 75 },
+		{ std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN() },
+		{ 60, 75 },
+		{ 80, 75 } } );
+	auto& blue = chart->addLineSeries( "Blue" );
+	blue.setColor( Color( 0, 0, 255 ) );
+	blue.setPoints( std::vector<ChartPoint>{ { 60, 50 }, { 80, 50 } } );
+	app.getUI()->flushDirtyStyleAndLayout();
+	app.getWindow()->setClearColor( Color( 20, 20, 20 ) );
+	const auto draw = [&]() {
+		app.getWindow()->clear();
+		app.getUI()->draw();
+		GlobalBatchRenderer::instance()->draw();
+		return app.getWindow()->getFrontBufferImage();
+	};
+	Image unfilled = draw();
+	const Color redOnly = unfilled.getPixel( 60, 150 );
+	const Color gap = unfilled.getPixel( 100, 150 );
+	const Color overlapBefore = unfilled.getPixel( 140, 150 );
+	EXPECT_TRUE( redOnly.r > gap.r + 30 );
+	EXPECT_TRUE( overlapBefore.r > gap.r + 30 );
+	EXPECT_TRUE( overlapBefore.b < 60 );
+	blue.setFilled( true );
+	blue.setFillColor( Color( 0, 0, 255, 128 ) );
+	Image filled = draw();
+	const Color overlapAfter = filled.getPixel( 140, 150 );
+	EXPECT_TRUE( overlapAfter.b > overlapBefore.b + 60 );
+	EXPECT_TRUE( overlapAfter.r < overlapBefore.r );
+	EXPECT_EQ( filled.getPixel( 100, 150 ).r, gap.r );
+	red.setFilled( false );
+	Image redDisabled = draw();
+	EXPECT_EQ( redDisabled.getPixel( 60, 150 ).r, gap.r );
+	blue.setFillColor( std::nullopt );
+	EXPECT_FALSE( blue.fillColor().has_value() );
+	PixelDensity::setPixelDensity( previousDensity );
+}
+
 UTEST( UIChart, smoothLineBendsWithoutOvershootingAndRotatedLabelsFit ) {
 	const Float previousDensity = PixelDensity::getPixelDensity();
 	UIApplication app(

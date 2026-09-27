@@ -141,6 +141,16 @@ class EE_API LineSeries {
 
 	bool hasCustomColor() const { return mColorExplicit; }
 
+	/** Fill the area between the line and the plot's bottom edge. Disabled by default. */
+	void setFilled( bool filled );
+
+	bool filled() const { return mFilled; }
+
+	/** Overrides the translucent line color used by the fill; null restores the default. */
+	void setFillColor( std::optional<Color> color );
+
+	const std::optional<Color>& fillColor() const { return mFillColor; }
+
 	/** Stroke width in device-independent pixels. */
 	void setWidth( Float width );
 
@@ -200,6 +210,7 @@ class EE_API LineSeries {
 	ChartAxis* mXAxis;
 	ChartAxis* mYAxis;
 	Color mColor{ 48, 130, 220 };
+	std::optional<Color> mFillColor;
 	bool mColorExplicit{ false };
 	Float mWidth{ 2.f };
 	Float mMiterLimit{ 4.f };
@@ -207,6 +218,7 @@ class EE_API LineSeries {
 	LineCap mCap{ LineCap::Butt };
 	LineInterpolation mInterpolation{ LineInterpolation::Linear };
 	bool mVisible{ true };
+	bool mFilled{ false };
 	Uint64 mGeometryRevision{ 0 };
 };
 
@@ -323,6 +335,7 @@ class EE_API UIChart : public UIWidget {
 	struct SeriesCache {
 		LineSeries* series{ nullptr };
 		VertexBufferUniquePtr geometry;
+		VertexBufferUniquePtr fillGeometry;
 		Uint64 generation{ 0 };
 		Uint64 viewRevision{ 0 };
 		Uint64 seriesRevision{ 0 };

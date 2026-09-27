@@ -3,8 +3,9 @@
 ## Overview
 
 `UIChart` is eepp's interactive, hardware-accelerated line chart widget. It supports multiple
-series and Y axes, live data, pan and zoom, hover tooltips, configurable grids, smooth curves,
-and rotated X-axis labels. Charts can be created in C++ or placed in a UI XML layout as `<Chart>`.
+series and Y axes, optional filled areas, live data, pan and zoom, hover tooltips, configurable
+grids, smooth curves, and rotated X-axis labels. Charts can be created in C++ or placed in a UI
+XML layout as `<Chart>`.
 
 The public API is available through `<eepp/ui.hpp>`. The individual headers are under
 `<eepp/ui/charts/>`, and the types live in `EE::UI::Charts`. The complete runnable example is
@@ -245,6 +246,24 @@ series and hover colors, with built-in fallback colors. Tick color defaults to t
 color. Grid color defaults to the axis color with reduced opacity. `ChartStyle::font == nullptr`
 uses the UI theme's default font. The optional `font` pointer is borrowed; its font must outlive
 the chart's use of it. A series's explicit `setColor()` overrides the style's default series color.
+
+### Filled areas
+
+Each line can optionally fill the area down to the **bottom edge of the plot**. The fill uses the
+same interpolation as its line, stops at nonfinite data gaps, and is clipped to the plot. All fills
+are drawn before the line strokes, so overlapping fills blend while the strokes stay visible.
+Filling is off by default.
+
+```cpp
+series.setFilled( true );
+series.setFillColor( Color( 83, 179, 255, 90 ) ); // Optional custom RGBA fill.
+series.setFillColor( std::nullopt );             // Return to the derived color.
+```
+
+Without a custom fill color, the chart uses the resolved line color at one-quarter of its alpha.
+Thus a themed series follows theme color changes, and a transparent line produces a correspondingly
+transparent fill. Set `setFilled( false )` to show only the line again. A zero-width line can still
+show its fill.
 
 ### Grids
 

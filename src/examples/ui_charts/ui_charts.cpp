@@ -68,6 +68,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 	auto& sine = waves->addLineSeries( "Sine" );
 	sine.setColor( Color( 83, 179, 255 ) );
 	sine.setWidth( 3.f );
+	sine.setFilled( true );
 	sine.setInterpolation( LineInterpolation::MonotoneCubic );
 	sine.setPoints( wave( 500, 0 ) );
 	sine.setTooltipProvider(
@@ -77,6 +78,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		} );
 	auto& cosine = waves->addLineSeries( "Cosine" );
 	cosine.setColor( Color( 255, 177, 77 ) );
+	cosine.setFilled( true );
 	cosine.setCap( LineCap::Square );
 	cosine.setPoints( wave( 500, 1.5707963267948966 ) );
 	waves->fit();

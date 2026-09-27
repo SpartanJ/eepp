@@ -136,6 +136,22 @@ void LineSeries::setColor( Color color ) {
 	}
 }
 
+void LineSeries::setFilled( bool filled ) {
+	if ( mFilled != filled ) {
+		mFilled = filled;
+		++mGeometryRevision;
+		changed();
+	}
+}
+
+void LineSeries::setFillColor( std::optional<Color> color ) {
+	if ( mFillColor != color ) {
+		mFillColor = color;
+		++mGeometryRevision;
+		changed();
+	}
+}
+
 void LineSeries::setWidth( Float width ) {
 	width = std::max( 0.f, width );
 	if ( mWidth != width ) {
@@ -598,8 +614,13 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 		cache.geometry->clear();
 	else
 		cache.geometry = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLES );
-	if ( !cache.series->visible() || read.size() < 2 || cache.series->width() <= 0 )
+	if ( cache.fillGeometry )
+		cache.fillGeometry->clear();
+	if ( !cache.series->visible() || read.size() < 2 ||
+		 ( cache.series->width() <= 0 && !cache.series->filled() ) )
 		return;
+	if ( cache.series->filled() && !cache.fillGeometry )
+		cache.fillGeometry = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLES );
 	const auto& xView = viewport( cache.series->xAxis() );
 	const auto& yView = viewport( cache.series->yAxis() );
 	IndexRange visible{ 0, read.size() };
@@ -632,10 +653,19 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 	Vector2f priorDirection;
 	Vector2f priorNormal;
 	const Color seriesColor = cache.series->hasCustomColor() ? cache.series->color() : mSeriesColor;
+	Color fillColor = cache.series->fillColor().value_or( seriesColor );
+	if ( !cache.series->fillColor() )
+		fillColor.a = static_cast<Uint8>( ( static_cast<Uint32>( seriesColor.a ) + 1 ) / 4 );
 	auto addTriangle = [&]( Vector2f a, Vector2f b, Vector2f c ) {
 		for ( const auto& vertex : { a, b, c } ) {
 			cache.geometry->addVertex( vertex );
 			cache.geometry->addColor( seriesColor );
+		}
+	};
+	auto addFillTriangle = [&]( Vector2f a, Vector2f b, Vector2f c ) {
+		for ( const auto& vertex : { a, b, c } ) {
+			cache.fillGeometry->addVertex( vertex );
+			cache.fillGeometry->addColor( fillColor );
 		}
 	};
 	auto addSquareCap = [&]( Vector2f center, Vector2f direction, Vector2f normal, bool start ) {
@@ -671,6 +701,16 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 			const Float dy = current.y - previous.y;
 			const Float length = std::hypot( dx, dy );
 			if ( length > 0.001f ) {
+				if ( cache.series->filled() ) {
+					const Float bottom = mLayout.plot.Bottom;
+					addFillTriangle( previous, { previous.x, bottom }, current );
+					addFillTriangle( current, { previous.x, bottom }, { current.x, bottom } );
+				}
+				if ( cache.series->width() <= 0 ) {
+					previous = current;
+					previousValid = true;
+					return;
+				}
 				const Vector2f direction( dx / length, dy / length );
 				const Vector2f normal( -dy / length * halfWidth, dx / length * halfWidth );
 				if ( !priorSegment )
@@ -1001,15 +1041,29 @@ void UIChart::draw() {
 				geometryChanged = true;
 			}
 		}
-		if ( rebuilt && cache.geometry && cache.geometry->getVertexCount() )
-			cache.geometry->compile();
-		if ( cache.geometry && cache.geometry->getVertexCount() ) {
-			cache.geometry->bind();
-			GLi->translatef( mScreenPos.x, mScreenPos.y, 0 );
-			cache.geometry->draw();
-			GLi->translatef( -mScreenPos.x, -mScreenPos.y, 0 );
-			cache.geometry->unbind();
+		if ( rebuilt ) {
+			if ( cache.fillGeometry && cache.fillGeometry->getVertexCount() )
+				cache.fillGeometry->compile();
+			if ( cache.geometry && cache.geometry->getVertexCount() )
+				cache.geometry->compile();
 		}
+	}
+	const auto drawGeometry = [&]( const VertexBufferUniquePtr& geometry ) {
+		if ( geometry && geometry->getVertexCount() ) {
+			geometry->bind();
+			GLi->translatef( mScreenPos.x, mScreenPos.y, 0 );
+			geometry->draw();
+			GLi->translatef( -mScreenPos.x, -mScreenPos.y, 0 );
+			geometry->unbind();
+		}
+	};
+	for ( const auto& cache : mCaches ) {
+		if ( cache.series->visible() && cache.series->dataSource() )
+			drawGeometry( cache.fillGeometry );
+	}
+	for ( const auto& cache : mCaches ) {
+		if ( cache.series->visible() && cache.series->dataSource() )
+			drawGeometry( cache.geometry );
 	}
 	if ( mHover && !mPanning &&
 		 ( geometryChanged || layoutChanged || mHoverRevision != mModel->revision() ) ) {
