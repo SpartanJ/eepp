@@ -757,8 +757,9 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 	addBool( panel,
 			 { "hideTabBar", "editor.tabs", mApp->i18n( "hide_tabbar", "Hide Tab Bar" ),
 			   mApp->i18n( "hide_tabbar_tooltip", "Always hide the tab bar." ) },
-			 &mApp->getConfig().editor.hideTabBar,
-			 [this]( bool value ) { mApp->getSplitter()->setHideTabBar( value ); } );
+			 &mApp->getConfig().editor.hideTabBar, [this]( bool value ) {
+				 mApp->getSplitter()->setHideTabBar( value || mApp->isZenMode() );
+			 } );
 	addBool( panel,
 			 { "hideTabBarOnSingleTab", "editor.tabs",
 			   mApp->i18n( "hide_tabbar_on_single_tab", "Hide Tab Bar on Single Tab" ),

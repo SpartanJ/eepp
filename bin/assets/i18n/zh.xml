@@ -252,6 +252,7 @@
 	<string name="frame_rate_limit">FPS限制</string>
 	<string name="frame_rate_limit_applied">FPS设置已生效</string>
 	<string name="fullscreen_mode">全屏模式</string>
+	<string name="zen_mode">禅模式</string>
 	<string name="fullscreen_toggle">切换全屏</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">添加分支</string>

@@ -347,6 +347,7 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="frame_rate_limit">Bildwiederholratenbegrenzung</string>
 	<string name="frame_rate_limit_applied">Bildwiederholratenbegrenzung angewendet</string>
 	<string name="fullscreen_mode">Vollbildmodus</string>
+	<string name="zen_mode">Zen-Modus</string>
 	<string name="fullscreen_toggle">Vollbild umschalten</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Zweig hinzufügen</string>

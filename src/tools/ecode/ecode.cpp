@@ -1238,6 +1238,7 @@ void App::updateRecentFolders() {
 }
 
 void App::showSidePanel( bool show ) {
+	show = show && !mZenMode;
 	if ( show == mSidePanel->isVisible() )
 		return;
 
@@ -1252,6 +1253,7 @@ void App::showSidePanel( bool show ) {
 }
 
 void App::showStatusBar( bool show ) {
+	show = show && !mZenMode;
 	if ( show == mStatusBar->isVisible() )
 		return;
 	mStatusBar->setVisible( show );
@@ -1297,6 +1299,20 @@ void App::switchStatusBar() {
 void App::switchMenuBar() {
 	mConfig.ui.showMenuBar = !mConfig.ui.showMenuBar;
 	mSettings->updateMenu();
+}
+
+void App::setZenMode( bool enabled ) {
+	if ( mZenMode == enabled )
+		return;
+	mZenMode = enabled;
+	showSidePanel( mConfig.ui.showSidePanel );
+	showStatusBar( mConfig.ui.showStatusBar );
+	mSplitter->setHideTabBar( enabled || mConfig.editor.hideTabBar );
+	mSettings->updateMenu();
+	updateDocInfoLocation();
+	if ( mDocInfo )
+		mDocInfo->setVisible( !enabled && mConfig.editor.showDocInfo );
+	mSettings->updateViewMenu();
 }
 
 void App::panelPosition( const PanelPosition& panelPosition ) {
@@ -1616,7 +1632,7 @@ void App::onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& doc ) {
 void App::updateDocInfoLocation() {
 	if ( !mDocInfo )
 		return;
-	if ( mConfig.ui.showStatusBar ) {
+	if ( mConfig.ui.showStatusBar && !mZenMode ) {
 		if ( mStatusBar != mDocInfo->getParent() ) {
 			mDocInfo->setParent( mStatusBar );
 			mDocInfo->setEnabled( true );
@@ -1629,7 +1645,7 @@ void App::updateDocInfoLocation() {
 
 void App::updateDocInfo( TextDocument& doc ) {
 	if ( !doc.isRunningTransaction() && !doc.isLoading() && mConfig.editor.showDocInfo &&
-		 mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+		 !mZenMode && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String::formatTo( mDocInfoUtf8Buffer, "%s: %lld / %zu  %s: %lld    %s    %s%s    %s",
@@ -2188,6 +2204,8 @@ KeyBindings::ShortcutMap App::getLocalKeybindings() {
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
+		  "zen-mode" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
@@ -2290,6 +2308,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"open-terminal-settings",
 		"switch-side-panel",
 		"toggle-status-bar",
+		"zen-mode",
 		"download-file-web",
 		"create-new-terminal",
 		"terminal-split-left",
@@ -2343,7 +2362,7 @@ void App::closeEditors() {
 
 	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
 	mSplitter->clearNavigationHistory();
-	mStatusBar->setVisible( mConfig.ui.showStatusBar );
+	showStatusBar( mConfig.ui.showStatusBar );
 
 	saveProject();
 
@@ -4309,7 +4328,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
-		mStatusBar->setVisible( mConfig.ui.showStatusBar );
+		showStatusBar( mConfig.ui.showStatusBar );
 	}
 	mClosedDocumentState.clear();
 
@@ -5268,6 +5287,8 @@ void App::init( InitParameters& params ) {
 		} else {
 			initProjectTreeView( std::move( params.files ), params.openClean, params.readOnly );
 		}
+		if ( params.zenMode )
+			setZenMode( true );
 
 		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
 		mFileToOpenReadOnly = params.readOnly;
@@ -5432,6 +5453,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag openClean( parser, "open-clean",
 						  "Open a new instance of ecode without recovering the last session",
 						  { "open-clean", 'x' } );
+	args::Flag zenMode( parser, "zen-mode", "Start with Zen Mode enabled", { 'z', "zen-mode" } );
 	args::ValueFlag<std::string> language(
 		parser, "language",
 		"Try to set the default language the editor will be loaded. The language must be supported "
@@ -5534,7 +5556,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	params.fileToOpen = file.Get();
 	params.stdOutLogs = verbose.Get();
 	params.disableFileLogs = disableFileLogs.Get();
-	params.openClean = openClean.Get();
+	params.zenMode = zenMode.Get();
+	params.openClean = openClean.Get() || params.zenMode;
 	params.portable = portable.Get();
 	params.language = language.Get();
 	params.incognito = incognito.Get();
@@ -5542,7 +5565,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						   ( exportLangPath && !exportLangPath.Get().empty() );
 	params.profile = profile.Get();
 	params.disablePlugins = disablePlugins.Get();
-	params.redirectToFirstInstance = redirectToFirstInstance.Get();
+	params.redirectToFirstInstance = redirectToFirstInstance.Get() || params.zenMode;
 	params.diff = diff.Get();
 	params.readOnly = readOnly.Get();
 

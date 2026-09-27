@@ -330,6 +330,7 @@ ecode tentera d'ouvrir un terminal externe.</string>
 	<string name="frame_rate_limit">Limite de la fréquence d'images</string>
 	<string name="frame_rate_limit_applied">Limite de la fréquence d'images appliquée</string>
 	<string name="fullscreen_mode">Mode plein écran</string>
+	<string name="zen_mode">Mode zen</string>
 	<string name="fullscreen_toggle">Basculer en plein écran</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Ajouter une branche</string>

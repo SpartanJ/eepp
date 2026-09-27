@@ -331,6 +331,7 @@ ecode will try to open an external terminal.</string>
 	<string name="frame_rate_limit">Frame Rate Limit</string>
 	<string name="frame_rate_limit_applied">Frame Rate Limit Applied</string>
 	<string name="fullscreen_mode">Full Screen Mode</string>
+	<string name="zen_mode">Zen Mode</string>
 	<string name="fullscreen_toggle">Fullscreen Toggle</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Add Branch</string>

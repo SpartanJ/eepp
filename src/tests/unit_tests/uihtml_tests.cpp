@@ -1258,6 +1258,8 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 	win->setClearColor( Color::White );
 
 	win->getInput()->update();
+	EXPECT_EQ( win->getInput()->getMousePos().x, 0 );
+	EXPECT_EQ( win->getInput()->getMousePos().y, 0 );
 	SceneManager::instance()->update();
 
 	win->clear();
@@ -3118,8 +3120,14 @@ UTEST( UIHTML, MarkdownDocumentSelectionProjectsAndCopies ) {
 	EXPECT_EQ( second->getTextSelectionRange().second, 5 );
 	EXPECT_EQ( third->getTextSelectionRange().second, 3 );
 	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	// SDL may return native CRLF line endings from the Windows clipboard.
+	auto clipboardText = [&]() {
+		auto text = sceneNode->getWindow()->getClipboard()->getText();
+		String::replaceAll( text, "\r\n", "\n" );
+		return text;
+	};
 	EXPECT_TRUE( controller->copySelection() );
-	EXPECT_STDSTREQ( sceneNode->getWindow()->getClipboard()->getText(), "pha\nbravo\ncha" );
+	EXPECT_STDSTREQ( "pha\nbravo\ncha", clipboardText() );
 	markdown->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	markdown->setPixelsSize( 110, markdown->getPixelsSize().getHeight() );
 	sceneNode->update( Seconds( 1 ) );
@@ -3133,7 +3141,7 @@ UTEST( UIHTML, MarkdownDocumentSelectionProjectsAndCopies ) {
 	EXPECT_TRUE( controller->onKeyDown( selectAll ) );
 	EXPECT_STRINGEQ( controller->getSelectionString(), "alpha\nbravo\ncharlie" );
 	EXPECT_TRUE( controller->onKeyDown( copy ) );
-	EXPECT_STDSTREQ( sceneNode->getWindow()->getClipboard()->getText(), "alpha\nbravo\ncharlie" );
+	EXPECT_STDSTREQ( "alpha\nbravo\ncharlie", clipboardText() );
 	first->setUserSelect( CSSUserSelect::None );
 	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Text );
 	controller->selectAll();

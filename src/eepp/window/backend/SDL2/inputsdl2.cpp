@@ -140,7 +140,11 @@ Scancode InputSDL::getScancodeFromKey( const Keycode& scancode ) const {
 
 void InputSDL::init() {
 	mDPIScale = mWindow->getScale();
-	mMousePos = queryMousePos();
+	// A hidden window has no pointer position of its own. Its global screen position must not
+	// make hover state depend on where the user happens to be moving the desktop cursor.
+	mMousePos = mWindow->getWindowInfo()->WindowConfig.Style & WindowStyle::Hidden
+					? Vector2i( 0, 0 )
+					: queryMousePos();
 }
 
 void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
