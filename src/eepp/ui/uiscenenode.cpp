@@ -230,6 +230,18 @@ UISceneNode::~UISceneNode() {
 	if ( mOwnsEventDispatcher ) {
 		eeSAFE_DELETE( mEventDispatcher );
 	} else {
+		// Children can leave the shared dispatcher pointing at this embedded scene. Its Node
+		// destructor cannot clear that reference after mEventDispatcher is detached here.
+		if ( mEventDispatcher ) {
+			if ( mEventDispatcher->getMouseOverNode() == this )
+				mEventDispatcher->setMouseOverNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getFocusNode() == this )
+				mEventDispatcher->setFocusNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getLastFocusNode() == this )
+				mEventDispatcher->setLastFocusNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getMouseDownNode() == this )
+				mEventDispatcher->resetMouseDownNode();
+		}
 		mEventDispatcher = nullptr;
 	}
 }
