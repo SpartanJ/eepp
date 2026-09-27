@@ -16,7 +16,7 @@ class UIHTMLWidget;
 
 enum class CSSUserSelect : Uint8 { Auto, Text, None, Contain, All };
 
-struct CSSUserSelectHelper {
+struct EE_API CSSUserSelectHelper {
 	static CSSUserSelect fromString( std::string_view value );
 
 	static std::string_view toString( CSSUserSelect value );
