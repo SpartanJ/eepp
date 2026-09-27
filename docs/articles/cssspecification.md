@@ -1865,7 +1865,8 @@ Selects an item inside an element containing a list of items from its item text.
 
 Sets the text selection background color on a text element that supports text selection.
 
-* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+* Applicable to: EE::UI::UIRichText (RichText), EE::UI::UITextSpan (TextSpan),
+  EE::UI::UITextView (TextView), and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList)
 * Data Type: [color](#color-data-type)
@@ -2163,14 +2164,27 @@ Read [text-overflow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overf
 
 ### text-selection
 
-Enables/disables text selection in any element that contains text.
+eepp-specific widget capability for interactive text selection. `UIRichText` and `UITextSpan`
+enable it by default; `text-selection: false` disables their local capability. HTML document
+selection also applies the separate CSS `user-select` policy.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab), EE::UI::UITextEdit (TextEdit)
 * Data Type: [boolean](#boolean-data-type)
-* Default value: `true` for TextEdit, TextInput. `false` for any other element.
+* Default value: `true` for RichText, TextSpan, TextEdit, and TextInput.
+
+---
+
+### user-select
+
+Controls HTML document selection with `auto`, `text`, `none`, `all`, and `contain`.
+`-webkit-user-select` is an alias. The property is not inherited: `auto` resolves from the
+parent's used value. `UIWebView` and `UIMarkdownView` support selection across paragraphs and
+other independent text formatting contexts automatically. Dragging near the top or bottom of a
+scrollable view extends the selection as the view scrolls. Their right-click menu includes Copy
+and Select All; listen for `Event::OnCreateContextMenu` on the view to add menu items.
 
 ---
 

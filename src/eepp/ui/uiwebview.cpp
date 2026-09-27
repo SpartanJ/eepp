@@ -157,6 +157,7 @@ UIWebView* UIWebView::New() {
 }
 
 UIWebView::UIWebView() : UIScrollView( "webview" ) {
+	mTextSelectionController.setHost( this );
 	mNavigationLoadState = std::make_shared<NavigationLoadState>();
 	mNavigationLoadState->owner = this;
 
@@ -177,6 +178,7 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 	mDocContainer->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 	mDocContainer->setParent( mDocumentScene->getRoot() );
 	mDocContainer->setBackgroundColor( Color::White );
+	mTextSelectionController.setSelectionRoot( mDocContainer );
 	mScrollContainerSizeChangeCb = mContainer->on( Event::OnSizeChange, [this]( const Event* ) {
 		onDocumentViewportGeometryChanged();
 		updateScroll();
@@ -189,6 +191,7 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 }
 
 UIWebView::~UIWebView() {
+	mTextSelectionController.onDocumentWillChange();
 	if ( mNavigationLoadState ) {
 		mNavigationLoadState->alive = false;
 		mNavigationLoadState->owner = nullptr;
@@ -204,6 +207,27 @@ Uint32 UIWebView::getType() const {
 
 bool UIWebView::isType( const Uint32& type ) const {
 	return UIWebView::getType() == type || UIScrollView::isType( type );
+}
+
+UITextSelectionController* UIWebView::getTextSelectionController() {
+	return &mTextSelectionController;
+}
+
+const UITextSelectionController* UIWebView::getTextSelectionController() const {
+	return &mTextSelectionController;
+}
+
+Uint32 UIWebView::onKeyDown( const KeyEvent& event ) {
+	if ( mTextSelectionController.onKeyDown( event ) )
+		return 1;
+	return UIScrollView::onKeyDown( event );
+}
+
+Uint32 UIWebView::onMessage( const NodeMessage* message ) {
+	if ( message->getMsg() == NodeMessage::MouseUp &&
+		 mTextSelectionController.onMouseUpMessage( message ) )
+		return 1;
+	return UIScrollView::onMessage( message );
 }
 
 void UIWebView::onSizeChange() {
@@ -240,6 +264,8 @@ void UIWebView::scheduledUpdate( const Time& time ) {
 				cache->prune();
 		}
 	}
+	// Keep dragging across the embedded document scene and over gaps without text events.
+	mTextSelectionController.updateSelectionDrag();
 }
 
 void UIWebView::onScrollViewSizeChange( const Event* event ) {
@@ -378,6 +404,7 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 
 		self->getVerticalScrollBar()->setValue( 0 );
 		self->getHorizontalScrollBar()->setValue( 0 );
+		self->mTextSelectionController.onDocumentWillChange();
 		static_cast<UIWebViewDocumentContainer*>( self->mDocContainer )->clearDocumentChildren();
 		ui->invalidateAsyncResourceLoads();
 		// The previous document remains active while its replacement is downloading. Advance the
@@ -391,6 +418,7 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 		auto hash = String::hash( url.toString() );
 		ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), self->mDocContainer,
 								  hash );
+		self->mTextSelectionController.onDocumentChanged();
 
 		ui->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
 			auto locked = loadState.lock();

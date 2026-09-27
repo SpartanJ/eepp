@@ -281,6 +281,13 @@ class EE_API RichText : public Drawable {
 	/** @brief Sets the text selection range. */
 	void setSelection( TextSelectionRange range );
 
+	/** Excludes character intervals from the painted and copied selection. */
+	void setSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions );
+
+	const SmallVector<TextSelectionRange, 4>& getSelectionExclusions() const {
+		return mSelectionExclusions;
+	}
+
 	/** @return The current text selection range. */
 	TextSelectionRange getSelection() const { return mSelection; }
 
@@ -310,6 +317,9 @@ class EE_API RichText : public Drawable {
 
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
+
+	/** @return A character interval as a string, honoring selection exclusions. */
+	String getSelectionString( TextSelectionRange range ) const;
 
 	/** Tries to update the layout if has been invalidated. This is automatically called before
 	 * draw. */
@@ -474,6 +484,11 @@ class EE_API RichText : public Drawable {
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	TextSelectionRange mSelection{ 0, 0 };
+	SmallVector<TextSelectionRange, 4> mSelectionExclusions;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments() const;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments( TextSelectionRange range ) const;
 	Color mSelectionColor{ Color::White };
 	Color mSelectionBackColor{ 0, 0, 255, 150 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };

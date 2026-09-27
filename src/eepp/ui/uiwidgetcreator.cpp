@@ -123,6 +123,15 @@ input[type="number"] {
 }
 
 button,
+select,
+meter,
+progress,
+input[type="submit"],
+input[type="button"],
+input[type="image"],
+input[type="reset"] { user-select: none; }
+
+button,
 input[type="submit"],
 input[type="button"],
 input[type="reset"] {

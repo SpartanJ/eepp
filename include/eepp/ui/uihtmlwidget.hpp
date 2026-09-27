@@ -14,6 +14,14 @@ namespace EE { namespace UI {
 class UILayouter;
 class UIHTMLWidget;
 
+enum class CSSUserSelect : Uint8 { Auto, Text, None, Contain, All };
+
+struct CSSUserSelectHelper {
+	static CSSUserSelect fromString( std::string_view value );
+
+	static std::string_view toString( CSSUserSelect value );
+};
+
 enum class CSSFormattingRole : Uint8 {
 	Inline,
 	InlineBlock,
@@ -115,6 +123,12 @@ class EE_API UIHTMLWidget : public UILayout {
 	virtual void onDisplayChange();
 
 	CSSDisplay getDisplay() const { return mDisplay; }
+
+	CSSUserSelect getUserSelect() const { return mUserSelect; }
+
+	void setUserSelect( CSSUserSelect value );
+
+	CSSUserSelect getUsedUserSelect() const;
 
 	void setDisplay( CSSDisplay display );
 
@@ -423,6 +437,7 @@ class EE_API UIHTMLWidget : public UILayout {
 
   protected:
 	CSSDisplay mDisplay{ CSSDisplay::Block };
+	CSSUserSelect mUserSelect{ CSSUserSelect::Auto };
 	CSSPosition mPosition{ CSSPosition::Static };
 	CSSFloat mFloat{ CSSFloat::None };
 	CSSClear mClear{ CSSClear::None };

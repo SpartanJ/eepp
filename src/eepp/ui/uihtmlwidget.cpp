@@ -11,8 +11,57 @@
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 
 namespace EE { namespace UI {
+
+CSSUserSelect CSSUserSelectHelper::fromString( std::string_view value ) {
+	if ( String::iequals( value, "text" ) )
+		return CSSUserSelect::Text;
+	if ( String::iequals( value, "none" ) )
+		return CSSUserSelect::None;
+	if ( String::iequals( value, "contain" ) )
+		return CSSUserSelect::Contain;
+	if ( String::iequals( value, "all" ) )
+		return CSSUserSelect::All;
+	return CSSUserSelect::Auto;
+}
+
+std::string_view CSSUserSelectHelper::toString( CSSUserSelect value ) {
+	switch ( value ) {
+		case CSSUserSelect::Text:
+			return "text";
+		case CSSUserSelect::None:
+			return "none";
+		case CSSUserSelect::Contain:
+			return "contain";
+		case CSSUserSelect::All:
+			return "all";
+		default:
+			return "auto";
+	}
+}
+
+CSSUserSelect UIHTMLWidget::getUsedUserSelect() const {
+	if ( mUserSelect != CSSUserSelect::Auto )
+		return mUserSelect;
+	for ( Node* parent = getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_HTML_WIDGET ) ) {
+			auto used = parent->asType<UIHTMLWidget>()->getUsedUserSelect();
+			return used == CSSUserSelect::All || used == CSSUserSelect::None ? used
+																			 : CSSUserSelect::Text;
+		}
+	}
+	return CSSUserSelect::Text;
+}
+
+void UIHTMLWidget::setUserSelect( CSSUserSelect value ) {
+	if ( mUserSelect == value )
+		return;
+	mUserSelect = value;
+	if ( auto* controller = getTextSelectionControllerInTree() )
+		controller->refresh();
+}
 
 static bool isDataPropertyName( std::string_view name ) {
 	return String::istartsWith( String::trim( name ), "data-" );
@@ -1094,6 +1143,7 @@ void UIHTMLWidget::setJustifySelf( CSSJustifySelf val ) {
 std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
 	auto local = { PropertyId::Display,
+				   PropertyId::UserSelect,
 				   PropertyId::BoxSizing,
 				   PropertyId::Position,
 				   PropertyId::Float,
@@ -1141,6 +1191,8 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::UserSelect:
+			return std::string( CSSUserSelectHelper::toString( mUserSelect ) );
 		case PropertyId::Display:
 			return CSSDisplayHelper::toString( mDisplay );
 		case PropertyId::BoxSizing:
@@ -1234,6 +1286,9 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	};
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::UserSelect:
+			setUserSelect( CSSUserSelectHelper::fromString( attribute.asString() ) );
+			return true;
 		case PropertyId::Display: {
 			setDisplay( CSSDisplayHelper::fromString( attribute.asString() ) );
 			return true;

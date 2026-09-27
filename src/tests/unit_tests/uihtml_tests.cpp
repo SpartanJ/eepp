@@ -32,17 +32,21 @@
 #include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
@@ -3034,6 +3038,455 @@ UTEST( UIHTML, MarkdownViewLoadsBodyChildrenIntoNativeTree ) {
 	EXPECT_TRUE( paragraph->getStyleSheetParentElement() == markdownView );
 	EXPECT_TRUE( Color::Red == paragraph->asType<UIRichText>()->getFontColor() );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, UserSelectUsedValueAndRichTextDefault ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	auto* child = UIHTMLWidget::New();
+	child->setParent( parent );
+	EXPECT_EQ( CSSUserSelect::Text, child->getUsedUserSelect() );
+	parent->setUserSelect( CSSUserSelect::None );
+	EXPECT_EQ( CSSUserSelect::None, child->getUsedUserSelect() );
+	child->setUserSelect( CSSUserSelect::Text );
+	EXPECT_EQ( CSSUserSelect::Text, child->getUsedUserSelect() );
+	child->setUserSelect( CSSUserSelect::Auto );
+	parent->setUserSelect( CSSUserSelect::All );
+	EXPECT_EQ( CSSUserSelect::All, child->getUsedUserSelect() );
+	EXPECT_EQ( CSSUserSelect::Contain, CSSUserSelectHelper::fromString( "contain" ) );
+	const auto* standard = StyleSheetSpecification::instance()->getProperty( "user-select" );
+	const auto* alias = StyleSheetSpecification::instance()->getProperty( "-webkit-user-select" );
+	ASSERT_TRUE( standard != nullptr );
+	ASSERT_TRUE( alias != nullptr );
+	EXPECT_EQ( PropertyId::UserSelect, alias->getPropertyId() );
+	EXPECT_FALSE( standard->isInherited() );
+	sceneNode->loadLayoutFromString(
+		R"xml(<div id="aliased-selection" style="-webkit-user-select:none">text</div>)xml" );
+	auto* aliased = sceneNode->find<UIRichText>( "aliased-selection" );
+	ASSERT_TRUE( aliased != nullptr );
+	EXPECT_EQ( CSSUserSelect::None, aliased->getUserSelect() );
+	sceneNode->loadLayoutFromString(
+		R"xml(<richtext id="optout-selection" text-selection="false">text</richtext>)xml" );
+	auto* optout = sceneNode->find<UIRichText>( "optout-selection" );
+	ASSERT_TRUE( optout != nullptr );
+	EXPECT_FALSE( optout->isTextSelectionEnabled() );
+	auto* richText = UIRichText::New();
+	EXPECT_TRUE( richText->isTextSelectionEnabled() );
+	richText->setTextSelectionEnabled( false );
+	EXPECT_FALSE( richText->isTextSelectionEnabled() );
+	auto* span = UITextSpan::New();
+	EXPECT_TRUE( span->isTextSelectionEnabled() );
+	eeDelete( span );
+	eeDelete( richText );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownDocumentSelectionProjectsAndCopies ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "al**ph**a\n\nbravo\n\ncharlie" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* firstNode = markdown->findByTag( "p" );
+	ASSERT_TRUE( firstNode != nullptr );
+	auto* first = firstNode->asType<UIRichText>();
+	auto* strong = first->findByTag( "strong" );
+	ASSERT_TRUE( strong != nullptr );
+	EXPECT_FALSE( strong->asType<UIRichText>()->isTextSelectionOwner() );
+	UIRichText* second = nullptr;
+	UIRichText* third = nullptr;
+	for ( Node* node = first->getNextNode(); node; node = node->getNextNode() ) {
+		if ( node->isType( UI_TYPE_RICHTEXT ) &&
+			 node->asType<UIRichText>()->getElementTag() == "p" ) {
+			if ( !second )
+				second = node->asType<UIRichText>();
+			else {
+				third = node->asType<UIRichText>();
+				break;
+			}
+		}
+	}
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( third != nullptr );
+	auto* controller = markdown->getTextSelectionController();
+	controller->setSelection( { first, 2 }, { third, 3 } );
+	EXPECT_EQ( first->getTextSelectionRange().first, 2 );
+	EXPECT_EQ( second->getTextSelectionRange().second, 5 );
+	EXPECT_EQ( third->getTextSelectionRange().second, 3 );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	EXPECT_TRUE( controller->copySelection() );
+	EXPECT_STDSTREQ( sceneNode->getWindow()->getClipboard()->getText(), "pha\nbravo\ncha" );
+	markdown->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	markdown->setPixelsSize( 110, markdown->getPixelsSize().getHeight() );
+	sceneNode->update( Seconds( 1 ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	controller->setSelection( { third, 3 }, { first, 2 } );
+	EXPECT_TRUE( controller->getSelection().anchor.owner == third );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	KeyEvent selectAll( markdown, Event::KeyDown, KEY_A, SCANCODE_A, 0,
+						KeyMod::getDefaultModifier() );
+	KeyEvent copy( markdown, Event::KeyDown, KEY_C, SCANCODE_C, 0, KeyMod::getDefaultModifier() );
+	EXPECT_TRUE( controller->onKeyDown( selectAll ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "alpha\nbravo\ncharlie" );
+	EXPECT_TRUE( controller->onKeyDown( copy ) );
+	EXPECT_STDSTREQ( sceneNode->getWindow()->getClipboard()->getText(), "alpha\nbravo\ncharlie" );
+	first->setUserSelect( CSSUserSelect::None );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Text );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ph\nbravo\ncharlie" );
+	first->setUserSelect( CSSUserSelect::Text );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::None );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ala\nbravo\ncharlie" );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Text );
+	strong->asType<UIRichText>()->setTextSelectionEnabled( false );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ala\nbravo\ncharlie" );
+	strong->asType<UIRichText>()->setTextSelectionEnabled( true );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::All );
+	controller->setSelection( { first, 2 }, { first, 3 } );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ph" );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Contain );
+	controller->setSelection( { first, 3 }, { third, 3 } );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "h" );
+	markdown->loadFromString( "replacement" );
+	EXPECT_FALSE( controller->hasSelection() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownDocumentSelectionPolicies ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "before\n\nmiddle\n\nafter" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* firstNode = markdown->findByTag( "p" );
+	ASSERT_TRUE( firstNode != nullptr );
+	auto* first = firstNode->asType<UIRichText>();
+	auto* second = first->getNextNode()->asType<UIRichText>();
+	auto* third = second->getNextNode()->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	second->setUserSelect( CSSUserSelect::None );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before\nafter" );
+	EXPECT_EQ( second->getTextSelectionRange().first, second->getTextSelectionRange().second );
+	second->setUserSelect( CSSUserSelect::All );
+	controller->setSelection( { second, 2 }, { third, 2 } );
+	EXPECT_EQ( second->getTextSelectionRange().first, 0 );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "middle\naf" );
+	second->setUserSelect( CSSUserSelect::Contain );
+	controller->setSelection( { second, 2 }, { third, 2 } );
+	EXPECT_EQ( third->getTextSelectionRange().first, third->getTextSelectionRange().second );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ddle" );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before\nmiddle\nafter" );
+	second->close();
+	sceneNode->update( Seconds( 1 ) );
+	EXPECT_FALSE( controller->hasSelection() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionClearsBeforeAncestorDestroysOwners ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "- alpha\n- bravo\n\noutside" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* list = markdown->findByTag( "ul" );
+	ASSERT_TRUE( list != nullptr );
+	auto* first = list->findByTag( "li" )->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	controller->setSelection( { first, 1 }, { first, 4 } );
+	ASSERT_TRUE( controller->hasSelection() );
+	eeDelete( list );
+	EXPECT_FALSE( controller->hasSelection() );
+	EXPECT_FALSE( controller->getSelection().isValid() );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "outside" );
+	auto* paragraph = markdown->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	eeDelete( paragraph );
+	EXPECT_FALSE( controller->getSelection().isValid() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownTableSelectionCopyOrder ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "| A | B |\n| --- | --- |\n| C | D |" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* selection = markdown->getTextSelectionController();
+	selection->selectAll();
+	EXPECT_STRINGEQ( selection->getSelectionString(), "A\tB\nC\tD" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownListItemsAllowPartialSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "- alpha item\n  - nested word\n- second item" );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto listItems = markdown->findAllByTag( "li" );
+	ASSERT_EQ( listItems.size(), 3u );
+	auto* parent = listItems[0]->asType<UIRichText>();
+	auto* nested = listItems[1]->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	auto pointAtOffset = []( UIRichText* owner, Int64 offset ) {
+		Rectf rect = owner->getScreenRect();
+		for ( int y = static_cast<int>( rect.Top ); y < static_cast<int>( rect.Bottom ); ++y ) {
+			for ( int x = static_cast<int>( rect.Left ); x < static_cast<int>( rect.Right ); ++x ) {
+				Vector2i point( x, y );
+				if ( owner->findTextCharacterFromWorldPosition( point.asFloat() ) == offset )
+					return point;
+			}
+		}
+		return Vector2i( -1, -1 );
+	};
+	auto* input = sceneNode->getWindow()->getInput();
+	for ( auto* owner : { parent, nested } ) {
+		Vector2i start = pointAtOffset( owner, 1 );
+		Vector2i end = pointAtOffset( owner, 4 );
+		ASSERT_GE( start.x, 0 );
+		ASSERT_GE( end.x, 0 );
+		input->injectButtonPress( EE_BUTTON_LEFT );
+		EXPECT_TRUE( controller->onMouseDown( owner, start, EE_BUTTON_LMASK ) );
+		EXPECT_TRUE( controller->getSelection().anchor.owner == owner );
+		EXPECT_TRUE( controller->onMouseUp( end, EE_BUTTON_LMASK ) );
+		input->injectButtonRelease( EE_BUTTON_LEFT );
+		EXPECT_TRUE( controller->getSelection().focus.owner == owner );
+		EXPECT_EQ( owner->getTextSelectionRange().first, 1 );
+		EXPECT_EQ( owner->getTextSelectionRange().second, 4 );
+	}
+	EXPECT_STRINGEQ( controller->getSelectionString(), "est" );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "alpha item\nnested word\nsecond item" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DocumentSelectionOrdersTextAroundNestedList ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* document = UIMarkdownView::New();
+	document->setParent( sceneNode->getRoot() );
+	sceneNode->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML( "<ul><li id='parent-item'>before<ul><li "
+								  "id='child-item'>child</li></ul>after</li></ul>" ),
+		document );
+	sceneNode->update( Seconds( 1 ) );
+	auto* parent = document->find<UIRichText>( "parent-item" );
+	auto* child = document->find<UIRichText>( "child-item" );
+	ASSERT_TRUE( parent != nullptr && child != nullptr );
+	auto* controller = document->getTextSelectionController();
+	controller->selectAll();
+	std::string copied = controller->getSelectionString().toUtf8();
+	EXPECT_STDSTREQ( copied, "before\nchild\nafter" );
+	auto before = copied.find( "before" );
+	auto nested = copied.find( "child" );
+	auto after = copied.find( "after" );
+	EXPECT_TRUE( before != std::string::npos );
+	EXPECT_TRUE( nested != std::string::npos );
+	EXPECT_TRUE( after != std::string::npos );
+	EXPECT_LT( before, nested );
+	EXPECT_LT( nested, after );
+	controller->setSelection( { child, 1 }, { parent, parent->getTextCharacterCount() } );
+	copied = controller->getSelectionString().toUtf8();
+	EXPECT_TRUE( copied.find( "before" ) == std::string::npos );
+	EXPECT_TRUE( copied.find( "hild" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "after" ) != std::string::npos );
+	EXPECT_LT( copied.find( "hild" ), copied.find( "after" ) );
+	controller->setSelection( { parent, 1 }, { parent, parent->getTextCharacterCount() } );
+	EXPECT_EQ( child->getTextSelectionRange().first, 0 );
+	EXPECT_EQ( child->getTextSelectionRange().second, child->getTextCharacterCount() );
+	copied = controller->getSelectionString().toUtf8();
+	EXPECT_TRUE( copied.find( "efore" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "child" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "after" ) != std::string::npos );
+	EXPECT_LT( copied.find( "efore" ), copied.find( "child" ) );
+	EXPECT_LT( copied.find( "child" ), copied.find( "after" ) );
+	controller->setSelection( { parent, parent->getTextCharacterCount() }, { parent, 1 } );
+	EXPECT_STDSTREQ( controller->getSelectionString().toUtf8(), copied );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownPointerSelectionCrossesOwnersAndIgnoresNoneStart ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "alpha\n\nbravo\n\ncharlie" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto* second = first->getNextNode()->asType<UIRichText>();
+	auto* third = second->getNextNode()->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	auto firstRect = first->getScreenRect();
+	auto thirdRect = third->getScreenRect();
+	Vector2i firstPoint( static_cast<int>( firstRect.Left + 2 ),
+						 static_cast<int>( firstRect.Top + firstRect.getHeight() / 2 ) );
+	Vector2i thirdPoint( static_cast<int>( thirdRect.Left + thirdRect.getWidth() - 2 ),
+						 static_cast<int>( thirdRect.Top + thirdRect.getHeight() / 2 ) );
+	auto* input = sceneNode->getWindow()->getInput();
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	input->setMousePos( thirdPoint );
+	controller->updateSelectionDrag();
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->onMouseUp( thirdPoint, EE_BUTTON_LMASK ) );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	EXPECT_TRUE( controller->consumeSuppressedClick() );
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->getSelection().anchor.owner == first );
+	EXPECT_TRUE( controller->getSelection().focus.owner == third );
+	second->setUserSelect( CSSUserSelect::None );
+	String selectionBefore = controller->getSelectionString();
+	auto secondRect = second->getScreenRect();
+	Vector2i secondPoint( static_cast<int>( secondRect.Left + 2 ),
+						  static_cast<int>( secondRect.Top + secondRect.getHeight() / 2 ) );
+	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
+	second->setUserSelect( CSSUserSelect::Text );
+	second->setTextSelectionEnabled( false );
+	selectionBefore = controller->getSelectionString();
+	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	input->setMousePos( thirdPoint );
+	controller->updateSelectionDrag();
+	EXPECT_TRUE( controller->onMouseUp( firstPoint, EE_BUTTON_LMASK ) );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	EXPECT_TRUE( controller->consumeSuppressedClick() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionAutoScrollsContainingScrollView ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* scrollView = UIScrollView::New();
+	scrollView->setPixelsSize( 180, 100 );
+	scrollView->setParent( sceneNode->getRoot() );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scrollView );
+	std::string content;
+	for ( int i = 0; i < 20; ++i )
+		content += "paragraph\n\n";
+	markdown->loadFromString( content );
+	sceneNode->update( Seconds( 1 ) );
+	ASSERT_TRUE( scrollView->getVerticalScrollBar()->isEnabled() );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto firstRect = first->getScreenRect();
+	Vector2i start( static_cast<int>( firstRect.Left + 2 ),
+					static_cast<int>( firstRect.Top + firstRect.getHeight() / 2 ) );
+	auto* input = sceneNode->getWindow()->getInput();
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	auto* controller = markdown->getTextSelectionController();
+	EXPECT_TRUE( controller->onMouseDown( first, start, EE_BUTTON_LMASK ) );
+	auto viewport = scrollView->getContainer()->getScreenRect();
+	Float scrollRange = scrollView->getScrollView()->asType<UINode>()->getPixelsSize().getHeight() -
+						scrollView->getContainer()->getPixelsSize().getHeight();
+	ASSERT_GT( scrollRange, 0.f );
+	input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+		{ viewport.Left + 10, viewport.Bottom - 2 }, sceneNode->getWindow()->getDefaultView() ) );
+	controller->updateSelectionDrag();
+	EXPECT_GT( scrollView->getVerticalScrollBar()->getValue(), 0.f );
+	Float lineHeight = first->getFont()->getFontHeight( first->getFontSize() );
+	EXPECT_GT( scrollView->getVerticalScrollBar()->getValue() * scrollRange, lineHeight * 0.5f );
+	EXPECT_LT( scrollView->getVerticalScrollBar()->getValue() * scrollRange, lineHeight * 2.f );
+	scrollView->getVerticalScrollBar()->setValue( 0.8f );
+	input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+		{ viewport.Left + 10, viewport.Top + 2 }, sceneNode->getWindow()->getDefaultView() ) );
+	controller->updateSelectionDrag();
+	EXPECT_LT( scrollView->getVerticalScrollBar()->getValue(), 0.8f );
+	EXPECT_TRUE( controller->isSelecting() );
+	controller->onMouseUp( input->getMousePos(), EE_BUTTON_LMASK );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownInlineCodeHasSelectionGeometry ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "before `inline code` after" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto* code = paragraph->findByTag( "code" );
+	ASSERT_TRUE( code != nullptr );
+	EXPECT_FALSE( code->asType<UIRichText>()->isTextSelectionOwner() );
+	auto* controller = markdown->getTextSelectionController();
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before inline code after" );
+	EXPECT_TRUE( !paragraph->getRichText().getSelectionRects().empty() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuCanBeExtended ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "selectable text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	markdown->getTextSelectionController()->selectAll();
+	int menuEvents = 0;
+	size_t menuItems = 0;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		++menuEvents;
+		auto* menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+		menu->add( "Custom action" );
+		menuItems = menu->getCount();
+	} );
+	NodeMessage mouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &mouseUp );
+	EXPECT_EQ( menuEvents, 1 );
+	EXPECT_EQ( menuItems, 3u );
+	markdown->getTextSelectionController()->clear();
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuDefersToChildHandlers ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "selectable text" );
+	sceneNode->update( Seconds( 1 ) );
+	int documentMenus = 0;
+	auto menuConnection =
+		markdown->connect( Event::OnCreateContextMenu, [&]( const Event* ) { ++documentMenus; } );
+
+	auto* input = UIHTMLTextInput::New();
+	input->setParent( markdown );
+	NodeMessage inputMouseUp( input, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	input->messagePost( &inputMouseUp );
+	EXPECT_EQ( documentMenus, 0 );
+
+	auto* editor = UICodeEditor::New();
+	editor->setParent( markdown );
+	NodeMessage editorMouseUp( editor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	editor->messagePost( &editorMouseUp );
+	EXPECT_EQ( documentMenus, 0 );
+
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	NodeMessage paragraphMouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &paragraphMouseUp );
+	EXPECT_EQ( documentMenus, 1 );
+	menuConnection.disconnect();
+	markdown->getTextSelectionController()->clear();
 	Engine::destroySingleton();
 }
 

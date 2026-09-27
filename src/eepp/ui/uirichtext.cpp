@@ -16,6 +16,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -425,7 +426,8 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
-	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION |
+			  UI_TEXT_SELECTION_ENABLED;
 
 	UISceneNode* sceneNode =
 		getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
@@ -451,7 +453,16 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 }
 
+UIRichText::~UIRichText() {
+	if ( mDocumentSelectionController )
+		mDocumentSelectionController->onOwnerWillBeDestroyed( this );
+}
+
 const RichText& UIRichText::getRichText() {
+	return mRichText;
+}
+
+const RichText& UIRichText::getRichText() const {
 	return mRichText;
 }
 
@@ -1719,6 +1730,8 @@ static Drawable* getInlineBorderDrawable( UIWidget* widget ) {
 
 void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	UILayout::countRichTextRebuild();
+	TextSelectionRange selection = richText.getSelection();
+	SmallVector<TextSelectionRange, 4> selectionExclusions = richText.getSelectionExclusions();
 	richText.clear();
 	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
 		auto* uiRt = static_cast<UIRichText*>( container );
@@ -2256,8 +2269,11 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		// UIRichText::draw(): isFlex()/isGrid() includes inline display variants, but these
 		// ownership exits are only valid for block-level flex/grid containers.
 		CSSDisplay display = htmlContainer->getDisplay();
-		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid )
+		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid ) {
+			richText.setSelection( selection );
+			richText.setSelectionExclusions( std::move( selectionExclusions ) );
 			return;
+		}
 	}
 
 	Node* child = container->getFirstChild();
@@ -2268,6 +2284,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			processNode( child, processNode );
 		child = child->getNextNode();
 	}
+	richText.setSelection( selection );
+	richText.setSelectionExclusions( std::move( selectionExclusions ) );
 }
 
 void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
@@ -2443,6 +2461,34 @@ bool UIRichText::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+bool UIRichText::isTextSelectionOwner() const {
+	if ( !isVisible() || getDisplay() == CSSDisplay::None || getDisplay() == CSSDisplay::Flex ||
+		 getDisplay() == CSSDisplay::Grid || mRichText.getCharacterCount() == 0 )
+		return false;
+	if ( isType( UI_TYPE_TEXTSPAN ) && asConstType<UITextSpan>()->isInline() ) {
+		Node* parent = getParent();
+		if ( !parent || !parent->isType( UI_TYPE_HTML_WIDGET ) )
+			return false;
+		auto display = parent->asType<UIHTMLWidget>()->getDisplay();
+		return display == CSSDisplay::Flex || display == CSSDisplay::Grid;
+	}
+	return true;
+}
+
+Int64 UIRichText::getTextCharacterCount() const {
+	return mRichText.getCharacterCount();
+}
+
+Int64 UIRichText::findTextCharacterFromWorldPosition( const Vector2f& worldPos ) const {
+	Vector2f nodePos( worldPos );
+	worldToNode( nodePos );
+	nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
+	nodePos.x = eemax( 0.f, nodePos.x );
+	nodePos.y = eemax( 0.f, nodePos.y );
+	return std::clamp( mRichText.findCharacterFromPos( nodePos.asInt() ), (Int64)0,
+					   mRichText.getCharacterCount() );
+}
+
 void UIRichText::onLayoutUpdate() {
 	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
 	mDeferredLayoutReasons = 0;
@@ -2460,11 +2506,15 @@ void UIRichText::onLayoutUpdate() {
 }
 
 void UIRichText::setTextSelectionEnabled( bool active ) {
+	if ( active == isTextSelectionEnabled() )
+		return;
 	if ( active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
 	}
+	if ( auto* controller = getTextSelectionControllerInTree() )
+		controller->refresh();
 }
 
 const Color& UIRichText::getSelectionBackColor() const {
@@ -2490,9 +2540,21 @@ std::pair<Int64, Int64> UIRichText::getTextSelectionRange() const {
 }
 
 void UIRichText::setTextSelectionRange( TextSelectionRange range ) {
+	mRichText.setSelectionExclusions( {} );
 	selCurInit( std::clamp( range.start, (Int64)0, mRichText.getCharacterCount() ) );
 	selCurEnd( std::clamp( range.end, (Int64)0, mRichText.getCharacterCount() ) );
 	onSelectionChange();
+}
+
+void UIRichText::setTextSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions ) {
+	const auto& current = mRichText.getSelectionExclusions();
+	if ( current.size() == exclusions.size() &&
+		 std::equal(
+			 current.begin(), current.end(), exclusions.begin(),
+			 []( const auto& a, const auto& b ) { return a.start == b.start && a.end == b.end; } ) )
+		return;
+	mRichText.setSelectionExclusions( std::move( exclusions ) );
+	invalidateDraw();
 }
 
 String UIRichText::getSelectionString() const {
@@ -2500,16 +2562,14 @@ String UIRichText::getSelectionString() const {
 }
 
 Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseDown( this, position, flags );
+		return UIHTMLWidget::onMouseDown( position, flags );
+	}
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( getEventDispatcher()->getMouseDownNode() == this ||
 		   inParentTreeOf( getEventDispatcher()->getMouseDownNode() ) ) ) {
-		Vector2f nodePos( Vector2f( position.x, position.y ) );
-		worldToNode( nodePos );
-		nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
-		nodePos.x = eemax( 0.f, nodePos.x );
-		nodePos.y = eemax( 0.f, nodePos.y );
-
-		Int64 curPos = mRichText.findCharacterFromPos( nodePos.asInt() );
+		Int64 curPos = findTextCharacterFromWorldPosition( position.asFloat() );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {
@@ -2529,6 +2589,10 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseUp( position, flags );
+		return UIHTMLWidget::onMouseUp( position, flags );
+	}
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mSelecting = false;
 	}
@@ -2537,16 +2601,30 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onMouseDoubleClick( this, position, flags ) )
+			return 1;
+	}
 	return UIHTMLWidget::onMouseDoubleClick( position, flags );
 }
 
 Uint32 UIRichText::onFocusLoss() {
 	UIHTMLWidget::onFocusLoss();
+	if ( getTextSelectionControllerInTree() )
+		return 1;
 
 	selCurEnd( selCurInit() );
 	onSelectionChange();
 
 	return 1;
+}
+
+Uint32 UIRichText::onKeyDown( const KeyEvent& event ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onKeyDown( event ) )
+			return 1;
+	}
+	return UIHTMLWidget::onKeyDown( event );
 }
 
 void UIRichText::onSelectionChange() {

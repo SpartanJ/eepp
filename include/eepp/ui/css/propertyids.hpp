@@ -96,6 +96,7 @@ enum class PropertyId : Uint16 {
 	TextStrokeWidth,
 	TextStrokeColor,
 	TextSelection,
+	UserSelect,
 	TextAlign,
 	Icon,
 	MinIconSize,

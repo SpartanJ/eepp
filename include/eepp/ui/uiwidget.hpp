@@ -24,6 +24,7 @@ namespace EE { namespace UI {
 class UITooltip;
 class UIStyle;
 class UIWidget;
+class UITextSelectionController;
 
 struct MarginAuto {
 	static constexpr auto Left = ( 1 << 0 );
@@ -75,6 +76,12 @@ class EE_API UIWidget : public UINode {
 	static UIWidget* NewWithTag( const std::string& tag );
 
 	virtual ~UIWidget();
+
+	virtual UITextSelectionController* getTextSelectionController();
+
+	virtual const UITextSelectionController* getTextSelectionController() const;
+
+	UITextSelectionController* getTextSelectionControllerInTree() const;
 
 	/**
 	 * @brief Gets the widget type identifier.

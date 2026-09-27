@@ -440,6 +440,24 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	}
 }
 
+UITextSelectionController* UIWidget::getTextSelectionController() {
+	return nullptr;
+}
+
+const UITextSelectionController* UIWidget::getTextSelectionController() const {
+	return nullptr;
+}
+
+UITextSelectionController* UIWidget::getTextSelectionControllerInTree() const {
+	for ( Node* node = const_cast<UIWidget*>( this ); node; node = node->getParent() ) {
+		if ( node->isWidget() ) {
+			if ( auto* controller = node->asType<UIWidget>()->getTextSelectionController() )
+				return controller;
+		}
+	}
+	return nullptr;
+}
+
 Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_TAB && isTabStop() ) {
 		Node::onKeyDown( event );

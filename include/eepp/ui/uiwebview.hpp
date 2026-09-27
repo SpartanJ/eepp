@@ -7,6 +7,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/webresourcecache.hpp>
 
 #include <functional>
@@ -45,6 +46,10 @@ class EE_API UIWebView : public UIScrollView {
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
+
+	virtual UITextSelectionController* getTextSelectionController();
+
+	virtual const UITextSelectionController* getTextSelectionController() const;
 
 	void loadURI( URI uri );
 
@@ -103,6 +108,7 @@ class EE_API UIWebView : public UIScrollView {
 	UISceneNode* mDocumentScene{ nullptr };
 	UILayout* mDocumentLayout{ nullptr };
 	UIWidget* mDocContainer{ nullptr };
+	UITextSelectionController mTextSelectionController;
 	Uint32 mScrollContainerSizeChangeCb{ 0 };
 	Uint32 mVerticalScrollVisibleChangeCb{ 0 };
 	Uint32 mHorizontalScrollVisibleChangeCb{ 0 };
@@ -133,6 +139,9 @@ class EE_API UIWebView : public UIScrollView {
 	virtual void onSizeChange();
 	virtual void onSceneChange();
 	virtual void scheduledUpdate( const Time& time );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+	virtual Uint32 onMessage( const NodeMessage* message );
 	virtual void onScrollViewSizeChange( const Event* event );
 
 	void loadDocumentData( URI url, std::string data );

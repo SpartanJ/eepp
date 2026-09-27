@@ -27,6 +27,7 @@
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -120,6 +121,8 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 <html>
 <body style="margin:0">
 	<div id="tall" style="height:1200px;width:380px;background:#abcdef"></div>
+	<p id="selection-one">alpha</p>
+	<p id="selection-two">bravo</p>
 </body>
 </html>
 )html" );
@@ -143,6 +146,8 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	ASSERT_TRUE( htmlNode != nullptr );
 	auto bodyNode = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY );
 	ASSERT_TRUE( bodyNode != nullptr );
+	EXPECT_TRUE( bodyNode->asType<UIWidget>()->getTextSelectionControllerInTree() ==
+				 webView->getTextSelectionController() );
 	auto tallNode = documentScene->getRoot()->find( "tall" );
 	ASSERT_TRUE( tallNode != nullptr );
 
@@ -173,6 +178,36 @@ UTEST( UIWebView, OwnedDocumentSceneScrollTarget ) {
 	UINode* scrollTarget = documentScene->getParent()->asType<UINode>();
 	webView->getVerticalScrollBar()->setValue( 1.f );
 	EXPECT_LT( scrollTarget->getPixelsPosition().y, -500.f );
+	for ( int i = 0; i < 10; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+	auto* selectionOneNode = documentScene->getRoot()->find( "selection-one" );
+	auto* selectionTwoNode = documentScene->getRoot()->find( "selection-two" );
+	ASSERT_TRUE( selectionOneNode != nullptr && selectionTwoNode != nullptr );
+	auto* selectionOne = selectionOneNode->asType<UIRichText>();
+	auto* selectionTwo = selectionTwoNode->asType<UIRichText>();
+	EXPECT_GT( selectionOne->getTextCharacterCount(), 0 );
+	EXPECT_GT( selectionTwo->getTextCharacterCount(), 0 );
+	EXPECT_TRUE( selectionOne->isTextSelectionOwner() );
+	EXPECT_TRUE( selectionTwo->isTextSelectionOwner() );
+	auto* selection = webView->getTextSelectionController();
+	selection->setSelection( { selectionOne, 2 }, { selectionTwo, 3 } );
+	EXPECT_STRINGEQ( selection->getSelectionString(), "pha\nbra" );
+	int contextMenuEvents = 0;
+	webView->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		++contextMenuEvents;
+		static_cast<const ContextMenuEvent*>( event )->getMenu()->add( "Inspect" );
+	} );
+	NodeMessage mouseUp( selectionOne, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	selectionOne->messagePost( &mouseUp );
+	EXPECT_EQ( contextMenuEvents, 1 );
+	webView->reload();
+	for ( int i = 0; i < 10; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+	EXPECT_FALSE( selection->hasSelection() );
 
 	Engine::destroySingleton();
 }

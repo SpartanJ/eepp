@@ -766,6 +766,9 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseDown ) {
 		return 1;
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && ( msg->getFlags() & EE_BUTTON_RMASK ) ) {
+		// The editor handles its own context menu in onMouseUp().
+		return 1;
 	} else if ( msg->getMsg() == NodeMessage::Focus ) {
 		if ( msg->getSender() == mVScrollBar || msg->getSender() == mHScrollBar ||
 			 mVScrollBar->isParentOf( msg->getSender() ) ||

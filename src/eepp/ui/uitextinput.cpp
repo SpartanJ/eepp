@@ -445,6 +445,13 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	return UITextView::onMouseUp( position, flags );
 }
 
+Uint32 UITextInput::onMessage( const NodeMessage* message ) {
+	// The input owns its right-click behavior, including the choice to disable its menu.
+	if ( message->getMsg() == NodeMessage::MouseUp && ( message->getFlags() & EE_BUTTON_RMASK ) )
+		return 1;
+	return UITextView::onMessage( message );
+}
+
 Uint32 UITextInput::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	UITextView::onMouseClick( position, flags );
 	if ( ( flags & EE_BUTTON_LMASK ) &&

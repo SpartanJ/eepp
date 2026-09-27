@@ -292,6 +292,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "fontoutlinecolor" );
 	registerProperty( PropertyId::TextSelection, "text-selection", "", true )
 		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::UserSelect, "user-select", "auto", false )
+		.setType( PropertyType::String )
+		.addAlias( "-webkit-user-select" );
 	registerProperty( PropertyId::TextAlign, "text-align", "", true ).addAlias( "align" );
 	registerProperty( PropertyId::Icon, "icon", "" );
 	registerProperty( PropertyId::MinIconSize, "min-icon-size", "" )

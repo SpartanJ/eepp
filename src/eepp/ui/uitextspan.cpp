@@ -9,6 +9,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -759,6 +760,11 @@ UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
+			if ( auto* controller = getTextSelectionControllerInTree() ) {
+				// A document drag can finish over a link and still produce a MouseClick.
+				if ( controller->consumeSuppressedClick() )
+					return 1;
+			}
 			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
 				getUISceneNode()->openURL( mHref );
 			return 1;
