@@ -100,6 +100,21 @@ static void init_ui_test() {
 	themeManager->setDefaultFont( font );
 }
 
+static void beginSelectionPress( UISceneNode* sceneNode, const Vector2i& point ) {
+	auto* window = sceneNode->getWindow();
+	auto* input = window->getInput();
+	input->setMousePos( window->mapCoordsToPixel( point.asFloat(), window->getDefaultView() ) );
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	sceneNode->getEventDispatcher()->update( Seconds( 0 ) );
+}
+
+static void endSelectionPress( UISceneNode* sceneNode ) {
+	auto* input = sceneNode->getWindow()->getInput();
+	input->setMousePos( { 1000, 600 } );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	sceneNode->getEventDispatcher()->update( Seconds( 0 ) );
+}
+
 static String uiHtmlRenderedText( const RichText& richText ) {
 	String text;
 	const auto& lines = richText.getLines();
@@ -3260,17 +3275,16 @@ UTEST( UIHTML, MarkdownListItemsAllowPartialSelection ) {
 		}
 		return Vector2i( -1, -1 );
 	};
-	auto* input = sceneNode->getWindow()->getInput();
 	for ( auto* owner : { parent, nested } ) {
 		Vector2i start = pointAtOffset( owner, 1 );
 		Vector2i end = pointAtOffset( owner, 4 );
 		ASSERT_GE( start.x, 0 );
 		ASSERT_GE( end.x, 0 );
-		input->injectButtonPress( EE_BUTTON_LEFT );
+		beginSelectionPress( sceneNode, start );
 		EXPECT_TRUE( controller->onMouseDown( owner, start, EE_BUTTON_LMASK ) );
 		EXPECT_TRUE( controller->getSelection().anchor.owner == owner );
 		EXPECT_TRUE( controller->onMouseUp( end, EE_BUTTON_LMASK ) );
-		input->injectButtonRelease( EE_BUTTON_LEFT );
+		endSelectionPress( sceneNode );
 		EXPECT_TRUE( controller->getSelection().focus.owner == owner );
 		EXPECT_EQ( owner->getTextSelectionRange().first, 1 );
 		EXPECT_EQ( owner->getTextSelectionRange().second, 4 );
@@ -3344,7 +3358,7 @@ UTEST( UIHTML, MarkdownPointerSelectionCrossesOwnersAndIgnoresNoneStart ) {
 	Vector2i thirdPoint( static_cast<int>( thirdRect.Left + thirdRect.getWidth() - 2 ),
 						 static_cast<int>( thirdRect.Top + thirdRect.getHeight() / 2 ) );
 	auto* input = sceneNode->getWindow()->getInput();
-	input->injectButtonPress( EE_BUTTON_LEFT );
+	beginSelectionPress( sceneNode, firstPoint );
 	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
 	input->setMousePos( thirdPoint );
 	controller->updateSelectionDrag();
@@ -3352,7 +3366,7 @@ UTEST( UIHTML, MarkdownPointerSelectionCrossesOwnersAndIgnoresNoneStart ) {
 	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
 	EXPECT_TRUE( controller->hasSelection() );
 	EXPECT_TRUE( controller->onMouseUp( thirdPoint, EE_BUTTON_LMASK ) );
-	input->injectButtonRelease( EE_BUTTON_LEFT );
+	endSelectionPress( sceneNode );
 	EXPECT_TRUE( controller->consumeSuppressedClick() );
 	EXPECT_TRUE( controller->hasSelection() );
 	EXPECT_TRUE( controller->getSelection().anchor.owner == first );
@@ -3362,20 +3376,62 @@ UTEST( UIHTML, MarkdownPointerSelectionCrossesOwnersAndIgnoresNoneStart ) {
 	auto secondRect = second->getScreenRect();
 	Vector2i secondPoint( static_cast<int>( secondRect.Left + 2 ),
 						  static_cast<int>( secondRect.Top + secondRect.getHeight() / 2 ) );
+	beginSelectionPress( sceneNode, secondPoint );
 	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
 	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
+	endSelectionPress( sceneNode );
 	second->setUserSelect( CSSUserSelect::Text );
 	second->setTextSelectionEnabled( false );
 	selectionBefore = controller->getSelectionString();
+	beginSelectionPress( sceneNode, secondPoint );
 	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
 	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
-	input->injectButtonPress( EE_BUTTON_LEFT );
+	endSelectionPress( sceneNode );
+	beginSelectionPress( sceneNode, firstPoint );
 	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
 	input->setMousePos( thirdPoint );
 	controller->updateSelectionDrag();
 	EXPECT_TRUE( controller->onMouseUp( firstPoint, EE_BUTTON_LMASK ) );
-	input->injectButtonRelease( EE_BUTTON_LEFT );
+	endSelectionPress( sceneNode );
 	EXPECT_TRUE( controller->consumeSuppressedClick() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionStartsOnlyFromViewContent ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->setPixelsSize( 180, 100 );
+	markdown->loadFromString( "paragraph" );
+	auto* scrollbar = UIScrollBar::NewVertical();
+	scrollbar->setParent( markdown );
+	scrollbar->setPosition( 140, 0 );
+	scrollbar->setPixelsSize( 12, 80 );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( sceneNode->getRoot() );
+	editor->setPosition( 250, 0 );
+	editor->setPixelsSize( 200, 100 );
+	sceneNode->update( Seconds( 1 ) );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto textRect = first->getScreenRect();
+	Vector2i textPoint( static_cast<int>( textRect.Left + 2 ),
+						static_cast<int>( textRect.Top + textRect.getHeight() / 2 ) );
+	auto* controller = markdown->getTextSelectionController();
+	auto* input = sceneNode->getWindow()->getInput();
+	for ( auto* origin :
+		  { static_cast<UIWidget*>( scrollbar ), static_cast<UIWidget*>( editor ) } ) {
+		auto rect = origin->getScreenRect();
+		Vector2i originPoint( static_cast<int>( rect.Left + 1 ), static_cast<int>( rect.Top + 1 ) );
+		beginSelectionPress( sceneNode, originPoint );
+		auto* down = sceneNode->getEventDispatcher()->getMouseDownNode();
+		EXPECT_TRUE( down == origin || origin->inParentTreeOf( down ) );
+		input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+			textPoint.asFloat(), sceneNode->getWindow()->getDefaultView() ) );
+		EXPECT_FALSE( controller->onMouseDown( first, textPoint, EE_BUTTON_LMASK ) );
+		EXPECT_FALSE( controller->isSelecting() );
+		endSelectionPress( sceneNode );
+	}
 	Engine::destroySingleton();
 }
 
@@ -3398,7 +3454,7 @@ UTEST( UIHTML, MarkdownSelectionAutoScrollsContainingScrollView ) {
 	Vector2i start( static_cast<int>( firstRect.Left + 2 ),
 					static_cast<int>( firstRect.Top + firstRect.getHeight() / 2 ) );
 	auto* input = sceneNode->getWindow()->getInput();
-	input->injectButtonPress( EE_BUTTON_LEFT );
+	beginSelectionPress( sceneNode, start );
 	auto* controller = markdown->getTextSelectionController();
 	EXPECT_TRUE( controller->onMouseDown( first, start, EE_BUTTON_LMASK ) );
 	auto viewport = scrollView->getContainer()->getScreenRect();
@@ -3419,7 +3475,7 @@ UTEST( UIHTML, MarkdownSelectionAutoScrollsContainingScrollView ) {
 	EXPECT_LT( scrollView->getVerticalScrollBar()->getValue(), 0.8f );
 	EXPECT_TRUE( controller->isSelecting() );
 	controller->onMouseUp( input->getMousePos(), EE_BUTTON_LMASK );
-	input->injectButtonRelease( EE_BUTTON_LEFT );
+	endSelectionPress( sceneNode );
 	Engine::destroySingleton();
 }
 

@@ -651,15 +651,26 @@ bool UITextSelectionController::onMouseDown( UIRichText* source, const Vector2i&
 		return true;
 	if ( !( flags & EE_BUTTON_LMASK ) || !mRoot || !mHost || !source->isTextSelectionEnabled() )
 		return false;
+	auto* dispatcher = source->getEventDispatcher();
+	if ( !dispatcher )
+		return false;
+	Node* mouseDown = dispatcher->getMouseDownNode();
+	if ( !mouseDown || !nodeWithin( mouseDown, mRoot ) )
+		return false;
+	const UIHTMLWidget* target = source;
+	bool foundTarget = false;
+	for ( const Node* node = mouseDown; node; node = node->getParent() ) {
+		if ( node->isType( UI_TYPE_SCROLLBAR ) )
+			return false;
+		if ( !foundTarget && node->isType( UI_TYPE_HTML_WIDGET ) ) {
+			target = node->asConstType<UIHTMLWidget>();
+			foundTarget = true;
+		}
+		if ( node == mRoot )
+			break;
+	}
 	collectOwners();
 	Point point = hitTest( position.asFloat() );
-	const UIHTMLWidget* target = source;
-	if ( auto* dispatcher = source->getEventDispatcher() ) {
-		Node* mouseDown = dispatcher->getMouseDownNode();
-		if ( mouseDown && mouseDown->isType( UI_TYPE_HTML_WIDGET ) &&
-			 isDescendantOf( mouseDown->asType<UIWidget>(), mRoot ) )
-			target = mouseDown->asType<UIHTMLWidget>();
-	}
 	// The event source may be a containing rich text while the pointer is on a selectable
 	// descendant inside user-select:none. Check the actual HTML target before rejecting it.
 	if ( point.isValid() && target->getUsedUserSelect() == CSSUserSelect::None )
