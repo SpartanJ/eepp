@@ -69,7 +69,7 @@ MCP could not open the packaged `.slp` directly, so it was extracted to `/tmp/su
 Existing related plan:
 
 ```text
-.agent/plans/eepp_css_selector_optimization_plan.md
+.agents/plans/eepp_css_selector_optimization_plan.md
 ```
 
 CSS selector matching still appears in this capture, but that file already covers the larger selector-indexing and correctness work. Items below only include selector-adjacent tasks when they are smaller or complementary.
@@ -326,7 +326,7 @@ Validation:
 Files:
 
 ```text
-.agent/plans/eepp_css_selector_optimization_plan.md
+.agents/plans/eepp_css_selector_optimization_plan.md
 src/eepp/ui/css/stylesheet.cpp
 src/eepp/ui/css/stylesheetselector.cpp
 src/eepp/ui/css/stylesheetselectorrule.cpp
@@ -352,7 +352,7 @@ Files:
 
 ```text
 projects/scripts/
-.agent/plans/
+.agents/plans/
 src/tests/unit_tests/
 ```
 

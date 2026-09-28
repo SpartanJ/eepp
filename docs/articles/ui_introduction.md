@@ -8,6 +8,8 @@ and [CSS standards](https://developer.mozilla.org/en-US/docs/Web/CSS).
 It's still a work in progress so several features are still not stable, but
 already provides a very solid foundation to create rich and interactive UIs.
 
+For other guides organized by task, see the [articles index](README.md).
+
 ## Layout
 
 A layout defines the structure for a user interface in your app.
@@ -164,14 +166,13 @@ node.
 [CSS (Cascading Style Sheets)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 is the code you use to style the UI. It's very heavily based on the
 [CSS 2.1](https://www.w3.org/TR/CSS21/) standards with a good amount of CSS 3
-features. Some of the main current differences are: eepp CSS properties don't
-support inheritance (except for the case
-[custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
-and `*` is supported), eepp also adds new properties oriented to decoration
-related and layout control stuffs, and CSS layout properties differ from the
-standard since we use a different layout model. But you can learn how to style the
-UI following the CSS standards and then reading about the specific eepp UI
-features.
+features. Some of the main differences are: only properties explicitly registered as
+inheritable pass their values to child widgets, and native layout properties follow eepp's
+layout model rather than browser layout. eepp also adds properties for decoration and layout
+control. See [CSS for Application UI](ui_css_for_applications.md) for the native cascade and
+inheritance rules, and the [HTML compatibility guide](ui_html_compatibility.md) when styling
+HTML content.
+
 Important CSS3 features that are currently supported:
 
 * [Animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/)
@@ -188,7 +189,7 @@ Important CSS3 features that are currently supported:
 
 * [Most of the background properties](https://developer.mozilla.org/en-US/docs/Web/CSS/background)
 
-See the [CSS Specification](docs/articles/css_specification.md) for more information.
+See the [CSS Specification](css_specification.md) for more information.
 
 ## Write the CSS
 
@@ -265,6 +266,28 @@ For a complete example of this introduction you can look into:
 [src/examples/ui_hello_world/ui_hello_world.cpp](https://github.com/SpartanJ/eepp/blob/develop/src/examples/ui_hello_world/ui_hello_world.cpp).
 
 Also is important to notice that for applications that wants to use the default eepp UI theme and fonts you can simply take advantage of the EE::UI::UIApplication class which controls the initialization and loading of the core components of the UI. You can look at the simplest example at [src/examples/ui_application_hello_world/ui_application_hello_world.cpp](https://github.com/SpartanJ/eepp/blob/develop/src/examples/ui_application_hello_world/ui_application_hello_world.cpp).
+
+To run that application example, follow the [build instructions for your platform](../../README.md#how-to-build-it)
+and build the `eepp-ui-application-hello-world` target, or build the full project. Its executable
+is placed in `bin/` (`eepp-ui-application-hello-world.exe` on Windows). Run it from there.
+
+The example creates its widgets from the XML string in that source file. Change the `TextView`'s
+`text` attribute to see an XML edit. To try CSS, add this before `return app.run();`:
+
+```cpp
+app.getUI()->combineStyleSheet( R"css(
+	#text_view {
+		font-size: 28dp;
+		color: #1a73e8;
+	}
+)css" );
+```
+
+Rebuild the example with the same platform build workflow, then run it again. The label should show
+your new text in a larger blue font. Press **F11** in the example window to open the visual widget
+inspector; select `text_view` or use **Pick Widget** to see its computed properties and matching
+style rules. The inspector is implemented in
+[`UIWidgetInspector`](../../include/eepp/ui/tools/uiwidgetinspector.hpp).
 
 For applications with reactive state, typed input, validation, or observable collections, continue
 with the [UI Data Binding](ui_databinding.md) guide.

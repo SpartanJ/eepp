@@ -123,6 +123,10 @@ Inspector and debugging tools should target either the application scene or a do
 explicitly. Application-root searches intentionally stop at nested scene boundaries; use
 `UIWebView::getDocumentSceneNode()` when inspecting or querying document nodes.
 
+For runtime diagnosis, follow `docs/articles/ui_inspector.md`: discover the WebView's document
+scene with `ui.contexts` or from the WebView query result, then pass that scene to subsequent
+queries, inspections, screenshots, or input commands.
+
 ### UIHTMLWidget
 
 `UIHTMLWidget` is the base class for HTML-like elements. It stores parsed CSS layout state such as `display`, `position`, `float`, `clear`, list style, and data attributes. It does not own all layout math directly. Instead, it uses `UILayouterManager` to instantiate the appropriate `UILayouter` for its `CSSDisplay`.

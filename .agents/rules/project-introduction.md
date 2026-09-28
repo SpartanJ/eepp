@@ -27,7 +27,19 @@ not `eTerm`. Its implementation lives under `src/modules/eterm/`.
 
 When working on this project, rely on the following resources to understand existing implementations:
 *   **C++ Headers (Primary Reference):** Rely heavily on Doxygen documentation found directly inside the class headers located at `include/eepp/`.
-*   **Basic Documentation:** Found in `docs/articles/`.
+*   **Task-specific guides:** Use `docs/articles/` when the task touches an area below:
+    *   Native application UI: `ui_authoring.md` for design patterns, `ui_layout_reference.md`
+        for sizing and layout behavior, and `ui_css_for_applications.md` for styling and the
+        native CSS cascade. Start with `ui_introduction.md` for a basic XML/CSS example.
+    *   HTML in `UIWebView` or `UIMarkdownView`: `ui_html_compatibility.md` for the supported
+        behavior and boundaries; `css_specification.md` for eepp CSS properties and values.
+    *   Runtime UI debugging or interaction: `ui_inspector.md` explains how to enable the
+        inspector and use `projects/scripts/eepp-inspect.py` to inspect live widget trees,
+        geometry, CSS, focus, and nested WebView scenes, capture screenshots, and automate input.
+        Use it when visual or interaction behavior needs runtime verification.
+    *   UI data binding or charts: `ui_databinding.md` or `ui_charts.md`, respectively.
+    *   `eterm` Kitty protocol work: `eterm_kitty_keyboard.md` and
+        `eterm_kitty_graphics.md` for the corresponding supported behavior.
 *   **Implementation Examples:** A wide variety of examples showing how to use the library are located in `src/examples/`.
 *   **General Context:** The `README.md` at the root directory contains deeper project details.
 

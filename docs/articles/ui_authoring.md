@@ -1298,7 +1298,10 @@ It is not a z-stack or absolute overlay container.
 
 Do not guess geometry when the application can tell you the answer.
 
-Enable the inspector and inspect the real running UI.
+Enable the inspector and inspect the real running UI. See
+[`ui_inspector.md`](ui_inspector.md) for activation, client setup, and scene selection.
+The handles and scene IDs in the commands below are examples; get the actual values from
+`contexts` and `query` for the running application.
 
 Basic workflow:
 

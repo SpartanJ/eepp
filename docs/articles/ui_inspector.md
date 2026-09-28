@@ -35,6 +35,10 @@ EEPP_INSPECTOR={"protocolVersion":1,"host":"127.0.0.1","port":43187,"token":"<ge
 
 With `EEPP_INSPECTOR_TOKEN` supplied, the `token` member is omitted. The prefix `EEPP_INSPECTOR=` is stable. The server accepts up to 16 simultaneous TCP clients, and a request line is limited to 1 MiB. Each client's pending output is limited to 4 MiB. A single query returns at most 1000 nodes; a tree returns at most 1000 nodes; a batch accepts at most 100 commands.
 
+Copy the `port` and generated `token` from that startup line into the client environment below.
+The default port is selected by the OS at launch, so the client cannot infer it in advance.
+If you set `EEPP_INSPECTOR_TOKEN` yourself, use that value for the client instead.
+
 ## Python client
 
 `projects/scripts/eepp-inspect.py` requires Python 3 and only the standard library. It reads `EEPP_INSPECTOR_HOST`, `EEPP_INSPECTOR_PORT`, and `EEPP_INSPECTOR_TOKEN`, or the corresponding `--host`, `--port`, and `--token` options. Use `--pretty` for indented JSON. Default stdout is compact JSON only; diagnostics go to stderr. Ordinary commands connect, authenticate, print one response, and disconnect.
