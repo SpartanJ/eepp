@@ -34,6 +34,9 @@
 #include <thread>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 
 #include <bcrypt.h>
