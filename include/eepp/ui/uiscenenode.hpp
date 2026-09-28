@@ -968,6 +968,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	Uint32 getCurrentMarker() const { return mCurrentMarker; }
 
+	void loadHTMLBasicCSS();
+
 	void loadHTMLBaseCSS();
 
 	struct AsyncResourceLoadState {

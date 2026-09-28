@@ -20,6 +20,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -31,6 +32,12 @@
 #include <set>
 #include <string_view>
 #include <thread>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <windows.h>
+
+#include <bcrypt.h>
+#endif
 
 using json = nlohmann::json;
 using namespace EE::Network;
@@ -58,23 +65,33 @@ json errorObject( const InspectorError& error ) {
 }
 
 std::string tokenFromOS() {
+	std::array<Uint32, 8> values;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( !BCRYPT_SUCCESS( BCryptGenRandom( nullptr, reinterpret_cast<PUCHAR>( values.data() ),
+										   static_cast<ULONG>( sizeof( values ) ),
+										   BCRYPT_USE_SYSTEM_PREFERRED_RNG ) ) )
+		return {};
+#else
 	try {
 		std::random_device random;
 		if ( random.entropy() <= 0 )
 			return {};
-		static const char* hex = "0123456789abcdef";
-		std::string token( 64, '0' );
-		for ( size_t i = 0; i < token.size(); i += 8 ) {
-			unsigned value = random();
-			for ( size_t j = 0; j < 8; ++j ) {
-				token[i + j] = hex[value & 15];
-				value >>= 4;
-			}
-		}
-		return token;
+		for ( auto& value : values )
+			value = random();
 	} catch ( const std::exception& ) {
 		return {};
 	}
+#endif
+	static const char* hex = "0123456789abcdef";
+	std::string token( 64, '0' );
+	for ( size_t i = 0; i < values.size(); ++i ) {
+		Uint32 value = values[i];
+		for ( size_t j = 0; j < 8; ++j ) {
+			token[i * 8 + j] = hex[value & 15];
+			value >>= 4;
+		}
+	}
+	return token;
 }
 
 std::string requireString( const json& params, const char* name ) {

@@ -69,9 +69,9 @@ UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback =
 UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget =
 	UIWidgetCreator::RegisteredWidgetCallbackMap();
 
-static const std::string_view getHTMLBaseDefaultsCSS() {
+static const std::string_view getHTMLBasicDefaultsCSS() {
 	return R"css(
-body { color: black; margin: 0.67em; }
+body { margin: 0.67em; }
 
 h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
 h2 { font-size: 1.5em; font-weight: bold; margin: 0.83em 0; }
@@ -83,7 +83,7 @@ h6 { font-size: 0.67em; font-weight: bold; margin: 2.33em 0; }
 p { margin: 1em 0; }
 pre { margin: 1em 0; white-space: pre; }
 blockquote { margin: 1em 0; }
-hr { display: block; border-width: 1px; border-style: solid; border-color: gray; margin: 0.5em 0; min-height: 2px; }
+hr { display: block; border-width: 1px; border-style: solid; margin: 0.5em 0; min-height: 2px; }
 ul, ol, dl { margin: 1em 0; }
 
 b, strong { font-weight: bold; }
@@ -95,15 +95,26 @@ code, kbd { font-family: monospace; }
 sub, sup { font-size: smaller; }
 mark { background-color: yellow; }
 
-a, a:link { color: #0000EE; text-decoration: none; cursor: arrow; }
+a, a:link { text-decoration: none; cursor: arrow; }
 a:hover { text-decoration: underline; cursor: hand; }
-a:visited { color: #551A8B; }
 
 ul { padding-left: 40dp; list-style-type: disc; }
 ol { padding-left: 40dp; list-style-type: decimal; }
 dd { margin-left: 40dp; }
 
 summary { cursor: pointer; padding-left: 20dp; list-style-type: disclosure-closed; }
+
+)css";
+}
+
+static const std::string_view getHTMLDocumentDefaultsCSS() {
+	return R"css(
+body { color: black; }
+mark { background-color: yellow; }
+
+hr { border-color: gray; }
+a, a:link { color: #0000EE; }
+a:visited { color: #551A8B; }
 
 textarea { border-width: 1dp; border-style: solid; border-color: #767676; background-color: white; color: black; padding: 2dp; selection-back-color: lightgray; }
 
@@ -429,16 +440,26 @@ std::vector<std::string> UIWidgetCreator::getWidgetNames() {
 	return names;
 }
 
-void UIWidgetCreator::loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+static void loadHTMLDefaults( CSS::StyleSheet& styleSheet, Uint32 marker, std::string_view css ) {
 	if ( styleSheet.markerExists( marker ) )
 		return;
 	CSS::StyleSheetParser parser;
-	if ( parser.loadFromString( getHTMLBaseDefaultsCSS() ) ) {
-		CSS::StyleSheet baseDefaults = parser.getStyleSheet();
+	if ( parser.loadFromString( css ) ) {
+		CSS::StyleSheet& baseDefaults = parser.getStyleSheet();
 		baseDefaults.setSelectorSpecificity( -1 );
 		baseDefaults.setMarker( marker );
 		styleSheet.combineStyleSheet( baseDefaults );
 	}
+}
+
+void UIWidgetCreator::loadHTMLBasicDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+	loadHTMLDefaults( styleSheet, marker, getHTMLBasicDefaultsCSS() );
+}
+
+void UIWidgetCreator::loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+	loadHTMLBasicDefaults( styleSheet, marker );
+	loadHTMLDefaults( styleSheet, String::hash( "html_document_defaults" ),
+					  getHTMLDocumentDefaultsCSS() );
 }
 
 }} // namespace EE::UI

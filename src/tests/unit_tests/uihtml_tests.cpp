@@ -3058,6 +3058,50 @@ UTEST( UIHTML, MarkdownViewLoadsBodyChildrenIntoNativeTree ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, MarkdownLoadsOnlyBasicHTMLDefaults ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "# Heading\n\nParagraph" );
+	sceneNode->update( Seconds( 1 ) );
+
+	EXPECT_TRUE( sceneNode->getStyleSheet().markerExists( String::hash( "html_defaults" ) ) );
+	EXPECT_FALSE(
+		sceneNode->getStyleSheet().markerExists( String::hash( "html_document_defaults" ) ) );
+	auto* heading = markdown->findByTag( "h1" )->asType<UIRichText>();
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( paragraph != nullptr );
+	EXPECT_GT( heading->getFontSize(), paragraph->getFontSize() );
+
+	auto* body = UIHTMLBody::New( "body" );
+	body->setParent( sceneNode->getRoot() );
+	EXPECT_TRUE(
+		sceneNode->getStyleSheet().markerExists( String::hash( "html_document_defaults" ) ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BreezeStylesMarkdownRuleAndHTMLTextarea ) {
+	UIApplication app(
+		WindowSettings( 1024, 650, "Breeze HTML defaults test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* sceneNode = app.getUI();
+
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "Before\n\n---\n\nAfter" );
+	auto* textarea = UIHTMLTextArea::New();
+	textarea->setParent( sceneNode->getRoot() );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* rule = markdown->findByTag( "hr" )->asType<UIWidget>();
+	ASSERT_TRUE( rule != nullptr );
+	EXPECT_TRUE( rule->getBorder()->getBorders().top.realColor == Color( "#31363b" ) );
+	EXPECT_TRUE( textarea->getBackgroundColor() == Color( "#232629" ) );
+}
+
 UTEST( UIHTML, UserSelectUsedValueAndRichTextDefault ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();

@@ -103,6 +103,10 @@ MarkdownView h2 {
 	border-bottom: 1dp solid var(--tab-line);
 }
 
+MarkdownView hr {
+	border-color: var(--separator);
+}
+
 MarkdownView img {
 	max-width: 100%;
 	max-height: 100vh;
@@ -120,6 +124,8 @@ MarkdownView code {
 	padding-left: 2dp;
 	padding-right: 2dp;
 }
+
+MarkdownView mark { background-color: var(--theme-warning); }
 
 pushbutton,
 selectbutton,
@@ -163,6 +169,7 @@ Tab,
 TextEdit,
 TextInput,
 TextArea,
+textarea,
 TextView,
 Anchor,
 Tooltip,
@@ -180,6 +187,7 @@ TextView,
 Anchor,
 TextEdit,
 TextArea,
+textarea,
 TextInput,
 ComboBox::DropDownList,
 SpinBox::input, {
@@ -459,7 +467,8 @@ SpinBox::btndown {
 }
 
 TextEdit,
-TextArea {
+TextArea,
+textarea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -475,7 +484,9 @@ TextArea {
 TextEdit:focus,
 TextEdit:hover,
 TextArea:focus,
-TextArea:hover {
+TextArea:hover,
+textarea:focus,
+textarea:hover {
 	border-color: var(--primary);
 }
 

@@ -112,7 +112,8 @@ bool SocketSelector::isReady( Socket& socket ) const {
 	SocketHandle handle = socket.getHandle();
 
 	if ( handle != Private::SocketImpl::invalidSocket() ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
+		// Windows FD_SETSIZE limits the number of sockets, not their handle values.
+#if EE_PLATFORM != EE_PLATFORM_WIN
 		if ( handle >= FD_SETSIZE )
 			return false;
 #endif

@@ -2580,8 +2580,12 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 		ft->setBoldItalicFont( boldItalicFont );
 }
 
+void UISceneNode::loadHTMLBasicCSS() {
+	UIWidgetCreator::loadHTMLBasicDefaults( mStyleSheet, String::hash( "html_defaults" ) );
+}
+
 void UISceneNode::loadHTMLBaseCSS() {
-	// Load HTML base defaults (idempotent - marker check prevents duplicates)
+	// Load HTML defaults (idempotent - marker checks prevent duplicates)
 	UIWidgetCreator::loadHTMLBaseDefaults( mStyleSheet, String::hash( "html_defaults" ) );
 }
 

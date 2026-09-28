@@ -20,7 +20,7 @@ UIMarkdownView::UIMarkdownView() : UILinearLayout( "markdownview", UIOrientation
 	subscribeScheduledUpdate();
 	mWidthPolicy = SizePolicy::MatchParent;
 	mHeightPolicy = SizePolicy::WrapContent;
-	getUISceneNode()->loadHTMLBaseCSS();
+	getUISceneNode()->loadHTMLBasicCSS();
 }
 
 UIMarkdownView::~UIMarkdownView() {
