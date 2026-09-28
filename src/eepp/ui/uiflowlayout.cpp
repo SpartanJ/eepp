@@ -1,38 +1,38 @@
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 
 namespace EE { namespace UI {
 
-UIStackLayout* UIStackLayout::NewWithTag( const std::string& tag ) {
-	return eeNew( UIStackLayout, ( tag ) );
+UIFlowLayout* UIFlowLayout::NewWithTag( const std::string& tag ) {
+	return eeNew( UIFlowLayout, ( tag ) );
 }
 
-UIStackLayout* UIStackLayout::New() {
-	return eeNew( UIStackLayout, () );
+UIFlowLayout* UIFlowLayout::New() {
+	return eeNew( UIFlowLayout, () );
 }
 
-UIStackLayout::UIStackLayout() : UIStackLayout( "stacklayout" ) {}
+UIFlowLayout::UIFlowLayout() : UIFlowLayout( "flowlayout" ) {}
 
-UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
+UIFlowLayout::UIFlowLayout( const std::string& tag ) : UILayout( tag ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
 	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
 	listenParent();
 }
 
-UIStackLayout::~UIStackLayout() {
+UIFlowLayout::~UIFlowLayout() {
 	clearListeners();
 }
 
-Uint32 UIStackLayout::getType() const {
-	return UI_TYPE_STACK_LAYOUT;
+Uint32 UIFlowLayout::getType() const {
+	return UI_TYPE_FLOW_LAYOUT;
 }
 
-bool UIStackLayout::isType( const Uint32& type ) const {
-	return UIStackLayout::getType() == type ? true : UILayout::isType( type );
+bool UIFlowLayout::isType( const Uint32& type ) const {
+	return UIFlowLayout::getType() == type ? true : UILayout::isType( type );
 }
 
-void UIStackLayout::applySizePolicyOnChildren() {
+void UIFlowLayout::applySizePolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -80,29 +80,29 @@ void UIStackLayout::applySizePolicyOnChildren() {
 	}
 }
 
-void UIStackLayout::setRowValign( const std::string& rowValign ) {
+void UIFlowLayout::setRowValign( const std::string& rowValign ) {
 	if ( rowValign == "top" ) {
-		setRowValign( UIStackLayout::RowValign::Top );
+		setRowValign( UIFlowLayout::RowValign::Top );
 	} else if ( rowValign == "center" ) {
-		setRowValign( UIStackLayout::RowValign::Center );
+		setRowValign( UIFlowLayout::RowValign::Center );
 	} else if ( rowValign == "bottom" ) {
-		setRowValign( UIStackLayout::RowValign::Bottom );
+		setRowValign( UIFlowLayout::RowValign::Bottom );
 	}
 }
 
-std::string UIStackLayout::rowValignToStr( const RowValign& rowValign ) {
+std::string UIFlowLayout::rowValignToStr( const RowValign& rowValign ) {
 	switch ( rowValign ) {
-		case UIStackLayout::RowValign::Top:
+		case UIFlowLayout::RowValign::Top:
 			return "top";
-		case UIStackLayout::RowValign::Center:
+		case UIFlowLayout::RowValign::Center:
 			return "center";
-		case UIStackLayout::RowValign::Bottom:
+		case UIFlowLayout::RowValign::Bottom:
 		default:
 			return "bottom";
 	}
 }
 
-void UIStackLayout::clearListeners() {
+void UIFlowLayout::clearListeners() {
 	if ( mParentRef ) {
 		if ( mParentSizeChangeCb > 0 ) {
 			mParentRef->removeEventListener( mParentSizeChangeCb );
@@ -115,7 +115,7 @@ void UIStackLayout::clearListeners() {
 	}
 }
 
-void UIStackLayout::listenParent() {
+void UIFlowLayout::listenParent() {
 	clearListeners();
 
 	mParentRef = getParent();
@@ -130,12 +130,12 @@ void UIStackLayout::listenParent() {
 		mParentRef->on( Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
 }
 
-void UIStackLayout::onParentChange() {
+void UIFlowLayout::onParentChange() {
 	listenParent();
 }
 
-std::string UIStackLayout::getPropertyString( const PropertyDefinition* propertyDef,
-											  const Uint32& propertyIndex ) const {
+std::string UIFlowLayout::getPropertyString( const PropertyDefinition* propertyDef,
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -149,14 +149,14 @@ std::string UIStackLayout::getPropertyString( const PropertyDefinition* property
 	}
 }
 
-std::vector<PropertyId> UIStackLayout::getPropertiesImplemented() const {
+std::vector<PropertyId> UIFlowLayout::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
 	auto local = { PropertyId::GravityOwner, PropertyId::RowValign };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
 
-bool UIStackLayout::applyProperty( const StyleSheetProperty& attribute ) {
+bool UIFlowLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 
@@ -176,7 +176,7 @@ bool UIStackLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UIStackLayout::onMessage( const NodeMessage* Msg ) {
+Uint32 UIFlowLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
 			tryUpdateLayout();
@@ -187,7 +187,7 @@ Uint32 UIStackLayout::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-void UIStackLayout::updateLayout() {
+void UIFlowLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
@@ -329,15 +329,15 @@ void UIStackLayout::updateLayout() {
 			}
 
 			switch ( mRowValign ) {
-				case UIStackLayout::RowValign::Center:
+				case UIFlowLayout::RowValign::Center:
 					pos.y = yDisplacement + maxY +
 							eeceil( ( line.maxY - widget->getPixelsSize().getHeight() ) * 0.5f );
 					break;
-				case UIStackLayout::RowValign::Bottom:
+				case UIFlowLayout::RowValign::Bottom:
 					pos.y = yDisplacement + maxY + line.maxY - widget->getPixelsSize().getHeight() -
 							widget->getLayoutPixelsMargin().Bottom;
 					break;
-				case UIStackLayout::RowValign::Top:
+				case UIFlowLayout::RowValign::Top:
 				default:
 					pos.y = yDisplacement + maxY + widget->getLayoutPixelsMargin().Top;
 					break;
@@ -373,11 +373,11 @@ void UIStackLayout::updateLayout() {
 	mDirtyLayout = false;
 }
 
-const UIStackLayout::RowValign& UIStackLayout::getRowValign() const {
+const UIFlowLayout::RowValign& UIFlowLayout::getRowValign() const {
 	return mRowValign;
 }
 
-void UIStackLayout::setRowValign( const RowValign& rowValign ) {
+void UIFlowLayout::setRowValign( const RowValign& rowValign ) {
 	mRowValign = rowValign;
 }
 

@@ -114,6 +114,7 @@
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihelper.hpp>
@@ -174,7 +175,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uistyle.hpp>

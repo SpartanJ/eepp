@@ -599,7 +599,7 @@ static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
 	</hbox>
 	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp">
 		<MarkdownView class="permission_desc" lw="mp" lh="wc" />
-		<StackLayout class="permission_options" lw="mp" lh="wc" />
+		<FlowLayout class="permission_options" lw="mp" lh="wc" />
 	</vbox>
 </vbox>
 )xml";

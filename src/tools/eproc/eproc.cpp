@@ -823,7 +823,7 @@ bool App::init() {
 					<TextView id="perf_summary" class="eproc-performance-muted" lw="mp" lh="wc" margin-bottom="8dp" />
 					<Chart id="perf_detail_chart" class="eproc-performance-chart" lw="mp" lh="0" lw8="1" />
 					<ScrollView id="perf_cores_scroll" lw="mp" lh="0" lw8="1" visible="false">
-						<StackLayout id="perf_cores_stack" lw="mp" lh="wc" row-valign="top" />
+						<FlowLayout id="perf_cores_stack" lw="mp" lh="wc" row-valign="top" />
 					</ScrollView>
 					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" />
 				</vbox>

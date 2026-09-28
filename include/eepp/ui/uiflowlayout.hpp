@@ -1,20 +1,20 @@
-#ifndef EE_UI_UISTACKLAYOUT_HPP
-#define EE_UI_UISTACKLAYOUT_HPP
+#ifndef EE_UI_UIFLOWLAYOUT_HPP
+#define EE_UI_UIFLOWLAYOUT_HPP
 
 #include <eepp/core/small_vector.hpp>
 #include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIStackLayout : public UILayout {
+class EE_API UIFlowLayout : public UILayout {
   public:
 	enum class RowValign { Top, Center, Bottom };
 
-	static UIStackLayout* New();
+	static UIFlowLayout* New();
 
-	static UIStackLayout* NewWithTag( const std::string& tag = "stacklayout" );
+	static UIFlowLayout* NewWithTag( const std::string& tag = "flowlayout" );
 
-	virtual ~UIStackLayout();
+	virtual ~UIFlowLayout();
 
 	virtual Uint32 getType() const;
 
@@ -46,9 +46,9 @@ class EE_API UIStackLayout : public UILayout {
 	Uint32 mParentSizeChangeCb{ 0 };
 	Uint32 mParentCloseCb{ 0 };
 
-	UIStackLayout();
+	UIFlowLayout();
 
-	explicit UIStackLayout( const std::string& tag );
+	explicit UIFlowLayout( const std::string& tag );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
@@ -67,4 +67,4 @@ class EE_API UIStackLayout : public UILayout {
 
 }} // namespace EE::UI
 
-#endif // EE_UI_UISTACKLAYOUT_HPP
+#endif // EE_UI_UIFLOWLAYOUT_HPP

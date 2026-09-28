@@ -2585,22 +2585,22 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The current document uses an extension that can be interpreted as more than one languages.&#xA;Which language is this document?")'
 		/>
-		<StackLayout class="languages" layout_width="match_parent" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
+		<FlowLayout class="languages" layout_width="match_parent" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></FlowLayout>
 		<TextView font-size="9dp" text='@string(lang_selected_default, The language selected will be set as the default language for this file extension.)' margin-top="8dp" />
 	</vbox>
 	)xml";
 	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
 
-	UIStackLayout* stack = docAlert->findByClass<UIStackLayout>( "languages" );
+	UIFlowLayout* flow = docAlert->findByClass<UIFlowLayout>( "languages" );
 
-	if ( !stack ) {
+	if ( !flow ) {
 		docAlert->close();
 		return;
 	}
 
 	for ( const auto& lang : langs ) {
 		UIPushButton* btn = UIPushButton::New();
-		btn->setParent( stack );
+		btn->setParent( flow );
 		btn->setText( lang->getLanguageName() );
 		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
 		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {

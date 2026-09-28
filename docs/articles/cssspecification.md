@@ -1716,10 +1716,10 @@ Sets the vertical separation between each element in the grid layout.
 
 ### row-valign
 
-Sets the vertical alignment of the elements in a stack layout. Elements in the same row will align
+Sets the vertical alignment of the elements in a flow layout. Elements in the same row will align
 based on the maximum element height in that row.
 
-* Applicable to: EE::UI::UIStackLayout (StackLayout)
+* Applicable to: EE::UI::UIFlowLayout (FlowLayout)
 * Data Type: [string-list](#string-list-data-type)
 
 * Value List:

@@ -10,6 +10,7 @@
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihtmldetails.hpp>
 #include <eepp/ui/uihtmlform.hpp>
@@ -38,7 +39,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uisvg.hpp>
@@ -249,7 +249,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["textureregion"] = UITextureRegion::New;
 		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
-		registeredWidget["stacklayout"] = UIStackLayout::New;
+		registeredWidget["flowlayout"] = UIFlowLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["diffview"] = Tools::UIDiffView::New;

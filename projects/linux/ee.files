@@ -392,6 +392,7 @@
 ../../include/eepp/ui/uieventdispatcher.hpp
 ../../include/eepp/ui/uifiledialog.hpp
 ../../include/eepp/ui/uifontstyleconfig.hpp
+../../include/eepp/ui/uiflowlayout.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uihelper.hpp
 ../../include/eepp/ui/uiicon.hpp
@@ -436,7 +437,6 @@
 ../../include/eepp/ui/uispinbox.hpp
 ../../include/eepp/ui/uisplitter.hpp
 ../../include/eepp/ui/uisprite.hpp
-../../include/eepp/ui/uistacklayout.hpp
 ../../include/eepp/ui/uistackwidget.hpp
 ../../include/eepp/ui/uistate.hpp
 ../../include/eepp/ui/uistyle.hpp
@@ -487,7 +487,7 @@
 ../../include/eepp/window/window.hpp
 ../../Makefile
 ../../Makefile.base
-../../include/eepp/ui/uistacklayout.hpp
+../../include/eepp/ui/uiflowlayout.hpp
 ../../premake4.lua
 ../../premake5.lua
 ../../src/eepp/audio/alcheck.cpp
@@ -1191,6 +1191,7 @@
 ../../src/eepp/ui/uidropdownlist.cpp
 ../../src/eepp/ui/uieventdispatcher.cpp
 ../../src/eepp/ui/uifiledialog.cpp
+../../src/eepp/ui/uiflowlayout.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiicon.cpp
 ../../src/eepp/ui/uiicontheme.cpp
@@ -1233,7 +1234,6 @@
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
-../../src/eepp/ui/uistacklayout.cpp
 ../../src/eepp/ui/uistackwidget.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp

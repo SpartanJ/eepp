@@ -61,7 +61,7 @@ UTEST( UIMergeView, UsesSharedResultDocumentAndAcceptIsUndoable ) {
 	input.stage3.label = "Theirs";
 	auto* view = UIMergeView::New();
 	view->load( std::move( input ) );
-	auto* toolbar = view->find<UIStackLayout>( "merge_toolbar" );
+	auto* toolbar = view->find<UIFlowLayout>( "merge_toolbar" );
 	auto* editorsLayout = view->find<UILinearLayout>( "merge_editors" );
 	ASSERT_TRUE( toolbar != nullptr );
 	ASSERT_TRUE( editorsLayout != nullptr );
