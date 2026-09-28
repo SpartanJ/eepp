@@ -192,7 +192,7 @@ struct UIInspectorServer::Impl {
 		Uint64 client;
 		json id;
 		json commands;
-		json results{ json::object() };
+		json results = json::object();
 		std::map<std::string, json> named;
 		size_t index{ 0 };
 		unsigned frames{ 0 };

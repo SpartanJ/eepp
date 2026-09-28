@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <string>
+#include <unordered_map>
 
 namespace EE { namespace UI {
 
@@ -48,7 +49,9 @@ class EE_API UIInspector {
 		Scene::Node* node{ nullptr };
 		Scene::EventConnection close;
 	};
-	using NodeHandles = UnorderedMap<std::string, NodeEntry>;
+	// EventConnection is move-only; keep these entries in a node-based map so map operations do not
+	// require copying the connection through the dense map's vector storage.
+	using NodeHandles = std::unordered_map<std::string, NodeEntry>;
 	using ReverseNodeHandles = UnorderedMap<Scene::Node*, std::string>;
 
 	std::string registerNode( Scene::Node* node, const char* prefix, NodeHandles& handles,
