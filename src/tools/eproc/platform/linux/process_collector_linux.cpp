@@ -412,6 +412,21 @@ void ProcessCollectorLinux::readProcessCmdline( ProcessInfo& proc, long pid ) {
 	if ( proc.commandLine.empty() )
 		return;
 
+	// Linux comm is limited to 15 bytes. As in ksysguard, extend a truncated name from argv[0]
+	// only when its basename begins with the kernel name; wrappers and renamed processes retain
+	// their comm instead. Inspect argv[0] before replacing the NUL argument separators below.
+	if ( proc.name.size() == 15 ) {
+		const size_t firstSeparator = proc.commandLine.find( '\0' );
+		const std::string_view argv0( proc.commandLine.data(), firstSeparator == std::string::npos
+																   ? proc.commandLine.size()
+																   : firstSeparator );
+		const size_t lastSlash = argv0.rfind( '/' );
+		const std::string_view basename =
+			argv0.substr( lastSlash == std::string_view::npos ? 0 : lastSlash + 1 );
+		if ( basename.size() > proc.name.size() && basename.starts_with( proc.name ) )
+			proc.name.assign( basename );
+	}
+
 	// argv entries are NUL separated. Replace the separators with spaces to reconstruct the
 	// command line as ksysguard6 shows it in its command column (and for the clipboard).
 	for ( char& character : proc.commandLine ) {

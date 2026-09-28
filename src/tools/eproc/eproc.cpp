@@ -48,6 +48,37 @@ String forceKillLabel( UISceneNode* ui, size_t count ) {
 	return count == 1 ? ui->i18n( "eproc_forcibly_kill_process", "Forcibly Kill Process" )
 					  : ui->i18n( "eproc_forcibly_kill_processes", "Forcibly Kill Processes" );
 }
+
+String formatUptime( UISceneNode* ui, double uptimeSeconds ) {
+	const Int64 seconds = std::isfinite( uptimeSeconds ) && uptimeSeconds > 0
+							  ? static_cast<Int64>( uptimeSeconds )
+							  : 0;
+	const Int64 days = seconds / 86400;
+	const Int64 hours = ( seconds / 3600 ) % 24;
+	const Int64 minutes = ( seconds / 60 ) % 60;
+	String result;
+	auto append = [&]( Int64 value, const char* singularKey, const char* singular,
+					   const char* pluralKey, const char* plural ) {
+		if ( !result.empty() )
+			result += ", ";
+		result += String::format(
+			ui->i18n( value == 1 ? singularKey : pluralKey, value == 1 ? singular : plural )
+				.toUtf8(),
+			static_cast<long long>( value ) );
+	};
+	if ( days > 0 )
+		append( days, "eproc_uptime_day", "%lld day", "eproc_uptime_days", "%lld days" );
+	if ( hours > 0 )
+		append( hours, "eproc_uptime_hour", "%lld hour", "eproc_uptime_hours", "%lld hours" );
+	if ( minutes > 0 )
+		append( minutes, "eproc_uptime_minute", "%lld minute", "eproc_uptime_minutes",
+				"%lld minutes" );
+	if ( result.empty() )
+		append( seconds, "eproc_uptime_second", "%lld second", "eproc_uptime_seconds",
+				"%lld seconds" );
+	return result;
+}
+
 constexpr int kPreviousProcessTableStateVersion = 3;
 constexpr int kLegacyProcessTableStateVersion = 2;
 constexpr int kPriorProcessTableStateVersion = 4;
@@ -1141,6 +1172,7 @@ void App::setupPerformance() {
 		auto& line = metric.preview->addLineSeries( names[i] );
 		line.setDataSource( metric.primary );
 		line.setColor( colors[i] );
+		line.setFilled( true );
 		metric.preview->xAxis().setFormatter(
 			[this]( double value, double ) { return formatPerformanceTime( value ); } );
 		if ( i == 3 ) {
@@ -1159,6 +1191,7 @@ void App::setupPerformance() {
 			auto& upload = metric.preview->addLineSeries( "Upload" );
 			upload.setDataSource( metric.secondary );
 			upload.setColor( themeColor( mApp->getUI(), "--theme-error", Color( 236, 115, 103 ) ) );
+			upload.setFilled( true );
 		}
 		ChartStyle smallStyle = metric.preview->chartStyle();
 		smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
@@ -1247,6 +1280,7 @@ void App::rebuildCoreCharts( size_t count ) {
 		auto& line = chart->addLineSeries( String::format( "CPU %zu", core ) );
 		line.setDataSource( mCoreHistory[core] );
 		line.setColor( themeColor( mApp->getUI(), "--primary", Color( 49, 178, 224 ) ) );
+		line.setFilled( true );
 		chart->xAxis().setFormatter( []( double, double ) { return String(); } );
 		chart->yAxis().setFormatter( []( double, double ) { return String(); } );
 		ChartStyle style = chart->chartStyle();
@@ -1344,8 +1378,12 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 
 	mPerformanceSummaries[0] = String::format( "%.1f%% utilization", sysInfo.cpuUsage );
 	mPerformanceDetails[0] =
-		String::format( "%d logical processors    %zu processes    %.0f seconds up",
-						sysInfo.cpuCount, processes.size(), sysInfo.uptimeSeconds );
+		String::format( mApp->getUI()
+							->i18n( "eproc_performance_cpu_details",
+									"%d logical processors    %zu processes    Uptime: %s" )
+							.toUtf8(),
+						sysInfo.cpuCount, processes.size(),
+						formatUptime( mApp->getUI(), sysInfo.uptimeSeconds ).toUtf8().c_str() );
 	mPerformanceSummaries[1] = String::format( "%.1f%% physical memory", memoryPercent );
 	mPerformanceDetails[1] =
 		String::format( "In use  %s    Available  %s    Total  %s    Swap  %s / %s",
