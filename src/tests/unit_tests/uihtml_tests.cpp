@@ -3566,6 +3566,104 @@ UTEST( UIHTML, MarkdownContextMenuCanBeExtended ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, MarkdownContextMenuCopiesLinkWithoutSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setURIFromURL( URI( "https://docs.example.com/guide/index.md" ) );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](../api/item?q=docs&lang=en#details) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	ASSERT_TRUE( anchor != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_FALSE( menu->getItemId( "copy" )->isEnabled() );
+	ASSERT_TRUE( menu->getItemId( "copy-link" ) != nullptr );
+	menu->getItemId( "copy-link" )->activate();
+	EXPECT_STDSTREQ( "https://docs.example.com/api/item?q=docs&lang=en#details",
+					 sceneNode->getWindow()->getClipboard()->getText() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, WebViewContextMenuCopiesLinkUsingDocumentURI ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setURIFromURL( URI( "https://outer.example.com/page" ) );
+	auto* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	auto* documentScene = webView->getDocumentSceneNode();
+	documentScene->setURIFromURL( URI( "https://docs.example.com/guide/index.html" ) );
+	documentScene->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML(
+			R"html(<html><body><p><a id="link" href="../api/item?q=docs&amp;lang=en#details">link</a></p></body></html>)html" ),
+		webView->getDocumentContainer() );
+	webView->getTextSelectionController()->onDocumentChanged();
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = documentScene->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( anchor != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	webView->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	auto* copyLink = menu->getItemId( "copy-link" );
+	ASSERT_TRUE( copyLink != nullptr );
+	copyLink->activate();
+	EXPECT_STDSTREQ( "https://docs.example.com/api/item?q=docs&lang=en#details",
+					 sceneNode->getWindow()->getClipboard()->getText() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuOmitsLinkForSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](https://example.com/page) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	ASSERT_TRUE( anchor != nullptr );
+	markdown->getTextSelectionController()->selectAll();
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "copy" )->isEnabled() );
+	EXPECT_TRUE( menu->getItemId( "copy-link" ) == nullptr );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuOmitsLinkForPlainText ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](https://example.com/page) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "copy-link" ) == nullptr );
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, MarkdownContextMenuDefersToChildHandlers ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();

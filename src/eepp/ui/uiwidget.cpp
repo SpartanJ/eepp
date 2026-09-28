@@ -2683,7 +2683,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::fromFloat( getSize().getHeight(), "dp" );
+	return String::fromFloat( getSize().getWidth(), "dp" );
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {

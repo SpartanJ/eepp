@@ -188,7 +188,7 @@ Important CSS3 features that are currently supported:
 
 * [Most of the background properties](https://developer.mozilla.org/en-US/docs/Web/CSS/background)
 
-See the [CSS Specification](docs/articles/cssspecification.md) for more information.
+See the [CSS Specification](docs/articles/css_specification.md) for more information.
 
 ## Write the CSS
 
@@ -267,9 +267,9 @@ For a complete example of this introduction you can look into:
 Also is important to notice that for applications that wants to use the default eepp UI theme and fonts you can simply take advantage of the EE::UI::UIApplication class which controls the initialization and loading of the core components of the UI. You can look at the simplest example at [src/examples/ui_application_hello_world/ui_application_hello_world.cpp](https://github.com/SpartanJ/eepp/blob/develop/src/examples/ui_application_hello_world/ui_application_hello_world.cpp).
 
 For applications with reactive state, typed input, validation, or observable collections, continue
-with the [UI Data Binding](uidatabinding.md) guide.
+with the [UI Data Binding](ui_databinding.md) guide.
 
-For interactive line charts, live data, grids, and tooltip examples, see [UI Charts](uicharts.md).
+For interactive line charts, live data, grids, and tooltip examples, see [UI Charts](ui_charts.md).
 
 ## Environment overrides
 

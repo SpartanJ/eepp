@@ -8,28 +8,40 @@ specification. Since CSS is widely used and documented, every feature that it's 
 standard will be directly linked to the Mozilla CSS documentation. If you are totally new to CSS
 please go the [Mozilla CSS portal](https://developer.mozilla.org/en-US/docs/Web/CSS).
 
-## Relevant differences with CSS standard
+## Relevant differences with the CSS standard
 
-* Layout properties are not supported (display, float, etc), since eepp layout system differs from
-the HTML+CSS specification (design decision).
+eepp uses the same CSS engine for native application widgets and for the HTML compatibility layer,
+but the layout model depends on the type of UI being styled.
 
-* [inheritance](https://developer.mozilla.org/en-US/docs/Web/CSS/Inheritance) is not supported,
-except for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*)
-(design decision).
+* Browser layout properties such as `display`, `float`, Flexbox, CSS Grid, and CSS positioning are
+  supported by the HTML compatibility layer. They do not define the layout of ordinary native eepp
+  application widgets. Native application UI uses eepp layout containers and properties such as
+  `layout-width`, `layout-height`, `layout-weight`, and `layout-gravity`. See
+  [`ui_authoring.md`](ui_authoring.md) and
+  [`ui_html_compatibility.md`](ui_html_compatibility.md).
 
-* [Attribute selector](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors)
-is not supported (probably will not be supported in the near future, since collides with some
-implementation decisions).
+* CSS inheritance is supported for properties explicitly defined by eepp as inheritable. CSS custom
+  properties also inherit through the widget hierarchy. Not every property necessarily has the same
+  inheritance semantics as a browser implementation.
 
-* CSS relative paths start from the process current working directory instead the relative path from
-the CSS file.
+* Attribute selectors are supported. For native widgets they operate on properties exposed by the
+  widget property system. HTML `data-*` attributes are also available to selectors on HTML widgets.
 
-* eepp CSS supports alternative path methods besides paths (resource locator to previously loaded
-resources by the process).
+* State-dependent style rollback is not yet a complete CSS computed-style rollback implementation.
+  When a pseudo-class or other volatile selector introduces a property that has no matching
+  stateless declaration, eepp attempts to preserve the previous value by serializing the current
+  widget property and using it as a fallback. This works for many properties, but restoration may
+  be incomplete when a property cannot be serialized, when a property first appears during a
+  transition between non-normal states, or when the original value came from dynamic/inherited
+  state that later changes.
 
-* eepp CSS supports [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel) unit `dp`.
+* Relative resource URLs are resolved against the relevant stylesheet/document base URI when one is
+  available. eepp also supports resource locators for resources already loaded by the application.
 
-* CSS files should be always UTF-8 encoded.
+* eepp CSS supports the `dp` device-independent pixel unit, together with the eepp-specific rounded
+  variants `dpr`, `dprd`, and `dpru`.
+
+* CSS files should always be UTF-8 encoded.
 
 ## CSS Selectors
 
@@ -1185,23 +1197,47 @@ Accommodates bottom margin of this element and top margin of anchor view.
 
 ### layout-weight
 
-Indicates how much of the extra space in the EE::UI::UILinearLayout (LinearLayout) is allocated to
-the element. Specify 0 if the element should not be stretched. Otherwise the extra pixels will be
-pro-rated among all views whose weight is greater than 0. The weight sum of all elements must be 1
-to fill the whole parent length. The weight is applied to the orientation that the LinearLayout uses.
-This property behaves the same as the [android:layout_weight](https://developer.android.com/reference/android/widget/LinearLayout.LayoutParams#attr_android:layout_weight)
-XML attribute in Android (for those who are familiar with it).
-LinearLayout supports assigning a weight to individual children. This attribute assigns an
-"importance" value to a element, and allows it to expand to fill any remaining space in the parent
-view. Element/widget default weight is zero.
-In order to work properly you must set the [layout-width](#layout-width) or the
-[layout-height](#layout-height) to `0` to the element that uses layout weight. If the parent is a
-horizontal LinearLayout the [layout-width](#layout-width) must be set to `0`, and if the parent if a
-vertical LinearLayout the [layout-height](#layout-height) must be set to `0`, in order to use the
-layout weight.
+Indicates how much of the remaining space in a `EE::UI::UILinearLayout` (LinearLayout) is allocated
+to the element along the layout orientation.
 
-* Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout)
-* Data Type: [number](#number-data-type) (normalized from `0` to `1`)
+A value of `0` means that the element does not participate in weighted space distribution.
+Positive values are treated as **relative weights**. The remaining space is distributed among all
+visible children with a positive weight proportionally to each child's weight:
+
+```text
+childSize = remainingSpace * childWeight / totalWeight
+```
+
+where `totalWeight` is the sum of all positive child weights.
+
+Weights do **not** need to be normalized or sum to `1`. For example, the following weight pairs are
+equivalent:
+
+```text
+1 / 3
+0.25 / 0.75
+25 / 75
+```
+
+The weight is applied to the axis corresponding to the `LinearLayout` orientation.
+
+For a horizontal `LinearLayout`, the weighted child should normally use:
+
+```text
+layout-width: 0;
+```
+
+For a vertical `LinearLayout`, the weighted child should normally use:
+
+```text
+layout-height: 0;
+```
+
+This allows the layout to assign the weighted dimension entirely from the available remaining
+space.
+
+* Applicable to: Any element child of a `EE::UI::UILinearLayout` (LinearLayout)
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 * Aliases: `layout_weight`, `lw8`
 

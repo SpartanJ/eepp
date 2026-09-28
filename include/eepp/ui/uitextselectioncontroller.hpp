@@ -74,7 +74,7 @@ class EE_API UITextSelectionController {
 
 	bool onMouseUpMessage( const NodeMessage* message );
 
-	bool showContextMenu( const Vector2i& position, Uint32 flags );
+	bool showContextMenu( const Vector2i& position, Uint32 flags, const Node* target = nullptr );
 
 	/** Consumes the pending click from a text drag so a link does not navigate on release. */
 	bool consumeSuppressedClick();

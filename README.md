@@ -250,9 +250,9 @@ the most basic widgets in a vertical linear layout display.
 </window>
 ```
 
-**UI introduction can be found [here](https://cdn.ensoft.dev/eepp-docs/page_uiintroduction.html)**.
+**UI introduction can be found [here](docs/articles/ui_introduction.md)**.
 
-**The UI data-binding guide can be found [here](docs/articles/uidatabinding.md).**
+**The UI data-binding guide can be found [here](docs/articles/ui_databinding.md).**
 
 **The runtime UI inspector guide can be found [here](docs/articles/ui_inspector.md).**
 
@@ -352,7 +352,7 @@ Here is a small example on how the CSS looks like:
 }
 ```
 
-**The complete CSS specification can be found in the docs: [here](https://cdn.ensoft.dev/eepp-docs/page_cssspecification.html).**
+**The complete CSS specification can be found in the docs: [here](docs/articles/css_specification.md).**
 
 **You can also check how a pure CSS theme looks like in eepp: [here](https://github.com/SpartanJ/eepp/blob/develop/bin/assets/ui/breeze.css).**
 

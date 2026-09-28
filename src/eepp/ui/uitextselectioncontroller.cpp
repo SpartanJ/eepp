@@ -13,6 +13,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextselectioncontroller.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
@@ -89,6 +90,19 @@ static bool nodeWithin( const Node* node, const Node* ancestor ) {
 			return true;
 	}
 	return false;
+}
+
+static const UIAnchorSpan* linkForNode( const Node* node, const Node* root ) {
+	for ( ; node; node = node->getParent() ) {
+		if ( node->isType( UI_TYPE_TEXTSPAN ) ) {
+			auto* span = node->asConstType<UITextSpan>();
+			if ( span->getElementTag() == "a" )
+				return static_cast<const UIAnchorSpan*>( span );
+		}
+		if ( node == root )
+			break;
+	}
+	return nullptr;
 }
 
 static bool precedesInTree( const Node* left, const Node* right ) {
@@ -769,18 +783,31 @@ bool UITextSelectionController::onMouseUpMessage( const NodeMessage* message ) {
 		mHost->getInput()
 			->getMousePosFromView( mHost->getUISceneNode()->getWindow()->getDefaultView() )
 			.asInt();
-	return showContextMenu( position, message->getFlags() );
+	return showContextMenu( position, message->getFlags(), message->getSender() );
 }
 
-bool UITextSelectionController::showContextMenu( const Vector2i& position, Uint32 flags ) {
+bool UITextSelectionController::showContextMenu( const Vector2i& position, Uint32 flags,
+												 const Node* target ) {
 	if ( mCurrentMenu || !mHost || !mHost->getUISceneNode() )
 		return false;
+	const bool selected = hasSelection();
+	std::string linkHref;
+	if ( !selected && target && nodeWithin( target, mRoot ) ) {
+		if ( const auto* link = linkForNode( target, mRoot ); link && !link->getHref().empty() ) {
+			linkHref =
+				link->getUISceneNode()->solveRelativePath( URI( link->getHref() ) ).toString();
+		}
+	}
 	auto* menu = UIPopUpMenu::New();
 	menu->setParent( mHost->getUISceneNode()->getRoot() );
 	menu->addClass( "text-selection-menu" );
 	auto* copy = menu->add( mHost->i18n( "uicodeeditor_copy", "Copy" ) );
 	copy->setId( "copy" );
-	copy->setEnabled( hasSelection() );
+	copy->setEnabled( selected );
+	if ( !linkHref.empty() ) {
+		auto* copyLink = menu->add( mHost->i18n( "uihtml_copy_link", "Copy Link" ) );
+		copyLink->setId( "copy-link" );
+	}
 	auto* selectAllItem = menu->add( mHost->i18n( "uicodeeditor_select_all", "Select All" ) );
 	selectAllItem->setId( "select-all" );
 	ContextMenuEvent event( mHost, menu, Event::OnCreateContextMenu, position, flags );
@@ -791,17 +818,20 @@ bool UITextSelectionController::showContextMenu( const Vector2i& position, Uint3
 	}
 	menu->setCloseOnHide( true );
 	menu->setCloseSubMenusOnClose( true );
-	mMenuItemConnection = menu->connect( Event::OnItemClicked, [this, menu]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) ||
-			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
-			return;
-		const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
-		if ( id == "copy" )
-			copySelection();
-		else if ( id == "select-all" )
-			selectAll();
-		menu->hide();
-	} );
+	mMenuItemConnection = menu->connect(
+		Event::OnItemClicked, [this, menu, linkHref = std::move( linkHref )]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) ||
+				 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
+				return;
+			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
+			if ( id == "copy" )
+				copySelection();
+			else if ( id == "copy-link" )
+				mHost->getUISceneNode()->getWindow()->getClipboard()->setText( linkHref );
+			else if ( id == "select-all" )
+				selectAll();
+			menu->hide();
+		} );
 	mMenuCloseConnection =
 		menu->connect( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
