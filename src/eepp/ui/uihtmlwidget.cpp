@@ -731,6 +731,11 @@ void UIHTMLWidget::collectStackingScopeItems( UIHTMLWidget* container, SmallVect
 
 void UIHTMLWidget::collectStackingScopeChild( Node* child, SmallVector<Node*, 16>& out,
 											  bool directChildren ) const {
+	// A promoted positioned descendant must not escape a hidden ancestor's
+	// subtree. The normal node traversal stops at that ancestor, while this
+	// flattened paint list would otherwise visit and paint its descendants.
+	if ( !child->isVisible() )
+		return;
 	if ( directChildren )
 		out.push_back( child );
 	if ( !child->isType( UI_TYPE_HTML_WIDGET ) )

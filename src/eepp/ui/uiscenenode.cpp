@@ -206,6 +206,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 }
 
 UISceneNode::~UISceneNode() {
+	onClose();
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
 		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
@@ -422,8 +423,8 @@ UISceneNode* UISceneNode::setSmoothScrollEnabled( bool enabled, bool applyNow ) 
 	rootScene->mSmoothScrollEnabled = enabled;
 	if ( applyNow ) {
 		const auto applyToScene = [enabled]( auto&& self, UISceneNode* scene ) -> void {
-			for ( auto* widget : scene->findAllByType<UITouchDraggableWidget>(
-					 UI_TYPE_TOUCH_DRAGGABLE_WIDGET ) )
+			for ( auto* widget :
+				  scene->findAllByType<UITouchDraggableWidget>( UI_TYPE_TOUCH_DRAGGABLE_WIDGET ) )
 				widget->setSmoothScrollEnabled( enabled );
 			for ( auto* childScene : scene->mChildUISceneNodes )
 				self( self, childScene );

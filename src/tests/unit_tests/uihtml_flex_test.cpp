@@ -1533,6 +1533,36 @@ UTEST( FlexContainer, iterativeFlexResolutionWithMinWidths ) {
 	Engine::destroySingleton();
 }
 
+UTEST( FlexContainer, explicitZeroMinWidthOverridesIntrinsicMinimum ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "Flex explicit minimum test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	init_flex_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			.row { display: flex; width: 1000px; gap: 64px; padding: 0 48px;
+			       box-sizing: border-box; }
+			.text { flex: 0 0 320px; }
+			.screenshot { flex: 1.2; min-width: 0; }
+			.wide-content { width: 904px; height: 10px; }
+		</style></head><body>
+			<div class="row"><div class="text">Text</div><div class="screenshot">
+				<div class="wide-content"></div>
+			</div></div>
+		</body></html>
+	)html" ) );
+	scene->updateDirtyLayouts();
+	auto* row = scene->getRoot()->findByClass( "row" )->asType<UIWidget>();
+	auto* screenshot = scene->getRoot()->findByClass( "screenshot" )->asType<UIWidget>();
+	ASSERT_TRUE( row != nullptr && screenshot != nullptr );
+	EXPECT_LE( screenshot->getPixelsPosition().x + screenshot->getPixelsSize().getWidth(),
+			   row->getPixelsSize().getWidth() - 48.f + 2.f );
+	EXPECT_NEAR( screenshot->getPixelsSize().getWidth(), 520.f, 5.f );
+	Engine::destroySingleton();
+}
+
 UTEST( FlexContainer, crossAxisAutoMargins ) {
 	// G4: margin: auto on the cross axis should center/position the item
 	// within the line before align-self applies (§8.1).

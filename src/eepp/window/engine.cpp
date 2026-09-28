@@ -20,6 +20,7 @@
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uiinspectorserver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
@@ -348,6 +349,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
+	UIInspectorServer::notifyWindowDestroyed( window );
 	mWindows.erase( window->getWindowID() );
 
 	if ( window == mWindow ) {
