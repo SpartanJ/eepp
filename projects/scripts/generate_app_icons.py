@@ -4,9 +4,10 @@
 For every application this derives the 256x256 .png runtime window icon and,
 where platform packaging needs them, the Windows .ico, the MinGW .res/.x64.res
 COFF resource objects, and the macOS .icns container. The shared PNG uses
-Breeze-like small-icon margins; the macOS runtime PNG and ICNS use separate
-transparent insets to fit neighboring Dock icons. Windows ICO entries retain
-their original full-size artwork.
+Breeze-like small-icon margins; the macOS runtime PNG and larger ICNS entries
+use matching transparent insets to fit neighboring Dock icons. Smaller ICNS
+entries keep Breeze-like margins. Windows ICO entries retain their original
+full-size artwork.
 
 The binary layouts intentionally mirror the historical artifacts:
 
@@ -38,23 +39,20 @@ import zlib
 
 PNG_SIZE = 256
 # Breeze's colorful icon grid uses 2px margins at 32px and 4px at 64px.
-# Larger macOS icons get progressively more breathing room. These are visual
+# Larger macOS icons match the runtime PNG's artwork bounds so the Dock icon
+# does not change size when the application starts or exits. These are visual
 # design choices, not mandated dimensions in Apple's icon guidelines.
 SMALL_ARTWORK_FRACTION = 0.875
-MEDIUM_ARTWORK_FRACTION = 0.85
-LARGE_ARTWORK_FRACTION = 0.824
-# SDL's Cocoa backend displays the single runtime PNG larger than .icns icons
-# in the Dock. This ratio brings its visible bounds in line with neighboring
-# icons in the reference Dock screenshot.
-MACOS_RUNTIME_ARTWORK_FRACTION = 0.8
+# SDL's Cocoa backend uses this single PNG while the app is running. Match its
+# artwork fraction in the larger ICNS entries so the Dock shows the same size
+# for the running and closed app.
+MACOS_RUNTIME_ARTWORK_FRACTION = 0.824
 
 
 def macos_artwork_fraction( size ):
     if size <= 64:
         return SMALL_ARTWORK_FRACTION
-    if size <= 128:
-        return MEDIUM_ARTWORK_FRACTION
-    return LARGE_ARTWORK_FRACTION
+    return MACOS_RUNTIME_ARTWORK_FRACTION
 
 # Sizes requested from the .icns entry table below (plus the ICO sizes and
 # PNG_SIZE), rendered natively from the SVG instead of resampled.
