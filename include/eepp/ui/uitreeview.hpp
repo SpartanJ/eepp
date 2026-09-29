@@ -64,6 +64,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void collapseAll( const ModelIndex& index = {} );
 
+	virtual void selectAll();
+
 	UIIcon* getExpandIcon() const;
 
 	void setExpandedIcon( UIIcon* expandIcon );

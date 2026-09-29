@@ -31,7 +31,7 @@ std::vector<PropertyId> UIHTMLTable::getPropertiesImplemented() const {
 }
 
 std::string UIHTMLTable::getPropertyString( const PropertyDefinition* propertyDef,
-											const Uint32& state ) const {
+											const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -55,7 +55,7 @@ std::string UIHTMLTable::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::TableLayout:
 			return mTopEq;
 		default:
-			return UIHTMLWidget::getPropertyString( propertyDef );
+			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -223,7 +223,7 @@ std::vector<PropertyId> UIHTMLTableCell::getPropertiesImplemented() const {
 }
 
 std::string UIHTMLTableCell::getPropertyString( const PropertyDefinition* propertyDef,
-												const Uint32& state ) const {
+												const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -231,7 +231,7 @@ std::string UIHTMLTableCell::getPropertyString( const PropertyDefinition* proper
 		case PropertyId::ColSpan:
 			return String::format( "%lld", mColSpan );
 		default:
-			return UIHTMLWidget::getPropertyString( propertyDef );
+			return UIHTMLWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

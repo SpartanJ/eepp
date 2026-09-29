@@ -27,13 +27,12 @@ but the layout model depends on the type of UI being styled.
 * Attribute selectors are supported. For native widgets they operate on properties exposed by the
   widget property system. HTML `data-*` attributes are also available to selectors on HTML widgets.
 
-* State-dependent style rollback is not yet a complete CSS computed-style rollback implementation.
-  When a pseudo-class or other volatile selector introduces a property that has no matching
-  stateless declaration, eepp attempts to preserve the previous value by serializing the current
-  widget property and using it as a fallback. This works for many properties, but restoration may
-  be incomplete when a property cannot be serialized, when a property first appears during a
-  transition between non-normal states, or when the original value came from dynamic/inherited
-  state that later changes.
+* When a pseudo-class or other volatile selector stops matching, eepp restores the current
+  underlying local or stylesheet declaration. If there is no such declaration, it restores the
+  current inherited value or a saved native widget value. Native fallback requires the widget to
+  serialize that property through `getPropertyString()`; properties without a serializable native
+  value may not roll back. Application changes to a property while a state-dependent declaration
+  overrides it have no defined rollback behavior.
 
 * Relative resource URLs are resolved against the relevant stylesheet/document base URI when one is
   available. eepp also supports resource locators for resources already loaded by the application.

@@ -145,6 +145,14 @@ class EE_API UIStyle : public UIState {
 	 * needs no container allocation; nested slots are retained for later reuse. */
 	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
 	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
+	struct PropertyFallback {
+		CSS::PropertyId propertyId;
+		Uint32 index;
+		const CSS::PropertyDefinition* definition;
+		std::string nativeValue;
+		bool inherited;
+	};
+	SmallVector<PropertyFallback, 0> mPropertyFallbacks;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
@@ -175,7 +183,18 @@ class EE_API UIStyle : public UIState {
 	void removeRelatedWidgets();
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
-								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+								  std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								  bool captureFallback = true );
+
+	void capturePropertyFallback( const CSS::StyleSheetProperty& property );
+
+	bool isTransientProperty( CSS::PropertyId propertyId ) const;
+
+	bool restorePropertyFallbacks( CSS::PropertyId propertyId,
+								   std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								   Uint32 firstIndex = 0 );
+
+	void clearPropertyFallbacks( CSS::PropertyId propertyId );
 
 	void updateAnimationsPlayState();
 

@@ -1,4 +1,5 @@
 #include "eproc.hpp"
+#include "process_view.hpp"
 #include "settingspanel.hpp"
 
 #include <args/args.hxx>
@@ -6,6 +7,7 @@
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
@@ -604,6 +606,8 @@ bool App::init() {
 		} );
 	}
 
+	UIWidgetCreator::registerWidget( "eproc-table-view", ProcessTableView::New );
+	UIWidgetCreator::registerWidget( "eproc-tree-view", ProcessTreeView::New );
 	mRoot = ui->loadLayoutFromString( R"xml(
 	<style>
 	<![CDATA[
@@ -785,10 +789,10 @@ bool App::init() {
 					<TextInput id="search_input" lw="0" lw8="1" lh="wc" margin-right="4dp" />
 					<DropDownList id="filter_dropdown" lw="120dp" lh="wc" margin-right="4dp" />
 				</hbox>
-				<TableView id="process_table" lw="mp" lh="0" lw8="1"
+				<eproc-table-view id="process_table" lw="mp" lh="0" lw8="1"
 					 column-width-mode-menu="true"
 					 table-flags="headers|row-search|focus-on-selection|auto-columns" />
-				<TreeView id="process_tree" lw="mp" lh="0" lw8="1" visible="false"
+				<eproc-tree-view id="process_tree" lw="mp" lh="0" lw8="1" visible="false"
 					 column-width-mode-menu="true"
 					 table-flags="headers|row-search|focus-on-selection|auto-columns" />
 				<hbox id="status_bar" lw="mp" lh="wc" padding="4dp">
@@ -1075,6 +1079,8 @@ void App::setupUI() {
 	mFilterDropdown = mRoot->find<UIDropDownList>( "filter_dropdown" );
 	mTableView = mRoot->find<UITableView>( "process_table" );
 	mTreeView = mRoot->find<UITreeView>( "process_tree" );
+	static_cast<ProcessTableView*>( mTableView )->setSearchInput( mSearchInput );
+	static_cast<ProcessTreeView*>( mTreeView )->setSearchInput( mSearchInput );
 	mStatusText = mRoot->find<UITextView>( "process_count" );
 	mCpuText = mRoot->find<UITextView>( "cpu_text" );
 	mMemText = mRoot->find<UITextView>( "mem_text" );
@@ -1117,8 +1123,15 @@ void App::setupUI() {
 	if ( mEndProcessBtn )
 		mEndProcessBtn->onClick( [this]( const MouseEvent* ) { onEndProcess(); } );
 
-	if ( mSearchInput )
+	if ( mSearchInput ) {
 		mSearchInput->on( Event::OnTextChanged, [this]( const Event* ) { onSearchChanged(); } );
+		mSearchInput->on( Event::KeyDown, [this]( const Event* event ) {
+			const KeyEvent* key = event->asKeyEvent();
+			if ( key->getKeyCode() != KEY_DOWN || key->getSanitizedMod() != KEYMOD_NONE )
+				return;
+			focusFirstProcessRow( activeProcessView() );
+		} );
+	}
 
 	if ( mFilterDropdown )
 		mFilterDropdown->on( Event::OnItemSelected, [this]( const Event* ) { onFilterChanged(); } );
@@ -1503,6 +1516,13 @@ void App::setupProcessTable() {
 		view->setColumnWidth( ProcessModel::ColIcon, PixelDensity::dpToPx( 26 ) );
 
 		view->setOnSelectionChange( [this]() { onSelectionChange(); } );
+		view->on( Event::KeyDown, [this, view]( const Event* event ) {
+			const KeyEvent* key = event->asKeyEvent();
+			if ( view == activeProcessView() && key->getKeyCode() == KEY_A &&
+				 ( key->getSanitizedMod() & KeyMod::getDefaultModifier() ) && !view->isEditing() ) {
+				view->selectAll();
+			}
+		} );
 		view->onModelEvent( [this]( const ModelEvent* event ) {
 			if ( event->getModelEventType() == ModelEventType::OpenMenu )
 				showProcessContextMenu( event->getModelIndex() );
@@ -1994,6 +2014,20 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 	signalMenu->setId( "process_signal_menu" );
 	for ( const auto& item : signalItems )
 		signalMenu->add( mApp->getUI()->i18n( item.key, item.label ) )->setId( item.id );
+	// Menu item events go to their immediate menu, not the parent context menu.
+	signalMenu->on( Event::OnItemClicked, [this, pids]( const Event* event ) {
+		const auto* item = event->getNode()->asType<UIMenuItem>();
+		if ( !item )
+			return;
+		for ( const auto& sig : signalItems ) {
+			if ( item->getId() == sig.id ) {
+				requestSignal( pids, sig.signal,
+							   mApp->getUI()->i18n( "eproc_send_signal", "Send Signal" ).toUtf8(),
+							   false );
+				break;
+			}
+		}
+	} );
 	menu->addSubMenu( mApp->getUI()->i18n( "eproc_send_signal", "Send Signal" ), nullptr,
 					  signalMenu )
 		->setId( "send-signal" );
@@ -2017,41 +2051,30 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 	menu->add( forceKillLabel( mApp->getUI(), pids.size() ) )->setId( "kill-process" );
 #endif
 
-	menu->on( Event::OnItemClicked, [this, pids, parentPid, tracerPid,
-									 copyCommandLine =
-										 std::move( copyCommandLine )]( const Event* event ) {
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( !item )
-			return;
+	menu->on( Event::OnItemClicked,
+			  [this, pids, parentPid, tracerPid,
+			   copyCommandLine = std::move( copyCommandLine )]( const Event* event ) {
+				  UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+				  if ( !item )
+					  return;
 
-		const std::string id( item->getId() );
+				  const std::string id( item->getId() );
 
-		if ( id == "jump-parent" ) {
-			selectProcess( parentPid );
-		} else if ( id == "jump-tracer" ) {
-			selectProcess( tracerPid );
-		} else if ( id == "copy-command-line" ) {
-			if ( !copyCommandLine.empty() && mApp->getWindow()->getClipboard() )
-				mApp->getWindow()->getClipboard()->setText( copyCommandLine );
-		} else if ( id == "end-process" ) {
-			requestSignal( pids, kEndProcessSignal,
-						   endProcessLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
-		} else if ( id == "kill-process" ) {
-			requestSignal( pids, kForceKillSignal,
-						   forceKillLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
-		} else {
-			// Signals picked explicitly from the submenu are sent straight away: the original
-			// only asks for confirmation on End Process and Forcibly Kill.
-			for ( const auto& sig : signalItems ) {
-				if ( id == sig.id ) {
-					requestSignal(
-						pids, sig.signal,
-						mApp->getUI()->i18n( "eproc_send_signal", "Send Signal" ).toUtf8(), false );
-					break;
-				}
-			}
-		}
-	} );
+				  if ( id == "jump-parent" ) {
+					  selectProcess( parentPid );
+				  } else if ( id == "jump-tracer" ) {
+					  selectProcess( tracerPid );
+				  } else if ( id == "copy-command-line" ) {
+					  if ( !copyCommandLine.empty() && mApp->getWindow()->getClipboard() )
+						  mApp->getWindow()->getClipboard()->setText( copyCommandLine );
+				  } else if ( id == "end-process" ) {
+					  requestSignal( pids, kEndProcessSignal,
+									 endProcessLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
+				  } else if ( id == "kill-process" ) {
+					  requestSignal( pids, kForceKillSignal,
+									 forceKillLabel( mApp->getUI(), pids.size() ).toUtf8(), true );
+				  }
+			  } );
 
 	Vector2f pos( mApp->getWindow()->getInput()->getMousePos().asFloat() );
 	menu->nodeToWorldTranslation( pos );

@@ -534,7 +534,11 @@ Use pseudo-classes for widget state managed by the UI system:
 }
 ```
 
-State changes cause eepp to recompute the matching style.
+State changes cause eepp to recompute the matching style. When a state-dependent declaration stops
+matching, a lower local or stylesheet declaration takes effect again. If there is no lower
+declaration, eepp restores the current inherited value or the widget's saved native value. Native
+rollback requires `getPropertyString()` to serialize the property. Changes made by application code
+to a property while a state rule overrides it have no defined rollback behavior.
 
 Common native state pseudo-classes include:
 

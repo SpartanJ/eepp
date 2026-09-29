@@ -349,7 +349,7 @@ class EE_API UIHTMLWidget : public UILayout {
 	using UIWidget::getPropertyString;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& state = 0 ) const;
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 

@@ -94,6 +94,18 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	}
 }
 
+void UITreeView::selectAll() {
+	if ( !getModel() )
+		return;
+	std::vector<ModelIndex> indexes;
+	indexes.reserve( getItemCount() );
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		indexes.push_back( index );
+		return IterationDecision::Continue;
+	} );
+	getSelection().set( indexes );
+}
+
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
 	if ( !getModel() ) {
 		updateContentSize();

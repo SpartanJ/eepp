@@ -1191,7 +1191,7 @@ std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 }
 
 std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& state ) const {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -1271,7 +1271,7 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::JustifySelf:
 			return CSSJustifySelfHelper::toString( getJustifySelf() );
 		default:
-			return UILayout::getPropertyString( propertyDef );
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

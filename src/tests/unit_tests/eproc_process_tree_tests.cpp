@@ -57,8 +57,20 @@ UTEST( EProcProcessTree, ParentAndChildIndexesFollowPids ) {
 	view->setPixelsSize( 500, 200 );
 	view->setModel( tree );
 	EXPECT_TRUE( view->getHeaderColumn( ProcessModel::ColMemory ) != nullptr );
+	view->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
+	view->selectAll();
+	EXPECT_EQ( view->getSelection().size(), 2 );
+	EXPECT_TRUE( view->getSelection().contains( init ) );
+	EXPECT_FALSE( view->getSelection().contains( child ) );
 	view->setExpanded( init, true );
+	view->selectAll();
+	EXPECT_EQ( view->getSelection().size(), 3 );
+	EXPECT_TRUE( view->getSelection().contains( child ) );
+	EXPECT_FALSE( view->getSelection().contains( grandchild ) );
 	view->setExpanded( child, true );
+	view->selectAll();
+	EXPECT_EQ( view->getSelection().size(), 4 );
+	EXPECT_TRUE( view->getSelection().contains( grandchild ) );
 	EXPECT_TRUE( view->isExpanded( init ) );
 	EXPECT_TRUE( view->isExpanded( child ) );
 }
