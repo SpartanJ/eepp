@@ -840,13 +840,17 @@ int App::run( int argc, char* argv[] ) {
 	appSettings.baseFont = uiFont.get();
 	const Int32 frameRateLimit =
 		config->window.benchmarkMode ? 0 : static_cast<Int32>( config->window.maxFPS );
-	UIApplication app( WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
-									   WindowStyle::Default, WindowBackend::Default, 32,
-									   resPath + "icon/eterm.png" ),
-					   appSettings,
-					   ContextSettings( config->window.vsync, frameRateLimit,
-										config->window.multisamples,
-										config->window.rendererVersion ) );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "icon/eterm-macos.png";
+#else
+	const char* windowIcon = "icon/eterm.png";
+#endif
+	UIApplication app(
+		WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
+						WindowStyle::Default, WindowBackend::Default, 32, resPath + windowIcon ),
+		appSettings,
+		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
+						 config->window.rendererVersion ) );
 	appWindow = app.getWindow();
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )

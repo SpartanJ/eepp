@@ -3,7 +3,10 @@
 
 For every application this derives the 256x256 .png runtime window icon and,
 where platform packaging needs them, the Windows .ico, the MinGW .res/.x64.res
-COFF resource objects, and the macOS .icns container.
+COFF resource objects, and the macOS .icns container. The shared PNG uses
+Breeze-like small-icon margins; the macOS runtime PNG and ICNS use separate
+transparent insets to fit neighboring Dock icons. Windows ICO entries retain
+their original full-size artwork.
 
 The binary layouts intentionally mirror the historical artifacts:
 
@@ -18,8 +21,8 @@ The binary layouts intentionally mirror the historical artifacts:
   .res     compiled from <app>.rc + <app>.ico with mingw windres, for both the
            pe-i386 and pe-x86-64 targets.
 
-Requires: python3 (stdlib only), inkscape, and a mingw-w64 windres (found as
-$WINDRES, x86_64-w64-mingw32-windres, or windres).
+Requires: python3 (stdlib only), inkscape or rsvg-convert, and a mingw-w64
+windres for Windows resources ($WINDRES, x86_64-w64-mingw32-windres, or windres).
 """
 
 import argparse
@@ -30,9 +33,28 @@ import struct
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 import zlib
 
 PNG_SIZE = 256
+# Breeze's colorful icon grid uses 2px margins at 32px and 4px at 64px.
+# Larger macOS icons get progressively more breathing room. These are visual
+# design choices, not mandated dimensions in Apple's icon guidelines.
+SMALL_ARTWORK_FRACTION = 0.875
+MEDIUM_ARTWORK_FRACTION = 0.85
+LARGE_ARTWORK_FRACTION = 0.824
+# SDL's Cocoa backend displays the single runtime PNG larger than .icns icons
+# in the Dock. This ratio brings its visible bounds in line with neighboring
+# icons in the reference Dock screenshot.
+MACOS_RUNTIME_ARTWORK_FRACTION = 0.8
+
+
+def macos_artwork_fraction( size ):
+    if size <= 64:
+        return SMALL_ARTWORK_FRACTION
+    if size <= 128:
+        return MEDIUM_ARTWORK_FRACTION
+    return LARGE_ARTWORK_FRACTION
 
 # Sizes requested from the .icns entry table below (plus the ICO sizes and
 # PNG_SIZE), rendered natively from the SVG instead of resampled.
@@ -239,14 +261,30 @@ def build_icns( pngs ):
     return b'icns' + struct.pack( '>I', 8 + len( body ) ) + body
 
 
-def render_png( inkscape, svg, size, out_path ):
-    subprocess.run(
-        [inkscape, '--export-type=png', '--export-area-page',
-         f'--export-width={size}', f'--export-height={size}',
-         '--export-background-opacity=0', f'--export-filename={out_path}', svg],
-        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL )
+def render_png( renderer, svg, size, out_path ):
+    if os.path.basename( renderer ) == 'inkscape':
+        command = [renderer, '--export-type=png', '--export-area-page',
+                   f'--export-width={size}', f'--export-height={size}',
+                   '--export-background-opacity=0', f'--export-filename={out_path}', svg]
+    else:
+        command = [renderer, '-w', str( size ), '-h', str( size ), '-o', out_path, svg]
+    subprocess.run( command, check=True, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL )
     with open( out_path, 'rb' ) as handle:
         return handle.read()
+
+
+def inset_svg( source, destination, fraction ):
+    """Place the original artwork in the center of a transparent macOS canvas."""
+
+    tree = ET.parse( source )
+    root = tree.getroot()
+    x, y, width, height = map( float, root.attrib['viewBox'].split() )
+    margin_x = width * ( 1 / fraction - 1 ) / 2
+    margin_y = height * ( 1 / fraction - 1 ) / 2
+    root.set( 'viewBox', f'{x - margin_x} {y - margin_y} '
+                         f'{width + 2 * margin_x} {height + 2 * margin_y}' )
+    tree.write( destination, encoding='utf-8', xml_declaration=True )
 
 
 def find_windres():
@@ -257,29 +295,42 @@ def find_windres():
     raise SystemExit( 'windres not found (install mingw-w64 binutils or set $WINDRES)' )
 
 
-def generate( app, icon_dir, tmp_dir, inkscape, windres ):
+def generate( app, icon_dir, tmp_dir, renderer, windres, macos_only ):
     spec = APPS[app]
-    icns_sizes = {size for _, size, _ in ICNS_ENTRIES}
-    needed = set( spec['ico'] ) | {PNG_SIZE}
-    if spec['icns']:
-        needed |= icns_sizes
-    pngs = {}
-    for size in sorted( needed ):
-        pngs[size] = render_png( inkscape, os.path.join( icon_dir, spec['svg'] ), size,
+    source = os.path.join( icon_dir, spec['svg'] )
+    written = []
+    if not macos_only:
+        needed = set( spec['ico'] ) | {PNG_SIZE}
+        pngs = {size: render_png( renderer, source, size,
                                  os.path.join( tmp_dir, f'{app}-{size}.png' ) )
-
-    written = [f'{app}.png']
-    with open( os.path.join( icon_dir, f'{app}.png' ), 'wb' ) as handle:
-        handle.write( pngs[PNG_SIZE] )
-    if spec['ico']:
-        with open( os.path.join( icon_dir, f'{app}.ico' ), 'wb' ) as handle:
-            handle.write( build_ico( pngs, spec['ico'] ) )
-        written.append( f'{app}.ico' )
+                for size in sorted( needed )}
+        if spec['ico']:
+            with open( os.path.join( icon_dir, f'{app}.ico' ), 'wb' ) as handle:
+                handle.write( build_ico( pngs, spec['ico'] ) )
+            written.append( f'{app}.ico' )
     if spec['icns']:
+        icns_sizes = {size for _, size, _ in ICNS_ENTRIES if size}
+        macos_pngs = {}
+        for size in sorted( icns_sizes ):
+            macos_svg = os.path.join( tmp_dir, f'{app}-macos-{size}.svg' )
+            inset_svg( source, macos_svg, macos_artwork_fraction( size ) )
+            macos_pngs[size] = render_png( renderer, macos_svg, size,
+                                           os.path.join( tmp_dir, f'{app}-macos-{size}.png' ) )
+        shared_svg = os.path.join( tmp_dir, f'{app}-shared.svg' )
+        inset_svg( source, shared_svg, SMALL_ARTWORK_FRACTION )
+        with open( os.path.join( icon_dir, f'{app}.png' ), 'wb' ) as handle:
+            handle.write( render_png( renderer, shared_svg, PNG_SIZE,
+                                      os.path.join( tmp_dir, f'{app}-shared.png' ) ) )
+        # SDL_SetWindowIcon uses this single PNG for the running Dock icon.
+        runtime_svg = os.path.join( tmp_dir, f'{app}-runtime.svg' )
+        inset_svg( source, runtime_svg, MACOS_RUNTIME_ARTWORK_FRACTION )
+        with open( os.path.join( icon_dir, f'{app}-macos.png' ), 'wb' ) as handle:
+            handle.write( render_png( renderer, runtime_svg, PNG_SIZE,
+                                      os.path.join( tmp_dir, f'{app}-runtime.png' ) ) )
         with open( os.path.join( icon_dir, f'{app}.icns' ), 'wb' ) as handle:
-            handle.write( build_icns( pngs ) )
-        written.append( f'{app}.icns' )
-    if spec['res']:
+            handle.write( build_icns( macos_pngs ) )
+        written.extend( ( f'{app}.png', f'{app}-macos.png', f'{app}.icns' ) )
+    if spec['res'] and not macos_only:
         for target, output in ( ( 'pe-i386', f'{app}.res' ), ( 'pe-x86-64', f'{app}.x64.res' ) ):
             subprocess.run( [windres, f'--target={target}', '-O', 'coff', f'{app}.rc', output],
                             check=True, cwd=icon_dir )
@@ -292,20 +343,22 @@ def main():
                                       formatter_class=argparse.RawDescriptionHelpFormatter )
     parser.add_argument( '--app', action='append', choices=sorted( APPS ),
                          help='application to regenerate (repeatable; default: all)' )
+    parser.add_argument( '--macos-only', action='store_true',
+                         help='regenerate macOS .icns plus shared and macOS runtime PNG icons' )
     args = parser.parse_args()
 
     script_dir = os.path.dirname( os.path.abspath( __file__ ) )
     icon_dir = os.path.join( os.path.abspath( os.path.join( script_dir, '..', '..' ) ),
                              'bin', 'assets', 'icon' )
-    inkscape = shutil.which( 'inkscape' )
-    if not inkscape:
-        raise SystemExit( 'inkscape not found' )
+    renderer = shutil.which( 'inkscape' ) or shutil.which( 'rsvg-convert' )
+    if not renderer:
+        raise SystemExit( 'inkscape or rsvg-convert not found' )
     apps = args.app or list( APPS )
-    windres = find_windres() if any( APPS[app]['res'] for app in apps ) else None
+    windres = find_windres() if not args.macos_only and any( APPS[app]['res'] for app in apps ) else None
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         for app in apps:
-            generate( app, icon_dir, tmp_dir, inkscape, windres )
+            generate( app, icon_dir, tmp_dir, renderer, windres, args.macos_only )
     return 0
 
 

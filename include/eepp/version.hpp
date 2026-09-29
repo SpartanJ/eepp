@@ -4,10 +4,10 @@
 #include <eepp/config.hpp>
 #include <string>
 
-#define EEPP_MAJOR_VERSION 4
+#define EEPP_MAJOR_VERSION 5
 #define EEPP_MINOR_VERSION 0
 #define EEPP_PATCH_LEVEL 0
-#define EEPP_CODENAME "Asādhāraṇa"
+#define EEPP_CODENAME "Kittima-attā"
 
 /** The compiled version of the library */
 #define EEPP_VERSION( x )             \

@@ -53,6 +53,7 @@ RESOURCES_PATH="ecode.app/Contents/Resources"
 bash ../../scripts/copy_ecode_assets.sh ../../bin $RESOURCES_PATH || exit
 mkdir -p ecode.app/Contents/MacOS/
 cp ../../../bin/assets/icon/ecode.icns $RESOURCES_PATH/ecode.icns
+cp ../../../bin/assets/icon/ecode-macos.png $RESOURCES_PATH/assets/icon/ecode-macos.png
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')

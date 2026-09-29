@@ -566,8 +566,13 @@ bool App::init() {
 		storedSize.getWidth() > 0 ? static_cast<Uint32>( storedSize.getWidth() ) : 1280;
 	const Uint32 windowHeight =
 		storedSize.getHeight() > 0 ? static_cast<Uint32>( storedSize.getHeight() ) : 720;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "assets/icon/eproc-macos.png";
+#else
+	const char* windowIcon = "assets/icon/eproc.png";
+#endif
 	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
-					   32, Sys::getProcessPath() + "assets/icon/eproc.png" );
+					   32, Sys::getProcessPath() + windowIcon );
 	ContextSettings ctx;
 	ctx.Multisamples = mConfig->multisamples;
 	ctx.VSync = mConfig->vsync;
