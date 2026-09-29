@@ -130,6 +130,30 @@ UTEST( UIHTMLForm, submitPOST ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLForm, emptyActionSubmitsToCurrentDocumentURL ) {
+	auto* sceneNode = initFormTest( "Form Empty Action Test" );
+	sceneNode->setURIFromURL( URI( "https://news.ycombinator.com/login?goto=news" ) );
+	NavigationRequest intercepted;
+	sceneNode->setNavigationInterceptorCb( [&]( const NavigationRequest& request ) {
+		intercepted = request;
+		return true;
+	} );
+	auto* form = UIHTMLForm::New();
+	form->setParent( sceneNode->getRoot() );
+	form->setMethod( "post" );
+	auto* account = UIHTMLInput::New();
+	account->setParent( form );
+	account->setInputType( "text" );
+	account->setStyleSheetInlineProperty( "name", "acct" );
+	static_cast<UITextInput*>( account->getChildWidget() )->setText( "example" );
+	form->submit();
+	EXPECT_TRUE( intercepted.uri.toString() == "https://news.ycombinator.com/login?goto=news" );
+	EXPECT_TRUE( intercepted.method == "POST" );
+	EXPECT_TRUE( intercepted.body.find( "acct=example" ) != std::string::npos );
+	EXPECT_TRUE( intercepted.source == form );
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLForm, getValueCheckbox ) {
 	auto* sceneNode = initFormTest( "Form Checkbox Value" );
 

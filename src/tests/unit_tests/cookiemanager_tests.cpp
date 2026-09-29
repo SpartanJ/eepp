@@ -1,6 +1,8 @@
 #include "utest.h"
 
 #include <eepp/network/cookiemanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 
 using namespace EE;
 using namespace EE::Network;
@@ -73,4 +75,31 @@ UTEST( CookieManager, storeFromRawHeader ) {
 	CookieManager cm;
 	cm.storeCookiesFromHeader( "example.com", "key=value; Path=/" );
 	EXPECT_TRUE( cm.getCookieHeader( "example.com" ) == "key=value" );
+}
+
+UTEST( CookieManager, clearDomain ) {
+	CookieManager cm;
+	cm.storeCookiesFromHeader( "one.example", "a=1" );
+	cm.storeCookiesFromHeader( "two.example", "b=2" );
+	cm.clearDomain( "one.example" );
+	EXPECT_FALSE( cm.hasCookie( "one.example" ) );
+	EXPECT_TRUE( cm.hasCookie( "two.example" ) );
+}
+
+UTEST( CookieManager, persistence ) {
+	const std::string path = Sys::getTempPath() + "eepp_cookies_test.txt";
+	CookieManager saved;
+	saved.storeCookiesFromHeader( "one.example", "name=value with spaces" );
+	saved.storeCookiesFromHeader( "two.example", "other=\"quoted\"" );
+	ASSERT_TRUE( saved.saveToFile( path ) );
+	CookieManager loaded;
+	ASSERT_TRUE( loaded.loadFromFile( path ) );
+	EXPECT_TRUE( loaded.getCookieHeader( "one.example" ) == "name=value with spaces" );
+	EXPECT_TRUE( loaded.getCookieHeader( "two.example" ) == "other=\"quoted\"" );
+	saved.storeCookiesFromHeader( "one.example", "name=replaced" );
+	ASSERT_TRUE( saved.saveToFile( path ) );
+	ASSERT_TRUE( loaded.loadFromFile( path ) );
+	EXPECT_TRUE( loaded.getCookieHeader( "one.example" ) == "name=replaced" );
+	EXPECT_FALSE( FileSystem::fileExists( path + ".tmp" ) );
+	FileSystem::fileRemove( path );
 }

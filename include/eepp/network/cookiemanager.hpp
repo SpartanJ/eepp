@@ -25,6 +25,14 @@ class EE_API CookieManager {
 	/** Remove all stored cookies. */
 	void clear();
 
+	/** Remove cookies stored for exactly this domain. */
+	void clearDomain( const std::string& domain );
+
+	/** Load or save this jar to a versioned file. Loading replaces the current contents. */
+	bool loadFromFile( const std::string& path );
+
+	bool saveToFile( const std::string& path ) const;
+
 	/** @return The number of cookie entries across all domains. */
 	size_t size() const;
 

@@ -120,6 +120,12 @@ class EE_API UITabWidgetSplitter {
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
 
+	/** Whether splitting keeps single-tab bars visible. Disabled by default.
+	 * Explicitly hidden tab bars (setHideTabBar) remain hidden. */
+	bool getShowTabBarWhenSplit() const;
+
+	void setShowTabBarWhenSplit( bool showTabBarWhenSplit );
+
 	void setHideTabBar( bool hideTabBar );
 
 	bool getVisualSplitting() const;
@@ -255,6 +261,7 @@ class EE_API UITabWidgetSplitter {
 	bool mHideTabBar{ false };
 	bool mHideTabBarOnSingleTab{ true };
 	bool mVisualSplitting{ true };
+	bool mShowTabBarWhenSplit{ false };
 	Float mVisualSplitEdgePercent{ 0.1 };
 	Mutex mTabWidgetMutex;
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
@@ -273,6 +280,8 @@ class EE_API UITabWidgetSplitter {
 	void attachWidgetEvents( UIWidget* widget );
 
 	void detachWidgetEvents( UIWidget* widget );
+
+	void updateTabBarVisibility();
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 

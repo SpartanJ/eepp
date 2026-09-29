@@ -52,6 +52,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void setAnchorScroll( bool anchor );
 
+	/** Enable default scrolling shortcuts. Enabled by default. */
 	void setEnableDefaultKeybindings( bool enable );
 
 	bool areDefaultKeybindingsEnabled() const { return mDefaultKeybindings; }
@@ -91,6 +92,10 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	virtual void onSizePolicyChange();
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	void scrollByViewport( Float direction );
 
 	void onValueChangeCb( const Event* Event );
 

@@ -180,8 +180,11 @@ UITabWidget* UITabWidgetSplitter::createTabWidget( Node* parent ) {
 	} );
 	if ( mOnTabWidgetCreateCb )
 		mOnTabWidgetCreateCb( tabWidget );
-	Lock l( mTabWidgetMutex );
-	mTabWidgets.push_back( tabWidget );
+	{
+		Lock l( mTabWidgetMutex );
+		mTabWidgets.push_back( tabWidget );
+	}
+	updateTabBarVisibility();
 	return tabWidget;
 }
 
@@ -691,6 +694,7 @@ void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				focusSomeWidget( nullptr );
 			}
 
+			updateTabBarVisibility();
 			eeASSERT( !mTabWidgets.empty() );
 			eeASSERT( !( mTabWidgets.size() == 1 && mTabWidgets[0]->getTabCount() == 0 ) );
 			return;
@@ -771,12 +775,27 @@ bool UITabWidgetSplitter::getHideTabBarOnSingleTab() const {
 	return mHideTabBarOnSingleTab;
 }
 
+void UITabWidgetSplitter::updateTabBarVisibility() {
+	const bool hideSingleTabBar = mHideTabBarOnSingleTab && !( mShowTabBarWhenSplit && hasSplit() );
+	for ( auto* widget : mTabWidgets )
+		widget->setHideTabBarOnSingleTab( hideSingleTabBar );
+}
+
 void UITabWidgetSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab ) {
 	if ( hideTabBarOnSingleTab != mHideTabBarOnSingleTab ) {
 		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
+		updateTabBarVisibility();
+	}
+}
 
-		for ( auto widget : mTabWidgets )
-			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
+bool UITabWidgetSplitter::getShowTabBarWhenSplit() const {
+	return mShowTabBarWhenSplit;
+}
+
+void UITabWidgetSplitter::setShowTabBarWhenSplit( bool showTabBarWhenSplit ) {
+	if ( mShowTabBarWhenSplit != showTabBarWhenSplit ) {
+		mShowTabBarWhenSplit = showTabBarWhenSplit;
+		updateTabBarVisibility();
 	}
 }
 

@@ -6,9 +6,11 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -3622,6 +3624,78 @@ UTEST( UIHTML, WebViewContextMenuCopiesLinkUsingDocumentURI ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, WebViewOpensResolvedLinkInNewTab ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* webView = UIWebView::New();
+	webView->setParent( scene->getRoot() );
+	auto* document = webView->getDocumentSceneNode();
+	document->setURIFromURL( URI( "https://docs.example.com/guide/index.html" ) );
+	document->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML(
+			R"html(<html><body><a id="link" href="../api/item">link</a></body></html>)html" ),
+		webView->getDocumentContainer() );
+	webView->getTextSelectionController()->onDocumentChanged();
+	scene->update( Seconds( 1 ) );
+	auto* anchor = document->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( anchor != nullptr );
+	std::vector<std::string> opened;
+	webView->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		auto* request = static_cast<const UIWebView::LinkOpenEvent*>( event );
+		opened.push_back( request->uri.toString() );
+		request->accept();
+	} );
+	NodeMessage middleClick( anchor, NodeMessage::MouseClick, EE_BUTTON_MMASK );
+	anchor->messagePost( &middleClick );
+	ASSERT_EQ( opened.size(), 1u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	NavigationRequest modifiedClick{ URI( anchor->getHref() ) };
+	modifiedClick.source = anchor;
+	modifiedClick.mouseButtons = EE_BUTTON_LMASK;
+	modifiedClick.modifiers = KeyMod::getDefaultModifier();
+	document->navigate( modifiedClick );
+	ASSERT_EQ( opened.size(), 2u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	UIPopUpMenu* menu = nullptr;
+	webView->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		auto* context = static_cast<const ContextMenuEvent*>( event );
+		menu = context->getMenu();
+		if ( context->getTarget() == anchor ) {
+			menu->add( "Open Link in New Tab" )->setId( "open-link-new-tab" );
+			menu->on( Event::OnItemClicked, [document, anchor]( const Event* itemEvent ) {
+				if ( itemEvent->getNode()->getId() == "open-link-new-tab" ) {
+					NavigationRequest request{ URI( anchor->getHref() ) };
+					request.target = NavigationRequest::Target::NewTab;
+					document->navigate( request );
+				}
+			} );
+		}
+	} );
+	NodeMessage rightUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &rightUp );
+	ASSERT_TRUE( menu != nullptr );
+	auto* open = menu->getItemId( "open-link-new-tab" );
+	ASSERT_TRUE( open != nullptr );
+	open->activate();
+	ASSERT_EQ( opened.size(), 3u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, PasswordTextUsesUpdatedFontColor ) {
+	struct PasswordInputProbe : UITextInput {
+		PasswordInputProbe() : UITextInput() {}
+		Color visibleColor() { return getVisibleTextCache().getFillColor(); }
+	};
+	init_ui_test();
+	auto* input = eeNew( PasswordInputProbe, () );
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	input->setMode( UITextInput::TextInputMode::Password );
+	input->setFontColor( Color( 17, 31, 47 ) );
+	EXPECT_TRUE( input->visibleColor() == Color( 17, 31, 47 ) );
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, MarkdownContextMenuOmitsLinkForSelection ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
@@ -7139,5 +7213,67 @@ UTEST( UIHTML, ImageHeightAutoMaxWidthStyleStateTransition ) {
 	EXPECT_NEAR( img->getPixelsSize().getWidth(), constrainedWidth, 1.f );
 	EXPECT_NEAR( img->getPixelsSize().getHeight(), constrainedHeight, 1.f );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSpaceScrollingUsesParentViewport ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* scroll = UIScrollView::New();
+	scroll->setParent( scene->getRoot() );
+	scroll->setPixelsSize( 400, 300 );
+	scroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scroll->getContainer() );
+	std::string text;
+	for ( int i = 0; i < 60; ++i )
+		text += "A paragraph of Markdown content.\n\n";
+	markdown->loadFromString( text );
+	for ( int i = 0; i < 10; ++i )
+		scene->update( Seconds( 1.f / 60.f ) );
+	auto* bar = scroll->getVerticalScrollBar();
+	const Float viewport = scroll->getContainer()->getPixelsSize().getHeight();
+	const Float range = markdown->getPixelsSize().getHeight() - viewport;
+	ASSERT_TRUE( range > 2.f * viewport );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, KEYMOD_LSHIFT );
+	EXPECT_EQ( 0.f, bar->getValue() );
+	scene->getWindow()->startTextInput();
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_EQ( 0.f, bar->getValue() );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scroll->setEnableDefaultKeybindings( false );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scene->getWindow()->stopTextInput();
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, PasswordSelectionUsesVisibleGlyphWidth ) {
+	struct PasswordSelectionProbe : UITextInput {
+		Float maskedWidth() { return getVisibleTextCache().getTextWidth(); }
+
+		Float selectedWidth() {
+			selCurInit( 0 );
+			selCurEnd( getText().size() );
+			drawSelection( getVisibleTextCache() );
+			return mSelRectsCache.empty() ? 0.f : mSelRectsCache.front().getSize().getWidth();
+		}
+	};
+	static_assert( sizeof( PasswordSelectionProbe ) == sizeof( UITextInput ) );
+	init_ui_test();
+	auto* input = eeNew( PasswordSelectionProbe, () );
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	input->setText( "WWWWWWWW" );
+	const Float unmaskedWidth = input->getTextCache()->getTextWidth();
+	input->setMode( UITextInput::TextInputMode::Password );
+	const Float maskedWidth = input->maskedWidth();
+	ASSERT_TRUE( std::abs( unmaskedWidth - maskedWidth ) > 1.f );
+	EXPECT_NEAR( maskedWidth, input->selectedWidth(), 1.f );
 	Engine::destroySingleton();
 }

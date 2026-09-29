@@ -891,3 +891,27 @@ UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UISceneNode, CookieJarIsPrivateByDefaultAndReplaceable ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Shared cookie jars" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* first = app.getUI();
+	auto* second = UISceneNode::New();
+	ASSERT_TRUE( &first->getCookieManager() != &second->getCookieManager() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "private=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ).empty() );
+
+	auto shared = std::make_shared<CookieManager>();
+	first->setCookieManager( shared );
+	second->setCookieManager( shared );
+	EXPECT_TRUE( &first->getCookieManager() == shared.get() );
+	EXPECT_TRUE( &second->getCookieManager() == shared.get() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "shared=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	first->setCookieManager( nullptr );
+	EXPECT_TRUE( &first->getCookieManager() != shared.get() );
+	EXPECT_TRUE( first->getCookieManager().getCookieHeader( "example.com" ).empty() );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	eeDelete( second );
+}

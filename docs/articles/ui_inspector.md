@@ -54,6 +54,7 @@ python3 projects/scripts/eepp-inspect.py focus --scene scene:2
 python3 projects/scripts/eepp-inspect.py screenshot --scene scene:2 --format png
 python3 projects/scripts/eepp-inspect.py screenshot --window win:2 --rect 10 20 400 300 --format webp
 python3 projects/scripts/eepp-inspect.py click --scene scene:2 '#submit'
+python3 projects/scripts/eepp-inspect.py click --button right --scene scene:2 '#content'
 python3 projects/scripts/eepp-inspect.py key --scene scene:2 Enter
 python3 projects/scripts/eepp-inspect.py type --scene scene:2 'hello world'
 python3 projects/scripts/eepp-inspect.py type --target '#search' 'hello world'
@@ -114,7 +115,7 @@ All examples below omit `id` where the surrounding explanation is enough; real r
 | `ui.inspect` | Exactly one of `handle` or `selector` plus optional `scene`; optional `properties`, `maxStringLength:4096` (maximum 65536) | Handle, scene, typed `properties`, `unavailable` | `invalid-widget`, `target-not-found`, `target-ambiguous` |
 | `ui.focus` | `scene` default | Scene and focused widget summary or `null` | `invalid-scene` |
 | `ui.screenshot` | Optional `scene` or `window` (mutually exclusive); optional `rect:[x,y,width,height]`; `format:"png"` | Temporary file path, format, window/scene handles, captured rectangle and size | `invalid-window`, `invalid-scene`, `invalid-params`, `screenshot-failed` |
-| `input.click` | Exactly one target; optional `button:"left"`, `count:1` (maximum 2) | Target handle, scene, click point | `target-not-interactable`, `permission-denied` |
+| `input.click` | Exactly one target; optional `button:"left"`, `"middle"`, or `"right"`, `count:1` (maximum 2) | Target handle, scene, click point | `target-not-interactable`, `permission-denied` |
 | `input.key` | `scene` default, `key` required, `action:"press"`, `modifiers:[]` | Key and action | `invalid-params`, `permission-denied` |
 | `input.text` | `scene` default, `text` required (maximum 64 KiB UTF-8) | Character count | `invalid-params`, `permission-denied` |
 | `watch.subscribe` | One handle or selector; explicit `properties` array; `initial:true` | Subscription and bound target values | `target-not-found`, `property-unknown` |
@@ -159,7 +160,20 @@ These compact request/response pairs show each method's envelope. Handle numbers
 
 `ui.screenshot` captures the native window containing the selected scene. With no target it captures the default scene's full native window. An explicit `window` captures that whole window; an explicit `scene` crops to its visible world bounds, including a WebView document viewport. `rect` overrides that crop and uses top-left native-window pixel coordinates. It must fit entirely inside the window and have positive width and height. Supported formats are `png`, `jpg`, `bmp`, `tga`, `qoi`, and `webp`; eepp's case-insensitive image extension parser also accepts `jpeg` and `jfif` as aliases for `jpg`. The response uses the canonical extension. The server renders the selected window after the current UI update, saves the image in the OS temporary directory, and returns its absolute `path`; it does not send image bytes over NDJSON. The caller is responsible for deleting the file when finished. The path is useful to a local agent; remote clients must separately retrieve the file, for example over SSH. Screenshot observation is available in read-only mode and can be used inside `session.batch`.
 
-Single-widget methods never pick the first of multiple selector matches: zero matches return `target-not-found`, and multiple matches return `target-ambiguous`. `input.click` uses the window input route and scene hit testing; clipped, covered, invisible, disabled, or off-window targets can return `target-not-interactable`. It does not scroll a target into view. `input.key` accepts names understood by eepp's `Input::getKeyFromName()` plus `Enter` as an alias for `Return`, and modifiers `Ctrl`, `Shift`, `Alt`, `Meta`; action may be `press`, `down`, or `up`. `input.text` sends Unicode text input to the current focus path and does not focus a widget first. Read-only mode omits input capabilities and returns `permission-denied` for these methods.
+Single-widget methods never pick the first of multiple selector matches: zero matches return `target-not-found`, and multiple matches return `target-ambiguous`. `input.click` uses the window input route and scene hit testing; clipped, covered, invisible, disabled, or off-window targets can return `target-not-interactable`. It does not scroll a target into view. The default button is `left`; set `button` to `middle` for a middle click or `right` to open a context menu. Other button values return `invalid-params`. `input.key` accepts names understood by eepp's `Input::getKeyFromName()` plus `Enter` as an alias for `Return`, and modifiers `Ctrl`, `Shift`, `Alt`, `Meta`; action may be `press`, `down`, or `up`. `input.text` sends Unicode text input to the current focus path and does not focus a widget first. Read-only mode omits input capabilities and returns `permission-denied` for these methods.
+
+### Checking context menus
+
+Right-click a visible target, then query the popup and its items. For a WebView, the HTML target belongs to its document scene, while the popup usually belongs to the parent application scene:
+
+```sh
+python3 projects/scripts/eepp-inspect.py contexts
+python3 projects/scripts/eepp-inspect.py click --button right --scene scene:2 '#context-target'
+python3 projects/scripts/eepp-inspect.py query --scene scene:1 'popupmenu'
+python3 projects/scripts/eepp-inspect.py tree --scene scene:1 --depth 5
+```
+
+`input.click` aims at the target's center. Choose a visible child if a large HTML element extends beyond the window; a body whose center is off-screen will return `target-not-interactable`. The command reports the chosen point in window pixels. The same button option works in a raw or batched `input.click` request: `{"method":"input.click","params":{"scene":"scene:2","selector":"#context-target","button":"right"}}`.
 
 ## Properties
 

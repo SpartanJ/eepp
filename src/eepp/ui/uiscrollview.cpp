@@ -1,8 +1,10 @@
 #include <cmath>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -488,6 +490,10 @@ void UIScrollView::setScrollControllerPosition( const Vector2f& position ) {
 	mVScroll->setValue( maxPosition.y > 0.f ? position.y / maxPosition.y : 0.f );
 }
 
+void UIScrollView::setEnableDefaultKeybindings( bool enable ) {
+	mDefaultKeybindings = enable;
+}
+
 bool UIScrollView::isAutoSetClipStep() const {
 	return mAutoSetClipStep;
 }
@@ -505,7 +511,16 @@ void UIScrollView::setAnchorScroll( bool anchor ) {
 }
 
 Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
-	if ( !mDefaultKeybindings || event.getSanitizedMod() )
+	const auto mod = event.getSanitizedMod();
+	if ( mDefaultKeybindings && event.getKeyCode() == Window::KEY_SPACE &&
+		 ( mod & ~KEYMOD_SHIFT ) == 0 ) {
+		// Active text input gets priority through onTextInput's normal bubbling path.
+		if ( getUISceneNode()->getWindow()->isTextInputActive() )
+			return UITouchDraggableWidget::onKeyDown( event );
+		scrollByViewport( mod & KEYMOD_SHIFT ? -1.f : 1.f );
+		return 1;
+	}
+	if ( !mDefaultKeybindings || mod )
 		return UITouchDraggableWidget::onKeyDown( event );
 
 	if ( event.getKeyCode() == Window::KEY_UP ) {
@@ -515,10 +530,10 @@ Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 		mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
-		mVScroll->setValue( mVScroll->getValue() + mVScroll->getPageStep() );
+		scrollByViewport( 1.f );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
-		mVScroll->setValue( mVScroll->getValue() - mVScroll->getPageStep() );
+		scrollByViewport( -1.f );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_HOME ) {
 		mVScroll->setValue( mVScroll->getMinValue() );
@@ -529,6 +544,22 @@ Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 	}
 
 	return UITouchDraggableWidget::onKeyDown( event );
+}
+
+Uint32 UIScrollView::onTextInput( const TextInputEvent& event ) {
+	if ( mDefaultKeybindings && event.getChar() == ' ' && event.isValid( getInput() ) ) {
+		scrollByViewport( getInput()->isShiftPressed() ? -1.f : 1.f );
+		return 1;
+	}
+	return UITouchDraggableWidget::onTextInput( event );
+}
+
+void UIScrollView::scrollByViewport( Float direction ) {
+	const Float range = getScrollControllerMaxPosition().y;
+	if ( mVScroll->isEnabled() && range > 0.f ) {
+		mVScroll->setValue( mVScroll->getValue() +
+							direction * mContainer->getPixelsSize().getHeight() / range );
+	}
 }
 
 }} // namespace EE::UI

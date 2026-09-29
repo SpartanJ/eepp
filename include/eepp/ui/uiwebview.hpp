@@ -17,6 +17,10 @@
 
 using namespace EE::Network;
 
+namespace EE { namespace Network {
+class CookieManager;
+}} // namespace EE::Network
+
 namespace EE { namespace UI {
 
 class UIHTMLHtml;
@@ -26,6 +30,31 @@ class UISceneNode;
 
 class EE_API UIWebView : public UIScrollView {
   public:
+	/** The icon is empty when the replacement document has no favicon yet. */
+	struct FaviconEvent : Scene::Event {
+		TexturePtr icon;
+
+		FaviconEvent( Node* node, TexturePtr icon = {} ) :
+			Scene::Event( node, Event::OnFaviconChanged ), icon( std::move( icon ) ) {}
+	};
+
+	struct TitleEvent : Scene::Event {
+		std::string title;
+
+		TitleEvent( Node* node, std::string title ) :
+			Scene::Event( node, Event::OnTitleChanged ), title( std::move( title ) ) {}
+	};
+
+	struct LinkOpenEvent : Scene::Event {
+		URI uri;
+		mutable bool handled{ false };
+
+		LinkOpenEvent( Node* node, URI uri ) :
+			Scene::Event( node, Event::OnLinkOpenRequested ), uri( std::move( uri ) ) {}
+
+		void accept() const { handled = true; }
+	};
+
 	struct NavigationEvent : Scene::Event {
 		URI uri;
 		bool success{ false };
@@ -72,6 +101,8 @@ class EE_API UIWebView : public UIScrollView {
 
 	const URI& getCurrentURI() const;
 
+	const std::string& getTitle() const { return mTitle; }
+
 	void reload();
 
 	UIWidget* getDocumentContainer() const;
@@ -81,6 +112,9 @@ class EE_API UIWebView : public UIScrollView {
 	const WebResourceCachePtr& getWebResourceCache() const;
 
 	UIWebView* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
+	/** Share a cookie jar with other WebViews. Set before starting navigation. */
+	UIWebView* setCookieManager( std::shared_ptr<EE::Network::CookieManager> manager );
 
 	void setStyleSheetDefaultMarker( Uint32 marker );
 
@@ -127,6 +161,7 @@ class EE_API UIWebView : public UIScrollView {
 	bool mIsLoading{ false };
 	Uint64 mNavigationGeneration{ 0 };
 	std::string mUserAgent;
+	std::string mTitle;
 	Time mDefaultTimeout{ Seconds( 30 ) };
 	Time mWebResourceCachePruneElapsed;
 	Uint32 mStyleSheetDefaultMarker{ 0 };
@@ -141,6 +176,7 @@ class EE_API UIWebView : public UIScrollView {
 	virtual void scheduledUpdate( const Time& time );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	virtual Uint32 onMessage( const NodeMessage* message );
 	virtual void onScrollViewSizeChange( const Event* event );
 

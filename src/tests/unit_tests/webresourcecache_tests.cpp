@@ -198,6 +198,26 @@ UTEST( WebResourceCache, navigationHeadersDoNotDuplicateRetainedEntries ) {
 	EXPECT_EQ( 1u, cache->getEntryCount() );
 }
 
+UTEST( WebResourceCache, documentCacheSeparatesCookieSessions ) {
+	auto cache = WebResourceCache::New();
+	int fetches = 0;
+	cache->setFetcher(
+		[&]( const WebResourceRequest&, WebResourceCache::FetchCompletion completion ) {
+			++fetches;
+			auto ok = Http::Response::Status::Ok;
+			completion( response( ok, "document" ) );
+		} );
+	auto session = cache->createSession();
+	auto generation = cache->beginNavigation( session, URI( "https://news.example/" ) );
+	auto request = requestFor( "https://news.example/" );
+	request.kind = WebResourceKind::Document;
+	cache->requestData( session, generation, request, {} );
+	request.headers["Cookie"] = "user=logged-in";
+	cache->requestData( session, generation, request, {} );
+	cache->requestData( session, generation, request, {} );
+	EXPECT_EQ( 2, fetches );
+}
+
 UTEST( WebResourceCache, ttlStartsWhenFinalDocumentLeaseIsReleased ) {
 	auto cache = WebResourceCache::New();
 	cache->setTTL( Time::Zero );

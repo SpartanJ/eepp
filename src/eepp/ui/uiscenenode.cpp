@@ -919,7 +919,7 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 		return;
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
-	std::string cookie = mCookieManager.getCookieHeader( request.uri.getAuthority() );
+	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
 	if ( !cookie.empty() )
 		request.headers["Cookie"] = std::move( cookie );
 	auto resourceState = mAsyncResourceLoadState;
@@ -933,7 +933,7 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 		if ( !scene )
 			return;
 		if ( !result.setCookie.empty() )
-			scene->mCookieManager.storeCookiesFromHeader( authority, result.setCookie );
+			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
 		if ( callback )
 			callback( result );
 	};
@@ -947,7 +947,7 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 		return {};
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
-	std::string cookie = mCookieManager.getCookieHeader( request.uri.getAuthority() );
+	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
 	if ( !cookie.empty() )
 		request.headers["Cookie"] = std::move( cookie );
 	auto resourceState = mAsyncResourceLoadState;
@@ -967,7 +967,7 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 		if ( !scene )
 			return;
 		if ( !result.setCookie.empty() )
-			scene->mCookieManager.storeCookiesFromHeader( authority, result.setCookie );
+			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
 		if ( callback )
 			callback( result );
 	};

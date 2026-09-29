@@ -352,7 +352,7 @@ struct UIInspectorServer::Impl {
 																   : "unauthenticated";
 									const char* message =
 										request.is_discarded() ? "Malformed JSON"
-										: isConnect			   ? "Invalid inspector token"
+										: isConnect ? "Invalid inspector token"
 													: "First request must be session.connect";
 									client.output +=
 										json( { { "id", id },
@@ -1068,8 +1068,14 @@ struct UIInspectorServer::Impl {
 			const std::string windowHandle = inspector.windowHandle( window );
 			if ( method == "input.click" ) {
 				const std::string targetHandle = inspector.widgetHandle( target );
-				if ( params.contains( "button" ) && params["button"] != "left" )
-					fail( "invalid-params", "Only left click is supported" );
+				if ( params.contains( "button" ) && !params["button"].is_string() )
+					fail( "invalid-params", "button must be a string" );
+				const std::string button = params.value( "button", "left" );
+				if ( button != "left" && button != "middle" && button != "right" )
+					fail( "invalid-params", "button must be left, middle, or right" );
+				const Uint8 inputButton = button == "right"	   ? EE_BUTTON_RIGHT
+										  : button == "middle" ? EE_BUTTON_MIDDLE
+															   : EE_BUTTON_LEFT;
 				unsigned count = boundedUnsigned( params, "count", 1, 2 );
 				auto bounds = target->getWorldBounds();
 				Vector2i point( static_cast<int>( ( bounds.Left + bounds.Right ) * 0.5f ),
@@ -1102,7 +1108,7 @@ struct UIInspectorServer::Impl {
 					InputEvent press( InputEvent::MouseButtonDown );
 					press.WinID = window->getWindowID();
 					press.button = {};
-					press.button.button = EE_BUTTON_LEFT;
+					press.button.button = inputButton;
 					press.button.x = point.x;
 					press.button.y = point.y;
 					input->pushEvent( press );

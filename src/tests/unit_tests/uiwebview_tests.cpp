@@ -15,6 +15,7 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -32,6 +33,8 @@
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwebview.hpp>
@@ -54,6 +57,36 @@ class CountingDrawWidget : public UIWidget {
 	int drawCount{ 0 };
 };
 
+// A custom text consumer with no editor type identity or key-down handler.
+class TextConsumerWidget : public UIWidget {
+  public:
+	TextConsumerWidget() : UIWidget( "custom-text-consumer" ) {}
+
+	Uint32 onFocus( NodeFocusReason reason ) override {
+		UIWidget::onFocus( reason );
+		getUISceneNode()->getWindow()->startTextInput();
+		return 1;
+	}
+
+	Uint32 onFocusLoss() override {
+		getUISceneNode()->getWindow()->stopTextInput();
+		return UIWidget::onFocusLoss();
+	}
+
+	Uint32 onTextInput( const TextInputEvent& ) override {
+		if ( consumesText ) {
+			++acceptedText;
+			return 1;
+		}
+		return 0;
+	}
+
+	Uint32 acceptedText{ 0 };
+	bool consumesText{ true };
+};
+
+static_assert( sizeof( TextConsumerWidget ) <= sizeof( UIWidget ) + 8 );
+
 static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nullptr ) {
 	std::string request;
 	char buffer[1024];
@@ -67,6 +100,36 @@ static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nu
 	if ( headers )
 		*headers = std::move( request );
 	return true;
+}
+
+UTEST( UIWebView, EmitsParsedDocumentTitle ) {
+	auto* window = Engine::instance()->createWindow(
+		WindowSettings( 320, 240, "UIWebView Title Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	auto* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+	auto* scene = UISceneNode::New();
+	SceneManager::instance()->add( scene );
+	scene->getUIThemeManager()->setDefaultFont( font );
+	auto* view = UIWebView::New();
+	view->setParent( scene->getRoot() );
+	std::string title;
+	view->onTitleChanged( [&]( const std::string& value ) { title = value; } );
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_title.html";
+	FileSystem::fileWrite(
+		path, "<html><head><title>Useful &amp; Clear</title></head><body>text</body></html>" );
+	view->loadURI( URI( "file://" + path ) );
+	for ( int i = 0; i < 10 && title.empty(); ++i ) {
+		window->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+	EXPECT_TRUE( title == "Useful & Clear" );
+	EXPECT_TRUE( view->getTitle() == title );
+	FileSystem::fileRemove( path );
+	Engine::destroySingleton();
 }
 
 UTEST( UIWebView, DocumentSceneInheritsHostFontRenderingPolicy ) {
@@ -3434,5 +3497,224 @@ UTEST( UIWebView, RepeatedRemoteNavigationHandlesSubresourceFanOut ) {
 	ASSERT_TRUE( documentScene != nullptr );
 	EXPECT_TRUE( documentScene->getRoot()->find( "document-5" ) != nullptr );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, FaviconUsesRelativeURLAndIgnoresStaleCompletion ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Cache Lease Boundary Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 300, 200 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto cache = WebResourceCache::New();
+	std::vector<WebResourceCache::FetchCompletion> icons;
+	std::string requestedIcon;
+	cache->setFetcher(
+		[&]( const WebResourceRequest& request, WebResourceCache::FetchCompletion completion ) {
+			if ( request.kind == WebResourceKind::Image ) {
+				requestedIcon = request.uri.toString();
+				icons.emplace_back( std::move( completion ) );
+			} else {
+				auto status = Http::Response::Status::Ok;
+				Http::Response::FieldTable fields;
+				completion( Http::Response::createFakeResponse(
+					fields, status,
+					request.uri.getPath() == "/blank"
+						? "<html><body>blank</body></html>"
+						: "<html><head><link rel='SHORTCUT icon' "
+						  "href='y18.svg'></head><body>icon</body></html>" ) );
+			}
+		} );
+	webView->setWebResourceCache( cache );
+	int loadedIcons = 0;
+	int clearedIcons = 0;
+	webView->on( Event::OnFaviconChanged, [&]( const Event* event ) {
+		const auto& icon = static_cast<const UIWebView::FaviconEvent*>( event )->icon;
+		if ( icon ) {
+			++loadedIcons;
+			EXPECT_EQ( 18u, icon->getImageWidth() );
+		} else {
+			++clearedIcons;
+		}
+	} );
+	auto pump = [&] {
+		for ( int i = 0; i < 10; ++i ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		}
+	};
+	auto completeIcon = [&] {
+		ASSERT_FALSE( icons.empty() );
+		auto completion = std::move( icons.front() );
+		icons.erase( icons.begin() );
+		auto status = Http::Response::Status::Ok;
+		Http::Response::FieldTable fields;
+		completion( Http::Response::createFakeResponse(
+			fields, status,
+			"<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><rect width='18' "
+			"height='18' fill='orange'/></svg>" ) );
+		pump();
+	};
+	webView->loadURI( URI( "https://favicon.example/sub/page" ) );
+	pump();
+	EXPECT_STREQ( "https://favicon.example/sub/y18.svg", requestedIcon.c_str() );
+	completeIcon();
+	EXPECT_EQ( 1, loadedIcons );
+	webView->loadURI( URI( "https://favicon.example/other/page" ) );
+	pump();
+	webView->loadURI( URI( "https://favicon.example/blank" ) );
+	pump();
+	completeIcon();
+	EXPECT_EQ( 1, loadedIcons );
+	EXPECT_EQ( 3, clearedIcons );
+	cache.reset();
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, DefaultShortcutsScrollByViewportAndRespectFocusedControls ) {
+	auto* window = Engine::instance()->createWindow(
+		WindowSettings( 400, 300, "UIWebView scrolling shortcuts", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	auto* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+	auto* scene = UISceneNode::New();
+	SceneManager::instance()->add( scene );
+	scene->getUIThemeManager()->setDefaultFont( font );
+	auto* view = UIWebView::New();
+	view->setParent( scene->getRoot() );
+	view->setPixelsSize( 400, 300 );
+	view->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	const std::string path = Sys::getTempPath() + "eepp_uiwebview_scroll_keys.html";
+	FileSystem::fileWrite(
+		path, "<html><body style='margin:0'><input id='entry'><details><summary "
+			  "id='summary'>Toggle</summary>"
+			  "<p>details</p></details><div style='height:3000px'>tall</div></body></html>" );
+	view->loadURI( URI( "file://" + path ) );
+	for ( int i = 0; i < 10; ++i ) {
+		window->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+	auto* document = view->getDocumentSceneNode();
+	const Float viewport = document->getViewportPixelsSize().getHeight();
+	auto* scroll = view->getVerticalScrollBar();
+	const Float range = document->getPixelsSize().getHeight() - viewport;
+	ASSERT_TRUE( range > viewport * 3.f );
+	auto press = [&]( Keycode key, Uint32 mod = 0 ) {
+		scene->getEventDispatcher()->sendKeyDown( key, SCANCODE_UNKNOWN, 0, mod );
+	};
+	scene->getEventDispatcher()->setFocusNode( view );
+	press( KEY_SPACE );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	press( KEY_PAGEDOWN );
+	EXPECT_NEAR( 2.f * viewport, scroll->getValue() * range, 1.f );
+	press( KEY_PAGEUP );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	press( KEY_SPACE, KEYMOD_LSHIFT );
+	EXPECT_NEAR( 0.f, scroll->getValue(), 0.001f );
+	press( KEY_PAGEUP );
+	EXPECT_EQ( 0.f, scroll->getValue() );
+	scroll->setValue( 1.f - viewport / ( 2.f * range ) );
+	press( KEY_PAGEDOWN );
+	EXPECT_EQ( 1.f, scroll->getValue() );
+	press( KEY_PAGEUP );
+	EXPECT_NEAR( range - viewport, scroll->getValue() * range, 1.f );
+
+	view->setEnableDefaultKeybindings( false );
+	EXPECT_FALSE( view->areDefaultKeybindingsEnabled() );
+	const Float disabledValue = scroll->getValue();
+	press( KEY_SPACE );
+	press( KEY_PAGEUP );
+	press( KEY_PAGEDOWN );
+	press( KEY_HOME );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+	view->setEnableDefaultKeybindings( true );
+	press( KEY_SPACE, KEYMOD_CTRL );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+
+	Node* editor = document->find( "entry" );
+	ASSERT_TRUE( editor != nullptr );
+	for ( auto* child = editor->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( child->isType( UI_TYPE_TEXTINPUT ) ) {
+			editor = child;
+			break;
+		}
+	}
+	ASSERT_TRUE( editor->isType( UI_TYPE_TEXTINPUT ) );
+	scene->getEventDispatcher()->setFocusNode( editor );
+	window->getInput()->beginInputFrame();
+	press( KEY_SPACE );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_TRUE( editor->asType<UITextInput>()->getText() == " " );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+
+	auto* multiline = UITextEdit::New();
+	multiline->setParent( document->getRoot() );
+	scene->getEventDispatcher()->setFocusNode( multiline );
+	window->getInput()->beginInputFrame();
+	press( KEY_SPACE );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_TRUE( multiline->getText() == " " );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+
+	auto* custom = eeNew( TextConsumerWidget, () );
+	custom->setParent( document->getRoot() );
+	scene->getEventDispatcher()->setFocusNode( custom );
+	ASSERT_TRUE( window->isTextInputActive() );
+	press( KEY_SPACE );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_EQ( 1u, custom->acceptedText );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+
+	custom->consumesText = false;
+	scroll->setValue( 0.f );
+	press( KEY_SPACE );
+	EXPECT_EQ( 0.f, scroll->getValue() );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	InputEvent shiftedSpace( InputEvent::KeyDown );
+	shiftedSpace.key = {};
+	shiftedSpace.key.keysym.sym = KEY_SPACE;
+	shiftedSpace.key.keysym.scancode = SCANCODE_SPACE;
+	shiftedSpace.key.keysym.mod = KEYMOD_LSHIFT;
+	window->getInput()->pushEvent( shiftedSpace );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_EQ( 0.f, scroll->getValue() );
+	shiftedSpace.Type = InputEvent::KeyUp;
+	shiftedSpace.key.keysym.mod = 0;
+	window->getInput()->pushEvent( shiftedSpace );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	view->setEnableDefaultKeybindings( false );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
+	view->setEnableDefaultKeybindings( true );
+	scroll->setValue( disabledValue );
+	auto* summary = document->find( "summary" );
+	ASSERT_TRUE( summary != nullptr );
+	scene->getEventDispatcher()->setFocusNode( summary );
+	press( KEY_SPACE );
+	EXPECT_EQ( disabledValue, scroll->getValue() );
+	FileSystem::fileRemove( path );
 	Engine::destroySingleton();
 }

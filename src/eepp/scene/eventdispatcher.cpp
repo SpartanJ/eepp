@@ -186,7 +186,7 @@ void EventDispatcher::update( const Time& time ) {
 	}
 
 	if ( mInput->getReleaseTrigger() ) {
-		if ( NULL != mFocusNode ) {
+		if ( NULL != mFocusNode || ( mInput->getReleaseTrigger() & EE_BUTTON_MMASK ) ) {
 			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
@@ -208,14 +208,21 @@ void EventDispatcher::update( const Time& time ) {
 				}
 
 				if ( mInput->getClickTrigger() && mDownNode == mOverNode ) {
-					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					// Middle click should activate the hovered widget without changing keyboard
+					// focus.
+					Node* clickNode = ( mInput->getClickTrigger() & EE_BUTTON_MMASK )
+										  ? mOverNode
+										  : mLastFocusNode;
+					if ( clickNode ) {
+						clickNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+						sendMsg( clickNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					}
 
-					if ( mInput->getDoubleClickTrigger() &&
+					if ( clickNode && mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
-						mLastFocusNode->onMouseDoubleClick( mMousePosi,
-															mInput->getDoubleClickTrigger() );
-						sendMsg( mLastFocusNode, NodeMessage::MouseDoubleClick,
+						clickNode->onMouseDoubleClick( mMousePosi,
+													   mInput->getDoubleClickTrigger() );
+						sendMsg( clickNode, NodeMessage::MouseDoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 

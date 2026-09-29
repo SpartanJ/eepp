@@ -48,13 +48,17 @@ class EE_API UIPopUpMenu : public UIMenu {
 class EE_API ContextMenuEvent : public MouseEvent {
   public:
 	ContextMenuEvent( Node* node, UIPopUpMenu* menu, const Uint32& eventType, const Vector2i& pos,
-					  const Uint32& flags ) :
-		MouseEvent( node, eventType, pos, flags ), menu( menu ) {}
+					  const Uint32& flags, const Node* target = nullptr ) :
+		MouseEvent( node, eventType, pos, flags ), menu( menu ), target( target ) {}
 
 	UIPopUpMenu* getMenu() const { return menu; }
 
+	/** The widget under the pointer, when the menu creator provides one. */
+	const Node* getTarget() const { return target; }
+
   protected:
 	UIPopUpMenu* menu;
+	const Node* target;
 };
 
 }} // namespace EE::UI

@@ -810,7 +810,7 @@ bool UITextSelectionController::showContextMenu( const Vector2i& position, Uint3
 	}
 	auto* selectAllItem = menu->add( mHost->i18n( "uicodeeditor_select_all", "Select All" ) );
 	selectAllItem->setId( "select-all" );
-	ContextMenuEvent event( mHost, menu, Event::OnCreateContextMenu, position, flags );
+	ContextMenuEvent event( mHost, menu, Event::OnCreateContextMenu, position, flags, target );
 	mHost->sendEvent( &event );
 	if ( menu->getCount() == 0 ) {
 		menu->close();

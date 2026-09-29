@@ -83,7 +83,9 @@ void UIHTMLForm::submit() {
 	UISceneNode* sceneNode = getUISceneNode();
 
 	NavigationRequest request;
-	request.uri = URI( mAction );
+	// With no action, HTML submits to the current document URL, not its asset base URI.
+	request.uri = mAction.empty() ? sceneNode->getReferer() : URI( mAction );
+	request.source = this;
 
 	if ( mEnctype == "multipart/form-data" ) {
 		request.method = "POST";

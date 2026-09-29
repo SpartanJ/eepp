@@ -137,6 +137,8 @@ class EE_API Event {
 		OnHideFindReplace,
 		OnTooltipCreated,
 		MouseWheel,
+		OnLinkOpenRequested,
+		OnFaviconChanged,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

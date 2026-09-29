@@ -406,6 +406,11 @@ void UITextInput::onFontStyleChanged() {
 	invalidateDraw();
 }
 
+void UITextInput::onFontColorChanged() {
+	if ( mPassCache )
+		mPassCache->setFillColor( mTextCache.getFillColor() );
+}
+
 Text& UITextInput::getVisibleTextCache() {
 	if ( mMode == TextInputMode::Password && mPassCache )
 		return *mPassCache;

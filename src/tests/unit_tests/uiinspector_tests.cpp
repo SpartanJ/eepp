@@ -333,6 +333,36 @@ UTEST( UIInspector, InputActionErrorsAndKeyEvents ) {
 				   { "params", { { "selector", "#first" } } } } );
 	ASSERT_TRUE( client.receive().contains( "result" ) );
 	EXPECT_EQ( clicks, 1 );
+	int rightClicks = 0;
+	first->on( Event::MouseUp, [&]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_RMASK )
+			++rightClicks;
+	} );
+	client.send( { { "id", id++ },
+				   { "method", "input.click" },
+				   { "params", { { "selector", "#first" }, { "button", "right" } } } } );
+	ASSERT_TRUE( client.receive().contains( "result" ) );
+	EXPECT_EQ( rightClicks, 1 );
+	EXPECT_EQ( clicks, 1 );
+	int middleClicks = 0;
+	first->on( Event::MouseClick, [&]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_MMASK )
+			++middleClicks;
+	} );
+	scene->getEventDispatcher()->setFocusNode( second );
+	client.send( { { "id", id++ },
+				   { "method", "input.click" },
+				   { "params", { { "selector", "#first" }, { "button", "middle" } } } } );
+	ASSERT_TRUE( client.receive().contains( "result" ) );
+	EXPECT_EQ( middleClicks, 1 );
+	EXPECT_EQ( clicks, 1 );
+	EXPECT_TRUE( scene->getEventDispatcher()->getFocusNode() == second );
+	client.send( { { "id", id++ },
+				   { "method", "input.click" },
+				   { "params", { { "selector", "#first" }, { "button", "other" } } } } );
+	json invalidButton = client.receive();
+	ASSERT_TRUE( invalidButton.contains( "error" ) );
+	EXPECT_TRUE( invalidButton["error"]["code"] == "invalid-params" );
 
 	scene->getEventDispatcher()->setFocusNode( first );
 	int keyDown = 0;

@@ -1005,7 +1005,35 @@ back into the owning `UIWebView`, including relative URL resolution.
 
 This means ordinary links can navigate the current web view.
 
+`NavigationRequest` carries the source node, mouse buttons, and keyboard modifiers. Middle click,
+the platform modifier plus left click, or an explicit `Target::NewTab` request emits
+`Event::OnLinkOpenRequested` on the WebView. Subscribe to this event, open the resolved URI in a
+new view, and call `UIWebView::LinkOpenEvent::accept()` to handle it. Unhandled requests navigate
+the current view. Applications add their own link menu actions through `OnCreateContextMenu`;
+`ContextMenuEvent::getTarget()` identifies the clicked document node.
+
+`getTitle()` returns the parsed HTML document title. `onTitleChanged()` reports the title after
+loading, including an empty title for pages without one. The `ui_html` example uses it for tab labels
+and falls back to the host or URL. Tabs cap their width at 200dp and truncate long titles with ellipsis.
+The example enables `UITabWidgetSplitter::setShowTabBarWhenSplit(true)` to keep each pane's tab bar
+visible while split. This option is disabled by default for other splitter users.
+
+`<link rel="icon" href="...">` (including `rel="shortcut icon"`) loads the declared favicon through
+the document's shared image cache. Relative URLs resolve against the document URL, and SVG icons
+are supported. `Event::OnFaviconChanged` carries a `UIWebView::FaviconEvent` with the loaded texture;
+an empty icon clears the previous document's favicon. Responses from an older navigation are ignored.
+The `ui_html` example displays the texture as a 16dp tab icon.
+
 `UIWebView` maintains its own navigation history.
+
+`UIMarkdownView` uses the same shortcuts through its enclosing `UIScrollView`; disable them on
+that scroll view with `setEnableDefaultKeybindings(false)`.
+
+Default scrolling shortcuts are Space and Page Down (one viewport down), Shift+Space and Page Up
+(one viewport up). Keys handled by a focused descendant do not reach the WebView. While text input is active,
+Space scrolls only if its committed text reaches the WebView unhandled; custom controls can consume
+it through `onTextInput()` like built-in editors. Call `setEnableDefaultKeybindings(false)` to disable scrolling
+shortcuts, including the inherited arrow and Home/End bindings.
 
 Anchor interaction also cooperates with document text selection so a completed text drag does not
 accidentally activate the link.
@@ -1073,6 +1101,8 @@ other text-like types   -> UIHTMLTextInput
 `textarea` uses a `UITextEdit`-based implementation with `rows` and `cols` intrinsic sizing.
 
 Forms collect named control values and can submit navigation requests.
+
+An omitted or empty form `action` submits to the full current document URL, preserving its query.
 
 Supported submission encodings include:
 

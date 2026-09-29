@@ -110,7 +110,9 @@ def command(args):
         params["format"] = args.format
         return "ui.screenshot", params
     if name == "click":
-        return "input.click", target(args.target, args.scene)
+        params = target(args.target, args.scene)
+        params["button"] = args.button
+        return "input.click", params
     if name == "key":
         params.update(key=args.key, action=args.action, modifiers=args.modifiers)
         return "input.key", params
@@ -168,6 +170,7 @@ def main():
     click = sub.add_parser("click")
     click.add_argument("target")
     click.add_argument("--scene")
+    click.add_argument("--button", choices=("left", "middle", "right"), default="left")
     key = sub.add_parser("key")
     key.add_argument("key")
     key.add_argument("--scene")

@@ -648,6 +648,50 @@ UTEST( UITabWidgetSplitter, ClosingSplitNotifiesBeforeTabWidgetDestruction ) {
 	eeDelete( splitter );
 }
 
+UTEST( UITabWidgetSplitter, ShowsEveryTabBarWhileSplitWhenEnabled ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabs = splitter->createTabWidget( container );
+	auto* firstWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( firstTabs, firstWidget, "First" );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+
+	auto* secondTabs = splitter->splitTabWidget( SplitDirection::Right, firstTabs );
+	ASSERT_TRUE( secondTabs != nullptr );
+	EXPECT_FALSE( splitter->getShowTabBarWhenSplit() );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( true );
+	EXPECT_TRUE( splitter->getShowTabBarWhenSplit() );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( false );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( true );
+	splitter->setHideTabBar( true );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setHideTabBar( false );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( secondTabs->getTabBar()->isVisible() );
+	auto* secondWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( secondTabs, secondWidget, "Second" );
+	splitter->closeTab( secondWidget, UITabWidget::FocusTabBehavior::Default );
+	EXPECT_EQ( splitter->getTabWidgets().size(), 1UL );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	auto* newSplit = splitter->splitTabWidget( SplitDirection::Bottom, firstTabs );
+	ASSERT_TRUE( newSplit != nullptr );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( newSplit->getTabBar()->isVisible() );
+	eeDelete( splitter );
+}
+
 UTEST( UITabWidgetSplitter, Serialization ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

@@ -1195,7 +1195,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		if ( plugin->onTextInput( this, event ) )
 			return 1;
 
-	return 0;
+	return 1;
 }
 
 void UICodeEditor::updateIMELocation() {
@@ -1920,8 +1920,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool flipped ) {
-	const Vector2i position = getEventDispatcher() ? getEventDispatcher()->getMousePos()
-											  : Vector2i::Zero;
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseWheel( this, position, offset, flipped ) )
 			return 1;

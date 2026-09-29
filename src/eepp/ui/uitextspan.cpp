@@ -13,6 +13,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/input.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -765,8 +766,13 @@ Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 				if ( controller->consumeSuppressedClick() )
 					return 1;
 			}
-			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
-				getUISceneNode()->openURL( mHref );
+			if ( !mHref.empty() && ( Msg->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_MMASK ) ) ) {
+				NavigationRequest request{ URI( mHref ) };
+				request.source = this;
+				request.mouseButtons = Msg->getFlags();
+				request.modifiers = getInput() ? getInput()->getModState() : 0;
+				getUISceneNode()->navigate( request );
+			}
 			return 1;
 		}
 	}

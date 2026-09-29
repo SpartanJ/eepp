@@ -44,10 +44,16 @@ class UIIcon;
 class UIRoot;
 
 struct NavigationRequest {
+	enum class Target : Uint8 { Current, NewTab };
+
 	URI uri;
 	std::string method{ "GET" };
 	std::string body;
 	std::map<std::string, std::string> extraHeaders;
+	const Node* source{ nullptr };
+	Uint32 mouseButtons{ 0 };
+	Uint32 modifiers{ 0 };
+	Target target{ Target::Current };
 };
 
 class EE_API UISceneNode : public SceneNode {
@@ -931,9 +937,14 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return The document referer */
 	URI getReferer() const { return mReferer; };
 
-	const Network::CookieManager& getCookieManager() const { return mCookieManager; }
+	const CookieManager& getCookieManager() const { return *mCookieManager; }
 
-	Network::CookieManager& getCookieManager() { return mCookieManager; }
+	CookieManager& getCookieManager() { return *mCookieManager; }
+
+	/** Share one cookie jar across document scenes. Passing nullptr creates a fresh private jar. */
+	void setCookieManager( std::shared_ptr<CookieManager> manager ) {
+		mCookieManager = manager ? std::move( manager ) : std::make_shared<CookieManager>();
+	}
 
 	const WebResourceCachePtr& getWebResourceCache() const { return mWebResourceCache; }
 
@@ -1057,7 +1068,7 @@ class EE_API UISceneNode : public SceneNode {
 	URI mURI;
 	URI mReferer;
 	std::function<bool( const NavigationRequest& request )> mNavigationInterceptorCb;
-	Network::CookieManager mCookieManager;
+	std::shared_ptr<CookieManager> mCookieManager{ std::make_shared<CookieManager>() };
 
 	/**
 	 * @brief Protected constructor.
