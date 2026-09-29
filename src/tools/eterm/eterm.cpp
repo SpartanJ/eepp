@@ -966,6 +966,7 @@ int App::run( int argc, char* argv[] ) {
 		UITabWidgetSplitter::New( &splitterClient, scene ) );
 	tabSplitter = tabSplitterOwner.get();
 	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );
+	tabSplitter->setShowTabBarWhenSplit( config->window.showTabBarWhenSplit );
 	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {
 		restoreMaximizedTabWidget();
 		return true;

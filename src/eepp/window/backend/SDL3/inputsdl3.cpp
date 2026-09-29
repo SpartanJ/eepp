@@ -437,6 +437,13 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.quit.type = event.Type;
 			break;
 		}
+		case SDL_EVENT_CLIPBOARD_UPDATE: {
+			event.Type = InputEvent::ClipboardChanged;
+			event.clipboard.owner = SDLEvent.clipboard.owner ? InputEvent::ClipboardOwner::Self
+															 : InputEvent::ClipboardOwner::External;
+			event.WinID = 0;
+			break;
+		}
 		case SDL_EVENT_DROP_FILE: {
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.data;

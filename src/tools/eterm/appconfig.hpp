@@ -59,6 +59,7 @@ struct WindowConfig {
 	bool benchmarkMode{ false };
 	bool warnBeforeClose{ false };
 	bool alwaysShowTabBar{ false };
+	bool showTabBarWhenSplit{ true };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };

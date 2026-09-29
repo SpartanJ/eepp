@@ -447,6 +447,16 @@ UIWindow* SettingsPanel::create( App& app ) {
 						app.savePreferences();
 					} );
 
+	panel->addBool(
+		{ "showTabBarWhenSplit", "terminal.appearance",
+		  app.i18n( "show_tab_bar_when_split", "Show Tab Bar When Split" ),
+		  app.i18n( "show_tab_bar_when_split_desc",
+					"Show single-tab bars when the terminal is split into multiple panes." ) },
+		&app.config->window.showTabBarWhenSplit, [&app]( bool value ) {
+			app.tabSplitter->setShowTabBarWhenSplit( value );
+			app.savePreferences();
+		} );
+
 	panel->build();
 	settingsWindow->on( Event::OnWindowReady, [panel]( const Event* ) {
 		panel->runOnMainThread( [panel] { panel->focusSearch(); } );

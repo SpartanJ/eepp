@@ -499,6 +499,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
 			break;
 		}
+		case SDL_CLIPBOARDUPDATE: {
+			event.Type = InputEvent::ClipboardChanged;
+			event.clipboard.owner = InputEvent::ClipboardOwner::Unknown;
+			event.WinID = 0;
+			break;
+		}
 		case SDL_DROPFILE: {
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.file;

@@ -7236,6 +7236,9 @@ UTEST( UIHTML, MarkdownSpaceScrollingUsesParentViewport ) {
 	const Float range = markdown->getPixelsSize().getHeight() - viewport;
 	ASSERT_TRUE( range > 2.f * viewport );
 	scene->getEventDispatcher()->setFocusNode( markdown );
+	// Establish the key-only path explicitly; SDL2 enables text input on desktop by default.
+	scene->getWindow()->stopTextInput();
+	ASSERT_FALSE( scene->getWindow()->isTextInputActive() );
 	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
 	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
 	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, KEYMOD_LSHIFT );

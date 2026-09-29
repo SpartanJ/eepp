@@ -3621,6 +3621,10 @@ UTEST( UIWebView, DefaultShortcutsScrollByViewportAndRespectFocusedControls ) {
 		scene->getEventDispatcher()->sendKeyDown( key, SCANCODE_UNKNOWN, 0, mod );
 	};
 	scene->getEventDispatcher()->setFocusNode( view );
+	// SDL2 starts text input automatically on desktop. These assertions send keys only;
+	// the committed-text path is exercised separately below.
+	window->stopTextInput();
+	ASSERT_FALSE( window->isTextInputActive() );
 	press( KEY_SPACE );
 	EXPECT_NEAR( viewport, scroll->getValue() * range, 1.f );
 	press( KEY_PAGEDOWN );
