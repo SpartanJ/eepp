@@ -73,7 +73,7 @@ void StyleSheetPropertyAnimation::tweenProperty(
 				static_cast<Int32>( startColor.a + ( endColor.a - startColor.a ) * progress ),
 				255 ) );
 			widget->applyProperty(
-					StyleSheetProperty( property, resColor.toHexString(), propertyIndex ) );
+				StyleSheetProperty( property, resColor.toHexString(), propertyIndex ) );
 			break;
 		}
 		case PropertyType::NumberLength: {
@@ -83,8 +83,8 @@ void StyleSheetPropertyAnimation::tweenProperty(
 			Float end = widget->convertLength( endValue, containerLength );
 			Float value = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
 									start, end - start, 1.f );
-			widget->applyProperty(
-				StyleSheetProperty( property, String::fromFloat( value, "px" ), propertyIndex ) );
+			widget->applyProperty( StyleSheetProperty(
+				property, widget->pixelsLengthToString( value ), propertyIndex ) );
 
 			if ( isDone ) {
 				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );

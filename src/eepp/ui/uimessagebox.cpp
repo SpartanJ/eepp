@@ -64,7 +64,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextEdit = UITextEdit::New();
 		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( Vector2f{ 400, 100 } )
+			->setSize( Vector2f{ 600, 200 } )
 			->setParent( vlay );
 		mTextEdit->getDocument().setCommand( "complete-edit",
 											 [this] { sendCommonEvent( Event::OnConfirm ); } );

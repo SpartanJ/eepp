@@ -13,15 +13,20 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/input.hpp>
 
@@ -2100,4 +2105,48 @@ UTEST( CSSFunctions, NotAFunctionReturnsDefault ) {
 	auto len = StyleSheetLength::fromString( "notaclamp(10px, 50px, 100px)" );
 	EXPECT_EQ( StyleSheetLength::Unit::Px, len.getUnit() );
 	EXPECT_EQ( 0, len.getValue() );
+}
+
+UTEST( CSSUnits, StrokeRoundTripAndTransitionAtHighDensity ) {
+	UIApplication app( WindowSettings( 800, 600, "eepp - CSS Units Test", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ),
+					   UIApplication::Settings( System::Sys::getProcessPath() + ".." +
+													System::FileSystem::getOSSlash(),
+												1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	PixelDensity::setPixelDensity( 2.f );
+	auto* definition =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::TextStrokeWidth );
+	UIWidget* widgets[] = { UITextView::New(),	UITextSpan::New(), UIRichText::New(),
+							UITooltip::New(),	UIConsole::New(),  UICodeEditor::New(),
+							UITextInput::New(), UITextEdit::New() };
+	for ( auto* widget : widgets ) {
+		widget->setParent( app.getUI() );
+		definition = StyleSheetSpecification::instance()->getProperty(
+			widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_TEXTEDIT )
+				? PropertyId::HintStrokeWidth
+				: PropertyId::TextStrokeWidth );
+		for ( bool html : { false, true } ) {
+			if ( html )
+				widget->setFlags( UI_HTML_ELEMENT );
+			else
+				widget->unsetFlags( UI_HTML_ELEMENT );
+			for ( const char* source : { "2px", "2dp" } ) {
+				widget->applyProperty( StyleSheetProperty( definition, source ) );
+				const Float expected = html || std::string_view( source ) == "2dp" ? 4.f : 2.f;
+				std::string serialized = widget->getPropertyString( definition );
+				EXPECT_EQ( widget->lengthFromValue( serialized, PropertyRelativeTarget::None, 0 ),
+						   expected );
+				widget->applyProperty( StyleSheetProperty( definition, serialized ) );
+				EXPECT_TRUE( widget->getPropertyString( definition ) == serialized );
+				StyleSheetPropertyAnimation::tweenProperty( widget, 0.5f, definition, serialized,
+															"6dp", Ease::Interpolation::Linear, {},
+															0, false );
+				EXPECT_EQ( widget->lengthFromValue( widget->getPropertyString( definition ),
+													PropertyRelativeTarget::None, 0 ),
+						   ( expected + 12.f ) / 2.f );
+			}
+		}
+	}
+	PixelDensity::setPixelDensity( previousDensity );
 }

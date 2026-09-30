@@ -27,9 +27,9 @@ arguments. Do not add sanitizer, linker, framework, generator, architecture, or 
 outside the scripts unless `.ecode/project_build.json` itself requires them. Do not fall back to a
 hand-written Premake or direct Make command.
 
-## Release Performance Builds (Linux)
+## Release Builds (Linux)
 
-For performance investigations, use the `eepp-linux-ninja` configuration from
+For release builds, use the `eepp-linux-ninja` configuration from
 `.ecode/project_build.json`. At the time of writing, its commands are:
 
 `premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 ninja`

@@ -602,7 +602,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::fromFloat( getHintOutlineThickness(), "px" );
+			return pixelsLengthToString( getHintOutlineThickness() );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		case PropertyId::HintDisplay:
@@ -682,7 +682,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontStyle( attribute.asFontStyle() );
 			break;
 		case PropertyId::HintStrokeWidth:
-			setHintOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			setHintOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintStrokeColor:
 			setHintOutlineColor( attribute.asColor() );

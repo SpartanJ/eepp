@@ -1848,6 +1848,11 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 	return ret;
 }
 
+std::string UINode::pixelsLengthToString( Float pixels ) const {
+	return mFlags & UI_HTML_ELEMENT ? String::fromFloat( PixelDensity::pxToDp( pixels ), "dp" )
+									: String::fromFloat( pixels, "px" );
+}
+
 Float UINode::convertLengthAsDp( const StyleSheetLength& length,
 								 const Float& containerLength ) const {
 	return PixelDensity::pxToDp( convertLength( length, containerLength ) );

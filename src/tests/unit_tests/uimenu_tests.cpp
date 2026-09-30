@@ -1,14 +1,24 @@
 #include "utest.h"
 
+#include <eepp/graphics/ninepatch.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 
 using namespace EE;
 using namespace EE::System;
+using namespace EE::Graphics;
 using namespace EE::UI;
 using namespace EE::Window;
 
@@ -84,4 +94,126 @@ UTEST( UIMenu, SemanticActivationLifecycleAndRoles ) {
 	} );
 	subMenu->showSubMenu();
 	EXPECT_EQ( subMenuShowStep, 2 );
+}
+
+UTEST( UIMenu, NestedMenuBarAndSubmenuAtHighDensity ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - Menu DPI Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	PixelDensity::setPixelDensity( 2.f );
+	auto* container = UIWidget::New();
+	container->setParent( app.getUI() );
+	container->setPosition( 30, 40 );
+	auto* bar = UIMenuBar::New();
+	bar->setParent( container );
+	bar->setPosition( 10, 15 );
+	bar->setSize( 300, 24 );
+	auto* popup = UIPopUpMenu::New();
+	popup->add( "Item" );
+	bar->addMenuButton( "File", popup );
+	auto* button = bar->getButton( 0 );
+	Vector2f expected( 0, button->getSize().getHeight() );
+	button->nodeToWorld( expected );
+	bar->showMenu( 0 );
+	Vector2f actual( 0, 0 );
+	popup->nodeToWorld( actual );
+	EXPECT_EQ( actual.x, expected.x );
+	EXPECT_EQ( actual.y, expected.y );
+	popup->setPadding( Rectf( 0, 0, 3, 0 ) );
+	auto* child = UIPopUpMenu::New();
+	child->add( "Child" );
+	auto* item = popup->addSubMenu( "Submenu", {}, child );
+	// The placement policy aligns the submenu to the parent menu's right edge.
+	Vector2f subExpected( popup->getSize().getWidth(), 0 );
+	popup->nodeToWorld( subExpected );
+	item->showSubMenu();
+	Vector2f subActual( 0, 0 );
+	child->nodeToWorld( subActual );
+	EXPECT_EQ( subActual.x, subExpected.x );
+	PixelDensity::setPixelDensity( previousDensity );
+}
+
+namespace {
+
+class DensityTestCheckBox : public UICheckBox {
+  public:
+	using UICheckBox::onAutoSize;
+};
+
+class DensityTestRadioButton : public UIRadioButton {
+  public:
+	using UIRadioButton::onAutoSize;
+};
+
+class DensityTestScrollBar : public UIScrollBar {
+  public:
+	DensityTestScrollBar( UIOrientation orientation ) : UIScrollBar( "scrollbar", orientation ) {}
+
+	using UIScrollBar::onAutoSize;
+};
+
+} // namespace
+
+UTEST( UIUnits, AutoSizeAtHighDensity ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - Sizing DPI Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	PixelDensity::setPixelDensity( 2.f );
+	auto* checkbox = eeNew( DensityTestCheckBox, () );
+	checkbox->setParent( app.getUI() );
+	checkbox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	checkbox->setFlags( UI_AUTO_SIZE );
+	checkbox->setTextSeparation( 8 );
+	checkbox->setPadding( Rectf( 3, 4, 5, 6 ) );
+	checkbox->getCheckedButton()->setSize( 10, 12 );
+	checkbox->setSize( 0, 0 );
+	checkbox->onAutoSize();
+	EXPECT_EQ( checkbox->getPixelsSize().x, (int)checkbox->getTextWidth() + 20 + 16 +
+												checkbox->getPixelsPadding().Left +
+												checkbox->getPixelsPadding().Right );
+	auto* radio = eeNew( DensityTestRadioButton, () );
+	radio->setParent( app.getUI() );
+	radio->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	radio->setFlags( UI_AUTO_SIZE );
+	radio->setPadding( Rectf( 3, 4, 5, 6 ) );
+	radio->getActiveButton()->setSize( 10, 12 );
+	radio->setMinSize( Sizef::Zero );
+	radio->setSize( 0, 0 );
+	radio->onAutoSize();
+	EXPECT_EQ( radio->getSize().y, 12 + radio->getPadding().Top + radio->getPadding().Bottom );
+
+	auto region = TextureRegion::New();
+	region->setDestSize( Sizef( 20, 30 ) );
+	region->setPixelDensity( 2.f );
+	unsigned char texturePixels[20 * 30 * 4] = {};
+	auto texture = TextureFactory::instance()->loadFromPixels( texturePixels, 20, 30, 4 );
+	auto ninePatch = NinePatch::New( texture, 2, 2, 2, 2, 2.f );
+	DrawablePtr drawables[] = { DrawablePtr( RectangleDrawable::New( {}, Sizef( 20, 30 ) ) ),
+								region, ninePatch };
+	for ( auto& drawable : drawables ) {
+		auto skin = UISkin::New( "dpi-test" );
+		skin->setStateDrawable( UIState::StateFlagNormal, drawable );
+		for ( auto orientation : { UIOrientation::Vertical, UIOrientation::Horizontal } ) {
+			auto* scrollbar = eeNew( DensityTestScrollBar, ( orientation ) );
+			scrollbar->setParent( app.getUI() );
+			scrollbar->setSize( 100, 100 );
+			scrollbar->getSlider()->getBackSlider()->setSkin( skin.get() );
+			scrollbar->onAutoSize();
+			const Sizef pixels = skin->getPixelsSize();
+			EXPECT_EQ( scrollbar->getCurMinSize().x, pixels.x / 2.f );
+			EXPECT_EQ( scrollbar->getCurMinSize().y, pixels.y / 2.f );
+			if ( orientation == UIOrientation::Vertical ) {
+				EXPECT_EQ( scrollbar->getPixelsSize().x, pixels.x );
+				EXPECT_EQ( scrollbar->getSlider()->getPixelsSize().x, pixels.x );
+			} else {
+				EXPECT_EQ( scrollbar->getPixelsSize().y, pixels.y );
+				EXPECT_EQ( scrollbar->getSlider()->getPixelsSize().y, pixels.y );
+			}
+		}
+	}
+	PixelDensity::setPixelDensity( previousDensity );
 }

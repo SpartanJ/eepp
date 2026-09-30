@@ -681,7 +681,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( getOutlineThickness(), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::SelectionColor:

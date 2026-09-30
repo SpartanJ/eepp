@@ -7,7 +7,7 @@ The test binary manages its own current working directory, so you can execute it
 
 The required default workflow is:
 
-1. Build the release unit-test target.
+1. Build the release unit-test target (use ninja build).
 2. Run `bin/unit_tests/eepp-unit_tests` directly, without Xvfb.
 3. If sandbox restrictions prevent access to the host display, retry that same direct command with
    elevated permissions.

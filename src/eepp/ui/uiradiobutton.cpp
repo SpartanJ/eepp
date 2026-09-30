@@ -87,8 +87,8 @@ void UIRadioButton::onAutoSize() {
 		}
 
 		if ( getSize().getHeight() == 0 ) {
-			setInternalHeight( mActiveButton->getSize().getHeight() + mPaddingPx.Top +
-							   mPaddingPx.Bottom );
+			setInternalHeight( mActiveButton->getSize().getHeight() + mPadding.Top +
+							   mPadding.Bottom );
 		}
 	}
 
