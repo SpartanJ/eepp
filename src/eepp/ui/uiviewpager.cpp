@@ -20,7 +20,7 @@ UIViewPager::UIViewPager() :
 	mOrientation( UIOrientation::Horizontal ),
 	mDragging( false ),
 	mLocked( false ),
-	mDragResistance( PixelDensity::dpToPx( 8 ) ),
+	mDragResistance( 8 ),
 	mInitialDisplacement( 0 ),
 	mDisplacement( 0 ),
 	mChangePagePercent( 0.33f ),

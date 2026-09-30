@@ -12,7 +12,7 @@ UILoader* UILoader::New() {
 UILoader::UILoader() :
 	UIWidget( "loader" ),
 	mRadius( 0 ),
-	mOutlineThickness( PixelDensity::dpToPx( 8 ) ),
+	mOutlineThickness( 8 ),
 	mColor( Color::White ),
 	mArcAngle( 0 ),
 	mArcStartAngle( 0 ),

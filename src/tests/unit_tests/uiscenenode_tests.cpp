@@ -21,6 +21,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
+#include <thread>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -128,6 +129,53 @@ UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
 	}
 
 	EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	sceneManager->remove( sceneB );
+	sceneManager->remove( sceneA );
+	eeDelete( sceneB );
+	eeDelete( sceneA );
+}
+
+UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene ) {
+	auto* engine = Engine::instance();
+	auto* window = engine->getCurrentWindow();
+	if ( !window ) {
+		window = engine->createWindow( WindowSettings( 320, 240, "Async Resource Context Test",
+													   WindowStyle::Default, WindowBackend::Default,
+													   32, {}, 1, false, true ),
+									   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	}
+
+	auto* sceneA = UISceneNode::New( window );
+	auto* sceneB = UISceneNode::New( window );
+	auto* sceneManager = SceneManager::instance();
+	sceneManager->add( sceneA );
+	sceneManager->add( sceneB );
+	sceneManager->setCurrentUISceneNode( sceneA );
+
+	auto state = sceneB->getAsyncResourceLoadState();
+	const Uint64 generation = state->generation.load( std::memory_order_acquire );
+	bool immediateBound = false;
+	bool queuedBound = false;
+	{
+		auto context = sceneA->makeCurrent();
+		UISceneNode::runAsyncResourceOnMainThread( state, generation, [&]( UISceneNode* owner ) {
+			immediateBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+		} );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+
+		std::thread producer( [&] {
+			UISceneNode::runAsyncResourceOnMainThread(
+				state, generation, [&]( UISceneNode* owner ) {
+					queuedBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+				} );
+		} );
+		producer.join();
+		sceneA->update( Time::Zero );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	}
+
+	EXPECT_TRUE( immediateBound );
+	EXPECT_TRUE( queuedBound );
 	sceneManager->remove( sceneB );
 	sceneManager->remove( sceneA );
 	eeDelete( sceneB );

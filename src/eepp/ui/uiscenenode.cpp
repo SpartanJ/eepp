@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -57,12 +58,13 @@ struct PendingAsyncResourceMainThread {
 enum class AsyncResourceMainThreadQueueState : Uint8 { Closed, Open, Closing };
 
 std::mutex sAsyncResourceMainThreadMutex;
-std::vector<PendingAsyncResourceMainThread> sAsyncResourceMainThreadQueue;
+using AsyncResourceMainThreadQueue = SmallVector<PendingAsyncResourceMainThread, 4>;
+AsyncResourceMainThreadQueue sAsyncResourceMainThreadQueue;
 std::atomic<AsyncResourceMainThreadQueueState> sAsyncResourceMainThreadQueueState{
 	AsyncResourceMainThreadQueueState::Closed };
 
 void drainAsyncResourceMainThreadQueue() {
-	std::vector<PendingAsyncResourceMainThread> pending;
+	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		if ( sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed ) !=
@@ -71,7 +73,7 @@ void drainAsyncResourceMainThreadQueue() {
 		pending.swap( sAsyncResourceMainThreadQueue );
 	}
 
-	std::vector<PendingAsyncResourceMainThread> delayed;
+	AsyncResourceMainThreadQueue delayed;
 	for ( auto& item : pending ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( item.resourceState, item.generation ) )
 			continue;
@@ -82,8 +84,10 @@ void drainAsyncResourceMainThreadQueue() {
 		}
 
 		UISceneNode* owner = item.resourceState->owner.load( std::memory_order_acquire );
-		if ( owner && item.func )
+		if ( owner && item.func ) {
+			auto context = owner->makeCurrent();
 			item.func( owner );
+		}
 	}
 
 	if ( !delayed.empty() ) {
@@ -2323,8 +2327,10 @@ void UISceneNode::runAsyncResourceOnMainThread(
 	if ( isAsyncResourceLoadCurrent( resourceState, generation ) && Engine::isMainThread() &&
 		 delay <= Time::Zero ) {
 		UISceneNode* owner = resourceState->owner.load( std::memory_order_acquire );
-		if ( owner )
+		if ( owner ) {
+			auto context = owner->makeCurrent();
 			func( owner );
+		}
 		return;
 	}
 
@@ -2342,7 +2348,7 @@ void UISceneNode::runAsyncResourceOnMainThread(
 }
 
 void UISceneNode::openAsyncResourceMainThreadQueue() {
-	std::vector<PendingAsyncResourceMainThread> stale;
+	AsyncResourceMainThreadQueue stale;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		stale.swap( sAsyncResourceMainThreadQueue );
@@ -2358,7 +2364,7 @@ void UISceneNode::beginAsyncResourceMainThreadQueueShutdown() {
 }
 
 void UISceneNode::finishAsyncResourceMainThreadQueueShutdown() {
-	std::vector<PendingAsyncResourceMainThread> pending;
+	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closed,
