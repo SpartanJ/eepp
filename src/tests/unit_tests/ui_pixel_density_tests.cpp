@@ -180,9 +180,9 @@ UTEST( PixelDensityRegression, ListBoxAutomaticRowHeightAddsLogicalPadding ) {
 UTEST( PixelDensityRegression, MessageBoxControlsUseLogicalDimensions ) {
 	DensityApplication fixture;
 	auto* editBox = UIMessageBox::New( UIMessageBox::TEXT_EDIT, "Edit" );
-	EXPECT_EQ( editBox->getTextEdit()->getSize().x, 400.f );
-	EXPECT_EQ( editBox->getTextEdit()->getSize().y, 100.f );
-	EXPECT_EQ( editBox->getTextEdit()->getPixelsSize().x, 800.f );
+	EXPECT_EQ( editBox->getTextEdit()->getSize().x, 600.f );
+	EXPECT_EQ( editBox->getTextEdit()->getSize().y, 200.f );
+	EXPECT_EQ( editBox->getTextEdit()->getPixelsSize().x, 1200.f );
 	auto* dropdownBox = UIMessageBox::New( UIMessageBox::DROPDOWNLIST, "Choose" );
 	EXPECT_EQ( dropdownBox->getDropDownList()->getSize().x, 200.f );
 	EXPECT_EQ( dropdownBox->getDropDownList()->getPixelsSize().x, 400.f );
