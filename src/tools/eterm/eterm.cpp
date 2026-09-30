@@ -1059,6 +1059,8 @@ int App::run( int argc, char* argv[] ) {
 			pendingExitCloseTabs.pop_back();
 			closeTab( tab );
 		}
+		if ( !appWindow->isOpen() )
+			return;
 		if ( benchmarkMode || scene->invalidated() ) {
 			appWindow->clear();
 			SceneManager::instance()->draw();
@@ -1073,6 +1075,9 @@ int App::run( int argc, char* argv[] ) {
 			secondsCounter.restart();
 		}
 	} );
+	// Native destruction is deferred to keep the GL context alive during UI teardown.
+	// Hide first: stopping the file watcher can wait for its polling thread.
+	appWindow->hide();
 	fileWatcher.reset();
 	return EXIT_SUCCESS;
 }
