@@ -929,15 +929,17 @@ void UICodeEditor::setMouseWheelScroll( const Float& mouseWheelScroll ) {
 }
 
 void UICodeEditor::setLineNumberPaddingLeft( const Float& dpLeft ) {
-	if ( dpLeft != mLineNumberPaddingLeft ) {
-		mLineNumberPaddingLeft = dpLeft;
+	Float pxLeft = PixelDensity::dpToPx( dpLeft );
+	if ( pxLeft != mLineNumberPaddingLeft ) {
+		mLineNumberPaddingLeft = pxLeft;
 		invalidateDraw();
 	}
 }
 
 void UICodeEditor::setLineNumberPaddingRight( const Float& dpRight ) {
-	if ( dpRight != mLineNumberPaddingRight ) {
-		mLineNumberPaddingRight = dpRight;
+	Float pxRight = PixelDensity::dpToPx( dpRight );
+	if ( pxRight != mLineNumberPaddingRight ) {
+		mLineNumberPaddingRight = pxRight;
 		invalidateDraw();
 	}
 }
@@ -3272,7 +3274,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return String::fromFloat( getOutlineThickness(), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:

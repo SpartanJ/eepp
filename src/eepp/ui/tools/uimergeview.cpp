@@ -227,7 +227,7 @@ UIPushButton* UIMergeView::addToolbarAction( const std::string& command, const S
 	if ( auto* toolbarIcon = getUISceneNode()->findIcon( icon ) )
 		button->setIcon( toolbarIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	button->setClass( "mergeview_toolbar_button" );
-	button->setLayoutMarginRight( PixelDensity::dpToPx( 4 ) );
+	button->setLayoutMarginRight( 4 );
 	const auto keybind = getKeyBindings().getCommandKeybindString( command );
 	button->setTooltipText( keybind.empty() ? text : text + " (" + keybind + ")" );
 	button->onClick( [this, command]( const Event* ) { execute( command ); } );

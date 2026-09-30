@@ -281,7 +281,7 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( getFontStyleConfig().Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getFontOutlineThickness() ), "px" );
+			return String::fromFloat( getFontOutlineThickness(), "px" );
 		case PropertyId::TextStrokeColor:
 			return getFontOutlineColor().toHexString();
 		default:

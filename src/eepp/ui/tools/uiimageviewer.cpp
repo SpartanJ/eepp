@@ -78,7 +78,7 @@ UIImageViewer::UIImageViewer() : UIWidget( "imageviewer" ) {
 	mLoader->setVisible( false );
 	mLoader->setEnabled( false );
 	mLoader->setSize( { 64, 64 } );
-	mLoader->setOutlineThickness( PixelDensity::dpToPx( 6 ) );
+	mLoader->setOutlineThickness( 6 );
 	mTextView = UITextView::New();
 	mTextView->setParent( this );
 	mTextView->setEnabled( false );

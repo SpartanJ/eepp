@@ -2602,7 +2602,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		UIPushButton* btn = UIPushButton::New();
 		btn->setParent( flow );
 		btn->setText( lang->getLanguageName() );
-		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
+		btn->setLayoutMarginRight( 8 );
 		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
 			editor->setSyntaxDefinition( *lang );
 			editor->disableReportSizeChangeToChildren();

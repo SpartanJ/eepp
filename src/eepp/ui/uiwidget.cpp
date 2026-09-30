@@ -255,7 +255,7 @@ UIWidget* UIWidget::updateLayoutMarginAuto() {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
-	if ( mLayoutMargin != margin ) {
+	if ( mLayoutMarginPx != margin ) {
 		mLayoutMarginPx = margin;
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
 		onMarginChange();
@@ -267,7 +267,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
-	if ( mLayoutMargin.Left != marginLeft ) {
+	if ( mLayoutMarginPx.Left != marginLeft ) {
 		mLayoutMarginPx.Left = marginLeft;
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
 		onMarginChange();
@@ -279,7 +279,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
-	if ( mLayoutMargin.Right != marginRight ) {
+	if ( mLayoutMarginPx.Right != marginRight ) {
 		mLayoutMarginPx.Right = marginRight;
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
 		onMarginChange();
@@ -291,7 +291,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
-	if ( mLayoutMargin.Top != marginTop ) {
+	if ( mLayoutMarginPx.Top != marginTop ) {
 		mLayoutMarginPx.Top = marginTop;
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
 		onMarginChange();
@@ -303,7 +303,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
-	if ( mLayoutMargin.Bottom != marginBottom ) {
+	if ( mLayoutMarginPx.Bottom != marginBottom ) {
 		mLayoutMarginPx.Bottom = marginBottom;
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
 		onMarginChange();
@@ -1009,7 +1009,7 @@ UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 }
 
 UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
-	if ( padding != mPadding ) {
+	if ( padding != mPaddingPx ) {
 		mPaddingPx = padding;
 		mPadding = PixelDensity::pxToDp( mPaddingPx ).ceil();
 		onAutoSize();
@@ -1021,7 +1021,7 @@ UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
-	if ( paddingLeft != mPadding.Left ) {
+	if ( paddingLeft != mPaddingPx.Left ) {
 		mPaddingPx.Left = paddingLeft;
 		mPadding.Left = eeceil( PixelDensity::pxToDp( mPaddingPx.Left ) );
 		onAutoSize();
@@ -1033,7 +1033,7 @@ UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
-	if ( paddingRight != mPadding.Right ) {
+	if ( paddingRight != mPaddingPx.Right ) {
 		mPaddingPx.Right = paddingRight;
 		mPadding.Right = eeceil( PixelDensity::pxToDp( mPaddingPx.Right ) );
 		onAutoSize();
@@ -1045,7 +1045,7 @@ UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
-	if ( paddingTop != mPadding.Top ) {
+	if ( paddingTop != mPaddingPx.Top ) {
 		mPaddingPx.Top = paddingTop;
 		mPadding.Top = eeceil( PixelDensity::pxToDp( mPaddingPx.Top ) );
 		onAutoSize();
@@ -1057,7 +1057,7 @@ UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsBottom( const Float& paddingBottom ) {
-	if ( paddingBottom != mPadding.Bottom ) {
+	if ( paddingBottom != mPaddingPx.Bottom ) {
 		mPaddingPx.Bottom = paddingBottom;
 		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPaddingPx.Bottom ) );
 		onAutoSize();

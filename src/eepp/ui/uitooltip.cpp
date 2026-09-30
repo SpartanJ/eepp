@@ -513,7 +513,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return String::fromFloat( getOutlineThickness(), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:

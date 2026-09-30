@@ -122,7 +122,7 @@ void UIWidgetTable::setTheme( UITheme* Theme ) {
 
 void UIWidgetTable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::dpToPx( makePadding() );
+		mContainerPadding = makePadding();
 	}
 }
 
@@ -134,7 +134,7 @@ void UIWidgetTable::onSizeChange() {
 }
 
 void UIWidgetTable::containerResize() {
-	Rectf padding = mContainerPadding + mPaddingPx;
+	Rectf padding = mContainerPadding + mPadding;
 
 	mContainer->setPosition( padding.Left, padding.Top );
 
@@ -627,7 +627,7 @@ UIWidgetTable* UIWidgetTable::setSmoothScroll( bool smoothScroll ) {
 }
 
 Rectf UIWidgetTable::getContainerPadding() const {
-	return PixelDensity::pxToDp( mContainerPadding + mPaddingPx );
+	return mContainerPadding + mPadding;
 }
 
 void UIWidgetTable::onPaddingChange() {
