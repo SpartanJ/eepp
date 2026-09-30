@@ -456,7 +456,7 @@ class EE_API UICodeEditorSplitter {
 
 	void saveEditorSelection( UICodeEditor* editor );
 
-	void restoreEditorSelection( UICodeEditor* editor );
+	void restoreEditorSelection( UICodeEditor* editor, bool scrollToCursor );
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 

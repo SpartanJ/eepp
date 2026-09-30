@@ -1725,7 +1725,7 @@ void UICodeEditorSplitter::saveEditorSelection( UICodeEditor* editor ) {
 		mEditorSelections[editor] = editor->getDocument().getSelections();
 }
 
-void UICodeEditorSplitter::restoreEditorSelection( UICodeEditor* editor ) {
+void UICodeEditorSplitter::restoreEditorSelection( UICodeEditor* editor, bool scrollToCursor ) {
 	if ( !editor || !editor->hasDocument() )
 		return;
 
@@ -1740,7 +1740,8 @@ void UICodeEditorSplitter::restoreEditorSelection( UICodeEditor* editor ) {
 	// resetSelection() drops stale extra cursors; setSelection() updates the active cursor index.
 	editor->getDocument().resetSelection( selection );
 	editor->getDocument().setSelection( selection );
-	editor->scrollToCursor();
+	if ( scrollToCursor )
+		editor->scrollToCursor();
 }
 
 std::shared_ptr<ThreadPool> UICodeEditorSplitter::getThreadPool() const {
@@ -1837,8 +1838,11 @@ void UICodeEditorSplitter::attachWidgetEvents( UIWidget* widget ) {
 				 !prevEditor->hasFocus() )
 				saveEditorSelection( prevEditor );
 			setCurrentWidget( editor );
-			if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor )
-				restoreEditorSelection( editor );
+			if ( mRestoreEditorSelectionOnFocus && prevEditor && prevEditor != editor ) {
+				// Mouse hit testing must use the viewport the user clicked, before any scroll.
+				restoreEditorSelection( editor, event->asFocusEvent()->getReason() !=
+													NodeFocusReason::Click );
+			}
 		} );
 		connections += editor->connect( Event::OnFocusLoss, [this]( const Event* event ) {
 			if ( mRestoreEditorSelectionOnFocus )

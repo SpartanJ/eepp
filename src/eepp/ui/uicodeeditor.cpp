@@ -1661,7 +1661,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		mMouseDown = true;
 		Input* input = getInput();
 		input->captureMouse( true );
-		setFocus();
+		setFocus( NodeFocusReason::Click );
 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );

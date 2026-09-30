@@ -231,3 +231,43 @@ UTEST( UICodeEditorSplitter, EditorDestructionClearsSplitterBookkeeping ) {
 
 	eeDelete( splitter );
 }
+
+UTEST( UICodeEditorSplitter, MouseFocusPreservesScrolledViewport ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	EditorSplitterTestClient client;
+	auto* splitter = TestableEditorSplitter::New( &client, app.getUI() );
+	auto* tabWidgetA = splitter->createEditorWithTabWidget( app.getUI(), false );
+	auto* editorA = editorInTab( tabWidgetA, 0 );
+	auto* tabWidgetB = splitter->splitTabWidget( SplitDirection::Right, tabWidgetA );
+	auto* editorB = splitter->createCodeEditorInTabWidget( tabWidgetB ).second;
+	editorA->getDocument().textInput( String( std::string( 300, '\n' ) ) );
+	editorA->setSize( 350, 400 );
+	editorB->setSize( 350, 400 );
+	const TextPosition savedCursor( 5, 0 );
+
+	// Both independent documents and two views of one document must keep their viewport.
+	for ( bool sharedDocument : { false, true } ) {
+		if ( sharedDocument )
+			editorB->setDocument( editorA->getDocumentRef() );
+		editorA->setFocus();
+		editorA->getDocument().setSelection( savedCursor );
+		editorA->setScrollY( 150 * editorA->getLineHeight() );
+		const auto scroll = editorA->getScroll();
+		EXPECT_TRUE( scroll.y > 0 );
+		editorB->setFocus();
+		// Simulate another pane moving the shared cursor while A is inactive.
+		editorA->getDocument().setSelection( TextPosition( 200, 0 ) );
+		editorA->setFocus( NodeFocusReason::Click );
+		EXPECT_TRUE( editorA->getScroll() == scroll );
+		EXPECT_TRUE( editorA->getDocument().getSelection().start() == savedCursor );
+
+		// Keyboard/programmatic activation still reveals the restored cursor.
+		editorB->setFocus();
+		editorA->setFocus();
+		EXPECT_TRUE( editorA->getScroll().y < scroll.y );
+	}
+
+	eeDelete( splitter );
+}
