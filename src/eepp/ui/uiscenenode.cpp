@@ -1415,44 +1415,49 @@ void UISceneNode::invalidateLayout( UILayout* node, LayoutInvalidationFlags reas
 		ancestorIt = ancestorIt->getParent();
 	}
 
-	// 2. Walk DOWN the dirty list.
-	// Remove any already-dirty layouts that will be naturally updated by THIS node,
-	// merging their reasons into this node.
-	SmallVector<UILayout*> eraseList;
+	// A leaf cannot contain dirty descendants. In particular, newly constructed layouts
+	// invalidate themselves before attachment; scanning the growing dirty set for each leaf
+	// makes document construction quadratic. Preserve the ancestor coalescing above.
+	if ( node->getFirstChild() != nullptr ) {
+		// 2. Walk DOWN the dirty list.
+		// Remove any already-dirty layouts that will be naturally updated by THIS node,
+		// merging their reasons into this node.
+		SmallVector<UILayout*> eraseList;
 
-	for ( auto layout : mDirtyLayouts ) {
-		if ( NULL == layout ) {
-			eraseList.push_back( layout );
-			continue;
-		}
-
-		// Traverse up from the already-dirty layout to the new node. Coalescing is valid only when
-		// every intermediate node is a layout, because updateLayoutTree() recursively walks layout
-		// children but does not cross arbitrary widget boundaries.
-		Node* it = layout->getParent();
-		bool isValidPath = false;
-
-		while ( it != nullptr ) {
-			if ( it == node ) {
-				// We reached node, and every node in between was a layout.
-				isValidPath = true;
-				break;
+		for ( auto layout : mDirtyLayouts ) {
+			if ( NULL == layout ) {
+				eraseList.push_back( layout );
+				continue;
 			}
-			if ( !it->isLayout() ) {
-				// The invalidation path is broken, or node is not an ancestor.
-				break;
+
+			// Traverse up from the already-dirty layout to the new node. Coalescing is valid only
+			// when every intermediate node is a layout, because updateLayoutTree() recursively
+			// walks layout children but does not cross arbitrary widget boundaries.
+			Node* it = layout->getParent();
+			bool isValidPath = false;
+
+			while ( it != nullptr ) {
+				if ( it == node ) {
+					// We reached node, and every node in between was a layout.
+					isValidPath = true;
+					break;
+				}
+				if ( !it->isLayout() ) {
+					// The invalidation path is broken, or node is not an ancestor.
+					break;
+				}
+				it = it->getParent();
 			}
-			it = it->getParent();
+
+			if ( isValidPath ) {
+				reasons |= layout->mDirtyReasons;
+				eraseList.push_back( layout );
+			}
 		}
 
-		if ( isValidPath ) {
-			reasons |= layout->mDirtyReasons;
-			eraseList.push_back( layout );
-		}
+		for ( auto layout : eraseList )
+			mDirtyLayouts.erase( layout );
 	}
-
-	for ( auto layout : eraseList )
-		mDirtyLayouts.erase( layout );
 
 	// 3. Insert the coalesced layout after preserving any descendant reasons removed above.
 	node->mDirtyReasons |= reasons;

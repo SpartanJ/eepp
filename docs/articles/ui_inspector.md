@@ -51,6 +51,8 @@ python3 projects/scripts/eepp-inspect.py query --scene scene:2 'table > tr > td.
 python3 projects/scripts/eepp-inspect.py tree --scene scene:2 --depth 4
 python3 projects/scripts/eepp-inspect.py inspect w:42 geometry.size geometry.position css.font-size
 python3 projects/scripts/eepp-inspect.py focus --scene scene:2
+python3 projects/scripts/eepp-inspect.py keybindings --limit 100
+python3 projects/scripts/eepp-inspect.py keybindings '#url_bar'
 python3 projects/scripts/eepp-inspect.py screenshot --scene scene:2 --format png
 python3 projects/scripts/eepp-inspect.py screenshot --window win:2 --rect 10 20 400 300 --format webp
 python3 projects/scripts/eepp-inspect.py click --scene scene:2 '#submit'
@@ -113,6 +115,7 @@ All examples below omit `id` where the surrounding explanation is enough; real r
 | `ui.query` | `selector` required; `scene` default; `offset:0`, `limit:50` (maximum 1000); optional `properties`, `maxStringLength:4096` (maximum 65536) | Scene, selector, total, pagination, truncation, compact `nodes` | `invalid-scene`, `selector-invalid` |
 | `ui.tree` | `scene` default or `root` handle; `depth:3` (maximum 32), `maxNodes:200` (maximum 1000), `includeText:false` | Flat nodes with `parent`, `children`, and `truncated` | `invalid-widget`, `invalid-scene` |
 | `ui.inspect` | Exactly one of `handle` or `selector` plus optional `scene`; optional `properties`, `maxStringLength:4096` (maximum 65536) | Handle, scene, typed `properties`, `unavailable` | `invalid-widget`, `target-not-found`, `target-ambiguous` |
+| `ui.keybindings` | Optional `handle` or `selector`; `scene` default; `offset:0`, `limit:50` (maximum 1000) | Scene, optional widget handle, `supported`, pagination, `bindings` | `invalid-scene`, `invalid-widget`, `selector-invalid`, `target-not-found`, `target-ambiguous` |
 | `ui.focus` | `scene` default | Scene and focused widget summary or `null` | `invalid-scene` |
 | `ui.screenshot` | Optional `scene` or `window` (mutually exclusive); optional `rect:[x,y,width,height]`; `format:"png"` | Temporary file path, format, window/scene handles, captured rectangle and size | `invalid-window`, `invalid-scene`, `invalid-params`, `screenshot-failed` |
 | `input.click` | Exactly one target; optional `button:"left"`, `"middle"`, or `"right"`, `count:1` (maximum 2) | Target handle, scene, click point | `target-not-interactable`, `permission-denied` |
@@ -127,7 +130,7 @@ These compact request/response pairs show each method's envelope. Handle numbers
 
 ```json
 {"id":1,"method":"session.connect","params":{"protocolVersion":1,"token":"secret"}}
-{"id":1,"result":{"protocolVersion":1,"application":"ecode","pid":19382,"readOnly":false,"defaultWindow":"win:1","defaultScene":"scene:1","capabilities":["ui.contexts","ui.query","ui.tree","ui.inspect","ui.focus","ui.screenshot","session.batch","session.nextFrame","watch.properties","events.context-lifecycle","input.click","input.key","input.text"]}}
+{"id":1,"result":{"protocolVersion":1,"application":"ecode","pid":19382,"readOnly":false,"defaultWindow":"win:1","defaultScene":"scene:1","capabilities":["ui.contexts","ui.query","ui.tree","ui.inspect","ui.focus","ui.screenshot","ui.keybindings","session.batch","session.nextFrame","watch.properties","events.context-lifecycle","input.click","input.key","input.text"]}}
 {"id":2,"method":"ui.contexts"}
 {"id":2,"result":{"revision":0,"defaultWindow":"win:1","defaultScene":"scene:1","windows":[{"handle":"win:1","id":1,"title":"ecode","sizePx":[800,600],"positionPx":[0,0],"focused":true}],"scenes":[{"handle":"scene:1","window":"win:1","kind":"top-level","parentScene":null,"owner":null,"root":"w:1"}]}}
 {"id":3,"method":"ui.query","params":{"selector":"#panel","properties":["geometry.size"],"limit":1}}
@@ -157,6 +160,15 @@ These compact request/response pairs show each method's envelope. Handle numbers
 ```
 
 `ui.query` uses eepp's CSS selector matching and returns an empty `nodes` array for no matches. Summary fields include handle, scene, tag, ID, classes, active pseudo-classes, pixel bounds, visible, enabled, focused, and optional text. Text is exposed for text controls, `UITextNode`, `UITextSpan`, and `UIRichText`; rich-text containers concatenate descendant source text without forcing layout. Summary text is limited to 256 Unicode characters. When `properties` is provided, each returned node also has the requested inspection values, avoiding one `ui.inspect` call per match. `ui.tree` does not cross a nested scene boundary; a WebView entry instead includes `documentScene`.
+
+`ui.keybindings` lists the bindings registered directly on a scene, or on one widget selected by `handle` or `selector`. Omit the widget target to inspect the scene's bindings. It uses the same scene and target validation as `ui.inspect` and is available in read-only mode. Each entry contains `shortcut` (the platform's key name and modifiers), `command`, and numeric `keycode` and `mod` fields from `KeyBindings::Shortcut`. Entries are ordered by packed shortcut value, and every shortcut alias is retained. Pagination uses `offset` and `limit`, with `total`, `returned`, and `truncated` in the response.
+
+Supported widgets are `UITextInput` (including password inputs), `UICodeEditor`, `UIWindow`, `UIConsole`, and widgets using `WidgetCommandExecuter`, such as diff, merge, and find/replace views. Other widgets return `supported:false` and an empty list; scenes and supported widgets with no bindings return `supported:true`. The query reports registered bindings only: it does not merge ancestor or nested-scene bindings, infer hardcoded key handlers, or assert that a command callback exists or will receive an event. For focus-related debugging, inspect the focused widget and its enclosing scene separately.
+
+```json
+{"id":20,"method":"ui.keybindings","params":{"limit":100}}
+{"id":21,"method":"ui.keybindings","params":{"selector":"#url_bar"}}
+```
 
 `ui.screenshot` captures the native window containing the selected scene. With no target it captures the default scene's full native window. An explicit `window` captures that whole window; an explicit `scene` crops to its visible world bounds, including a WebView document viewport. `rect` overrides that crop and uses top-left native-window pixel coordinates. It must fit entirely inside the window and have positive width and height. Supported formats are `png`, `jpg`, `bmp`, `tga`, `qoi`, and `webp`; eepp's case-insensitive image extension parser also accepts `jpeg` and `jfif` as aliases for `jpg`. The response uses the canonical extension. The server renders the selected window after the current UI update, saves the image in the OS temporary directory, and returns its absolute `path`; it does not send image bytes over NDJSON. The caller is responsible for deleting the file when finished. The path is useful to a local agent; remote clients must separately retrieve the file, for example over SSH. Screenshot observation is available in read-only mode and can be used inside `session.batch`.
 

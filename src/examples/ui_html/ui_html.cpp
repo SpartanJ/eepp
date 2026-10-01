@@ -18,6 +18,19 @@ struct BrowserTabs : UITabWidgetSplitter::Client {
 													: nullptr;
 	}
 
+	UITabWidget* currentTabWidget() const {
+		return splitter ? splitter->tabWidgetFromWidget( current() ) : nullptr;
+	}
+
+	void cycleTab( bool next ) const {
+		auto* tabs = currentTabWidget();
+		if ( !tabs || tabs->getTabCount() == 0 )
+			return;
+		const auto count = tabs->getTabCount();
+		const auto index = tabs->getTabSelectedIndex();
+		tabs->setTabSelected( next ? ( index + 1 ) % count : ( index + count - 1 ) % count );
+	}
+
 	void updateNavigation() const {
 		UIWebView* view = current();
 		backBtn->setEnabled( view && view->canGoBack() );
@@ -148,7 +161,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		}
 	</style>
 	<vbox layout_width="match_parent" layout_height="match_parent">
-		<hbox layout_width="match_parent" layout_height="wrap_content">
+		<hbox layout_width="match_parent" layout_height="wrap_content" padding-bottom="1dp">
 			<PushButton lw="26dp" id="backbtn" class="webview_ui" text="@string(back, Back)"
 				icon="icon(arrow-left-s, 22dp)"
 				text-as-fallback="true" />
@@ -349,26 +362,75 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		} );
 	};
 
-	backBtn->onClick( [&browser]( const MouseEvent* ) {
+	ui->setKeyBindingCommand( "go-back", [&browser] {
 		if ( auto* view = browser.current() ) {
 			view->goHistoryBack();
 			browser.updateNavigation();
 		}
 	} );
 
-	fwdBtn->onClick( [&browser]( const MouseEvent* ) {
+	ui->setKeyBindingCommand( "go-forward", [&browser] {
 		if ( auto* view = browser.current() ) {
 			view->goHistoryForward();
 			browser.updateNavigation();
 		}
 	} );
 
-	refreshBtn->onClick( [&browser]( const MouseEvent* ) {
+	ui->setKeyBindingCommand( "reload", [&browser] {
 		if ( auto* view = browser.current() )
 			view->refresh();
 	} );
 
-	newTabBtn->onClick( [&newTab]( const MouseEvent* ) { newTab(); } );
+	ui->setKeyBindingCommand( "focus-address-bar", [urlBar] {
+		urlBar->setFocus();
+		urlBar->getDocument().selectAll();
+	} );
+	ui->setKeyBindingCommand( "new-tab", [&newTab, ui] {
+		newTab();
+		ui->executeKeyBindingCommand( "focus-address-bar" );
+	} );
+	ui->setKeyBindingCommand( "close-tab", [&browser, &splitter] {
+		if ( auto* view = browser.current() ) {
+			if ( splitter->tryTabClose( view, UITabWidget::FocusTabBehavior::Default ) )
+				splitter->closeTab( view, UITabWidget::FocusTabBehavior::Default );
+		}
+	} );
+	ui->setKeyBindingCommand( "next-tab", [&browser] { browser.cycleTab( true ); } );
+	ui->setKeyBindingCommand( "previous-tab", [&browser] { browser.cycleTab( false ); } );
+	ui->setKeyBindingCommand( "switch-to-last-tab", [&browser] {
+		if ( auto* tabs = browser.currentTabWidget(); tabs && tabs->getTabCount() )
+			tabs->setTabSelected( tabs->getTabCount() - 1 );
+	} );
+
+	for ( Uint32 i = 1; i <= 9; ++i ) {
+		const auto command = String::format( "switch-to-tab-%u", i );
+		ui->setKeyBindingCommand( command, [&browser, i] {
+			if ( auto* tabs = browser.currentTabWidget() )
+				tabs->setTabSelected( i - 1 );
+		} );
+		ui->getKeyBindings().addKeybindString( String::format( "mod+%u", i ), command );
+	}
+	ui->getKeyBindings().addKeybindsString( {
+		{ "mod+0", "switch-to-last-tab" },
+		{ "mod+t", "new-tab" },
+		{ "mod+w", "close-tab" },
+		{ "mod+tab", "next-tab" },
+		{ "mod+shift+tab", "previous-tab" },
+		{ "ctrl+pagedown", "next-tab" },
+		{ "ctrl+pageup", "previous-tab" },
+		{ "mod+l", "focus-address-bar" },
+		{ "alt+d", "focus-address-bar" },
+		{ "f6", "focus-address-bar" },
+		{ "mod+r", "reload" },
+		{ "f5", "reload" },
+		{ "alt+left", "go-back" },
+		{ "alt+right", "go-forward" },
+	} );
+
+	backBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "go-back" ); } );
+	fwdBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "go-forward" ); } );
+	refreshBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "reload" ); } );
+	newTabBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "new-tab" ); } );
 
 	urlBar->on( Event::OnPressEnter, [&browser, urlBar]( auto ) {
 		if ( auto* view = browser.current() )

@@ -705,6 +705,116 @@ UTEST( UIInspector, WebViewSecondaryWindowAndDeferredBatch ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIInspector, KeyBindingsKeepAliasesAndSceneScopeInReadOnlyMode ) {
+	UIApplication app( WindowSettings( 320, 240, "Inspector Keybindings", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ),
+					   UIApplication::Settings(
+						   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f, true ),
+					   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* scene = app.getUI();
+	int executions = 0;
+	scene->getKeyBindings().reset();
+	scene->getKeyBindings().addKeybind( { KEY_R, KEYMOD_CTRL }, "reload" );
+	scene->getKeyBindings().addKeybind( { KEY_F5, 0 }, "reload" );
+	scene->setKeyBindingCommand( "reload", [&executions] { ++executions; } );
+	auto* input = UITextInput::New();
+	input->setId( "address" );
+	input->setParent( scene->getRoot() );
+	input->getKeyBindings().reset();
+	input->getKeyBindings().addKeybind( { KEY_A, KEYMOD_CTRL }, "select-all" );
+	auto* webview = UIWebView::New();
+	webview->setId( "preview" );
+	webview->setParent( scene->getRoot() );
+	ASSERT_TRUE( UIInspectorServer::start( scene, { "127.0.0.1", 0, true, "bindings-token" } ) );
+	InspectorClient client( UIInspectorServer::instance()->getPort() );
+	ASSERT_TRUE( client.connected );
+	client.send( { { "id", 1 },
+				   { "method", "session.connect" },
+				   { "params", { { "protocolVersion", 1 }, { "token", "bindings-token" } } } } );
+	json connected = client.receive();
+	ASSERT_TRUE( connected.contains( "result" ) );
+	const auto& capabilities = connected["result"]["capabilities"];
+	EXPECT_TRUE( std::find( capabilities.begin(), capabilities.end(), "ui.keybindings" ) !=
+				 capabilities.end() );
+	client.send( { { "id", 2 }, { "method", "ui.keybindings" } } );
+	json bindings = client.receive();
+	ASSERT_TRUE( bindings.contains( "result" ) );
+	const auto& result = bindings["result"];
+	EXPECT_TRUE( result["supported"] == true );
+	EXPECT_TRUE( result["handle"].is_null() );
+	ASSERT_EQ( result["total"].get<int>(), 2 );
+	ASSERT_EQ( result["bindings"].size(), 2u );
+	EXPECT_TRUE( result["bindings"][0]["command"] == "reload" );
+	EXPECT_TRUE( result["bindings"][1]["command"] == "reload" );
+	EXPECT_EQ( result["bindings"][0]["keycode"].get<int>(), KEY_F5 );
+	EXPECT_EQ( result["bindings"][1]["keycode"].get<int>(), KEY_R );
+	EXPECT_EQ( result["bindings"][1]["mod"].get<Uint32>(), KEYMOD_CTRL );
+	EXPECT_STDSTREQ( result["bindings"][1]["shortcut"].get<std::string>(),
+					 scene->getKeyBindings().getShortcutString( { KEY_R, KEYMOD_CTRL } ) );
+	client.send(
+		{ { "id", 3 }, { "method", "ui.keybindings" }, { "params", { { "limit", 1 } } } } );
+	json page = client.receive();
+	ASSERT_TRUE( page.contains( "result" ) );
+	EXPECT_EQ( page["result"]["returned"].get<int>(), 1 );
+	EXPECT_TRUE( page["result"]["truncated"] == true );
+	client.send( { { "id", 4 },
+				   { "method", "ui.keybindings" },
+				   { "params", { { "offset", 1 }, { "limit", 1 } } } } );
+	json nextPage = client.receive();
+	ASSERT_TRUE( nextPage.contains( "result" ) );
+	EXPECT_TRUE( nextPage["result"]["bindings"][0] == result["bindings"][1] );
+	EXPECT_TRUE( nextPage["result"]["truncated"] == false );
+	client.send( { { "id", 5 },
+				   { "method", "ui.keybindings" },
+				   { "params", { { "selector", "#address" } } } } );
+	json widgetBindings = client.receive();
+	ASSERT_TRUE( widgetBindings.contains( "result" ) );
+	EXPECT_TRUE( widgetBindings["result"]["supported"] == true );
+	ASSERT_EQ( widgetBindings["result"]["total"].get<int>(), 1 );
+	EXPECT_TRUE( widgetBindings["result"]["bindings"][0]["command"] == "select-all" );
+	client.send( { { "id", 6 },
+				   { "method", "ui.keybindings" },
+				   { "params", { { "handle", widgetBindings["result"]["handle"] } } } } );
+	json byHandle = client.receive();
+	ASSERT_TRUE( byHandle.contains( "result" ) );
+	EXPECT_TRUE( byHandle["result"] == widgetBindings["result"] );
+	client.send( { { "id", 7 },
+				   { "method", "ui.keybindings" },
+				   { "params", { { "selector", "#preview" } } } } );
+	json unsupported = client.receive();
+	ASSERT_TRUE( unsupported.contains( "result" ) );
+	EXPECT_TRUE( unsupported["result"]["supported"] == false );
+	EXPECT_TRUE( unsupported["result"]["bindings"].empty() );
+	client.send(
+		{ { "id", 8 }, { "method", "ui.query" }, { "params", { { "selector", "#preview" } } } } );
+	json preview = client.receive();
+	ASSERT_TRUE( preview.contains( "result" ) );
+	client.send(
+		{ { "id", 9 },
+		  { "method", "ui.keybindings" },
+		  { "params", { { "scene", preview["result"]["nodes"][0]["documentScene"] } } } } );
+	json nested = client.receive();
+	ASSERT_TRUE( nested.contains( "result" ) );
+	EXPECT_TRUE( nested["result"]["supported"] == true );
+	EXPECT_TRUE( nested["result"]["bindings"].empty() );
+	client.send(
+		{ { "id", 10 }, { "method", "ui.keybindings" }, { "params", { { "limit", 1001 } } } } );
+	json invalidLimit = client.receive();
+	ASSERT_TRUE( invalidLimit.contains( "error" ) );
+	EXPECT_TRUE( invalidLimit["error"]["code"] == "invalid-params" );
+	client.send(
+		{ { "id", 11 },
+		  { "method", "ui.keybindings" },
+		  { "params",
+			{ { "handle", widgetBindings["result"]["handle"] }, { "selector", "#address" } } } } );
+	json invalidTarget = client.receive();
+	ASSERT_TRUE( invalidTarget.contains( "error" ) );
+	EXPECT_TRUE( invalidTarget["error"]["code"] == "invalid-params" );
+	EXPECT_EQ( executions, 0 );
+	UIInspectorServer::stop();
+	Engine::destroySingleton();
+}
+
 UTEST( UIInspector, AuthenticationFramingAndReadOnly ) {
 	UIApplication app( WindowSettings( 320, 240, "Inspector Security", WindowStyle::Default,
 									   WindowBackend::Default, 32, {}, 1, false, true ),

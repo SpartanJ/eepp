@@ -68,6 +68,8 @@ class EE_API UIHTMLTableCell : public UIRichText {
   protected:
 	Uint32 mColSpan{ 1 };
 
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
 	virtual void onLayoutUpdate();
 };
 

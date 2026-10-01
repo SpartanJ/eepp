@@ -1993,6 +1993,143 @@ UTEST( UIHTMLTable, tableCellAnchorHoverRelayoutsRichText ) {
 	destroyRichTextScene( sceneNode );
 }
 
+UTEST( UIHTMLTable, assignedCellSizesDoNotReenterMeasurement ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 240px; table-layout: fixed">
+			<tr>
+				<td id="first">Text wraps within the assigned column width.</td>
+				<td id="second">More text.</td>
+			</tr>
+		</table>
+	)xml" );
+
+	UILayout::resetMetrics();
+	sceneNode->flushDirtyStyleAndLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+
+	auto* first = sceneNode->find<UIHTMLTableCell>( "first" );
+	auto* second = sceneNode->find<UIHTMLTableCell>( "second" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	// The table may replay deferred row changes once per dirty pass; assigning the two cell
+	// widths and used heights must not also restart each cell's measurement.
+	EXPECT_LE( metrics.synchronousUpdates, 2u );
+	EXPECT_GT( first->getRichText().getLines().size(), 1u );
+	EXPECT_EQ( first->getPixelsSize().getHeight(), second->getPixelsSize().getHeight() );
+	EXPECT_GE( first->getPixelsSize().getHeight(), first->getRichTextPtr()->getSize().getHeight() );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, nestedCellsUpdateAfterTextAndWidthChanges ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 300 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 100%; table-layout: fixed">
+			<tr>
+				<td id="outer" style="position: relative">
+					<table id="nested">
+						<tr><td id="text">Short text.</td></tr>
+					</table>
+					<div id="marker" style="position: absolute; bottom: 0; right: 0;
+						width: 10px; height: 10px" />
+				</td>
+				<td id="peer"><img style="width: 16px; height: 96px; display: block" /></td>
+			</tr>
+		</table>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	auto* table = sceneNode->find<UIHTMLTable>( "table" );
+	auto* nested = sceneNode->find<UIHTMLTable>( "nested" );
+	auto* outer = sceneNode->find<UIHTMLTableCell>( "outer" );
+	auto* text = sceneNode->find<UIHTMLTableCell>( "text" );
+	auto* peer = sceneNode->find<UIHTMLTableCell>( "peer" );
+	auto* marker = sceneNode->find<UIWidget>( "marker" );
+	ASSERT_TRUE( table && nested && outer && text && peer && marker );
+	ASSERT_TRUE( text->getFirstChild()->isType( UI_TYPE_TEXTNODE ) );
+
+	auto checkGeometry = [&]() {
+		EXPECT_EQ( outer->getPixelsSize().getHeight(), peer->getPixelsSize().getHeight() );
+		EXPECT_GE( outer->getPixelsSize().getHeight(), nested->getPixelsSize().getHeight() );
+		EXPECT_NEAR( nested->getPixelsSize().getWidth(), outer->getPixelsSize().getWidth(), 1.f );
+		EXPECT_NEAR( marker->getPixelsPosition().y + marker->getPixelsSize().getHeight(),
+					 outer->getPixelsSize().getHeight(), 1.f );
+	};
+	checkGeometry();
+	const Float initialHeight = outer->getPixelsSize().getHeight();
+	text->getFirstChild()->asType<UITextNode>()->setText(
+		"A longer text node changes the intrinsic column measurements and wraps over many lines. "
+		"The containing rows must grow to enclose all of this content, including nested tables. "
+		"This update must reach the outer table without an unrelated hover or viewport resize." );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_GT( outer->getPixelsSize().getHeight(), initialHeight );
+	checkGeometry();
+
+	const Float widerHeight = outer->getPixelsSize().getHeight();
+	host->setPixelsSize( 160, 300 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_NEAR( 160.f, table->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( outer->getPixelsSize().getHeight(), widerHeight );
+	checkGeometry();
+
+	// A settled table has no work to replay in subsequent frames.
+	UILayout::resetMetrics();
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	EXPECT_EQ( 0u, metrics.treeUpdates );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, contentCreatedByRowSizeEventIsMeasured ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 200px; table-layout: fixed">
+			<tr>
+				<td id="cell">Short text.</td>
+				<td id="peer"><img style="width: 16px; height: 96px; display: block" /></td>
+			</tr>
+		</table>
+	)xml" );
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	auto* peer = sceneNode->find<UIHTMLTableCell>( "peer" );
+	ASSERT_TRUE( cell && peer );
+	ASSERT_TRUE( cell->getFirstChild()->isType( UI_TYPE_TEXTNODE ) );
+	bool changedContent = false;
+	cell->on( Event::OnSizeChange, [&]( const Event* ) {
+		// The tall sibling determines the row's initial used height. This callback runs when
+		// that height is committed, after the short cell's content was already measured.
+		if ( !changedContent && cell->getPixelsSize().getHeight() == 96.f ) {
+			changedContent = true;
+			cell->getFirstChild()->asType<UITextNode>()->setText(
+				"Content added by a size event must not disappear into an active table layout. "
+				"The table must measure these new lines and grow its row even though the content "
+				"changed after the original cell measurement had already finished." );
+		}
+	} );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( changedContent );
+	EXPECT_GT( cell->getPixelsSize().getHeight(), 96.f );
+	EXPECT_EQ( cell->getPixelsSize().getHeight(), peer->getPixelsSize().getHeight() );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), cell->getRichTextPtr()->getSize().getHeight() );
+
+	destroyRichTextScene( sceneNode );
+}
+
 UTEST( UIRichText, WhitespaceCollapseBRTest ) {
 	auto sceneNode = createRichTextScene();
 	ASSERT_TRUE( sceneNode != nullptr );

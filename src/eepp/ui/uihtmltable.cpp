@@ -1,6 +1,7 @@
 #include <eepp/ui/tablelayouter.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uilayouter.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
@@ -133,7 +134,12 @@ Uint32 UIHTMLTable::onMessage( const NodeMessage* Msg ) {
 				return 1;
 
 			bool isChild = Msg->getSender() != this;
-			if ( isChild && isPacking() ) {
+			// The table owns its cells until the complete layout-tree traversal finishes, not
+			// just while TableLayouter is measuring rows. Descendants visited afterward can
+			// change their content contribution; replay those reasons once in onLayoutUpdate()
+			// instead of synchronously restarting every ancestor table for each child message.
+			if ( isChild &&
+				 ( isPacking() || ( mUISceneNode->isUpdatingLayouts() && mUpdatingLayoutTree ) ) ) {
 				mTableDirtyReasons |= reasons;
 				return 1;
 			}
@@ -177,7 +183,11 @@ void UIHTMLTable::onLayoutUpdate() {
 
 	const Sizef oldSize = getPixelsSize();
 	tryUpdateLayout();
-	if ( oldSize != getPixelsSize() )
+	// Deferred descendant changes may have changed the table's intrinsic contribution even
+	// when this replay leaves its used box unchanged. Ancestors may already have measured the
+	// old contribution before the descendant tree traversal; let them measure the completed one.
+	if ( oldSize != getPixelsSize() ||
+		 ( nonPaint & toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) ) )
 		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 }
 
@@ -257,8 +267,67 @@ Uint32 UIHTMLTableCell::getColSpan() const {
 	return mColSpan;
 }
 
+static UIHTMLTable* owningTableForCell( const UIHTMLTableCell* cell ) {
+	Node* parent = cell->getParent();
+	if ( !parent || !parent->isType( UI_TYPE_HTML_TABLE_ROW ) )
+		return nullptr;
+
+	for ( parent = parent->getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_HTML_TABLE ) ) {
+			auto* table = parent->asType<UIHTMLTable>();
+			return table->getDisplay() == CSSDisplay::Table ? table : nullptr;
+		}
+	}
+	return nullptr;
+}
+
 void UIHTMLTableCell::onSizeChange() {
-	UIRichText::onSizeChange();
+	// CSS table layout measures cell content at the assigned column width, then commits the
+	// row's used height. Both sizes are outputs of that same pass: re-entering cell layout or
+	// invalidating intrinsic content widths here duplicates measurement and feeds geometry
+	// notifications back into the table. Keep drawing/size events current; TableLayouter explicitly
+	// measures the cell and the normal tree traversal still updates its positioned descendants.
+	auto* table = owningTableForCell( this );
+	if ( table && table->isPacking() )
+		UIWidget::onSizeChange( false );
+	else
+		UIRichText::onSizeChange();
+}
+
+Uint32 UIHTMLTableCell::onMessage( const NodeMessage* Msg ) {
+	if ( Msg->getMsg() == NodeMessage::LayoutAttributeChange ) {
+		auto reasons = layoutInvalidationFromMessage( Msg );
+		const auto paintOnly = toLayoutInvalidationFlags( LayoutInvalidationReason::PaintOnly );
+		bool senderIsFixed =
+			Msg->getSender()->isType( UI_TYPE_HTML_WIDGET ) &&
+			Msg->getSender()->asConstType<UIHTMLWidget>()->getCSSPosition() == CSSPosition::Fixed;
+		if ( ( reasons && ( reasons & ~paintOnly ) == 0 ) || senderIsFixed )
+			return UIRichText::onMessage( Msg );
+
+		auto* table = owningTableForCell( this );
+		const auto contentReasons =
+			toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) |
+			toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext );
+		if ( table && ( table->isPacking() || isPacking() ) ) {
+			// Child changes can arrive while the table assigns widths, or even after a cell
+			// was measured (for example a size event creates content). Preserve them for the
+			// completed tree pass instead of re-entering cell measurement during assignment.
+			if ( reasons & contentReasons )
+				invalidateIntrinsicSize();
+			mDeferredLayoutReasons |= reasons;
+			return 1;
+		}
+		if ( table && !mUpdatingLayoutTree && ( reasons & contentReasons ) ) {
+			Uint32 result = UIRichText::onMessage( Msg );
+			// A table fixes the used cell height to the row height. New content can therefore
+			// leave the cell box unchanged even when its required content height grows. The
+			// table must measure it again at wrap-content height, not wait for a box resize.
+			notifyLayoutAttrChangeParent(
+				reasons | toLayoutInvalidationFlags( LayoutInvalidationReason::NormalFlowChild ) );
+			return result;
+		}
+	}
+	return UIRichText::onMessage( Msg );
 }
 
 void UIHTMLTableCell::onLayoutUpdate() {

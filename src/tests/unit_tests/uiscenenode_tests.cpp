@@ -10,6 +10,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -465,6 +466,8 @@ class InvalidationTestSceneNode : public UISceneNode {
 
 	size_t pendingStyleStateAnimationCount() const { return mDirtyStyleStateCSSAnimations.size(); }
 
+	size_t pendingLayoutCount() const { return mDirtyLayouts.size(); }
+
 	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
 
 	UIWidget* processedStyleRoot( size_t index ) const { return mDirtyStylesSnapshot[index].first; }
@@ -822,6 +825,54 @@ UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
 	sceneNode->flushDirtyStyleAndLayout();
 
 	EXPECT_TRUE( dialog->getButtonOpen() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+class InvalidationTestLayout : public UILayout {
+  public:
+	InvalidationTestLayout() : UILayout( "invalidation-test" ) {}
+
+	void updateLayout() override {
+		lastReasons = mCurrentLayoutReasons;
+		mDirtyLayout = false;
+	}
+
+	LayoutInvalidationFlags lastReasons{ 0 };
+};
+
+UTEST( UISceneNode, LeafLayoutInvalidationPreservesSiblingRootsAndDescendantReasons ) {
+	Engine::instance()->createWindow( WindowSettings( 320, 240, "Leaf Layout Invalidation",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* sceneNode = InvalidationTestSceneNode::New();
+	init_test_scene_node( sceneNode );
+	auto* first = eeNew( InvalidationTestLayout, () );
+	first->setParent( sceneNode->getRoot() );
+	auto* second = eeNew( InvalidationTestLayout, () );
+	second->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::TextFormatting );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::Self, first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::TextFormatting, second->lastReasons );
+
+	// Once a leaf gains a child, ancestor coalescing must still retain the child's reasons.
+	auto* child = eeNew( InvalidationTestLayout, () );
+	child->setParent( first );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateLayout( child, LayoutInvalidation::TextFormatting );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Document );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::TextFormatting | LayoutInvalidation::Document,
+			   first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::Self, second->lastReasons );
 
 	Engine::destroySingleton();
 }

@@ -1677,6 +1677,10 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onSizeChange();
 
+	/** Updates size-dependent drawing state without treating measured layout output as new input.
+	 */
+	void onSizeChange( bool notifyLayout );
+
 	/**
 	 * @brief Handles size policy change events.
 	 *

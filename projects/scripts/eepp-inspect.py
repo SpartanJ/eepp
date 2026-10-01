@@ -100,6 +100,10 @@ def command(args):
         if args.max_string_length is not None:
             params["maxStringLength"] = args.max_string_length
         return "ui.inspect", params
+    if name == "keybindings":
+        params = target(args.target, args.scene) if args.target else params
+        params.update(offset=args.offset, limit=args.limit)
+        return "ui.keybindings", params
     if name == "focus":
         return "ui.focus", params
     if name == "screenshot":
@@ -157,6 +161,11 @@ def main():
     inspect.add_argument("properties", nargs="*")
     inspect.add_argument("--scene")
     inspect.add_argument("--max-string-length", type=int)
+    keybindings = sub.add_parser("keybindings", help="list bindings on a scene or widget")
+    keybindings.add_argument("target", nargs="?", help="widget handle or selector; omit for scene")
+    keybindings.add_argument("--scene")
+    keybindings.add_argument("--offset", type=int, default=0)
+    keybindings.add_argument("--limit", type=int, default=50)
     focus = sub.add_parser("focus")
     focus.add_argument("--scene")
     screenshot = sub.add_parser("screenshot", help="save a window or scene image to a temporary path")

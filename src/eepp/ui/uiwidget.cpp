@@ -752,6 +752,10 @@ void UIWidget::onVisibilityChange() {
 }
 
 void UIWidget::onSizeChange() {
+	onSizeChange( true );
+}
+
+void UIWidget::onSizeChange( bool notifyLayout ) {
 	if ( mMarginAuto != 0 )
 		calculateAutoMargin();
 	UINode::onSizeChange();
@@ -765,7 +769,8 @@ void UIWidget::onSizeChange() {
 	if ( mForeground != NULL )
 		mForeground->invalidate();
 
-	notifyLayoutAttrChange( LayoutInvalidation::Self );
+	if ( notifyLayout )
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
 }
 
 void UIWidget::onSizePolicyChange() {}
