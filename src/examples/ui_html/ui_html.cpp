@@ -176,7 +176,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		}
 	</style>
 	<vbox layout_width="match_parent" layout_height="match_parent">
-		<hbox layout_width="match_parent" layout_height="wrap_content" padding-bottom="1dp">
+		<hbox layout_width="match_parent" layout_height="wrap_content" padding="1dp 4dp 1dp 4dp">
 			<PushButton lw="26dp" id="backbtn" class="webview_ui" text="@string(back, Back)"
 				icon="icon(arrow-left-s, 22dp)"
 				text-as-fallback="true" />
@@ -189,7 +189,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<PushButton lw="26dp" id="newtabbtn" class="webview_ui" text="New Tab"
 				icon="icon(add, 18dp)" text-as-fallback="true" />
 			<TextInput id="url_bar" layout_width="0" layout_weight="1"
-				hint="@string(enter_address, Enter Address)" margin-right="1dp" />
+				hint="@string(enter_address, Enter Address)" />
 		</hbox>
 		<vbox id="tabs_host" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	</vbox>

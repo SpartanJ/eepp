@@ -34,6 +34,9 @@ class EE_API UIRichText : public UIHTMLWidget {
 	static void rebuildRichText( UILayout* container, RichText& richText,
 								 IntrinsicMode mode = IntrinsicMode::None );
 
+	/** Whether the nearest inline formatting owner is assigning this child's fragment bounds. */
+	static bool isAssigningInlineFragments( const UIWidget* child );
+
 	/** Resolves the wrapping constraint independently of constructing the inline content stream. */
 	static Float getLayoutMaxWidth( UILayout* container, IntrinsicMode mode = IntrinsicMode::None );
 

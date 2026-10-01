@@ -25,12 +25,16 @@ class EE_API UILayouter {
 
 	virtual bool isPacking() const { return mPacking; }
 
+	/** True while the inline formatting owner assigns its computed fragment boxes. */
+	bool isPositioningInlineFragments() const { return mPositioningInlineFragments; }
+
   protected:
 	UIWidget* mContainer;
 	bool mPacking{ false };
 	// These flags occupy existing padding, preserving the size and member offsets of layouters.
 	bool mInlineContentDirty{ true };
 	bool mInlineContentReusable{ false };
+	bool mPositioningInlineFragments{ false };
 	size_t mResizedCount{ 0 };
 	bool mIntrinsicWidthsDirty{ true };
 	Float mMinIntrinsicWidth{ 0 };

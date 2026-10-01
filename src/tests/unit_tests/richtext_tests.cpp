@@ -1993,6 +1993,81 @@ UTEST( UIHTMLTable, tableCellAnchorHoverRelayoutsRichText ) {
 	destroyRichTextScene( sceneNode );
 }
 
+UTEST( UIRichText, inlineFragmentResizeKeepsContentReusable ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 200 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<p id="text" layout_width="match_parent" layout_height="200px">
+			<a id="link">Several inline words must wrap when the available width changes.</a>
+		</p>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* text = sceneNode->find<UIRichText>( "text" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( text && link );
+	text->updateLayout();
+	const auto widerLines = text->getRichText().getLines().size();
+	host->setPixelsSize( 120, 200 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_NEAR( 120.f, text->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( text->getRichText().getLines().size(), widerLines );
+	EXPECT_GT( link->getHitBoxes().size(), 1u );
+
+	// A new font changes both the content measurement and its assigned fragment bounds.
+	// The following owner pass must consume that input without invalidating it again merely
+	// because the newly measured bounds were committed. The container's size is already settled.
+	link->setFontSize( 24 );
+	text->updateLayout();
+	UILayout::resetMetrics();
+	text->updateLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, contentChangedByInlineFragmentSizeEventIsMeasured ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 400 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 100%; table-layout: fixed">
+			<tr><td id="cell"><a id="link">Inline words that wrap in a narrower column.</a></td></tr>
+		</table>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( cell && link );
+	bool changedContent = false;
+	link->on( Event::OnSizeChange, [link, &changedContent]( const Event* ) {
+		if ( !changedContent ) {
+			changedContent = true;
+			link->setText( "Replacement content created by an inline size event must be measured "
+						   "and enclosed by its table row after the column becomes narrower." );
+		}
+	} );
+	host->setPixelsSize( 120, 400 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( changedContent );
+	EXPECT_TRUE( richTextRenderedText( cell->getRichText() ).find( "Replacement" ) !=
+				 String::InvalidPos );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), cell->getRichTextPtr()->getSize().getHeight() );
+	EXPECT_GT( link->getHitBoxes().size(), 1u );
+	destroyRichTextScene( sceneNode );
+}
+
 UTEST( UIRichText, unchangedInlineContentIsReused ) {
 	auto* sceneNode = createRichTextScene();
 	ASSERT_TRUE( sceneNode != nullptr );

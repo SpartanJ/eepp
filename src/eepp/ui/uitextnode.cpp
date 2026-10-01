@@ -28,6 +28,12 @@ bool UITextNode::isType( const Uint32& type ) const {
 	return UITextNode::getType() == type ? true : UIWidget::isType( type );
 }
 
+void UITextNode::onSizeChange() {
+	// Raw text-node bounds are also outputs of the nearest inline formatting owner. Changes
+	// to the source text still emit TextFormatting invalidations through setText().
+	UIWidget::onSizeChange( !UIRichText::isAssigningInlineFragments( this ) );
+}
+
 void UITextNode::draw() {
 	if ( mText.empty() )
 		return;

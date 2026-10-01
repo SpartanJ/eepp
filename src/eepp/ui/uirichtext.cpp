@@ -1728,6 +1728,19 @@ static Drawable* getInlineBorderDrawable( UIWidget* widget ) {
 			   : nullptr;
 }
 
+bool UIRichText::isAssigningInlineFragments( const UIWidget* child ) {
+	for ( Node* parent = child->getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET );
+		  parent = parent->getParent() ) {
+		auto* owner = parent->asType<UIHTMLWidget>();
+		if ( auto* layouter = owner->getLayouter();
+			 layouter && layouter->isPositioningInlineFragments() )
+			return true;
+		if ( !owner->isInline() )
+			break;
+	}
+	return false;
+}
+
 Float UIRichText::getLayoutMaxWidth( UILayout* container, IntrinsicMode mode ) {
 	if ( mode != IntrinsicMode::None )
 		return 0.f;

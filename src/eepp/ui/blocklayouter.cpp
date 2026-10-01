@@ -1,5 +1,6 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/blocklayouter.hpp>
 #include <eepp/ui/flexlayouter.hpp>
 #include <eepp/ui/uihtmltable.hpp>
@@ -295,6 +296,8 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 }
 
 void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt, bool reuseFragments ) {
+	BoolScopedOpOptional positioning( !mPositioningInlineFragments, mPositioningInlineFragments,
+									  true );
 	const auto& lines = rt->getLines();
 	const auto& fragments = rt->getInlineFragments();
 	Node* child = mContainer->getFirstChild();

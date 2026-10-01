@@ -72,6 +72,18 @@ bool UITextSpan::isInlineBlock() const {
 	return mDisplay == CSSDisplay::InlineBlock && !isOutOfFlow();
 }
 
+void UITextSpan::onSizeChange() {
+	if ( isInline() && UIRichText::isAssigningInlineFragments( this ) ) {
+		// CSS inline fragment bounds are results of the owning formatting pass, not new
+		// intrinsic content inputs. Keep size events/drawing current without feeding those
+		// bounds back into the stream. Callback-created text/style changes still emit their
+		// own formatting invalidations while the owner is measuring.
+		UIWidget::onSizeChange( false );
+	} else {
+		UIRichText::onSizeChange();
+	}
+}
+
 void UITextSpan::onDisplayChange() {
 	bool nowInline = isInline();
 	if ( nowInline && getFontBackgroundColor() == Color::Transparent ) {
