@@ -2425,6 +2425,7 @@ void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Co
 }
 
 void RichText::clear() {
+	++mInlineFragmentsGeneration;
 	mInlineItems.clear();
 	mInlinePath.clear();
 	mInlineFragments.clear();
@@ -2436,6 +2437,7 @@ void RichText::clear() {
 
 void RichText::rebuildInlineFragments() {
 	mInlineFragments = RichTextInlineLayouter::rebuildFragments( mInlineItems, mLines );
+	++mInlineFragmentsGeneration;
 }
 
 void RichText::setFontStyleConfig( const FontStyleConfig& styleConfig ) {

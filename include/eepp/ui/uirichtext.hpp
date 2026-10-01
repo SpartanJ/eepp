@@ -34,6 +34,9 @@ class EE_API UIRichText : public UIHTMLWidget {
 	static void rebuildRichText( UILayout* container, RichText& richText,
 								 IntrinsicMode mode = IntrinsicMode::None );
 
+	/** Resolves the wrapping constraint independently of constructing the inline content stream. */
+	static Float getLayoutMaxWidth( UILayout* container, IntrinsicMode mode = IntrinsicMode::None );
+
 	static void setUseCodeEditorForPreCodeBlocks( bool enabled );
 
 	static bool getUseCodeEditorForPreCodeBlocks();

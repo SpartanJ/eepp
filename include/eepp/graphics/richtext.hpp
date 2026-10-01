@@ -325,6 +325,9 @@ class EE_API RichText : public Drawable {
 	 * draw. */
 	void updateLayout();
 
+	/** Changes whenever the retained inline fragments are replaced or cleared. */
+	Uint32 getInlineFragmentsGeneration() const { return mInlineFragmentsGeneration; }
+
 	/** Invalidates the current layout */
 	void invalidateLayout();
 
@@ -502,6 +505,7 @@ class EE_API RichText : public Drawable {
 	WhiteSpaceWrapMode mWhiteSpaceWrapMode{ WhiteSpaceWrapMode::Normal };
 	Uint32 mTabWidth{ 8 };
 	Uint32 mTextHints{ 0 };
+	Uint32 mInlineFragmentsGeneration{ 0 };
 };
 
 }} // namespace EE::Graphics

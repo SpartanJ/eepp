@@ -7,6 +7,21 @@
 
 using namespace EE::UI::Tools;
 
+static std::string normalizeBrowserAddress( std::string address ) {
+	String::trimInPlace( address );
+	if ( address.empty() || address.find( "://" ) != std::string::npos )
+		return address;
+
+	// Default user-entered addresses to HTTPS while preserving local CLI file inputs.
+	if ( String::startsWith( address, "//" ) ) {
+		address.insert( 0, "https:" );
+	} else if ( FileSystem::isRelativePath( address ) && !String::startsWith( address, "./" ) &&
+				!String::startsWith( address, "../" ) && !FileSystem::fileExists( address ) ) {
+		address.insert( 0, "https://" );
+	}
+	return address;
+}
+
 struct BrowserTabs : UITabWidgetSplitter::Client {
 	UITabWidgetSplitter* splitter{ nullptr };
 	UITextInput* urlBar{ nullptr };
@@ -174,7 +189,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<PushButton lw="26dp" id="newtabbtn" class="webview_ui" text="New Tab"
 				icon="icon(add, 18dp)" text-as-fallback="true" />
 			<TextInput id="url_bar" layout_width="0" layout_weight="1"
-				hint="@string(enter_address, Enter Address)" />
+				hint="@string(enter_address, Enter Address)" margin-right="1dp" />
 		</hbox>
 		<vbox id="tabs_host" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	</vbox>
@@ -433,12 +448,16 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	newTabBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "new-tab" ); } );
 
 	urlBar->on( Event::OnPressEnter, [&browser, urlBar]( auto ) {
-		if ( auto* view = browser.current() )
-			view->loadURI( urlBar->getText().toUtf8() );
+		if ( auto* view = browser.current() ) {
+			auto address = normalizeBrowserAddress( urlBar->getText().toUtf8() );
+			if ( !address.empty() )
+				view->loadURI( address );
+		}
 	} );
 
 	auto* firstView = newTab();
-	firstView->loadURI( !url.Get().empty() ? url.Get() : "https://news.ycombinator.com" );
+	firstView->loadURI( normalizeBrowserAddress(
+		!url.Get().empty() ? url.Get() : "https://news.ycombinator.com" ) );
 	browser.updateNavigation();
 
 	win->getInput()->pushCallback( [&browser]( InputEvent* event ) {

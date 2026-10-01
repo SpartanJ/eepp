@@ -2002,8 +2002,6 @@ void App::showProcessContextMenu( const ModelIndex& proxyIndex ) {
 		{ "signal-usr1", "eproc_signal_user1", "User 1 (USR1)", SIGUSR1 },
 		{ "signal-usr2", "eproc_signal_user2", "User 2 (USR2)", SIGUSR2 },
 	} };
-#else
-	static const std::array<SignalItem, 0> signalItems{};
 #endif
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();

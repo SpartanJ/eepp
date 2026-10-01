@@ -1,5 +1,17 @@
 #include <eepp/ui/tools/uiinspectorserver.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#ifdef KEY_EXECUTE
+#undef KEY_EXECUTE
+#endif
+
+#include <bcrypt.h>
+#endif
+
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/socketselector.hpp>
 #include <eepp/network/tcplistener.hpp>
@@ -37,15 +49,6 @@
 #include <set>
 #include <string_view>
 #include <thread>
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-
-#include <bcrypt.h>
-#endif
 
 using json = nlohmann::json;
 using namespace EE::Network;

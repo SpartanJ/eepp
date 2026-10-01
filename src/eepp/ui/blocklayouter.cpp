@@ -42,6 +42,40 @@ static bool isTableCellInTableRow( UIWidget* widget ) {
 		   widget->getParent()->isType( UI_TYPE_HTML_TABLE_ROW );
 }
 
+// Text-only inline trees do not embed child geometry. Inline boxes with spacing and atomic
+// widgets retain the existing rebuild path: their percentage sizes, baselines, floats, and
+// child measurements can depend on the available space even without new text/style input.
+static bool hasReusableInlineContent( const std::vector<RichText::InlineItem>& items ) {
+	for ( const auto& item : items ) {
+		if ( item.isAtomicBox() && !item.asAtomicBox().isLineBreak )
+			return false;
+		if ( item.isBox() ) {
+			const auto& box = item.asBox();
+			if ( box.margin != Rectf::Zero || box.padding != Rectf::Zero ||
+				 box.borderWidth != 0.f || !hasReusableInlineContent( box.children ) )
+				return false;
+			if ( box.source.type == RichText::InlineSourceType::Widget ) {
+				auto* span = static_cast<UIWidget*>( box.source.ptr );
+				if ( auto* style = span->getUIStyle() ) {
+					// A percentage may resolve to zero before the containing width is established.
+					// Such inline spacing must be resolved again on later measurements. Length
+					// functions can also contain percentages, so retain their rebuild path.
+					for ( auto property : { PropertyId::MarginLeft, PropertyId::MarginRight,
+											PropertyId::MarginTop, PropertyId::MarginBottom,
+											PropertyId::PaddingLeft, PropertyId::PaddingRight,
+											PropertyId::PaddingTop, PropertyId::PaddingBottom } ) {
+						const auto* value = style->getProperty( property );
+						if ( value && ( StyleSheetLength::isPercentage( value->value() ) ||
+										value->value().find( '(' ) != std::string::npos ) )
+							return false;
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
 Float BlockLayouter::getMinIntrinsicWidth() {
 	computeIntrinsicWidths();
 	return mMinIntrinsicWidth;
@@ -67,12 +101,19 @@ void BlockLayouter::computeIntrinsicWidths() {
 	}
 
 	if ( mIntrinsicWidthsDirty ) {
-		RichText tmpRt( *rt );
+		// Intrinsic measurement needs the default text style and shaping hints, not copies of
+		// the normal stream's already-shaped lines, fragments, selections, or float exclusions.
+		RichText tmpRt;
+		tmpRt.setFontStyleConfig( rt->getFontStyleConfig() );
+		tmpRt.setTextHints( rt->getTextHints() );
 		UIRichText::rebuildRichText( widget, tmpRt, UIRichText::IntrinsicMode::Min );
 		mMinIntrinsicWidth = tmpRt.getMinIntrinsicWidth() +
 							 mContainer->getPixelsContentOffset().Left +
 							 mContainer->getPixelsContentOffset().Right;
-		UIRichText::rebuildRichText( widget, tmpRt, UIRichText::IntrinsicMode::Max );
+		// Pure inline content is identical in min/max measurement modes. Only atomic child
+		// widgets need their distinct minimum and maximum intrinsic contributions rebuilt.
+		if ( !hasReusableInlineContent( tmpRt.getInlineItems() ) )
+			UIRichText::rebuildRichText( widget, tmpRt, UIRichText::IntrinsicMode::Max );
 		mMaxIntrinsicWidth = tmpRt.getMaxIntrinsicWidth() +
 							 mContainer->getPixelsContentOffset().Left +
 							 mContainer->getPixelsContentOffset().Right;
@@ -131,11 +172,24 @@ void BlockLayouter::updateLayout() {
 			  mContainer->cssHeightPropertyToBorderBoxHeight( *prop ) } );
 	}
 
-	UIRichText::rebuildRichText( widget, *rt );
+	if ( mInlineContentDirty || !mInlineContentReusable ) {
+		// Clear before rebuilding so changes raised by the pass remain dirty for its next use.
+		mInlineContentDirty = false;
+		UIRichText::rebuildRichText( widget, *rt );
+		mInlineContentReusable = hasReusableInlineContent( rt->getInlineItems() );
+	} else {
+		// CSS inline content and its line-breaking constraint have separate inputs. Reuse the
+		// stream and let RichText rewrap only when the resolved available width has changed.
+		rt->setMaxWidth( UIRichText::getLayoutMaxWidth( widget ) );
+	}
 
 	rt->updateLayout();
+	// A generation also catches RichText layouts performed by callers between our passes.
+	// Reuse buckets only while their non-owning fragment pointers remain current.
+	const bool reuseFragments =
+		mPositionedFragmentsGeneration == rt->getInlineFragmentsGeneration();
 
-	positionRichTextChildren( rt );
+	positionRichTextChildren( rt, reuseFragments );
 
 	Sizef contentSize = rt->getSize();
 	if ( mContainer->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
@@ -227,14 +281,20 @@ void BlockLayouter::updateLayout() {
 
 	mContainer->endAttributesTransaction();
 
-	if ( mResizedCount > 0 )
-		positionRichTextChildren( rt );
+	if ( mResizedCount > 0 ) {
+		positionRichTextChildren( rt, mPositionedFragmentsGeneration ==
+										  rt->getInlineFragmentsGeneration() );
+	}
 
 	mPacking = false;
 	mResizedCount = 0;
 }
 
 void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
+	positionRichTextChildren( rt, false );
+}
+
+void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt, bool reuseFragments ) {
 	const auto& lines = rt->getLines();
 	const auto& fragments = rt->getInlineFragments();
 	Node* child = mContainer->getFirstChild();
@@ -261,38 +321,41 @@ void BlockLayouter::positionRichTextChildren( Graphics::RichText* rt ) {
 	Int64 curCharIdx = 0;
 	const Rectf contentOffset = mContainer->getPixelsContentOffset();
 
-	for ( auto& bucket : mTextNodeFragments )
-		bucket.second.clear();
-	for ( auto& bucket : mWidgetFragments )
-		bucket.second.clear();
-	mTextNodeFragments.clear();
-	mWidgetFragments.clear();
-	mTextNodeFragments.reserve( fragments.size() );
-	mWidgetFragments.reserve( fragments.size() );
-	for ( const auto& fragment : fragments ) {
-		if ( fragment.source.ptr == nullptr )
-			continue;
+	if ( !reuseFragments ) {
+		for ( auto& bucket : mTextNodeFragments )
+			bucket.second.clear();
+		for ( auto& bucket : mWidgetFragments )
+			bucket.second.clear();
+		mTextNodeFragments.clear();
+		mWidgetFragments.clear();
+		mTextNodeFragments.reserve( fragments.size() );
+		mWidgetFragments.reserve( fragments.size() );
+		for ( const auto& fragment : fragments ) {
+			if ( fragment.source.ptr == nullptr )
+				continue;
 
-		auto* bucket = fragment.source.type == RichText::InlineSourceType::TextNode
-						   ? &mTextNodeFragments[fragment.source.ptr]
-					   : fragment.source.type == RichText::InlineSourceType::Widget
-						   ? &mWidgetFragments[fragment.source.ptr]
-						   : nullptr;
-		if ( bucket == nullptr )
-			continue;
+			auto* bucket = fragment.source.type == RichText::InlineSourceType::TextNode
+							   ? &mTextNodeFragments[fragment.source.ptr]
+						   : fragment.source.type == RichText::InlineSourceType::Widget
+							   ? &mWidgetFragments[fragment.source.ptr]
+							   : nullptr;
+			if ( bucket == nullptr )
+				continue;
 
-		switch ( fragment.type ) {
-			case RichText::InlineFragment::Type::TextRun:
-				bucket->textRuns.push_back( &fragment );
-				break;
-			case RichText::InlineFragment::Type::Box:
-				bucket->boxes.push_back( &fragment );
-				break;
-			case RichText::InlineFragment::Type::AtomicBox:
-				bucket->atomicBoxes.push_back( &fragment );
-				break;
+			switch ( fragment.type ) {
+				case RichText::InlineFragment::Type::TextRun:
+					bucket->textRuns.push_back( &fragment );
+					break;
+				case RichText::InlineFragment::Type::Box:
+					bucket->boxes.push_back( &fragment );
+					break;
+				case RichText::InlineFragment::Type::AtomicBox:
+					bucket->atomicBoxes.push_back( &fragment );
+					break;
+			}
 		}
 	}
+	mPositionedFragmentsGeneration = rt->getInlineFragmentsGeneration();
 
 	auto toContainerBounds = [&]( const Rectf& bounds ) {
 		return Rectf( contentOffset.Left + bounds.Left, contentOffset.Top + bounds.Top,

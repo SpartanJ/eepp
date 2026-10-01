@@ -1728,25 +1728,9 @@ static Drawable* getInlineBorderDrawable( UIWidget* widget ) {
 			   : nullptr;
 }
 
-void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
-	UILayout::countRichTextRebuild();
-	TextSelectionRange selection = richText.getSelection();
-	SmallVector<TextSelectionRange, 4> selectionExclusions = richText.getSelectionExclusions();
-	richText.clear();
-	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
-		auto* uiRt = static_cast<UIRichText*>( container );
-		richText.setLineHeight( uiRt->getLineHeightPx() );
-		richText.setTextIndent( uiRt->getTextIndentPx() );
-		richText.setLineWrap( uiRt->getLineWrap() );
-		richText.setTabWidth( uiRt->getTabSize() );
-		richText.setWhiteSpaceWrapMode(
-			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
-	}
-	UIRichText* containerRichText =
-		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
-			? container->asType<UIRichText>()
-			: nullptr;
-	bool lastSpanEndsWithSpace = false;
+Float UIRichText::getLayoutMaxWidth( UILayout* container, IntrinsicMode mode ) {
+	if ( mode != IntrinsicMode::None )
+		return 0.f;
 	Float maxWidth = 0;
 	bool isInlineBlockTextSpan =
 		container->isType( UI_TYPE_TEXTSPAN ) && container->asType<UITextSpan>()->isInlineBlock();
@@ -1757,18 +1741,16 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	bool parentIsFlexOrGrid = parentNode && parentNode->isType( UI_TYPE_HTML_WIDGET ) &&
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
 								parentNode->asType<UIHTMLWidget>()->isGrid() );
-	if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
-		 container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
+	if ( isInlineBlockTextSpan && container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
 		 container->getPixelsSize().getWidth() > 0 ) {
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
-	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) && mode == IntrinsicMode::None &&
+	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&
-				container->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-				mode == IntrinsicMode::None ) {
+				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = container->getMatchParentWidth() - container->getPixelsContentOffset().Left -
@@ -1790,15 +1772,31 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			mw = 0.f;
 	}
 
-	if ( mode == IntrinsicMode::None ) {
-		if ( !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
-			richText.setMaxWidth( mw );
-		} else {
-			richText.setMaxWidth( maxWidth );
-		}
-	} else {
-		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+	return !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ? mw
+																					 : maxWidth;
+}
+
+void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
+	UILayout::countRichTextRebuild();
+	TextSelectionRange selection = richText.getSelection();
+	SmallVector<TextSelectionRange, 4> selectionExclusions = richText.getSelectionExclusions();
+	richText.clear();
+	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
+		auto* uiRt = static_cast<UIRichText*>( container );
+		richText.setLineHeight( uiRt->getLineHeightPx() );
+		richText.setTextIndent( uiRt->getTextIndentPx() );
+		richText.setLineWrap( uiRt->getLineWrap() );
+		richText.setTabWidth( uiRt->getTabSize() );
+		richText.setWhiteSpaceWrapMode(
+			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
 	}
+	UIRichText* containerRichText =
+		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
+			? container->asType<UIRichText>()
+			: nullptr;
+	bool lastSpanEndsWithSpace = false;
+	Node* parentNode = container->getParent();
+	richText.setMaxWidth( getLayoutMaxWidth( container, mode ) );
 
 	auto getEffectiveTextTransform = []( Node* node ) -> TextTransform::Value {
 		while ( node ) {
@@ -2366,10 +2364,16 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			bool packing = isPacking();
-			if ( packing )
-				return 1;
 			auto reasons = layoutInvalidationFromMessage( Msg );
+			bool packing = isPacking();
+			if ( packing ) {
+				// An active measurement absorbs notifications, but its retained inline stream
+				// must still observe content changes made by callbacks during that measurement.
+				if ( reasons &
+					 toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) )
+					invalidateIntrinsicSize();
+				return 1;
+			}
 
 			// PaintOnly invalidations must not trigger layout.
 			if ( reasons && ( reasons & ~toLayoutInvalidationFlags(

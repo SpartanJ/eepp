@@ -18,16 +18,24 @@ class EE_API UILayouter {
 	virtual Float getMinIntrinsicWidth() { return 0; }
 	virtual Float getMaxIntrinsicWidth() { return 0; }
 
-	virtual void invalidateIntrinsicWidths() { mIntrinsicWidthsDirty = true; }
+	virtual void invalidateIntrinsicWidths() {
+		mIntrinsicWidthsDirty = true;
+		mInlineContentDirty = true;
+	}
+
 	virtual bool isPacking() const { return mPacking; }
 
   protected:
 	UIWidget* mContainer;
 	bool mPacking{ false };
+	// These flags occupy existing padding, preserving the size and member offsets of layouters.
+	bool mInlineContentDirty{ true };
+	bool mInlineContentReusable{ false };
 	size_t mResizedCount{ 0 };
 	bool mIntrinsicWidthsDirty{ true };
 	Float mMinIntrinsicWidth{ 0 };
 	Float mMaxIntrinsicWidth{ 0 };
+	Uint32 mPositionedFragmentsGeneration{ 0 };
 
 	void setMatchParentIfNeededVerticalGrowth();
 };

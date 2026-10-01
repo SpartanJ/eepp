@@ -32,6 +32,8 @@ class EE_API BlockLayouter : public UILayouter {
 
 	void positionRichTextChildren( RichText* rt );
 
+	void positionRichTextChildren( RichText* rt, bool reuseFragments );
+
 	UnorderedMap<void*, FragmentBucket> mTextNodeFragments;
 	UnorderedMap<void*, FragmentBucket> mWidgetFragments;
 };
