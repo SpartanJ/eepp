@@ -43,6 +43,15 @@ jobs:
           echo "sdl2=$(sdl2-config --version)"
         } > .eepp-dev-environment
 
+        # Keep the small set of system graphics headers needed to compile
+        # renderer/backend translation units in a relocated development VM.
+        mkdir -p .eepp-dev/sysroot/include
+        for include_dir in GL EGL GLES GLES2 GLES3 KHR; do
+          if [ -d "/usr/include/$include_dir" ]; then
+            cp -a "/usr/include/$include_dir" .eepp-dev/sysroot/include/
+          fi
+        done
+
         tar \
           --exclude='.git' \
           --exclude='projects/linux/sdk' \
