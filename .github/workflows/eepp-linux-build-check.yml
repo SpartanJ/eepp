@@ -65,9 +65,9 @@ jobs:
       with:
         archive: ${{ runner.temp }}/eepp-dev-linux-x86_64.tar.zst
         artifact_prefix: eepp-dev-linux-x86_64
-        chunk_size: 400M
+        chunk_size: 64M
         retention_days: 5
-        max_parts: 8
+        max_parts: 64
     - name: Set SDK version
       id: sdk_version
       run: |
