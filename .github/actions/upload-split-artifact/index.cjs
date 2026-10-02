@@ -1,10 +1,14 @@
-#!/usr/bin/env node
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { pipeline } = require('stream/promises');
-const { DefaultArtifactClient } = require('@actions/artifact');
+
+function input(name, fallback = '') {
+	return process.env[`INPUT_${name.toUpperCase()}`] || fallback;
+}
 
 function parseSize(value) {
 	const match = /^(\d+)([KMG]?)$/i.exec(value);
@@ -29,20 +33,14 @@ async function writeChunk(source, destination, start, end) {
 }
 
 async function main() {
-	const [
-		archiveArg,
-		artifactPrefix = 'eepp-dev-linux-x86_64',
-		chunkSizeArg = '400M',
-		retentionDaysArg = '5',
-		maxPartsArg = '8',
-	] = process.argv.slice(2);
+	const archiveArg = input('archive');
+	const artifactPrefix = input('artifact_prefix', 'eepp-dev-linux-x86_64');
+	const chunkSizeArg = input('chunk_size', '400M');
+	const retentionDaysArg = input('retention_days', '5');
+	const maxPartsArg = input('max_parts', '8');
 
-	if (!archiveArg) {
-		console.error(
-			'Usage: upload_split_artifact.cjs <archive> [artifact-prefix] [chunk-size] [retention-days] [max-parts]'
-		);
-		process.exit(2);
-	}
+	if (!archiveArg)
+		throw new Error("Missing required input 'archive'");
 
 	const archive = path.resolve(archiveArg);
 	const chunkSize = parseSize(chunkSizeArg);
@@ -65,12 +63,35 @@ async function main() {
 		);
 	}
 
+	const installDir = path.join(
+		process.env.RUNNER_TEMP || os.tmpdir(),
+		'eepp-artifact-uploader'
+	);
+	fs.mkdirSync(installDir, { recursive: true });
+
+	console.log('Installing @actions/artifact@5.0.3...');
+	execFileSync(
+		'npm',
+		[
+			'install',
+			'--no-save',
+			'--no-package-lock',
+			'--prefix',
+			installDir,
+			'@actions/artifact@5.0.3',
+		],
+		{ stdio: 'inherit' }
+	);
+
+	const { DefaultArtifactClient } = require(
+		path.join(installDir, 'node_modules', '@actions', 'artifact')
+	);
+	const artifact = new DefaultArtifactClient();
+	const suffixWidth = Math.max(2, String(partCount - 1).length);
+
 	console.log(
 		`Uploading ${archive} (${stat.size} bytes) as ${partCount} artifact part(s) of at most ${chunkSizeArg}`
 	);
-
-	const artifact = new DefaultArtifactClient();
-	const suffixWidth = Math.max(2, String(partCount - 1).length);
 
 	for (let index = 0; index < partCount; ++index) {
 		const suffix = String(index).padStart(suffixWidth, '0');

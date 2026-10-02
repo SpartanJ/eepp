@@ -52,20 +52,13 @@ jobs:
 
     - name: Upload development environment
       if: github.event_name == 'push'
-      run: |
-        npm install \
-          --no-save \
-          --no-package-lock \
-          --prefix "$RUNNER_TEMP/eepp-artifact-uploader" \
-          @actions/artifact@5.0.3
-
-        NODE_PATH="$RUNNER_TEMP/eepp-artifact-uploader/node_modules" \
-          node projects/scripts/upload_split_artifact.cjs \
-            "$RUNNER_TEMP/eepp-dev-linux-x86_64.tar.zst" \
-            eepp-dev-linux-x86_64 \
-            400M \
-            5 \
-            8
+      uses: ./.github/actions/upload-split-artifact
+      with:
+        archive: ${{ runner.temp }}/eepp-dev-linux-x86_64.tar.zst
+        artifact_prefix: eepp-dev-linux-x86_64
+        chunk_size: 400M
+        retention_days: 5
+        max_parts: 8
     - name: Set SDK version
       id: sdk_version
       run: |
