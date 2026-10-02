@@ -88,6 +88,7 @@ async function main() {
 			const { id, size } = await artifact.uploadArtifact(
 				artifactName,
 				[partPath],
+				path.dirname(partPath),
 				{
 					retentionDays,
 					compressionLevel: 0,

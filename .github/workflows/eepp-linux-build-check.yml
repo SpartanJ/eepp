@@ -57,7 +57,7 @@ jobs:
           --no-save \
           --no-package-lock \
           --prefix "$RUNNER_TEMP/eepp-artifact-uploader" \
-          @actions/artifact@6.2.1
+          @actions/artifact@5.0.3
 
         NODE_PATH="$RUNNER_TEMP/eepp-artifact-uploader/node_modules" \
           node projects/scripts/upload_split_artifact.cjs \
