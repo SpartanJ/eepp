@@ -52,12 +52,20 @@ jobs:
 
     - name: Upload development environment
       if: github.event_name == 'push'
-      uses: actions/upload-artifact@v4
-      with:
-        name: eepp-dev-linux-x86_64
-        path: ${{ runner.temp }}/eepp-dev-linux-x86_64.tar.zst
-        retention-days: 5
-        compression-level: 0
+      run: |
+        npm install \
+          --no-save \
+          --no-package-lock \
+          --prefix "$RUNNER_TEMP/eepp-artifact-uploader" \
+          @actions/artifact@6.2.1
+
+        NODE_PATH="$RUNNER_TEMP/eepp-artifact-uploader/node_modules" \
+          node projects/scripts/upload_split_artifact.cjs \
+            "$RUNNER_TEMP/eepp-dev-linux-x86_64.tar.zst" \
+            eepp-dev-linux-x86_64 \
+            400M \
+            5 \
+            8
     - name: Set SDK version
       id: sdk_version
       run: |
