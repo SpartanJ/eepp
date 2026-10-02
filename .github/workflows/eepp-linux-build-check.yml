@@ -47,7 +47,7 @@ jobs:
           --exclude='.git' \
           --exclude='projects/linux/sdk' \
           --zstd \
-          -cf ../eepp-dev-linux-x86_64.tar.zst \
+          -cf "$RUNNER_TEMP/eepp-dev-linux-x86_64.tar.zst" \
           .
 
     - name: Upload development environment
@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: eepp-dev-linux-x86_64
-        path: ../eepp-dev-linux-x86_64.tar.zst
+        path: ${{ runner.temp }}/eepp-dev-linux-x86_64.tar.zst
         retention-days: 5
         compression-level: 0
     - name: Set SDK version
