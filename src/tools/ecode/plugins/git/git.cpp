@@ -811,32 +811,16 @@ Git::CheckoutResult Git::checkout( const std::string& branch,
 Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remoteBranch,
 													   const std::string& newBranch,
 													   const std::string& projectDir ) const {
-	std::string newBranchName =
-		newBranch.empty() ? ( remoteBranch.find_last_of( '/' ) != std::string::npos
-								  ? remoteBranch.substr( remoteBranch.find_last_of( '/' ) + 1 )
-								  : remoteBranch )
-						  : newBranch;
+	const size_t separator = remoteBranch.find( '/' );
 	Git::CheckoutResult res;
-	std::string buf;
-	int retCode =
-		git( String::format( "branch --no-track %s refs/remotes/%s", newBranchName, remoteBranch ),
-			 projectDir, buf );
-	if ( retCode != EXIT_SUCCESS ) {
-		res.returnCode = retCode;
-		res.result = buf;
-		return res;
-	}
-
-	retCode = git( String::format( "branch --set-upstream-to=refs/remotes/%s %s", remoteBranch,
-								   newBranchName ),
-				   projectDir, buf );
-	if ( retCode != EXIT_SUCCESS ) {
-		res.returnCode = retCode;
-		res.result = buf;
-		return res;
-	}
-
-	return checkout( newBranchName, projectDir );
+	res.branch = newBranch.empty()
+					 ? ( separator != std::string::npos ? remoteBranch.substr( separator + 1 )
+														: remoteBranch )
+					 : newBranch;
+	res.returnCode =
+		git( { "checkout", "--track", "-b", res.branch, "refs/remotes/" + remoteBranch },
+			 projectDir, res.result );
+	return res;
 }
 
 static std::string asList( std::vector<std::string>& files ) {
@@ -1226,6 +1210,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 			for ( auto& branch : branches ) {
 				if ( branch.type == RefType::Head ) {
 					branch.localOnly =
+						branch.remote.empty() &&
 						std::find( remoteBranchNames.begin(), remoteBranchNames.end(),
 								   branch.name ) == remoteBranchNames.end();
 				}

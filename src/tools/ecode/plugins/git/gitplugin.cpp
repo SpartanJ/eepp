@@ -1525,31 +1525,32 @@ void GitPlugin::checkout( Git::Branch branch ) {
 	const auto lifetime = mLifetime.weakHandle();
 	const auto git = mGit;
 	const std::string repo = repoSelected();
-	const auto checkOutFn = [this, branch, lifetime, git, repo]( bool createLocal ) {
+	const auto checkOutFn = [this, branchName = std::move( branch.name ), lifetime, git,
+							 repo]( bool createLocal ) {
 		mLoader->setVisible( true );
-		mThreadPool->run( [branch, createLocal, lifetime, git, repo] {
-			auto result = createLocal ? git->checkoutAndCreateLocalBranch( branch.name, "", repo )
-									  : git->checkout( branch.name, repo );
-			lifetime.run(
-				[branch, createLocal, repo, result = std::move( result )]( GitPlugin* plugin ) {
-					if ( result.success() ) {
-						{
-							Lock l( plugin->mGitBranchMutex );
-							plugin->mGitBranches[repo] = branch.name;
-						}
-						if ( plugin->mBranchesTree->getModel() ) {
-							if ( createLocal )
-								plugin->updateBranches();
-							else
-								plugin->mBranchesTree->getModel()->invalidate(
-									Model::DontInvalidateIndexes );
-						}
-						plugin->invalidateHistory();
-					} else {
-						plugin->showMessage( LSPMessageType::Warning, result.result );
+		mThreadPool->run( [branchName, createLocal, lifetime, git, repo]() mutable {
+			auto result = createLocal ? git->checkoutAndCreateLocalBranch( branchName, "", repo )
+									  : git->checkout( branchName, repo );
+			lifetime.run( [createLocal, repo = std::move( repo ),
+						   result = std::move( result )]( GitPlugin* plugin ) mutable {
+				if ( result.success() ) {
+					{
+						Lock l( plugin->mGitBranchMutex );
+						plugin->mGitBranches[repo] = std::move( result.branch );
 					}
-					plugin->mLoader->setVisible( false );
-				} );
+					if ( plugin->mBranchesTree->getModel() ) {
+						if ( createLocal )
+							plugin->updateBranches();
+						else
+							plugin->mBranchesTree->getModel()->invalidate(
+								Model::DontInvalidateIndexes );
+					}
+					plugin->invalidateHistory();
+				} else {
+					plugin->showMessage( LSPMessageType::Warning, result.result );
+				}
+				plugin->mLoader->setVisible( false );
+			} );
 		} );
 	};
 

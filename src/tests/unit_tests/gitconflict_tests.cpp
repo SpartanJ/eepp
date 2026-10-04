@@ -25,6 +25,78 @@ struct GitTempDirectory {
 
 } // namespace
 
+UTEST( GitBranch, RemoteCheckoutPreservesNamesAndTracking ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	const std::string repoPath = ( temp.path / "repo with spaces" ).string();
+	ASSERT_TRUE( FileSystem::makeDir( repoPath, true ) );
+	Git git( repoPath, gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) { return git.git( args, repoPath, output ); };
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Branch Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "branch@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "branch.autoSetupMerge", "false" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "remote", "add", "origin", repoPath } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "remote", "add", "upstream", repoPath } ) );
+
+	const struct {
+		const char* remote;
+		const char* newName;
+		const char* expectedName;
+	} cases[] = {
+		{ "origin/fix/cross-watch-moves", "", "fix/cross-watch-moves" },
+		{ "upstream/feature/nested/branch", "", "feature/nested/branch" },
+		{ "origin/simple", "", "simple" },
+		{ "origin/fix/cross-watch-moves", "custom/local-name", "custom/local-name" },
+	};
+	for ( const auto& test : cases ) {
+		ASSERT_EQ( EXIT_SUCCESS,
+				   run( { "update-ref", std::string( "refs/remotes/" ) + test.remote, "HEAD" } ) );
+		const auto result = git.checkoutAndCreateLocalBranch( test.remote, test.newName, repoPath );
+		ASSERT_TRUE( result.success() );
+		EXPECT_STREQ( test.expectedName, result.branch.c_str() );
+		ASSERT_EQ( EXIT_SUCCESS, run( { "symbolic-ref", "--short", "HEAD" } ) );
+		EXPECT_STDSTREQ( std::string( test.expectedName ) + "\n", output );
+		ASSERT_EQ( EXIT_SUCCESS, run( { "rev-parse", "--symbolic-full-name", "@{upstream}" } ) );
+		EXPECT_STDSTREQ( std::string( "refs/remotes/" ) + test.remote + "\n", output );
+
+		const auto branches = git.getAllBranchesAndTags( Git::RefType::All, {}, repoPath );
+		bool found = false;
+		for ( const auto& branch : branches ) {
+			if ( branch.type == Git::RefType::Head && branch.name == test.expectedName ) {
+				found = true;
+				EXPECT_STREQ( test.remote, branch.remote.c_str() );
+				EXPECT_FALSE( branch.localOnly );
+				EXPECT_FALSE( branch.gone );
+			}
+		}
+		EXPECT_TRUE( found );
+	}
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "branch", "--no-track", "only-local" } ) );
+	const auto branches = git.getAllBranchesAndTags( Git::RefType::All, {}, repoPath );
+	bool foundLocalOnly = false;
+	for ( const auto& branch : branches ) {
+		if ( branch.type == Git::RefType::Head && branch.name == "only-local" ) {
+			foundLocalOnly = true;
+			EXPECT_TRUE( branch.localOnly );
+		}
+	}
+	EXPECT_TRUE( foundLocalOnly );
+
+	EXPECT_TRUE(
+		git.checkoutAndCreateLocalBranch( "origin/fix/cross-watch-moves", "", repoPath ).fail() );
+	EXPECT_TRUE( git.checkoutAndCreateLocalBranch( "origin/missing/branch", "", repoPath ).fail() );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "symbolic-ref", "--short", "HEAD" } ) );
+	EXPECT_STDSTREQ( std::string( "custom/local-name\n" ), output );
+	EXPECT_NE( EXIT_SUCCESS, run( { "show-ref", "--verify", "refs/heads/missing/branch" } ) );
+}
+
 UTEST( GitStatus, DecodesQuotedUntrackedPaths ) {
 	const std::string gitPath = Sys::which( "git" );
 	if ( gitPath.empty() )
