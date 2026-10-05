@@ -3143,11 +3143,14 @@ UTEST( UIHTML, MarkdownFollowsLocalLinksAndRebasesNavigation ) {
 	auto* scene = SceneManager::instance()->getUISceneNode();
 	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
 	const URI sceneURI = scene->getURI();
-	const std::string dir = Sys::getTempPath() + "eepp_markdown_navigation/";
-	ASSERT_TRUE( FileSystem::makeDir( dir + "docs/", true ) );
-	ASSERT_TRUE(
-		FileSystem::fileWrite( dir + "docs/intro.md", "[Next](../next%20page.markdown)" ) );
-	ASSERT_TRUE( FileSystem::fileWrite( dir + "next page.markdown", "# Destination" ) );
+	const std::string dir =
+		Sys::getTempPath() + "eepp_markdown_navigation" + FileSystem::getOSSlash();
+	const std::string docs = dir + "docs" + FileSystem::getOSSlash();
+	const std::string intro = docs + "intro.md";
+	const std::string destination = dir + "next page.markdown";
+	ASSERT_TRUE( FileSystem::makeDir( docs, true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( intro, "[Next](../next%20page.markdown)" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
 	auto* markdown = UIMarkdownView::New();
 	markdown->setParent( scene->getRoot() );
 	markdown->loadFromString( "[Intro](file://docs/intro.md)", dir + "README.md" );
@@ -3170,21 +3173,21 @@ UTEST( UIHTML, MarkdownFollowsLocalLinksAndRebasesNavigation ) {
 	};
 	clickLink();
 	EXPECT_EQ( completed, 1 );
-	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "docs/intro.md" );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), intro );
 	clickLink();
 	EXPECT_EQ( completed, 2 );
-	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "next page.markdown" );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
 	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
 	EXPECT_TRUE( sceneURI == scene->getURI() );
 	NavigationRequest missing{ URI( "missing.md" ) };
 	missing.source = markdown;
 	scene->navigate( missing );
 	EXPECT_EQ( failed, 1 );
-	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "next page.markdown" );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
 	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
-	FileSystem::fileRemove( dir + "docs/intro.md" );
-	FileSystem::fileRemove( dir + "next page.markdown" );
-	FileSystem::fileRemove( dir + "docs/" );
+	FileSystem::fileRemove( intro );
+	FileSystem::fileRemove( destination );
+	FileSystem::fileRemove( docs );
 	FileSystem::fileRemove( dir );
 	Engine::destroySingleton();
 }
@@ -3257,14 +3260,15 @@ UTEST( UIHTML, ScrollableMarkdownViewResetsScrollOnlyAfterSuccessfulNavigation )
 	scene->update( Milliseconds( 16 ) );
 	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
 	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
-	NavigationRequest request{ URI( path + ".missing.md" ) };
+	// A Windows drive path passed directly to URI is parsed as a scheme, not a file URL.
+	NavigationRequest request{ URI( "file://" + path + ".missing.md" ) };
 	request.source = markdown;
 	scene->navigate( request );
 	scene->update( Milliseconds( 16 ) );
 	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
 	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
 	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
-	request.uri = URI( path );
+	request.uri = URI( "file://" + path );
 	scene->navigate( request );
 	scene->update( Milliseconds( 16 ) );
 	EXPECT_STDSTREQ( markdown->getDocumentPath(), path );
@@ -3282,7 +3286,7 @@ UTEST( UIHTML, ScrollableMarkdownHistoryCommitsSuccessfulLoadsAndPreservesForwar
 	view->setHistoryNavigationEnabled( true );
 	view->setPixelsSize( 300, 200 );
 	auto* markdown = view->getMarkdownView();
-	const std::string dir = Sys::getTempPath() + "eepp_markdown_history/";
+	const std::string dir = Sys::getTempPath() + "eepp_markdown_history" + FileSystem::getOSSlash();
 	ASSERT_TRUE( FileSystem::makeDir( dir, true ) );
 	const std::string source = dir + "source.md";
 	const std::string first = dir + "first.md";
@@ -3581,13 +3585,18 @@ UTEST( UIHTML, MarkdownLinkResolutionIsScopedAndFollowsSceneChanges ) {
 	auto* scene = SceneManager::instance()->getUISceneNode();
 	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
 	const std::string base = Sys::getTempPath();
+	const std::string firstDir = base + "project-a" + FileSystem::getOSSlash();
+	const std::string secondDir = base + "project-b" + FileSystem::getOSSlash();
+	const std::string firstLinkPath =
+		firstDir + "docs" + FileSystem::getOSSlash() + "intro page.md";
+	const std::string secondLinkPath = secondDir + "docs" + FileSystem::getOSSlash() + "intro.md";
 	auto* first = UIMarkdownView::New();
 	first->setParent( scene->getRoot() );
 	first->loadFromString( "[Link](file://docs/intro%20page.md?q=docs#details)",
-						   base + "project-a/README.md" );
+						   firstDir + "README.md" );
 	auto* second = UIMarkdownView::New();
 	second->setParent( scene->getRoot() );
-	second->loadFromString( "[Link](docs/intro.md)", base + "project-b/README.md" );
+	second->loadFromString( "[Link](docs/intro.md)", secondDir + "README.md" );
 	std::string firstPath;
 	std::string secondPath;
 	first->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
@@ -3608,8 +3617,8 @@ UTEST( UIHTML, MarkdownLinkResolutionIsScopedAndFollowsSceneChanges ) {
 	auto* secondLink = second->findByTag<UIAnchorSpan>( "a" );
 	NodeMessage secondClick( secondLink, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 	secondLink->messagePost( &secondClick );
-	EXPECT_STDSTREQ( firstPath, base + "project-a/docs/intro page.md" );
-	EXPECT_STDSTREQ( secondPath, base + "project-b/docs/intro.md" );
+	EXPECT_STDSTREQ( firstPath, firstLinkPath );
+	EXPECT_STDSTREQ( secondPath, secondLinkPath );
 	URI absolute;
 	absolute.setScheme( "file" );
 	absolute.setPath( "/absolute/guide.md" );
@@ -3630,10 +3639,10 @@ UTEST( UIHTML, MarkdownLinkResolutionIsScopedAndFollowsSceneChanges ) {
 	first->setParent( otherScene->getRoot() );
 	firstPath.clear();
 	link->messagePost( &firstClick );
-	EXPECT_STDSTREQ( firstPath, base + "project-a/docs/intro page.md" );
+	EXPECT_STDSTREQ( firstPath, firstLinkPath );
 	secondPath.clear();
 	secondLink->messagePost( &secondClick );
-	EXPECT_STDSTREQ( secondPath, base + "project-b/docs/intro.md" );
+	EXPECT_STDSTREQ( secondPath, secondLinkPath );
 	Engine::destroySingleton();
 }
 

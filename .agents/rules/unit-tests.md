@@ -47,6 +47,25 @@ the display. A sandbox can hide or deny access to an otherwise usable host displ
     Keep the same harness as the full suite: direct execution on a graphical Linux desktop, or the
     wrapper in a genuinely headless environment.
 
+## Cross-Platform Compatibility (Required)
+
+All general unit tests must work on every supported platform, including at least the desktop
+platforms: Windows, Linux, and macOS. Consider portability when implementing a test, rather than
+relying on success on the development host alone.
+
+* Use platform-aware filesystem helpers for fixture paths and expected filesystem paths. Do not
+  assume `/` is the native path separator or that every absolute path starts with `/`.
+* Keep filesystem paths distinct from URIs. Construct explicit file URIs for navigation; a Windows
+  drive letter in a bare filesystem path can be interpreted as a URI scheme.
+* Avoid unguarded assumptions about shell commands, environment variables, keyboard modifiers,
+  fonts, or operating-system behavior. Use the project's portable APIs where available.
+* Tests for intentionally platform-specific behavior are allowed, but must be explicitly guarded
+  for the relevant platforms. Do not restrict a general test to one platform to avoid fixing its
+  portability.
+* When changing platform-sensitive test code, validate it on the affected platforms where possible.
+  Use `projects/mingw32/make.sh` to build Windows tests from Linux and run them under Wine.
+  State any platforms that remain unverified.
+
 ## Writing New Tests
 Writing new tests is highly encouraged, but depends on the context of your changes:
 *   **Core Framework (`eepp`):** If you add new logic, math, or framework-level features, you are **expected** to write unit tests for them.
