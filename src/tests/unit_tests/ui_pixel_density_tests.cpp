@@ -5,8 +5,11 @@
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
@@ -14,6 +17,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -24,6 +28,7 @@
 
 using namespace EE;
 using namespace EE::Graphics;
+using namespace EE::Scene;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
@@ -234,6 +239,78 @@ UTEST( PixelDensityRegression, DiffGuttersUsePhysicalGlyphWidthAndGrowWithLineNu
 		}
 		diff->setViewMode( UIDiffView::ViewMode::Unified );
 	}
+}
+
+UTEST( PixelDensityRegression, DiffImagesUseNativePixelsAndOnlyShrinkToFit ) {
+	DensityApplication fixture;
+	fixture.app.getUI()->setThreadPool( ThreadPool::createShared( 2 ) );
+	const std::string oldPath( Sys::getTempPath() + "eepp-diff-density-old.png" );
+	const std::string newPath( Sys::getTempPath() + "eepp-diff-density-new.png" );
+	// Odd dimensions expose rounding errors when undoing fractional pixel density.
+	Image oldImage( 81, 51, 4, Color::Red );
+	Image newImage( 81, 51, 4, Color::Blue );
+	ASSERT_TRUE( oldImage.saveToFile( oldPath, Image::SaveType::PNG ) );
+	ASSERT_TRUE( newImage.saveToFile( newPath, Image::SaveType::PNG ) );
+
+	for ( Float density : { 1.f, 1.5f, 2.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* diff = UIDiffView::New();
+		diff->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		diff->setPixelsSize( 400, 200 );
+		diff->loadFromFile( oldPath, newPath );
+		auto* left = diff->getLeftImageViewer();
+		auto* right = diff->getRightImageViewer();
+		ASSERT_TRUE( left && right );
+		const auto waitForImages = [&] {
+			Clock clock;
+			while ( ( !left->getImage()->getDrawable() || !right->getImage()->getDrawable() ) &&
+					clock.getElapsedTime() < Seconds( 5 ) ) {
+				SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+				Sys::sleep( Milliseconds( 1 ) );
+			}
+			return left->getImage()->getDrawable() && right->getImage()->getDrawable();
+		};
+		ASSERT_TRUE( waitForImages() );
+		for ( auto* viewer : { left, right } ) {
+			EXPECT_EQ( 81.f, viewer->getImage()->getPixelsSize().x );
+			EXPECT_EQ( 51.f, viewer->getImage()->getPixelsSize().y );
+		}
+
+		diff->setPixelsSize( 80, 100 );
+		for ( auto* viewer : { left, right } ) {
+			EXPECT_EQ( 40.f, viewer->getImage()->getPixelsSize().x );
+			EXPECT_EQ( 25.f, viewer->getImage()->getPixelsSize().y );
+		}
+		diff->setPixelsSize( 400, 20 );
+		for ( auto* viewer : { left, right } ) {
+			EXPECT_EQ( 31.f, viewer->getImage()->getPixelsSize().x );
+			EXPECT_EQ( 20.f, viewer->getImage()->getPixelsSize().y );
+		}
+
+		diff->setPixelsSize( 400, 200 );
+		diff->setViewMode( UIDiffView::ViewMode::Unified );
+		const auto viewers = diff->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER );
+		ASSERT_EQ( size_t{ 3 }, viewers.size() );
+		auto* visualDiff = viewers[2]->getImage();
+		ASSERT_TRUE( visualDiff->getDrawable() );
+		EXPECT_EQ( 81.f, visualDiff->getPixelsSize().x );
+		EXPECT_EQ( 51.f, visualDiff->getPixelsSize().y );
+		diff->setPixelsSize( 40, 100 );
+		EXPECT_EQ( 40.f, visualDiff->getPixelsSize().x );
+		EXPECT_EQ( 25.f, visualDiff->getPixelsSize().y );
+		diff->setPixelsSize( 400, 200 );
+		EXPECT_EQ( 81.f, visualDiff->getPixelsSize().x );
+		EXPECT_EQ( 51.f, visualDiff->getPixelsSize().y );
+		diff->setViewMode( UIDiffView::ViewMode::SideBySide );
+		ASSERT_TRUE( waitForImages() );
+		for ( auto* viewer : { left, right } ) {
+			EXPECT_EQ( 81.f, viewer->getImage()->getPixelsSize().x );
+			EXPECT_EQ( 51.f, viewer->getImage()->getPixelsSize().y );
+		}
+		eeDelete( diff );
+	}
+	FileSystem::fileRemove( oldPath );
+	FileSystem::fileRemove( newPath );
 }
 
 UTEST( PixelDensityRegression, TableContainerPaddingAndOriginStayLogical ) {

@@ -248,9 +248,9 @@ void UIImageViewer::updateImageLayout() {
 	if ( !mImage || !mImage->getDrawable() )
 		return;
 
-	Sizef imageSize( mImage->getDrawable()->getPixelsSize() );
-	if ( mUseNativeImageSize )
-		imageSize /= PixelDensity::getPixelDensity();
+	// Use source dimensions directly to avoid rounding twice at fractional pixel densities.
+	Sizef imageSize( mUseNativeImageSize ? mImage->getDrawable()->getSize()
+										 : mImage->getDrawable()->getPixelsSize() );
 
 	const Float scale =
 		imageSize.x > mSize.x || imageSize.y > mSize.y

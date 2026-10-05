@@ -226,6 +226,9 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 					}
 				}
 
+				// Text paints glyphs from an em-size baseline. Translate that origin to the
+				// font ascent used by layout; backgrounds and selection retain their line boxes.
+				pos.y += span.baseline - text->getCharacterSize();
 				if ( rotation == 0 && scale == Vector2f::One ) {
 					text->draw( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ),
 								Vector2f::One, 0, effect );
@@ -890,7 +893,7 @@ class RichTextInlineLayouter {
 			bool isFloat = span.floatType != RichText::InlineFloat::None;
 
 			if ( span.type == RichText::RenderSpan::Type::Text ) {
-				Float baseline = getTextVisualBaseline( span.text );
+				Float baseline = span.baseline;
 				RichText::BaselineAlignValue baselineAlign = effectiveInlineBaselineAlign(
 					inlineItems, span.inlinePath, span.baselineAlign );
 				Float offsetY = getBaselineAlignedOffset(
@@ -1990,6 +1993,7 @@ class RichTextInlineLayouter {
 		RichText::RenderSpan renderSpan;
 		renderSpan.type = RichText::RenderSpan::Type::Text;
 		renderSpan.text = renderSpanText;
+		renderSpan.baseline = getTextVisualBaseline( payload.text );
 		renderSpan.margin = payload.margin;
 		renderSpan.padding = payload.padding;
 		renderSpan.lineHeight = payload.lineHeight;

@@ -62,7 +62,8 @@ static bool setImageViewerImageSize( UIImageViewer* viewer ) {
 	if ( !viewer || !viewer->getImage() || !viewer->getImage()->getDrawable() )
 		return false;
 
-	auto imageSize( viewer->getImage()->getDrawable()->getPixelsSize() );
+	// Sprite logical dimensions are source pixels; getPixelsSize() includes UI density.
+	auto imageSize( viewer->getImage()->getDrawable()->getSize() );
 	auto viewerSize( viewer->getPixelsSize() );
 	auto scale(
 		viewerSize.x > 0 && viewerSize.y > 0 &&
@@ -830,6 +831,9 @@ void UIDiffView::createEditor( UICodeEditor*& editor,
 UIImageViewer* UIDiffView::createImageViewer() {
 	auto* imageViewer = UIImageViewer::New();
 	imageViewer->setParent( this );
+	// Image viewers are created lazily; keep the overlay buttons last for hit testing.
+	mModeToggle->toFront();
+	mCompleteViewToggle->toFront();
 	imageViewer->setVisible( false );
 	imageViewer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	imageViewer->setDisplayOptions( UIImageViewer::DisplayDimensions );
@@ -979,7 +983,7 @@ void UIDiffView::onAutoSize() {
 		Float height = PixelDensity::dpToPx( 64 ); // force a min height
 		auto viewImageHeight = []( auto iv ) -> Float {
 			if ( iv && iv->getImage() && iv->getImage()->getDrawable() )
-				return iv->getImage()->getDrawable()->getPixelsSize().getHeight();
+				return iv->getImage()->getDrawable()->getSize().getHeight();
 			return 0;
 		};
 

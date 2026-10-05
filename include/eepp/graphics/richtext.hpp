@@ -236,7 +236,7 @@ class EE_API RichText : public Drawable {
 		Float lineHeight{ 0 };
 		BaselineAlignValue baselineAlign;
 		bool suppressBackground{ false };
-		Float baseline{ 0 };
+		Float baseline{ 0 }; // Natural baseline from the content box's top, also for text runs.
 		InlineFloat floatType{ InlineFloat::None };
 		InlineClear clearType{ InlineClear::None };
 		bool isLineBreak{ false };

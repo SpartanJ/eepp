@@ -254,6 +254,57 @@ UTEST( RichText, BaselineAlignment ) {
 	Engine::destroySingleton();
 }
 
+UTEST( RichText, MixedFontPaintedBaselinesMatchLineMetrics ) {
+	auto* scene = createRichTextScene();
+	ASSERT_TRUE( scene != nullptr );
+	auto* sans = static_cast<FontTrueType*>( scene->getUIThemeManager()->getDefaultFont() );
+	auto mono = FontTrueType::New( "MixedBaselineMono", "../assets/fonts/DejaVuSansMono.ttf" );
+	ASSERT_TRUE( mono && mono->loaded() );
+	mono->setAntialiasing( FontAntialiasing::Grayscale );
+	sans->setAntialiasing( FontAntialiasing::Grayscale );
+	auto* window = Engine::instance()->getCurrentWindow();
+	for ( const Uint32 monoSize : { 16u, 24u } ) {
+		for ( const Float lineHeight : { 0.f, 48.f } ) {
+			RichText richText;
+			richText.getFontStyleConfig().Font = sans;
+			richText.getFontStyleConfig().CharacterSize = 24;
+			richText.setLineHeight( lineHeight );
+			richText.addSpan( "HH", sans, 24, Color::Black );
+			richText.addSpan( "HH", mono.get(), monoSize, Color::Black );
+			richText.addSpan( "HH", sans, 24, Color::Black );
+			richText.updateLayout();
+			ASSERT_EQ( richText.getLines().size(), 1u );
+			const auto& line = richText.getLines()[0];
+			ASSERT_EQ( line.spans.size(), 3u );
+			window->setClearColor( Color::White );
+			window->clear();
+			richText.draw( 32.f, 32.f );
+			Image image = window->getFrontBufferImage();
+			for ( const auto& span : line.spans ) {
+				const auto& style = span.text->getFontStyleConfig();
+				const auto bounds =
+					style.Font->getGlyph( 'H', style.CharacterSize, false, false, 0.f ).bounds;
+				Int32 lastInkRow = -1;
+				const Int32 left = static_cast<Int32>( 32.f + span.position.x );
+				const Int32 right = left + static_cast<Int32>( span.size.getWidth() );
+				for ( Int32 y = 16; y < 128; ++y ) {
+					for ( Int32 x = left; x < right; ++x ) {
+						if ( image.getPixel( x, y ).r < 128 )
+							lastInkRow = y;
+					}
+				}
+				ASSERT_GE( lastInkRow, 0 );
+				// H has no descender. Recover its painted baseline from the glyph bounds;
+				// checking only span offsets would miss a renderer/layout mismatch.
+				const Float paintedBaseline = lastInkRow + 1.f - bounds.Top - bounds.Bottom;
+				EXPECT_NEAR( paintedBaseline, std::trunc( 32.f + line.maxAscent ), 0.001f );
+			}
+		}
+	}
+	mono.reset();
+	destroyRichTextScene( scene );
+}
+
 UTEST( RichText, VerticalAlignAtomicBoxes ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Vertical Align",
 													  WindowStyle::Default, WindowBackend::Default,
