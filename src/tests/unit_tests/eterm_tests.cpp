@@ -4,10 +4,18 @@
 #include <deque>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/inputevent.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminalsearch.hpp>
@@ -87,6 +95,106 @@ waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 	}
 	return nullptr;
+}
+
+class SelectionTestDisplay : public TerminalDisplay {
+  public:
+	SelectionTestDisplay( EE::Window::Window* window, Font* font,
+						  std::shared_ptr<TerminalSession> session ) :
+		TerminalDisplay( window, font, 12, { 400, 200 }, false ) {
+		mPadding = { 10, 10, 10, 10 };
+		mSession = std::move( session );
+		consumeSnapshot();
+	}
+
+	using TerminalDisplay::positionToGrid;
+};
+
+UTEST( eterm_display, selection_clamps_each_axis_independently ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm selection bounds", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto session = TerminalSession::create( std::make_unique<MockPty>(),
+											std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 80 && snapshot.rows == 24;
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const Vector2i inside{ 110 + 3 * cell.getWidth(), 110 + 4 * cell.getHeight() };
+	const auto grid = display.positionToGrid( inside );
+	ASSERT_GT( grid.x, 0 );
+	ASSERT_GT( grid.y, 0 );
+
+	for ( int x : { -50, 0, 90, 10000 } ) {
+		const auto outside = display.positionToGrid( { x, inside.y } );
+		EXPECT_EQ( grid.y, outside.y );
+		EXPECT_EQ( x < 110 ? 0 : 80, outside.x );
+	}
+	for ( int y : { -50, 0, 90, 10000 } ) {
+		const auto outside = display.positionToGrid( { inside.x, y } );
+		EXPECT_EQ( grid.x, outside.x );
+		EXPECT_EQ( y < 110 ? 0 : 23, outside.y );
+	}
+}
+
+UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm selection auto-scroll", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	for ( int line = 0; line < 80; ++line )
+		pty->mBuffer += "selection history\r\n";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.historyLength > 40;
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	display.setClickStep( 1 );
+	auto* input = app.getWindow()->getInput();
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	display.onMouseDown( { 150, 150 }, EE_BUTTON_LMASK );
+
+	// Keep the auto-scroll timer eligible and leave the input position stale deliberately.
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	for ( const Vector2i& point :
+		  { Vector2i{ -50, 150 }, Vector2i{ 700, 150 }, Vector2i{ -50, 100 }, Vector2i{ 700, 105 },
+			Vector2i{ -50, 295 }, Vector2i{ 700, 300 } } ) {
+		display.onMouseMove( point, EE_BUTTON_LMASK );
+		session->requestSelection(); // Wait for the worker to process the motion.
+		EXPECT_EQ( 0, session->snapshot()->scrollPosition );
+	}
+
+	// Crossing the top and bottom must still scroll even when X is outside the widget.
+	display.onMouseMove( { -50, 99 }, EE_BUTTON_LMASK );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 1;
+				 } ) != nullptr );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	display.onMouseMove( { 700, 301 }, EE_BUTTON_LMASK );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 0;
+				 } ) != nullptr );
+
+	// Periodic updates must retain the unclamped Y coordinate outside the window.
+	display.setPosition( { 100, 0 } );
+	EE::Window::InputEvent motion( EE::Window::InputEvent::MouseMotion );
+	motion.motion = {};
+	motion.motion.x = -50;
+	motion.motion.y = -1;
+	input->processEvent( &motion );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	display.update( false );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 1;
+				 } ) != nullptr );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	display.onMouseUp( { 150, 150 }, EE_BUTTON_LMASK );
 }
 
 UTEST( eterm_session, command_wakeup_and_snapshot_immutability ) {

@@ -8,6 +8,7 @@
 #include <eepp/scene/event.hpp>
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/nodemessage.hpp>
+#include <functional>
 
 namespace EE { namespace UI {
 
@@ -64,6 +65,9 @@ class EE_API UITextSelectionController {
 
 	bool copySelection();
 
+	/** Overrides URL resolution for Copy Link. By default, the link's scene resolves its href. */
+	void setLinkResolverCb( std::function<std::string( const std::string& )> cb );
+
 	bool onKeyDown( const KeyEvent& event );
 
 	bool onMouseDown( UIRichText* source, const Vector2i& position, Uint32 flags );
@@ -96,6 +100,7 @@ class EE_API UITextSelectionController {
 	UIHTMLWidget* mContainRoot{ nullptr };
 	UIScrollView* mScrollTarget{ nullptr };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
+	std::function<std::string( const std::string& )> mLinkResolverCb;
 	EventConnection mMenuItemConnection;
 	EventConnection mMenuCloseConnection;
 	SmallVector<UIRichText*, 8> mOwners;

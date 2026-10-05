@@ -794,8 +794,10 @@ bool UITextSelectionController::showContextMenu( const Vector2i& position, Uint3
 	std::string linkHref;
 	if ( !selected && target && nodeWithin( target, mRoot ) ) {
 		if ( const auto* link = linkForNode( target, mRoot ); link && !link->getHref().empty() ) {
-			linkHref =
-				link->getUISceneNode()->solveRelativePath( URI( link->getHref() ) ).toString();
+			linkHref = mLinkResolverCb ? mLinkResolverCb( link->getHref() )
+									   : link->getUISceneNode()
+											 ->solveRelativePath( URI( link->getHref() ) )
+											 .toString();
 		}
 	}
 	auto* menu = UIPopUpMenu::New();
@@ -956,6 +958,11 @@ bool UITextSelectionController::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_C )
 		return copySelection();
 	return false;
+}
+
+void UITextSelectionController::setLinkResolverCb(
+	std::function<std::string( const std::string& )> cb ) {
+	mLinkResolverCb = std::move( cb );
 }
 
 }} // namespace EE::UI

@@ -1307,4 +1307,6 @@ Restart ecode to see the changes.</string>
 	<string name="git_local_only">local only</string>
 	<string name="git_remote_branch">Remote</string>
 	<string name="git_tag">Tag</string>
+	<string name="uimarkdownview_go_back">Go Back</string>
+	<string name="uimarkdownview_go_forward">Go Forward</string>
 </resources>

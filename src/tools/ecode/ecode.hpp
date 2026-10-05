@@ -579,6 +579,12 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
 
+	UITab* createMarkdownPreview( UITabWidget* tabWidget, const std::string& path,
+								  const std::string& sourcePath, UICodeEditor* editor = nullptr,
+								  bool focus = true );
+
+	void bindMarkdownPreviewSources();
+
 	void loadDiffFromPath( const std::string& path );
 
 	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );

@@ -772,7 +772,7 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 			mDraggingSel = false;
 			mSelectionOverridesMouseCapture = false;
 		} else if ( !isMouseOverMe ) {
-			onMouseMove( mWindow->getInput()->getMousePos(),
+			onMouseMove( mWindow->getInput()->getRelativeMousePos(),
 						 mWindow->getInput()->getPressTrigger() );
 		}
 	}
@@ -1145,7 +1145,6 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 	const Uint32 modifiers = mWindow->getInput()->getModState();
 	const bool shiftPressed = ( modifiers & KEYMOD_SHIFT ) != 0;
-	auto mousePos = mWindow->getInput()->getRelativeMousePos();
 	const bool appCapturingMouse = isAppCapturingMouse();
 	const bool selectionOverride =
 		mSelectionOverridesMouseCapture || ( appCapturingMouse && shiftPressed );
@@ -1153,14 +1152,14 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 
 	if ( !isAltScr() && !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mAlreadyClickedLButton ) {
-		Vector2f relPos = { mousePos.x - mPosition.x - mPadding.Left,
-							mousePos.y - mPosition.y - mPadding.Top };
+		// Selection auto-scroll follows the terminal's vertical bounds, including padding.
+		const Float relativeY = pos.y - mPosition.y;
 
 		if ( mLastAutoScroll.getElapsedTime() >= Milliseconds( 16 ) ) {
-			if ( relPos.y < 0 ) {
+			if ( relativeY < 0 ) {
 				action( TerminalShortcutAction::SCROLLUP_ROW );
 				mLastAutoScroll.restart();
-			} else if ( relPos.y > mSize.getHeight() ) {
+			} else if ( relativeY > mSize.getHeight() ) {
 				action( TerminalShortcutAction::SCROLLDOWN_ROW );
 				mLastAutoScroll.restart();
 			}
@@ -1895,34 +1894,17 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 }
 
 Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
-	Vector2f relPos = { pos.x - mPosition.x - mPadding.Left, pos.y - mPosition.y - mPadding.Top };
-	int mouseX = 0;
-	int mouseY = 0;
+	const Vector2f relPos = { pos.x - mPosition.x - mPadding.Left,
+							  pos.y - mPosition.y - mPadding.Top };
+	const Float cellWidth = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	const Float cellHeight = mFont->getFontHeight( mFontSize );
+	const int columns = mSnapshot ? mSnapshot->columns : 0;
+	const int rows = mSnapshot ? mSnapshot->rows : 0;
 
-	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
-
-	auto clipColumns = (int)std::floor( std::max( 1.0f, mSize.getWidth() / spaceCharAdvanceX ) );
-	auto clipRows = (int)std::floor( std::max( 1.0f, mSize.getHeight() / fontSize ) );
-
-	if ( pos.x <= 0.0f || pos.y <= 0.0f ) {
-		mouseX = 0;
-		mouseY = 0;
-	} else if ( relPos.x >= 0.0f && relPos.y >= 0.0f ) {
-		mouseX = eeclamp( (int)std::floor( relPos.x / spaceCharAdvanceX ), 0, clipColumns );
-		mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows - 1 );
-	}
-
-	// All these checks are because there's a very rare bug I cannot find how it happens
-	auto termSize = mSnapshot ? Vector2i( mSnapshot->columns, mSnapshot->rows ) : Vector2i::Zero;
-
-	eeASSERT( mouseX >= 0 && mouseX <= termSize.x );
-	eeASSERT( mouseY >= 0 && mouseY <= termSize.y );
-
-	mouseX = eeclamp( mouseX, 0, termSize.x );
-	mouseY = eeclamp( mouseY, 0, termSize.y );
-
-	return { mouseX, mouseY };
+	// Clamp each axis independently so leaving a horizontal edge preserves the selected row.
+	return { eeclamp( static_cast<int>( std::floor( relPos.x / cellWidth ) ), 0, columns ),
+			 eeclamp( static_cast<int>( std::floor( relPos.y / cellHeight ) ), 0,
+					  eemax( 0, rows - 1 ) ) };
 }
 
 Vector2i TerminalDisplay::positionToPixel( const Vector2i& pos ) const {

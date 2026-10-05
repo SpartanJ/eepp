@@ -120,7 +120,6 @@ MarkdownView CodeEditor,
 MarkdownView code {
 	font-family: monospace;
 	background-color: var(--button-back);
-	font-size: 11dp;
 	padding-left: 2dp;
 	padding-right: 2dp;
 }

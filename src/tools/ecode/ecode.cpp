@@ -12,6 +12,7 @@
 #include "settingspanel.hpp"
 #include "uibuildsettings.hpp"
 #include "uidownloadwindow.hpp"
+#include "uimarkdownpreview.hpp"
 #include "uirightpanel.hpp"
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
@@ -3046,6 +3047,42 @@ void App::openInNewWindow( const std::string& params ) {
 	}
 }
 
+UITab* App::createMarkdownPreview( UITabWidget* tabWidget, const std::string& path,
+								   const std::string& sourcePath, UICodeEditor* editor,
+								   bool focus ) {
+	auto* preview = eeNew( UIMarkdownPreview, ( sourcePath ) );
+	auto* mdView = preview->getMarkdownView();
+	mdView->loadFromString( "", path );
+	if ( !path.empty() && ( !editor || editor->getDocument().isLoading() ||
+							path != editor->getDocument().getFilePath() ) )
+		mdView->loadFromFile( path );
+	if ( editor )
+		preview->bindSource( editor );
+	const std::string filename = editor && path == editor->getDocument().getFilePath()
+									 ? editor->getDocument().getFilename()
+									 : FileSystem::fileNameFromPath( path );
+	auto title = i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) + " " + filename;
+	auto [tab, _] = getSplitter()->createWidgetInTabWidget( tabWidget, preview, title, focus );
+	tab->setIcon( findIcon( "filetype-md" ) );
+	tab->setTooltipText( title );
+	registerUnlockedCommands( *preview );
+	return tab;
+}
+
+void App::bindMarkdownPreviewSources() {
+	getSplitter()->forEachTabWidget( [this]( UITabWidget* tabWidget ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
+			auto* widget = tabWidget->getTab( i )->getOwnedWidget();
+			if ( widget && widget->isWidget() &&
+				 widget->asType<UIWidget>()->hasClass( "markdown-preview" ) ) {
+				auto* preview = widget->asType<UIMarkdownPreview>();
+				if ( auto* editor = getSplitter()->findEditorFromPath( preview->getSourcePath() ) )
+					preview->bindSource( editor );
+			}
+		}
+	} );
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
@@ -3378,9 +3415,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					auto splitter = getSplitter();
 					auto editor = static_cast<UICodeEditor*>( client );
 					auto doc = editor->getDocumentRef();
-					auto scrollView = UIScrollViewCommandExecuter::New();
-					auto mdView = UIMarkdownView::New();
-					mdView->setParent( scrollView );
 
 					auto tabWidget = splitter->getCurTabWidget();
 					bool removeUnusedEditor = false;
@@ -3393,36 +3427,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						removeUnusedEditor = true;
 					}
 
-					auto textChangedCb =
-						editor->on( Event::OnTextChanged, [mdView, editor]( const Event* event ) {
-							mdView->debounce(
-								[mdView, editor] {
-									if ( App::instance() &&
-										 !SceneManager::instance()->isShuttingDown() &&
-										 App::instance()->getSplitter()->editorExists( editor ) ) {
-										mdView->loadFromString(
-											editor->getDocument().toUtf8String() );
-									}
-								},
-								Milliseconds( 400 ), (Action::UniqueID)mdView );
-						} );
-
-					mdView->on( Event::OnClose, [textChangedCb, editor]( const Event* event ) {
-						if ( App::instance() &&
-							 App::instance()->getSplitter()->editorExists( editor ) ) {
-							editor->removeEventListener( textChangedCb );
-						}
-					} );
-
-					mdView->loadFromString( doc->toUtf8String() );
-					auto title = i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) +
-								 " " + doc->getFilename();
-					auto [tab, _] =
-						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
-					tab->setIcon( findIcon( "filetype-md" ) );
-					tab->setTooltipText( title );
-
-					registerUnlockedCommands( *scrollView );
+					createMarkdownPreview( tabWidget, doc->getFilePath(), doc->getFilePath(),
+										   editor );
 
 					if ( removeUnusedEditor )
 						splitter->removeUnusedTab( tabWidget );

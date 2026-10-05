@@ -925,8 +925,19 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets a callback to intercept navigate() calls. Return true to handle the request,
 	 * false to fall through to the URL interceptor and default handling. */
 	void setNavigationInterceptorCb( std::function<bool( const NavigationRequest& request )> cb ) {
-		mNavigationInterceptorCb = cb;
+		mNavigationInterceptorCb = std::move( cb );
 	};
+
+	/** Registers an interceptor for requests originating in root's subtree. Interceptors run from
+	 * the source's nearest scope outward, before the scene-wide callback. Pass an empty callback
+	 * to unregister; the owner must unregister before root is destroyed or when it moves scenes.
+	 * Registration requires root to be this scene or a descendant. Unregistration also accepts
+	 * roots that have already left the scene's tree.
+	 * Each scope supports one callback. Requests without a source use the scene-wide callback.
+	 * Returns true on registration/replacement or removal, and false for an invalid root or
+	 * when attempting to remove a scope that is not registered. */
+	bool setNavigationInterceptorCb( const Node* root,
+									 std::function<bool( const NavigationRequest& request )> cb );
 
 	/**
 	 * Solves a relative path with no scheme or authority into a complete URI.
@@ -1068,6 +1079,8 @@ class EE_API UISceneNode : public SceneNode {
 	URI mURI;
 	URI mReferer;
 	std::function<bool( const NavigationRequest& request )> mNavigationInterceptorCb;
+	UnorderedMap<const Node*, std::function<bool( const NavigationRequest& )>>
+		mScopedNavigationInterceptors;
 	std::shared_ptr<CookieManager> mCookieManager{ std::make_shared<CookieManager>() };
 
 	/**

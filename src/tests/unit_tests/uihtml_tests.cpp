@@ -15,6 +15,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -3034,6 +3035,688 @@ UTEST( UIHTML, StyleSheetTraversalBoundaries ) {
 	EXPECT_TRUE( nativeWidget->getStyleSheetPreviousSiblingElement() == b );
 	EXPECT_TRUE( nativeChild->getStyleSheetParentElement() == nativeWidget );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScopedNavigationInterceptorsComposeWithSceneHandler ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* outer = UILinearLayout::NewVertical();
+	outer->setParent( scene->getRoot() );
+	auto* inner = UILinearLayout::NewVertical();
+	inner->setParent( outer );
+	auto* source = UITextSpan::New();
+	source->setParent( inner );
+	std::string calls;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		calls += "scene ";
+		return true;
+	} );
+	scene->setNavigationInterceptorCb( outer, [&]( const NavigationRequest& ) {
+		calls += "outer ";
+		return false;
+	} );
+	scene->setNavigationInterceptorCb( inner, [&]( const NavigationRequest& ) {
+		calls += "inner ";
+		// Removing this handler during dispatch must not invalidate the callable being invoked.
+		scene->setNavigationInterceptorCb( inner, {} );
+		return false;
+	} );
+	NavigationRequest request{ URI( "https://example.com" ) };
+	request.source = source;
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "inner outer scene " );
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "outer scene " );
+	scene->setNavigationInterceptorCb( inner, [&]( const NavigationRequest& ) {
+		calls += "handled ";
+		return true;
+	} );
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "handled " );
+	request.source = nullptr;
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "scene " );
+	scene->setNavigationInterceptorCb( inner, {} );
+	scene->setNavigationInterceptorCb( outer, {} );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScopedNavigationInterceptorRequiresSceneTreeMembership ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* detached = Node::New();
+	int scoped = 0;
+	int fallback = 0;
+	auto interceptor = [&]( const NavigationRequest& ) {
+		++scoped;
+		return true;
+	};
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		++fallback;
+		return true;
+	} );
+	NavigationRequest request{ URI( "https://example.com" ) };
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( nullptr, interceptor ) );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( detached, interceptor ) );
+	request.source = detached;
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 0 );
+	EXPECT_EQ( fallback, 1 );
+	eeDelete( detached );
+	auto* otherScene = UISceneNode::New();
+	SceneManager::instance()->add( otherScene );
+	auto* foreign = UIWidget::New();
+	foreign->setParent( otherScene->getRoot() );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	request.source = foreign;
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 0 );
+	EXPECT_EQ( fallback, 2 );
+	foreign->setParent( scene->getRoot() );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 1 );
+	EXPECT_EQ( fallback, 2 );
+	foreign->setParent( otherScene->getRoot() );
+	// Removal must work after reparenting, otherwise the old scene retains a stale callback.
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, {} ) );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( foreign, {} ) );
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 1 );
+	EXPECT_EQ( fallback, 3 );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( scene, interceptor ) );
+	request.source = scene->getRoot();
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 2 );
+	EXPECT_EQ( fallback, 3 );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( scene, {} ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownFollowsLocalLinksAndRebasesNavigation ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
+	const URI sceneURI = scene->getURI();
+	const std::string dir = Sys::getTempPath() + "eepp_markdown_navigation/";
+	ASSERT_TRUE( FileSystem::makeDir( dir + "docs/", true ) );
+	ASSERT_TRUE(
+		FileSystem::fileWrite( dir + "docs/intro.md", "[Next](../next%20page.markdown)" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( dir + "next page.markdown", "# Destination" ) );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	markdown->loadFromString( "[Intro](file://docs/intro.md)", dir + "README.md" );
+	EXPECT_TRUE( markdown->getFollowLocalLinks() );
+	int completed = 0;
+	int failed = 0;
+	markdown->on( Event::OnNavigationCompleted, [&]( const Event* event ) {
+		EXPECT_TRUE( static_cast<const UIMarkdownView::NavigationEvent*>( event )->success );
+		++completed;
+	} );
+	markdown->on( Event::OnNavigationError, [&]( const Event* event ) {
+		EXPECT_FALSE( static_cast<const UIMarkdownView::NavigationEvent*>( event )->success );
+		++failed;
+	} );
+	auto clickLink = [&] {
+		auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+		NodeMessage click( anchor, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+		anchor->messagePost( &click );
+		scene->update( Milliseconds( 16 ) );
+	};
+	clickLink();
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "docs/intro.md" );
+	clickLink();
+	EXPECT_EQ( completed, 2 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "next page.markdown" );
+	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	EXPECT_TRUE( sceneURI == scene->getURI() );
+	NavigationRequest missing{ URI( "missing.md" ) };
+	missing.source = markdown;
+	scene->navigate( missing );
+	EXPECT_EQ( failed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), dir + "next page.markdown" );
+	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	FileSystem::fileRemove( dir + "docs/intro.md" );
+	FileSystem::fileRemove( dir + "next page.markdown" );
+	FileSystem::fileRemove( dir + "docs/" );
+	FileSystem::fileRemove( dir );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownViewLoadsInlineContentAndRoutesShortcuts ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->loadLayoutFromString(
+		R"xml(<ScrollableMarkdownView id="document" layout_width="180dp" layout_height="100dp"><![CDATA[# Inline Markdown]]></ScrollableMarkdownView>)xml" );
+	auto* view = scene->find<UIScrollableMarkdownView>( "document" );
+	ASSERT_TRUE( view != nullptr );
+	EXPECT_TRUE( view->isType( UI_TYPE_SCROLLABLEMARKDOWNVIEW ) );
+	EXPECT_TRUE( view->isType( UI_TYPE_SCROLLVIEW ) );
+	auto* markdown = view->getMarkdownView();
+	EXPECT_TRUE( markdown == view->getScrollView() );
+	EXPECT_TRUE( markdown->getParent() == view->getContainer() );
+	ASSERT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	scene->update( Seconds( 1 ) );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "Inline Markdown" ) );
+	std::string content;
+	for ( int i = 0; i < 40; ++i )
+		content += "paragraph\n\n";
+	markdown->loadFromString( content );
+	scene->update( Seconds( 1 ) );
+	auto* bar = view->getVerticalScrollBar();
+	ASSERT_TRUE( bar->isEnabled() );
+	int commands = 0;
+	view->setCommand( "custom-page", [&] { ++commands; } );
+	view->getKeyBindings().addKeybind( { KEY_PAGEDOWN, 0 }, "custom-page" );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_EQ( commands, 1 );
+	EXPECT_EQ( bar->getValue(), 0.f );
+	view->unsetCommand( "custom-page" );
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_GT( bar->getValue(), 0.f );
+	view->setEnableDefaultKeybindings( false );
+	const Float position = bar->getValue();
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_EQ( bar->getValue(), position );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownViewResetsScrollOnlyAfterSuccessfulNavigation ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setPixelsSize( 180, 100 );
+	auto* markdown = view->getMarkdownView();
+	markdown->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	markdown->setPixelsSize( 400, 100 );
+	std::string content;
+	for ( int i = 0; i < 40; ++i )
+		content += "paragraph\n\n";
+	const std::string source = Sys::getTempPath() + "eepp_scrollable_source.md";
+	const std::string path = Sys::getTempPath() + "eepp_scrollable_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( path, content ) );
+	markdown->loadFromString( content, source );
+	scene->update( Seconds( 1 ) );
+	auto* bar = view->getVerticalScrollBar();
+	ASSERT_TRUE( bar->isEnabled() );
+	auto* horizontal = view->getHorizontalScrollBar();
+	ASSERT_TRUE( horizontal->isEnabled() );
+	bar->setValue( 0.7f );
+	horizontal->setValue( 0.4f );
+	markdown->loadFromString( content, source );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
+	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
+	NavigationRequest request{ URI( path + ".missing.md" ) };
+	request.source = markdown;
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
+	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
+	request.uri = URI( path );
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), path );
+	EXPECT_EQ( bar->getValue(), 0.f );
+	EXPECT_EQ( horizontal->getValue(), 0.f );
+	FileSystem::fileRemove( path );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownHistoryCommitsSuccessfulLoadsAndPreservesForwardUpdates ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setHistoryNavigationEnabled( true );
+	view->setPixelsSize( 300, 200 );
+	auto* markdown = view->getMarkdownView();
+	const std::string dir = Sys::getTempPath() + "eepp_markdown_history/";
+	ASSERT_TRUE( FileSystem::makeDir( dir, true ) );
+	const std::string source = dir + "source.md";
+	const std::string first = dir + "first.md";
+	const std::string second = dir + "second.md";
+	const std::string branch = dir + "branch.md";
+	for ( const auto& path : { source, first, second, branch } )
+		ASSERT_TRUE( FileSystem::fileWrite( path, "# Document" ) );
+	markdown->loadFromString( "[Next](first.md)", source );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	NavigationRequest request{ URI( "first.md" ) };
+	request.source = markdown;
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	markdown->loadFromFile( second );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_EQ( view->getHistoryIndex(), 2 );
+	EXPECT_TRUE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_TRUE( view->execute( "go-back" ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	EXPECT_EQ( view->getHistoryIndex(), 1 );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_LEFTBRACKET, SCANCODE_LEFTBRACKET, 0,
+											  KeyMod::getDefaultModifier() );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_TRUE( view->canGoForward() );
+	markdown->loadFromString( "# Updated source buffer", source );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_TRUE( view->canGoForward() );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_RIGHTBRACKET, SCANCODE_RIGHTBRACKET, 0,
+											  KeyMod::getDefaultModifier() );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	FileSystem::fileRemove( second );
+	view->goHistoryForward();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	EXPECT_EQ( view->getHistoryIndex(), 1 );
+	EXPECT_TRUE( view->canGoForward() );
+	markdown->loadFromFile( branch );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_STDSTREQ( view->getHistory().back(), branch );
+	EXPECT_FALSE( view->canGoForward() );
+	markdown->loadFromString( "updated branch", branch );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	markdown->loadFromString( "anonymous replacement" );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	for ( const auto& path : { source, first, branch } )
+		FileSystem::fileRemove( path );
+	FileSystem::fileRemove( dir );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownHistoryMenuEnablesDirectionsAndExecutesCommands ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setPixelsSize( 300, 200 );
+	auto* markdown = view->getMarkdownView();
+	const std::string source = Sys::getTempPath() + "eepp_markdown_menu_source.md";
+	const std::string destination = Sys::getTempPath() + "eepp_markdown_menu_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( source, "# Source" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
+	markdown->loadFromString( "# Source", source );
+	EXPECT_FALSE( view->isHistoryNavigationEnabled() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_FALSE( view->hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->hasCommand( "go-forward" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-forward" ) );
+	markdown->loadFromString( "# Destination", destination );
+	view->goHistoryBack();
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	EXPECT_TRUE( view->getHistory().empty() );
+	markdown->loadFromString( "# Source", source );
+	scene->update( Milliseconds( 16 ) );
+	auto showMenu = [&] {
+		NodeMessage click( view->getContainer(), NodeMessage::MouseUp, EE_BUTTON_RMASK );
+		view->getContainer()->messagePost( &click );
+		scene->update( Milliseconds( 16 ) );
+		return scene->getRoot()->findByClass<UIPopUpMenu>( "text-selection-menu" );
+	};
+	auto* menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" ) == nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-forward" ) == nullptr );
+	menu->close();
+	scene->update( Milliseconds( 16 ) );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_TRUE( view->isHistoryNavigationEnabled() );
+	ASSERT_EQ( view->getHistory().size(), 1u );
+	EXPECT_STDSTREQ( view->getHistory()[0], source );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	markdown->loadFromFile( destination );
+	scene->update( Milliseconds( 16 ) );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	ASSERT_TRUE( menu->getItemId( "go-back" ) != nullptr );
+	ASSERT_TRUE( menu->getItemId( "go-forward" ) != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" )->isEnabled() );
+	EXPECT_FALSE( menu->getItemId( "go-forward" )->isEnabled() );
+	menu->getItemId( "go-back" )->activate();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_FALSE( menu->getItemId( "go-back" )->isEnabled() );
+	EXPECT_TRUE( menu->getItemId( "go-forward" )->isEnabled() );
+	menu->getItemId( "go-forward" )->activate();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	int customBack = 0;
+	view->setCommand( "go-back", [&] { ++customBack; } );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	menu->getItemId( "go-back" )->activate();
+	EXPECT_EQ( customBack, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	view->setCommand( "custom", [] {} );
+	view->getKeyBindings().addKeybindString( "F8", "custom" );
+	view->getKeyBindings().addKeybindString( "F9", "go-back" );
+	const KeyBindings sharedBindings = view->getKeyBindings();
+	view->setHistoryNavigationEnabled( false );
+	EXPECT_FALSE( view->isHistoryNavigationEnabled() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_FALSE( view->execute( "go-back" ) );
+	EXPECT_FALSE( view->execute( "go-forward" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-forward" ) );
+	EXPECT_EQ( view->getKeyBindings().getShortcutMap().size(), 1u );
+	EXPECT_TRUE( view->execute( "custom" ) );
+	EXPECT_TRUE( view->getKeyBindings().hasCommand( "custom" ) );
+	EXPECT_EQ( sharedBindings.getShortcutMap().size(), 4u );
+	menu->close();
+	scene->update( Milliseconds( 16 ) );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" ) == nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-forward" ) == nullptr );
+	markdown->loadFromString( "# Source again", source );
+	EXPECT_TRUE( view->getHistory().empty() );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	FileSystem::fileRemove( source );
+	FileSystem::fileRemove( destination );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownPendingHistoryTraversalRespectsReplacement ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setHistoryNavigationEnabled( true );
+	auto* markdown = view->getMarkdownView();
+	const std::string source = Sys::getTempPath() + "eepp_markdown_pending_source.md";
+	const std::string destination = Sys::getTempPath() + "eepp_markdown_pending_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( source, "# Source" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
+	markdown->loadFromString( "# Source", source );
+	markdown->loadFromString( "# Destination", destination );
+	markdown->loadFromString( "# Third", Sys::getTempPath() + "third.md" );
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	std::atomic<bool> release{ false };
+	std::atomic<bool> finished{ false };
+	auto blockWorker = [&] {
+		pool->run( [&] {
+			while ( !release.load() )
+				Sys::sleep( Milliseconds( 1 ) );
+		} );
+	};
+	auto finishLoads = [&] {
+		pool->run( [&] { finished = true; } );
+		release = true;
+		Clock timeout;
+		while ( !finished.load() && timeout.getElapsedTime() < Seconds( 5 ) )
+			Sys::sleep( Milliseconds( 1 ) );
+		scene->update( Milliseconds( 16 ) );
+		return finished.load();
+	};
+	blockWorker();
+	view->goHistoryBack();
+	view->goHistoryBack();
+	markdown->on( Event::OnLinkOpenRequested, []( const Event* event ) {
+		static_cast<const UIMarkdownView::LinkOpenEvent*>( event )->accept();
+	} );
+	NavigationRequest custom{ URI( "https://example.com/new-tab" ) };
+	custom.target = NavigationRequest::Target::NewTab;
+	EXPECT_TRUE( markdown->navigate( custom ) );
+	EXPECT_EQ( view->getHistoryIndex(), 2 );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	release = false;
+	finished = false;
+	blockWorker();
+	view->goHistoryForward();
+	markdown->loadFromString( "# Updated source", source );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_TRUE( view->canGoForward() );
+
+	// Turning history off does not let an in-flight document load repopulate it.
+	release = false;
+	finished = false;
+	blockWorker();
+	view->goHistoryForward();
+	view->setHistoryNavigationEnabled( false );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	scene->setThreadPool( nullptr );
+	pool.reset();
+	FileSystem::fileRemove( source );
+	FileSystem::fileRemove( destination );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownLinkPolicyAndCustomTargets ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	const std::string path = Sys::getTempPath() + "README.md";
+	markdown->loadFromString( "[Link](chapter.md)", path );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	int fallback = 0;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		++fallback;
+		return true;
+	} );
+	markdown->setFollowLocalLinks( false );
+	NodeMessage click( anchor, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	anchor->messagePost( &click );
+	EXPECT_EQ( fallback, 1 );
+	markdown->setFollowLocalLinks( true );
+	int custom = 0;
+	markdown->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* link = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		EXPECT_TRUE( link->request.target == NavigationRequest::Target::NewTab );
+		EXPECT_STDSTREQ( link->request.uri.getFSPath(), Sys::getTempPath() + "chapter.md" );
+		EXPECT_TRUE( link->request.source == anchor );
+		++custom;
+		link->accept();
+	} );
+	NodeMessage middle( anchor, NodeMessage::MouseClick, EE_BUTTON_MMASK );
+	anchor->messagePost( &middle );
+	NavigationRequest modified{ URI( "chapter.md" ) };
+	modified.source = anchor;
+	modified.mouseButtons = EE_BUTTON_LMASK;
+	modified.modifiers = KeyMod::getDefaultModifier();
+	scene->navigate( modified );
+	modified.target = NavigationRequest::Target::NewTab;
+	modified.mouseButtons = 0;
+	scene->navigate( modified );
+	EXPECT_EQ( custom, 3 );
+	EXPECT_EQ( fallback, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), path );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownLinkResolutionIsScopedAndFollowsSceneChanges ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
+	const std::string base = Sys::getTempPath();
+	auto* first = UIMarkdownView::New();
+	first->setParent( scene->getRoot() );
+	first->loadFromString( "[Link](file://docs/intro%20page.md?q=docs#details)",
+						   base + "project-a/README.md" );
+	auto* second = UIMarkdownView::New();
+	second->setParent( scene->getRoot() );
+	second->loadFromString( "[Link](docs/intro.md)", base + "project-b/README.md" );
+	std::string firstPath;
+	std::string secondPath;
+	first->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* request = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		firstPath = request->request.uri.getFSPath();
+		EXPECT_STDSTREQ( request->request.uri.getQuery(), "q=docs" );
+		EXPECT_STDSTREQ( request->request.uri.getFragment(), "details" );
+		request->accept();
+	} );
+	second->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* request = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		secondPath = request->request.uri.getFSPath();
+		request->accept();
+	} );
+	auto* link = first->findByTag<UIAnchorSpan>( "a" );
+	NodeMessage firstClick( link, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	link->messagePost( &firstClick );
+	auto* secondLink = second->findByTag<UIAnchorSpan>( "a" );
+	NodeMessage secondClick( secondLink, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	secondLink->messagePost( &secondClick );
+	EXPECT_STDSTREQ( firstPath, base + "project-a/docs/intro page.md" );
+	EXPECT_STDSTREQ( secondPath, base + "project-b/docs/intro.md" );
+	URI absolute;
+	absolute.setScheme( "file" );
+	absolute.setPath( "/absolute/guide.md" );
+	EXPECT_TRUE( first->resolveLink( absolute ) == absolute );
+	scene->update( Milliseconds( 16 ) );
+	UIPopUpMenu* menu = nullptr;
+	first->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage rightUp( link, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	link->messagePost( &rightUp );
+	ASSERT_TRUE( menu != nullptr );
+	menu->getItemId( "copy-link" )->activate();
+	EXPECT_STDSTREQ( scene->getWindow()->getClipboard()->getText(),
+					 first->resolveLink( URI( link->getHref() ) ).toString() );
+	auto* otherScene = UISceneNode::New();
+	SceneManager::instance()->add( otherScene );
+	first->setParent( otherScene->getRoot() );
+	firstPath.clear();
+	link->messagePost( &firstClick );
+	EXPECT_STDSTREQ( firstPath, base + "project-a/docs/intro page.md" );
+	secondPath.clear();
+	secondLink->messagePost( &secondClick );
+	EXPECT_STDSTREQ( secondPath, base + "project-b/docs/intro.md" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownPendingFileLoadsRespectReplacementAndDestruction ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	const std::string path = Sys::getTempPath() + "eepp_markdown_async.md";
+	const std::string latestPath = Sys::getTempPath() + "eepp_markdown_async_latest.md";
+	ASSERT_TRUE( FileSystem::fileWrite( path, "stale" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( latestPath, "latest" ) );
+	std::atomic<bool> release{ false };
+	std::atomic<bool> finished{ false };
+	auto waitForWorker = [&] {
+		Clock timeout;
+		while ( !finished.load() && timeout.getElapsedTime() < Seconds( 5 ) )
+			Sys::sleep( Milliseconds( 1 ) );
+		scene->update( Milliseconds( 16 ) );
+		return finished.load();
+	};
+	pool->run( [&] {
+		while ( !release.load() )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	int completed = 0;
+	markdown->on( Event::OnNavigationCompleted, [&]( const Event* ) { ++completed; } );
+	markdown->loadFromFile( path );
+	markdown->loadFromString( "replacement" );
+	auto* destroyed = UIMarkdownView::New();
+	destroyed->setParent( scene->getRoot() );
+	destroyed->loadFromFile( path );
+	eeDelete( destroyed );
+	pool->run( [&] { finished = true; } );
+	release = true;
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 0 );
+	EXPECT_TRUE( markdown->getDocumentPath().empty() );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "replacement" ) );
+	// A live view still receives background completions after stale jobs are discarded.
+	finished = false;
+	markdown->loadFromFile( path );
+	markdown->loadFromFile( latestPath );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), latestPath );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "latest" ) );
+	// Replacing content in a document observer cancels the older completion too.
+	markdown->on( Event::OnDocumentChanged, [&]( const Event* ) {
+		if ( markdown->getDocumentPath() == path )
+			markdown->loadFromString( "observer replacement", latestPath );
+	} );
+	finished = false;
+	markdown->loadFromFile( path );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), latestPath );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "observer replacement" ) );
+	// A document observer may destroy the view before the navigation-completion event.
+	auto* closing = UIMarkdownView::New();
+	closing->setParent( scene->getRoot() );
+	closing->on( Event::OnDocumentChanged,
+				 []( const Event* event ) { eeDelete( event->getNode() ); } );
+	closing->on( Event::OnNavigationCompleted, [&]( const Event* ) { ++completed; } );
+	finished = false;
+	closing->loadFromFile( path );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	scene->setThreadPool( nullptr );
+	pool.reset();
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( latestPath );
 	Engine::destroySingleton();
 }
 

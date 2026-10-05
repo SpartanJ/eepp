@@ -270,6 +270,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["richtext"] = UIRichText::New;
 		registeredWidget["textspan"] = UITextSpan::New;
 		registeredWidget["markdownview"] = UIMarkdownView::New;
+		registeredWidget["scrollablemarkdownview"] = UIScrollableMarkdownView::New;
 		registeredWidget["mergeview"] = Tools::UIMergeView::New;
 
 		// Aliases

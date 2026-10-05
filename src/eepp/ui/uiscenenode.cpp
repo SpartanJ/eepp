@@ -2297,9 +2297,36 @@ void UISceneNode::openURL( URI uri ) {
 }
 
 void UISceneNode::navigate( const NavigationRequest& request ) {
+	if ( !mScopedNavigationInterceptors.empty() ) {
+		for ( const Node* node = request.source; node; node = node->getParent() ) {
+			auto interceptor = mScopedNavigationInterceptors.find( node );
+			if ( interceptor != mScopedNavigationInterceptors.end() ) {
+				// A handler can unregister its own scope or register another scope while running.
+				auto cb = interceptor->second;
+				if ( cb( request ) )
+					return;
+			}
+			if ( node == this )
+				break;
+		}
+	}
 	if ( mNavigationInterceptorCb && mNavigationInterceptorCb( request ) )
 		return;
 	Engine::instance()->openURI( request.uri.toString() );
+}
+
+bool UISceneNode::setNavigationInterceptorCb( const Node* root,
+											  std::function<bool( const NavigationRequest& )> cb ) {
+	if ( !root )
+		return false;
+	if ( !cb ) {
+		// A scope may already have moved out of this tree when its owner unregisters it.
+		return mScopedNavigationInterceptors.erase( root ) != 0;
+	}
+	if ( root != this && !isParentOf( root ) )
+		return false;
+	mScopedNavigationInterceptors.insert_or_assign( root, std::move( cb ) );
+	return true;
 }
 
 void UISceneNode::invalidateAsyncResourceLoads() {

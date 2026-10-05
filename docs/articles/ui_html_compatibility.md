@@ -142,8 +142,8 @@ Markdown
     -> eepp HTML widgets
 ```
 
-Unlike `UIWebView`, `UIMarkdownView` is not a standalone browsing context with document navigation
-and a dedicated embedded scene.
+Unlike `UIWebView`, `UIMarkdownView` shares its enclosing scene and does not create a dedicated
+embedded scene. It can follow local Markdown links without changing the shared scene's URI.
 
 It is a native vertical layout hosting HTML-derived content and loads the **basic HTML default
 styles** needed for Markdown rendering.
@@ -1026,8 +1026,75 @@ The `ui_html` example displays the texture as a 16dp tab icon.
 
 `UIWebView` maintains its own navigation history.
 
+`UIMarkdownView` follows local `.md` and `.markdown` links in the same view by default. Supply
+the source filename when rendering an editor buffer so relative links resolve from that document:
+
+```cpp
+markdownView->loadFromString( markdown, "/project/README.md" );
+// Or load the document from disk (uses the scene's worker pool when available):
+markdownView->loadFromFile( "/project/README.md" );
+```
+
+Both `docs/intro.md` and `file://docs/intro.md` resolve relative to the source document;
+`file:///project/docs/intro.md` is absolute. Subsequent links resolve from the newly loaded document.
+Without a source filename, links use the enclosing scene's base URI. Copy Link uses the same
+resolution. `getDocumentPath()` reports the displayed source filename. Failed reads preserve the
+current document and emit `OnNavigationError`; successful reads emit `OnNavigationCompleted`, both
+with `UIMarkdownView::NavigationEvent`. Replacing content cancels pending navigation.
+
+Call `setFollowLocalLinks(false)` to disable default local navigation. Every link first emits
+`OnLinkOpenRequested`, whose `UIMarkdownView::LinkOpenEvent::request` contains the resolved URI,
+source node, mouse buttons, modifiers, and target. A consumer can open a new tab or implement another
+flow and call `accept()` to prevent default handling. Middle click and the platform modifier plus
+left click request `NavigationRequest::Target::NewTab`; consumers can also call `navigate()` with
+an explicit target. Unaccepted local new-tab requests open in the same view. Other links continue
+through the enclosing scene's navigation handler. No tab UI or navigation history is built into
+the Markdown view.
+
+Markdown views register their navigation handlers with
+`UISceneNode::setNavigationInterceptorCb(root, callback)`, scoped to their own widget subtree.
+Scoped callbacks run from the closest scope outward; returning `false` falls through to the next
+scope and then to the scene-wide interceptor. Registering a scope does not replace the scene-wide
+callback. A scope must belong to the scene's tree when registered. An empty callback unregisters
+a scope, including one that has already moved out of the tree. The Markdown view manages registration
+when it moves between scenes or is destroyed. The scoped overload returns `true` for registration,
+replacement, or removal, and `false` for invalid roots or removal of a missing registration.
+
 `UIMarkdownView` uses the same shortcuts through its enclosing `UIScrollView`; disable them on
 that scroll view with `setEnableDefaultKeybindings(false)`.
+
+`UIScrollableMarkdownView` provides the scroll container and owns a `UIMarkdownView` child. It is
+declared in `uimarkdownview.hpp` and can also be created as `<ScrollableMarkdownView>` in XML layouts,
+with inline Markdown text or CDATA. Configure the child through `getMarkdownView()`:
+
+```cpp
+auto* documentView = UIScrollableMarkdownView::New();
+documentView->setParent( parent );
+documentView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+documentView->getMarkdownView()->loadFromFile( "/project/README.md" );
+```
+
+Successful file navigation resets both scrollbars to the start. String updates and failed loads
+preserve scrolling. The wrapper implements `WidgetCommandExecuter`: register custom commands with
+`setCommand()` and shortcuts with `getKeyBindings()`. Unhandled keys use the scroll view's default
+shortcuts. Loading, link policy, selection, and navigation events belong to the Markdown child;
+editor binding and session persistence remain application responsibilities.
+
+History navigation is disabled by default. Call `setHistoryNavigationEnabled(true)` to enable it
+and start history at the current named Markdown document. Disabling clears history and unregisters
+the history commands and shortcuts; loading documents and following local links remain available.
+Ecode explicitly enables history for its Markdown previews.
+
+When enabled, the scrollable wrapper maintains history for named Markdown documents.
+`goHistoryBack()` and `goHistoryForward()` traverse it; `canGoBack()` and `canGoForward()` report
+available directions.
+The `go-back` and `go-forward` commands default to `mod+[` and `mod+]`, using the platform's default
+modifier. Once a direction is available, the document's context menu adds Go Back and Go Forward,
+enabling each as appropriate. A successful new navigation discards the forward branch; updating the
+current string buffer preserves it. Failed and canceled loads do not advance history. Traversal
+reloads files by default; applications can override `loadHistoryDocument()` to render their current
+buffer instead. Ecode uses this for its live source, including unsaved edits. History is kept for
+the lifetime of the widget and is cleared when it loads an anonymous string document.
 
 Default scrolling shortcuts are Space and Page Down (one viewport down), Shift+Space and Page Up
 (one viewport up). Keys handled by a focused descendant do not reach the WebView. While text input is active,
