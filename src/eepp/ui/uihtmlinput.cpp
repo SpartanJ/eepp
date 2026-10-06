@@ -108,9 +108,7 @@ static long double htmlTemporalNumber( const LocalDateTime& value ) {
 
 static double htmlTemporalStep( const std::string& text, bool date ) {
 	double step;
-	const auto parsed = std::from_chars( text.data(), text.data() + text.size(), step );
-	return parsed.ec == std::errc() && parsed.ptr == text.data() + text.size() &&
-				   std::isfinite( step ) && step > 0
+	return String::fromString( step, text ) && std::isfinite( step ) && step > 0
 			   ? step
 			   : ( date ? 1. : 60. );
 }

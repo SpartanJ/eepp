@@ -177,6 +177,39 @@ UTEST( UIHTMLTemporal, DefaultStepsAndValueAttributeStepBase ) {
 	app.getUI()->update( Time::Zero );
 }
 
+UTEST( UIHTMLTemporal, StepParsingAndInvalidStepFallback ) {
+	auto app = temporalApp();
+	auto* input = UIHTMLInput::New();
+	input->setParent( app.getUI()->getRoot() );
+	input->setInputType( "time" );
+	input->applyProperty( StyleSheetProperty( "min", "00:00" ) );
+	struct Case {
+		const char* step;
+		const char* aligned;
+		const char* unaligned;
+	};
+	const Case cases[] = { { "2", "00:00:02", "00:00:01" },
+						   { "2e0", "00:00:02", "00:00:01" },
+						   { "0.01", "00:00:00.020", "00:00:00.015" },
+						   { "1e-2", "00:00:00.020", "00:00:00.015" },
+						   { "", "00:01", "00:00:01" },
+						   { "0", "00:01", "00:00:01" },
+						   { "-1", "00:01", "00:00:01" },
+						   { "nan", "00:01", "00:00:01" },
+						   { "inf", "00:01", "00:00:01" },
+						   { "1e999", "00:01", "00:00:01" },
+						   { "1e-999", "00:01", "00:00:01" },
+						   { "900junk", "00:01", "00:00:01" },
+						   { "900 ", "00:01", "00:00:01" } };
+	for ( const auto& test : cases ) {
+		input->applyProperty( StyleSheetProperty( "step", test.step, false ) );
+		input->applyProperty( StyleSheetProperty( "value", test.aligned ) );
+		EXPECT_TRUE( input->checkValidity() );
+		input->applyProperty( StyleSheetProperty( "value", test.unaligned ) );
+		EXPECT_TRUE( input->getValidity().stepMismatch );
+	}
+}
+
 UTEST( UIHTMLTemporal, FormSerializationAndInteractiveValidation ) {
 	auto app = temporalApp();
 	auto* ui = app.getUI();
