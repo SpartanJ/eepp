@@ -1159,15 +1159,31 @@ Current explicit native mappings include:
 button / submit / reset -> UIPushButton
 checkbox                -> UICheckBox
 hidden                  -> no visible child
+date                    -> UIDatePicker
+time                    -> UITimePicker
+datetime-local          -> UIDateTimePicker
 number                  -> UISpinBox
 password                -> password text input
 radio                   -> UIRadioButton
 other text-like types   -> UIHTMLTextInput
 ```
 
+Form controls use light user-agent defaults from `getHTMLDocumentDefaultsCSS()` in
+`uiwidgetcreator.cpp`, independently of the application's native theme. Author CSS styles the
+HTML control host; anonymous implementation parts retain their private defaults. Temporal controls
+have intrinsic text/placeholder sizing, so they remain usable without an authored width.
+
 `textarea` uses a `UITextEdit`-based implementation with `rows` and `cols` intrinsic sizing.
 
 Forms collect named control values and can submit navigation requests.
+
+Temporal inputs sanitize invalid value strings to empty and submit normalized ISO values independently
+of their display locale. They support `min`, `max`, `step`, `required`, `readonly`, and `disabled`.
+Range validation never silently changes the supplied value; reversed time ranges wrap midnight.
+`UIHTMLInput::getValidity()` exposes the implemented temporal validity flags. `UIHTMLForm::requestSubmit()`
+and submit-button activation validate these controls, while direct `submit()` bypasses validation.
+Disabled temporal controls are excluded from form data, and named empty temporal controls submit an
+empty string. See [date/time pickers](ui_date_time_pickers.md) for APIs and the supported subset.
 
 An omitted or empty form `action` submits to the full current document URL, preserving its query.
 

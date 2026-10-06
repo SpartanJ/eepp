@@ -12,14 +12,6 @@ StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
 	parseSelector( mName );
 }
 
-const std::string& StyleSheetSelector::getName() const {
-	return mName;
-}
-
-const Int64& StyleSheetSelector::getSpecificity() const {
-	return mSpecificity;
-}
-
 void StyleSheetSelector::setSpecificity( const Int64& specificity ) {
 	mSpecificity = specificity;
 }

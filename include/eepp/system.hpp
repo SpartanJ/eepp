@@ -9,6 +9,8 @@
 #include <eepp/system/condition.hpp>
 #include <eepp/system/container.hpp>
 #include <eepp/system/cpu.hpp>
+#include <eepp/system/datetime.hpp>
+#include <eepp/system/datetimeformat.hpp>
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/fileassociation.hpp>
 #include <eepp/system/fileinfo.hpp>

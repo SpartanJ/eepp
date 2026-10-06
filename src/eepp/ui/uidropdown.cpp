@@ -1,10 +1,8 @@
-#include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uidropdown.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uipopup.hpp>
 
 namespace EE { namespace UI {
 
@@ -129,50 +127,9 @@ Float UIDropDown::getPopUpWidth( Float contentsWidth ) const {
 }
 
 void UIDropDown::alignPopUp( UIWidget* widget ) {
-	if ( !mStyleConfig.PopUpToRoot )
-		widget->setParent( getWindowContainer() );
-	else
-		widget->setParent( getUISceneNode()->getRoot() );
-
-	widget->toFront();
-
-	bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
-				  mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
-
-	// The placement is decided in screen pixels, where the field, the popup and the scene bounds
-	// are directly comparable. Deriving it from the node's own dp position previously mixed
-	// coordinate spaces (the candidate point was expressed in the parent's space but converted
-	// through the field's own nodeToWorld, shifting the test rectangle by the field's offset), so
-	// the "fits below" check failed for any field away from its parent's origin and the popup was
-	// flipped above the field even when there was no room there.
-	const Rectf field( getScreenRect() );
-	const Sizef popUpSize( widget->getPixelsSize() );
-	const Rectf sceneBounds( getUISceneNode()->getWorldBounds() );
-
-	Float x = center ? field.Left + eefloor( ( field.getWidth() - popUpSize.getWidth() ) * 0.5f )
-					 : field.Left;
-
-	// Prefer below the field, fall back to above it, and only then clamp: the list is never placed
-	// partially off screen when the scene has room for it on either side.
-	Float y = field.Bottom;
-	if ( y + popUpSize.getHeight() > sceneBounds.Bottom ) {
-		Float above = field.Top - popUpSize.getHeight();
-		y = above >= sceneBounds.Top
-				? above
-				: eemax( sceneBounds.Top, sceneBounds.Bottom - popUpSize.getHeight() );
-	}
-
-	// Keep the popup inside the scene horizontally as well; a list wider than its field used to
-	// run off the right edge.
-	x = eeclamp( x, sceneBounds.Left,
-				 eemax( sceneBounds.Left, sceneBounds.Right - popUpSize.getWidth() ) );
-
-	// World coordinates are pixels and worldToNode already converts back to dp, which is what
-	// setPosition expects; applying the density a second time would shift the popup.
-	Vector2f pos( x, y );
-	widget->getParent()->worldToNode( pos );
-
-	widget->setPosition( pos );
+	const bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
+						mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
+	UIPopUp::align( this, widget, mStyleConfig.PopUpToRoot, center );
 	show();
 	widget->setFocus();
 }
@@ -234,7 +191,7 @@ void UIDropDown::onPopUpFocusLoss() {
 		std::find( mRelatedWidgets.begin(), mRelatedWidgets.end(),
 				   getEventDispatcher()->getFocusNode() ) != mRelatedWidgets.end();
 
-	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !friendIsFocus &&
+	if ( !UIPopUp::hasFocus( this, getPopUpWidget() ) && !isChildFocus && !friendIsFocus &&
 		 !isRelatedWidget ) {
 		hide();
 	}
@@ -248,36 +205,11 @@ void UIDropDown::onItemClicked( const Event* ) {
 void UIDropDown::onItemSelected( const Event* ) {}
 
 void UIDropDown::show() {
-	UIWidget* widget = getPopUpWidget();
-	if ( NULL == widget )
-		return;
-
-	widget->setEnabled( true );
-	widget->setVisible( true );
-
-	if ( NULL != getUISceneNode() &&
-		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
-		widget->runAction( Actions::Sequence::New(
-			Actions::Fade::New( 255.f == widget->getAlpha() ? 0.f : widget->getAlpha(), 255.f,
-								getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
-			Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
-	}
+	UIPopUp::show( getPopUpWidget() );
 }
 
 void UIDropDown::hide() {
-	UIWidget* widget = getPopUpWidget();
-	if ( NULL == widget )
-		return;
-
-	if ( NULL != getUISceneNode() &&
-		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
-		widget->runAction( Actions::Sequence::New(
-			Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
-			Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
-	} else {
-		widget->setEnabled( false );
-		widget->setVisible( false );
-	}
+	UIPopUp::hide( getPopUpWidget() );
 }
 
 Uint32 UIDropDown::onMouseOver( const Vector2i& position, const Uint32& flags ) {

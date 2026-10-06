@@ -3,6 +3,7 @@
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenubar.hpp>
+#include <eepp/ui/uipopup.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -731,169 +732,82 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIM
 	if ( nullptr == sceneNode )
 		return;
 
+	if ( trigger || !parent || !subMenu ) {
+		pos = UIPopUp::findBestPosition( menu, pos, trigger, true );
+		return;
+	}
+
+	// Cascading menus also avoid overlapping the previous menu in the chain.
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
-	Vector2f oriPos( pos );
-	Rectf qPos( pos.x, pos.y, pos.x + menu->getPixelsSize().getWidth(),
-				pos.y + menu->getPixelsSize().getHeight() );
+	Rectf qPos( pos, menu->getPixelsSize() );
+	Rectf qPrevMenu;
+	bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
+					parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
 
-	if ( nullptr != trigger ) {
-		Rectf qTrigger = trigger->getScreenRect();
-		// Try to position below the trigger
-		pos.y = qTrigger.Bottom;
+	Vector2f sPos = subMenu->getPixelsPosition();
+	subMenu->nodeToWorldTranslation( sPos );
+
+	Vector2f pPos = parent->getPixelsPosition();
+	parent->nodeToWorldTranslation( pPos );
+
+	if ( clipMenu ) {
+		UIMenu* parentOwner = parent->getOwnerNode()->getParent()->asType<UIMenu>();
+		Vector2f poPos = parentOwner->getPixelsPosition();
+		parentOwner->nodeToWorldTranslation( poPos );
+		qPrevMenu = Rectf( poPos.x, poPos.y, poPos.x + parentOwner->getPixelsSize().getWidth(),
+						   poPos.y + parentOwner->getPixelsSize().getHeight() );
+	}
+
+	Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
+				   pPos.y + parent->getPixelsSize().getHeight() );
+
+	pos.x = qParent.Right;
+	pos.y = sPos.y;
+	qPos.Left = pos.x;
+	qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+	qPos.Top = pos.y;
+	qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+	if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
+		pos.y = sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
 		qPos.Top = pos.y;
 		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-		if ( !qScreen.contains( qPos ) ) {
-			// Try to position above the trigger
-			pos.y = qTrigger.Top - menu->getPixelsSize().getHeight();
-			qPos.Top = pos.y;
-			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-			if ( !qScreen.contains( qPos ) ) {
-				// Try to position to the right of the trigger
-				pos.x = qTrigger.Right;
-				pos.y = qTrigger.Top;
-				qPos.Left = pos.x;
-				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-				qPos.Top = pos.y;
-				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-				if ( !qScreen.contains( qPos ) ) {
-					// Try to position to the left of the trigger
-					pos.x = qTrigger.Left - menu->getPixelsSize().getWidth();
-					qPos.Left = pos.x;
-					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-
-					if ( !qScreen.contains( qPos ) ) {
-						// Reset to original position if no better position found
-						pos = oriPos;
-						qPos.Left = pos.x;
-						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-						qPos.Top = pos.y;
-						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-					}
-				}
-			}
-		}
-	} else if ( nullptr != parent && nullptr != subMenu ) {
-		Rectf qPrevMenu;
-		bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
-						parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
-
-		Vector2f sPos = subMenu->getPixelsPosition();
-		subMenu->nodeToWorldTranslation( sPos );
-
-		Vector2f pPos = parent->getPixelsPosition();
-		parent->nodeToWorldTranslation( pPos );
-
-		if ( clipMenu ) {
-			UIMenu* parentOwner = parent->getOwnerNode()->getParent()->asType<UIMenu>();
-			Vector2f poPos = parentOwner->getPixelsPosition();
-			parentOwner->nodeToWorldTranslation( poPos );
-			qPrevMenu = Rectf( poPos.x, poPos.y, poPos.x + parentOwner->getPixelsSize().getWidth(),
-							   poPos.y + parentOwner->getPixelsSize().getHeight() );
-		}
-
-		Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
-					   pPos.y + parent->getPixelsSize().getHeight() );
-
-		pos.x = qParent.Right;
-		pos.y = sPos.y;
-		qPos.Left = pos.x;
-		qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-		qPos.Top = pos.y;
-		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
 		if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-			pos.y =
-				sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
+			pos.x = qParent.Left - menu->getPixelsSize().getWidth();
+			pos.y = sPos.y;
+			qPos.Left = pos.x;
+			qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
 			qPos.Top = pos.y;
 			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
 			if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-				pos.x = qParent.Left - menu->getPixelsSize().getWidth();
-				pos.y = sPos.y;
-				qPos.Left = pos.x;
-				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+				pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
+						menu->getPixelsSize().getHeight();
 				qPos.Top = pos.y;
 				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
-				if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-					pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
-							menu->getPixelsSize().getHeight();
-					qPos.Top = pos.y;
-					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-					if ( !qScreen.contains( qPos ) ) {
-						if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
-							pos = { pos.x, eefloor( ( qScreen.getHeight() -
-													  menu->getPixelsSize().getHeight() ) *
-													0.5f ) };
-						} else {
-							pos = { pos.x, 0 };
-						}
-					}
-
-					if ( pos.x < 0 )
-						pos.x = 0;
-					if ( pos.y < 0 )
-						pos.y = 0;
-
-					qPos.Left = qParent.Right;
-					qPos.Top = pos.y;
-					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-					if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
-						pos.x = qPos.Left;
+				if ( !qScreen.contains( qPos ) ) {
+					if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
+						pos = { pos.x, eefloor( ( qScreen.getHeight() -
+												  menu->getPixelsSize().getHeight() ) *
+												0.5f ) };
+					} else {
+						pos = { pos.x, 0 };
 					}
 				}
-			}
-		}
-	} else {
-		if ( !qScreen.contains( qPos ) ) {
-			pos.y -= menu->getPixelsSize().getHeight();
-			qPos.Top -= menu->getPixelsSize().getHeight();
-			qPos.Bottom -= menu->getPixelsSize().getHeight();
 
-			if ( !qScreen.contains( qPos ) ) {
-				pos.x -= menu->getPixelsSize().getWidth();
-				qPos.Left -= menu->getPixelsSize().getWidth();
-				qPos.Right -= menu->getPixelsSize().getWidth();
+				if ( pos.x < 0 )
+					pos.x = 0;
+				if ( pos.y < 0 )
+					pos.y = 0;
 
-				if ( !qScreen.contains( qPos ) ) {
-					pos.y += menu->getPixelsSize().getHeight();
-					qPos.Top += menu->getPixelsSize().getHeight();
-					qPos.Bottom += menu->getPixelsSize().getHeight();
-
-					if ( !qScreen.contains( qPos ) ) {
-						pos = oriPos;
-						pos.y -= menu->getPixelsSize().getHeight();
-						qPos.Left = pos.x;
-						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-						qPos.Top = pos.y;
-						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-						if ( !qScreen.contains( qPos ) ) {
-							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
-							qPos.Left = pos.x;
-							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-
-							if ( qPos.Right > qScreen.Right ) {
-								qPos.Right = qScreen.Right;
-								qPos.Left = qPos.Right - menu->getPixelsSize().getWidth();
-							}
-
-							qPos.Top = pos.y;
-							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-							if ( qPos.Top < qScreen.Top ) {
-								qPos.Top = qScreen.Top;
-								qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-							}
-
-							pos = qPos.getPosition();
-						}
-					}
+				qPos.Left = qParent.Right;
+				qPos.Top = pos.y;
+				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+				if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
+					pos.x = qPos.Left;
 				}
 			}
 		}

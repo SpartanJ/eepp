@@ -1783,6 +1783,12 @@ solution "eepp"
 		files { "src/examples/ui_application_multi_window/*.cpp" }
 		build_link_configuration( "eepp-ui-application-multi-window", true )
 
+	project "eepp-ui-date-time-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_date_time_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-date-time-picker", true )
+
 	project "eepp-ui-font-picker"
 		set_kind()
 		language "C++"

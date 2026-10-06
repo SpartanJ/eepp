@@ -977,10 +977,6 @@ Float UINode::getBorderWidth() const {
 	return NULL != mBorder ? mBorder->getLineWidth() : 1.f;
 }
 
-const Uint64& UINode::getFlags() const {
-	return mFlags;
-}
-
 UINode* UINode::setFlags( const Uint64& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
 		setBackgroundFillEnabled( true );

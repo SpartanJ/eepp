@@ -139,6 +139,8 @@ class EE_API Event {
 		MouseWheel,
 		OnLinkOpenRequested,
 		OnFaviconChanged,
+		OnAllowEditingChange,
+		OnFocusedDateChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

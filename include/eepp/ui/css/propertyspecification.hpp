@@ -16,11 +16,11 @@ class EE_API PropertySpecification {
   public:
 	~PropertySpecification();
 
-	PropertyDefinition& registerProperty( PropertyId id, const std::string& propertyName,
-										  const std::string& defaultValue, bool inherited );
+	PropertyDefinition& registerProperty( PropertyId id, std::string_view propertyName,
+										  std::string_view defaultValue, bool inherited );
 
-	PropertyDefinition* registerProperty( const std::string& propertyName,
-										  const std::string& defaultValue, bool inherited );
+	PropertyDefinition* registerProperty( std::string_view propertyName,
+										  std::string_view defaultValue, bool inherited );
 
 	const PropertyDefinition* getProperty( const PropertyId& id ) const;
 

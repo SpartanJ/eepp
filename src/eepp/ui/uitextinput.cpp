@@ -294,6 +294,12 @@ void UITextInput::autoPadding() {
 UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
 	if ( allow != mAllowEditing ) {
 		mAllowEditing = allow;
+		sendCommonEvent( Event::OnAllowEditingChange );
+		// Attribute selectors can style the input and its children from allow-editing.
+		if ( getUISceneNode() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 		invalidateDraw();
 	}
 	return this;
@@ -479,7 +485,9 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 }
 
 Uint32 UITextInput::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	if ( NULL != mSceneNode )
+	// Mouse-over also bubbles from children; keep the cursor selected for the hovered child.
+	auto* dispatcher = getEventDispatcher();
+	if ( mSceneNode && dispatcher && dispatcher->getMouseOverNode() == this )
 		mSceneNode->setCursor( Cursor::IBeam );
 
 	return UITextView::onMouseOver( position, flags );

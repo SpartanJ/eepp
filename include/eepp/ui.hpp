@@ -104,11 +104,15 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uicalendar.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uiclip.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uidatepicker.hpp>
+#include <eepp/ui/uidatetimeedit.hpp>
+#include <eepp/ui/uidatetimepicker.hpp>
 #include <eepp/ui/uidropdown.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
@@ -193,6 +197,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitimepicker.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>

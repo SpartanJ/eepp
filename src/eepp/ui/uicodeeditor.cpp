@@ -210,7 +210,11 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 
 	mFontStyleConfig.Font = mFont;
 
-	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	auto* themeManager = getUISceneNode()->getUIThemeManager();
+	auto* theme = themeManager->getDefaultTheme();
+	// Match UITextView's theme default and whole-pixel character size.
+	setFontSize( static_cast<Uint32>( theme ? theme->getDefaultFontSize()
+											: themeManager->getDefaultFontSize() ) );
 
 	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );

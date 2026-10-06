@@ -4,10 +4,14 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
+#include <eepp/ui/uicalendar.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uidatepicker.hpp>
+#include <eepp/ui/uidatetimeedit.hpp>
+#include <eepp/ui/uidatetimepicker.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiflowlayout.hpp>
@@ -50,6 +54,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitimepicker.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
@@ -104,6 +109,7 @@ dd { margin-left: 40dp; }
 
 summary { cursor: pointer; padding-left: 20dp; list-style-type: disclosure-closed; }
 
+form { margin-top: 0em; margin-bottom: 1em; }
 )css";
 }
 
@@ -120,7 +126,10 @@ textarea { border-width: 1dp; border-style: solid; border-color: #767676; backgr
 
 input[type="text"],
 input[type="password"],
-input[type="number"] {
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
 	border-width: 1dp;
 	border-style: solid;
 	border-color: #767676;
@@ -209,6 +218,103 @@ RadioButton::active {
 	foreground-position: 6dp 6dp;
 }
 
+/* Anonymous temporal controls use browser-like light defaults within the document. */
+Calendar {
+	color: black;
+	font-size: 12dp;
+	background-color: white;
+	border-color: #767676;
+	border-width: 1dp;
+	width: auto;
+	height: auto;
+	min-width: 160dp;
+	min-height: 160dp;
+}
+Calendar::previous, Calendar::next, Calendar::title, Calendar::today, Calendar::day {
+	color: black;
+	padding: 0;
+	border-width: 0;
+	background-color: transparent;
+}
+Calendar::previous {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z'/></svg>");
+}
+Calendar::next {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z'/></svg>");
+}
+Calendar::previous, Calendar::next {
+	cursor: arrow;
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+}
+Calendar::weekday, Calendar::day.outside-month { color: #767676; }
+Calendar::day.selected, Calendar::day:hover { background-color: #0078d7; color: white; }
+Calendar::day.today { border-color: #767676; border-width: 1dp; }
+Calendar::day.focused { border-color: black; border-width: 1dp; }
+Calendar::day:disabled { opacity: 0.35; }
+DatePicker::button, DateTimePicker::button {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z'/></svg>");
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+	padding: 0;
+	cursor: arrow;
+	border-width: 0;
+	background-color: transparent;
+}
+DatePicker:disabled > DatePicker::button, DateTimePicker:disabled > DateTimePicker::button,
+DatePicker[allow-editing=false] > DatePicker::button,
+DateTimePicker[allow-editing=false] > DateTimePicker::button {
+	foreground-tint: #767676;
+	background-color: transparent;
+	cursor: arrow;
+}
+
+/* Combined popup: a reusable calendar followed by a segmented time editor. */
+DateTimePicker::popup {
+	width: auto;
+	height: auto;
+	background-color: white;
+	border-color: #767676;
+	border-width: 1dp;
+	border-radius: 2dp;
+}
+DateTimePicker::popup > Calendar {
+	border-width: 0;
+	background-color: transparent;
+}
+DateTimePicker::time {
+	text-align: center;
+	font-size: 18dp;
+	padding: 24dp 8dp;
+	min-height: 72dp;
+	color: black;
+	background-color: transparent;
+	border-color: #767676;
+	border-width: 1dp 0 0 0;
+}
+DateTimePicker::time-up, DateTimePicker::time-down {
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+	background-color: transparent;
+	border-width: 0;
+	padding: 0;
+	width: 24dp;
+	height: 22dp;
+	cursor: arrow;
+}
+DateTimePicker::time-up {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 8L18 14L16.5858 15.4142L12 10.8284L7.41421 15.4142L6 14L12 8Z'/></svg>");
+}
+DateTimePicker::time-down {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 16L6 10L7.41421 8.58579L12 13.1716L16.5858 8.58579L18 10L12 16Z'/></svg>");
+}
+
 )css";
 }
 
@@ -239,6 +345,11 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
+		registeredWidget["datetimeedit"] = []() -> UIWidget* { return UIDateTimeEdit::New(); };
+		registeredWidget["calendar"] = UICalendar::New;
+		registeredWidget["datepicker"] = UIDatePicker::New;
+		registeredWidget["timepicker"] = UITimePicker::New;
+		registeredWidget["datetimepicker"] = UIDateTimePicker::New;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;

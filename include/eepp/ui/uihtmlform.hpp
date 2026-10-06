@@ -28,15 +28,24 @@ class EE_API UIHTMLForm : public UIRichText {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
+	/** Direct submission bypasses validation, as HTMLFormElement.submit() does. */
 	void submit();
 
+	/** Validates implemented input constraints before submitting. */
+	bool requestSubmit();
+
+	bool checkValidity() const;
+
 	const std::string& getAction() const { return mAction; }
+
 	void setAction( const std::string& action ) { mAction = action; }
 
 	const std::string& getMethod() const { return mMethod; }
+
 	void setMethod( const std::string& method ) { mMethod = method; }
 
 	const std::string& getEnctype() const { return mEnctype; }
+
 	void setEnctype( const std::string& enctype ) { mEnctype = enctype; }
 
   protected:
@@ -47,7 +56,7 @@ class EE_API UIHTMLForm : public UIRichText {
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	static void collectFormData( Node* node,
-								  std::vector<std::pair<std::string, std::string>>& fields );
+								 std::vector<std::pair<std::string, std::string>>& fields );
 	bool isSubmitTrigger( Node* sender ) const;
 };
 

@@ -291,6 +291,10 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 
 	const std::string& tag = element->getElementTag();
 	const std::string& id = element->getId();
+	// Anonymous HTML control content ignores author CSS but retains the existing UA defaults,
+	// which loadHTMLDefaults marks with negative specificity in the document stylesheet.
+	const bool privateDefaults = element->getFlags() & UI_IGNORE_GLOBAL_CSS;
+	const bool applyPseudoClasses = applyPseudo;
 
 	std::array<size_t, 4> nodeHash;
 	int numHashes = 2;
@@ -309,7 +313,9 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		if ( itNodes != mNodeIndex.end() ) {
 			const StyleSheetStyleVector& nodes = itNodes->second;
 			for ( StyleSheetStyle* node : nodes ) {
-				if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) ) {
+				if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
+					 node->isMediaValid() &&
+					 node->getSelector().select( element, applyPseudoClasses ) ) {
 					applicableNodes.push_back( node );
 				}
 			}
@@ -321,7 +327,8 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		if ( itNodes == mClassNodeIndex.end() )
 			continue;
 		for ( StyleSheetStyle* node : itNodes->second ) {
-			if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) )
+			if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
+				 node->isMediaValid() && node->getSelector().select( element, applyPseudoClasses ) )
 				applicableNodes.push_back( node );
 		}
 	}

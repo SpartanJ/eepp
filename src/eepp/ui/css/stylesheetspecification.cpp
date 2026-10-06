@@ -23,14 +23,14 @@ StyleSheetSpecification::~StyleSheetSpecification() {
 }
 
 PropertyDefinition& StyleSheetSpecification::registerProperty( PropertyId id,
-															   const std::string& propertyName,
-															   const std::string& defaultValue,
+															   std::string_view propertyName,
+															   std::string_view defaultValue,
 															   bool inherited ) {
 	return mPropertySpecification->registerProperty( id, propertyName, defaultValue, inherited );
 }
 
-PropertyDefinition* StyleSheetSpecification::registerProperty( const std::string& propertyName,
-															   const std::string& defaultValue,
+PropertyDefinition* StyleSheetSpecification::registerProperty( std::string_view propertyName,
+															   std::string_view defaultValue,
 															   bool inherited ) {
 	return mPropertySpecification->registerProperty( propertyName, defaultValue, inherited );
 }
@@ -406,6 +406,13 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::Bool );
 	registerProperty( PropertyId::MovementSpeed, "movement-speed", "" )
 		.setType( PropertyType::Vector2 );
+	// HTML form attributes are strings: temporal min/max and step use HTML value syntax.
+	registerProperty( PropertyId::Min, "min", "" );
+	registerProperty( PropertyId::Max, "max", "" );
+	registerProperty( PropertyId::Step, "step", "" );
+	registerProperty( PropertyId::Required, "required", "" );
+	registerProperty( PropertyId::ReadOnly, "readonly", "" );
+	registerProperty( PropertyId::Disabled, "disabled", "" );
 	registerProperty( PropertyId::MinValue, "min-value", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( PropertyId::MaxValue, "max-value", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( PropertyId::Value, "value", "" ).setType( PropertyType::NumberFloat );
@@ -422,6 +429,41 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( PropertyId::MaxLength, "max-length", "" ).setType( PropertyType::NumberInt );
 	registerProperty( PropertyId::Numeric, "numeric", "" ).setType( PropertyType::Bool );
 	registerProperty( PropertyId::AllowFloat, "allow-float", "" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::FirstDayOfWeek, "first-day-of-week", "" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::CalendarView, "calendar-view", "days" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::DisplayedMonth, "displayed-month", "" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::FocusedDate, "focused-date", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::ActiveSection, "active-section", "none" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::PopUpOpen, "popup-open", "false" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::DateTimeMode, "mode", "date" ).setType( PropertyType::String );
+	registerProperty( PropertyId::AllowEmpty, "allow-empty", "true" ).setType( PropertyType::Bool );
+	registerProperty( PropertyId::DateFormat, "date-format", "locale" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::TimeFormat, "time-format", "locale" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::HourCycle, "hour-cycle", "locale" )
+		.setType( PropertyType::String );
+	registerProperty( PropertyId::ShowSeconds, "show-seconds", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::ShowMilliseconds, "show-milliseconds", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::WheelEditing, "wheel-editing", "false" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::HourStep, "hour-step", "1" ).setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::MinuteStep, "minute-step", "1" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::SecondStep, "second-step", "1" )
+		.setType( PropertyType::NumberInt );
+	registerProperty( PropertyId::MinDate, "min-date", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::MaxDate, "max-date", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::MinTime, "min-time", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::MaxTime, "max-time", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::MinDateTime, "min-datetime", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::MaxDateTime, "max-datetime", "" ).setType( PropertyType::String );
 	registerProperty( PropertyId::TouchDrag, "touch-drag", "" ).setType( PropertyType::Bool );
 	registerProperty( PropertyId::TouchDragDeceleration, "touch-drag-deceleration", "" )
 		.setType( PropertyType::NumberFloat );

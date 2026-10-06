@@ -1,5 +1,6 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <limits>
 
 namespace EE { namespace UI {
 
@@ -149,6 +150,10 @@ void UIGridLayout::updateLayout() {
 		pos.x = initX;
 	}
 
+	// Fractional column weights accumulate rounding error. Treat subpixel differences at the
+	// right edge as a fit so a seven-column grid does not unexpectedly wrap after six cells.
+	const Float edgeTolerance =
+		std::max( 1.f, getSize().getWidth() ) * std::numeric_limits<Float>::epsilon() * 8;
 	bool usedLastRow = true;
 
 	while ( NULL != ChildLoop ) {
@@ -168,9 +173,10 @@ void UIGridLayout::updateLayout() {
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth()
 															 : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left ||
-				 pos.x + targetSize.x > getSize().getWidth() - mPadding.Right ||
-				 pos.x + targetSize.x + mBoxMargin.x > getSize().getWidth() - mPadding.Right ) {
+			if ( pos.x < mPadding.Left - edgeTolerance ||
+				 pos.x + targetSize.x > getSize().getWidth() - mPadding.Right + edgeTolerance ||
+				 pos.x + targetSize.x + mBoxMargin.x >
+					 getSize().getWidth() - mPadding.Right + edgeTolerance ) {
 
 				if ( getHorizontalAlign() == UI_HALIGN_CENTER ) {
 					pos.x = initX;

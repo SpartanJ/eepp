@@ -153,6 +153,37 @@ Example: `TextView + image` will match all `<image>` elements that directly foll
 
 ---
 
+## Date/time control styling
+
+Native tags are `DateTimeEdit`, `DatePicker`, `TimePicker`, `DateTimePicker`, and `Calendar`.
+Picker button tags are `DatePicker::button` and `DateTimePicker::button`. Calendar subparts
+are `Calendar::header`, `::previous`, `::next`, `::title`, `::weekdays`, `::weekday`, `::grid`,
+`::day`, and `::today` (each uses the `Calendar` prefix). Day-cell classes are `selected`,
+`today`, `outside-month`, and `focused`; unavailable dates use `:disabled`.
+
+The combined popup exposes `DateTimePicker::popup`, `DateTimePicker::time`,
+`DateTimePicker::time-up`, and `DateTimePicker::time-down`. Time buttons have segment classes
+`hour`, `minute`, `second`, `millisecond`, or `am-pm`. Standard foreground image/size/tint,
+font, padding, border, and color properties style these parts:
+
+```css
+DateTimePicker { show-seconds: true; minute-step: 15; }
+Calendar { font-size: 12dp; min-width: 160dp; min-height: 160dp; }
+DateTimePicker::button { foreground-size: 12dp 12dp; cursor: arrow; }
+DateTimePicker[allow-editing=false] > DateTimePicker::button { foreground-tint: gray; }
+Calendar::day.selected { background-color: #0078d7; color: white; }
+```
+
+Calendars fit their text metrics automatically unless an explicit fixed size overrides them.
+Seconds and milliseconds default to hidden; changing display settings also updates an open
+native date-time popup. Theme icons are CSS-defined inline SVG images sized in `dp`.
+
+In HTML documents, style the `input` host. Anonymous control parts use private light defaults
+from the document's user-agent CSS and ignore author rules. HTML temporal constraints use
+`min`, `max`, `step`, `required`, `readonly`, and `disabled`, rather than the native bound and
+editing properties. See [date/time pickers](ui_date_time_pickers.md) for interactions and APIs,
+and [HTML compatibility](ui_html_compatibility.md) for the supported form behavior.
+
 ## CSS Properties
 
 eepp CSS properties can be categorized in two big groups: CSS standard properties and eepp CSS
@@ -174,6 +205,19 @@ properties.
 	* `<LinearLayout layout_width="match_parent" layout_height="match_parent" orientation="vertical"></LinearLayout>`
 * CSS standard properties directly linked to the Mozilla docs are fully supported, otherwise a clarification will appear.
 * _Applicable to_ will link to the EE::UI::UIWidget that can use that property, and between parenthesis is the CSS element name.
+
+---
+
+### active-section
+
+Selects the active segment of a date/time editor. Values: `none`, `day`, `month`, `year`,
+`hour`, `minute`, `second`, `millisecond`, and `am-pm`. The segment must exist in the current
+display format; `none` clears segment selection.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: `none`
 
 ---
 
@@ -232,9 +276,24 @@ elastic-out, elastic-in-out, none.
 
 ### allow-editing
 
-Enable or disable editing on input elements.
+Enable or disable editing on input elements. Read-only date/time controls retain text
+selection, close an open popup, and mute their calendar button using theme CSS.
 
-* Applicable to: EE::UI::UITextEdit (TextEdit), EE::UI::UITextInput (TextInput)
+* Applicable to: EE::UI::UITextEdit (TextEdit), EE::UI::UITextInput (TextInput),
+  EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `true`
+
+---
+
+### allow-empty
+
+Allows a date/time editor to have no value. Setting this to `false` initializes an empty
+editor from the current date/time, subject to its bounds, and prevents clearing it.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
@@ -432,6 +491,17 @@ Defines where the border box is drawn.
 
 ---
 
+### calendar-view
+
+Selects the calendar view: `days`, `months`, or `years`. Changing the view does not select
+a date.
+
+* Applicable to: EE::UI::UICalendar (Calendar)
+* Data Type: [string](#string-data-type)
+* Default value: `days`
+
+---
+
 ### change-page-percent
 
 Sets the percentage of scroll of a page that triggers a page change in a ViewPager.
@@ -577,6 +647,32 @@ Custom cursors not yet supported (but supported by the engine, only not implemen
 
 ---
 
+### date-format
+
+Sets the date display pattern, or `locale` to use the editor locale. Supported tokens are
+`d`/`dd`, `M`/`MM`, and `yy`/`yyyy`; all three date components are required. Single quotes
+escape literal text. For example: `date-format: "dd/MM/yyyy";`. This changes display and
+editing, while [value](#value) retains ISO serialization.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: `locale`
+
+---
+
+### disabled
+
+Disables an HTML input when the attribute/property is present, including an empty value.
+Disabled temporal inputs are excluded from constraint validation and form submission. This
+HTML presence attribute is distinct from the native [enabled](#enabled) boolean property.
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: HTML presence attribute
+* Default value: _Absent_
+
+---
+
 ### disable-editor-flags
 
 Allows disabling specific behavior flags for the code editor component.
@@ -589,6 +685,17 @@ Multiple flags are separated by `|`.
   * All flags listed in [enable-editor-flags](#enable-editor-flags) can be used here to disable their respective features.
   * `editorfeatures`: Macro Flag - Disables line numbers, whitespace display, folding regions, current line highlight, matching bracket highlight, selection match highlight, color picker, minimap, and find/replace. Resets line breaking and forces the editor to use the default style.
 * Default value: _No value_
+
+---
+
+### displayed-month
+
+Sets the calendar month to display using an ISO date (`yyyy-MM-dd`). The day component is
+normalized to the first day of that month. Navigation does not change the selected value.
+
+* Applicable to: EE::UI::UICalendar (Calendar)
+* Data Type: [string](#string-data-type)
+* Default value: Current month for a standalone calendar; picker popups synchronize on opening
 
 ---
 
@@ -703,6 +810,28 @@ If `true` the inner element for text is expanded to occupy as much horizontal sp
 * Applicable to: EE::UI::UIPushButton (PushButton) and any element that extends it: UIMenuItem, UISelectButton (SelectButton), UITableCell , UITableHeaderColumn.
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
+
+---
+
+### first-day-of-week
+
+Sets the first weekday of the calendar: Sunday `0` through Saturday `6`. This controls
+the weekday header and day-grid ordering.
+
+* Applicable to: EE::UI::UICalendar (Calendar)
+* Data Type: [integer](#integer-data-type)
+* Default value: The calendar locale's first weekday
+
+---
+
+### focused-date
+
+Sets the calendar keyboard-focus date using ISO format (`yyyy-MM-dd`). It is clamped to
+the calendar bounds and brings its month into view without selecting it.
+
+* Applicable to: EE::UI::UICalendar (Calendar)
+* Data Type: [string](#string-data-type)
+* Default value: Today for a standalone calendar; picker popups synchronize on opening
 
 ---
 
@@ -1003,6 +1132,32 @@ Sets the hint font stroke (the outline) width.
 * Applicable to: EE::UI::UITextInput (TextInput)
 * Data Type: [length](#length-data-type)
 * Default value: `0dp`
+
+---
+
+### hour-cycle
+
+Sets the hour cycle for locale-derived time patterns: `locale`, `12`, or `24`. Aliases
+`h12` and `h24` are accepted as values. An explicit [time-format](#time-format) defines its
+own hour tokens and takes precedence.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: `locale`
+
+---
+
+### hour-step
+
+Sets the positive integer hour increment for stepping the active hour segment, including
+date-time popup steppers. Time-only stepping wraps within the day; date-time stepping
+carries across date boundaries.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [integer](#integer-data-type)
+* Default value: `1`
 
 ---
 
@@ -1355,6 +1510,63 @@ Read [margin-top](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top) d
 
 ---
 
+### max
+
+Sets the maximum valid value for HTML `date`, `time`, and `datetime-local` inputs.
+Use the input type's ISO value syntax (see [value](#value)). Invalid bounds are ignored.
+Out-of-range values report a validation error rather than being silently clamped. Time
+ranges with `min` later than `max` wrap across midnight.
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### max-date
+
+Sets the inclusive maximum for native `date` mode using ISO syntax
+(`yyyy-MM-dd`). Native editors clamp values to their active mode's bounds. Calendar bounds
+also disable unavailable dates.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker),
+  EE::UI::UICalendar (Calendar)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### max-datetime
+
+Sets the inclusive maximum for native `datetime` mode using ISO syntax
+(`yyyy-MM-ddTHH:mm:ss[.SSS]`). Native editors clamp values to their active mode's bounds.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### max-time
+
+Sets the inclusive maximum for native `time` mode using ISO syntax
+(`HH:mm:ss[.SSS]`). Native editors clamp values to their active mode's bounds.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
 ### max-height
 
 Read [max-height](https://developer.mozilla.org/en-US/docs/Web/CSS/max-height) documentation.
@@ -1455,6 +1667,63 @@ Sets how is the dropdown-menu width calculated.
 
 ---
 
+### min
+
+Sets the minimum valid value for HTML `date`, `time`, and `datetime-local` inputs.
+Use the input type's ISO value syntax (see [value](#value)). Invalid bounds are ignored.
+Out-of-range values report a validation error rather than being silently clamped. Time
+ranges with `min` later than `max` wrap across midnight.
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### min-date
+
+Sets the inclusive minimum for native `date` mode using ISO syntax
+(`yyyy-MM-dd`). Native editors clamp values to their active mode's bounds. Calendar bounds
+also disable unavailable dates.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker),
+  EE::UI::UICalendar (Calendar)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### min-datetime
+
+Sets the inclusive minimum for native `datetime` mode using ISO syntax
+(`yyyy-MM-ddTHH:mm:ss[.SSS]`). Native editors clamp values to their active mode's bounds.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
+### min-time
+
+Sets the inclusive minimum for native `time` mode using ISO syntax
+(`HH:mm:ss[.SSS]`). Native editors clamp values to their active mode's bounds.
+An empty string removes the bound. If the bounds cross, the opposite bound moves to the
+new bound. HTML inputs use [min](#min) and [max](#max) instead.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: _No bound_
+
+---
+
 ### min-height
 
 Read [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height) documentation.
@@ -1496,6 +1765,19 @@ Sets the minimum value that a range element will hold.
 
 ---
 
+### minute-step
+
+Sets the positive integer minute increment when stepping the active minute segment or
+using the date-time popup's minute buttons. For example, `minute-step: 15;` advances by
+fifteen minutes. This controls the increment, not validation or snapping to multiples.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [integer](#integer-data-type)
+* Default value: `1`
+
+---
+
 ### min-width
 
 Read [min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width) documentation.
@@ -1509,6 +1791,18 @@ Sets the movement speed in displaced length per second of the progress bar fille
 * Applicable to: EE::UI::UIProgressBar (ProgressBar)
 * Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: `0dp 0dp`
+
+---
+
+### mode
+
+Sets the shared editor mode: `date`, `time`, or `datetime`. The picker classes initialize
+their corresponding mode automatically. Values and display formats follow the active mode.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: `date` for DateTimeEdit and DatePicker; `time` for TimePicker; `datetime` for DateTimePicker
 
 ---
 
@@ -1612,12 +1906,25 @@ component.
 
 ---
 
+### popup-open
+
+Exposes whether the calendar popup is currently open as `true` or `false`, for inspection,
+binding and attribute selectors. This property is read-only; a declaration does not open
+or close the popup. Use the picker API or normal keyboard/mouse interaction.
+
+* Applicable to: EE::UI::UIDatePicker (DatePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### popup-to-root
 
-Sets if the drop down listbox should popup in the root widget node, otherwise will popup in the
-parent window.
+Sets whether a dropdown or picker popup is parented to the scene root instead of its
+parent window container. Popup placement is clamped to the scene's visible viewport.
 
-* Applicable to: EE::UI::UIDropDownList (DropDownList)
+* Applicable to: EE::UI::UIDropDownList (DropDownList), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UIDateTimePicker (DateTimePicker)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
@@ -1652,6 +1959,32 @@ the last child to the first.
 * Applicable to: Any element
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
+
+---
+
+### readonly
+
+Makes an HTML input read-only when the attribute/property is present, including an empty
+value. Temporal inputs retain text selection but prevent value edits and opening their
+popup, and are excluded from constraint validation. Use [allow-editing](#allow-editing)
+for native date/time controls.
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: HTML presence attribute
+* Default value: _Absent_
+
+---
+
+### required
+
+Requires a nonempty value for HTML `date`, `time`, and `datetime-local` inputs during
+constraint validation when the attribute/property is present, including an empty value.
+Read-only and disabled inputs are excluded from validation. Unlike native
+[allow-empty](#allow-empty), this does not initialize or prevent an empty value.
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: HTML presence attribute
+* Default value: _Absent_
 
 ---
 
@@ -1861,6 +2194,47 @@ Sets the scrollbar style (for the moment defines if it contains buttons at its e
   * `no-buttons`: It's just a scroll bar.
   * `two-buttons`: Adds to buttons at its edge.
 * Default value: `two-buttons` for desktop platforms, `no-button` for mobile.
+
+---
+
+### second-step
+
+Sets the positive integer second increment when stepping the active second segment or
+using the date-time popup's second buttons. Show the segment with [show-seconds](#show-seconds)
+or an explicit [time-format](#time-format).
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [integer](#integer-data-type)
+* Default value: `1`
+
+---
+
+### show-milliseconds
+
+Includes milliseconds and seconds in locale-derived time patterns. Enabling this also
+enables [show-seconds](#show-seconds); disabling it leaves seconds enabled. Hidden
+precision remains in the stored value. Explicit [time-format](#time-format) patterns
+control their own segments.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
+### show-seconds
+
+Includes seconds in locale-derived time patterns, independently of milliseconds.
+Disabling seconds also disables [show-milliseconds](#show-milliseconds). Hidden precision
+remains in the stored value. Explicit [time-format](#time-format) patterns control their
+own segments. The date-time popup follows the editor's current display precision.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
 
 ---
 
@@ -2160,6 +2534,20 @@ Sets boolean flags for table and tree views. Multiple flags can be set, separate
 
 ---
 
+### step
+
+Sets the allowed interval for HTML `date`, `time`, and `datetime-local` input validation.
+Date steps use days; time and date-time steps use seconds and accept fractional seconds.
+`any` disables step-mismatch validation. The base is a valid `min`, otherwise the initial
+`value` attribute, otherwise the Unix civil epoch. This HTML constraint is distinct from
+native [hour-step](#hour-step), [minute-step](#minute-step), and [second-step](#second-step).
+
+* Applicable to: EE::UI::UIHTMLInput (input)
+* Data Type: Positive [number](#number-data-type) or `any`
+* Default value: `1` for date; `60` for time and datetime-local
+
+---
+
 ### text
 
 Sets the text to any element that holds or contains text.
@@ -2316,6 +2704,21 @@ Sets the timing function (easing function) of a view pager.
 
 ---
 
+### time-format
+
+Sets the time display pattern, or `locale` to use the editor locale. Tokens: `H`/`HH`
+(24-hour), `h`/`hh` (12-hour), `m`/`mm`, `s`/`ss`, `S`/`SS`/`SSS`, and `a` (AM/PM).
+An hour and minutes are required; 12-hour patterns also require `a`. Single quotes escape
+literal text. For example: `time-format: "HH:mm:ss";`. Explicit patterns control their own
+precision and hour cycle; [value](#value) retains ISO serialization.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [string](#string-data-type)
+* Default value: `locale`
+
+---
+
 ### tint
 
 Sets the tint color of an image.
@@ -2401,10 +2804,27 @@ elastic-out, elastic-in-out, cubic-bezier, none.
 
 ### value
 
-Sets the current value to an element that accepts values.
+Sets the current value to an element that accepts values. Numeric controls use numbers.
+Date/time controls use locale-independent ISO strings:
 
-* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox)
-* Data Type: [number](#number-data-type)
+| Control or mode | Value syntax | Example |
+| --- | --- | --- |
+| Calendar, native date mode, HTML `date` | `yyyy-MM-dd` | `2026-09-28` |
+| Native time mode | `HH:mm:ss[.SSS]` | `20:14:32.125` |
+| Native datetime mode | `yyyy-MM-ddTHH:mm:ss[.SSS]` | `2026-09-28T20:14:32.125` |
+| HTML `time` | `HH:mm[:ss[.SSS]]` | `20:14` |
+| HTML `datetime-local` | `yyyy-MM-ddTHH:mm[:ss[.SSS]]` | `2026-09-28T20:14` |
+
+An empty string clears a native editor when [allow-empty](#allow-empty) permits it, or clears
+calendar selection. Display formats and hidden precision do not change ISO serialization.
+HTML temporal inputs sanitize invalid strings to empty and validate constraints without
+clamping their supplied value. Local date-time values carry no timezone.
+
+* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox),
+  EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker),
+  EE::UI::UICalendar (Calendar), EE::UI::UIHTMLInput (input)
+* Data Type: [number](#number-data-type) or ISO [string](#string-data-type), depending on the control
 * Default value: _Not set_
 
 ---
@@ -2449,6 +2869,19 @@ The mode defines the visibility of the vertical scroll.
   * `on`: The vertical scrollbar will be always visible.
   * `off`: The vertical scrollbar will be always hidden.
 * Default value: `auto`
+
+---
+
+### wheel-editing
+
+Allows mouse-wheel stepping of the active date/time segment while the editor has focus.
+The selected segment uses its configured step and bounds. [allow-editing](#allow-editing)
+must also be enabled.
+
+* Applicable to: EE::UI::UIDateTimeEdit (DateTimeEdit), EE::UI::UIDatePicker (DatePicker),
+  EE::UI::UITimePicker (TimePicker), EE::UI::UIDateTimePicker (DateTimePicker)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
 
 ---
 

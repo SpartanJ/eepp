@@ -23,6 +23,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
 
@@ -204,6 +205,64 @@ UTEST( PixelDensityRegression, FontPickerUsesLogicalSceneInset ) {
 
 	EXPECT_EQ( dialog->getMinWindowSize().x, scene.x - 32.f );
 	EXPECT_EQ( dialog->getMinWindowSize().y, scene.y - 32.f );
+}
+
+UTEST( PixelDensityRegression, CodeEditorMatchesDefaultTextFontSize ) {
+	RestoreDensity restoreDensity;
+	for ( Float density : { 1.f, 1.5f, 2.f } ) {
+		UIApplication app(
+			WindowSettings( 1200, 1000, "Editor Default Font Size", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+									 density ) );
+		auto* ui = app.getUI();
+		ui->setStyleSheet( "" );
+		auto* manager = ui->getUIThemeManager();
+		const auto verifyDefault = [&]() {
+			auto* text = UITextView::New();
+			auto* editor = UICodeEditor::New();
+			text->setParent( ui->getRoot() );
+			editor->setParent( ui->getRoot() );
+			ui->update( Time::Zero );
+			EXPECT_EQ( editor->getFontSize(), static_cast<Float>( text->getFontSize() ) );
+			editor->fontSizeGrow();
+			editor->fontSizeReset();
+			EXPECT_EQ( editor->getFontSize(), static_cast<Float>( text->getFontSize() ) );
+			editor->applyProperty( StyleSheetProperty( "font-size", "14dp" ) );
+			EXPECT_EQ( editor->getFontSize(), PixelDensity::dpToPx( 14.f ) );
+			eeDelete( editor );
+			eeDelete( text );
+		};
+		verifyDefault();
+		// Theme defaults take priority over the manager fallback, just as for UITextView.
+		manager->setDefaultFontSize( PixelDensity::dpToPx( 20.f ) );
+		manager->getDefaultTheme()->setDefaultFontSize( PixelDensity::dpToPx( 10.f ) );
+		verifyDefault();
+		manager->setDefaultTheme( UIThemePtr{} );
+		verifyDefault();
+	}
+}
+
+UTEST( PixelDensityRegression, BreezePreservesConfiguredCodeEditorFontSize ) {
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	auto* editor = UICodeEditor::New();
+	editor->setParent( ui->getRoot() );
+	// ecode applies its configured size after creation, before deferred CSS is resolved.
+	const Float configuredSize = PixelDensity::dpToPx( 17.f );
+	editor->setFontSize( configuredSize );
+	ui->update( Time::Zero );
+	EXPECT_EQ( editor->getFontSize(), configuredSize );
+	editor->reloadStyle( true, true, true, true, true );
+	ui->update( Time::Zero );
+	EXPECT_EQ( editor->getFontSize(), configuredSize );
+	// Settings changes must also survive subsequent theme/style reloads.
+	const Float changedSize = PixelDensity::dpToPx( 19.f );
+	editor->setFontSize( changedSize );
+	editor->reloadStyle( true, true, true, true, true );
+	ui->update( Time::Zero );
+	EXPECT_EQ( editor->getFontSize(), changedSize );
+	eeDelete( editor );
 }
 
 UTEST( PixelDensityRegression, EditorLineNumberPaddingScalesExactlyOnce ) {

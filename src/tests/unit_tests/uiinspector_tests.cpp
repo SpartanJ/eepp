@@ -748,7 +748,7 @@ UTEST( UIInspector, KeyBindingsKeepAliasesAndSceneScopeInReadOnlyMode ) {
 	EXPECT_TRUE( result["bindings"][1]["command"] == "reload" );
 	EXPECT_EQ( result["bindings"][0]["keycode"].get<int>(), KEY_F5 );
 	EXPECT_EQ( result["bindings"][1]["keycode"].get<int>(), KEY_R );
-	EXPECT_EQ( result["bindings"][1]["mod"].get<Uint32>(), KEYMOD_CTRL );
+	EXPECT_EQ( result["bindings"][1]["mod"].get<Uint32>(), (Uint32)KEYMOD_CTRL );
 	EXPECT_STDSTREQ( result["bindings"][1]["shortcut"].get<std::string>(),
 					 scene->getKeyBindings().getShortcutString( { KEY_R, KEYMOD_CTRL } ) );
 	client.send(

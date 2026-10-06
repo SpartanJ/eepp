@@ -765,7 +765,7 @@ class EE_API UINode : public Node {
 	 *
 	 * @return The flags as a Uint64 bitmask.
 	 */
-	const Uint64& getFlags() const;
+	inline const Uint64& getFlags() const { return mFlags; }
 
 	/**
 	 * @brief Sets multiple flags on the node.

@@ -15,9 +15,9 @@ class EE_API StyleSheetSelector {
 
 	explicit StyleSheetSelector( const std::string& selectorName );
 
-	const std::string& getName() const;
+	inline const std::string& getName() const { return mName; }
 
-	const Int64& getSpecificity() const;
+	inline const Int64& getSpecificity() const { return mSpecificity; }
 
 	void setSpecificity( const Int64& specificity );
 
@@ -27,7 +27,8 @@ class EE_API StyleSheetSelector {
 
 	bool hasPseudoClasses() const;
 
-	SmallVector<UIWidget*, 8> getRelatedElements( UIWidget* element, bool applyPseudo = true ) const;
+	SmallVector<UIWidget*, 8> getRelatedElements( UIWidget* element,
+												  bool applyPseudo = true ) const;
 
 	bool isStructurallyVolatile() const;
 
