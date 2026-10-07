@@ -43,6 +43,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -53,9 +54,12 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
+#include <random>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -4546,6 +4550,722 @@ UTEST( UIHTML, StyleSheetSiblingCombinators ) {
 	EXPECT_TRUE( inverseSibling.select( a ) );
 	EXPECT_FALSE( inverseSibling.select( b ) );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, NestedTableHoverSelectorBacktracks ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			body > center > table > tbody > tr:first-child * {
+				background-color: #505050 !important;
+			}
+			body > center > table > tbody > tr:first-child * a:hover {
+				background: #404040 !important;
+			}
+		</style></head><body><center><table><tr><td>
+			<table><tr><td><span><a id="link" href="#">Link</a></span></td></tr></table>
+		</td></tr><tr><td><a id="outside" href="#">Outside</a></td></tr></table></center></body></html>
+	)html" ) );
+	sceneNode->update( Seconds( 1 ) );
+	auto* link = sceneNode->getRoot()->find( "link" )->asType<UITextSpan>();
+	auto* outside = sceneNode->getRoot()->find( "outside" )->asType<UIWidget>();
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_TRUE( outside != nullptr );
+	StyleSheetSelector selector( "body > center > table > tbody > tr:first-child * a:hover" );
+	EXPECT_FALSE( selector.select( link ) );
+	EXPECT_TRUE( selector.select( link, false ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( outside );
+	outside->pushState( UIState::StateHover );
+	EXPECT_FALSE( selector.select( outside ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#505050" ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( link );
+	link->pushState( UIState::StateHover );
+	EXPECT_TRUE( selector.select( link ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#404040" ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	link->popState( UIState::StateHover );
+	EXPECT_FALSE( selector.select( link ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#505050" ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DescendantSelectorBacktracksUniversalMatch ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>#target { opacity: 0; } #scope > *:hover span { opacity: 1; }</style>
+			<div id="outer" class="branch"><div id="inner" class="branch"><span id="target" /></div></div>
+		</div>
+	)xml" );
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( target != nullptr );
+	EXPECT_TRUE( StyleSheetSelector( "#scope > * span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#missing > * span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope > span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#inner * span" ).select( target ) );
+	auto* outer = sceneNode->getRoot()->find( "outer" )->asType<UIWidget>();
+	auto* inner = sceneNode->getRoot()->find( "inner" )->asType<UIWidget>();
+	ASSERT_TRUE( outer != nullptr );
+	ASSERT_TRUE( inner != nullptr );
+	StyleSheetSelector selector( "#scope > *:hover span" );
+	auto related = selector.getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == outer );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( outer );
+	outer->pushState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	outer->popState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SiblingSelectorBacktracksRelatedMatch ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div>
+			<style>
+				#target { opacity: 0; }
+				#start + .candidate:hover ~ #target { opacity: 1; }
+			</style>
+			<div id="start" /><div id="first" class="candidate" />
+			<span /><div id="second" class="candidate" /><div id="target" />
+		</div>
+	)xml" );
+	auto* first = sceneNode->getRoot()->find( "first" )->asType<UIWidget>();
+	auto* second = sceneNode->getRoot()->find( "second" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	StyleSheetSelector selector( "#start + .candidate:hover ~ #target" );
+	EXPECT_TRUE( selector.select( target, false ) );
+	auto related = selector.getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == first );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( second );
+	second->pushState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	second->popState( UIState::StateHover );
+	sceneNode->getEventDispatcher()->setMouseOverNode( first );
+	first->pushState( UIState::StateHover );
+	EXPECT_TRUE( selector.select( target ) );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	first->popState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorBacktracksAcrossHTMLRootSibling ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto append = []( UIWidget* parent, UIWidget* child, const char* id, const char* cls = "" ) {
+		child->setId( id );
+		if ( *cls )
+			child->addClass( cls );
+		child->setParent( parent );
+		return child;
+	};
+	// <html> is a style sheet parent boundary only: its siblings remain sibling-visible.
+	auto* scope = append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ), "scope" );
+	auto* earlier = append( scope, UIWidget::NewWithTag( "div" ), "earlier", "candidate" );
+	auto* root = append( scope, UIHTMLHtml::New( "html" ), "root", "candidate" );
+	append( root, UIWidget::NewWithTag( "span" ), "before" );
+	auto* inner = append( root, UIWidget::NewWithTag( "p" ), "inner" );
+	auto* nested = append( inner, UIWidget::NewWithTag( "span" ), "nested" );
+	auto* target = append( scope, UIWidget::NewWithTag( "a" ), "target" );
+	ASSERT_TRUE( root->isType( UI_TYPE_HTML_HTML ) );
+	ASSERT_TRUE( root->getParent() == scope );
+	ASSERT_TRUE( root->getStyleSheetParentElement() == nullptr );
+	ASSERT_TRUE( target->getStyleSheetPreviousSiblingElement() == root );
+
+	for ( bool applyPseudo : { true, false } ) {
+		// The nearer candidate is the boundary; only the earlier sibling has #scope as parent.
+		EXPECT_TRUE(
+			StyleSheetSelector( "#scope > .candidate ~ a" ).select( target, applyPseudo ) );
+		EXPECT_TRUE( StyleSheetSelector( "#scope .candidate ~ a" ).select( target, applyPseudo ) );
+		// A + step from the retried descendant candidate leaves the document through <html>.
+		EXPECT_TRUE( StyleSheetSelector( "#scope * + * span" ).select( nested, applyPseudo ) );
+	}
+	auto related =
+		StyleSheetSelector( "#scope > .candidate:hover ~ a" ).getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == earlier );
+
+	// Document isolation: nothing inside <html> matches through its physical parent.
+	EXPECT_FALSE( StyleSheetSelector( "#scope > html" ).select( root ) );
+	EXPECT_FALSE( StyleSheetSelector( "* html" ).select( root ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope span" ).select( nested ) );
+	EXPECT_FALSE( StyleSheetSelector( "div p span" ).select( nested ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope .candidate span" ).select( nested ) );
+	EXPECT_TRUE(
+		StyleSheetSelector( "#scope .candidate:hover span" ).getRelatedElements( nested ).empty() );
+	EXPECT_TRUE( StyleSheetSelector( "html.candidate > p > span" ).select( nested ) );
+	EXPECT_TRUE( StyleSheetSelector( ".candidate span" ).select( nested ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorRetriesDoNotTreatAncestorMatchesAsSiblingCandidates ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto append = []( UIWidget* parent, UIWidget* child ) {
+		child->setParent( parent );
+		return child;
+	};
+	// scope > [first, root:html > [inner, nested:html]], followed by next.
+	auto* scope = append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ) );
+	append( scope, UIWidget::NewWithTag( "div" ) );
+	auto* root = append( scope, UIHTMLHtml::New( "html" ) );
+	append( root, UIWidget::NewWithTag( "div" ) );
+	auto* nested = append( root, UIHTMLHtml::New( "html" ) );
+	append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ) );
+	// The only ~ candidate is the inner div. Its ancestor match is <html>, whose earlier sibling
+	// leads to the next div through "* |", but that <html> is not a ~ candidate of the subject.
+	EXPECT_FALSE( StyleSheetSelector( "div | * * ~ html" ).select( nested, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "html * ~ html" ).select( nested, false ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StateSubscriptionsCoverEveryEligibleAncestor ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>span { opacity: 0; } .candidate:hover span { opacity: 1; }</style>
+			<div id="outer" class="candidate"><div id="inner" class="candidate"><span id="target" /></div></div>
+		</div>
+	)xml" );
+	auto* outer = sceneNode->getRoot()->find( "outer" )->asType<UIWidget>();
+	auto* inner = sceneNode->getRoot()->find( "inner" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( outer != nullptr );
+	ASSERT_TRUE( inner != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	StyleSheetSelector selector( ".candidate:hover span" );
+	auto* dispatcher = sceneNode->getEventDispatcher();
+
+	for ( auto [hovered, other] : { std::pair{ outer, inner }, std::pair{ inner, outer } } ) {
+		EXPECT_FALSE( selector.select( target ) );
+		EXPECT_EQ( target->getAlpha(), 0.f );
+		dispatcher->setMouseOverNode( hovered );
+		hovered->pushState( UIState::StateHover );
+		EXPECT_TRUE( hovered->hasPseudoClass( "hover" ) );
+		EXPECT_FALSE( other->hasPseudoClass( "hover" ) );
+		EXPECT_TRUE( selector.select( target ) );
+		// Normal state-change propagation must refresh the target, without a style reload.
+		EXPECT_EQ( target->getAlpha(), 255.f );
+		dispatcher->setMouseOverNode( nullptr );
+		hovered->popState( UIState::StateHover );
+		EXPECT_FALSE( hovered->hasPseudoClass( "hover" ) );
+		EXPECT_EQ( target->getAlpha(), 0.f );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StateSubscriptionsRespectLeftHandConstraints ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>
+				#target, #later { opacity: 0; }
+				#scope > .candidate:hover span { opacity: 1; }
+				.item:hover ~ #later { opacity: 1; }
+			</style>
+			<div id="outer" class="candidate"><div id="inner" class="candidate"><span id="target" /></div></div>
+			<div id="first" class="item" /><span /><div id="second" class="item" /><div id="later" />
+		</div>
+	)xml" );
+	auto find = [&]( const char* id ) {
+		return sceneNode->getRoot()->find( id )->asType<UIWidget>();
+	};
+	auto* outer = find( "outer" );
+	auto* inner = find( "inner" );
+	auto* target = find( "target" );
+	auto* first = find( "first" );
+	auto* second = find( "second" );
+	auto* later = find( "later" );
+	auto* dispatcher = sceneNode->getEventDispatcher();
+	auto hover = [&]( UIWidget* widget, bool enable ) {
+		dispatcher->setMouseOverNode( enable ? widget : nullptr );
+		if ( enable )
+			widget->pushState( UIState::StateHover );
+		else
+			widget->popState( UIState::StateHover );
+	};
+	auto relatedTo = []( UIWidget* widget, UIWidget* dependent ) {
+		return widget->getUIStyle()->getRelatedWidgets().count( dependent ) != 0;
+	};
+
+	// Only #outer can satisfy "#scope >"; #inner must not become a dependency.
+	auto related =
+		StyleSheetSelector( "#scope > .candidate:hover span" ).getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == outer );
+	EXPECT_TRUE( relatedTo( outer, target ) );
+	EXPECT_FALSE( relatedTo( inner, target ) );
+	hover( inner, true );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	hover( inner, false );
+	hover( outer, true );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	hover( outer, false );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	// Every eligible general-sibling candidate is a dependency, not only the nearest one.
+	related = StyleSheetSelector( ".item:hover ~ #later" ).getRelatedElements( later, false );
+	EXPECT_EQ( 2u, related.size() );
+	EXPECT_TRUE( relatedTo( first, later ) );
+	EXPECT_TRUE( relatedTo( second, later ) );
+	for ( auto* item : { first, second } ) {
+		hover( item, true );
+		EXPECT_EQ( later->getAlpha(), 255.f );
+		hover( item, false );
+		EXPECT_EQ( later->getAlpha(), 0.f );
+	}
+
+	// Style reloads and destruction remove every subscription created above.
+	later->setId( "unmatched" );
+	sceneNode->updateDirtyStyles();
+	EXPECT_FALSE( relatedTo( first, later ) );
+	EXPECT_FALSE( relatedTo( second, later ) );
+	eeDelete( target );
+	EXPECT_TRUE( outer->getUIStyle()->getRelatedWidgets().empty() );
+	Engine::destroySingleton();
+}
+
+namespace {
+
+struct ReferenceCompound {
+	char combinator;
+	bool tracksState;
+	StyleSheetSelector selector;
+};
+
+// Exhaustive Selectors 4 matching over eepp's navigation primitives. Every candidate of every
+// combinator is tried, and dependencies are the union over all successful paths.
+bool referenceComplete( const std::vector<ReferenceCompound>& compounds, size_t index,
+						UIWidget* element, bool applyPseudo, std::vector<UIWidget*>& related ) {
+	if ( index + 1 == compounds.size() )
+		return true;
+	const auto& compound = compounds[index + 1];
+	bool matched = false;
+	auto tryCandidate = [&]( UIWidget* candidate ) {
+		if ( !compound.selector.select( candidate, applyPseudo ) ||
+			 !referenceComplete( compounds, index + 1, candidate, applyPseudo, related ) ) {
+			return;
+		}
+		matched = true;
+		if ( compound.tracksState &&
+			 std::find( related.begin(), related.end(), candidate ) == related.end() ) {
+			related.push_back( candidate );
+		}
+	};
+	switch ( compound.combinator ) {
+		case '>':
+			if ( auto* parent = element->getStyleSheetParentElement() )
+				tryCandidate( parent );
+			break;
+		case '+':
+			if ( auto* sibling = element->getStyleSheetPreviousSiblingElement() )
+				tryCandidate( sibling );
+			break;
+		case '|':
+			if ( auto* sibling = element->getStyleSheetNextSiblingElement() )
+				tryCandidate( sibling );
+			break;
+		case ' ':
+			for ( auto* parent = element->getStyleSheetParentElement(); parent;
+				  parent = parent->getStyleSheetParentElement() ) {
+				tryCandidate( parent );
+			}
+			break;
+		case '~':
+			for ( auto* sibling = element->getStyleSheetPreviousSiblingElement(); sibling;
+				  sibling = sibling->getStyleSheetPreviousSiblingElement() ) {
+				tryCandidate( sibling );
+			}
+			break;
+	}
+	return matched;
+}
+
+} // namespace
+
+UTEST( UIHTML, SelectorMatchingAgreesWithExhaustiveReference ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	// mt19937 output is fully specified, so the generated cases are identical on every platform.
+	std::mt19937 random( 1709 );
+	auto pick = [&]( size_t count ) { return static_cast<size_t>( random() % count ); };
+	static constexpr const char* Compounds[] = {
+		"*",		  "div",	"span",			 "html",
+		".c",		  ".d",		"div.c",		 "*:hover",
+		".c:hover",	  "html.d", "*:first-child", "span:first-child",
+		"div:hover.d" };
+	static constexpr char Combinators[] = { ' ', '>', '+', '~', '|' };
+	size_t comparisons = 0;
+	size_t failures = 0;
+
+	for ( int tree = 0; tree < 400; ++tree ) {
+		auto* container = UIWidget::NewWithTag( "div" );
+		container->setParent( sceneNode->getRoot() );
+		std::vector<UIWidget*> parents{ container };
+		std::vector<UIWidget*> elements;
+		const size_t nodeCount = 6 + pick( 6 );
+		for ( size_t i = 0; i < nodeCount; ++i ) {
+			auto* parent = parents[pick( parents.size() )];
+			const size_t kind = pick( 10 );
+			if ( kind == 0 ) {
+				// Raw text is skipped by sibling navigation and never a selector subject.
+				auto* text = UITextNode::New();
+				text->setParent( parent );
+				continue;
+			}
+			UIWidget* widget = kind <= 2   ? UIHTMLHtml::New( "html" )
+							   : kind <= 6 ? UIWidget::NewWithTag( "div" )
+										   : UIWidget::NewWithTag( "span" );
+			widget->setParent( parent );
+			if ( pick( 2 ) )
+				widget->addClass( "c" );
+			if ( pick( 3 ) == 0 )
+				widget->addClass( "d" );
+			if ( pick( 3 ) == 0 )
+				widget->pushState( UIState::StateHover );
+			parents.push_back( widget );
+			elements.push_back( widget );
+		}
+
+		for ( int s = 0; s < 40; ++s ) {
+			std::string text;
+			std::vector<ReferenceCompound> compounds;
+			const size_t length = 1 + pick( 5 );
+			std::vector<std::pair<const char*, char>> parts;
+			for ( size_t i = 0; i < length; ++i ) {
+				const char* compound = Compounds[pick( std::size( Compounds ) )];
+				const char combinator = i == 0 ? 0 : Combinators[pick( std::size( Combinators ) )];
+				if ( i != 0 )
+					text += combinator == ' ' ? std::string( " " )
+											  : std::string( " " ) + combinator + " ";
+				text += compound;
+				parts.emplace_back( compound, combinator );
+			}
+			// Selector rules run right to left; each compound carries the combinator to its right.
+			for ( size_t i = length; i-- > 0; ) {
+				StyleSheetSelector compound( parts[i].first );
+				const auto& rule = compound.getRule( 0 );
+				compounds.push_back( { i + 1 < length ? parts[i + 1].second : '\0',
+									   rule.hasPseudoClasses() || rule.hasStructuralPseudoClasses(),
+									   std::move( compound ) } );
+			}
+			StyleSheetSelector selector( text );
+			for ( auto* element : elements ) {
+				for ( bool applyPseudo : { true, false } ) {
+					std::vector<UIWidget*> expectedRelated;
+					const bool expected =
+						compounds[0].selector.select( element, applyPseudo ) &&
+						referenceComplete( compounds, 0, element, applyPseudo, expectedRelated );
+					if ( !expected )
+						expectedRelated.clear();
+					auto related = selector.getRelatedElements( element, applyPseudo );
+					std::vector<UIWidget*> actualRelated( related.begin(), related.end() );
+					std::sort( expectedRelated.begin(), expectedRelated.end() );
+					std::sort( actualRelated.begin(), actualRelated.end() );
+					++comparisons;
+					if ( expected != selector.select( element, applyPseudo ) ||
+						 expectedRelated != actualRelated ) {
+						if ( failures++ < 8 ) {
+							UTEST_PRINT_INFO(
+								String::format(
+									"tree %d selector \"%s\" element %zu pseudo %d", tree,
+									text.c_str(),
+									std::find( elements.begin(), elements.end(), element ) -
+										elements.begin(),
+									applyPseudo )
+									.c_str() );
+						}
+					}
+				}
+			}
+		}
+		eeDelete( container );
+	}
+	EXPECT_EQ( 0u, failures );
+	EXPECT_GT( comparisons, 200000u );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, AttributeSelectorsMatchWidgetIds ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* parent = UIWidget::NewWithTag( "div" );
+	parent->setId( "probe-parent" );
+	parent->setParent( sceneNode->getRoot() );
+	auto* child = UIWidget::NewWithTag( "a" );
+	child->setParent( parent );
+	auto* idProperty = StyleSheetSpecification::instance()->getProperty( PropertyId::Id );
+	EXPECT_STREQ( "probe-parent", parent->getPropertyString( idProperty ).c_str() );
+	EXPECT_TRUE( StyleSheetSelector( "[id=probe-parent] a" ).select( child ) );
+	EXPECT_TRUE( StyleSheetSelector( "*[id] > a" ).select( child ) );
+	EXPECT_TRUE( StyleSheetSelector( "[id^=probe] a" ).select( child ) );
+	EXPECT_FALSE( StyleSheetSelector( "[id=other] a" ).select( child ) );
+	// A widget without an id has no id attribute.
+	EXPECT_FALSE( StyleSheetSelector( "a[id]" ).select( child ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, LongSelectorsKeepEveryCheckpoint ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	UIWidget* tail = UIWidget::NewWithTag( "div" );
+	tail->setId( "scope" );
+	tail->setParent( sceneNode->getRoot() );
+	for ( int i = 0; i < 30; ++i ) {
+		auto* child = UIWidget::NewWithTag( "div" );
+		child->setParent( tail );
+		tail = child;
+	}
+	auto* target = UIWidget::NewWithTag( "a" );
+	target->setParent( tail );
+	// 20 compounds exceed the 16 that always fit, so storage is sized by the 9 compounds that
+	// keep checkpoints: each descendant search precedes a > step and keeps one while the nearest
+	// candidates are retried.
+	std::string body;
+	for ( int i = 0; i < 9; ++i )
+		body += "* > div ";
+	EXPECT_TRUE( StyleSheetSelector( "#scope > " + body + "a" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#missing > " + body + "a" ).select( target ) );
+	EXPECT_FALSE(
+		StyleSheetSelector( "#scope > " + body + body + body + body + "a" ).select( target ) );
+	// Child steps keep no checkpoints, so this needs no checkpoint storage at all.
+	std::string children;
+	for ( int i = 0; i < 30; ++i )
+		children += "div > ";
+	EXPECT_TRUE( StyleSheetSelector( "#scope > " + children + "a" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope > " + children + "span" ).select( target ) );
+
+	// Checkpoint storage grows 16 > 32 > 64 entries on the stack, then falls back to the heap.
+	// The selectors above cover 16 (9 checkpoints) and 64 (36); these cover 32 and the heap.
+	UIWidget* deepTail = UIWidget::NewWithTag( "div" );
+	deepTail->setId( "deep" );
+	deepTail->setParent( sceneNode->getRoot() );
+	for ( int i = 0; i < 160; ++i ) {
+		auto* child = UIWidget::NewWithTag( "div" );
+		child->setParent( deepTail );
+		deepTail = child;
+	}
+	auto* deepTarget = UIWidget::NewWithTag( "a" );
+	deepTarget->setParent( deepTail );
+	for ( int checkpoints : { 20, 72 } ) {
+		std::string longBody;
+		for ( int i = 0; i < checkpoints; ++i )
+			longBody += "* > div ";
+		EXPECT_TRUE( StyleSheetSelector( "#deep > " + longBody + "a" ).select( deepTarget ) );
+		EXPECT_FALSE( StyleSheetSelector( "#missing > " + longBody + "a" ).select( deepTarget ) );
+		EXPECT_FALSE( StyleSheetSelector( "#deep > " + longBody + "span" ).select( deepTarget ) );
+		// Each "* > div" pair consumes two levels, so more than 80 pairs cannot fit the chain.
+		std::string tooLong;
+		while ( tooLong.size() / std::strlen( "* > div " ) <= 80 )
+			tooLong += longBody;
+		EXPECT_FALSE( StyleSheetSelector( "#deep > " + tooLong + "a" ).select( deepTarget ) );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, RelatedElementsShareSuffixSearches ) {
+	class CountingWidget : public UIWidget {
+	  public:
+		CountingWidget( size_t& checks ) : UIWidget( "div" ), mChecks( checks ) {}
+
+		std::string getPropertyString( const PropertyDefinition* property,
+									   const Uint32& index = 0 ) const {
+			if ( property && property->getPropertyId() == PropertyId::Id )
+				++mChecks;
+			return UIWidget::getPropertyString( property, index );
+		}
+
+	  private:
+		size_t& mChecks;
+	};
+
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	size_t checks = 0;
+	constexpr size_t count = 128;
+	auto* scope = eeNew( CountingWidget, ( checks ) );
+	scope->setId( "scope" );
+	scope->setParent( sceneNode->getRoot() );
+
+	// Nested candidates: each one would search its ancestors again for [id=scope].
+	UIWidget* tail = scope;
+	for ( size_t i = 0; i < count; ++i ) {
+		auto* candidate = eeNew( CountingWidget, ( checks ) );
+		candidate->addClass( "candidate" );
+		candidate->setParent( tail );
+		tail = candidate;
+	}
+	auto* nestedTarget = UIWidget::NewWithTag( "a" );
+	nestedTarget->setParent( tail );
+	checks = 0;
+	EXPECT_EQ( count, StyleSheetSelector( "[id=scope] .candidate:hover a" )
+						  .getRelatedElements( nestedTarget, false )
+						  .size() );
+	// Every element is checked once, not once per candidate below it.
+	EXPECT_GT( checks, 0u );
+	EXPECT_LE( checks, count + 2 );
+	// A tracked rest repeats elements across candidates; each must still be reported once.
+	auto nestedPairs = StyleSheetSelector( ".candidate:hover > .candidate:hover a" )
+						   .getRelatedElements( nestedTarget, false );
+	EXPECT_EQ( count, nestedPairs.size() );
+	EXPECT_EQ( count, UnorderedSet<UIWidget*>( nestedPairs.begin(), nestedPairs.end() ).size() );
+
+	// Sibling candidates share their parent, so the climb to [id=scope] happens once.
+	auto* list = eeNew( CountingWidget, ( checks ) );
+	list->addClass( "list" );
+	list->setParent( scope );
+	for ( size_t i = 0; i < count; ++i ) {
+		auto* item = eeNew( CountingWidget, ( checks ) );
+		item->addClass( "item" );
+		item->setParent( list );
+	}
+	auto* siblingTarget = UIWidget::NewWithTag( "a" );
+	siblingTarget->setParent( list );
+	checks = 0;
+	EXPECT_EQ( count, StyleSheetSelector( "[id=scope] .item:hover ~ a" )
+						  .getRelatedElements( siblingTarget, false )
+						  .size() );
+	EXPECT_GT( checks, 0u );
+	EXPECT_LE( checks, 2u );
+	// The shared rest is above every candidate, so the list is reported once with all items.
+	auto shared = StyleSheetSelector( ".list:hover > .item:hover ~ a" )
+					  .getRelatedElements( siblingTarget, false );
+	EXPECT_EQ( count + 1, shared.size() );
+	EXPECT_EQ( count + 1, UnorderedSet<UIWidget*>( shared.begin(), shared.end() ).size() );
+	EXPECT_TRUE( std::find( shared.begin(), shared.end(), list ) != shared.end() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorFailuresPruneRepeatedDescendantSearches ) {
+	class CountingWidget : public UIWidget {
+	  public:
+		CountingWidget( size_t& checks ) : UIWidget( "div" ), mChecks( checks ) {
+			setId( "probe" );
+		}
+
+		std::string getPropertyString( const PropertyDefinition* property,
+									   const Uint32& index = 0 ) const {
+			if ( property && property->getPropertyId() == PropertyId::Id )
+				++mChecks;
+			return UIWidget::getPropertyString( property, index );
+		}
+
+	  private:
+		size_t& mChecks;
+	};
+
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	size_t checks = 0;
+	constexpr size_t depth = 24;
+	constexpr size_t compounds = 6;
+	UIWidget* parent = sceneNode->getRoot();
+	for ( size_t i = 0; i < depth; ++i ) {
+		auto* widget = eeNew( CountingWidget, ( checks ) );
+		widget->setParent( parent );
+		parent = widget;
+	}
+	auto* target = UIWidget::NewWithTag( "a" );
+	target->setParent( parent );
+
+	// "missing " creates no checkpoints (every descendant search precedes another one), so it
+	// covers immediate exhaustion. "missing > " checkpoints the last * and exercises retries. With
+	// no prefix, C(24, 6) paths match, and dependency collection must share their states.
+	for ( const char* prefix : { "missing ", "missing > ", "" } ) {
+		const bool matches = *prefix == '\0';
+		std::string selectorText( prefix );
+		std::string relatedText( prefix );
+		for ( size_t i = 0; i < compounds; ++i ) {
+			selectorText += "*[id=probe] ";
+			relatedText += "*[id=probe]:hover ";
+		}
+		selectorText += "a";
+		relatedText += "a";
+		StyleSheetSelector selector( selectorText );
+		checks = 0;
+		EXPECT_EQ( matches, selector.select( target ) );
+		// Exhausting the ancestor search must not enumerate combinations of earlier matches.
+		// The lower bound keeps the test from passing if attribute checks stop being counted.
+		EXPECT_GT( checks, 0u );
+		EXPECT_LE( checks, depth * compounds );
+		checks = 0;
+		// Every probe lies on some matching path, so each one is a dependency.
+		EXPECT_EQ( matches ? depth : 0u,
+				   StyleSheetSelector( relatedText ).getRelatedElements( target, false ).size() );
+		EXPECT_GT( checks, 0u );
+		EXPECT_LE( checks, depth * compounds );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StylesheetsDoNotPaintRawTextNodes ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			#host { font-size: 24px; color: white; }
+			#host * { background-color: #505050; }
+		</style></head><body><div id="host"><span id="row"><a>Left</a> | <a>Right</a></span></div></body></html>
+	)html" ) );
+	sceneNode->update( Seconds( 1 ) );
+	auto* row = sceneNode->getRoot()->find( "row" )->asType<UITextSpan>();
+	ASSERT_TRUE( row != nullptr );
+	auto* separatorNode = row->getFirstChild()->getNextNode();
+	ASSERT_TRUE( separatorNode != nullptr && separatorNode->isTextNode() );
+	auto* separator = separatorNode->asType<UITextNode>();
+	EXPECT_TRUE( separator->getText() == " | " );
+	EXPECT_TRUE( separator->getBackgroundColor() == Color::Transparent );
+	EXPECT_TRUE( sceneNode->getStyleSheet().getElementStyles( separator ) == nullptr );
+	EXPECT_TRUE( row->getFontBackgroundColor() == Color( "#505050" ) );
+	auto* colorProperty = StyleSheetSpecification::instance()->getProperty( PropertyId::Color );
+	EXPECT_TRUE( Color( separator->getPropertyString( colorProperty ) ) == Color::White );
+
+	// Raw text remains queryable by the inspector, although it receives no matched CSS rules.
+	EXPECT_TRUE( StyleSheetSelector( "textnode" ).select( separator ) );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+	Image image = win->getFrontBufferImage();
+	const Vector2i position = separator->convertToWorldSpace( Vector2f::Zero ).asInt();
+	const Sizei size = separator->getPixelsSize().asInt();
+	ASSERT_GT( size.getWidth(), 0 );
+	ASSERT_GT( size.getHeight(), 0 );
+	ASSERT_GE( position.x, 0 );
+	ASSERT_GE( position.y, 0 );
+	ASSERT_LE( position.x + size.getWidth(), static_cast<int>( image.getWidth() ) );
+	ASSERT_LE( position.y + size.getHeight(), static_cast<int>( image.getHeight() ) );
+	const Color backgroundColor = row->getFontBackgroundColor();
+	bool visibleGlyph = false;
+	for ( int y = position.y; y < position.y + size.getHeight(); ++y ) {
+		for ( int x = position.x; x < position.x + size.getWidth(); ++x ) {
+			const Color pixel = image.getPixel( x, y );
+			if ( pixel.r > backgroundColor.r || pixel.g > backgroundColor.g ||
+				 pixel.b > backgroundColor.b )
+				visibleGlyph = true;
+		}
+	}
+	EXPECT_TRUE( visibleGlyph );
 	Engine::destroySingleton();
 }
 

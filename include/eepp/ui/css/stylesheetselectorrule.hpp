@@ -162,6 +162,12 @@ class EE_API StyleSheetSelectorRule {
 
 	bool hasStructuralPseudoClasses() const;
 
+	/** Whether the compound has any dynamic or structural pseudo-class. Inline because selector
+	 * dependency collection classifies every compound on each call. */
+	bool hasAnyPseudoClasses() const {
+		return mPseudoClasses != 0 || !mStructuralPseudoClasses.empty();
+	}
+
 	const std::vector<std::string>& getStructuralPseudoClasses() const;
 
 	bool hasStructuralPseudoClass( const std::string& cls ) const;

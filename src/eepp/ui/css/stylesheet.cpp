@@ -286,6 +286,11 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet, SourceOrder so
 // This is based on the RmlUi implementation.
 std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* element,
 																 const bool& applyPseudo ) const {
+	// Raw text inherits its element parent's text style; it is not an element targeted by CSS.
+	// Giving it a widget background would paint over glyphs drawn by the parent rich-text stream.
+	if ( element->isTextNode() )
+		return nullptr;
+
 	static StyleSheetStyleVector applicableNodes;
 	applicableNodes.clear();
 

@@ -2010,6 +2010,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 					   : "false";
 		case PropertyId::Focusable:
 			return isTabFocusable() ? "true" : "false";
+		case PropertyId::Id:
+			return getId();
 		case PropertyId::Class: {
 			std::string cls;
 			const auto& classes = getStyleSheetClasses();

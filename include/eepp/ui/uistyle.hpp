@@ -103,6 +103,9 @@ class EE_API UIStyle : public UIState {
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
+	/** @return Widgets whose styles are refreshed when this widget changes state. */
+	const UnorderedSet<UIWidget*>& getRelatedWidgets() const { return mRelatedWidgets; }
+
   protected:
 	class EE_API PropertyResolution {
 	  public:

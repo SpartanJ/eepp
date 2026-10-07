@@ -1737,6 +1737,11 @@ workspace "eepp"
 			build_eepp( "eepp" )
 			postsymlinklib_arch( "eepp" )
 			target_dir_lib("")
+			-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
+			-- only: Mach-O and PE already bind them directly.
+			if os.istarget("linux") or os.istarget("bsd") or os.istarget("haiku") then
+				linkoptions { "-Wl,-Bsymbolic-functions" }
+			end
 	end
 
 	-- Examples

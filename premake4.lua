@@ -1701,6 +1701,11 @@ solution "eepp"
 		build_eepp( "eepp" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
 		postsymlinklib("../../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
+		-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
+		-- only: Mach-O and PE already bind them directly.
+		if os.is_real("linux") or os.is_real("bsd") or os.is_real("haiku") then
+			linkoptions { "-Wl,-Bsymbolic-functions" }
+		end
 
 	-- Examples
 	project "eepp-external-shader"
