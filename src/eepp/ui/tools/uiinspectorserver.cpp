@@ -271,10 +271,22 @@ struct UIInspectorServer::Impl {
 	}
 
 	void networkLoop() {
+		constexpr size_t maxClients = 16;
 		SocketSelector selector;
 		selector.add( listener );
+		bool listening = true;
 		std::map<Uint64, Client> clients;
 		while ( running ) {
+			// A pending connection keeps the listener readable. Stop watching it while the client
+			// limit is reached, otherwise every wait() returns immediately and the thread spins.
+			bool acceptClients = clients.size() < maxClients;
+			if ( acceptClients != listening ) {
+				if ( acceptClients )
+					selector.add( listener );
+				else
+					selector.remove( listener );
+				listening = acceptClients;
+			}
 			{
 				std::lock_guard<std::mutex> lock( mutex );
 				while ( !outgoing.empty() ) {
@@ -292,7 +304,7 @@ struct UIInspectorServer::Impl {
 				}
 			}
 			selector.wait( Milliseconds( 10 ) );
-			if ( selector.isReady( listener ) && clients.size() < 16 ) {
+			if ( listening && selector.isReady( listener ) ) {
 				auto socket = std::make_unique<TcpSocket>();
 				if ( listener.accept( *socket ) == Socket::Done ) {
 					socket->setBlocking( false );

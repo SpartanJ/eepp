@@ -14,11 +14,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/sys.hpp>
 
-#if EE_PLATFORM != EE_PLATFORM_WIN
-#include <fcntl.h>
-#include <sys/select.h>
-#include <unistd.h>
-#endif
+#include "highfiledescriptors.hpp"
 
 using namespace EE;
 using namespace EE::Network;
@@ -53,21 +49,6 @@ struct ThreadGate {
 };
 
 } // namespace
-
-#if EE_PLATFORM != EE_PLATFORM_WIN
-namespace {
-
-struct FileDescriptorGuard {
-	~FileDescriptorGuard() {
-		for ( int fd : fds )
-			::close( fd );
-	}
-
-	std::vector<int> fds;
-};
-
-} // namespace
-#endif
 
 UTEST( Http, responseHeaderLineLargerThanReceiveBuffer ) {
 	TcpListener listener;
@@ -459,16 +440,8 @@ UTEST( Http, tcpConnectTimeoutHandlesFdAboveFdSetSize ) {
 	TcpListener listener;
 	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
 
-	FileDescriptorGuard openFiles;
-	openFiles.fds.reserve( FD_SETSIZE + 16 );
-	while ( openFiles.fds.empty() || openFiles.fds.back() < FD_SETSIZE ) {
-		int fd = ::open( "/dev/null", O_RDONLY );
-		if ( fd < 0 )
-			break;
-		openFiles.fds.push_back( fd );
-	}
-
-	if ( openFiles.fds.empty() || openFiles.fds.back() < FD_SETSIZE )
+	HighFileDescriptorReservation highFds;
+	if ( !highFds.isReady() )
 		UTEST_SKIP( "could not reserve enough file descriptors" );
 
 	TcpSocket client;

@@ -5014,7 +5014,7 @@ UTEST( UIHTML, AttributeSelectorsMatchWidgetIds ) {
 	auto* child = UIWidget::NewWithTag( "a" );
 	child->setParent( parent );
 	auto* idProperty = StyleSheetSpecification::instance()->getProperty( PropertyId::Id );
-	EXPECT_STREQ( "probe-parent", parent->getPropertyString( idProperty ).c_str() );
+	EXPECT_STDSTREQ( "probe-parent", parent->getPropertyString( idProperty ) );
 	EXPECT_TRUE( StyleSheetSelector( "[id=probe-parent] a" ).select( child ) );
 	EXPECT_TRUE( StyleSheetSelector( "*[id] > a" ).select( child ) );
 	EXPECT_TRUE( StyleSheetSelector( "[id^=probe] a" ).select( child ) );
@@ -5245,7 +5245,8 @@ UTEST( UIHTML, StylesheetsDoNotPaintRawTextNodes ) {
 	auto* win = Engine::instance()->getCurrentWindow();
 	win->clear();
 	SceneManager::instance()->draw();
-	win->display();
+	// Read before display(): readback uses the back buffer, whose contents are undefined after a
+	// buffer swap on some platforms (Windows drivers do not preserve them).
 	Image image = win->getFrontBufferImage();
 	const Vector2i position = separator->convertToWorldSpace( Vector2f::Zero ).asInt();
 	const Sizei size = separator->getPixelsSize().asInt();
