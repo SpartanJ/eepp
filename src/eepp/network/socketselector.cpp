@@ -90,9 +90,8 @@ bool SocketSelector::wait( Time timeout ) {
 		Int64 timeoutMilliseconds = timeoutMicroseconds / 1000;
 		if ( timeoutMicroseconds % 1000 != 0 )
 			timeoutMilliseconds++;
-		pollTimeout = timeoutMilliseconds > std::numeric_limits<int>::max()
-						  ? std::numeric_limits<int>::max()
-						  : static_cast<int>( timeoutMilliseconds );
+		pollTimeout = static_cast<int>(
+			std::min<Int64>( timeoutMilliseconds, std::numeric_limits<int>::max() ) );
 	}
 
 	// WSAPoll() fails immediately on an empty set while poll() waits for the timeout. Wait on every
