@@ -1,4 +1,5 @@
 #include "eproc.hpp"
+#include "process_table_state.hpp"
 #include "process_view.hpp"
 #include "settingspanel.hpp"
 
@@ -25,6 +26,8 @@
 
 namespace eproc {
 
+using namespace ProcessTableState;
+
 namespace {
 
 constexpr size_t kPerformanceHistorySamples = 600;
@@ -32,7 +35,6 @@ constexpr double kPerformanceVisibleSeconds = 60.0;
 static_assert( kPerformanceHistorySamples >=
 			   kPerformanceVisibleSeconds * 1000 / AppConfig::MinRefreshIntervalMs + 2 );
 
-constexpr int kProcessTableStateVersion = 6;
 constexpr int kForceKillSignal = 9; // SIGKILL on Linux; TerminateProcess on Windows.
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	EE_PLATFORM == EE_PLATFORM_BSD
@@ -79,68 +81,6 @@ String formatUptime( UISceneNode* ui, double uptimeSeconds ) {
 		append( seconds, "eproc_uptime_second", "%lld second", "eproc_uptime_seconds",
 				"%lld seconds" );
 	return result;
-}
-
-constexpr int kPreviousProcessTableStateVersion = 3;
-constexpr int kLegacyProcessTableStateVersion = 2;
-constexpr int kPriorProcessTableStateVersion = 4;
-constexpr int kFamilyProcessTableStateVersion = 5;
-constexpr size_t kPreviousProcessColumnCount = 20;
-constexpr size_t kPreviousCommandColumn = 11;
-
-constexpr std::array<size_t, 12> kOptionalProcessColumns = { {
-	ProcessModel::ColTotalMemory,
-	ProcessModel::ColVirtualSize,
-	ProcessModel::ColCpuTime,
-	ProcessModel::ColNiceness,
-	ProcessModel::ColRelativeStartTime,
-	ProcessModel::ColTty,
-	ProcessModel::ColIoRead,
-	ProcessModel::ColIoWrite,
-	ProcessModel::ColThreads,
-	ProcessModel::ColMemoryPercent,
-	ProcessModel::ColFamilyMemory,
-	ProcessModel::ColFamilyMemoryPercent,
-} };
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
-	ProcessModel::ColSharedMem,
-	ProcessModel::ColGpuUsage,
-	ProcessModel::ColGpuMemory,
-	ProcessModel::ColDownload,
-	ProcessModel::ColUpload,
-	ProcessModel::ColVirtualSize,
-	ProcessModel::ColNiceness,
-	ProcessModel::ColTty,
-} };
-#elif EE_PLATFORM == EE_PLATFORM_MACOS
-constexpr std::array<size_t, 6> kUnavailableProcessColumns = { {
-	ProcessModel::ColSharedMem,
-	ProcessModel::ColGpuUsage,
-	ProcessModel::ColGpuMemory,
-	ProcessModel::ColDownload,
-	ProcessModel::ColUpload,
-	ProcessModel::ColTty,
-} };
-#elif EE_PLATFORM == EE_PLATFORM_BSD
-constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
-	ProcessModel::ColSharedMem,
-	ProcessModel::ColGpuUsage,
-	ProcessModel::ColGpuMemory,
-	ProcessModel::ColDownload,
-	ProcessModel::ColUpload,
-	ProcessModel::ColTty,
-	ProcessModel::ColIoRead,
-	ProcessModel::ColIoWrite,
-} };
-#else
-constexpr std::array<size_t, 0> kUnavailableProcessColumns{};
-#endif
-
-bool isProcessColumnSupported( size_t column ) {
-	return std::find( kUnavailableProcessColumns.begin(), kUnavailableProcessColumns.end(),
-					  column ) == kUnavailableProcessColumns.end();
 }
 
 String processColumnTooltip( UISceneNode* ui, size_t column ) {
@@ -254,183 +194,6 @@ bool parseSortOrder( const std::string& value, SortOrder& order ) {
 		return true;
 	}
 	return false;
-}
-
-bool isValidProcessTableWidthState( const nlohmann::json& widths, size_t columnCount,
-									const UIAbstractTableView& tableView ) {
-	if ( !widths.is_object() || !widths.contains( "mode" ) || !widths["mode"].is_string() ||
-		 !widths.contains( "widths" ) || !widths["widths"].is_array() ||
-		 widths["widths"].size() != columnCount )
-		return false;
-
-	const std::string mode = widths["mode"].get<std::string>();
-	if ( mode != "pixels" && mode != "percentage" )
-		return false;
-
-	bool hasVisibleWidth = false;
-	for ( size_t column = 0; column < columnCount; ++column ) {
-		const auto& width = widths["widths"][column];
-		const double value = width.is_number() ? width.get<double>() : 0;
-		if ( !width.is_number() || !std::isfinite( value ) || value < 0 )
-			return false;
-		if ( mode == "pixels" && !tableView.isColumnHidden( column ) && value <= 1.0 )
-			return false;
-		if ( !tableView.isColumnHidden( column ) && value > 0 )
-			hasVisibleWidth = true;
-	}
-
-	return hasVisibleWidth;
-}
-
-size_t remapPreviousProcessTableColumn( size_t column ) {
-	if ( column == kPreviousCommandColumn )
-		return ProcessModel::ColCommand;
-	if ( column > kPreviousCommandColumn )
-		return column - 1;
-	return column;
-}
-
-bool migratePreviousProcessTableState( nlohmann::json& state ) {
-	if ( !state.contains( "widths" ) || !state["widths"].is_object() ||
-		 !state["widths"].contains( "widths" ) || !state["widths"]["widths"].is_array() ||
-		 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
-		return false;
-
-	nlohmann::json remappedWidths = nlohmann::json::array();
-	for ( size_t column = 0; column < kPreviousProcessColumnCount; ++column )
-		remappedWidths.push_back( 0 );
-	for ( size_t previousColumn = 0; previousColumn < kPreviousProcessColumnCount;
-		  ++previousColumn ) {
-		remappedWidths[remapPreviousProcessTableColumn( previousColumn )] =
-			state["widths"]["widths"][previousColumn];
-	}
-	state["widths"]["widths"] = std::move( remappedWidths );
-
-	if ( state.contains( "hidden_columns" ) && state["hidden_columns"].is_array() ) {
-		nlohmann::json remappedHiddenColumns = nlohmann::json::array();
-		for ( const auto& column : state["hidden_columns"] ) {
-			if ( !column.is_number_integer() )
-				continue;
-			const Int64 previousColumn = column.get<Int64>();
-			if ( previousColumn >= 0 &&
-				 static_cast<size_t>( previousColumn ) < kPreviousProcessColumnCount )
-				remappedHiddenColumns.push_back(
-					remapPreviousProcessTableColumn( static_cast<size_t>( previousColumn ) ) );
-		}
-		state["hidden_columns"] = std::move( remappedHiddenColumns );
-	}
-
-	if ( state.contains( "sort" ) && state["sort"].is_object() &&
-		 state["sort"].contains( "column" ) && state["sort"]["column"].is_number_integer() ) {
-		const Int64 previousColumn = state["sort"]["column"].get<Int64>();
-		if ( previousColumn >= 0 &&
-			 static_cast<size_t>( previousColumn ) < kPreviousProcessColumnCount )
-			state["sort"]["column"] =
-				remapPreviousProcessTableColumn( static_cast<size_t>( previousColumn ) );
-	}
-
-	state["version"] = kPreviousProcessTableStateVersion;
-	return true;
-}
-
-bool migrateProcessTableState( nlohmann::json& state ) {
-	if ( state["version"] == kLegacyProcessTableStateVersion &&
-		 !migratePreviousProcessTableState( state ) )
-		return false;
-	if ( state["version"] == kPreviousProcessTableStateVersion ) {
-		if ( !state.contains( "widths" ) || !state["widths"].is_object() ||
-			 !state["widths"].contains( "widths" ) || !state["widths"]["widths"].is_array() ||
-			 state["widths"]["widths"].size() != kPreviousProcessColumnCount )
-			return false;
-		state["widths"]["widths"].push_back( 0 );
-		state["widths"]["widths"].push_back( 0 );
-		if ( !state.contains( "hidden_columns" ) || !state["hidden_columns"].is_array() )
-			state["hidden_columns"] = nlohmann::json::array();
-		state["hidden_columns"].push_back( ProcessModel::ColThreads );
-		state["hidden_columns"].push_back( ProcessModel::ColMemoryPercent );
-		if ( state.contains( "column_order" ) && state["column_order"].is_array() &&
-			 state["column_order"].size() == kPreviousProcessColumnCount ) {
-			state["column_order"].push_back( ProcessModel::ColThreads );
-			state["column_order"].push_back( ProcessModel::ColMemoryPercent );
-		}
-		state["version"] = kPriorProcessTableStateVersion;
-	}
-	if ( state["version"] == kPriorProcessTableStateVersion ) {
-		const auto addFamilyColumn = []( nlohmann::json& columns ) {
-			if ( !columns.contains( "widths" ) || !columns["widths"].is_object() ||
-				 !columns["widths"].contains( "widths" ) ||
-				 !columns["widths"]["widths"].is_array() ||
-				 columns["widths"]["widths"].size() != ProcessModel::ColFamilyMemory )
-				return false;
-			columns["widths"]["widths"].push_back( 0 );
-			if ( !columns.contains( "hidden_columns" ) || !columns["hidden_columns"].is_array() )
-				columns["hidden_columns"] = nlohmann::json::array();
-			columns["hidden_columns"].push_back( ProcessModel::ColFamilyMemory );
-			if ( columns.contains( "column_order" ) && columns["column_order"].is_array() &&
-				 columns["column_order"].size() == ProcessModel::ColFamilyMemory )
-				columns["column_order"].push_back( ProcessModel::ColFamilyMemory );
-			return true;
-		};
-		if ( !addFamilyColumn( state ) )
-			return false;
-		if ( state.contains( "tree" ) && state["tree"].is_object() &&
-			 !addFamilyColumn( state["tree"] ) )
-			state.erase( "tree" );
-		state["version"] = kFamilyProcessTableStateVersion;
-	}
-	if ( state["version"] != kFamilyProcessTableStateVersion )
-		return false;
-	const auto addFamilyPercentColumn = []( nlohmann::json& columns ) {
-		if ( !columns.contains( "widths" ) || !columns["widths"].is_object() ||
-			 !columns["widths"].contains( "widths" ) || !columns["widths"]["widths"].is_array() ||
-			 columns["widths"]["widths"].size() != ProcessModel::ColFamilyMemoryPercent )
-			return false;
-		columns["widths"]["widths"].push_back( 0 );
-		if ( !columns.contains( "hidden_columns" ) || !columns["hidden_columns"].is_array() )
-			columns["hidden_columns"] = nlohmann::json::array();
-		columns["hidden_columns"].push_back( ProcessModel::ColFamilyMemoryPercent );
-		if ( columns.contains( "column_order" ) && columns["column_order"].is_array() &&
-			 columns["column_order"].size() == ProcessModel::ColFamilyMemoryPercent ) {
-			const auto& oldOrder = columns["column_order"];
-			bool naturalOrder = true;
-			for ( size_t i = 0; i < oldOrder.size(); ++i ) {
-				if ( !oldOrder[i].is_number_integer() ||
-					 oldOrder[i].get<Int64>() != static_cast<Int64>( i ) ) {
-					naturalOrder = false;
-					break;
-				}
-			}
-			nlohmann::json order = nlohmann::json::array();
-			if ( naturalOrder ) {
-				for ( size_t column = 0; column < ProcessModel::ColFamilyMemoryPercent; ++column ) {
-					if ( column != ProcessModel::ColCommand )
-						order.push_back( column );
-				}
-				order.push_back( ProcessModel::ColFamilyMemoryPercent );
-				order.push_back( ProcessModel::ColCommand );
-			} else {
-				bool inserted = false;
-				for ( const auto& column : oldOrder ) {
-					if ( column == ProcessModel::ColCommand ) {
-						order.push_back( ProcessModel::ColFamilyMemoryPercent );
-						inserted = true;
-					}
-					order.push_back( column );
-				}
-				if ( !inserted )
-					order.push_back( ProcessModel::ColFamilyMemoryPercent );
-			}
-			columns["column_order"] = std::move( order );
-		}
-		return true;
-	};
-	if ( !addFamilyPercentColumn( state ) )
-		return false;
-	if ( state.contains( "tree" ) && state["tree"].is_object() &&
-		 !addFamilyPercentColumn( state["tree"] ) )
-		state.erase( "tree" );
-	state["version"] = kProcessTableStateVersion;
-	return true;
 }
 
 const char* usernameClass( const ProcessInfo& process ) {
@@ -866,10 +629,8 @@ bool App::init() {
 		platformMessage->showWhenReady();
 	}
 
-	// The first snapshot was requested before the window existed, so it is normally ready by now.
-	// Publishing it here (before the loop, so nothing is being drawn yet) means the very first
-	// frame already shows data instead of flashing an empty table.
-	waitForFirstSnapshot( 250 );
+	// Publish whatever finished during UI initialization. Neither process collection nor PSS
+	// accounting may delay the first frame; later results arrive through the refresh tick.
 	publishStagedSnapshot();
 
 	setupRefreshTimer();
@@ -972,7 +733,8 @@ static void restoreProcessColumns( UIAbstractTableView& view, const nlohmann::js
 	hideUnsupportedProcessColumns( view );
 
 	if ( state.contains( "widths" ) &&
-		 isValidProcessTableWidthState( state["widths"], columnCount, view ) ) {
+		 isValidWidths( state["widths"], columnCount,
+						[&view]( size_t column ) { return view.isColumnHidden( column ); } ) ) {
 		// Pixel restoration sets each width separately, so disable automatic sizing first.
 		const bool pixelWidths = state["widths"]["mode"] == "pixels";
 		if ( pixelWidths )
@@ -1035,26 +797,15 @@ void App::restoreProcessTableState() {
 	if ( !mConfig || mConfig->processTableState.empty() || !mTableView || !mSortProxy )
 		return;
 
-	nlohmann::json state =
-		nlohmann::json::parse( mConfig->processTableState, nullptr, false, true );
-	if ( state.is_discarded() || !state.is_object() || !state.contains( "version" ) ||
-		 !state["version"].is_number_integer() )
+	nlohmann::json state = parse( mConfig->processTableState );
+	if ( state.is_null() )
 		return;
-
-	const int stateVersion = state["version"].get<int>();
-	if ( stateVersion == kLegacyProcessTableStateVersion ||
-		 stateVersion == kPreviousProcessTableStateVersion ||
-		 stateVersion == kPriorProcessTableStateVersion ||
-		 stateVersion == kFamilyProcessTableStateVersion ) {
-		if ( !migrateProcessTableState( state ) )
-			return;
-	} else if ( stateVersion != kProcessTableStateVersion ) {
-		return;
-	}
 
 	const size_t columnCount = mSortProxy->columnCount();
 	if ( !state.contains( "widths" ) ||
-		 !isValidProcessTableWidthState( state["widths"], columnCount, *mTableView ) )
+		 !isValidWidths( state["widths"], columnCount, [this]( size_t column ) {
+			 return mTableView->isColumnHidden( column );
+		 } ) )
 		return;
 
 	restoreProcessColumns( *mTableView, state, columnCount );
@@ -1087,6 +838,10 @@ void App::setupUI() {
 	mSwapText = mRoot->find<UITextView>( "swap_text" );
 
 	auto* ui = mApp->getUI();
+	ui->setKeyBindingCommand( "next-tab", [this] { mTabWidget->focusNextTab(); } );
+	ui->setKeyBindingCommand( "previous-tab", [this] { mTabWidget->focusPreviousTab(); } );
+	ui->addKeyBindingString( "mod+tab", "next-tab" );
+	ui->addKeyBindingString( "mod+shift+tab", "previous-tab" );
 	mRoot->find<UITab>( "tab_process_table" )
 		->setText( ui->i18n( "eproc_process_table_tab", "Process Table" ) );
 	mRoot->find<UITab>( "tab_performance" )
@@ -1099,6 +854,32 @@ void App::setupUI() {
 	mSwapText->setText( ui->i18n( "eproc_swap_status", "Swap: 0 / 0" ) );
 
 	// Tabs are declared in the XML layout via Tab elements with owns= attributes.
+	for ( size_t index = 0; index < mTabFocus.size(); ++index ) {
+		auto* content = mTabWidget->getTab( index )->getOwnedWidget();
+		mTabFocus[index].focusConnection =
+			content->connect( Event::OnFocusWithin, [this, index]( const Event* event ) {
+				auto* focused = mApp->getUI()->getEventDispatcher()->getFocusNode();
+				// Tab selection briefly focuses the container; preserve its last focused child.
+				if ( mTabFocusRestorePending || !focused || focused == event->getNode() ||
+					 !focused->isWidget() || !event->getNode()->isParentOf( focused ) )
+					return;
+				auto& state = mTabFocus[index];
+				if ( state.node == focused && state.closeConnection )
+					return;
+				state.closeConnection =
+					focused->connect( Event::OnClose, [this, index]( const Event* ) {
+						mTabFocus[index].node = nullptr;
+					} );
+				state.node = focused;
+			} );
+	}
+	mTabSelectedConnection = mTabWidget->connect( Event::OnTabSelected, [this]( const Event* ) {
+		// Mouse-down and Shift+Tab processing can move focus again after selection finishes.
+		if ( mTabFocusRestorePending )
+			return;
+		mTabFocusRestorePending = true;
+		mTabWidget->runOnMainThread( [this] { restoreTabFocus(); } );
+	} );
 
 	// Filter entries mirror the original's ProcessFilter::State order.
 	static const std::pair<const char*, const char*> filters[] = {
@@ -1143,6 +924,33 @@ void App::setupUI() {
 	} );
 
 	mSearchInput->setFocus();
+}
+
+void App::restoreTabFocus() {
+	mTabFocusRestorePending = false;
+	const auto index = mTabWidget->getTabSelectedIndex();
+	if ( index >= mTabFocus.size() )
+		return;
+	auto* tab = mTabWidget->getTabSelected();
+	auto* content = tab->getOwnedWidget();
+	const auto& state = mTabFocus[index];
+	// Connection expiry also protects against widgets deleted without a close notification.
+	auto* focused = state.closeConnection ? state.node : nullptr;
+	if ( focused && content->isParentOf( focused ) ) {
+		for ( auto* ancestor = focused; ancestor; ancestor = ancestor->getParent() ) {
+			if ( !ancestor->isVisible() || !ancestor->isEnabled() || ancestor->isClosing() ) {
+				focused = nullptr;
+				break;
+			}
+			if ( ancestor == content )
+				break;
+		}
+	} else {
+		focused = nullptr;
+	}
+	if ( !focused )
+		focused = tab->getId() == "tab_process_table" ? mSearchInput : content;
+	focused->setFocus();
 }
 
 void App::setupPerformance() {
@@ -1559,6 +1367,12 @@ void App::startCollection() {
 	// joins the pool before destroying the staging mutex that the worker uses.
 	mThreadPool = ThreadPool::createShared( 1, false );
 
+	// Config is available before any table exists. Include PSS in the first snapshot and
+	// overlap the cold scan with window/UI initialization when the saved active view needs it.
+	mCollectProportionalMemory =
+		showsFamilyMemory( parse( mConfig->processTableState ),
+						   mConfig->filterMode == ProcessModel::AllProcessesInTreeForm );
+
 	// Timed from this first dispatch so the next sample lands a full period later, giving the CPU
 	// deltas a meaningful window instead of the few milliseconds of a back-to-back pair.
 	mDispatchClock.getElapsedTimeAndReset();
@@ -1575,25 +1389,14 @@ void App::setupRefreshTimer() {
 	mRoot->setInterval( [this] { onRefreshTick(); }, Milliseconds( mTickIntervalMs ) );
 }
 
-bool App::waitForFirstSnapshot( Uint32 timeoutMs ) {
-	Clock clock;
-	while ( clock.getElapsedTime().asMilliseconds() < timeoutMs ) {
-		{
-			Lock lock( mStagingMutex );
-			if ( mStagedReady )
-				return true;
-		}
-		Sys::sleep( Milliseconds( 2 ) );
-	}
-	return false;
-}
-
 void App::onRefreshTick() {
 	publishStagedSnapshot();
 	if ( mCollectInFlight.load() )
 		return;
-	if ( mCollectFamilyMemoryAfterRestore ) {
-		mCollectFamilyMemoryAfterRestore = false;
+	if ( mProcessTableStateRestored )
+		reconcileProportionalMemory();
+	if ( mCollectionRequested ) {
+		mCollectionRequested = false;
 		mDispatchClock.getElapsedTimeAndReset();
 		collectAsync();
 		return;
@@ -1614,20 +1417,44 @@ void App::collectAsync() {
 	// previous sample, so concurrent runs would corrupt it.
 	if ( mCollectInFlight.exchange( true ) )
 		return;
-	UIAbstractTableView* view = activeProcessView();
-	mCollector->setCollectProportionalMemory(
-		view && ( !view->isColumnHidden( ProcessModel::ColFamilyMemory ) ||
-				  !view->isColumnHidden( ProcessModel::ColFamilyMemoryPercent ) ) );
-
-	mThreadPool->run( [this] {
+	const bool collectProportionalMemory = mCollectProportionalMemory;
+	const bool initialCollection = mInitialCollection;
+	mInitialCollection = false;
+	mThreadPool->run( [this, collectProportionalMemory, initialCollection] {
+		// Policy travels with the job; the collector and its caches stay worker-owned.
+		mCollector->setCollectProportionalMemory( collectProportionalMemory );
 		std::vector<ProcessInfo> processes;
 		SystemInfo sysInfo;
 
-		if ( mCollector->collect( processes, sysInfo ) ) {
+		std::vector<ProportionalMemorySample> memory;
+		bool publishedBase = false;
+		const auto publishBase = [this, &publishedBase]( std::vector<ProcessInfo>&& processes,
+														 SystemInfo&& sysInfo ) {
 			Lock lock( mStagingMutex );
 			mStagedProcesses = std::move( processes );
 			mStagedSystemInfo = std::move( sysInfo );
+			mStagedFamilyMemoryReady = false;
 			mStagedReady = true;
+			publishedBase = true;
+		};
+		const bool collected =
+			initialCollection
+				? mCollector->collectInitial( processes, sysInfo, publishBase, &memory )
+				: mCollector->collect( processes, sysInfo );
+		if ( collected ) {
+			Lock lock( mStagingMutex );
+			if ( publishedBase ) {
+				mStagedProportionalMemory = std::move( memory );
+				mStagedProportionalMemoryReady = true;
+			} else {
+				mStagedProcesses = std::move( processes );
+				mStagedSystemInfo = std::move( sysInfo );
+				mStagedFamilyMemoryReady = true;
+				mStagedReady = true;
+				// A newer ordinary snapshot supersedes any unconsumed startup completion.
+				mStagedProportionalMemory.clear();
+				mStagedProportionalMemoryReady = false;
+			}
 		}
 
 		mCollectInFlight.store( false );
@@ -1637,19 +1464,32 @@ void App::collectAsync() {
 void App::publishStagedSnapshot() {
 	std::vector<ProcessInfo> processes;
 	SystemInfo sysInfo;
+	std::vector<ProportionalMemorySample> memory;
+	bool hasSnapshot = false;
+	bool hasMemory = false;
+	bool familyMemoryReady = true;
 
 	{
 		Lock lock( mStagingMutex );
-		if ( !mStagedReady )
+		if ( !mStagedReady && !mStagedProportionalMemoryReady )
 			return;
-		processes = std::move( mStagedProcesses );
-		sysInfo = std::move( mStagedSystemInfo );
-		mStagedReady = false;
+		hasSnapshot = mStagedReady;
+		hasMemory = mStagedProportionalMemoryReady;
+		familyMemoryReady = mStagedFamilyMemoryReady || hasMemory;
+		if ( hasSnapshot ) {
+			processes = std::move( mStagedProcesses );
+			sysInfo = std::move( mStagedSystemInfo );
+			mStagedReady = false;
+		}
+		if ( hasMemory ) {
+			memory = std::move( mStagedProportionalMemory );
+			mStagedProportionalMemoryReady = false;
+		}
 	}
 
 	// Window ownership is needed by the Programs Only filter, so it is refreshed on the UI thread
 	// once per published snapshot rather than per tick.
-	if ( mProcessModel && mCollector && mCollector->supportsProgramsOnly() ) {
+	if ( hasSnapshot && mProcessModel && mCollector && mCollector->supportsProgramsOnly() ) {
 		mGuiWindows.refresh();
 		mProcessModel->setGuiWindowPids( UnorderedSet<Int64>( mGuiWindows.windowPids().begin(),
 															  mGuiWindows.windowPids().end() ) );
@@ -1667,10 +1507,16 @@ void App::publishStagedSnapshot() {
 	if ( mTreeView )
 		mTreeView->clearViewMetadata();
 
-	if ( mPerformanceDetailChart )
+	if ( hasSnapshot && mPerformanceDetailChart )
 		updatePerformance( sysInfo, processes );
-	if ( mProcessModel )
-		mProcessModel->applySnapshot( std::move( processes ), sysInfo );
+	if ( mProcessModel ) {
+		if ( hasSnapshot ) {
+			mProcessModel->applySnapshot( std::move( processes ), sysInfo, familyMemoryReady,
+										  memory );
+		} else if ( hasMemory ) {
+			mProcessModel->applyProportionalMemory( memory );
+		}
+	}
 
 	if ( !mProcessTableStateRestored && !mProcessTableStateRestoreScheduled && mApp &&
 		 mApp->getUI() ) {
@@ -1679,10 +1525,7 @@ void App::publishStagedSnapshot() {
 			if ( !mProcessTableStateRestored ) {
 				restoreProcessTableState();
 				mProcessTableStateRestored = true;
-				UIAbstractTableView* view = activeProcessView();
-				mCollectFamilyMemoryAfterRestore =
-					view && ( !view->isColumnHidden( ProcessModel::ColFamilyMemory ) ||
-							  !view->isColumnHidden( ProcessModel::ColFamilyMemoryPercent ) );
+				reconcileProportionalMemory();
 			}
 			mProcessTableStateRestoreScheduled = false;
 		} );
@@ -1696,6 +1539,18 @@ void App::publishStagedSnapshot() {
 UIAbstractTableView* App::activeProcessView() const {
 	return mTreeMode ? static_cast<UIAbstractTableView*>( mTreeView )
 					 : static_cast<UIAbstractTableView*>( mTableView );
+}
+
+void App::reconcileProportionalMemory() {
+	UIAbstractTableView* view = activeProcessView();
+	const bool enabled = view && ( !view->isColumnHidden( ProcessModel::ColFamilyMemory ) ||
+								   !view->isColumnHidden( ProcessModel::ColFamilyMemoryPercent ) );
+	if ( enabled == mCollectProportionalMemory )
+		return;
+	mCollectProportionalMemory = enabled;
+	// Normally startup prediction matches restoration. Correct a mismatch, or a later
+	// visibility/view change, as soon as the current collection finishes.
+	mCollectionRequested = enabled;
 }
 
 void App::captureTreeExpansion() {

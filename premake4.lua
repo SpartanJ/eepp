@@ -2034,6 +2034,7 @@ solution "eepp"
 			"src/tools/eproc/process_collector.cpp",
 			"src/tools/eproc/process_info.cpp",
 			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/process_table_state.cpp",
 			"src/tools/eproc/settingspanel.cpp",
 			"src/tools/eproc/window_icon.cpp",
 		}
@@ -2111,6 +2112,7 @@ solution "eepp"
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eproc/process_info.cpp",
 				"src/tools/eproc/process_model.cpp",
+				"src/tools/eproc/process_table_state.cpp",
 				"src/tools/eproc/window_icon.cpp",
 				"src/tools/ecode/ignorematcher.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
@@ -2120,6 +2122,16 @@ solution "eepp"
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		eepp_module_backward_add( false )
+
+		configuration { "linux" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		configuration {}
+
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

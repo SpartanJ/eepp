@@ -1,4 +1,8 @@
 #include "process_collector_linux.hpp"
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <thread>
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/fileinfo.hpp>
@@ -33,6 +37,9 @@ constexpr size_t kProcFileCapacity = 8192;
 /** How often (in passes) the per-pid caches are swept of processes that exited. A sweep walks the
  *  whole map, so it is amortised over many passes instead of running on every one. */
 constexpr Uint32 kCacheSweepInterval = 60;
+// Four short-lived PSS workers finish the measured cold scan within UI initialization;
+// one/two workers exceeded the startup budget. No extra PSS workers survive this scan.
+constexpr size_t kStartupPssWorkers = 4;
 // smaps_rollup walks page tables. Refresh one PID bucket per pass to spread that work across
 // collections, while reading uncached values immediately.
 constexpr Uint32 kPssSampleInterval = 5;
@@ -151,6 +158,106 @@ std::string readExePath( long pid, char* out, size_t capacity ) {
 		return {};
 
 	return std::string( out, static_cast<size_t>( length ) );
+}
+
+// Startup workers use only stat and smaps_rollup. They never access collector caches.
+struct StartupPssSample {
+	Int64 startTime{ -1 };
+	Int64 rssPages{ 0 };
+	Int64 value{ -1 };
+	long pid{ 0 };
+};
+
+bool readProcessMemoryIdentity( long pid, Int64& startTime, Int64& rssPages ) {
+	char path[kProcPathCapacity];
+	char buffer[kProcFileCapacity];
+	size_t length = 0;
+	if ( 0 == formatProcPath( path, sizeof( path ), pid, "stat" ) ||
+		 !readProcFile( path, buffer, sizeof( buffer ), length ) )
+		return false;
+	// comm can contain spaces and parentheses; fields after the final ')' start with state (3).
+	const char* p = strrchr( buffer, ')' );
+	if ( !p || p[1] != ' ' )
+		return false;
+	p += 2;
+	for ( int field = 3; field < 22; ++field ) {
+		while ( *p && *p != ' ' )
+			++p;
+		while ( *p == ' ' )
+			++p;
+		if ( !*p )
+			return false;
+	}
+	const char* end = buffer + length;
+	auto start = std::from_chars( p, end, startTime );
+	if ( start.ec != std::errc() || start.ptr == end || *start.ptr != ' ' )
+		return false;
+	p = start.ptr;
+	while ( *p == ' ' )
+		++p;
+	// vsize (23) is irrelevant; RSS (24) is the cheap zero-memory shortcut.
+	while ( *p && *p != ' ' )
+		++p;
+	while ( *p == ' ' )
+		++p;
+	auto rss = std::from_chars( p, end, rssPages );
+	return rss.ec == std::errc() && startTime >= 0 && rssPages >= 0;
+}
+
+Int64 readProcessPss( long pid ) {
+	char path[kProcPathCapacity];
+	char buffer[kProcFileCapacity];
+	size_t length = 0;
+	if ( 0 == formatProcPath( path, sizeof( path ), pid, "smaps_rollup" ) ||
+		 !readProcFile( path, buffer, sizeof( buffer ), length ) )
+		return -1;
+	const char* line = strstr( buffer, "\nPss:" );
+	return line ? parseLabeledLong( line + 1 ) : -1;
+}
+
+void collectStartupPss( std::vector<StartupPssSample>& samples ) {
+	DIR* procDir = opendir( "/proc" );
+	if ( !procDir )
+		return;
+	struct dirent* entry;
+	while ( ( entry = readdir( procDir ) ) != nullptr ) {
+		char* end = nullptr;
+		const long pid = strtol( entry->d_name, &end, 10 );
+		if ( *end != '\0' || pid <= 0 )
+			continue;
+		StartupPssSample sample;
+		sample.pid = pid;
+		if ( readProcessMemoryIdentity( pid, sample.startTime, sample.rssPages ) )
+			samples.push_back( sample );
+	}
+	closedir( procDir );
+
+	// Measured cold scans have a long tail of large resident processes. Start those first so
+	// their page-table walks overlap the cheap jobs instead of delaying the final join.
+	std::sort( samples.begin(), samples.end(),
+			   []( const auto& lhs, const auto& rhs ) { return lhs.rssPages > rhs.rssPages; } );
+
+	std::atomic<size_t> nextJob{ 0 };
+	const auto work = [&] {
+		for ( ;; ) {
+			const size_t index = nextJob.fetch_add( 1, std::memory_order_relaxed );
+			if ( index >= samples.size() )
+				break;
+			auto& sample = samples[index];
+			sample.value = sample.rssPages == 0 ? 0 : readProcessPss( sample.pid );
+			// Check again after the accounting read: an exit/reused PID during the read must
+			// not attach a different incarnation's PSS to this sample.
+			Int64 startTime = 0, rssPages = 0;
+			if ( !readProcessMemoryIdentity( sample.pid, startTime, rssPages ) ||
+				 startTime != sample.startTime )
+				sample.startTime = -1;
+		}
+	};
+	// The sampler thread is itself one worker. All helpers join before samples are merged.
+	std::array<std::jthread, kStartupPssWorkers - 1> workers;
+	for ( auto& worker : workers )
+		worker = std::jthread( work );
+	work();
 }
 
 // ksysguard treats an account as a system account when its shell cannot be used to log in.
@@ -532,6 +639,62 @@ const ProcessCollectorLinux::UserInfo& ProcessCollectorLinux::userInfo( long uid
 	return mUserCache.emplace( uid, std::move( info ) ).first->second;
 }
 
+bool ProcessCollectorLinux::collectInitial( std::vector<ProcessInfo>& processes,
+											SystemInfo& sysInfo,
+											const InitialSnapshotCallback& publishBase,
+											std::vector<ProportionalMemorySample>* memory ) {
+	if ( !mCollectProportionalMemory )
+		return collect( processes, sysInfo );
+
+	// Overlap the cold PSS scan with the normal snapshot and with UI initialization. Workers
+	// write only private samples; the collector cache remains exclusively owned by this thread.
+	std::vector<StartupPssSample> samples;
+	std::jthread sampler( [&samples] { collectStartupPss( samples ); } );
+	mCollectProportionalMemory = false;
+	const bool collected = collect( processes, sysInfo );
+	mCollectProportionalMemory = true;
+	if ( !collected )
+		return false; // sampler's destructor still joins all startup workers.
+
+	const bool publishEarly = publishBase && memory;
+	if ( publishEarly ) {
+		// Keep only numeric identities/RSS-zero markers for the later merge. The large process
+		// snapshot and its strings move directly to the UI; no snapshot copy is needed.
+		memory->clear();
+		memory->reserve( processes.size() );
+		for ( const auto& proc : processes )
+			memory->push_back( { proc.pid, proc.startTime, proc.vmRSS == 0 ? 0 : -1 } );
+		publishBase( std::move( processes ), std::move( sysInfo ) );
+	}
+	sampler.join();
+
+	std::sort( samples.begin(), samples.end(),
+			   []( const auto& lhs, const auto& rhs ) { return lhs.pid < rhs.pid; } );
+	const auto merge = [&]( Int64 pid, Int64 startTime, bool zeroRss ) -> Int64 {
+		const auto sample =
+			std::lower_bound( samples.begin(), samples.end(), pid,
+							  []( const auto& sample, Int64 pid ) { return sample.pid < pid; } );
+		if ( sample == samples.end() || sample->pid != pid || sample->startTime != startTime )
+			return -1;
+		// Seed the ordinary bucket cache, so the next pass does not repeat the full scan.
+		PssEntry& pss = mProcessPss[pid];
+		pss.value = zeroRss ? 0 : sample->value;
+		pss.startTime = startTime;
+		pss.alivePass = mPass;
+		return pss.value;
+	};
+	if ( publishEarly ) {
+		for ( auto& sample : *memory )
+			sample.valueKB = merge( sample.pid, sample.startTime, sample.valueKB == 0 );
+		std::sort( memory->begin(), memory->end(),
+				   []( const auto& lhs, const auto& rhs ) { return lhs.pid < rhs.pid; } );
+	} else {
+		for ( auto& proc : processes )
+			proc.vmPSS = merge( proc.pid, proc.startTime, proc.vmRSS == 0 );
+	}
+	return true;
+}
+
 bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) {
 	// 0 is the "never seen" sentinel for the per-pid caches below.
 	++mPass;
@@ -627,22 +790,7 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 		if ( proc.hasSharedInfo && proc.vmRSS >= 0 )
 			proc.vmURSS = proc.vmRSS - proc.sharedMem;
 
-		if ( mCollectProportionalMemory ) {
-			PssEntry& pss = mProcessPss[pid];
-			if ( pss.startTime != proc.startTime || pss.value < 0 ||
-				 static_cast<Uint32>( pid ) % kPssSampleInterval == mPass % kPssSampleInterval ) {
-				pss.value = -1;
-				if ( 0 != formatProcPath( path, sizeof( path ), pid, "smaps_rollup" ) &&
-					 readProcFile( path, buffer, sizeof( buffer ), length ) ) {
-					const char* line = strstr( buffer, "\nPss:" );
-					if ( line )
-						pss.value = parseLabeledLong( line + 1 );
-				}
-				pss.startTime = proc.startTime;
-			}
-			pss.seenPass = mPass;
-			proc.vmPSS = pss.value;
-		}
+		collectProcessPss( proc );
 
 		// CPU usage delta against the previous pass for this PID. Entries are updated in place and
 		// swept periodically, so the steady state does not allocate. A pid whose start time
@@ -724,6 +872,35 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	return true;
 }
 
+void ProcessCollectorLinux::collectProcessPss( ProcessInfo& proc ) {
+	auto pssIt = mProcessPss.find( proc.pid );
+	if ( pssIt != mProcessPss.end() ) {
+		if ( pssIt->second.startTime != proc.startTime ) {
+			// A reused PID must never inherit the previous incarnation's cached PSS,
+			// including when collection is disabled.
+			mProcessPss.erase( pssIt );
+		} else {
+			// Liveness is independent of refresh policy. Keep live values while hidden.
+			pssIt->second.alivePass = mPass;
+		}
+	}
+	if ( mCollectProportionalMemory ) {
+		PssEntry& pss = mProcessPss[proc.pid];
+		if ( proc.vmRSS == 0 ) {
+			// Zombies/kernel threads have no resident userspace memory to account for.
+			pss.value = 0;
+			pss.startTime = proc.startTime;
+		} else if ( pss.startTime != proc.startTime || pss.value < 0 ||
+					static_cast<Uint32>( proc.pid ) % kPssSampleInterval ==
+						mPass % kPssSampleInterval ) {
+			pss.value = readProcessPss( proc.pid );
+			pss.startTime = proc.startTime;
+		}
+		pss.alivePass = mPass;
+		proc.vmPSS = pss.value;
+	}
+}
+
 void ProcessCollectorLinux::pruneCaches() {
 	for ( auto it = mProcessTicks.begin(); it != mProcessTicks.end(); ) {
 		if ( it->second.pass != mPass )
@@ -739,7 +916,7 @@ void ProcessCollectorLinux::pruneCaches() {
 			++it;
 	}
 	for ( auto it = mProcessPss.begin(); it != mProcessPss.end(); ) {
-		if ( it->second.seenPass != mPass )
+		if ( it->second.alivePass != mPass )
 			it = mProcessPss.erase( it );
 		else
 			++it;

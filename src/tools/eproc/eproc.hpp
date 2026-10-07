@@ -50,6 +50,9 @@ class App {
 
 	bool init();
 	void setupUI();
+
+	void restoreTabFocus();
+
 	void showSettings();
 	void savePreferences();
 	void setupProcessTable();
@@ -75,10 +78,6 @@ class App {
 	/** Starts the poll/dispatch timer. Requires the UI to exist. */
 	void setupRefreshTimer();
 
-	/** Blocks up to @p timeoutMs until the first snapshot is staged. Called before the render
-	 *  loop, where blocking cannot stall a frame. */
-	bool waitForFirstSnapshot( Uint32 timeoutMs );
-
 	/** Collects the current snapshot and publishes it to the UI thread through the staging
 	 *  buffer. Runs on a worker thread; never touches the model or any Node. */
 	void collectAsync();
@@ -94,6 +93,8 @@ class App {
 	void restoreSelection( const std::vector<Int64>& pids );
 
 	UIAbstractTableView* activeProcessView() const;
+
+	void reconcileProportionalMemory();
 
 	void captureTreeExpansion();
 
@@ -135,6 +136,13 @@ class App {
 	std::unique_ptr<UIApplication> mApp;
 	UIWidget* mRoot{ nullptr };
 	UITabWidget* mTabWidget{ nullptr };
+	struct TabFocusState {
+		Node* node{ nullptr };
+		EventConnection closeConnection;
+		EventConnection focusConnection;
+	};
+	std::array<TabFocusState, 2> mTabFocus;
+	EventConnection mTabSelectedConnection;
 	UIWindow* mSettingsWindow{ nullptr };
 
 	UIWidget* mProcessTableLayout{ nullptr };
@@ -172,6 +180,8 @@ class App {
 	Clock mPerformanceClock;
 	size_t mSelectedPerformanceMetric{ 0 };
 	bool mPerCoreView{ false };
+	bool mTabFocusRestorePending{ false };
+	bool mInitialCollection{ true };
 
 	std::shared_ptr<ProcessModel> mProcessModel;
 	std::shared_ptr<ProcessTreeModel> mTreeModel;
@@ -182,7 +192,8 @@ class App {
 	bool mTreeSearchActive{ false };
 	bool mProcessTableStateRestored{ false };
 	bool mProcessTableStateRestoreScheduled{ false };
-	bool mCollectFamilyMemoryAfterRestore{ false };
+	bool mCollectProportionalMemory{ false };
+	bool mCollectionRequested{ false };
 	bool mWindowStateSaved{ false };
 
 	// Window ownership backs the Programs Only filter. Refreshed on the UI thread, since Xlib is
@@ -196,8 +207,11 @@ class App {
 	std::atomic<bool> mCollectInFlight{ false };
 	Mutex mStagingMutex;
 	std::vector<ProcessInfo> mStagedProcesses;
+	std::vector<ProportionalMemorySample> mStagedProportionalMemory;
 	SystemInfo mStagedSystemInfo;
 	bool mStagedReady{ false };
+	bool mStagedFamilyMemoryReady{ true };
+	bool mStagedProportionalMemoryReady{ false };
 
 	Uint32 mUpdateIntervalMs{ 1000 };
 

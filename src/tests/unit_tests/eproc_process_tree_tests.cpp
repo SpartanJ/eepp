@@ -217,3 +217,105 @@ UTEST( EProcProcessTree, FamilyMemoryCountsZeroRssWithoutPss ) {
 			.empty() );
 }
 #endif
+
+UTEST( EProcProcessTree, FamilyMemoryPropagatesUnavailableGrandchildrenAndRejectsCycles ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto source = ProcessModel::create( app.getUI() );
+	auto parent = process( 1, 0, "parent" );
+	auto child = process( 2, 1, "child" );
+	auto grandchild = process( 3, 2, "grandchild" );
+	auto zero = process( 4, 1, "zero" );
+	parent.vmRSS = parent.vmPSS = 100;
+	child.vmRSS = child.vmPSS = 40;
+	grandchild.vmRSS = grandchild.vmPSS = 60;
+	zero.vmRSS = zero.vmPSS = 0;
+	source->applySnapshot( { parent, child, grandchild, zero }, {} );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, 200 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 2 ) )->familyMemoryKB, 100 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 3 ) )->familyMemoryKB, 60 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 4 ) )->familyMemoryKB, 0 );
+	grandchild.vmRSS = grandchild.vmPSS = -1;
+	source->applySnapshot( { parent, child, grandchild, zero }, {} );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, -1 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 2 ) )->familyMemoryKB, -1 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 4 ) )->familyMemoryKB, 0 );
+	parent.parentPid = 2;
+	child.parentPid = 1;
+	grandchild.parentPid = 3; // A self-parent is ignored; it cannot contribute twice.
+	grandchild.vmRSS = grandchild.vmPSS = 60;
+	source->applySnapshot( { parent, child, grandchild, zero }, {} );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, -1 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 2 ) )->familyMemoryKB, -1 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 3 ) )->familyMemoryKB, 60 );
+}
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+UTEST( EProcProcessTree, PendingFamilyMemoryStaysBlankUntilCompletedSamplesArrive ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto source = ProcessModel::create( app.getUI() );
+	auto parent = process( 1, 0, "parent" );
+	auto child = process( 2, 1, "child" );
+	auto zero = process( 3, 1, "zero" );
+	parent.startTime = 100;
+	child.startTime = 200;
+	zero.startTime = 300;
+	parent.vmRSS = 100;
+	child.vmRSS = 40;
+	zero.vmRSS = 0;
+	SystemInfo system;
+	system.totalMemory = 1000;
+	source->applySnapshot( { parent, child, zero }, system, false );
+	EXPECT_EQ( source->visibleCount(), 3u );
+	for ( long pid : { 1, 2, 3 } ) {
+		EXPECT_EQ( source->getProcessByRow( source->rowForPid( pid ) )->familyMemoryKB, -1 );
+		EXPECT_TRUE(
+			source->data( source->index( source->rowForPid( pid ), ProcessModel::ColFamilyMemory ) )
+				.toString()
+				.empty() );
+		EXPECT_TRUE( source
+						 ->data( source->index( source->rowForPid( pid ),
+												ProcessModel::ColFamilyMemoryPercent ) )
+						 .toString()
+						 .empty() );
+	}
+	const std::vector<ProportionalMemorySample> memory = {
+		{ 1, 100, 100 }, { 2, 200, 40 }, { 3, 300, 0 } };
+	source->applyProportionalMemory( memory );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, 140 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 3 ) )->familyMemoryKB, 0 );
+	EXPECT_TRUE(
+		source
+			->data( source->index( source->rowForPid( 1 ), ProcessModel::ColFamilyMemoryPercent ) )
+			.toString() == "14.0%" );
+	// Completion before publication follows the same merge without an intermediate blank model.
+	source->applySnapshot( { parent, child, zero }, system, true, memory );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, 140 );
+}
+
+UTEST( EProcProcessTree, LatePssRejectsReusedPidsAndDoesNotAgeEndedRows ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto source = ProcessModel::create( app.getUI() );
+	auto parent = process( 1, 0, "parent" );
+	auto child = process( 2, 1, "child" );
+	parent.startTime = 100;
+	child.startTime = 200;
+	parent.vmRSS = child.vmRSS = 100;
+	source->applySnapshot( { parent, child }, {}, false );
+	parent.startTime = 101;
+	source->applySnapshot( { parent }, {}, false );
+	source->applyProportionalMemory( { { 1, 100, 1000 }, { 2, 200, 1000 } } );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->vmPSS, -1 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 2 ) )->status, ProcessStatus::Ended );
+	source->applyProportionalMemory( { { 1, 101, 100 }, { 2, 200, 1000 } } );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 1 ) )->familyMemoryKB, 100 );
+	EXPECT_EQ( source->getProcessByRow( source->rowForPid( 2 ) )->status, ProcessStatus::Ended );
+	// The previous parent incarnation and child remain as ended rows for one snapshot.
+	EXPECT_EQ( source->visibleCount(), 3u );
+}
+#endif
