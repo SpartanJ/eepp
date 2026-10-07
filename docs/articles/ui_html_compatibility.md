@@ -113,6 +113,23 @@ webView->loadURI( URI( "file:///path/document.html" ) );
 
 or an HTTP/HTTPS URI.
 
+Native XML layouts can also embed a document directly:
+
+```xml
+<webview layout_width="match_parent" layout_height="180dp">
+    <html>
+        <head><style>p { color: #4085a9; }</style></head>
+        <body><p>Embedded HTML document</p></body>
+    </html>
+</webview>
+```
+
+The containing layout must be well-formed XML. The WebView consumes its `<html>` child and loads it
+through the normal HTML document pipeline in its isolated scene. Document CSS does not affect the
+host or sibling WebViews. Relative stylesheets, images, and links use the containing scene's URI;
+set that URI to the layout's file URI when loading layouts from memory. Embedded loading emits the
+normal navigation and title events without adding the containing layout to URL history.
+
 `UIWebView` supports navigation history through:
 
 ```cpp

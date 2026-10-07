@@ -7,6 +7,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -188,6 +189,24 @@ class TestUIApplication : public UIApplication {
 	using UIApplication::UIApplication;
 	void tickOnce() { tick(); }
 };
+
+UTEST( UIApplication, ClosesWindowWithVisibleModalDialog ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Modal shutdown", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	app.getUI()->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* dialog = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Close?" );
+	dialog->show();
+	app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( dialog->getModalWidget() != nullptr );
+	app.getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+	EXPECT_TRUE( app.getUI() == nullptr );
+}
 
 UTEST( UIApplication, RoutesNativeMouseWheelExactlyOnceToTargetWindow ) {
 	TestUIApplication app( WindowSettings( 320, 240, "Primary Wheel Routing", WindowStyle::Default,
@@ -961,6 +980,42 @@ UTEST( UISceneNode, StyleInvalidationCoalescesAtProcessingTime ) {
 	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateAnimationCount() );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UIWindow, ShadowSurvivesRepeatedTranslucentDraws ) {
+	for ( Float density : { 1.f, 1.5f } ) {
+		UIApplication app( WindowSettings( 320, 240, "Window shadow opacity", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* scene = app.getUI();
+		scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+		scene->loadLayoutFromString( R"xml(
+			<window id="shadow-test" x="30dp" y="30dp" width="60dp" height="40dp"
+				window-flags="borderless|shadow" background-color="white"
+				window-shadow-color="#00000080" window-shadow-size="8dp"
+				window-shadow-offset="0dp 0dp" />
+		)xml" );
+		scene->flushDirtyStyleAndLayout();
+		scene->getRoot()->setBackgroundColor( Color::White );
+		auto* window = scene->find( "shadow-test" )->asType<UIWindow>();
+		window->setVisible( true );
+		const auto* shadowColor = CSS::StyleSheetSpecification::instance()->getProperty(
+			CSS::PropertyId::WindowShadowColor );
+		// Exercise fade-in and fade-out frames without timer or inspector-driven redraws.
+		for ( Uint8 alpha : { 16, 64, 128, 192, 255, 128, 255 } ) {
+			window->setAlpha( alpha );
+			app.getWindow()->clear();
+			scene->draw();
+			EXPECT_STDSTREQ( "#00000080", window->getPropertyString( shadowColor ) );
+		}
+		auto pixels = app.getWindow()->getFrontBufferImage();
+		const auto bounds = window->getWorldBounds();
+		const auto y = static_cast<unsigned int>( bounds.getCenter().y );
+		const auto nearX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 4.f ) );
+		const auto farX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 16.f ) );
+		EXPECT_LT( pixels.getPixel( nearX, y ).r, pixels.getPixel( farX, y ).r );
+	}
 }
 
 UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
