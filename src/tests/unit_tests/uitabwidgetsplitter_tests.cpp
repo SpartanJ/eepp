@@ -1,11 +1,16 @@
+#include "tabtransfer.hpp"
 #include "utest.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/inputevent.hpp>
 #include <nlohmann/json.hpp>
 
 using namespace EE;
@@ -44,7 +49,8 @@ class ThreeColumnModel : public Model {
 	}
 	ModelIndex index( int row, int column,
 					  const ModelIndex& parent = ModelIndex() ) const override {
-		return row == 0 && column >= 0 && column < 3 && !parent.isValid()
+		return row >= 0 && static_cast<size_t>( row ) < mRows && column >= 0 && column < 3 &&
+					   !parent.isValid()
 				   ? createIndex( row, column )
 				   : ModelIndex{};
 	}
@@ -54,6 +60,16 @@ class ThreeColumnModel : public Model {
 
   protected:
 	size_t mRows;
+};
+
+class SortableRowsModel : public ThreeColumnModel {
+  public:
+	SortableRowsModel() : ThreeColumnModel( 4 ) {}
+
+	Variant data( const ModelIndex& index, ModelRole = ModelRole::Display ) const override {
+		static constexpr int values[] = { 30, 10, 40, 20 };
+		return values[index.row()];
+	}
 };
 
 class PercentageTestTable : public UITableView {
@@ -76,6 +92,14 @@ class PercentageTestTable : public UITableView {
 	}
 
 	void updateScrollbars() { onContentSizeChange(); }
+
+	void dragColumnTo( size_t column, Float centerX ) { reorderColumnAt( column, centerX ); }
+
+	void refreshColumns() { createOrUpdateColumns( true ); }
+
+	void layoutHeaders() { mHeader->updateLayout(); }
+
+	UIPushButton* header( size_t column ) { return columnData( column ).widget; }
 
 	Float getMaxColumnContentWidth( const size_t&, bool ) override { return mContentWidth; }
 
@@ -273,6 +297,169 @@ UTEST( UIAbstractTableView, ColumnWidthModeAndMenuCanBeConfiguredFromXML ) {
 	EXPECT_TRUE( cssTable->isColumnWidthModeMenuEnabled() );
 }
 
+UTEST( UIAbstractTableView, ColumnOrderKeepsModelIndexesAndCellsAligned ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto model = std::make_shared<ThreeColumnModel>();
+	auto* table = UITableView::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 400, 200 );
+	table->setModel( model );
+	table->setColumnsWidth( 100 );
+
+	EXPECT_FALSE( table->isColumnReorderingEnabled() );
+	table->setColumnReorderingEnabled( true );
+	EXPECT_TRUE( table->isColumnReorderingEnabled() );
+	EXPECT_FALSE( table->setColumnOrder( { 0, 0, 2 } ) );
+	EXPECT_FALSE( table->setColumnOrder( { 0, 1 } ) );
+	EXPECT_TRUE( table->setColumnOrder( { 2, 0, 1 } ) );
+	EXPECT_TRUE( table->getColumnOrder() == std::vector<size_t>( { 2, 0, 1 } ) );
+	EXPECT_TRUE( table->getColumnPosition( 2 ).x < table->getColumnPosition( 0 ).x );
+	EXPECT_TRUE( table->getColumnPosition( 0 ).x < table->getColumnPosition( 1 ).x );
+
+	table->drawChildren();
+	for ( size_t column = 0; column < model->columnCount(); ++column ) {
+		auto* cell = table->getCellFromIndex( model->index( 0, column ) );
+		ASSERT_TRUE( cell != nullptr );
+		EXPECT_EQ( cell->getPixelsPosition().x, table->getColumnPosition( column ).x );
+	}
+
+	EXPECT_TRUE( table->moveColumn( 1, 0 ) );
+	EXPECT_TRUE( table->getColumnOrder() == std::vector<size_t>( { 1, 2, 0 } ) );
+	table->setColumnHidden( 2, true );
+	table->setColumnHidden( 2, false );
+	EXPECT_TRUE( table->getColumnPosition( 1 ).x < table->getColumnPosition( 2 ).x );
+	EXPECT_TRUE( table->getColumnPosition( 2 ).x < table->getColumnPosition( 0 ).x );
+}
+
+UTEST( UIAbstractTableView, DragOrderAndResizeUseVisualNeighbors ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 800, 200 );
+	table->setModel( std::make_shared<ThreeColumnModel>() );
+	table->setColumnsWidthPercentage( { 25.f, 50.f, 25.f } );
+	EXPECT_TRUE( table->setColumnOrder( { 2, 0, 1 } ) );
+
+	const Float contentWidth = table->getContentSpaceWidth();
+	table->userResizeColumn( 2, contentWidth * 0.35f );
+	EXPECT_TRUE( std::abs( table->getColumnWidthPercentage( 2 ) - 35.f ) < 0.5f );
+	EXPECT_TRUE( std::abs( table->getColumnWidthPercentage( 0 ) - 15.f ) < 0.5f );
+	EXPECT_TRUE( std::abs( table->getColumnWidthPercentage( 1 ) - 50.f ) < 0.5f );
+
+	const Float beyondLastColumn = table->getColumnPosition( 1 ).x + table->getColumnWidth( 1 );
+	table->dragColumnTo( 2, beyondLastColumn );
+	EXPECT_TRUE( table->getColumnOrder() == std::vector<size_t>( { 0, 1, 2 } ) );
+}
+
+UTEST( UIAbstractTableView, RefreshKeepsDraggedHeaderPosition ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI()->getRoot() );
+	table->setPixelsSize( 500, 200 );
+	table->setModel( std::make_shared<ThreeColumnModel>() );
+	table->setColumnsWidth( 100 );
+	table->setColumnReorderingEnabled( true );
+	app.getUI()->flushDirtyStyleAndLayout();
+	app.getUI()->update( Milliseconds( 16 ) );
+	auto* dragged = table->header( 0 );
+	dragged->setDragging( true );
+	dragged->setPixelsPosition( 47.f, dragged->getPixelsPosition().y );
+	table->refreshColumns();
+	EXPECT_EQ( dragged->getPixelsPosition().x, 47.f );
+	table->layoutHeaders();
+	EXPECT_EQ( dragged->getPixelsPosition().x, 47.f );
+	dragged->setDragging( false, false );
+}
+
+UTEST( UIAbstractTableView, RightClickPreservesMultipleSelectedRows ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto model = std::make_shared<ThreeColumnModel>( 3 );
+	auto* table = UITableView::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 500, 200 );
+	table->setModel( model );
+	table->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
+	table->drawChildren();
+	table->selectAll();
+	EXPECT_EQ( table->getSelection().size(), 3 );
+	EXPECT_TRUE( table->getSelection().containsRow( 0 ) );
+	EXPECT_TRUE( table->getSelection().containsRow( 1 ) );
+	EXPECT_TRUE( table->getSelection().containsRow( 2 ) );
+
+	const ModelIndex first = model->index( 0, 0 );
+	const ModelIndex second = model->index( 1, 0 );
+	const ModelIndex third = model->index( 2, 0 );
+	table->getSelection().set( { first, second } );
+	EXPECT_EQ( table->getSelection().size(), 2 );
+	Input* input = app.getWindow()->getInput();
+	InputEvent keyDown{};
+	keyDown.Type = InputEvent::KeyDown;
+	keyDown.WinID = app.getWindow()->getWindowID();
+	keyDown.key.keysym.mod = KeyMod::getDefaultModifier();
+	input->processEventForWindow( &keyDown );
+	InputEvent mouseDown{};
+	mouseDown.Type = InputEvent::MouseButtonDown;
+	mouseDown.WinID = app.getWindow()->getWindowID();
+	mouseDown.button.button = EE_BUTTON_RIGHT;
+	input->processEventForWindow( &mouseDown );
+
+	auto* secondRow = table->getCellFromIndex( second )->getParent();
+	EXPECT_EQ( secondRow->asType<UITableRow>()->getCurIndex().row(), 1 );
+	secondRow->sendMouseEvent( Event::MouseDown, { 0, 0 }, EE_BUTTON_RMASK );
+	EXPECT_EQ( table->getSelection().size(), 2 );
+	EXPECT_TRUE( table->getSelection().contains( first ) );
+	EXPECT_TRUE( table->getSelection().contains( second ) );
+
+	auto* thirdRow = table->getCellFromIndex( third )->getParent();
+	EXPECT_EQ( thirdRow->asType<UITableRow>()->getCurIndex().row(), 2 );
+	thirdRow->sendMouseEvent( Event::MouseDown, { 0, 0 }, EE_BUTTON_RMASK );
+	EXPECT_EQ( table->getSelection().size(), 1 );
+	EXPECT_TRUE( table->getSelection().containsRow( third.row() ) );
+}
+
+UTEST( UIAbstractTableView, SortPreservesMultipleSelectedSourceRows ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto source = std::make_shared<SortableRowsModel>();
+	auto proxy = SortingProxyModel::New( source );
+	auto* table = UITableView::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 500, 200 );
+	table->setModel( proxy );
+	table->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
+	table->getSelection().set( { proxy->index( 0, 2 ), proxy->index( 2, 1 ) } );
+	auto* otherTable = UITableView::New();
+	otherTable->setParent( app.getUI() );
+	otherTable->setPixelsSize( 500, 200 );
+	otherTable->setModel( proxy );
+	otherTable->getSelection().set( proxy->index( 1, 0 ) );
+
+	auto selectedSourceIndexes = [&]() {
+		std::vector<std::pair<int, int>> indexes;
+		for ( const auto& index : table->getSelection().indexes() )
+			indexes.emplace_back( proxy->mapToSource( index ).row(), index.column() );
+		std::sort( indexes.begin(), indexes.end() );
+		return indexes;
+	};
+	const std::vector<std::pair<int, int>> expected{ { 0, 2 }, { 2, 1 } };
+	EXPECT_TRUE( selectedSourceIndexes() == expected );
+	table->sortByColumn( 0, SortOrder::Ascending );
+	EXPECT_TRUE( selectedSourceIndexes() == expected );
+	EXPECT_EQ( proxy->mapToSource( otherTable->getSelection().first() ).row(), 1 );
+	table->sortByColumn( 0, SortOrder::Descending );
+	EXPECT_TRUE( selectedSourceIndexes() == expected );
+	EXPECT_EQ( proxy->mapToSource( otherTable->getSelection().first() ).row(), 1 );
+}
+
 UTEST( UIAbstractTableView, PercentageRoundingDoesNotCreatePhantomHorizontalScroll ) {
 	Float previousDensity = PixelDensity::getPixelDensity();
 	PixelDensity::setPixelDensity( 1.5f );
@@ -458,6 +645,50 @@ UTEST( UITabWidgetSplitter, ClosingSplitNotifiesBeforeTabWidgetDestruction ) {
 
 	EXPECT_EQ( closedTabWidget, secondTabWidget );
 	EXPECT_EQ( splitter->getTabWidgets().size(), 1UL );
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, ShowsEveryTabBarWhileSplitWhenEnabled ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabs = splitter->createTabWidget( container );
+	auto* firstWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( firstTabs, firstWidget, "First" );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+
+	auto* secondTabs = splitter->splitTabWidget( SplitDirection::Right, firstTabs );
+	ASSERT_TRUE( secondTabs != nullptr );
+	EXPECT_FALSE( splitter->getShowTabBarWhenSplit() );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( true );
+	EXPECT_TRUE( splitter->getShowTabBarWhenSplit() );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( false );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setShowTabBarWhenSplit( true );
+	splitter->setHideTabBar( true );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_FALSE( secondTabs->getTabBar()->isVisible() );
+	splitter->setHideTabBar( false );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( secondTabs->getTabBar()->isVisible() );
+	auto* secondWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( secondTabs, secondWidget, "Second" );
+	splitter->closeTab( secondWidget, UITabWidget::FocusTabBehavior::Default );
+	EXPECT_EQ( splitter->getTabWidgets().size(), 1UL );
+	EXPECT_FALSE( firstTabs->getTabBar()->isVisible() );
+	auto* newSplit = splitter->splitTabWidget( SplitDirection::Bottom, firstTabs );
+	ASSERT_TRUE( newSplit != nullptr );
+	EXPECT_TRUE( firstTabs->getTabBar()->isVisible() );
+	EXPECT_TRUE( newSplit->getTabBar()->isVisible() );
 	eeDelete( splitter );
 }
 
@@ -736,4 +967,102 @@ UTEST( UITabWidgetSplitter, Serialization ) {
 		eeDelete( splitter1 );
 		eeDelete( splitter2 );
 	}
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedBetweenSplitsKeepsFocusAndTitleTracking ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto tabAndWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Moved", false );
+	UITab* tabW = tabAndWidget.first;
+	UIWidget* widgetW = tabAndWidget.second;
+	auto* secondTabWidget = splitter->splitTabWidget( SplitDirection::Right, firstTabWidget );
+	splitter->createWidgetInTabWidget( secondTabWidget, UIWidget::New(), "Other", false );
+
+	transferTabTo( tabW, secondTabWidget );
+
+	keepWidget->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+
+	widgetW->setFocus();
+	EXPECT_EQ( splitter->getCurWidget(), widgetW );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Renamed" );
+	EXPECT_TRUE( tabW->getText() == "Renamed" );
+
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedOutsideSplitterStopsNotifyingSplitter ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto tabAndWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Moved", false );
+	UITab* tabW = tabAndWidget.first;
+	UIWidget* widgetW = tabAndWidget.second;
+	auto* external = UITabWidget::New();
+	external->setParent( app.getUI() );
+	external->setAllowDragAndDropTabs( true );
+
+	transferTabTo( tabW, external );
+
+	keepWidget->setFocus();
+	int focusChanges = client.focusChangeCount;
+
+	widgetW->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+	EXPECT_EQ( client.focusChangeCount, focusChanges );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Stale" );
+	EXPECT_FALSE( tabW->getText() == "Stale" );
+
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, WidgetMovedIntoSplitterStartsNotifyingSplitter ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	auto* firstTabWidget = splitter->createTabWidget( container );
+	UIWidget* keepWidget =
+		splitter->createWidgetInTabWidget( firstTabWidget, UIWidget::New(), "Keep" ).second;
+	auto* external = UITabWidget::New();
+	external->setParent( app.getUI() );
+	external->setAllowDragAndDropTabs( true );
+	auto* widgetW = UIWidget::New();
+	UITab* tabW = external->add( "External", widgetW );
+	widgetW->setData( (UintPtr)tabW );
+
+	transferTabTo( tabW, firstTabWidget );
+
+	keepWidget->setFocus();
+	EXPECT_TRUE( splitter->getCurWidget() != widgetW );
+
+	widgetW->setFocus();
+	EXPECT_EQ( splitter->getCurWidget(), widgetW );
+
+	widgetW->sendTextEvent( Event::OnTitleChange, "Renamed" );
+	EXPECT_TRUE( tabW->getText() == "Renamed" );
+
+	eeDelete( splitter );
 }

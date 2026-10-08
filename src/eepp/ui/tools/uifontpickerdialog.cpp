@@ -265,8 +265,8 @@ UIFontPickerDialog::UIFontPickerDialog( Uint32 flags ) : UIWindow(), mFlags( fla
 	setTitle( i18n( "font_picker_select_font", "Select Font" ) );
 
 	const Sizef sceneSize( getUISceneNode()->getSize() );
-	const Sizef maxSize( eemax( 320.f, sceneSize.getWidth() - PixelDensity::dpToPx( 32 ) ),
-						 eemax( 320.f, sceneSize.getHeight() - PixelDensity::dpToPx( 32 ) ) );
+	const Sizef maxSize( eemax( 320.f, sceneSize.getWidth() - 32.f ),
+						 eemax( 320.f, sceneSize.getHeight() - 32.f ) );
 	setMinWindowSize(
 		Sizef( eemin( 720.f, maxSize.getWidth() ), eemin( 440.f, maxSize.getHeight() ) ) );
 	setSizeWithDecoration(

@@ -25,6 +25,78 @@ struct GitTempDirectory {
 
 } // namespace
 
+UTEST( GitBranch, RemoteCheckoutPreservesNamesAndTracking ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	const std::string repoPath = ( temp.path / "repo with spaces" ).string();
+	ASSERT_TRUE( FileSystem::makeDir( repoPath, true ) );
+	Git git( repoPath, gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) { return git.git( args, repoPath, output ); };
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Branch Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "branch@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "branch.autoSetupMerge", "false" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "remote", "add", "origin", repoPath } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "remote", "add", "upstream", repoPath } ) );
+
+	const struct {
+		const char* remote;
+		const char* newName;
+		const char* expectedName;
+	} cases[] = {
+		{ "origin/fix/cross-watch-moves", "", "fix/cross-watch-moves" },
+		{ "upstream/feature/nested/branch", "", "feature/nested/branch" },
+		{ "origin/simple", "", "simple" },
+		{ "origin/fix/cross-watch-moves", "custom/local-name", "custom/local-name" },
+	};
+	for ( const auto& test : cases ) {
+		ASSERT_EQ( EXIT_SUCCESS,
+				   run( { "update-ref", std::string( "refs/remotes/" ) + test.remote, "HEAD" } ) );
+		const auto result = git.checkoutAndCreateLocalBranch( test.remote, test.newName, repoPath );
+		ASSERT_TRUE( result.success() );
+		EXPECT_STREQ( test.expectedName, result.branch.c_str() );
+		ASSERT_EQ( EXIT_SUCCESS, run( { "symbolic-ref", "--short", "HEAD" } ) );
+		EXPECT_STDSTREQ( std::string( test.expectedName ) + "\n", output );
+		ASSERT_EQ( EXIT_SUCCESS, run( { "rev-parse", "--symbolic-full-name", "@{upstream}" } ) );
+		EXPECT_STDSTREQ( std::string( "refs/remotes/" ) + test.remote + "\n", output );
+
+		const auto branches = git.getAllBranchesAndTags( Git::RefType::All, {}, repoPath );
+		bool found = false;
+		for ( const auto& branch : branches ) {
+			if ( branch.type == Git::RefType::Head && branch.name == test.expectedName ) {
+				found = true;
+				EXPECT_STREQ( test.remote, branch.remote.c_str() );
+				EXPECT_FALSE( branch.localOnly );
+				EXPECT_FALSE( branch.gone );
+			}
+		}
+		EXPECT_TRUE( found );
+	}
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "branch", "--no-track", "only-local" } ) );
+	const auto branches = git.getAllBranchesAndTags( Git::RefType::All, {}, repoPath );
+	bool foundLocalOnly = false;
+	for ( const auto& branch : branches ) {
+		if ( branch.type == Git::RefType::Head && branch.name == "only-local" ) {
+			foundLocalOnly = true;
+			EXPECT_TRUE( branch.localOnly );
+		}
+	}
+	EXPECT_TRUE( foundLocalOnly );
+
+	EXPECT_TRUE(
+		git.checkoutAndCreateLocalBranch( "origin/fix/cross-watch-moves", "", repoPath ).fail() );
+	EXPECT_TRUE( git.checkoutAndCreateLocalBranch( "origin/missing/branch", "", repoPath ).fail() );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "symbolic-ref", "--short", "HEAD" } ) );
+	EXPECT_STDSTREQ( std::string( "custom/local-name\n" ), output );
+	EXPECT_NE( EXIT_SUCCESS, run( { "show-ref", "--verify", "refs/heads/missing/branch" } ) );
+}
+
 UTEST( GitStatus, DecodesQuotedUntrackedPaths ) {
 	const std::string gitPath = Sys::which( "git" );
 	if ( gitPath.empty() )
@@ -388,3 +460,122 @@ UTEST( GitStatus, PreservesSuffixOfRenamedDirectoryNumstatPaths ) {
 	EXPECT_EQ( 1u, staged );
 	EXPECT_EQ( 0u, untracked );
 }
+
+UTEST( GitStatus, BinaryRenamesDoNotAppearUntracked ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Status Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "status@example.invalid" } ) );
+
+	ASSERT_TRUE( FileSystem::makeDir( ( temp.path / "assets/img" ).string(), true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "icon.bin" ).string(),
+										std::string( "binary\0icon", 11 ) ) );
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "assets/img/logo.bin" ).string(),
+										std::string( "binary\0logo", 11 ) ) );
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "source-name.bin" ).string(),
+										std::string( "binary\0source", 13 ) ) );
+
+	ASSERT_EQ( EXIT_SUCCESS,
+			   run( { "add", "icon.bin", "assets/img/logo.bin", "source-name.bin" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "-m", "base" } ) );
+
+	ASSERT_TRUE( FileSystem::makeDir( ( temp.path / "old-site" ).string(), true ) );
+	ASSERT_TRUE( FileSystem::makeDir( ( temp.path / "assets/old" ).string(), true ) );
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "icon.bin", "old-site/icon.bin" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "assets/img/logo.bin", "assets/old/logo.bin" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "source-name.bin", "moved.bin" } ) );
+
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "new-binary.bin" ).string(),
+										std::string( "binary\0literal", 14 ) ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "new-binary.bin" } ) );
+
+	auto status = git.status( false, temp.path.string() );
+	size_t staged = 0;
+	size_t untracked = 0;
+
+	for ( const auto& [_, files] : status.files ) {
+		for ( const auto& file : files ) {
+			if ( file.report.type == Git::GitStatusType::Staged ) {
+				++staged;
+				EXPECT_TRUE( file.isBinary );
+			} else if ( file.report.type == Git::GitStatusType::Untracked ) {
+				++untracked;
+			}
+		}
+	}
+
+	EXPECT_EQ( 4u, staged );
+	EXPECT_EQ( 0u, untracked );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+
+UTEST( GitStatus, LiteralRenameSeparatorInBinaryFilenameIsNotMisparsed ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	Git git( temp.path.string(), gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) {
+		output.clear();
+		return git.git( args, temp.path.string(), output );
+	};
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Status Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "status@example.invalid" } ) );
+
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "source => name.bin" ).string(),
+										std::string( "binary\0source", 13 ) ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "source => name.bin" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "-m", "base" } ) );
+
+	ASSERT_EQ( EXIT_SUCCESS, run( { "mv", "source => name.bin", "moved.bin" } ) );
+
+	ASSERT_TRUE( FileSystem::fileWrite( ( temp.path / "literal => name.bin" ).string(),
+										std::string( "binary\0literal", 14 ) ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "add", "literal => name.bin" } ) );
+
+	auto status = git.status( false, temp.path.string() );
+	size_t staged = 0;
+	size_t untracked = 0;
+	bool foundRename = false;
+	bool foundLiteral = false;
+
+	for ( const auto& [_, files] : status.files ) {
+		for ( const auto& file : files ) {
+			if ( file.report.type == Git::GitStatusType::Staged ) {
+				++staged;
+				EXPECT_TRUE( file.isBinary );
+
+				if ( file.file == "moved.bin" )
+					foundRename = true;
+				else if ( file.file == "literal => name.bin" )
+					foundLiteral = true;
+			} else if ( file.report.type == Git::GitStatusType::Untracked ) {
+				++untracked;
+			}
+		}
+	}
+
+	EXPECT_EQ( 2u, staged );
+	EXPECT_EQ( 0u, untracked );
+	EXPECT_TRUE( foundRename );
+	EXPECT_TRUE( foundLiteral );
+}
+
+#endif

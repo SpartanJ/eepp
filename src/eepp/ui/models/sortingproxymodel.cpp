@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <eepp/ui/abstract/uiabstractview.hpp>
-#include <eepp/ui/models/modelselection.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/models/variant.hpp>
 
@@ -183,6 +182,28 @@ SortOrder SortingProxyModel::sortOrder() const {
 }
 
 void SortingProxyModel::sort( const size_t& column, const SortOrder& sortOrder ) {
+	struct ViewSelection {
+		UIAbstractView* view;
+		std::vector<ModelIndex> sourceIndexes;
+	};
+	auto removeInvalid = []( std::vector<ModelIndex>& indexes ) {
+		indexes.erase( std::remove_if( indexes.begin(), indexes.end(),
+									   []( const ModelIndex& index ) { return !index.isValid(); } ),
+					   indexes.end() );
+	};
+	std::vector<ViewSelection> selections;
+	forEachView( [&]( UIAbstractView* view ) {
+		if ( view->getSelection().isEmpty() )
+			return;
+		auto selected = view->getSelection().indexes();
+		if ( selected.empty() )
+			return;
+		for ( auto& index : selected )
+			index = mapToSource( index );
+		removeInvalid( selected );
+		selections.push_back( { view, std::move( selected ) } );
+	} );
+
 	for ( auto& it : mMappings ) {
 		auto& mapping = *it.second;
 		sortMapping( mapping, column, sortOrder );
@@ -190,6 +211,14 @@ void SortingProxyModel::sort( const size_t& column, const SortOrder& sortOrder )
 
 	mKeyColumn = column;
 	mSortOrder = sortOrder;
+
+	for ( auto& selection : selections ) {
+		for ( auto& index : selection.sourceIndexes )
+			index = mapToProxy( index );
+		removeInvalid( selection.sourceIndexes );
+		selection.view->getSelection().set( selection.sourceIndexes, false );
+		selection.view->notifySelectionChange();
+	}
 
 	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
 }
@@ -218,13 +247,13 @@ bool SortingProxyModel::lessThan( const ModelIndex& index1, const ModelIndex& in
 	auto data1 = mSource->data( index1, mSortRole );
 	auto data2 = mSource->data( index2, mSortRole );
 	if ( data1.isString() && data2.isString() ) {
-		if ( data1.is( Variant::Type::StdString ) && data2.is( Variant::Type::StdString ) )
-			return String::toLower( data1.asStdString() ) < String::toLower( data2.asStdString() );
+		if ( data1.isStdStringLike() && data2.isStdStringLike() )
+			return String::toLower( std::string{ data1.asStdStringView() } ) <
+				   String::toLower( std::string{ data2.asStdStringView() } );
 		if ( data1.is( Variant::Type::String ) && data2.is( Variant::Type::String ) )
 			return String::toLower( data1.asString() ) < String::toLower( data2.asString() );
-		if ( data1.is( Variant::Type::cstr ) && data2.is( Variant::Type::cstr ) )
-			return String::toLower( std::string( data1.asCStr() ) ) <
-				   String::toLower( std::string( data2.asCStr() ) );
+		if ( data1.is( Variant::Type::StringPtr ) && data2.is( Variant::Type::StringPtr ) )
+			return String::toLower( data1.asStringPtr() ) < String::toLower( data2.asStringPtr() );
 	}
 	return data1 < data2;
 }
@@ -240,52 +269,20 @@ void SortingProxyModel::sortMapping( SortingProxyModel::Mapping& mapping, int co
 		return;
 	}
 
-	auto oldSourceRows = mapping.sourceRows;
-
 	int rowCount = source().rowCount( mapping.sourceParent );
 	for ( int i = 0; i < rowCount; ++i )
 		mapping.sourceRows[i] = i;
 
-	std::stable_sort(
-		mapping.sourceRows.begin(), mapping.sourceRows.end(), [&]( auto row1, auto row2 ) -> bool {
-			bool isLessThan =
-				this->lessThan( mSource->index( row1, column, mapping.sourceParent ),
-								mSource->index( row2, column, mapping.sourceParent ) );
-			return sortOrder == SortOrder::Ascending ? isLessThan : !isLessThan;
-		} );
+	std::stable_sort( mapping.sourceRows.begin(), mapping.sourceRows.end(),
+					  [&]( auto row1, auto row2 ) -> bool {
+						  const auto first = mSource->index( row1, column, mapping.sourceParent );
+						  const auto second = mSource->index( row2, column, mapping.sourceParent );
+						  return sortOrder == SortOrder::Ascending ? lessThan( first, second )
+																   : lessThan( second, first );
+					  } );
 
 	for ( int i = 0; i < rowCount; ++i )
 		mapping.proxyRows[mapping.sourceRows[i]] = i;
-
-	// FIXME: I really feel like this should be done at the view layer somehow.
-	forEachView( [&]( UIAbstractView* view ) {
-		// Update the view's selection.
-		view->getSelection().changeFromModel( [&]( ModelSelection& selection ) {
-			std::vector<ModelIndex> selectedIndexesInSource;
-			std::vector<ModelIndex> staleIndexesInSelection;
-			selection.forEachIndex( [&]( const ModelIndex& index ) {
-				if ( index.parent() == mapping.sourceParent ) {
-					staleIndexesInSelection.push_back( index );
-					selectedIndexesInSource.push_back( source().index(
-						oldSourceRows[index.row()], index.column(), mapping.sourceParent ) );
-				}
-			} );
-
-			for ( auto& index : staleIndexesInSelection )
-				selection.remove( index );
-
-			for ( auto& index : selectedIndexesInSource ) {
-				for ( size_t i = 0; i < mapping.sourceRows.size(); ++i ) {
-					if ( mapping.sourceRows[i] == index.row() ) {
-						auto newSourceIndex =
-							this->index( i, index.column(), mapping.sourceParent );
-						selection.add( newSourceIndex );
-						break;
-					}
-				}
-			}
-		} );
-	} );
 }
 
 }}} // namespace EE::UI::Models

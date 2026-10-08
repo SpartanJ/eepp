@@ -93,19 +93,18 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	using ProcPtr = std::unique_ptr<IProcess>;
 
 	enum class EventType : Uint8 {
-		Title,
-		IconTitle,
-		HistoryLength,
-		ScrollPosition,
-		Bell,
-		Clipboard,
-		ProcessExit,
-		RestartFailure,
-		SnapshotReady,
-		Data,
-		PromptState,
-		Color,
-		Error
+		Title = 0,
+		IconTitle = 1,
+		// Values 2 and 3 were retired; keep later values stable for ABI compatibility.
+		Bell = 4,
+		Clipboard = 5,
+		ProcessExit = 6,
+		RestartFailure = 7,
+		SnapshotReady = 8,
+		Data = 9,
+		PromptState = 10,
+		Color = 11,
+		Error = 12
 	};
 
 	struct Event {

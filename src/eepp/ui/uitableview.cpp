@@ -6,6 +6,7 @@
 #include <eepp/ui/uitableview.hpp>
 
 #include <cmath>
+#include <string_view>
 
 namespace EE { namespace UI {
 
@@ -39,7 +40,7 @@ void UITableView::drawChildren() {
 			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), getItemCount() );
 		Float yOffset = 0;
 		Float xOffset;
-		auto colCount = getModel()->columnCount();
+		const auto& columnOrder = getColumnOrder();
 		auto headerHeight = getHeaderHeight();
 		for ( size_t i = start; i < end; i++ ) {
 			xOffset = 0;
@@ -52,7 +53,7 @@ void UITableView::drawChildren() {
 			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
 			rowNode->setChildrenVisibility( false, false );
 			realColIndex = 0;
-			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
+			for ( size_t colIndex : columnOrder ) {
 				auto& colData = columnData( colIndex );
 				if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
 					if ( colData.visible )
@@ -392,19 +393,22 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 										: ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ) );
 		Variant var = model->data( index );
 		if ( var.isValid() ) {
+			std::string convertedValue;
+			const std::string_view value =
+				var.isStdStringLike() ? var.asStdStringView()
+									  : std::string_view{ convertedValue = var.toString() };
 			bool matches = false;
 			switch ( matchKind ) {
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Equals:
-					matches = var.toString() == text;
+					matches = value == text;
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::StartsWith:
-					matches = String::startsWith( caseSensitive ? var.toString()
-																: String::toLower( var.toString() ),
-												  caseSensitive ? text : String::toLower( text ) );
+					matches = caseSensitive ? String::startsWith( value, text )
+											: String::istartsWith( value, text );
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Contains:
-					matches = caseSensitive ? String::contains( var.toString(), text )
-											: String::icontains( var.toString(), text );
+					matches = caseSensitive ? String::contains( value, text )
+											: String::icontains( value, text );
 					break;
 			}
 

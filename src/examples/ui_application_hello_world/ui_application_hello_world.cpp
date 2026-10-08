@@ -1,8 +1,9 @@
 #include <eepp/ee.hpp>
 
 EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 640, 480, "eepp - UIApplication Hello World" } );
-	app.getUI()->loadLayoutFromString( R"xml(
+	UIApplication app( { 1024, 768, "eepp - UIApplication Hello World" } );
+	auto* ui = app.getUI();
+	ui->loadLayoutFromString( R"xml(
 			<LinearLayout layout_width="match_parent"
 						  layout_height="match_parent"
 						  orientation="vertical">
@@ -16,5 +17,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 						text="Hello, I am a PushButton" />
 			</LinearLayout>
 	)xml" );
+	ui->on( Event::KeyUp, [ui]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_F11 ) {
+			UIWidgetInspector::create( ui );
+		}
+	} );
+
 	return app.run();
 }

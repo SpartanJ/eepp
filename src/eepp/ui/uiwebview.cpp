@@ -10,6 +10,10 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uiwebview.hpp>
+#include <eepp/window/keycodes.hpp>
+
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -157,6 +161,8 @@ UIWebView* UIWebView::New() {
 }
 
 UIWebView::UIWebView() : UIScrollView( "webview" ) {
+	mFlags |= UI_LOADS_ITS_CHILDREN;
+	mTextSelectionController.setHost( this );
 	mNavigationLoadState = std::make_shared<NavigationLoadState>();
 	mNavigationLoadState->owner = this;
 
@@ -167,6 +173,30 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 	mDocumentLayout->setParent( this );
 
 	mDocumentScene = UISceneNode::New();
+	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
+	mDocumentScene->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
+		auto locked = loadState.lock();
+		if ( !locked || !locked->alive || locked->owner == nullptr )
+			return true;
+		UIWebView* self = locked->owner;
+		UISceneNode* docScene = self->getDocumentSceneNode();
+		if ( !docScene )
+			return true;
+		URI uri = docScene->solveRelativePath( request.uri );
+		const bool requestNewTab = request.target == NavigationRequest::Target::NewTab ||
+								   ( request.mouseButtons & EE_BUTTON_MMASK ) ||
+								   ( ( request.mouseButtons & EE_BUTTON_LMASK ) &&
+									 ( request.modifiers & KeyMod::getDefaultModifier() ) );
+		if ( requestNewTab ) {
+			LinkOpenEvent event( self, uri );
+			self->sendEvent( &event );
+			if ( event.handled )
+				return true;
+		}
+		self->loadURI( uri, request.method != "GET", request.method, request.body,
+					   request.extraHeaders );
+		return true;
+	} );
 	mDocumentScene->setFollowParentSize( false );
 	mDocumentScene->setVisibleBoundsNode( mContainer );
 	mDocumentScene->setParent( mDocumentLayout );
@@ -177,6 +207,7 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 	mDocContainer->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 	mDocContainer->setParent( mDocumentScene->getRoot() );
 	mDocContainer->setBackgroundColor( Color::White );
+	mTextSelectionController.setSelectionRoot( mDocContainer );
 	mScrollContainerSizeChangeCb = mContainer->on( Event::OnSizeChange, [this]( const Event* ) {
 		onDocumentViewportGeometryChanged();
 		updateScroll();
@@ -189,6 +220,7 @@ UIWebView::UIWebView() : UIScrollView( "webview" ) {
 }
 
 UIWebView::~UIWebView() {
+	mTextSelectionController.onDocumentWillChange();
 	if ( mNavigationLoadState ) {
 		mNavigationLoadState->alive = false;
 		mNavigationLoadState->owner = nullptr;
@@ -204,6 +236,54 @@ Uint32 UIWebView::getType() const {
 
 bool UIWebView::isType( const Uint32& type ) const {
 	return UIWebView::getType() == type || UIScrollView::isType( type );
+}
+
+UITextSelectionController* UIWebView::getTextSelectionController() {
+	return &mTextSelectionController;
+}
+
+const UITextSelectionController* UIWebView::getTextSelectionController() const {
+	return &mTextSelectionController;
+}
+
+void UIWebView::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIScrollView::loadFromXmlNode( node );
+	for ( auto child : node.children() ) {
+		if ( !String::iequals( child.name(), "html" ) )
+			continue;
+		struct HTMLWriter : pugi::xml_writer {
+			std::string data;
+
+			void write( const void* buffer, size_t size ) override {
+				data.append( static_cast<const char*>( buffer ), size );
+			}
+		};
+		HTMLWriter writer;
+		child.print( writer, "", pugi::format_raw );
+		const Uint64 generation = beginNavigationLoad();
+		mIsLoading = true;
+		mTitle.clear();
+		URI uri = getUISceneNode()->getURI();
+		NavigationEvent event( this, Event::OnNavigationStarted, uri, true );
+		sendEvent( &event );
+		// This subtree is already XML. Re-parsing it as HTML would turn CSS CDATA into raw text
+		// and leave escaped entities in style/script elements undecoded.
+		loadDocumentData( std::move( uri ), std::move( writer.data ), generation, true );
+		return;
+	}
+}
+
+Uint32 UIWebView::onKeyDown( const KeyEvent& event ) {
+	if ( mTextSelectionController.onKeyDown( event ) )
+		return 1;
+	return UIScrollView::onKeyDown( event );
+}
+
+Uint32 UIWebView::onMessage( const NodeMessage* message ) {
+	if ( message->getMsg() == NodeMessage::MouseUp &&
+		 mTextSelectionController.onMouseUpMessage( message ) )
+		return 1;
+	return UIScrollView::onMessage( message );
 }
 
 void UIWebView::onSizeChange() {
@@ -240,6 +320,8 @@ void UIWebView::scheduledUpdate( const Time& time ) {
 				cache->prune();
 		}
 	}
+	// Keep dragging across the embedded document scene and over gaps without text events.
+	mTextSelectionController.updateSelectionDrag();
 }
 
 void UIWebView::onScrollViewSizeChange( const Event* event ) {
@@ -264,6 +346,7 @@ void UIWebView::loadURI( URI uri, bool isHistoryNav, const std::string& method,
 						 const std::string& body, const Http::Request::FieldTable& headers ) {
 	Uint64 generation = beginNavigationLoad();
 	mIsLoading = true;
+	mTitle.clear();
 
 	if ( !isHistoryNav )
 		pushHistory( uri );
@@ -354,6 +437,11 @@ void UIWebView::loadDocumentData( URI url, std::string data ) {
 }
 
 void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation ) {
+	loadDocumentData( std::move( url ), std::move( data ), generation, false );
+}
+
+void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation,
+								  bool documentIsXML ) {
 	if ( !isNavigationLoadCurrent( generation ) )
 		return;
 
@@ -366,8 +454,8 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 	}
 
 	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
-	ensureMainThread( [loadState, generation, url = std::move( url ),
-					   data = std::move( data )]() mutable {
+	ensureMainThread( [loadState, generation, url = std::move( url ), data = std::move( data ),
+					   documentIsXML]() mutable {
 		UIWebView* self = resolveNavigationLoad( loadState, generation );
 		if ( !self )
 			return;
@@ -378,6 +466,7 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 
 		self->getVerticalScrollBar()->setValue( 0 );
 		self->getHorizontalScrollBar()->setValue( 0 );
+		self->mTextSelectionController.onDocumentWillChange();
 		static_cast<UIWebViewDocumentContainer*>( self->mDocContainer )->clearDocumentChildren();
 		ui->invalidateAsyncResourceLoads();
 		// The previous document remains active while its replacement is downloading. Advance the
@@ -388,31 +477,67 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 		ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
 		ui->setURIFromURL( url );
 
+		std::string documentXML =
+			documentIsXML ? std::move( data ) : Tools::HTMLFormatter::HTMLtoXML( data );
+		pugi::xml_document metadataDocument;
+		if ( metadataDocument.load_string( documentXML.c_str() ) ) {
+			self->mTitle = String::trim( std::string_view(
+				metadataDocument.child( "html" ).child( "head" ).child( "title" ).child_value() ) );
+		} else {
+			self->mTitle.clear();
+		}
 		auto hash = String::hash( url.toString() );
-		ui->loadLayoutFromString( Tools::HTMLFormatter::HTMLtoXML( data ), self->mDocContainer,
-								  hash );
-
-		ui->setNavigationInterceptorCb( [loadState]( const NavigationRequest& request ) {
-			auto locked = loadState.lock();
-			if ( !locked || !locked->alive || locked->owner == nullptr )
-				return true;
-			UIWebView* self = locked->owner;
-			UISceneNode* docScene = self->getDocumentSceneNode();
-			if ( !docScene )
-				return true;
-			URI uri = docScene->solveRelativePath( request.uri );
-			self->loadURI( uri, request.method != "GET", request.method, request.body,
-						   request.extraHeaders );
-			return true;
-		} );
+		ui->loadLayoutFromString( documentXML, self->mDocContainer, hash );
+		self->mTextSelectionController.onDocumentChanged();
 
 		if ( !self->isNavigationLoadCurrent( generation ) )
 			return;
 		self->mIsLoading = false;
 		NavigationEvent ev( self, (Uint32)Event::OnNavigationCompleted, url, true );
 		self->sendEvent( &ev );
+		TitleEvent titleEvent( self, self->mTitle );
+		self->sendEvent( &titleEvent );
 		self->markDocumentExtentDirty( LayoutInvalidation::Document );
 		self->updateDocumentMetricsIfNeeded();
+
+		FaviconEvent cleared( self );
+		self->sendEvent( &cleared );
+		if ( !self->isNavigationLoadCurrent( generation ) )
+			return;
+		for ( auto link : metadataDocument.child( "html" ).child( "head" ).children( "link" ) ) {
+			std::string_view tokens( link.attribute( "rel" ).value() );
+			bool isIcon = false;
+			while ( !tokens.empty() ) {
+				const size_t start = tokens.find_first_not_of( " \t\r\n\f" );
+				if ( start == std::string_view::npos )
+					break;
+				tokens.remove_prefix( start );
+				const size_t end = tokens.find_first_of( " \t\r\n\f" );
+				if ( String::iequals( tokens.substr( 0, end ), "icon" ) ) {
+					isIcon = true;
+					break;
+				}
+				if ( end == std::string_view::npos )
+					break;
+				tokens.remove_prefix( end );
+			}
+			const char* href = link.attribute( "href" ).value();
+			if ( !isIcon || !*href )
+				continue;
+			WebResourceRequest request;
+			request.uri = ui->solveRelativePath( URI( href ) );
+			request.kind = WebResourceKind::Image;
+			request.timeout = self->mDefaultTimeout;
+			ui->requestWebTexture( std::move( request ),
+								   [loadState, generation]( const WebResourceResult& result ) {
+									   auto* view = resolveNavigationLoad( loadState, generation );
+									   if ( !view || !result.success || !result.texture )
+										   return;
+									   FaviconEvent iconEvent( view, result.texture );
+									   view->sendEvent( &iconEvent );
+								   } );
+			break;
+		}
 	} );
 }
 
@@ -501,6 +626,12 @@ const WebResourceCachePtr& UIWebView::getWebResourceCache() const {
 UIWebView* UIWebView::setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition ) {
 	if ( mDocumentScene )
 		mDocumentScene->setWebResourceCache( std::move( cache ), partition );
+	return this;
+}
+
+UIWebView* UIWebView::setCookieManager( std::shared_ptr<CookieManager> manager ) {
+	if ( mDocumentScene )
+		mDocumentScene->setCookieManager( std::move( manager ) );
 	return this;
 }
 
@@ -643,7 +774,7 @@ Uint32 UIWebView::onNavigationError( std::function<void( const URI&, const std::
 
 Uint32 UIWebView::onTitleChanged( std::function<void( const std::string& )> cb ) {
 	return on( Event::OnTitleChanged,
-			   [cb]( const Event* e ) { cb( static_cast<const NavigationEvent*>( e )->error ); } );
+			   [cb]( const Event* e ) { cb( static_cast<const TitleEvent*>( e )->title ); } );
 }
 
 }} // namespace EE::UI

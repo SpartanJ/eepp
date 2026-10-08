@@ -15,6 +15,7 @@ namespace EE { namespace UI {
 class UIPushButton;
 class UILinearLayout;
 class UIDropDownModelList;
+class UIPopUpMenu;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace Abstract {
@@ -56,9 +57,26 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	bool isColumnHidden( const size_t& column ) const;
 
+	/** Returns the header widget for a model column, or nullptr before it is created. */
+	UITableHeaderColumn* getHeaderColumn( const size_t& column ) const;
+
 	void setColumnHidden( const size_t& column, bool hidden );
 
 	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );
+
+	/** Enables dragging column headers to reorder them. Disabled by default. */
+	void setColumnReorderingEnabled( bool enabled );
+
+	bool isColumnReorderingEnabled() const;
+
+	/** Model column IDs in left-to-right display order, including hidden columns. */
+	const std::vector<size_t>& getColumnOrder() const;
+
+	/** Sets a complete permutation of the current model's column IDs. Returns false if invalid. */
+	bool setColumnOrder( std::vector<size_t> order );
+
+	/** Moves a model column to a position in the complete display order. */
+	bool moveColumn( size_t column, size_t position );
 
 	virtual void selectAll();
 
@@ -99,6 +117,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool isColumnWidthModeMenuEnabled() const;
 
 	void setColumnWidthModeMenuEnabled( bool enabled );
+
+	/** Lets a view append application-specific items to a column header's context menu. */
+	void setOnHeaderContextMenuCb( std::function<void( UIPopUpMenu*, size_t )> callback ) {
+		mOnHeaderContextMenuCb = std::move( callback );
+	}
 
 	void setColumnWidthPercentage( const size_t& colIndex, Float percentage );
 
@@ -153,6 +176,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool getAutoColumnsWidth() const;
 
 	void setAutoColumnsWidth( bool autoColumnsWidth );
+
+	/** Sorts @p colIndex through the model and reflects it in the header indicator, as if the user
+	 *  had clicked that column header. */
+	virtual void sortByColumn( const size_t& colIndex, const SortOrder& sortOrder );
 
 	const size_t& getMainColumn() const;
 
@@ -224,6 +251,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
+	// Visual order only. ColumnData and ModelIndex remain keyed by model column ID.
+	std::vector<size_t> mColumnOrder;
 	mutable std::vector<UnorderedMap<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader{ nullptr };
 	UILinearLayout* mRowHeader{ nullptr };
@@ -241,19 +270,28 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
 	std::function<void( UITableCell*, Model* )> mOnUpdateCellCb;
 	std::function<void( UITableCell* )> mSetupCellCb;
+	std::function<void( UIPopUpMenu*, size_t )> mOnHeaderContextMenuCb;
 	Float mRowHeaderWidth{ 0 };
 	Uint32 mTableFlags{ UITABLE_DEFAULT_FLAGS };
 	ColumnWidthMode mColumnWidthMode{ ColumnWidthMode::Pixels };
 	bool mColumnWidthModeMenuEnabled{ false };
+	bool mColumnReorderingEnabled{ false };
 	bool mUpdatingColumnsForScrollbars{ false };
 	bool mAutoExpandedColumnUsesVerticalScroll{ false };
 	std::string mPendingSerializedColumnWidths;
+	// Last sort state drawn in the header, so the indicator is only touched when it changes.
+	int mSortIndicatorColumn{ -1 };
+	SortOrder mSortIndicatorOrder{ SortOrder::None };
 
 	virtual ~UIAbstractTableView();
 
 	UIAbstractTableView( const std::string& tag );
 
 	ColumnData& columnData( const size_t& column ) const;
+
+	void applyColumnOrder();
+
+	void reorderColumnAt( size_t column, Float centerX );
 
 	virtual size_t getItemCount() const;
 
@@ -297,6 +335,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onRowCreated( UITableRow* row );
 
 	virtual void onSortColumn( const size_t& colIndex );
+
+	/** Draws the sort indicator on @p colIndex, clearing any indicator left on another column.
+	 *  Pass SortOrder::None to clear the indicator entirely. */
+	void applySortIndicator( const size_t& colIndex, const SortOrder& sortOrder );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 

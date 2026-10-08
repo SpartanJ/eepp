@@ -2,6 +2,7 @@
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/ui/css/idnamemap.hpp>
 #include <eepp/ui/css/propertyidset.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <vector>
 
 using namespace EE;
@@ -226,4 +227,59 @@ UTEST( IdNameMap, failedFinalizationDoesNotEnableCustomIds ) {
 	EXPECT_TRUE( ids.addBuiltin( TestDenseId::Two, "two" ) );
 	EXPECT_TRUE( ids.finalizeBuiltins() );
 	EXPECT_EQ( static_cast<Uint8>( ids.getOrCreateId( "custom" ) ), 3u );
+}
+
+UTEST( IdNameMap, ownsNamesRegisteredFromBoundedViews ) {
+	IdNameMap<TestDenseId, 5> ids;
+	const std::string expected = "first-canonical-property";
+	std::string storage = expected + "ignored-suffix";
+	const std::string_view name( storage.data(), expected.size() );
+	ASSERT_TRUE( ids.addBuiltin( TestDenseId::One, name ) );
+	EXPECT_FALSE( ids.addBuiltin( TestDenseId::Two, name ) );
+	ASSERT_TRUE( ids.addBuiltin( TestDenseId::Two, "second-canonical-property" ) );
+	ASSERT_TRUE( ids.finalizeBuiltins() );
+	EXPECT_TRUE( ids.getId( name ) == TestDenseId::One );
+	EXPECT_TRUE( ids.contains( name ) );
+	EXPECT_TRUE( ids.getId( storage ) == TestDenseId::Invalid );
+	storage.assign( storage.size(), 'x' );
+	EXPECT_TRUE( ids.getName( TestDenseId::One ) == expected );
+	EXPECT_TRUE( ids.getId( expected ) == TestDenseId::One );
+
+	const std::string customExpected = "custom-canonical-property";
+	storage = customExpected + "ignored-suffix";
+	const std::string_view customName( storage.data(), customExpected.size() );
+	const auto customId = ids.getOrCreateId( customName );
+	EXPECT_TRUE( customId == TestDenseId::FirstCustomId );
+	EXPECT_TRUE( ids.getOrCreateId( customName ) == customId );
+	storage.clear();
+	EXPECT_TRUE( ids.getName( customId ) == customExpected );
+	EXPECT_TRUE( ids.getId( std::string_view( customExpected ) ) == customId );
+}
+
+UTEST( PropertyRegistration, ownsNamesAndDefaultsPassedAsViews ) {
+	auto* specification = StyleSheetSpecification::instance();
+	const std::string expectedName = "view-backed-custom-property";
+	const std::string expectedValue = "a-default-value-longer-than-sso";
+	std::string nameStorage = expectedName + "ignored-suffix";
+	std::string valueStorage = expectedValue + "ignored-suffix";
+	const std::string_view name( nameStorage.data(), expectedName.size() );
+	const std::string_view value( valueStorage.data(), expectedValue.size() );
+	auto* definition = specification->registerProperty( name, value, true );
+	ASSERT_TRUE( definition );
+	EXPECT_TRUE( specification->getProperty( name ) == definition );
+	EXPECT_TRUE( specification->getProperty( nameStorage ) == nullptr );
+	nameStorage.assign( nameStorage.size(), 'x' );
+	valueStorage.assign( valueStorage.size(), 'x' );
+	EXPECT_TRUE( definition->getName() == expectedName );
+	EXPECT_TRUE( definition->getDefaultValue() == expectedValue );
+	EXPECT_TRUE( definition->getId() == String::hash( expectedName ) );
+	EXPECT_TRUE( definition->isInherited() );
+	EXPECT_TRUE( specification->getProperty( "viewbackedcustomproperty" ) == definition );
+	EXPECT_TRUE( specification->registerProperty( std::string_view( expectedName ), "changed" ) ==
+				 definition );
+	EXPECT_TRUE( definition->getDefaultValue() == expectedValue );
+
+	const PropertyDefinition empty( PropertyId::Invalid, std::string_view{}, std::string_view{} );
+	EXPECT_TRUE( empty.getName().empty() );
+	EXPECT_TRUE( empty.getDefaultValue().empty() );
 }

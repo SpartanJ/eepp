@@ -246,6 +246,31 @@ UTEST( UIHTMLFloat, positionedDescendantParticipatesInRootStackingScope ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, hiddenAncestorExcludesPromotedDescendant ) {
+	init_float_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( scene->getRoot() );
+	root->setPixelsSize( 300, 200 );
+	auto* hidden = UIHTMLWidget::New();
+	hidden->setParent( root );
+	hidden->setPixelsSize( 300, 200 );
+	auto* promoted = UIHTMLWidget::New();
+	promoted->setParent( hidden );
+	promoted->setPixelsSize( 200, 100 );
+	promoted->setCSSPosition( CSSPosition::Absolute );
+	promoted->setZIndex( 10 );
+	ASSERT_EQ( root->debugGetHTMLPaintOrder().size(), 2u );
+	hidden->setDisplay( CSSDisplay::None );
+	const auto hiddenOrder = root->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( hiddenOrder.empty() );
+	EXPECT_FALSE( promoted->isHTMLPaintPromoted() );
+	EXPECT_NE( root->overFind( { 10, 10 } ), promoted );
+	hidden->setDisplay( CSSDisplay::Block );
+	EXPECT_EQ( root->debugGetHTMLPaintOrder().size(), 2u );
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, directStackingGroupIsAtomic ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();

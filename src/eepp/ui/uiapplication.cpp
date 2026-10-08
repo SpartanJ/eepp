@@ -4,6 +4,7 @@
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -80,8 +81,13 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 	mDidRun = true;
 
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	if ( appSettings.pixelDensity && *appSettings.pixelDensity > 0 ) {
 		PixelDensity::setPixelDensity( *appSettings.pixelDensity );
+	} else if ( windowSettings.PixelDensity > 0 ) {
+		PixelDensity::setPixelDensity( windowSettings.PixelDensity );
+	} else if ( environmentDensity > 0 ) {
+		PixelDensity::setPixelDensity( environmentDensity );
 	} else if ( offscreen ) {
 		PixelDensity::setPixelDensity( 1.f );
 	} else {
@@ -156,6 +162,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 	mUISceneNode->getStyleSheet().setMarker( mStyleSheetMarker );
 	mUISceneNode->getUIThemeManager()->setDefaultTheme( std::move( theme ) );
+	mUISceneNode->updateWindowTitleBarColor();
 
 	if ( appSettings.loadIconResources ) {
 		auto loadIconFont = []( const std::string& name,
@@ -223,9 +230,11 @@ void UIApplication::configureUIScene( UISceneNode* ui ) {
 	ui->getUIThemeManager()->setDefaultTheme( sourceThemeManager->getDefaultThemeHandle() );
 	ui->getUIIconThemeManager()->setCurrentTheme(
 		mUISceneNode->getUIIconThemeManager()->getCurrentThemeHandle() );
+	ui->setColorSchemePreference( mUISceneNode->getColorSchemePreference() );
 	ui->setStyleSheet( mUISceneNode->getStyleSheet() );
 	ui->getStyleSheet().setMarker( mStyleSheetMarker );
 	ui->getRoot()->addClass( "appbackground" );
+	ui->updateWindowTitleBarColor();
 }
 
 UISceneNode* UIApplication::createWindow( const WindowSettings& windowSettings,

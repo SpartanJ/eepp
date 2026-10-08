@@ -34,6 +34,9 @@ class EE_API PixelDensity {
 
 	static const Float& getPixelDensity();
 
+	/** Positive EEPP_PIXEL_DENSITY value, or zero when unset or invalid. */
+	static Float getEnvironmentPixelDensity();
+
 	static void setPixelDensity( const Float& pixelDensity );
 
 	static void setPixelDensity( const PixelDensitySize& pixelDensity );

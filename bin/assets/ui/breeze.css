@@ -13,6 +13,7 @@
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #232629;
+	--list-back-alt: #1b1e20;
 	--separator: #31363b;
 	--item-hover: #284150;
 	--slider-back: #676a6e;
@@ -102,6 +103,10 @@ MarkdownView h2 {
 	border-bottom: 1dp solid var(--tab-line);
 }
 
+MarkdownView hr {
+	border-color: var(--separator);
+}
+
 MarkdownView img {
 	max-width: 100%;
 	max-height: 100vh;
@@ -115,10 +120,11 @@ MarkdownView CodeEditor,
 MarkdownView code {
 	font-family: monospace;
 	background-color: var(--button-back);
-	font-size: 11dp;
 	padding-left: 2dp;
 	padding-right: 2dp;
 }
+
+MarkdownView mark { background-color: var(--theme-warning); }
 
 pushbutton,
 selectbutton,
@@ -161,7 +167,12 @@ SpinBox::input,
 Tab,
 TextEdit,
 TextInput,
+DateTimeEdit,
+DatePicker,
+TimePicker,
+DateTimePicker,
 TextArea,
+textarea,
 TextView,
 Anchor,
 Tooltip,
@@ -179,7 +190,12 @@ TextView,
 Anchor,
 TextEdit,
 TextArea,
+textarea,
 TextInput,
+DateTimeEdit,
+DatePicker,
+TimePicker,
+DateTimePicker,
 ComboBox::DropDownList,
 SpinBox::input, {
 	selection-color: var(--font-selected-pressed);
@@ -242,7 +258,7 @@ SelectButton:selected:pressed {
 
 pushbutton:disabled,
 selectbutton:disabled,
-textinput:disabled,
+textinput:disabled, datetimeedit:disabled, datepicker:disabled, timepicker:disabled, datetimepicker:disabled,
 textedit:disabled,
 textarea:disabled,
 DropDownList:disabled,
@@ -394,7 +410,7 @@ ComboBox::DropDownList::ListBox::item:selected {
 	tint: var(--font-selected-pressed);
 }
 
-TextInput {
+TextInput, DateTimeEdit, DatePicker, TimePicker, DateTimePicker {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -422,8 +438,8 @@ ComboBox::DropDownList {
 	padding-bottom: var(--base-vertical-padding);
 }
 
-TextInput:hover,
-TextInput:focus,
+TextInput:hover, DateTimeEdit:hover, DatePicker:hover, TimePicker:hover, DateTimePicker:hover,
+TextInput:focus, DateTimeEdit:focus, DatePicker:focus, TimePicker:focus, DateTimePicker:focus,
 SpinBox:hover,
 SpinBox:focus {
 	border-color: var(--primary);
@@ -458,7 +474,8 @@ SpinBox::btndown {
 }
 
 TextEdit,
-TextArea {
+TextArea,
+textarea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -474,7 +491,9 @@ TextArea {
 TextEdit:focus,
 TextEdit:hover,
 TextArea:focus,
-TextArea:hover {
+TextArea:hover,
+textarea:focus,
+textarea:hover {
 	border-color: var(--primary);
 }
 
@@ -1215,6 +1234,7 @@ DiffView > SelectButton:focus {
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #ffffff;
+	--list-back-alt: #efefef;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
 	--slider-back: #e9e9e9;
@@ -1284,4 +1304,124 @@ Menu::Separator {
 	background-size: 100% 1px;
 }
 
+}
+
+/* Civil date/time controls use the current light or dark palette. */
+DatePicker::button, DateTimePicker::button {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z'/></svg>");
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: var(--font);
+	color: var(--font);
+	background-color: transparent;
+	border-width: 0;
+	padding: 0;
+	cursor: arrow;
+}
+DatePicker::button:hover, DateTimePicker::button:hover {
+	foreground-tint: var(--font-selected-pressed);
+	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+}
+Calendar {
+	color: var(--font);
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-width: var(--border-width);
+	border-radius: var(--button-radius);
+	width: auto;
+	height: auto;
+	min-width: 160dp;
+	min-height: 160dp;
+}
+Calendar::previous, Calendar::next, Calendar::title, Calendar::today, Calendar::day {
+	color: var(--font);
+	padding: 0;
+	border-width: 0;
+	background-color: transparent;
+}
+Calendar::previous {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z'/></svg>");
+}
+Calendar::next {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z'/></svg>");
+}
+Calendar::previous, Calendar::next {
+	cursor: arrow;
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: var(--font);
+}
+Calendar::previous:hover, Calendar::next:hover {
+	foreground-tint: var(--font-selected-pressed);
+}
+Calendar::weekday { color: var(--font-hint); }
+Calendar::day.outside-month { color: var(--font-hint); }
+Calendar::day:hover, Calendar::previous:hover, Calendar::next:hover,
+Calendar::title:hover, Calendar::today:hover, Calendar::day.selected {
+	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+}
+Calendar::day.today {
+	border-width: 1dp;
+	border-color: var(--primary);
+}
+Calendar::day.focused { border-width: 1dp; border-color: var(--font-hint); }
+Calendar::day:disabled { opacity: 0.35; }
+
+DatePicker:disabled > DatePicker::button,
+DateTimePicker:disabled > DateTimePicker::button,
+DatePicker[allow-editing=false] > DatePicker::button,
+DateTimePicker[allow-editing=false] > DateTimePicker::button {
+	foreground-tint: var(--disabled-color);
+	background-color: transparent;
+	cursor: arrow;
+}
+
+/* Combined popup: a reusable calendar followed by a segmented time editor. */
+DateTimePicker::popup {
+	width: auto;
+	height: auto;
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-width: 1dp;
+	border-radius: 2dp;
+}
+DateTimePicker::popup > Calendar {
+	border-width: 0;
+	background-color: transparent;
+}
+DateTimePicker::time {
+	text-align: center;
+	font-size: 18dp;
+	padding: 24dp 8dp;
+	min-height: 72dp;
+	color: var(--font);
+	background-color: transparent;
+	border-color: var(--button-border);
+	border-width: 1dp 0 0 0;
+}
+DateTimePicker::time-up, DateTimePicker::time-down {
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: var(--font);
+	background-color: transparent;
+	border-width: 0;
+	padding: 0;
+	width: 24dp;
+	height: 22dp;
+	cursor: arrow;
+}
+DateTimePicker::time-up {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 8L18 14L16.5858 15.4142L12 10.8284L7.41421 15.4142L6 14L12 8Z'/></svg>");
+}
+DateTimePicker::time-down {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 16L6 10L7.41421 8.58579L12 13.1716L16.5858 8.58579L18 10L12 16Z'/></svg>");
+}
+DateTimePicker::time-up:hover, DateTimePicker::time-down:hover {
+	foreground-tint: var(--font-selected-pressed);
+	background-color: var(--primary);
 }

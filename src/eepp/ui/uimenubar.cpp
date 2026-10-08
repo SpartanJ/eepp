@@ -46,19 +46,25 @@ void UIMenuBar::setCurrentMenu( UIPopUpMenu* currentMenu ) {
 	mWaitingUp = nullptr;
 }
 
+void UIMenuBar::positionMenu( UISelectButton* button, UIPopUpMenu* menu ) {
+	Vector2f pos( 0, button->getSize().getHeight() );
+	button->nodeToWorld( pos );
+	menu->setParent( getWindowContainer() );
+	menu->getParent()->worldToNode( pos );
+	menu->setPosition( pos );
+}
+
 void UIMenuBar::showMenu( const Uint32& index ) {
 	eeASSERT( index < mButtons.size() );
 	auto but = mButtons[index];
 	auto tbut = but.first;
 	auto tpop = but.second;
 
-	Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
-	tpop->setPosition( pos );
+	positionMenu( tbut, tpop );
 
 	if ( !tpop->isVisible() ) {
 		mCurrentMenu = tpop;
 		tbut->select();
-		tpop->setParent( getWindowContainer() );
 		tpop->show();
 		mWaitingUp = tpop;
 	} else if ( mCurrentMenu != tpop || mWaitingUp == nullptr ) {
@@ -321,15 +327,12 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 				if ( tpop == nullptr )
 					return 1;
 
-				Vector2f pos( tbut->getPosition().x,
-							  tbut->getPosition().y + tbut->getSize().getHeight() );
-				tpop->setPosition( pos );
+				positionMenu( tbut, tpop );
 
 				if ( msg->getMsg() == NodeMessage::MouseOver ) {
 					if ( nullptr != mCurrentMenu && mCurrentMenu != tpop ) {
 						mCurrentMenu = tpop;
 						tbut->select();
-						tpop->setParent( getWindowContainer() );
 						tpop->show();
 					}
 				} else {
@@ -338,7 +341,6 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 						if ( !tpop->isVisible() ) {
 							mCurrentMenu = tpop;
 							tbut->select();
-							tpop->setParent( getWindowContainer() );
 							tpop->show();
 							mWaitingUp = tpop;
 						} else if ( mCurrentMenu != tpop || mWaitingUp == nullptr ) {

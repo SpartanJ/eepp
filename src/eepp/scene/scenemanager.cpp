@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/tools/uiinspectorserver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -16,6 +17,7 @@ bool SceneManager::isActive() {
 SceneManager::SceneManager() : mUISceneNode( NULL ), mScopedUISceneNode( NULL ) {}
 
 SceneManager::~SceneManager() {
+	UIInspectorServer::stop();
 	for ( auto& it : mSceneNodes ) {
 		SceneNode* node = it;
 		eeSAFE_DELETE( node );
@@ -26,6 +28,8 @@ SceneManager::~SceneManager() {
 
 SceneNode* SceneManager::add( SceneNode* sceneNode ) {
 	mSceneNodes.push_back( sceneNode );
+	if ( sceneNode->isUISceneNode() )
+		UIInspectorServer::startFromEnvironment( sceneNode->asType<UISceneNode>() );
 	return sceneNode;
 }
 
@@ -87,6 +91,7 @@ void SceneManager::update( const Time& elapsed ) {
 			sceneNode->update( elapsed );
 		}
 	}
+	UIInspectorServer::pump();
 }
 
 void SceneManager::update() {
@@ -122,6 +127,11 @@ UISceneNode* SceneManager::getUISceneNode( EE::Window::Window* window ) {
 			return sceneNode->asType<UISceneNode>();
 	}
 	return nullptr;
+}
+
+void SceneManager::forEachSceneNode( const std::function<void( SceneNode* )>& callback ) const {
+	for ( auto* sceneNode : mSceneNodes )
+		callback( sceneNode );
 }
 
 void SceneManager::setCurrentUISceneNode( UISceneNode* uiSceneNode ) {

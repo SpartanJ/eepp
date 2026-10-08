@@ -1,9 +1,26 @@
 #!/bin/bash
+set -euo pipefail
 
 # Define SDL version and download URL
 SDL_VERSION="2.32.10"
 SDL_URL="https://libsdl.org/release/SDL2-${SDL_VERSION}.zip"
 ARCH="x86_64" # Default architecture for host
+KEEP_BUILD=false
+
+for arg in "$@"; do
+	case "$arg" in
+		--aarch64)
+			ARCH="aarch64"
+			;;
+		--keep-build)
+			KEEP_BUILD=true
+			;;
+		*)
+			echo "Unknown option: $arg" >&2
+			exit 1
+			;;
+	esac
+done
 
 # Function to install dependencies
 install_dependencies() {
@@ -72,14 +89,14 @@ configure_for_aarch64() {
 }
 
 # Parse options
-if [ "$1" == "--aarch64" ]; then
-    ARCH="aarch64"
+if [ "$ARCH" == "aarch64" ]; then
     install_cross_dependencies
 fi
 
 # Create a temporary directory for the SDL2 build
-mkdir -p ./sdl2_build
-cd ./sdl2_build || exit
+BUILD_DIR="$(pwd)/sdl2_build"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR" || exit
 
 # Install dependencies
 install_dependencies
@@ -112,10 +129,18 @@ echo "Installing SDL2..."
 sudo make install || exit
 
 # Clean up
-echo "Cleaning up..."
-rm -rf ./sdl2_build
-
 # Update shared library cache
 sudo ldconfig
+
+# The zip is redundant once the source has been extracted.
+rm -f "$BUILD_DIR/SDL2.zip"
+
+if [ "$KEEP_BUILD" = false ]; then
+    echo "Cleaning up..."
+    cd "$BUILD_DIR/.." || exit
+    rm -rf "$BUILD_DIR"
+else
+    echo "Keeping SDL2 build tree at: $BUILD_DIR"
+fi
 
 echo "SDL2 version ${SDL_VERSION} installed successfully for ${ARCH}!"

@@ -770,6 +770,9 @@ class EE_API TextDocument {
 
 	String toString();
 
+	/** Convert the document to UTF-8, reusing the output buffer capacity. */
+	void toUtf8String( std::string& stream );
+
 	std::string toUtf8String();
 
   protected:
@@ -833,7 +836,7 @@ class EE_API TextDocument {
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
-	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
+	UnorderedMap<std::atomic_bool*, std::unique_ptr<std::atomic_bool>> mStopFlags;
 	FoldRangeService mFoldRangeService;
 
 	void initializeCommands();

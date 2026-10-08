@@ -338,8 +338,14 @@ TextDocument::~TextDocument() {
 		mHighlighter->setStopTokenizingAsync();
 
 	// TODO: Use a condition variable to wait the thread pool to finish
-	while ( !mStopFlags.empty() )
+	while ( true ) {
+		{
+			Lock l( mStopFlagsMutex );
+			if ( mStopFlags.empty() )
+				break;
+		}
 		Sys::sleep( Milliseconds( 0.1 ) );
+	}
 
 	if ( mLoading ) {
 		mLoading = false;
@@ -952,8 +958,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 	mLoadingAsync = true;
 
 	Http::getAsync(
-		[this, onLoaded = std::move( onLoaded ),
-		 uri = std::move( uri )]( const Http&, Http::Request&, Http::Response& response ) {
+		[this, onLoaded = std::move( onLoaded ), uri]( const Http&, Http::Request&,
+													   Http::Response& response ) {
 			if ( response.getStatus() <= Http::Response::Ok ) {
 				std::string path( URI::getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
@@ -1456,22 +1462,23 @@ String TextDocument::toString() {
 	return stream;
 }
 
-std::string TextDocument::toUtf8String() {
+void TextDocument::toUtf8String( std::string& stream ) {
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
-	std::string stream;
-	std::size_t totalCodepoints = 0;
+	std::size_t utf8Size = 0;
 	for ( const auto& line : mLines )
-		totalCodepoints += line.size();
+		utf8Size += String::utf8EncodedLength( line.getText().getString(), line.getTextHints() );
 
-	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
-	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+	stream.clear();
+	stream.reserve( utf8Size );
 
-	for ( const auto& line : mLines ) {
-		const String& text = line.getText();
-		// Low-level conversion directly into the stream buffer
-		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
-	}
+	for ( const auto& line : mLines )
+		String::appendUtf8( line.getText().getString(), stream, line.getTextHints() );
+}
+
+std::string TextDocument::toUtf8String() {
+	std::string stream;
+	toUtf8String( stream );
 	return stream;
 }
 
@@ -3722,7 +3729,7 @@ TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosit
 void TextDocument::stopActiveFindAll() {
 	Lock l( mStopFlagsMutex );
 	for ( const auto& stopFlag : mStopFlags )
-		*stopFlag.second.get() = true;
+		stopFlag.second->store( true, std::memory_order_relaxed );
 }
 
 bool TextDocument::isDoingTextInput() const {
@@ -3739,8 +3746,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 	SearchResults all;
 	TextDocument::SearchResult found;
 	TextPosition from = startOfDoc();
-	auto stopFlagUP = std::make_unique<bool>( false );
-	bool* stopFlag = stopFlagUP.get();
+	auto stopFlagUP = std::make_unique<std::atomic_bool>( false );
+	std::atomic_bool* stopFlag = stopFlagUP.get();
 	{
 		Lock l( mStopFlagsMutex );
 		mStopFlags.insert( { stopFlag, std::move( stopFlagUP ) } );
@@ -3755,7 +3762,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 				break;
 			from = found.result.end();
 			all.push_back( found );
-			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
+			if ( ( maxResults != 0 && all.size() >= maxResults ) ||
+				 stopFlag->load( std::memory_order_relaxed ) )
 				break;
 		}
 	} while ( found.isValid() );

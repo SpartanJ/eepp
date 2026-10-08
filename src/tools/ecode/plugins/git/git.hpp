@@ -300,6 +300,8 @@ class Git {
 		int64_t behind{ 0 };
 
 		bool gone{ false };
+		/** No matching branch exists in the fetched remote refs. */
+		bool localOnly{ false };
 
 		const char* typeStr() const { return refTypeToString( type ); }
 

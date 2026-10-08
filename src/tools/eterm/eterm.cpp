@@ -509,6 +509,114 @@ void App::addTabKeyBindings( UITerminal* terminal ) {
 	applyKeybindings( terminal );
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+void App::executeMenuCommand( const std::string& command ) {
+	if ( command == "create-new-terminal" ) {
+		createNewTerminal();
+		return;
+	}
+	if ( command == "open-settings" ) {
+		settingsActions->showSettings();
+		return;
+	}
+	if ( command == "open-keybindings" ) {
+		openKeybindings();
+		return;
+	}
+
+	auto* widget = tabSplitter ? tabSplitter->getCurWidget() : nullptr;
+	if ( !widget )
+		return;
+	if ( widget->isType( UI_TYPE_TERMINAL ) ) {
+		widget->asType<UITerminal>()->execute( command );
+	} else if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		auto* editor = widget->asType<UICodeEditor>();
+		editor->getDocument().execute( command, editor );
+	}
+}
+
+void App::syncGlobalMenuKeybindings() {
+	if ( !menuBar )
+		return;
+
+	KeyBindings bindings( appWindow->getInput() );
+	bindings.addKeybindsStringUnordered( keybindings );
+	for ( Uint32 menuIndex = 0; menuIndex < menuBar->getButtonsCount(); ++menuIndex ) {
+		auto* menu = menuBar->getPopUpMenu( menuIndex );
+		for ( Uint32 itemIndex = 0; menu && itemIndex < menu->getCount(); ++itemIndex ) {
+			auto* item = menu->getItem( itemIndex );
+			if ( item->isType( UI_TYPE_MENUITEM ) && !item->getId().empty() ) {
+				item->asType<UIMenuItem>()->setShortcutText(
+					bindings.getCommandKeybindString( item->getId() ) );
+			}
+		}
+	}
+}
+
+void App::createGlobalMenuBar() {
+	menuBar = UIMenuBar::New();
+	/* The native menu is not part of the visible layout. Keeping it outside mainLayout preserves
+	 * UITabWidgetSplitter's invariant that its base layout owns only the splitter tree. */
+	menuBar->setParent( scene->getRoot() );
+	menuBar->setVisible( false );
+	/* Installing an application-owned menu replaces AppKit's default Close Window item. Do not add
+	 * a Cmd+W item here: eterm intentionally leaves it unbound and closes tabs with the configured
+	 * close-tab shortcut (Cmd+Shift+W by default). */
+
+	const auto addCommand = []( UIPopUpMenu* menu, const String& text,
+								const std::string& command ) {
+		auto* item = menu->add( text );
+		item->setId( command );
+		return item;
+	};
+	const auto onItemClicked = [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			executeMenuCommand( event->getNode()->getId() );
+	};
+
+	auto* fileMenu = UIPopUpMenu::New();
+	addCommand( fileMenu, i18n( "new_terminal", "New Terminal" ), "create-new-terminal" );
+	addCommand( fileMenu, i18n( "close_tab", "Close Tab" ), "close-tab" );
+	fileMenu->addSeparator();
+	addCommand( fileMenu, i18n( "settings", "Settings..." ), "open-settings" )
+		->setMenuRole( MenuRole::Preferences );
+	addCommand( fileMenu, i18n( "key_bindings", "Keybindings..." ), "open-keybindings" );
+	fileMenu->on( Event::OnItemClicked, onItemClicked );
+	menuBar->addMenuButton( i18n( "file", "File" ), fileMenu );
+
+	auto* editMenu = UIPopUpMenu::New();
+	addCommand( editMenu, i18n( "copy", "Copy" ), "terminal-copy" );
+	addCommand( editMenu, i18n( "paste", "Paste" ), "terminal-paste" );
+	editMenu->addSeparator();
+	addCommand( editMenu, i18n( "find_ellipsis", "Find..." ), "terminal-find" );
+	addCommand( editMenu, i18n( "find_next", "Find Next" ), "terminal-find-next" );
+	addCommand( editMenu, i18n( "find_previous", "Find Previous" ), "terminal-find-previous" );
+	editMenu->on( Event::OnItemClicked, onItemClicked );
+	editMenu->on( Event::OnMenuShow, [this, editMenu]( const Event* ) {
+		const auto* widget = tabSplitter ? tabSplitter->getCurWidget() : nullptr;
+		const bool enabled = widget && widget->isType( UI_TYPE_TERMINAL );
+		for ( Uint32 i = 0; i < editMenu->getCount(); ++i )
+			editMenu->getItem( i )->setEnabled( enabled );
+	} );
+	menuBar->addMenuButton( i18n( "edit", "Edit" ), editMenu );
+
+	auto* windowMenu = UIPopUpMenu::New();
+	windowMenu->setMenuBarRole( MenuBarRole::Window );
+	addCommand( windowMenu, i18n( "previous_tab", "Previous Tab" ), "previous-tab" );
+	addCommand( windowMenu, i18n( "next_tab", "Next Tab" ), "next-tab" );
+	windowMenu->addSeparator();
+	addCommand( windowMenu, i18n( "split_left", "Split Left" ), "split-left" );
+	addCommand( windowMenu, i18n( "split_right", "Split Right" ), "split-right" );
+	addCommand( windowMenu, i18n( "split_top", "Split Top" ), "split-top" );
+	addCommand( windowMenu, i18n( "split_bottom", "Split Bottom" ), "split-bottom" );
+	windowMenu->on( Event::OnItemClicked, onItemClicked );
+	menuBar->addMenuButton( i18n( "window", "Window" ), windowMenu );
+
+	syncGlobalMenuKeybindings();
+	menuBar->setGlobalMenuBarEnabled( true );
+}
+#endif
+
 bool App::closeWindow( EE::Window::Window* ) {
 	if ( closeApproved || !warnBeforeClose ) {
 		saveWindowState();
@@ -589,9 +697,14 @@ int App::run( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDensity( parser, "pixel-density",
 										 "Set default application pixel density",
 										 { 'd', "pixel-density" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
+		{ 'c', "prefers-color-scheme" } );
 	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
 	args::Flag closeOnExit( parser, "close-on-exit",
-							"close the application when the executable exits", { 'c', "close" } );
+							"close the application when the executable exits",
+							{ "close", "close-on-exit" } );
 	args::ValueFlag<std::string> executeInShell( parser, "execute-in-shell",
 												 "execute program in shell", { 'e', "execute" },
 												 config->terminal.executeInShell );
@@ -649,6 +762,14 @@ int App::run( int argc, char* argv[] ) {
 								 static_cast<int>( height.Get() ) };
 	if ( pixelDensity )
 		config->window.pixelDensity = pixelDensity.Get();
+	if ( prefersColorScheme ) {
+		const std::string& scheme = prefersColorScheme.Get();
+		if ( scheme != "light" && scheme != "dark" && scheme != "system" ) {
+			std::cerr << "Color scheme must be light, dark, or system\n";
+			return EXIT_FAILURE;
+		}
+		config->theme.uiColorScheme = ColorSchemePreferences::fromStringExt( scheme );
+	}
 	if ( wd )
 		config->terminal.workingDirectory = wd.Get();
 	config->terminal.executeInShell = executeInShell.Get();
@@ -706,20 +827,30 @@ int App::run( int argc, char* argv[] ) {
 	}
 	UIApplication::Settings appSettings;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
-	appSettings.pixelDensity = config->window.pixelDensity > 0 ? config->window.pixelDensity
-															   : currentDisplay->getPixelDensity();
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( config->window.pixelDensity > 0 ) {
+		appSettings.pixelDensity = config->window.pixelDensity;
+	} else if ( environmentDensity > 0 ) {
+		appSettings.pixelDensity = environmentDensity;
+	} else {
+		appSettings.pixelDensity = currentDisplay->getPixelDensity();
+	}
 	appSettings.fontHinting = config->font.hinting;
 	appSettings.fontAntialiasing = config->font.antialiasing;
 	appSettings.baseFont = uiFont.get();
 	const Int32 frameRateLimit =
 		config->window.benchmarkMode ? 0 : static_cast<Int32>( config->window.maxFPS );
-	UIApplication app( WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
-									   WindowStyle::Default, WindowBackend::Default, 32,
-									   resPath + "icon/eterm.png" ),
-					   appSettings,
-					   ContextSettings( config->window.vsync, frameRateLimit,
-										config->window.multisamples,
-										config->window.rendererVersion ) );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "icon/eterm-macos.png";
+#else
+	const char* windowIcon = "icon/eterm.png";
+#endif
+	UIApplication app(
+		WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
+						WindowStyle::Default, WindowBackend::Default, 32, resPath + windowIcon ),
+		appSettings,
+		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
+						 config->window.rendererVersion ) );
 	appWindow = app.getWindow();
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
@@ -732,6 +863,7 @@ int App::run( int argc, char* argv[] ) {
 	fileWatcher->addWatch( config->getConfigPath(), this );
 	fileWatcher->watch();
 	scene->setColorSchemePreference( config->theme.uiColorScheme );
+	scene->updateWindowTitleBarColor();
 	scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
 	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
 	appWindow->setClearColor( RGB( 0, 0, 0 ) );
@@ -834,6 +966,7 @@ int App::run( int argc, char* argv[] ) {
 		UITabWidgetSplitter::New( &splitterClient, scene ) );
 	tabSplitter = tabSplitterOwner.get();
 	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );
+	tabSplitter->setShowTabBarWhenSplit( config->window.showTabBarWhenSplit );
 	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {
 		restoreMaximizedTabWidget();
 		return true;
@@ -886,6 +1019,9 @@ int App::run( int argc, char* argv[] ) {
 			return EXIT_FAILURE;
 		}
 	}
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	createGlobalMenuBar();
+#endif
 	if ( config->windowState.position != Vector2i( -1, -1 ) &&
 		 config->windowState.displayIndex < displayManager->getDisplayCount() ) {
 		// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
@@ -923,6 +1059,8 @@ int App::run( int argc, char* argv[] ) {
 			pendingExitCloseTabs.pop_back();
 			closeTab( tab );
 		}
+		if ( !appWindow->isOpen() )
+			return;
 		if ( benchmarkMode || scene->invalidated() ) {
 			appWindow->clear();
 			SceneManager::instance()->draw();
@@ -937,6 +1075,9 @@ int App::run( int argc, char* argv[] ) {
 			secondsCounter.restart();
 		}
 	} );
+	// Native destruction is deferred to keep the GL context alive during UI teardown.
+	// Hide first: stopping the file watcher can wait for its polling thread.
+	appWindow->hide();
 	fileWatcher.reset();
 	return EXIT_SUCCESS;
 }

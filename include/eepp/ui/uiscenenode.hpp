@@ -46,10 +46,16 @@ class UIRoot;
 class AccessibilityManager;
 
 struct NavigationRequest {
+	enum class Target : Uint8 { Current, NewTab };
+
 	URI uri;
 	std::string method{ "GET" };
 	std::string body;
 	std::map<std::string, std::string> extraHeaders;
+	const Node* source{ nullptr };
+	Uint32 mouseButtons{ 0 };
+	Uint32 modifiers{ 0 };
+	Target target{ Target::Current };
 };
 
 class EE_API UISceneNode : public SceneNode {
@@ -751,6 +757,9 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	ColorSchemePreference getColorSchemePreference() const;
 
+	//! Updates the macOS titlebar from the active theme after changing the color scheme or style.
+	void updateWindowTitleBarColor();
+
 	/**
 	 * @brief Sets the color scheme preference from extended preference.
 	 *
@@ -934,8 +943,19 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets a callback to intercept navigate() calls. Return true to handle the request,
 	 * false to fall through to the URL interceptor and default handling. */
 	void setNavigationInterceptorCb( std::function<bool( const NavigationRequest& request )> cb ) {
-		mNavigationInterceptorCb = cb;
+		mNavigationInterceptorCb = std::move( cb );
 	};
+
+	/** Registers an interceptor for requests originating in root's subtree. Interceptors run from
+	 * the source's nearest scope outward, before the scene-wide callback. Pass an empty callback
+	 * to unregister; the owner must unregister before root is destroyed or when it moves scenes.
+	 * Registration requires root to be this scene or a descendant. Unregistration also accepts
+	 * roots that have already left the scene's tree.
+	 * Each scope supports one callback. Requests without a source use the scene-wide callback.
+	 * Returns true on registration/replacement or removal, and false for an invalid root or
+	 * when attempting to remove a scope that is not registered. */
+	bool setNavigationInterceptorCb( const Node* root,
+									 std::function<bool( const NavigationRequest& request )> cb );
 
 	/**
 	 * Solves a relative path with no scheme or authority into a complete URI.
@@ -946,9 +966,14 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return The document referer */
 	URI getReferer() const { return mReferer; };
 
-	const Network::CookieManager& getCookieManager() const { return mCookieManager; }
+	const CookieManager& getCookieManager() const { return *mCookieManager; }
 
-	Network::CookieManager& getCookieManager() { return mCookieManager; }
+	CookieManager& getCookieManager() { return *mCookieManager; }
+
+	/** Share one cookie jar across document scenes. Passing nullptr creates a fresh private jar. */
+	void setCookieManager( std::shared_ptr<CookieManager> manager ) {
+		mCookieManager = manager ? std::move( manager ) : std::make_shared<CookieManager>();
+	}
 
 	const WebResourceCachePtr& getWebResourceCache() const { return mWebResourceCache; }
 
@@ -982,6 +1007,8 @@ class EE_API UISceneNode : public SceneNode {
 	void loadFontStyleVariants( Font* font, const std::string& family ) const;
 
 	Uint32 getCurrentMarker() const { return mCurrentMarker; }
+
+	void loadHTMLBasicCSS();
 
 	void loadHTMLBaseCSS();
 
@@ -1075,7 +1102,9 @@ class EE_API UISceneNode : public SceneNode {
 	URI mURI;
 	URI mReferer;
 	std::function<bool( const NavigationRequest& request )> mNavigationInterceptorCb;
-	Network::CookieManager mCookieManager;
+	UnorderedMap<const Node*, std::function<bool( const NavigationRequest& )>>
+		mScopedNavigationInterceptors;
+	std::shared_ptr<CookieManager> mCookieManager{ std::make_shared<CookieManager>() };
 
 	/**
 	 * @brief Protected constructor.

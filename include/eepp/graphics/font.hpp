@@ -78,6 +78,9 @@ class EE_API Font {
 		return FontHinting::Full;
 	}
 
+	/** Applies EEPP_FONT_HINTING when it contains a supported value. */
+	static FontHinting fontHintingFromEnvironment( FontHinting fallback );
+
 	static std::string_view fontAntialiasingToString( FontAntialiasing aa ) {
 		switch ( aa ) {
 			case FontAntialiasing::None:
@@ -97,6 +100,9 @@ class EE_API Font {
 			return FontAntialiasing::Subpixel;
 		return FontAntialiasing::Grayscale;
 	}
+
+	/** Applies EEPP_FONT_ANTIALIASING when it contains a supported value. */
+	static FontAntialiasing fontAntialiasingFromEnvironment( FontAntialiasing fallback );
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
 		return flags & TEXT_HALIGN_MASK;

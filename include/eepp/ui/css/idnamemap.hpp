@@ -3,6 +3,7 @@
 
 #include <eepp/core/containers.hpp>
 #include <eepp/system/log.hpp>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -39,34 +40,39 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 	 *
 	 * @return true on success.
 	 */
-	bool addBuiltin( Id id, const std::string& canonicalName ) {
+	bool addBuiltin( Id id, std::string_view canonicalName ) {
 		if ( mBuiltinsFinalized ) {
 			EE::System::Log::error(
-				"IdNameMap: cannot register built-in \"%s\" after finalization.",
-				canonicalName.c_str() );
+				"IdNameMap: cannot register built-in \"%.*s\" after finalization.",
+				static_cast<int>( canonicalName.size() ),
+				canonicalName.empty() ? "" : canonicalName.data() );
 			return false;
 		}
 		const auto underlying = static_cast<std::underlying_type_t<Id>>( id );
 		const auto maxUnderlying = static_cast<std::underlying_type_t<Id>>( MaxIds );
 		if ( underlying == 0 ) {
-			EE::System::Log::error( "IdNameMap: cannot register Invalid built-in \"%s\".",
-									canonicalName.c_str() );
+			EE::System::Log::error( "IdNameMap: cannot register Invalid built-in \"%.*s\".",
+									static_cast<int>( canonicalName.size() ),
+									canonicalName.empty() ? "" : canonicalName.data() );
 			return false;
 		}
 		if ( underlying >= maxUnderlying ) {
-			EE::System::Log::error( "IdNameMap: built-in ID %d for \"%s\" is out of range.",
-									underlying, canonicalName.c_str() );
+			EE::System::Log::error( "IdNameMap: built-in ID %d for \"%.*s\" is out of range.",
+									underlying, static_cast<int>( canonicalName.size() ),
+									canonicalName.empty() ? "" : canonicalName.data() );
 			return false;
 		}
 		if ( mIdsByName.find( canonicalName ) != mIdsByName.end() ) {
-			EE::System::Log::error( "IdNameMap: duplicate built-in name \"%s\".",
-									canonicalName.c_str() );
+			EE::System::Log::error( "IdNameMap: duplicate built-in name \"%.*s\".",
+									static_cast<int>( canonicalName.size() ),
+									canonicalName.empty() ? "" : canonicalName.data() );
 			return false;
 		}
 		if ( underlying < mNames.size() && !mNames[underlying].empty() ) {
 			EE::System::Log::error(
-				"IdNameMap: built-in ID %d already bound to \"%s\", not \"%s\".", underlying,
-				mNames[underlying].c_str(), canonicalName.c_str() );
+				"IdNameMap: built-in ID %d already bound to \"%s\", not \"%.*s\".", underlying,
+				mNames[underlying].c_str(), static_cast<int>( canonicalName.size() ),
+				canonicalName.empty() ? "" : canonicalName.data() );
 			return false;
 		}
 		if ( mNames.size() <= underlying )
@@ -137,7 +143,7 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 	 * @return Invalid when the name is unknown.
 	 */
 	Id getId( std::string_view name ) const {
-		const auto it = mIdsByName.find( std::string( name ) );
+		const auto it = mIdsByName.find( name );
 		return it != mIdsByName.end() ? it->second : static_cast<Id>( 0 );
 	}
 
@@ -166,11 +172,12 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 	 * Only valid after finalizeBuiltins(). Reaching the capacity returns Invalid
 	 * and logs a clear error containing the rejected name.
 	 */
-	Id getOrCreateId( const std::string& canonicalName ) {
+	Id getOrCreateId( std::string_view canonicalName ) {
 		if ( !mBuiltinsFinalized ) {
 			EE::System::Log::error(
-				"IdNameMap: getOrCreateId(\"%s\") called before finalizeBuiltins().",
-				canonicalName.c_str() );
+				"IdNameMap: getOrCreateId(\"%.*s\") called before finalizeBuiltins().",
+				static_cast<int>( canonicalName.size() ),
+				canonicalName.empty() ? "" : canonicalName.data() );
 			return static_cast<Id>( 0 );
 		}
 		const auto existing = getId( canonicalName );
@@ -178,8 +185,10 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 			return existing;
 		const auto next = static_cast<std::underlying_type_t<Id>>( mNextCustomId );
 		if ( next >= static_cast<std::underlying_type_t<Id>>( MaxIds ) ) {
-			EE::System::Log::error( "IdNameMap: ID capacity exhausted (max %zu), rejecting \"%s\".",
-									MaxIds, canonicalName.c_str() );
+			EE::System::Log::error(
+				"IdNameMap: ID capacity exhausted (max %zu), rejecting \"%.*s\".", MaxIds,
+				static_cast<int>( canonicalName.size() ),
+				canonicalName.empty() ? "" : canonicalName.data() );
 			return static_cast<Id>( 0 );
 		}
 		if ( mNames.size() <= next )
@@ -196,7 +205,7 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 	}
 
 	bool contains( std::string_view name ) const {
-		return mIdsByName.find( std::string( name ) ) != mIdsByName.end();
+		return mIdsByName.find( name ) != mIdsByName.end();
 	}
 
 	bool contains( const std::string& name ) const {
@@ -209,7 +218,12 @@ template <typename Id, std::size_t MaxIds> class IdNameMap {
 
   private:
 	std::vector<std::string> mNames;
-	UnorderedMap<std::string, Id> mIdsByName;
+	// Preserve the selected container's string-view hash (including its avalanche marker),
+	// and allow borrowed names to find owned string keys without temporary allocations.
+	struct NameHash : UnorderedMap<std::string_view, Id>::hasher {
+		using is_transparent = void;
+	};
+	UnorderedMap<std::string, Id, NameHash, std::equal_to<>> mIdsByName;
 	Id mNextCustomId;
 	bool mBuiltinsFinalized{ false };
 };

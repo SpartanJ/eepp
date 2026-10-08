@@ -7,6 +7,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/webresourcecache.hpp>
 
 #include <functional>
@@ -15,6 +16,10 @@
 #include <vector>
 
 using namespace EE::Network;
+
+namespace EE { namespace Network {
+class CookieManager;
+}} // namespace EE::Network
 
 namespace EE { namespace UI {
 
@@ -25,6 +30,31 @@ class UISceneNode;
 
 class EE_API UIWebView : public UIScrollView {
   public:
+	/** The icon is empty when the replacement document has no favicon yet. */
+	struct FaviconEvent : Scene::Event {
+		TexturePtr icon;
+
+		FaviconEvent( Node* node, TexturePtr icon = {} ) :
+			Scene::Event( node, Event::OnFaviconChanged ), icon( std::move( icon ) ) {}
+	};
+
+	struct TitleEvent : Scene::Event {
+		std::string title;
+
+		TitleEvent( Node* node, std::string title ) :
+			Scene::Event( node, Event::OnTitleChanged ), title( std::move( title ) ) {}
+	};
+
+	struct LinkOpenEvent : Scene::Event {
+		URI uri;
+		mutable bool handled{ false };
+
+		LinkOpenEvent( Node* node, URI uri ) :
+			Scene::Event( node, Event::OnLinkOpenRequested ), uri( std::move( uri ) ) {}
+
+		void accept() const { handled = true; }
+	};
+
 	struct NavigationEvent : Scene::Event {
 		URI uri;
 		bool success{ false };
@@ -45,6 +75,14 @@ class EE_API UIWebView : public UIScrollView {
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
+
+	virtual UITextSelectionController* getTextSelectionController();
+
+	virtual const UITextSelectionController* getTextSelectionController() const;
+
+	/** Loads an embedded <html> child into the isolated document scene. Relative document
+	 * resources use the containing scene's URI. Other children are not loaded as host widgets. */
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	void loadURI( URI uri );
 
@@ -67,6 +105,8 @@ class EE_API UIWebView : public UIScrollView {
 
 	const URI& getCurrentURI() const;
 
+	const std::string& getTitle() const { return mTitle; }
+
 	void reload();
 
 	UIWidget* getDocumentContainer() const;
@@ -76,6 +116,9 @@ class EE_API UIWebView : public UIScrollView {
 	const WebResourceCachePtr& getWebResourceCache() const;
 
 	UIWebView* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
+	/** Share a cookie jar with other WebViews. Set before starting navigation. */
+	UIWebView* setCookieManager( std::shared_ptr<EE::Network::CookieManager> manager );
 
 	void setStyleSheetDefaultMarker( Uint32 marker );
 
@@ -103,6 +146,7 @@ class EE_API UIWebView : public UIScrollView {
 	UISceneNode* mDocumentScene{ nullptr };
 	UILayout* mDocumentLayout{ nullptr };
 	UIWidget* mDocContainer{ nullptr };
+	UITextSelectionController mTextSelectionController;
 	Uint32 mScrollContainerSizeChangeCb{ 0 };
 	Uint32 mVerticalScrollVisibleChangeCb{ 0 };
 	Uint32 mHorizontalScrollVisibleChangeCb{ 0 };
@@ -121,6 +165,7 @@ class EE_API UIWebView : public UIScrollView {
 	bool mIsLoading{ false };
 	Uint64 mNavigationGeneration{ 0 };
 	std::string mUserAgent;
+	std::string mTitle;
 	Time mDefaultTimeout{ Seconds( 30 ) };
 	Time mWebResourceCachePruneElapsed;
 	Uint32 mStyleSheetDefaultMarker{ 0 };
@@ -133,10 +178,18 @@ class EE_API UIWebView : public UIScrollView {
 	virtual void onSizeChange();
 	virtual void onSceneChange();
 	virtual void scheduledUpdate( const Time& time );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onMessage( const NodeMessage* message );
 	virtual void onScrollViewSizeChange( const Event* event );
 
 	void loadDocumentData( URI url, std::string data );
+
 	void loadDocumentData( URI url, std::string data, Uint64 generation );
+
+	void loadDocumentData( URI url, std::string data, Uint64 generation, bool documentIsXML );
+
 	void
 	loadDocumentAsync( const URI& url, const std::string& method = "GET",
 					   const std::string& body = "",

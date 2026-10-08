@@ -859,6 +859,30 @@ UTEST( ResourcePrerequisites, workerFinalReleaseDefersDestructionUntilDisplay ) 
 	Engine::destroySingleton();
 }
 
+UTEST( ResourcePrerequisites, engineShutdownCollectsWorkerReleasedTexturesAcrossRestarts ) {
+	constexpr std::size_t textureCount = 16;
+	for ( int cycle = 0; cycle < 2; ++cycle ) {
+		createLifecycleTestWindow( "Queued texture shutdown test" );
+		TextureFactory* factory = TextureFactory::instance();
+		std::vector<TexturePtr> textures;
+		textures.reserve( textureCount );
+		for ( std::size_t i = 0; i < textureCount; ++i ) {
+			TexturePtr texture = factory->createEmptyTexture( 1, 1 );
+			ASSERT_TRUE( texture != nullptr );
+			textures.emplace_back( std::move( texture ) );
+		}
+
+		std::thread worker( [textures = std::move( textures )]() mutable { textures.clear(); } );
+		worker.join();
+		EXPECT_EQ( factory->getPendingReleaseCount(), textureCount );
+
+		// No display call: Engine shutdown must drain the queue before the factory and context die.
+		Engine::destroySingleton();
+		EXPECT_TRUE( Engine::existsSingleton() == nullptr );
+		EXPECT_TRUE( TextureFactory::existsSingleton() == nullptr );
+	}
+}
+
 UTEST( ResourcePrerequisites, workerFileTextureLoadReleasesDecoderPixelsCorrectly ) {
 	EE::Window::Window* window = createLifecycleTestWindow( "Worker file texture load test" );
 	TexturePtr texture;

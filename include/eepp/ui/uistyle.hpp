@@ -63,6 +63,9 @@ class EE_API UIStyle : public UIState {
 
 	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
+	/** Resolve a color variable without copying its stored text. */
+	Color getColorVariable( const std::string& variable, Color fallback );
+
 	bool getForceReapplyProperties() const;
 
 	void setForceReapplyProperties( bool forceReapplyProperties );
@@ -99,6 +102,9 @@ class EE_API UIStyle : public UIState {
 	const std::shared_ptr<CSS::ElementDefinition> getDefinition() const { return mDefinition; }
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
+
+	/** @return Widgets whose styles are refreshed when this widget changes state. */
+	const UnorderedSet<UIWidget*>& getRelatedWidgets() const { return mRelatedWidgets; }
 
   protected:
 	class EE_API PropertyResolution {
@@ -142,6 +148,14 @@ class EE_API UIStyle : public UIState {
 	 * needs no container allocation; nested slots are retained for later reuse. */
 	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
 	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
+	struct PropertyFallback {
+		CSS::PropertyId propertyId;
+		Uint32 index;
+		const CSS::PropertyDefinition* definition;
+		std::string nativeValue;
+		bool inherited;
+	};
+	SmallVector<PropertyFallback, 0> mPropertyFallbacks;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
@@ -172,7 +186,18 @@ class EE_API UIStyle : public UIState {
 	void removeRelatedWidgets();
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
-								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+								  std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								  bool captureFallback = true );
+
+	void capturePropertyFallback( const CSS::StyleSheetProperty& property );
+
+	bool isTransientProperty( CSS::PropertyId propertyId ) const;
+
+	bool restorePropertyFallbacks( CSS::PropertyId propertyId,
+								   std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								   Uint32 firstIndex = 0 );
+
+	void clearPropertyFallbacks( CSS::PropertyId propertyId );
 
 	void updateAnimationsPlayState();
 

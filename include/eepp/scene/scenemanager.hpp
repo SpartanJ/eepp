@@ -48,6 +48,9 @@ class EE_API SceneManager {
 	/** Returns the UI scene associated with @p window, or nullptr if none is registered. */
 	UISceneNode* getUISceneNode( EE::Window::Window* window );
 
+	/** Enumerates registered top-level scenes on the UI thread. */
+	void forEachSceneNode( const std::function<void( SceneNode* )>& callback ) const;
+
 	void setCurrentUISceneNode( UISceneNode* uiSceneNode );
 
 	/** Removes and destroys all registered scene nodes associated with @p window. */

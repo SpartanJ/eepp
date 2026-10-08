@@ -186,7 +186,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	}
 
 	int visibleColumnAt( size_t wanted ) const {
-		for ( size_t column = 0; column < mView->getModel()->columnCount(); ++column ) {
+		for ( size_t column : mView->getColumnOrder() ) {
 			if ( !mView->isColumnHidden( column ) && wanted-- == 0 )
 				return column;
 		}

@@ -20,6 +20,7 @@
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uiinspectorserver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
@@ -336,13 +337,19 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	if ( firstWindow && Settings.PixelDensity > 0 )
-		PixelDensity::setPixelDensity( Settings.PixelDensity );
+	if ( firstWindow ) {
+		const Float density = Settings.PixelDensity > 0
+								  ? Settings.PixelDensity
+								  : PixelDensity::getEnvironmentPixelDensity();
+		if ( density > 0 )
+			PixelDensity::setPixelDensity( density );
+	}
 
 	return window;
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
+	UIInspectorServer::notifyWindowDestroyed( window );
 	mWindows.erase( window->getWindowID() );
 
 	if ( window == mWindow ) {

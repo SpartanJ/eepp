@@ -278,12 +278,12 @@ class UIBuildStep : public UILinearLayout {
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
 			<TextInput class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
-		<StackLayout lw="mp">
+		<FlowLayout lw="mp">
 			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="reuse_previous_terminal" text="@string(reuse_previous_terminal, Reuse previous terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="use_statusbar_terminal" text="@string(use_statusbar_terminal, Use status bar terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="strip_ansi_codes" text="@string(strip_ansi_codes, Strip ANSI codes)" visible="false" />
-		</StackLayout>
+		</FlowLayout>
 	</vbox>
 )xml";
 
@@ -387,7 +387,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 		<TextInput id="build_name" lw="mp" lh="wc" text="new_name" />
 		<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" focusable="false" />
 		<TextView lw="mp" lh="wc" word-wrap="true" text="@string(supported_platforms_desc, Selecting none means that the build settings will work and be available on any Operating System)" />
-		<StackLayout id="os_select" class="os_select" lw="wc" lh="wc">
+		<FlowLayout id="os_select" class="os_select" lw="wc" lh="wc">
 			<CheckBox id="linux" text="Linux" />
 			<CheckBox id="macos" text="macOS" />
 			<CheckBox id="windows" text="Windows" />
@@ -395,7 +395,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 			<CheckBox id="ios" text="iOS" />
 			<CheckBox id="haiku" text="Haiku" />
 			<CheckBox id="freebsd" text="FreeBSD" />
-		</StackLayout>
+		</FlowLayout>
 
 		<vbox lw="mp" lh="wc" class="build_steps">
 			<TextView class="subtitle" text="@string(build_steps, Build Steps)" focusable="false" />
@@ -411,7 +411,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 
 		<vbox lw="mp" lh="wc" class="run_step">
 			<TextView class="subtitle" text="@string(run, Run)" focusable="false" />
-			<StackLayout id="run_select" lw="mp" lh="wc" class="stack_margins">
+			<FlowLayout id="run_select" lw="mp" lh="wc" class="stack_margins">
 				<TextView text="@string(run_configuration_colon, Run configuration:)" focusable="false" />
 				<DropDownList id="run_list" layout_width="200dp" layout_height="19dp" />
 				<PushButton id="run_add" text="@string(add_ellipsis, Add...)" />
@@ -419,18 +419,18 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				<PushButton id="run_remove_all" text="@string(remove_all, Remove All)" />
 				<PushButton id="run_rename" text="@string(rename_ellipsis, Rename...)" />
 				<PushButton id="run_clone" text="@string(clone_ellipsis, Clone...)" />
-			</StackLayout>
+			</FlowLayout>
 			<vbox id="run_cont" lw="mp" lh="wc"></vbox>
 		</vbox>
 
 		<vbox lw="mp" lh="wc" class="build_types">
 			<TextView class="subtitle" text="@string(build_types, Build Types)" focusable="false" />
 			<TextView lw="mp" lh="wc" word-wrap="true" text="@string(build_types_desc, Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.)" />
-			<StackLayout class="build_types_cont span" lw="mp" lh="wc">
+			<FlowLayout class="build_types_cont span" lw="mp" lh="wc">
 				<DropDownList id="build_type_list" layout_width="200dp" layout_height="wc" />
 				<PushButton id="build_type_add" lh="mp" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)" />
 				<PushButton id="build_type_del" lh="mp" text="@string(delete_selected, Delete Selected)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_selected, Delete Selected)" />
-			</StackLayout>
+			</FlowLayout>
 		</vbox>
 
 		<vbox class="advanced_options" lw="mp" lh="wc">

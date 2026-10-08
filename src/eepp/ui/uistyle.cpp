@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
@@ -188,6 +189,11 @@ const bool& UIStyle::isChangingState() const {
 StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 	const StyleSheetVariable* resolved = getVariableRef( variable );
 	return resolved ? *resolved : StyleSheetVariable();
+}
+
+Color UIStyle::getColorVariable( const std::string& variable, Color fallback ) {
+	const StyleSheetVariable* resolved = getVariableRef( variable );
+	return resolved ? Color::fromString( resolved->getValue() ) : fallback;
 }
 
 const StyleSheetVariable* UIStyle::getVariableRef( const std::string& variable ) {
@@ -458,6 +464,9 @@ void UIStyle::onStateChange() {
 
 			if ( nullptr == property || NULL == property->getPropertyDefinition() ) {
 				const auto def = StyleSheetSpecification::instance()->getProperty( prop );
+				if ( restorePropertyFallbacks( prop, prevDefinition ) ) {
+					continue;
+				}
 				if ( def && def->isInherited() ) {
 					UIStyle* inheritedStyle = nullptr;
 					StyleSheetProperty* inheritedProp =
@@ -499,12 +508,30 @@ void UIStyle::onStateChange() {
 					}
 				}
 			} else {
+				const bool transient = isTransientProperty( prop );
 				if ( property->getPropertyDefinition()->isIndexed() ) {
-					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+					// Capture every layer before applying any of them. An earlier layer can
+					// change the widget's indexed backing storage.
+					if ( transient ) {
+						for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+							capturePropertyFallback( property->getPropertyIndex( i ) );
+						}
 					}
+					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition,
+												 false );
+					}
+					// A shorter transient declaration can leave higher indexes without a
+					// winner even while another state remains active.
+					restorePropertyFallbacks(
+						prop, prevDefinition,
+						static_cast<Uint32>( property->getPropertyIndexCount() ) );
+					if ( !transient )
+						clearPropertyFallbacks( prop );
 				} else {
 					applyStyleSheetProperty( *property, prevDefinition );
+					if ( !transient )
+						clearPropertyFallbacks( prop );
 				}
 
 				if ( property->getPropertyDefinition()->isInherited() )
@@ -538,26 +565,122 @@ UIStyle::getStatelessStyleSheetProperty( const PropertyId& propertyId ) const {
 	if ( propertyId == PropertyId::Invalid )
 		return nullptr;
 
-	if ( !mElementStyle->getSelector().hasPseudoClasses() ) {
-		const StyleSheetProperty* property = mElementStyle->getPropertyById( propertyId );
-
-		if ( property )
-			return property;
-	}
+	const StyleSheetProperty* winner = !mElementStyle->getSelector().hasPseudoClasses()
+										   ? mElementStyle->getPropertyById( propertyId )
+										   : nullptr;
 
 	if ( nullptr == mDefinition )
-		return nullptr;
+		return winner;
 
 	for ( auto style : mDefinition->getStyles() ) {
 		if ( style->getSelector().isCacheable() && !style->getSelector().hasPseudoClasses() ) {
 			const StyleSheetProperty* property = style->getPropertyById( propertyId );
-
-			if ( property )
-				return property;
+			if ( property && ( !winner || property->getSpecificity() >= winner->getSpecificity() ) )
+				winner = property;
 		}
 	}
 
-	return nullptr;
+	return winner;
+}
+
+void UIStyle::capturePropertyFallback( const StyleSheetProperty& property ) {
+	const PropertyDefinition* definition = property.getPropertyDefinition();
+	if ( nullptr == definition )
+		return;
+	const StyleSheetProperty* stateless =
+		getStatelessStyleSheetProperty( property.getPropertyId() );
+	if ( stateless &&
+		 ( !definition->isIndexed() || property.getIndex() < stateless->getPropertyIndexCount() ) )
+		return;
+
+	for ( const auto& fallback : mPropertyFallbacks ) {
+		if ( fallback.propertyId == property.getPropertyId() &&
+			 fallback.index == property.getIndex() )
+			return;
+	}
+
+	const bool inherited =
+		definition->isInherited() && getInheritedProperty( property.getPropertyId() );
+	// Keep a serialized value in case the inherited declaration disappears before rollback.
+	std::string value = mWidget->getPropertyString( definition, property.getIndex() );
+	if ( inherited || !value.empty() ) {
+		mPropertyFallbacks.push_back( { property.getPropertyId(), property.getIndex(), definition,
+										std::move( value ), inherited } );
+	}
+}
+
+bool UIStyle::isTransientProperty( PropertyId propertyId ) const {
+	const StyleSheetProperty* local =
+		mElementStyle ? mElementStyle->getPropertyById( propertyId ) : nullptr;
+	const StyleSheetProperty* winner =
+		mDefinition ? mDefinition->getProperty( propertyId ) : nullptr;
+	if ( nullptr == winner || ( local && local->getSpecificity() >= winner->getSpecificity() ) )
+		return false;
+	if ( winner->isVolatile() )
+		return true;
+	if ( mCurrentState == UIState::StateFlagNormal )
+		return false;
+
+	const StyleSheetProperty* sourceProperty = nullptr;
+	const StyleSheetStyle* sourceStyle = nullptr;
+	for ( const auto* style : mDefinition->getStyles() ) {
+		const StyleSheetProperty* candidate = style->getPropertyById( propertyId );
+		if ( candidate && ( !sourceProperty ||
+							candidate->getSpecificity() >= sourceProperty->getSpecificity() ) ) {
+			sourceProperty = candidate;
+			sourceStyle = style;
+		}
+	}
+	return sourceStyle && sourceStyle->getSelector().hasPseudoClasses();
+}
+
+bool UIStyle::restorePropertyFallbacks( PropertyId propertyId,
+										std::shared_ptr<ElementDefinition> prevDefinition,
+										Uint32 firstIndex ) {
+	bool restored = false;
+	for ( const auto& fallback : mPropertyFallbacks ) {
+		if ( fallback.propertyId != propertyId || fallback.index < firstIndex )
+			continue;
+
+		if ( fallback.inherited ) {
+			UIStyle* ownerStyle = nullptr;
+			StyleSheetProperty* inherited = getInheritedProperty( propertyId, &ownerStyle );
+			if ( inherited ) {
+				auto resolved = ownerStyle->resolveProperty( inherited );
+				StyleSheetProperty value( *resolved.get() );
+				value.setVolatile( false );
+				applyStyleSheetProperty( value, prevDefinition, false );
+				mWidget->propagateInheritedProperty( value );
+			} else if ( !fallback.nativeValue.empty() ) {
+				StyleSheetProperty value( fallback.definition, fallback.nativeValue,
+										  fallback.index );
+				applyStyleSheetProperty( value, prevDefinition, false );
+				mWidget->propagateInheritedProperty( value );
+			}
+		} else {
+			StyleSheetProperty value( fallback.definition, fallback.nativeValue, fallback.index );
+			applyStyleSheetProperty( value, prevDefinition, false );
+		}
+		restored = true;
+	}
+	if ( restored ) {
+		mPropertyFallbacks.erase(
+			std::remove_if( mPropertyFallbacks.begin(), mPropertyFallbacks.end(),
+							[propertyId, firstIndex]( const PropertyFallback& fallback ) {
+								return fallback.propertyId == propertyId &&
+									   fallback.index >= firstIndex;
+							} ),
+			mPropertyFallbacks.end() );
+	}
+	return restored;
+}
+
+void UIStyle::clearPropertyFallbacks( PropertyId propertyId ) {
+	mPropertyFallbacks.erase( std::remove_if( mPropertyFallbacks.begin(), mPropertyFallbacks.end(),
+											  [propertyId]( const PropertyFallback& fallback ) {
+												  return fallback.propertyId == propertyId;
+											  } ),
+							  mPropertyFallbacks.end() );
 }
 
 void UIStyle::updateState() {
@@ -623,26 +746,15 @@ void UIStyle::removeRelatedWidgets() {
 }
 
 void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalProperty,
-									   std::shared_ptr<ElementDefinition> prevDefinition ) {
+									   std::shared_ptr<ElementDefinition> prevDefinition,
+									   bool captureFallback ) {
 	auto resolvedProperty = resolveProperty( &originalProperty );
 	const StyleSheetProperty* property = resolvedProperty.get();
 
 	const PropertyDefinition* propertyDefinition = property->getPropertyDefinition();
 
-	// Save default value if possible and not available.
-	if ( mCurrentState != UIState::StateFlagNormal ||
-		 ( mCurrentState == UIState::StateFlagNormal && property->isVolatile() ) ) {
-		const StyleSheetProperty* oldAttribute =
-			getStatelessStyleSheetProperty( property->getPropertyId() );
-		if ( nullptr == oldAttribute && getPreviousState() == UIState::StateFlagNormal ) {
-			std::string value(
-				mWidget->getPropertyString( propertyDefinition, property->getIndex() ) );
-			if ( !value.empty() ) {
-				setStyleSheetProperty( StyleSheetProperty( propertyDefinition, value,
-														   property->getIndex(), true, true ) );
-			}
-		}
-	}
+	if ( captureFallback && isTransientProperty( property->getPropertyId() ) )
+		capturePropertyFallback( *property );
 
 	if ( !mDisableAnimations && !mFirstState && !mWidget->isSceneNodeLoading() &&
 		 NULL != propertyDefinition &&

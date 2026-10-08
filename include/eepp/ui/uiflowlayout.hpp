@@ -1,0 +1,70 @@
+#ifndef EE_UI_UIFLOWLAYOUT_HPP
+#define EE_UI_UIFLOWLAYOUT_HPP
+
+#include <eepp/core/small_vector.hpp>
+#include <eepp/ui/uilayout.hpp>
+
+namespace EE { namespace UI {
+
+class EE_API UIFlowLayout : public UILayout {
+  public:
+	enum class RowValign { Top, Center, Bottom };
+
+	static UIFlowLayout* New();
+
+	static UIFlowLayout* NewWithTag( const std::string& tag = "flowlayout" );
+
+	virtual ~UIFlowLayout();
+
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	void updateLayout();
+
+	const RowValign& getRowValign() const;
+
+	void setRowValign( const RowValign& rowValign );
+
+  protected:
+	struct NodeLine {
+		SmallVector<UIWidget*, 2> nodes;
+		Float maxY{ 0 };
+		Float width{ 0 };
+	};
+
+	RowValign mRowValign{ RowValign::Bottom };
+	SmallVector<NodeLine, 4> mLines;
+	Node* mParentRef{ nullptr };
+	Uint32 mParentSizeChangeCb{ 0 };
+	Uint32 mParentCloseCb{ 0 };
+
+	UIFlowLayout();
+
+	explicit UIFlowLayout( const std::string& tag );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	void applySizePolicyOnChildren();
+
+	void setRowValign( const std::string& rowValign );
+
+	static std::string rowValignToStr( const RowValign& rowValign );
+
+	virtual void onParentChange();
+
+	void listenParent();
+
+	void clearListeners();
+};
+
+}} // namespace EE::UI
+
+#endif // EE_UI_UIFLOWLAYOUT_HPP

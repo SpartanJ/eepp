@@ -167,6 +167,17 @@ function is_xcode()
 	return ( string.starts(_ACTION,"xcode") )
 end
 
+-- True when the configuration is built with clang. FreeBSD targets are forced
+-- to clang ( see the workspace "eepp" toolset filter ), macOS and iOS default
+-- to it.
+function is_clang()
+	if _OPTIONS["cc"] then
+		return _OPTIONS["cc"] == "clang"
+	end
+
+	return os.istarget("bsd") or os.istarget("macosx") or os.istarget("ios")
+end
+
 function set_kind()
 	if os.istarget("macosx") then
 		kind("ConsoleApp")
@@ -503,7 +514,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if _OPTIONS["with-mold-linker"] then
-		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+		if is_clang() then
 			linkoptions { "-fuse-ld=mold" }
 		else
 			gccversion = os.outputof( "gcc -dumpfullversion" )
@@ -537,6 +548,9 @@ function build_link_configuration( package_name, use_ee_icon )
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
+
+	filter "system:macosx"
+		linkoptions { "-weak_framework UniformTypeIdentifiers" }
 
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -657,7 +671,7 @@ function generate_os_links()
 	elseif os.istarget("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
@@ -699,7 +713,8 @@ function parse_args()
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -ltsan is gcc only.
+		if not is_clang() then
 			links { "tsan" }
 		end
 	end
@@ -707,7 +722,8 @@ function parse_args()
 	if _OPTIONS["address-sanitizer"] then
 		buildoptions { "-fsanitize=address" }
 		linkoptions { "-fsanitize=address" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -lasan is gcc only.
+		if not is_clang() then
 			links { "asan" }
 		end
 	end
@@ -754,6 +770,7 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
+			"simdutf-static",
 			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
@@ -1154,6 +1171,14 @@ workspace "eepp"
 		configurations { "debug", "release" }
 		platforms { "x86_64", "x86", "arm64" }
 	end
+
+	-- FreeBSD builds use clang: force the clang toolset so the generated project
+	-- files never fall back to the default gcc toolchain of the bsd system.
+	-- An explicitly requested compiler (--cc) still takes precedence.
+	filter { "system:bsd", "not options:cc" }
+		toolset "clang"
+	filter {}
+
 	rtti "On"
 	download_and_extract_dependencies()
 	select_backend()
@@ -1262,6 +1287,14 @@ workspace "eepp"
 		language "C++"
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+		target_dir_thirdparty()
+
+	project "simdutf-static"
+		kind "StaticLib"
+		language "C++"
+		files { "src/thirdparty/simdutf/simdutf.cpp" }
+		includedirs { "src/thirdparty/simdutf" }
+		build_base_cpp_configuration( "simdutf" )
 		target_dir_thirdparty()
 
 	project "zlib-static"
@@ -1599,6 +1632,8 @@ workspace "eepp"
 			build_base_cpp_configuration( "eepp-maps" )
 			postsymlinklib_arch( "eepp-maps" )
 			target_dir_lib("")
+			filter { "system:windows", "action:not vs*" }
+				links { "winpthread" }
 			filter "action:not vs*"
 				buildoptions { "-Wall" }
 	end
@@ -1677,7 +1712,8 @@ workspace "eepp"
 		incdirs { "include", "src" }
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
 				"src/eepp/window/platform/macos/platformhelper.mm",
-				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm" }
+				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
+				"src/eepp/system/fileassociation_macos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )
@@ -1703,6 +1739,11 @@ workspace "eepp"
 			build_eepp( "eepp" )
 			postsymlinklib_arch( "eepp" )
 			target_dir_lib("")
+			-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
+			-- only: Mach-O and PE already bind them directly.
+			if os.istarget("linux") or os.istarget("bsd") or os.istarget("haiku") then
+				linkoptions { "-Wl,-Bsymbolic-functions" }
+			end
 	end
 
 	-- Examples
@@ -1762,6 +1803,12 @@ workspace "eepp"
 		files { "src/examples/ui_custom_widget/*.cpp" }
 		build_link_configuration( "eepp-ui-custom-widget", true )
 
+	project "eepp-ui-charts"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_charts/*.cpp" }
+		build_link_configuration( "eepp-ui-charts", true )
+
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
@@ -1785,6 +1832,12 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/ui_accessibility/*.cpp" }
 		build_link_configuration( "eepp-ui-accessibility", true )
+
+	project "eepp-ui-date-time-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_date_time_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-date-time-picker", true )
 
 	project "eepp-ui-font-picker"
 		set_kind()
@@ -1965,6 +2018,8 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.x64.res" }
 		filter "system:linux or system:bsd"
 			links { "util" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter "system:haiku"
@@ -1980,8 +2035,60 @@ workspace "eepp"
 	project "eeiv"
 		set_kind()
 		language "C++"
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eeiv.rc", "bin/assets/icon/eeiv.ico" }
+			vpaths { ['Resources/*'] = { "eeiv.rc", "eeiv.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.x64.res" }
+		filter {}
 		files { "src/tools/eeiv/*.cpp" }
-		build_link_configuration( "eeiv", true )
+		build_link_configuration( "eeiv", false )
+
+	project "eproc"
+		set_kind()
+		language "C++"
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eproc.rc", "bin/assets/icon/eproc.ico" }
+			vpaths { ['Resources/*'] = { "eproc.rc", "eproc.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.x64.res" }
+		filter {}
+		files {
+			"src/tools/eproc/appconfig.cpp",
+			"src/tools/eproc/eproc.cpp",
+			"src/tools/eproc/gui_window_tracker.cpp",
+			"src/tools/eproc/process_collector.cpp",
+			"src/tools/eproc/process_info.cpp",
+			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/process_table_state.cpp",
+			"src/tools/eproc/settingspanel.cpp",
+			"src/tools/eproc/window_icon.cpp",
+		}
+		filter "system:linux"
+			files {
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+			}
+		filter "system:windows"
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
+			links { "psapi", "advapi32" }
+		filter "system:macosx"
+			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+		filter "system:bsd"
+			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		filter {}
+		build_link_configuration( "eproc", false )
 
 	-- Tests
 	project "eepp-test"
@@ -2015,8 +2122,15 @@ workspace "eepp"
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/eproc/process_info.cpp",
+				"src/tools/eproc/process_model.cpp",
+				"src/tools/eproc/process_table_state.cpp",
+				"src/tools/eproc/window_icon.cpp",
+				"src/tools/ecode/ignorematcher.cpp",
 				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/projectdirectorytree.cpp",
 				"src/tools/ecode/plugins/git/git.cpp",
+				"src/tools/ecode/plugins/git/gitdiff.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		if os.istarget("macosx") then
@@ -2025,10 +2139,27 @@ workspace "eepp"
 		end
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		filter "system:haiku"
 			links { "bsd", "network" }
+		filter "system:bsd"
+			links { "util" }
 		filter {}
 		eepp_module_backward_add( false )
+
+		filter { "system:linux" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		filter {}
+
 		build_link_configuration( "eepp-unit_tests", true )
 
 	if os.istarget("windows") then

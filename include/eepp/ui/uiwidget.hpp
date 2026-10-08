@@ -27,6 +27,7 @@ class UIStyle;
 class AccessibilityWidgetResolver;
 struct AccessibilityProperties;
 class UIWidget;
+class UITextSelectionController;
 
 struct MarginAuto {
 	static constexpr auto Left = ( 1 << 0 );
@@ -106,6 +107,12 @@ class EE_API UIWidget : public UINode {
 	UIWidget* setAccessibilityDescription( const String& description );
 
 	UIWidget* setAccessibilityHidden( bool hidden );
+
+	virtual UITextSelectionController* getTextSelectionController();
+
+	virtual const UITextSelectionController* getTextSelectionController() const;
+
+	UITextSelectionController* getTextSelectionControllerInTree() const;
 
 	/**
 	 * @brief Gets the widget type identifier.
@@ -1098,6 +1105,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIStyle* getUIStyle() const;
 
+	/** Resolve a CSS color variable, or return fallback when it is absent. */
+	Color themeColor( const std::string& variable, Color fallback ) const;
+
 	/**
 	 * @brief Reloads the widget's style.
 	 *
@@ -1705,6 +1715,10 @@ class EE_API UIWidget : public UINode {
 	 * implement custom handling of size changes.
 	 */
 	virtual void onSizeChange();
+
+	/** Updates size-dependent drawing state without treating measured layout output as new input.
+	 */
+	void onSizeChange( bool notifyLayout );
 
 	/**
 	 * @brief Handles size policy change events.

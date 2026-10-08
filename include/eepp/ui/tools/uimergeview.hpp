@@ -2,9 +2,9 @@
 #define EE_UI_TOOLS_UIMERGEVIEW_HPP
 
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
 namespace EE::UI::Tools {
@@ -76,7 +76,7 @@ class EE_API UIMergeView : public UILinearLayout, public WidgetCommandExecuter {
 	UICodeEditor* mLeftEditor{ nullptr };
 	UICodeEditor* mResultEditor{ nullptr };
 	UICodeEditor* mRightEditor{ nullptr };
-	UIStackLayout* mToolbar{ nullptr };
+	UIFlowLayout* mToolbar{ nullptr };
 	UILinearLayout* mEditorsLayout{ nullptr };
 	size_t mCurrentBlock{ 0 };
 	bool mSyncingScroll{ false };

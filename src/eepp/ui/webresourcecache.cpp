@@ -33,10 +33,10 @@ std::string makeRequestKey( CachePartitionId partition, const WebResourceRequest
 						canonicalURI( request.uri ).c_str() );
 	for ( const auto& header : request.headers ) {
 		std::string name = String::toLower( header.first );
-		// The partition identifies the cookie/authentication context. Cookie values evolve while a
-		// document is being used, and Referer changes with navigation history; including either one
-		// would duplicate an otherwise reusable resource on Back/Forward navigation.
-		if ( name == "cookie" || name == "referer" )
+		// Documents can change with authentication, while static resources remain reusable as
+		// cookies evolve. Referer changes with navigation history but does not identify content.
+		if ( ( name == "cookie" && request.kind != WebResourceKind::Document ) ||
+			 name == "referer" )
 			continue;
 		key += name;
 		key += ':';

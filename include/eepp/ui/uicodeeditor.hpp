@@ -960,7 +960,6 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	Time mFoldsRefreshTime;
 	Uint32 mTabWidth;
 	Uint32 mLigatureFeatures{ 0 };
-	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Vector2f mScroll;

@@ -57,18 +57,6 @@ std::string StyleSheetStyle::build( bool emitMediaQueryStart, bool emitMediaQuer
 	return css;
 }
 
-const StyleSheetSelector& StyleSheetStyle::getSelector() const {
-	return mSelector;
-}
-
-const StyleSheetProperties& StyleSheetStyle::getProperties() const {
-	return mProperties;
-}
-
-StyleSheetProperties& StyleSheetStyle::getPropertiesRef() {
-	return mProperties;
-}
-
 bool StyleSheetStyle::updatePropertyValue( const std::string& name, const std::string& value ) {
 	bool updated = false;
 	for ( auto& prop : mProperties ) {

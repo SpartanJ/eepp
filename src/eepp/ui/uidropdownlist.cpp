@@ -121,7 +121,7 @@ UIDropDownList* UIDropDownList::showList() {
 	if ( NULL == mListBox )
 		return this;
 
-	if ( !mListBox->isVisible() ) {
+	if ( !mListBox->isVisible() || !mListBox->isEnabled() ) {
 		if ( mListBox->getItemsCount() ) {
 			Rectf tPadding = mListBox->getContainerPadding();
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();

@@ -16,6 +16,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -425,7 +426,8 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
-	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION |
+			  UI_TEXT_SELECTION_ENABLED;
 
 	UISceneNode* sceneNode =
 		getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
@@ -451,7 +453,16 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 }
 
+UIRichText::~UIRichText() {
+	if ( mDocumentSelectionController )
+		mDocumentSelectionController->onOwnerWillBeDestroyed( this );
+}
+
 const RichText& UIRichText::getRichText() {
+	return mRichText;
+}
+
+const RichText& UIRichText::getRichText() const {
 	return mRichText;
 }
 
@@ -670,7 +681,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::SelectionColor:
@@ -1717,23 +1728,22 @@ static Drawable* getInlineBorderDrawable( UIWidget* widget ) {
 			   : nullptr;
 }
 
-void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
-	UILayout::countRichTextRebuild();
-	richText.clear();
-	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
-		auto* uiRt = static_cast<UIRichText*>( container );
-		richText.setLineHeight( uiRt->getLineHeightPx() );
-		richText.setTextIndent( uiRt->getTextIndentPx() );
-		richText.setLineWrap( uiRt->getLineWrap() );
-		richText.setTabWidth( uiRt->getTabSize() );
-		richText.setWhiteSpaceWrapMode(
-			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
+bool UIRichText::isAssigningInlineFragments( const UIWidget* child ) {
+	for ( Node* parent = child->getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET );
+		  parent = parent->getParent() ) {
+		auto* owner = parent->asType<UIHTMLWidget>();
+		if ( auto* layouter = owner->getLayouter();
+			 layouter && layouter->isPositioningInlineFragments() )
+			return true;
+		if ( !owner->isInline() )
+			break;
 	}
-	UIRichText* containerRichText =
-		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
-			? container->asType<UIRichText>()
-			: nullptr;
-	bool lastSpanEndsWithSpace = false;
+	return false;
+}
+
+Float UIRichText::getLayoutMaxWidth( UILayout* container, IntrinsicMode mode ) {
+	if ( mode != IntrinsicMode::None )
+		return 0.f;
 	Float maxWidth = 0;
 	bool isInlineBlockTextSpan =
 		container->isType( UI_TYPE_TEXTSPAN ) && container->asType<UITextSpan>()->isInlineBlock();
@@ -1744,18 +1754,16 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	bool parentIsFlexOrGrid = parentNode && parentNode->isType( UI_TYPE_HTML_WIDGET ) &&
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
 								parentNode->asType<UIHTMLWidget>()->isGrid() );
-	if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
-		 container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
+	if ( isInlineBlockTextSpan && container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
 		 container->getPixelsSize().getWidth() > 0 ) {
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
-	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) && mode == IntrinsicMode::None &&
+	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&
-				container->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-				mode == IntrinsicMode::None ) {
+				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = container->getMatchParentWidth() - container->getPixelsContentOffset().Left -
@@ -1777,15 +1785,31 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			mw = 0.f;
 	}
 
-	if ( mode == IntrinsicMode::None ) {
-		if ( !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
-			richText.setMaxWidth( mw );
-		} else {
-			richText.setMaxWidth( maxWidth );
-		}
-	} else {
-		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+	return !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ? mw
+																					 : maxWidth;
+}
+
+void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
+	UILayout::countRichTextRebuild();
+	TextSelectionRange selection = richText.getSelection();
+	SmallVector<TextSelectionRange, 4> selectionExclusions = richText.getSelectionExclusions();
+	richText.clear();
+	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
+		auto* uiRt = static_cast<UIRichText*>( container );
+		richText.setLineHeight( uiRt->getLineHeightPx() );
+		richText.setTextIndent( uiRt->getTextIndentPx() );
+		richText.setLineWrap( uiRt->getLineWrap() );
+		richText.setTabWidth( uiRt->getTabSize() );
+		richText.setWhiteSpaceWrapMode(
+			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
 	}
+	UIRichText* containerRichText =
+		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
+			? container->asType<UIRichText>()
+			: nullptr;
+	bool lastSpanEndsWithSpace = false;
+	Node* parentNode = container->getParent();
+	richText.setMaxWidth( getLayoutMaxWidth( container, mode ) );
 
 	auto getEffectiveTextTransform = []( Node* node ) -> TextTransform::Value {
 		while ( node ) {
@@ -2256,8 +2280,11 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		// UIRichText::draw(): isFlex()/isGrid() includes inline display variants, but these
 		// ownership exits are only valid for block-level flex/grid containers.
 		CSSDisplay display = htmlContainer->getDisplay();
-		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid )
+		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid ) {
+			richText.setSelection( selection );
+			richText.setSelectionExclusions( std::move( selectionExclusions ) );
 			return;
+		}
 	}
 
 	Node* child = container->getFirstChild();
@@ -2268,6 +2295,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			processNode( child, processNode );
 		child = child->getNextNode();
 	}
+	richText.setSelection( selection );
+	richText.setSelectionExclusions( std::move( selectionExclusions ) );
 }
 
 void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
@@ -2348,10 +2377,16 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			bool packing = isPacking();
-			if ( packing )
-				return 1;
 			auto reasons = layoutInvalidationFromMessage( Msg );
+			bool packing = isPacking();
+			if ( packing ) {
+				// An active measurement absorbs notifications, but its retained inline stream
+				// must still observe content changes made by callbacks during that measurement.
+				if ( reasons &
+					 toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) )
+					invalidateIntrinsicSize();
+				return 1;
+			}
 
 			// PaintOnly invalidations must not trigger layout.
 			if ( reasons && ( reasons & ~toLayoutInvalidationFlags(
@@ -2443,6 +2478,34 @@ bool UIRichText::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+bool UIRichText::isTextSelectionOwner() const {
+	if ( !isVisible() || getDisplay() == CSSDisplay::None || getDisplay() == CSSDisplay::Flex ||
+		 getDisplay() == CSSDisplay::Grid || mRichText.getCharacterCount() == 0 )
+		return false;
+	if ( isType( UI_TYPE_TEXTSPAN ) && asConstType<UITextSpan>()->isInline() ) {
+		Node* parent = getParent();
+		if ( !parent || !parent->isType( UI_TYPE_HTML_WIDGET ) )
+			return false;
+		auto display = parent->asType<UIHTMLWidget>()->getDisplay();
+		return display == CSSDisplay::Flex || display == CSSDisplay::Grid;
+	}
+	return true;
+}
+
+Int64 UIRichText::getTextCharacterCount() const {
+	return mRichText.getCharacterCount();
+}
+
+Int64 UIRichText::findTextCharacterFromWorldPosition( const Vector2f& worldPos ) const {
+	Vector2f nodePos( worldPos );
+	worldToNode( nodePos );
+	nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
+	nodePos.x = eemax( 0.f, nodePos.x );
+	nodePos.y = eemax( 0.f, nodePos.y );
+	return std::clamp( mRichText.findCharacterFromPos( nodePos.asInt() ), (Int64)0,
+					   mRichText.getCharacterCount() );
+}
+
 void UIRichText::onLayoutUpdate() {
 	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
 	mDeferredLayoutReasons = 0;
@@ -2460,11 +2523,15 @@ void UIRichText::onLayoutUpdate() {
 }
 
 void UIRichText::setTextSelectionEnabled( bool active ) {
+	if ( active == isTextSelectionEnabled() )
+		return;
 	if ( active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
 	}
+	if ( auto* controller = getTextSelectionControllerInTree() )
+		controller->refresh();
 }
 
 const Color& UIRichText::getSelectionBackColor() const {
@@ -2490,9 +2557,21 @@ std::pair<Int64, Int64> UIRichText::getTextSelectionRange() const {
 }
 
 void UIRichText::setTextSelectionRange( TextSelectionRange range ) {
+	mRichText.setSelectionExclusions( {} );
 	selCurInit( std::clamp( range.start, (Int64)0, mRichText.getCharacterCount() ) );
 	selCurEnd( std::clamp( range.end, (Int64)0, mRichText.getCharacterCount() ) );
 	onSelectionChange();
+}
+
+void UIRichText::setTextSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions ) {
+	const auto& current = mRichText.getSelectionExclusions();
+	if ( current.size() == exclusions.size() &&
+		 std::equal(
+			 current.begin(), current.end(), exclusions.begin(),
+			 []( const auto& a, const auto& b ) { return a.start == b.start && a.end == b.end; } ) )
+		return;
+	mRichText.setSelectionExclusions( std::move( exclusions ) );
+	invalidateDraw();
 }
 
 String UIRichText::getSelectionString() const {
@@ -2500,16 +2579,14 @@ String UIRichText::getSelectionString() const {
 }
 
 Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseDown( this, position, flags );
+		return UIHTMLWidget::onMouseDown( position, flags );
+	}
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( getEventDispatcher()->getMouseDownNode() == this ||
 		   inParentTreeOf( getEventDispatcher()->getMouseDownNode() ) ) ) {
-		Vector2f nodePos( Vector2f( position.x, position.y ) );
-		worldToNode( nodePos );
-		nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
-		nodePos.x = eemax( 0.f, nodePos.x );
-		nodePos.y = eemax( 0.f, nodePos.y );
-
-		Int64 curPos = mRichText.findCharacterFromPos( nodePos.asInt() );
+		Int64 curPos = findTextCharacterFromWorldPosition( position.asFloat() );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {
@@ -2529,6 +2606,10 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseUp( position, flags );
+		return UIHTMLWidget::onMouseUp( position, flags );
+	}
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mSelecting = false;
 	}
@@ -2537,16 +2618,30 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onMouseDoubleClick( this, position, flags ) )
+			return 1;
+	}
 	return UIHTMLWidget::onMouseDoubleClick( position, flags );
 }
 
 Uint32 UIRichText::onFocusLoss() {
 	UIHTMLWidget::onFocusLoss();
+	if ( getTextSelectionControllerInTree() )
+		return 1;
 
 	selCurEnd( selCurInit() );
 	onSelectionChange();
 
 	return 1;
+}
+
+Uint32 UIRichText::onKeyDown( const KeyEvent& event ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onKeyDown( event ) )
+			return 1;
+	}
+	return UIHTMLWidget::onKeyDown( event );
 }
 
 void UIRichText::onSelectionChange() {

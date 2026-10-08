@@ -141,17 +141,7 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 					 BlendMode effect, const OriginPoint& rotationCenter,
 					 const OriginPoint& scaleCenter ) {
 	updateLayout();
-
-	if ( mSelection.start != mSelection.end ) {
-		auto rects = getSelectionRects();
-		Primitives p;
-		p.setColor( mSelectionBackColor );
-		for ( const auto& rect : rects ) {
-			p.drawRectangle(
-				Rectf( rect.getPosition() * scale + Vector2f( X, Y ), rect.getSize() * scale ), 0.f,
-				scale );
-		}
-	}
+	const auto selectedSegments = getSelectedSegments();
 
 	for ( const auto& fragment : mInlineFragments ) {
 		if ( fragment.type != InlineFragment::Type::Box )
@@ -186,6 +176,16 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 				p.drawRectangle( Rectf( rect.Right - bw, rect.Top, rect.Right, rect.Bottom ) );
 		}
 	}
+	if ( mSelection.start != mSelection.end ) {
+		auto rects = getSelectionRects();
+		Primitives p;
+		p.setColor( mSelectionBackColor );
+		for ( const auto& rect : rects ) {
+			p.drawRectangle(
+				Rectf( rect.getPosition() * scale + Vector2f( X, Y ), rect.getSize() * scale ), 0.f,
+				scale );
+		}
+	}
 
 	for ( auto& line : mLines ) {
 		for ( auto& span : line.spans ) {
@@ -214,20 +214,21 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 
 				bool selectionApplied = false;
 				if ( mSelectionColor != Color::Transparent ) {
-					TextSelectionRange spanSel = {
-						std::clamp( mSelection.start, span.startCharIndex, span.endCharIndex ) -
-							span.startCharIndex,
-						std::clamp( mSelection.end, span.startCharIndex, span.endCharIndex ) -
-							span.startCharIndex };
-
-					if ( spanSel.start != spanSel.end ) {
-						text->setFillColor( mSelectionColor,
-											(Uint32)std::min( spanSel.start, spanSel.end ),
-											(Uint32)std::max( spanSel.start, spanSel.end ) - 1 );
-						selectionApplied = true;
+					for ( const auto& segment : selectedSegments ) {
+						Int64 start = std::max( segment.start, span.startCharIndex );
+						Int64 end = std::min( segment.end, span.endCharIndex );
+						if ( start < end ) {
+							text->setFillColor( mSelectionColor,
+												(Uint32)( start - span.startCharIndex ),
+												(Uint32)( end - span.startCharIndex - 1 ) );
+							selectionApplied = true;
+						}
 					}
 				}
 
+				// Text paints glyphs from an em-size baseline. Translate that origin to the
+				// font ascent used by layout; backgrounds and selection retain their line boxes.
+				pos.y += span.baseline - text->getCharacterSize();
 				if ( rotation == 0 && scale == Vector2f::One ) {
 					text->draw( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ),
 								Vector2f::One, 0, effect );
@@ -255,6 +256,34 @@ void RichText::setSelection( TextSelectionRange range ) {
 	if ( mSelection.start != range.start || mSelection.end != range.end ) {
 		mSelection = range;
 	}
+}
+
+void RichText::setSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions ) {
+	mSelectionExclusions = std::move( exclusions );
+}
+
+SmallVector<TextSelectionRange, 4> RichText::getSelectedSegments() const {
+	return getSelectedSegments( mSelection );
+}
+
+SmallVector<TextSelectionRange, 4> RichText::getSelectedSegments( TextSelectionRange range ) const {
+	SmallVector<TextSelectionRange, 4> segments;
+	Int64 start = std::min( range.start, range.end );
+	Int64 end = std::max( range.start, range.end );
+	if ( start >= end )
+		return segments;
+	for ( const auto& excluded : mSelectionExclusions ) {
+		if ( excluded.end <= start || excluded.start >= end )
+			continue;
+		if ( excluded.start > start )
+			segments.push_back( { start, std::min( excluded.start, end ) } );
+		start = std::max( start, excluded.end );
+		if ( start >= end )
+			break;
+	}
+	if ( start < end )
+		segments.push_back( { start, end } );
+	return segments;
 }
 
 void RichText::setLineHeight( Float height ) {
@@ -360,43 +389,37 @@ Vector2f RichText::findCharacterPos( Int64 index ) const {
 SmallVector<Rectf> RichText::getSelectionRects() const {
 	const_cast<RichText*>( this )->updateLayout();
 	SmallVector<Rectf> rects;
-	if ( mSelection.start == mSelection.end )
-		return rects;
-
-	Int64 start = std::min( mSelection.start, mSelection.end );
-	Int64 end = std::max( mSelection.start, mSelection.end );
-
-	if ( !mInlineFragments.empty() ) {
-		for ( const auto& fragment : mInlineFragments ) {
-			if ( fragment.type == InlineFragment::Type::Box )
-				continue;
-
-			Int64 fragmentStart = std::max( start, fragment.startCharIndex );
-			Int64 fragmentEnd = std::min( end, fragment.endCharIndex );
-			if ( fragmentStart >= fragmentEnd )
-				continue;
-
-			if ( fragment.type == InlineFragment::Type::TextRun && fragment.text ) {
-				auto spanRects =
-					fragment.text->getSelectionRects( { fragmentStart - fragment.startCharIndex,
-														fragmentEnd - fragment.startCharIndex } );
-				for ( auto& rect : spanRects ) {
-					rect.move( fragment.bounds.getPosition() );
-					rects.push_back( rect );
+	for ( const auto& segment : getSelectedSegments() ) {
+		Int64 start = segment.start;
+		Int64 end = segment.end;
+		if ( !mInlineFragments.empty() ) {
+			for ( const auto& fragment : mInlineFragments ) {
+				if ( fragment.type == InlineFragment::Type::Box )
+					continue;
+				Int64 fragmentStart = std::max( start, fragment.startCharIndex );
+				Int64 fragmentEnd = std::min( end, fragment.endCharIndex );
+				if ( fragmentStart >= fragmentEnd )
+					continue;
+				if ( fragment.type == InlineFragment::Type::TextRun && fragment.text ) {
+					auto spanRects = fragment.text->getSelectionRects(
+						{ fragmentStart - fragment.startCharIndex,
+						  fragmentEnd - fragment.startCharIndex } );
+					for ( auto& rect : spanRects ) {
+						rect.move( fragment.bounds.getPosition() );
+						rects.push_back( rect );
+					}
+				} else {
+					rects.push_back( fragment.bounds );
 				}
-			} else {
-				rects.push_back( fragment.bounds );
 			}
+			continue;
 		}
-		return rects;
-	}
-
-	for ( const auto& line : mLines ) {
-		for ( const auto& span : line.spans ) {
-			Int64 spanStart = std::max( start, span.startCharIndex );
-			Int64 spanEnd = std::min( end, span.endCharIndex );
-
-			if ( spanStart < spanEnd ) {
+		for ( const auto& line : mLines ) {
+			for ( const auto& span : line.spans ) {
+				Int64 spanStart = std::max( start, span.startCharIndex );
+				Int64 spanEnd = std::min( end, span.endCharIndex );
+				if ( spanStart >= spanEnd )
+					continue;
 				if ( span.type == RenderSpan::Type::Text && span.text ) {
 					auto spanRects = span.text->getSelectionRects(
 						{ spanStart - span.startCharIndex, spanEnd - span.startCharIndex } );
@@ -414,47 +437,49 @@ SmallVector<Rectf> RichText::getSelectionRects() const {
 }
 
 String RichText::getSelectionString() const {
+	return getSelectionString( mSelection );
+}
+
+String RichText::getSelectionString( TextSelectionRange range ) const {
 	const_cast<RichText*>( this )->updateLayout();
-	if ( mSelection.start == mSelection.end )
+	if ( range.start == range.end )
 		return "";
-
-	Int64 start = std::min( mSelection.start, mSelection.end );
-	Int64 end = std::max( mSelection.start, mSelection.end );
 	String res;
-
-	Int64 lastEndIdx = 0;
-	for ( const auto& line : mLines ) {
-		for ( const auto& span : line.spans ) {
-			// Check if there was a newline before this span
-			while ( lastEndIdx < span.startCharIndex ) {
-				if ( lastEndIdx >= start && lastEndIdx < end ) {
-					res += '\n';
+	for ( const auto& segment : getSelectedSegments( range ) ) {
+		Int64 start = segment.start;
+		Int64 end = segment.end;
+		Int64 lastEndIdx = 0;
+		for ( const auto& line : mLines ) {
+			for ( const auto& span : line.spans ) {
+				// Check if there was a newline before this span
+				while ( lastEndIdx < span.startCharIndex ) {
+					if ( lastEndIdx >= start && lastEndIdx < end ) {
+						res += '\n';
+					}
+					lastEndIdx++;
 				}
-				lastEndIdx++;
-			}
 
-			Int64 spanStart = std::max( start, span.startCharIndex );
-			Int64 spanEnd = std::min( end, span.endCharIndex );
+				Int64 spanStart = std::max( start, span.startCharIndex );
+				Int64 spanEnd = std::min( end, span.endCharIndex );
 
-			if ( spanStart < spanEnd ) {
-				if ( span.type == RenderSpan::Type::Text && span.text ) {
-					res += span.text->getString().substr( spanStart - span.startCharIndex,
-														  spanEnd - spanStart );
-				} else {
-					// It's a drawable or custom size, it takes 1 "character" index.
-					res += ' ';
+				if ( spanStart < spanEnd ) {
+					if ( span.type == RenderSpan::Type::Text && span.text ) {
+						res += span.text->getString().substr( spanStart - span.startCharIndex,
+															  spanEnd - spanStart );
+					} else {
+						// It's a drawable or custom size, it takes 1 "character" index.
+						res += ' ';
+					}
 				}
+				lastEndIdx = span.endCharIndex;
 			}
-			lastEndIdx = span.endCharIndex;
 		}
-	}
-
-	// Check for trailing newlines
-	while ( lastEndIdx < mTotalCharacterCount ) {
-		if ( lastEndIdx >= start && lastEndIdx < end ) {
-			res += '\n';
+		// Check for trailing newlines
+		while ( lastEndIdx < mTotalCharacterCount ) {
+			if ( lastEndIdx >= start && lastEndIdx < end )
+				res += '\n';
+			lastEndIdx++;
 		}
-		lastEndIdx++;
 	}
 
 	return res;
@@ -868,7 +893,7 @@ class RichTextInlineLayouter {
 			bool isFloat = span.floatType != RichText::InlineFloat::None;
 
 			if ( span.type == RichText::RenderSpan::Type::Text ) {
-				Float baseline = getTextVisualBaseline( span.text );
+				Float baseline = span.baseline;
 				RichText::BaselineAlignValue baselineAlign = effectiveInlineBaselineAlign(
 					inlineItems, span.inlinePath, span.baselineAlign );
 				Float offsetY = getBaselineAlignedOffset(
@@ -1968,6 +1993,7 @@ class RichTextInlineLayouter {
 		RichText::RenderSpan renderSpan;
 		renderSpan.type = RichText::RenderSpan::Type::Text;
 		renderSpan.text = renderSpanText;
+		renderSpan.baseline = getTextVisualBaseline( payload.text );
 		renderSpan.margin = payload.margin;
 		renderSpan.padding = payload.padding;
 		renderSpan.lineHeight = payload.lineHeight;
@@ -2403,16 +2429,19 @@ void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Co
 }
 
 void RichText::clear() {
+	++mInlineFragmentsGeneration;
 	mInlineItems.clear();
 	mInlinePath.clear();
 	mInlineFragments.clear();
 	mLines.clear();
 	mSelection = { 0, 0 };
+	mSelectionExclusions.clear();
 	invalidateLayout();
 }
 
 void RichText::rebuildInlineFragments() {
 	mInlineFragments = RichTextInlineLayouter::rebuildFragments( mInlineItems, mLines );
+	++mInlineFragmentsGeneration;
 }
 
 void RichText::setFontStyleConfig( const FontStyleConfig& styleConfig ) {

@@ -59,19 +59,6 @@ UITabWidgetSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget* 
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	auto& connections = mWidgetEventConnections[widget];
-	connections += widget->connect( Event::OnFocusWithin, [this]( const Event* event ) {
-		setCurrentWidget( event->getNode()->asType<UIWidget>() );
-	} );
-	connections += widget->connect( Event::OnTitleChange, [this]( const Event* event ) {
-		const TextEvent* tevent = static_cast<const TextEvent*>( event );
-		UIWidget* widget = event->getNode()->asType<UIWidget>();
-		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-		UITab* tab = tabWidget->getTabFromOwnedWidget( widget );
-		if ( !tab )
-			return;
-		tab->setText( tevent->getText() );
-	} );
 	if ( focus )
 		tabWidget->setTabSelected( tab );
 	mClient->onTabCreated( tab, widget );
@@ -182,13 +169,22 @@ UITabWidget* UITabWidgetSplitter::createTabWidget( Node* parent ) {
 			}
 			return false;
 		} );
+	connections += tabWidget->connect( Event::OnTabAdded, [this]( const Event* event ) {
+		const auto* tabEvent = static_cast<const TabEvent*>( event );
+		Node* ownedNode = tabEvent->getTab()->getOwnedWidget();
+		if ( ownedNode && ownedNode->isWidget() )
+			attachWidgetEvents( ownedNode->asType<UIWidget>() );
+	} );
 	connections += tabWidget->connect( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	if ( mOnTabWidgetCreateCb )
 		mOnTabWidgetCreateCb( tabWidget );
-	Lock l( mTabWidgetMutex );
-	mTabWidgets.push_back( tabWidget );
+	{
+		Lock l( mTabWidgetMutex );
+		mTabWidgets.push_back( tabWidget );
+	}
+	updateTabBarVisibility();
 	return tabWidget;
 }
 
@@ -292,7 +288,6 @@ void UITabWidgetSplitter::closeTab( UIWidget* widget,
 									UITabWidget::FocusTabBehavior focusTabBehavior ) {
 	if ( widget ) {
 		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-		mWidgetEventConnections.erase( widget );
 		if ( tabWidget )
 			tabWidget->removeTab( (UITab*)widget->getData(), true, false, focusTabBehavior );
 		if ( mCurWidget == widget )
@@ -627,9 +622,36 @@ void UITabWidgetSplitter::closeSplitter( UISplitter* splitter ) {
 	closeTabWidgets( splitter );
 }
 
+void UITabWidgetSplitter::attachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget ||
+		 mWidgetEventConnections.find( widget ) != mWidgetEventConnections.end() )
+		return;
+
+	auto& connections = mWidgetEventConnections[widget];
+	connections += widget->connect( Event::OnFocusWithin, [this]( const Event* event ) {
+		setCurrentWidget( event->getNode()->asType<UIWidget>() );
+	} );
+	connections += widget->connect( Event::OnTitleChange, [this]( const Event* event ) {
+		const TextEvent* tevent = static_cast<const TextEvent*>( event );
+		UIWidget* widget = event->getNode()->asType<UIWidget>();
+		UITab* tab = getTabFromWidget( widget );
+		if ( !tab )
+			return;
+		tab->setText( tevent->getText() );
+	} );
+}
+
+void UITabWidgetSplitter::detachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget )
+		return;
+
+	mWidgetEventConnections.erase( widget );
+}
+
 void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 	UIWidget* widget = tabEvent->getTab()->getOwnedWidget()->asType<UIWidget>();
 	UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
+	detachWidgetEvents( widget );
 	if ( tabWidget->getTabCount() == 0 ) {
 		UISplitter* splitter = splitterFromWidget( widget );
 		if ( splitter && splitter->isFull() ) {
@@ -672,6 +694,7 @@ void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				focusSomeWidget( nullptr );
 			}
 
+			updateTabBarVisibility();
 			eeASSERT( !mTabWidgets.empty() );
 			eeASSERT( !( mTabWidgets.size() == 1 && mTabWidgets[0]->getTabCount() == 0 ) );
 			return;
@@ -752,12 +775,27 @@ bool UITabWidgetSplitter::getHideTabBarOnSingleTab() const {
 	return mHideTabBarOnSingleTab;
 }
 
+void UITabWidgetSplitter::updateTabBarVisibility() {
+	const bool hideSingleTabBar = mHideTabBarOnSingleTab && !( mShowTabBarWhenSplit && hasSplit() );
+	for ( auto* widget : mTabWidgets )
+		widget->setHideTabBarOnSingleTab( hideSingleTabBar );
+}
+
 void UITabWidgetSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab ) {
 	if ( hideTabBarOnSingleTab != mHideTabBarOnSingleTab ) {
 		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
+		updateTabBarVisibility();
+	}
+}
 
-		for ( auto widget : mTabWidgets )
-			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
+bool UITabWidgetSplitter::getShowTabBarWhenSplit() const {
+	return mShowTabBarWhenSplit;
+}
+
+void UITabWidgetSplitter::setShowTabBarWhenSplit( bool showTabBarWhenSplit ) {
+	if ( mShowTabBarWhenSplit != showTabBarWhenSplit ) {
+		mShowTabBarWhenSplit = showTabBarWhenSplit;
+		updateTabBarVisibility();
 	}
 }
 

@@ -1,6 +1,7 @@
 #include "utest.h"
 #include <atomic>
 #include <eepp/graphics/image.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
@@ -9,6 +10,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <thread>
 
 using namespace EE;
@@ -226,6 +228,7 @@ UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {
 	ASSERT_TRUE( newImage.saveToFile( newImagePath, Graphics::Image::SaveType::PNG ) );
 
 	UIDiffView* diffView = UIDiffView::New();
+	diffView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	diffView->setPixelsSize( 400, 200 );
 	diffView->loadFromFile( oldImagePath, newImagePath );
 
@@ -237,6 +240,44 @@ UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {
 	EXPECT_FALSE( diffView->getLeftEditor()->isVisible() );
 	EXPECT_FALSE( diffView->getRightEditor()->isVisible() );
 	EXPECT_TRUE( diffView->getFileName().toUtf8() == "eepp-uidiffview-new.png" );
+
+	auto toggles = diffView->findAllByType<UISelectButton>( UI_TYPE_SELECTBUTTON );
+	ASSERT_EQ( size_t{ 2 }, toggles.size() );
+	auto* modeToggle = toggles[0];
+	auto* completeToggle = toggles[1];
+	modeToggle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	modeToggle->setPixelsSize( 100, 24 );
+	for ( auto mode : { UIDiffView::ViewMode::Unified, UIDiffView::ViewMode::SideBySide,
+						UIDiffView::ViewMode::Unified } ) {
+		app.getUI()->flushDirtyStyleAndLayout();
+		const Vector2f clickPos = modeToggle->convertToWorldSpace( { 50, 12 } );
+		auto* hit = diffView->overFind( clickPos );
+		ASSERT_EQ( modeToggle, hit );
+		app.getUI()->getEventDispatcher()->sendMouseClick( hit, clickPos.asInt(), EE_BUTTON_LMASK );
+		EXPECT_EQ( mode, diffView->getViewMode() );
+		EXPECT_EQ( mode != UIDiffView::ViewMode::Unified, modeToggle->isSelected() );
+		EXPECT_EQ( completeToggle, diffView->getLastChild() );
+		EXPECT_EQ( modeToggle, completeToggle->getPrevNode() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::SideBySide,
+				   diffView->getLeftImageViewer()->isVisible() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::SideBySide,
+				   diffView->getRightImageViewer()->isVisible() );
+		const auto viewers = diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER );
+		ASSERT_EQ( size_t{ 3 }, viewers.size() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::Unified, viewers[2]->isVisible() );
+		EXPECT_TRUE( viewers[2]->hasImage() );
+	}
+
+	diffView->loadFromStrings( "old", "new" );
+	completeToggle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	completeToggle->setPixelsSize( 80, 24 );
+	app.getUI()->flushDirtyStyleAndLayout();
+	const Vector2f clickPos = completeToggle->convertToWorldSpace( { 40, 12 } );
+	auto* hit = diffView->overFind( clickPos );
+	ASSERT_EQ( completeToggle, hit );
+	app.getUI()->getEventDispatcher()->sendMouseClick( hit, clickPos.asInt(), EE_BUTTON_LMASK );
+	EXPECT_TRUE( diffView->isCompleteView() );
+	EXPECT_FALSE( completeToggle->isSelected() );
 
 	eeDelete( diffView );
 	FileSystem::fileRemove( oldImagePath );

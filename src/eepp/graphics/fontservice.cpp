@@ -6,7 +6,10 @@
 
 namespace EE { namespace Graphics {
 
-FontService::FontService( ResourceScope& resourceScope ) : mResourceScope( resourceScope ) {}
+FontService::FontService( ResourceScope& resourceScope ) :
+	mResourceScope( resourceScope ),
+	mHinting( Font::fontHintingFromEnvironment( FontHinting::Full ) ),
+	mAntialiasing( Font::fontAntialiasingFromEnvironment( FontAntialiasing::Grayscale ) ) {}
 
 ResourceScope& FontService::getResourceScope() const {
 	return mResourceScope;
@@ -83,6 +86,7 @@ FontHinting FontService::getHinting() const {
 }
 
 void FontService::setHinting( FontHinting hinting ) {
+	hinting = Font::fontHintingFromEnvironment( hinting );
 	mHinting = hinting;
 	for ( const FontPtr& fontHandle : mResourceScope.getFonts() ) {
 		Font* font = fontHandle.get();
@@ -99,6 +103,7 @@ FontAntialiasing FontService::getAntialiasing() const {
 }
 
 void FontService::setAntialiasing( FontAntialiasing antialiasing ) {
+	antialiasing = Font::fontAntialiasingFromEnvironment( antialiasing );
 	mAntialiasing = antialiasing;
 	for ( const FontPtr& fontHandle : mResourceScope.getFonts() ) {
 		Font* font = fontHandle.get();

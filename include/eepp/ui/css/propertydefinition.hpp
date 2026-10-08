@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/propertyids.hpp>
+#include <string_view>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -44,8 +45,8 @@ enum class PropertyRelativeTarget : Uint32 {
 
 class EE_API PropertyDefinition {
   public:
-	PropertyDefinition( PropertyId propertyId, const std::string& name,
-						const std::string& defaultValue, const bool& inherited = false );
+	PropertyDefinition( PropertyId propertyId, std::string_view name, std::string_view defaultValue,
+						const bool& inherited = false );
 
 	const std::string& getName() const;
 

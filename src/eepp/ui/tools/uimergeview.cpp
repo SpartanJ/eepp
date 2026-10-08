@@ -168,18 +168,18 @@ void UIMergeView::createToolbar() {
 		padding: 2dp 4dp 2dp 4dp;
 	}
 	</style>
-	<StackLayout id="merge_toolbar" lw="mp" lh="wc" padding="4dp 4dp 0dp 4dp">
+	<FlowLayout id="merge_toolbar" lw="mp" lh="wc" padding="4dp 4dp 0dp 4dp">
 		<PushButton id="merge_previous_conflict" text="Previous Conflict" icon="icon(arrow-up, 12dp)" class="mergeview_toolbar_button" />
 		<PushButton id="merge_accept_left" text="Accept Left" icon="icon(arrow-left, 12dp)" class="mergeview_toolbar_button" />
 		<PushButton id="merge_accept_both" text="Accept Both" icon="icon(arrow-both, 12dp)" class="mergeview_toolbar_button" />
 		<PushButton id="merge_accept_right" text="Accept Right" icon="icon(arrow-right, 12dp)" class="mergeview_toolbar_button" />
 		<PushButton id="merge_recreate_conflict" text="Recreate Conflict" icon="icon(refresh, 12dp)" class="mergeview_toolbar_button" />
 		<PushButton id="merge_next_conflict" text="Next Conflict" icon="icon(arrow-down, 12dp)" class="mergeview_toolbar_button" />
-	</StackLayout>
+	</FlowLayout>
 	)xml";
 	getUISceneNode()->loadLayoutFromString( TOOLBAR_LAYOUT, this,
 											String::hash( "uimergeview_toolbar" ) );
-	mToolbar = find<UIStackLayout>( "merge_toolbar" );
+	mToolbar = find<UIFlowLayout>( "merge_toolbar" );
 
 	const auto bindAction = [this]( const char* buttonId, const char* command,
 									const KeyBindings::Shortcut& shortcut,
@@ -227,7 +227,7 @@ UIPushButton* UIMergeView::addToolbarAction( const std::string& command, const S
 	if ( auto* toolbarIcon = getUISceneNode()->findIcon( icon ) )
 		button->setIcon( toolbarIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	button->setClass( "mergeview_toolbar_button" );
-	button->setLayoutMarginRight( PixelDensity::dpToPx( 4 ) );
+	button->setLayoutMarginRight( 4 );
 	const auto keybind = getKeyBindings().getCommandKeybindString( command );
 	button->setTooltipText( keybind.empty() ? text : text + " (" + keybind + ")" );
 	button->onClick( [this, command]( const Event* ) { execute( command ); } );

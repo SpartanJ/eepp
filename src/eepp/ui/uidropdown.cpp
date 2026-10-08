@@ -1,10 +1,8 @@
-#include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uidropdown.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uipopup.hpp>
 
 namespace EE { namespace UI {
 
@@ -129,40 +127,9 @@ Float UIDropDown::getPopUpWidth( Float contentsWidth ) const {
 }
 
 void UIDropDown::alignPopUp( UIWidget* widget ) {
-	if ( !mStyleConfig.PopUpToRoot )
-		widget->setParent( getWindowContainer() );
-	else
-		widget->setParent( getUISceneNode()->getRoot() );
-
-	widget->toFront();
-
-	bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
-				  mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
-
-	Float width = widget->getSize().getWidth();
-	Float offsetX = center ? eefloor( ( getSize().getWidth() - width ) * 0.5f ) : 0;
-
-	Vector2f pos( mDpPos.x + offsetX, mDpPos.y + getSize().getHeight() );
-	Vector2f posCpy( pos );
-	nodeToWorld( posCpy );
-
-	if ( !getUISceneNode()->getWorldBounds().contains( Rectf( posCpy, widget->getSize() ) ) ) {
-		pos = Vector2f( mDpPos.x + offsetX, mDpPos.y - widget->getSize().getHeight() );
-	}
-
-	if ( mStyleConfig.PopUpToRoot ) {
-		getParent()->nodeToWorld( pos );
-		pos = PixelDensity::pxToDp( pos );
-	} else {
-		Node* parentNode = getParent();
-		Node* rp = getWindowContainer();
-		while ( rp != parentNode ) {
-			pos += parentNode->getPosition();
-			parentNode = parentNode->getParent();
-		}
-	}
-
-	widget->setPosition( pos );
+	const bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
+						mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
+	UIPopUp::align( this, widget, mStyleConfig.PopUpToRoot, center );
 	show();
 	widget->setFocus();
 }
@@ -224,7 +191,7 @@ void UIDropDown::onPopUpFocusLoss() {
 		std::find( mRelatedWidgets.begin(), mRelatedWidgets.end(),
 				   getEventDispatcher()->getFocusNode() ) != mRelatedWidgets.end();
 
-	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !friendIsFocus &&
+	if ( !UIPopUp::hasFocus( this, getPopUpWidget() ) && !isChildFocus && !friendIsFocus &&
 		 !isRelatedWidget ) {
 		hide();
 	}
@@ -238,37 +205,18 @@ void UIDropDown::onItemClicked( const Event* ) {
 void UIDropDown::onItemSelected( const Event* ) {}
 
 void UIDropDown::show() {
-	UIWidget* widget = getPopUpWidget();
-	if ( NULL == widget )
+	auto* popup = getPopUpWidget();
+	if ( !popup )
 		return;
-
-	widget->setEnabled( true );
-	widget->setVisible( true );
+	UIPopUp::show( popup );
 	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
-
-	if ( NULL != getUISceneNode() &&
-		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
-		widget->runAction( Actions::Sequence::New(
-			Actions::Fade::New( 255.f == widget->getAlpha() ? 0.f : widget->getAlpha(), 255.f,
-								getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
-			Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
-	}
 }
 
 void UIDropDown::hide() {
-	UIWidget* widget = getPopUpWidget();
-	if ( NULL == widget )
+	auto* popup = getPopUpWidget();
+	if ( !popup )
 		return;
-
-	if ( NULL != getUISceneNode() &&
-		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
-		widget->runAction( Actions::Sequence::New(
-			Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
-			Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
-	} else {
-		widget->setEnabled( false );
-		widget->setVisible( false );
-	}
+	UIPopUp::hide( popup );
 	notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 }
 

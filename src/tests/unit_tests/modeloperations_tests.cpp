@@ -375,6 +375,44 @@ UTEST( FileSystemModelEvents, preparedMetadataSurvivesDelayedAddDelivery ) {
 	ASSERT_TRUE( model->getNodeFromPath( path.string(), false, false ) != nullptr );
 }
 
+UTEST( FileSystemModelEvents, addsFileAndDirectoryAtRoot ) {
+	TempTree tree;
+	auto model = FileSystemModel::New( tree.path.string() );
+	ASSERT_TRUE( model->getNodeFromPath( tree.path.string(), true, false ) != nullptr );
+
+	auto filePath = tree.path / "new.txt";
+	std::FILE* file = std::fopen( filePath.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+	ASSERT_TRUE( model->handleFileEvent(
+		{ FileSystemEventType::Add, tree.path.string() + FileSystem::getOSSlash(), "new.txt" } ) );
+	ASSERT_TRUE( model->getNodeFromPath( filePath.string(), false, false ) != nullptr );
+
+	auto directoryPath = tree.path / "new-directory";
+	std::filesystem::create_directory( directoryPath );
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Add,
+										   tree.path.string() + FileSystem::getOSSlash(),
+										   "new-directory" } ) );
+	ASSERT_TRUE( model->getNodeFromPath( directoryPath.string(), true, false ) != nullptr );
+}
+
+UTEST( FileSystemModelMove, addsFileMovedFromOutsideProjectToRoot ) {
+	TempTree tree;
+	TempTree outside;
+	auto source = outside.path / "moved.txt";
+	auto destination = tree.path / "moved.txt";
+	std::FILE* file = std::fopen( source.string().c_str(), "wb" );
+	ASSERT_TRUE( file != nullptr );
+	std::fclose( file );
+
+	auto model = FileSystemModel::New( tree.path.string() );
+	std::filesystem::rename( source, destination );
+	ASSERT_TRUE( model->handleFileEvent( { FileSystemEventType::Moved,
+										   tree.path.string() + FileSystem::getOSSlash(),
+										   "moved.txt", source.string() } ) );
+	ASSERT_TRUE( model->getNodeFromPath( destination.string(), false, false ) != nullptr );
+}
+
 UTEST( FileSystemModelEvents, deletesEventCreatedNodeFromUnopenedDirectory ) {
 	TempTree tree;
 	auto directory = tree.path / "unopened";

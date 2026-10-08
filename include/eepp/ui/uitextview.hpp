@@ -179,6 +179,8 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onFontStyleChanged();
 
+	virtual void onFontColorChanged();
+
 	virtual void onAlphaChange();
 
 	virtual void onPaddingChange();

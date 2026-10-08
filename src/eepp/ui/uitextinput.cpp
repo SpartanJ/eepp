@@ -294,6 +294,12 @@ void UITextInput::autoPadding() {
 UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
 	if ( allow != mAllowEditing ) {
 		mAllowEditing = allow;
+		sendCommonEvent( Event::OnAllowEditingChange );
+		// Attribute selectors can style the input and its children from allow-editing.
+		if ( getUISceneNode() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 		invalidateDraw();
 	}
 	return this;
@@ -406,6 +412,11 @@ void UITextInput::onFontStyleChanged() {
 	invalidateDraw();
 }
 
+void UITextInput::onFontColorChanged() {
+	if ( mPassCache )
+		mPassCache->setFillColor( mTextCache.getFillColor() );
+}
+
 Text& UITextInput::getVisibleTextCache() {
 	if ( mMode == TextInputMode::Password && mPassCache )
 		return *mPassCache;
@@ -445,6 +456,13 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	return UITextView::onMouseUp( position, flags );
 }
 
+Uint32 UITextInput::onMessage( const NodeMessage* message ) {
+	// The input owns its right-click behavior, including the choice to disable its menu.
+	if ( message->getMsg() == NodeMessage::MouseUp && ( message->getFlags() & EE_BUTTON_RMASK ) )
+		return 1;
+	return UITextView::onMessage( message );
+}
+
 Uint32 UITextInput::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	UITextView::onMouseClick( position, flags );
 	if ( ( flags & EE_BUTTON_LMASK ) &&
@@ -467,7 +485,9 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 }
 
 Uint32 UITextInput::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	if ( NULL != mSceneNode )
+	// Mouse-over also bubbles from children; keep the cursor selected for the hovered child.
+	auto* dispatcher = getEventDispatcher();
+	if ( mSceneNode && dispatcher && dispatcher->getMouseOverNode() == this )
 		mSceneNode->setCursor( Cursor::IBeam );
 
 	return UITextView::onMouseOver( position, flags );
@@ -591,7 +611,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getHintOutlineThickness() ), "px" );
+			return pixelsLengthToString( getHintOutlineThickness() );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		case PropertyId::HintDisplay:
@@ -671,7 +691,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontStyle( attribute.asFontStyle() );
 			break;
 		case PropertyId::HintStrokeWidth:
-			setHintOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			setHintOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintStrokeColor:
 			setHintOutlineColor( attribute.asColor() );

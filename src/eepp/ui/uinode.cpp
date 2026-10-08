@@ -977,10 +977,6 @@ Float UINode::getBorderWidth() const {
 	return NULL != mBorder ? mBorder->getLineWidth() : 1.f;
 }
 
-const Uint64& UINode::getFlags() const {
-	return mFlags;
-}
-
 UINode* UINode::setFlags( const Uint64& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
 		setBackgroundFillEnabled( true );
@@ -1846,6 +1842,11 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 		ret = PixelDensity::dpToPx( ret ); // scale px as if where dp in HTML elements
 
 	return ret;
+}
+
+std::string UINode::pixelsLengthToString( Float pixels ) const {
+	return mFlags & UI_HTML_ELEMENT ? String::fromFloat( PixelDensity::pxToDp( pixels ), "dp" )
+									: String::fromFloat( pixels, "px" );
 }
 
 Float UINode::convertLengthAsDp( const StyleSheetLength& length,

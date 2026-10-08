@@ -330,6 +330,7 @@ ecode tentera d'ouvrir un terminal externe.</string>
 	<string name="frame_rate_limit">Limite de la fréquence d'images</string>
 	<string name="frame_rate_limit_applied">Limite de la fréquence d'images appliquée</string>
 	<string name="fullscreen_mode">Mode plein écran</string>
+	<string name="zen_mode">Mode zen</string>
 	<string name="fullscreen_toggle">Basculer en plein écran</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Ajouter une branche</string>
@@ -1104,6 +1105,14 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="enable_exclusive_mode_by_default">Activer le mode exclusif par défaut</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">Désactive les raccourcis globaux dans les nouveaux terminaux.</string>
 	<string name="file_associations">Associations de fichiers</string>
+	<string name="apply">Appliquer</string>
+	<string name="extension">Extension</string>
+	<string name="registered">Associé</string>
+	<string name="install_desktop_entry">Installer le lanceur d’application</string>
+	<string name="system_file_associations">Associations de fichiers système</string>
+	<string name="system_file_associations_desc">Rendre ecode disponible pour les extensions sélectionnées. Le système d’exploitation peut encore demander de confirmer l’application par défaut.</string>
+	<string name="file_associations_updated">Associations de fichiers mises à jour.</string>
+	<string name="file_associations_update_failed">Impossible de mettre à jour les associations de fichiers.</string>
 	<string name="full">Complet</string>
 	<string name="grayscale">Niveaux de gris</string>
 	<string name="hide_tabbar">Masquer la barre d'onglets</string>
@@ -1211,6 +1220,10 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="discordrpc_language_icons_desc">Display an icon for the active document language.</string>
 	<string name="formatter_auto_format_on_save">Format on Save</string>
 	<string name="formatter_auto_format_on_save_desc">Automatically format supported documents when saving.</string>
+	<string name="git_diff_gutter">Show Git Diff Gutter</string>
+	<string name="git_diff_gutter_desc">Show added, modified and deleted line indicators in the editor gutter.</string>
+	<string name="git_diff_gutter_debounce_delay">Git Diff Gutter Update Delay</string>
+	<string name="git_diff_gutter_debounce_delay_desc">How long to wait after editing before updating Git diff indicators.</string>
 	<string name="git_filetree_highlight_changes">Highlight File Tree Changes</string>
 	<string name="git_filetree_highlight_changes_desc">Highlight files with Git changes in the file tree.</string>
 	<string name="git_filetree_highlight_style_color">File Tree Highlight Color</string>
@@ -1290,6 +1303,9 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="git_history_error">Impossible de charger l’historique Git</string>
 	<string name="git_history_retry">Réessayer</string>
 	<string name="git_local_branch">Locale</string>
+	<string name="git_local_only">locale uniquement</string>
 	<string name="git_remote_branch">Distante</string>
 	<string name="git_tag">Tag</string>
+	<string name="uimarkdownview_go_back">Revenir en arrière</string>
+	<string name="uimarkdownview_go_forward">Avancer</string>
 </resources>

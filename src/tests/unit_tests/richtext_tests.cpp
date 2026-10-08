@@ -254,6 +254,57 @@ UTEST( RichText, BaselineAlignment ) {
 	Engine::destroySingleton();
 }
 
+UTEST( RichText, MixedFontPaintedBaselinesMatchLineMetrics ) {
+	auto* scene = createRichTextScene();
+	ASSERT_TRUE( scene != nullptr );
+	auto* sans = static_cast<FontTrueType*>( scene->getUIThemeManager()->getDefaultFont() );
+	auto mono = FontTrueType::New( "MixedBaselineMono", "../assets/fonts/DejaVuSansMono.ttf" );
+	ASSERT_TRUE( mono && mono->loaded() );
+	mono->setAntialiasing( FontAntialiasing::Grayscale );
+	sans->setAntialiasing( FontAntialiasing::Grayscale );
+	auto* window = Engine::instance()->getCurrentWindow();
+	for ( const Uint32 monoSize : { 16u, 24u } ) {
+		for ( const Float lineHeight : { 0.f, 48.f } ) {
+			RichText richText;
+			richText.getFontStyleConfig().Font = sans;
+			richText.getFontStyleConfig().CharacterSize = 24;
+			richText.setLineHeight( lineHeight );
+			richText.addSpan( "HH", sans, 24, Color::Black );
+			richText.addSpan( "HH", mono.get(), monoSize, Color::Black );
+			richText.addSpan( "HH", sans, 24, Color::Black );
+			richText.updateLayout();
+			ASSERT_EQ( richText.getLines().size(), 1u );
+			const auto& line = richText.getLines()[0];
+			ASSERT_EQ( line.spans.size(), 3u );
+			window->setClearColor( Color::White );
+			window->clear();
+			richText.draw( 32.f, 32.f );
+			Image image = window->getFrontBufferImage();
+			for ( const auto& span : line.spans ) {
+				const auto& style = span.text->getFontStyleConfig();
+				const auto bounds =
+					style.Font->getGlyph( 'H', style.CharacterSize, false, false, 0.f ).bounds;
+				Int32 lastInkRow = -1;
+				const Int32 left = static_cast<Int32>( 32.f + span.position.x );
+				const Int32 right = left + static_cast<Int32>( span.size.getWidth() );
+				for ( Int32 y = 16; y < 128; ++y ) {
+					for ( Int32 x = left; x < right; ++x ) {
+						if ( image.getPixel( x, y ).r < 128 )
+							lastInkRow = y;
+					}
+				}
+				ASSERT_GE( lastInkRow, 0 );
+				// H has no descender. Recover its painted baseline from the glyph bounds;
+				// checking only span offsets would miss a renderer/layout mismatch.
+				const Float paintedBaseline = lastInkRow + 1.f - bounds.Top - bounds.Bottom;
+				EXPECT_NEAR( paintedBaseline, std::trunc( 32.f + line.maxAscent ), 0.001f );
+			}
+		}
+	}
+	mono.reset();
+	destroyRichTextScene( scene );
+}
+
 UTEST( RichText, VerticalAlignAtomicBoxes ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Vertical Align",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -1989,6 +2040,343 @@ UTEST( UIHTMLTable, tableCellAnchorHoverRelayoutsRichText ) {
 
 	EXPECT_TRUE( ( renderedAnchorStyle() & Text::Underlined ) != 0 );
 	EXPECT_GT( nav->getPixelsSize().getHeight(), 10.f );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, inlineFragmentResizeKeepsContentReusable ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 200 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<p id="text" layout_width="match_parent" layout_height="200px">
+			<a id="link">Several inline words must wrap when the available width changes.</a>
+		</p>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* text = sceneNode->find<UIRichText>( "text" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( text && link );
+	text->updateLayout();
+	const auto widerLines = text->getRichText().getLines().size();
+	host->setPixelsSize( 120, 200 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_NEAR( 120.f, text->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( text->getRichText().getLines().size(), widerLines );
+	EXPECT_GT( link->getHitBoxes().size(), 1u );
+
+	// A new font changes both the content measurement and its assigned fragment bounds.
+	// The following owner pass must consume that input without invalidating it again merely
+	// because the newly measured bounds were committed. The container's size is already settled.
+	link->setFontSize( 24 );
+	text->updateLayout();
+	UILayout::resetMetrics();
+	text->updateLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, contentChangedByInlineFragmentSizeEventIsMeasured ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 400 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 100%; table-layout: fixed">
+			<tr><td id="cell"><a id="link">Inline words that wrap in a narrower column.</a></td></tr>
+		</table>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( cell && link );
+	bool changedContent = false;
+	link->on( Event::OnSizeChange, [link, &changedContent]( const Event* ) {
+		if ( !changedContent ) {
+			changedContent = true;
+			link->setText( "Replacement content created by an inline size event must be measured "
+						   "and enclosed by its table row after the column becomes narrower." );
+		}
+	} );
+	host->setPixelsSize( 120, 400 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( changedContent );
+	EXPECT_TRUE( richTextRenderedText( cell->getRichText() ).find( "Replacement" ) !=
+				 String::InvalidPos );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), cell->getRichTextPtr()->getSize().getHeight() );
+	EXPECT_GT( link->getHitBoxes().size(), 1u );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, unchangedInlineContentIsReused ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<p id="text" style="width: 240px">Retained <a id="link">inline text</a> wraps over lines.</p>
+	)xml" );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* text = sceneNode->find<UIRichText>( "text" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( text && link );
+	// Consume the conservative invalidation from the initial content-driven box resize.
+	// Once the geometry is settled, repeated owner passes should retain the inline stream.
+	text->updateLayout();
+	const auto initialText = richTextRenderedText( text->getRichText() );
+	const Float initialHeight = text->getPixelsSize().getHeight();
+
+	UILayout::resetMetrics();
+	for ( int i = 0; i < 4; ++i )
+		text->updateLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	EXPECT_TRUE( initialText == richTextRenderedText( text->getRichText() ) );
+	EXPECT_EQ( initialHeight, text->getPixelsSize().getHeight() );
+
+	link->setText( "changed inline text" );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( richTextRenderedText( text->getRichText() ).find( "changed inline" ) !=
+				 String::InvalidPos );
+	link->setFontSize( 24 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_GT( text->getPixelsSize().getHeight(), initialHeight );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, retainedInlineContentRewrapsAtNewColumnWidth ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 300 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 100%; table-layout: fixed">
+			<tr><td id="cell">A longer text stream with <a>inline content</a> must rewrap
+				when its table column changes width without changing its text.</td></tr>
+		</table>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* table = sceneNode->find<UIHTMLTable>( "table" );
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	ASSERT_TRUE( table && cell );
+	const Float widerHeight = cell->getPixelsSize().getHeight();
+	const auto widerLines = cell->getRichText().getLines().size();
+
+	host->setPixelsSize( 120, 300 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_NEAR( 120.f, table->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( cell->getRichText().getLines().size(), widerLines );
+	EXPECT_GT( cell->getPixelsSize().getHeight(), widerHeight );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), cell->getRichTextPtr()->getSize().getHeight() );
+
+	UILayout::resetMetrics();
+	cell->updateLayout();
+	cell->updateLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, inlineIntrinsicWidthsShareContentMeasurement ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<p id="text" layout_width="wrap_content">Several <a>inline words</a> and<br/>another line.</p>
+	)xml" );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* text = sceneNode->find<UIRichText>( "text" );
+	ASSERT_TRUE( text != nullptr );
+	const Float expectedMin = text->getMinIntrinsicWidth();
+	const Float expectedMax = text->getMaxIntrinsicWidth();
+	EXPECT_GT( expectedMax, expectedMin );
+
+	text->invalidateIntrinsicSize();
+	UILayout::resetMetrics();
+	const Float actualMin = text->getMinIntrinsicWidth();
+	const Float actualMax = text->getMaxIntrinsicWidth();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( expectedMin, actualMin );
+	EXPECT_EQ( expectedMax, actualMax );
+	EXPECT_EQ( 1u, metrics.richTextRebuilds );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIRichText, externalInlineLayoutRefreshesFragmentLookups ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<p id="text" style="width: 240px">An <a id="link">inline link with several words</a> follows text.</p>
+	)xml" );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto* text = sceneNode->find<UIRichText>( "text" );
+	auto* link = sceneNode->find<UITextSpan>( "link" );
+	ASSERT_TRUE( text && link );
+	const auto expected = richTextRenderedText( text->getRichText() );
+	const auto expectedHitBoxes = link->getHitBoxes();
+	ASSERT_FALSE( expectedHitBoxes.empty() );
+	const auto previousGeneration = text->getRichText().getInlineFragmentsGeneration();
+
+	// RichText can also be laid out directly, between its owner's normal passes. Its new
+	// fragments must replace the owner's non-owning lookup pointers even after layout is clean.
+	UIRichText::rebuildRichText( text, *text->getRichTextPtr() );
+	text->getRichTextPtr()->updateLayout();
+	EXPECT_NE( previousGeneration, text->getRichText().getInlineFragmentsGeneration() );
+	text->updateLayout();
+	EXPECT_TRUE( expected == richTextRenderedText( text->getRichText() ) );
+	EXPECT_TRUE( expectedHitBoxes == link->getHitBoxes() );
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, assignedCellSizesDoNotReenterMeasurement ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 240px; table-layout: fixed">
+			<tr>
+				<td id="first">Text wraps within the assigned column width.</td>
+				<td id="second">More text.</td>
+			</tr>
+		</table>
+	)xml" );
+
+	UILayout::resetMetrics();
+	sceneNode->flushDirtyStyleAndLayout();
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+
+	auto* first = sceneNode->find<UIHTMLTableCell>( "first" );
+	auto* second = sceneNode->find<UIHTMLTableCell>( "second" );
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	// The table may replay deferred row changes once per dirty pass; assigning the two cell
+	// widths and used heights must not also restart each cell's measurement.
+	EXPECT_LE( metrics.synchronousUpdates, 2u );
+	EXPECT_GT( first->getRichText().getLines().size(), 1u );
+	EXPECT_EQ( first->getPixelsSize().getHeight(), second->getPixelsSize().getHeight() );
+	EXPECT_GE( first->getPixelsSize().getHeight(), first->getRichTextPtr()->getSize().getHeight() );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, nestedCellsUpdateAfterTextAndWidthChanges ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	auto* host = UIWidget::New();
+	host->setParent( sceneNode->getRoot() );
+	host->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	host->enableReportSizeChangeToChildren();
+	host->setPixelsSize( 240, 300 );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 100%; table-layout: fixed">
+			<tr>
+				<td id="outer" style="position: relative">
+					<table id="nested">
+						<tr><td id="text">Short text.</td></tr>
+					</table>
+					<div id="marker" style="position: absolute; bottom: 0; right: 0;
+						width: 10px; height: 10px" />
+				</td>
+				<td id="peer"><img style="width: 16px; height: 96px; display: block" /></td>
+			</tr>
+		</table>
+	)xml",
+									 host );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	auto* table = sceneNode->find<UIHTMLTable>( "table" );
+	auto* nested = sceneNode->find<UIHTMLTable>( "nested" );
+	auto* outer = sceneNode->find<UIHTMLTableCell>( "outer" );
+	auto* text = sceneNode->find<UIHTMLTableCell>( "text" );
+	auto* peer = sceneNode->find<UIHTMLTableCell>( "peer" );
+	auto* marker = sceneNode->find<UIWidget>( "marker" );
+	ASSERT_TRUE( table && nested && outer && text && peer && marker );
+	ASSERT_TRUE( text->getFirstChild()->isType( UI_TYPE_TEXTNODE ) );
+
+	auto checkGeometry = [&]() {
+		EXPECT_EQ( outer->getPixelsSize().getHeight(), peer->getPixelsSize().getHeight() );
+		EXPECT_GE( outer->getPixelsSize().getHeight(), nested->getPixelsSize().getHeight() );
+		EXPECT_NEAR( nested->getPixelsSize().getWidth(), outer->getPixelsSize().getWidth(), 1.f );
+		EXPECT_NEAR( marker->getPixelsPosition().y + marker->getPixelsSize().getHeight(),
+					 outer->getPixelsSize().getHeight(), 1.f );
+	};
+	checkGeometry();
+	const Float initialHeight = outer->getPixelsSize().getHeight();
+	text->getFirstChild()->asType<UITextNode>()->setText(
+		"A longer text node changes the intrinsic column measurements and wraps over many lines. "
+		"The containing rows must grow to enclose all of this content, including nested tables. "
+		"This update must reach the outer table without an unrelated hover or viewport resize." );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_GT( outer->getPixelsSize().getHeight(), initialHeight );
+	checkGeometry();
+
+	const Float widerHeight = outer->getPixelsSize().getHeight();
+	host->setPixelsSize( 160, 300 );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_NEAR( 160.f, table->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( outer->getPixelsSize().getHeight(), widerHeight );
+	checkGeometry();
+
+	// A settled table has no work to replay in subsequent frames.
+	UILayout::resetMetrics();
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+	auto metrics = UILayout::getMetrics();
+	UILayout::setMetricsEnabled( false );
+	EXPECT_EQ( 0u, metrics.richTextRebuilds );
+	EXPECT_EQ( 0u, metrics.treeUpdates );
+
+	destroyRichTextScene( sceneNode );
+}
+
+UTEST( UIHTMLTable, contentCreatedByRowSizeEventIsMeasured ) {
+	auto* sceneNode = createRichTextScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	sceneNode->loadLayoutFromString( R"xml(
+		<table id="table" style="width: 200px; table-layout: fixed">
+			<tr>
+				<td id="cell">Short text.</td>
+				<td id="peer"><img style="width: 16px; height: 96px; display: block" /></td>
+			</tr>
+		</table>
+	)xml" );
+	auto* cell = sceneNode->find<UIHTMLTableCell>( "cell" );
+	auto* peer = sceneNode->find<UIHTMLTableCell>( "peer" );
+	ASSERT_TRUE( cell && peer );
+	ASSERT_TRUE( cell->getFirstChild()->isType( UI_TYPE_TEXTNODE ) );
+	bool changedContent = false;
+	cell->on( Event::OnSizeChange, [&]( const Event* ) {
+		// The tall sibling determines the row's initial used height. This callback runs when
+		// that height is committed, after the short cell's content was already measured.
+		if ( !changedContent && cell->getPixelsSize().getHeight() == 96.f ) {
+			changedContent = true;
+			cell->getFirstChild()->asType<UITextNode>()->setText(
+				"Content added by a size event must not disappear into an active table layout. "
+				"The table must measure these new lines and grow its row even though the content "
+				"changed after the original cell measurement had already finished." );
+		}
+	} );
+	sceneNode->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( changedContent );
+	EXPECT_GT( cell->getPixelsSize().getHeight(), 96.f );
+	EXPECT_EQ( cell->getPixelsSize().getHeight(), peer->getPixelsSize().getHeight() );
+	EXPECT_GE( cell->getPixelsSize().getHeight(), cell->getRichTextPtr()->getSize().getHeight() );
 
 	destroyRichTextScene( sceneNode );
 }

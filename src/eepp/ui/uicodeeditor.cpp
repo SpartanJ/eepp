@@ -210,7 +210,11 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 
 	mFontStyleConfig.Font = mFont;
 
-	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	auto* themeManager = getUISceneNode()->getUIThemeManager();
+	auto* theme = themeManager->getDefaultTheme();
+	// Match UITextView's theme default and whole-pixel character size.
+	setFontSize( static_cast<Uint32>( theme ? theme->getDefaultFontSize()
+											: themeManager->getDefaultFontSize() ) );
 
 	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );
@@ -244,11 +248,6 @@ UICodeEditor::~UICodeEditor() {
 
 	// Remember to stop all the async find jobs
 	mDoc->stopActiveFindAll();
-
-	// TODO: Use a condition variable to wait the thread pool to finish
-	// Wait to end all the async find jobs
-	while ( mHighlightWordProcessing )
-		Sys::sleep( Milliseconds( 0.1 ) );
 
 	mDocView.setDocument( nullptr );
 	std::size_t clientsOfTypeCount = mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
@@ -771,6 +770,9 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseDown ) {
 		return 1;
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && ( msg->getFlags() & EE_BUTTON_RMASK ) ) {
+		// The editor handles its own context menu in onMouseUp().
+		return 1;
 	} else if ( msg->getMsg() == NodeMessage::Focus ) {
 		if ( msg->getSender() == mVScrollBar || msg->getSender() == mHScrollBar ||
 			 mVScrollBar->isParentOf( msg->getSender() ) ||
@@ -931,15 +933,17 @@ void UICodeEditor::setMouseWheelScroll( const Float& mouseWheelScroll ) {
 }
 
 void UICodeEditor::setLineNumberPaddingLeft( const Float& dpLeft ) {
-	if ( dpLeft != mLineNumberPaddingLeft ) {
-		mLineNumberPaddingLeft = dpLeft;
+	Float pxLeft = PixelDensity::dpToPx( dpLeft );
+	if ( pxLeft != mLineNumberPaddingLeft ) {
+		mLineNumberPaddingLeft = pxLeft;
 		invalidateDraw();
 	}
 }
 
 void UICodeEditor::setLineNumberPaddingRight( const Float& dpRight ) {
-	if ( dpRight != mLineNumberPaddingRight ) {
-		mLineNumberPaddingRight = dpRight;
+	Float pxRight = PixelDensity::dpToPx( dpRight );
+	if ( pxRight != mLineNumberPaddingRight ) {
+		mLineNumberPaddingRight = pxRight;
 		invalidateDraw();
 	}
 }
@@ -1197,7 +1201,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		if ( plugin->onTextInput( this, event ) )
 			return 1;
 
-	return 0;
+	return 1;
 }
 
 void UICodeEditor::updateIMELocation() {
@@ -1661,7 +1665,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		mMouseDown = true;
 		Input* input = getInput();
 		input->captureMouse( true );
-		setFocus();
+		setFocus( NodeFocusReason::Click );
 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
@@ -1922,8 +1926,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool flipped ) {
-	const Vector2i position = getEventDispatcher() ? getEventDispatcher()->getMousePos()
-											  : Vector2i::Zero;
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseWheel( this, position, offset, flipped ) )
 			return 1;
@@ -3276,7 +3280,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:
@@ -3970,6 +3974,16 @@ const TextSearchParams& UICodeEditor::getHighlightWord() const {
 }
 
 void UICodeEditor::updateHighlightWordCache() {
+	struct HighlightSearchJob {
+		HighlightSearchJob( std::shared_ptr<TextDocument> searchedDocument,
+							TextSearchParams searchedParams ) :
+			document( std::move( searchedDocument ) ), params( std::move( searchedParams ) ) {}
+
+		const std::shared_ptr<TextDocument> document;
+		const TextSearchParams params;
+		TextRanges ranges;
+	};
+
 	if ( mHighlightWord.isEmpty() )
 		return;
 
@@ -3978,33 +3992,43 @@ void UICodeEditor::updateHighlightWordCache() {
 		removeActionsByTag( tag );
 		runOnMainThread(
 			[this, tag]() {
-				getUISceneNode()->getThreadPool()->removeWithTag( tag );
-				getUISceneNode()->getThreadPool()->run(
-					[this]() {
-						if ( mDoc->isRunningTransaction() )
+				auto threadPool = getUISceneNode()->getThreadPool();
+				threadPool->removeWithTag( tag );
+				auto search = std::make_shared<HighlightSearchJob>( mDoc, mHighlightWord );
+				const auto lifetime = mAsyncLifetime.weakHandle();
+				threadPool->run(
+					[search, lifetime]() {
+						if ( search->document->isRunningTransaction() )
 							return;
 						Clock docSearch;
-						mHighlightWordProcessing++;
-						mDoc->stopActiveFindAll();
+						search->document->stopActiveFindAll();
 
-						auto wordCache = mDoc->findAll(
-							mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
-														   : mHighlightWord.text,
-							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-							mHighlightWord.type, mHighlightWord.range );
-
-						{
-							Lock l( mHighlightWordCacheMutex );
-							mHighlightWordCache = wordCache.ranges();
-						}
+						const String searchedText = search->params.escapeSequences
+														? String::unescape( search->params.text )
+														: search->params.text;
+						search->ranges = search->document
+											 ->findAll( searchedText, search->params.caseSensitive,
+														search->params.wholeWord,
+														search->params.type, search->params.range )
+											 .ranges();
 
 						Log::info( "Document search triggered in document: \"%s\", searched for "
 								   "\"%s\" and took %.2f ms",
-								   mDoc->getFilename().c_str(),
-								   mHighlightWord.text.toUtf8().c_str(),
+								   search->document->getFilename(), search->params.text.toUtf8(),
 								   docSearch.getElapsedTime().asMilliseconds() );
+
+						lifetime.run( [search]( UICodeEditor* editor ) {
+							if ( editor->mDoc != search->document ||
+								 editor->mHighlightWord != search->params )
+								return;
+							{
+								Lock l( editor->mHighlightWordCacheMutex );
+								editor->mHighlightWordCache = std::move( search->ranges );
+							}
+							editor->invalidateDraw();
+						} );
 					},
-					[this]( const auto& ) { mHighlightWordProcessing--; }, tag );
+					{}, tag );
 			},
 			Milliseconds( 16 ), tag );
 	} else {

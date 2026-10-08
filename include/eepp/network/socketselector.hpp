@@ -3,7 +3,6 @@
 
 #include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
-#include <vector>
 using namespace EE::System;
 
 namespace EE { namespace Network {
@@ -52,6 +51,8 @@ class EE_API SocketSelector {
 	**  ready, use the isReady function.
 	**  If you use a timeout and no socket is ready before the timeout
 	**  is over, the function returns false.
+	**  An empty selector waits for the timeout and returns false, or returns
+	**  immediately when the timeout is infinite, since nothing could become ready.
 	**  @param timeout Maximum time to wait, (use Time::Zero for infinity)
 	**  @return True if there are sockets ready, false otherwise
 	**  @see IsReady */

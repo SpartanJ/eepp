@@ -386,6 +386,7 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 	mThreadPool( threadPool ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this, threadPool );
 	mInitOK = true;
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	setupColumnNames( translator );
 	invalidate();
 }
@@ -403,6 +404,7 @@ const std::string& FileSystemModel::getRootPath() const {
 void FileSystemModel::setRootPath( const std::string& rootPath ) {
 	mRootPath = rootPath;
 	mRealRootPath = FileSystem::getRealPath( mRootPath );
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	update();
 }
 
@@ -421,6 +423,12 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 	if ( mRootPath != mRealRootPath && rootMatches )
 		path.replace( 0, mRootPath.size(), mRealRootPath );
 	path = FileSystem::getRealPath( path );
+	// The canonical root is stored with a trailing slash, while realpath() returns the
+	// directory itself without one. Root-level file events need this parent node.
+	if ( !mRealRootPath.empty() &&
+		 ( path == mRealRootPath || ( path.size() + 1 == mRealRootPath.size() &&
+									  String::startsWith( mRealRootPath, path ) ) ) )
+		return mRoot.get();
 	if ( folderNode && !FileSystem::isDirectory( path ) )
 		path = FileSystem::fileRemoveFileName( path );
 	if ( String::startsWith( path, mRealRootPath ) )

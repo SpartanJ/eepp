@@ -21,11 +21,11 @@ class EE_API StyleSheetStyle {
 
 	std::string build( bool emitMediaQueryStart = true, bool emitMediaQueryEnd = true );
 
-	const StyleSheetSelector& getSelector() const;
+	inline const StyleSheetSelector& getSelector() const { return mSelector; }
 
-	const StyleSheetProperties& getProperties() const;
+	inline const StyleSheetProperties& getProperties() const { return mProperties; }
 
-	StyleSheetProperties& getPropertiesRef();
+	inline StyleSheetProperties& getPropertiesRef() { return mProperties; }
 
 	const StyleSheetVariables& getVariables() const;
 

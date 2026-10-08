@@ -169,6 +169,19 @@ class InputEvent {
 		Int32 length;
 	};
 
+	/** Clipboard ownership when the backend generated the notification. */
+	enum class ClipboardOwner : Uint8 {
+		Unknown, /**< Clipboard ownership is unknown or unavailable. */
+		Self,	 /**< This application owns the clipboard. */
+		External /**< This application does not own the clipboard. */
+	};
+
+	/** Clipboard change metadata. Query Clipboard for the current contents and MIME types.
+	 * Initialize owner explicitly when injecting a ClipboardChanged event. */
+	struct ClipboardEvent {
+		ClipboardOwner owner;
+	};
+
 	/** The "quit requested" event */
 	struct QuitEvent {
 		Uint8 type;
@@ -214,6 +227,10 @@ class InputEvent {
 		TextDropped,
 		TextEditing,
 		MouseWheel,
+		/** Clipboard notification, including self-writes when reported by the backend.
+		 * WinID is 0; query Clipboard for the current contents. SDL2 may also report PRIMARY
+		 * changes. */
+		ClipboardChanged,
 		EventUser,
 		EventCount = EventUser - 1
 	};
@@ -245,6 +262,7 @@ class InputEvent {
 		UserEvent user;
 		WheelEvent wheel;
 		SysWMEvent syswm;
+		ClipboardEvent clipboard;
 	};
 };
 

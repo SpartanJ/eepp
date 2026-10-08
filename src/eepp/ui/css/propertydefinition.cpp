@@ -4,8 +4,8 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-PropertyDefinition::PropertyDefinition( PropertyId propertyId, const std::string& name,
-										const std::string& defaultValue, const bool& inherited ) :
+PropertyDefinition::PropertyDefinition( PropertyId propertyId, std::string_view name,
+										std::string_view defaultValue, const bool& inherited ) :
 	mName( name ),
 	mId( String::hash( name ) ),
 	mPropertyId( propertyId ),

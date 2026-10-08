@@ -9,9 +9,11 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -23,6 +25,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
+#include <thread>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -136,11 +139,76 @@ UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
 	eeDelete( sceneA );
 }
 
+UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene ) {
+	auto* engine = Engine::instance();
+	auto* window = engine->getCurrentWindow();
+	if ( !window ) {
+		window = engine->createWindow( WindowSettings( 320, 240, "Async Resource Context Test",
+													   WindowStyle::Default, WindowBackend::Default,
+													   32, {}, 1, false, true ),
+									   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	}
+
+	auto* sceneA = UISceneNode::New( window );
+	auto* sceneB = UISceneNode::New( window );
+	auto* sceneManager = SceneManager::instance();
+	sceneManager->add( sceneA );
+	sceneManager->add( sceneB );
+	sceneManager->setCurrentUISceneNode( sceneA );
+
+	auto state = sceneB->getAsyncResourceLoadState();
+	const Uint64 generation = state->generation.load( std::memory_order_acquire );
+	bool immediateBound = false;
+	bool queuedBound = false;
+	{
+		auto context = sceneA->makeCurrent();
+		UISceneNode::runAsyncResourceOnMainThread( state, generation, [&]( UISceneNode* owner ) {
+			immediateBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+		} );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+
+		std::thread producer( [&] {
+			UISceneNode::runAsyncResourceOnMainThread(
+				state, generation, [&]( UISceneNode* owner ) {
+					queuedBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+				} );
+		} );
+		producer.join();
+		sceneA->update( Time::Zero );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	}
+
+	EXPECT_TRUE( immediateBound );
+	EXPECT_TRUE( queuedBound );
+	sceneManager->remove( sceneB );
+	sceneManager->remove( sceneA );
+	eeDelete( sceneB );
+	eeDelete( sceneA );
+}
+
 class TestUIApplication : public UIApplication {
   public:
 	using UIApplication::UIApplication;
 	void tickOnce() { tick(); }
 };
+
+UTEST( UIApplication, ClosesWindowWithVisibleModalDialog ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Modal shutdown", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	app.getUI()->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* dialog = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Close?" );
+	dialog->show();
+	app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( dialog->getModalWidget() != nullptr );
+	app.getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+	EXPECT_TRUE( app.getUI() == nullptr );
+}
 
 UTEST( UIApplication, RoutesNativeMouseWheelExactlyOnceToTargetWindow ) {
 	TestUIApplication app( WindowSettings( 320, 240, "Primary Wheel Routing", WindowStyle::Default,
@@ -430,6 +498,8 @@ class InvalidationTestSceneNode : public UISceneNode {
 	size_t pendingStyleStateCount() const { return mDirtyStyleState.size(); }
 
 	size_t pendingStyleStateAnimationCount() const { return mDirtyStyleStateCSSAnimations.size(); }
+
+	size_t pendingLayoutCount() const { return mDirtyLayouts.size(); }
 
 	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
 
@@ -794,6 +864,54 @@ UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
 	Engine::destroySingleton();
 }
 
+class InvalidationTestLayout : public UILayout {
+  public:
+	InvalidationTestLayout() : UILayout( "invalidation-test" ) {}
+
+	void updateLayout() override {
+		lastReasons = mCurrentLayoutReasons;
+		mDirtyLayout = false;
+	}
+
+	LayoutInvalidationFlags lastReasons{ 0 };
+};
+
+UTEST( UISceneNode, LeafLayoutInvalidationPreservesSiblingRootsAndDescendantReasons ) {
+	Engine::instance()->createWindow( WindowSettings( 320, 240, "Leaf Layout Invalidation",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* sceneNode = InvalidationTestSceneNode::New();
+	init_test_scene_node( sceneNode );
+	auto* first = eeNew( InvalidationTestLayout, () );
+	first->setParent( sceneNode->getRoot() );
+	auto* second = eeNew( InvalidationTestLayout, () );
+	second->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::TextFormatting );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::Self, first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::TextFormatting, second->lastReasons );
+
+	// Once a leaf gains a child, ancestor coalescing must still retain the child's reasons.
+	auto* child = eeNew( InvalidationTestLayout, () );
+	child->setParent( first );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateLayout( child, LayoutInvalidation::TextFormatting );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Document );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::TextFormatting | LayoutInvalidation::Document,
+			   first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::Self, second->lastReasons );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UISceneNode, StyleInvalidationCoalescesAtProcessingTime ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Deferred Style Invalidation Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -880,6 +998,42 @@ UTEST( UISceneNode, StyleInvalidationCoalescesAtProcessingTime ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIWindow, ShadowSurvivesRepeatedTranslucentDraws ) {
+	for ( Float density : { 1.f, 1.5f } ) {
+		UIApplication app( WindowSettings( 320, 240, "Window shadow opacity", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* scene = app.getUI();
+		scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+		scene->loadLayoutFromString( R"xml(
+			<window id="shadow-test" x="30dp" y="30dp" width="60dp" height="40dp"
+				window-flags="borderless|shadow" background-color="white"
+				window-shadow-color="#00000080" window-shadow-size="8dp"
+				window-shadow-offset="0dp 0dp" />
+		)xml" );
+		scene->flushDirtyStyleAndLayout();
+		scene->getRoot()->setBackgroundColor( Color::White );
+		auto* window = scene->find( "shadow-test" )->asType<UIWindow>();
+		window->setVisible( true );
+		const auto* shadowColor = CSS::StyleSheetSpecification::instance()->getProperty(
+			CSS::PropertyId::WindowShadowColor );
+		// Exercise fade-in and fade-out frames without timer or inspector-driven redraws.
+		for ( Uint8 alpha : { 16, 64, 128, 192, 255, 128, 255 } ) {
+			window->setAlpha( alpha );
+			app.getWindow()->clear();
+			scene->draw();
+			EXPECT_STDSTREQ( "#00000080", window->getPropertyString( shadowColor ) );
+		}
+		auto pixels = app.getWindow()->getFrontBufferImage();
+		const auto bounds = window->getWorldBounds();
+		const auto y = static_cast<unsigned int>( bounds.getCenter().y );
+		const auto nearX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 4.f ) );
+		const auto farX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 16.f ) );
+		EXPECT_LT( pixels.getPixel( nearX, y ).r, pixels.getPixel( farX, y ).r );
+	}
+}
+
 UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Modal Key Binding Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -906,4 +1060,28 @@ UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
 	EXPECT_EQ( executedCommands, 1 );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, CookieJarIsPrivateByDefaultAndReplaceable ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Shared cookie jars" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* first = app.getUI();
+	auto* second = UISceneNode::New();
+	ASSERT_TRUE( &first->getCookieManager() != &second->getCookieManager() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "private=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ).empty() );
+
+	auto shared = std::make_shared<CookieManager>();
+	first->setCookieManager( shared );
+	second->setCookieManager( shared );
+	EXPECT_TRUE( &first->getCookieManager() == shared.get() );
+	EXPECT_TRUE( &second->getCookieManager() == shared.get() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "shared=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	first->setCookieManager( nullptr );
+	EXPECT_TRUE( &first->getCookieManager() != shared.get() );
+	EXPECT_TRUE( first->getCookieManager().getCookieHeader( "example.com" ).empty() );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	eeDelete( second );
 }

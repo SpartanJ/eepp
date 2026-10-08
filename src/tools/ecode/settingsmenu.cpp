@@ -975,6 +975,9 @@ UIMenu* SettingsMenu::createViewMenu() {
 					   getKeybind( "fullscreen-toggle" ) )
 		->setId( "fullscreen-toggle" );
 	mViewMenu
+		->addCheckBox( i18n( "zen_mode", "Zen Mode" ), mApp->isZenMode(), getKeybind( "zen-mode" ) )
+		->setId( "zen-mode" );
+	mViewMenu
 		->addCheckBox( i18n( "show_side_panel", "Show Side Panel" ),
 					   mApp->getConfig().ui.showSidePanel, getKeybind( "switch-side-panel" ) )
 		->setId( "show-side-panel" );
@@ -1208,6 +1211,7 @@ void SettingsMenu::updateViewMenu() {
 	mViewMenu->getItemId( "fullscreen-toggle" )
 		->asType<UIMenuCheckBox>()
 		->setActive( !mApp->getWindow()->isWindowed() );
+	mViewMenu->getItemId( "zen-mode" )->asType<UIMenuCheckBox>()->setActive( mApp->isZenMode() );
 
 	mViewMenu->getItemId( "toggle-status-bar" )
 		->asType<UIMenuCheckBox>()
@@ -1628,8 +1632,8 @@ void SettingsMenu::createProjectMenu() {
 
 void SettingsMenu::updateMenu() {
 	bool showMenuBar = mApp->getConfig().ui.showMenuBar;
-	mSettingsButton->setVisible( !showMenuBar );
-	mMenuBar->setVisible( showMenuBar );
+	mSettingsButton->setVisible( !showMenuBar && !mApp->isZenMode() );
+	mMenuBar->setVisible( showMenuBar && !mApp->isZenMode() );
 
 	const auto setMenuParent = [this]( UIPopUpMenu* menu ) {
 		menu->setParent( mApp->getConfig().ui.showMenuBar ? mMenuBar->asType<UIWidget>()

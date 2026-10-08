@@ -26,6 +26,9 @@ class EE_API AccessibilityWidgetResolver {
 
 	static AccessibilityActions getActions( const UIWidget* widget );
 
+	/** Routes internal control state changes to their semantic owner. */
+	static UIWidget* getEventTarget( UIWidget* widget, AccessibilityEvent event );
+
 	static bool performAction( UIWidget* widget, const AccessibilityActionRequest& request );
 };
 

@@ -160,13 +160,21 @@ jobs:
           codename=$(lsb_release -cs)
           url="http://ports.ubuntu.com/ubuntu-ports"
           repos="main restricted universe multiverse"
+
+          # GitHub's Ubuntu x86_64 runner sources are not architecture-scoped.
+          # Restrict them before enabling arm64, otherwise apt also tries to
+          # fetch arm64 packages from the regular x86 Ubuntu mirrors.
+          sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+
+          sudo dpkg --add-architecture arm64
+
           echo "deb [arch=arm64] $url $codename $repos" > arm64.list
           echo "deb [arch=arm64] $url $codename-backports $repos" >> arm64.list
           echo "deb [arch=arm64] $url $codename-security $repos" >> arm64.list
           echo "deb [arch=arm64] $url $codename-updates $repos" >> arm64.list
           sudo mv arm64.list /etc/apt/sources.list.d/
+
           sudo apt-get update
-          sudo dpkg --add-architecture arm64
       - name: Install dependencies
         run: |
           sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
@@ -193,7 +201,7 @@ jobs:
         config:
           - compiler: default
             arch: x86_64
-            container: ubuntu-22.04
+            container: ubuntu-24.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -214,17 +222,9 @@ jobs:
           sudo apt-get update
       - name: Install dependencies
         run: |
-          sudo apt-get install -y premake4 libfuse2 fuse mingw-w64 gcc-12 g++-12
+          sudo apt-get install -y premake4 libfuse2t64 fuse mingw-w64
           wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
           tar xvzf premake-5.0.0-beta6-linux.tar.gz
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 10
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
-          sudo update-alternatives --set cc /usr/bin/gcc
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
-          sudo update-alternatives --set c++ /usr/bin/g++
-          sudo update-alternatives --config gcc
-          sudo update-alternatives --config g++
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -433,8 +433,6 @@ jobs:
             pkg upgrade -y
             pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake
           run: |
-            export CC=clang
-            export CXX=clang++
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
             sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}

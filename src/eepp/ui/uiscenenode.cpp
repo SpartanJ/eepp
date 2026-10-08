@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <cstdlib>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -8,12 +10,15 @@
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -23,12 +28,13 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 #include <mutex>
 
@@ -53,12 +59,13 @@ struct PendingAsyncResourceMainThread {
 enum class AsyncResourceMainThreadQueueState : Uint8 { Closed, Open, Closing };
 
 std::mutex sAsyncResourceMainThreadMutex;
-std::vector<PendingAsyncResourceMainThread> sAsyncResourceMainThreadQueue;
+using AsyncResourceMainThreadQueue = SmallVector<PendingAsyncResourceMainThread, 4>;
+AsyncResourceMainThreadQueue sAsyncResourceMainThreadQueue;
 std::atomic<AsyncResourceMainThreadQueueState> sAsyncResourceMainThreadQueueState{
 	AsyncResourceMainThreadQueueState::Closed };
 
 void drainAsyncResourceMainThreadQueue() {
-	std::vector<PendingAsyncResourceMainThread> pending;
+	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		if ( sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed ) !=
@@ -67,7 +74,7 @@ void drainAsyncResourceMainThreadQueue() {
 		pending.swap( sAsyncResourceMainThreadQueue );
 	}
 
-	std::vector<PendingAsyncResourceMainThread> delayed;
+	AsyncResourceMainThreadQueue delayed;
 	for ( auto& item : pending ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( item.resourceState, item.generation ) )
 			continue;
@@ -78,8 +85,10 @@ void drainAsyncResourceMainThreadQueue() {
 		}
 
 		UISceneNode* owner = item.resourceState->owner.load( std::memory_order_acquire );
-		if ( owner && item.func )
+		if ( owner && item.func ) {
+			auto context = owner->makeCurrent();
 			item.func( owner );
+		}
 	}
 
 	if ( !delayed.empty() ) {
@@ -195,11 +204,18 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mAsyncResourceLoadState->owner.store( this, std::memory_order_release );
 	mDocumentSessionId = mWebResourceCache->createSession();
 	mUIThemeManager->setResourceScope( mResourceScope );
+	if ( const char* scheme = std::getenv( "EEPP_COLOR_SCHEME" ) ) {
+		const std::string_view value( scheme );
+		if ( value == "light" || value == "dark" || value == "system" )
+			setColorSchemePreference( ColorSchemePreferences::fromStringExt( value ) );
+	}
 
 	resizeNode( mWindow );
 }
 
 UISceneNode::~UISceneNode() {
+	mNodeFlags |= NODE_FLAG_CLOSE;
+	onClose();
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
 		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
@@ -224,6 +240,18 @@ UISceneNode::~UISceneNode() {
 	if ( mOwnsEventDispatcher ) {
 		eeSAFE_DELETE( mEventDispatcher );
 	} else {
+		// Children can leave the shared dispatcher pointing at this embedded scene. Its Node
+		// destructor cannot clear that reference after mEventDispatcher is detached here.
+		if ( mEventDispatcher ) {
+			if ( mEventDispatcher->getMouseOverNode() == this )
+				mEventDispatcher->setMouseOverNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getFocusNode() == this )
+				mEventDispatcher->setFocusNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getLastFocusNode() == this )
+				mEventDispatcher->setLastFocusNode( mEventDispatcher->getSceneNode() );
+			if ( mEventDispatcher->getMouseDownNode() == this )
+				mEventDispatcher->resetMouseDownNode();
+		}
 		mEventDispatcher = nullptr;
 	}
 }
@@ -404,8 +432,8 @@ UISceneNode* UISceneNode::setSmoothScrollEnabled( bool enabled, bool applyNow ) 
 	rootScene->mSmoothScrollEnabled = enabled;
 	if ( applyNow ) {
 		const auto applyToScene = [enabled]( auto&& self, UISceneNode* scene ) -> void {
-			for ( auto* widget : scene->findAllByType<UITouchDraggableWidget>(
-					 UI_TYPE_TOUCH_DRAGGABLE_WIDGET ) )
+			for ( auto* widget :
+				  scene->findAllByType<UITouchDraggableWidget>( UI_TYPE_TOUCH_DRAGGABLE_WIDGET ) )
 				widget->setSmoothScrollEnabled( enabled );
 			for ( auto* childScene : scene->mChildUISceneNodes )
 				self( self, childScene );
@@ -903,7 +931,7 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 		return;
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
-	std::string cookie = mCookieManager.getCookieHeader( request.uri.getAuthority() );
+	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
 	if ( !cookie.empty() )
 		request.headers["Cookie"] = std::move( cookie );
 	auto resourceState = mAsyncResourceLoadState;
@@ -917,7 +945,7 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 		if ( !scene )
 			return;
 		if ( !result.setCookie.empty() )
-			scene->mCookieManager.storeCookiesFromHeader( authority, result.setCookie );
+			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
 		if ( callback )
 			callback( result );
 	};
@@ -931,7 +959,7 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 		return {};
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
-	std::string cookie = mCookieManager.getCookieHeader( request.uri.getAuthority() );
+	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
 	if ( !cookie.empty() )
 		request.headers["Cookie"] = std::move( cookie );
 	auto resourceState = mAsyncResourceLoadState;
@@ -951,7 +979,7 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 		if ( !scene )
 			return;
 		if ( !result.setCookie.empty() )
-			scene->mCookieManager.storeCookiesFromHeader( authority, result.setCookie );
+			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
 		if ( callback )
 			callback( result );
 	};
@@ -1447,44 +1475,49 @@ void UISceneNode::invalidateLayout( UILayout* node, LayoutInvalidationFlags reas
 		ancestorIt = ancestorIt->getParent();
 	}
 
-	// 2. Walk DOWN the dirty list.
-	// Remove any already-dirty layouts that will be naturally updated by THIS node,
-	// merging their reasons into this node.
-	SmallVector<UILayout*> eraseList;
+	// A leaf cannot contain dirty descendants. In particular, newly constructed layouts
+	// invalidate themselves before attachment; scanning the growing dirty set for each leaf
+	// makes document construction quadratic. Preserve the ancestor coalescing above.
+	if ( node->getFirstChild() != nullptr ) {
+		// 2. Walk DOWN the dirty list.
+		// Remove any already-dirty layouts that will be naturally updated by THIS node,
+		// merging their reasons into this node.
+		SmallVector<UILayout*> eraseList;
 
-	for ( auto layout : mDirtyLayouts ) {
-		if ( NULL == layout ) {
-			eraseList.push_back( layout );
-			continue;
-		}
-
-		// Traverse up from the already-dirty layout to the new node. Coalescing is valid only when
-		// every intermediate node is a layout, because updateLayoutTree() recursively walks layout
-		// children but does not cross arbitrary widget boundaries.
-		Node* it = layout->getParent();
-		bool isValidPath = false;
-
-		while ( it != nullptr ) {
-			if ( it == node ) {
-				// We reached node, and every node in between was a layout.
-				isValidPath = true;
-				break;
+		for ( auto layout : mDirtyLayouts ) {
+			if ( NULL == layout ) {
+				eraseList.push_back( layout );
+				continue;
 			}
-			if ( !it->isLayout() ) {
-				// The invalidation path is broken, or node is not an ancestor.
-				break;
+
+			// Traverse up from the already-dirty layout to the new node. Coalescing is valid only
+			// when every intermediate node is a layout, because updateLayoutTree() recursively
+			// walks layout children but does not cross arbitrary widget boundaries.
+			Node* it = layout->getParent();
+			bool isValidPath = false;
+
+			while ( it != nullptr ) {
+				if ( it == node ) {
+					// We reached node, and every node in between was a layout.
+					isValidPath = true;
+					break;
+				}
+				if ( !it->isLayout() ) {
+					// The invalidation path is broken, or node is not an ancestor.
+					break;
+				}
+				it = it->getParent();
 			}
-			it = it->getParent();
+
+			if ( isValidPath ) {
+				reasons |= layout->mDirtyReasons;
+				eraseList.push_back( layout );
+			}
 		}
 
-		if ( isValidPath ) {
-			reasons |= layout->mDirtyReasons;
-			eraseList.push_back( layout );
-		}
+		for ( auto layout : eraseList )
+			mDirtyLayouts.erase( layout );
 	}
-
-	for ( auto layout : eraseList )
-		mDirtyLayouts.erase( layout );
 
 	// 3. Insert the coalesced layout after preserving any descendant reasons removed above.
 	node->mDirtyReasons |= reasons;
@@ -2202,6 +2235,24 @@ ColorSchemePreference UISceneNode::getColorSchemePreference() const {
 	return mColorSchemePreference;
 }
 
+void UISceneNode::updateWindowTitleBarColor() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	auto* window = getWindow();
+	if ( !window || ( mColorSchemePreference == ColorSchemePreference::Dark ) !=
+						Sys::isOSUsingDarkColorScheme() )
+		return;
+	const auto rootStyle = mStyleSheet.getStyleFromSelector( ":root", true );
+	if ( !rootStyle )
+		return;
+	const auto backVar = rootStyle->getVariableByName( "--back" );
+	if ( backVar.isEmpty() )
+		return;
+	const auto backColor = Color::fromString( backVar.getValue() );
+	Engine::instance()->getPlatformHelper()->setWindowTitleBarColor(
+		window->getWindowHandler(), backColor.r, backColor.g, backColor.b );
+#endif
+}
+
 void UISceneNode::setColorSchemePreference(
 	const ColorSchemeExtPreference& colorSchemePreference ) {
 	switch ( colorSchemePreference ) {
@@ -2220,8 +2271,15 @@ void UISceneNode::setColorSchemePreference(
 }
 
 void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
-	if ( mColorSchemePreference != colorSchemePreference ) {
-		mColorSchemePreference = colorSchemePreference;
+	ColorSchemePreference effective = colorSchemePreference;
+	if ( const char* scheme = std::getenv( "EEPP_COLOR_SCHEME" ) ) {
+		const std::string_view value( scheme );
+		if ( value == "light" || value == "dark" || value == "system" )
+			effective =
+				ColorSchemePreferences::fromExt( ColorSchemePreferences::fromStringExt( value ) );
+	}
+	if ( mColorSchemePreference != effective ) {
+		mColorSchemePreference = effective;
 		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
 				mStyleSheet.invalidateCache();
@@ -2299,9 +2357,36 @@ void UISceneNode::openURL( URI uri ) {
 }
 
 void UISceneNode::navigate( const NavigationRequest& request ) {
+	if ( !mScopedNavigationInterceptors.empty() ) {
+		for ( const Node* node = request.source; node; node = node->getParent() ) {
+			auto interceptor = mScopedNavigationInterceptors.find( node );
+			if ( interceptor != mScopedNavigationInterceptors.end() ) {
+				// A handler can unregister its own scope or register another scope while running.
+				auto cb = interceptor->second;
+				if ( cb( request ) )
+					return;
+			}
+			if ( node == this )
+				break;
+		}
+	}
 	if ( mNavigationInterceptorCb && mNavigationInterceptorCb( request ) )
 		return;
 	Engine::instance()->openURI( request.uri.toString() );
+}
+
+bool UISceneNode::setNavigationInterceptorCb( const Node* root,
+											  std::function<bool( const NavigationRequest& )> cb ) {
+	if ( !root )
+		return false;
+	if ( !cb ) {
+		// A scope may already have moved out of this tree when its owner unregisters it.
+		return mScopedNavigationInterceptors.erase( root ) != 0;
+	}
+	if ( root != this && !isParentOf( root ) )
+		return false;
+	mScopedNavigationInterceptors.insert_or_assign( root, std::move( cb ) );
+	return true;
 }
 
 void UISceneNode::invalidateAsyncResourceLoads() {
@@ -2334,8 +2419,10 @@ void UISceneNode::runAsyncResourceOnMainThread(
 	if ( isAsyncResourceLoadCurrent( resourceState, generation ) && Engine::isMainThread() &&
 		 delay <= Time::Zero ) {
 		UISceneNode* owner = resourceState->owner.load( std::memory_order_acquire );
-		if ( owner )
+		if ( owner ) {
+			auto context = owner->makeCurrent();
 			func( owner );
+		}
 		return;
 	}
 
@@ -2353,7 +2440,7 @@ void UISceneNode::runAsyncResourceOnMainThread(
 }
 
 void UISceneNode::openAsyncResourceMainThreadQueue() {
-	std::vector<PendingAsyncResourceMainThread> stale;
+	AsyncResourceMainThreadQueue stale;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		stale.swap( sAsyncResourceMainThreadQueue );
@@ -2369,7 +2456,7 @@ void UISceneNode::beginAsyncResourceMainThreadQueueShutdown() {
 }
 
 void UISceneNode::finishAsyncResourceMainThreadQueueShutdown() {
-	std::vector<PendingAsyncResourceMainThread> pending;
+	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closed,
@@ -2591,8 +2678,12 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 		ft->setBoldItalicFont( boldItalicFont );
 }
 
+void UISceneNode::loadHTMLBasicCSS() {
+	UIWidgetCreator::loadHTMLBasicDefaults( mStyleSheet, String::hash( "html_defaults" ) );
+}
+
 void UISceneNode::loadHTMLBaseCSS() {
-	// Load HTML base defaults (idempotent - marker check prevents duplicates)
+	// Load HTML defaults (idempotent - marker checks prevent duplicates)
 	UIWidgetCreator::loadHTMLBaseDefaults( mStyleSheet, String::hash( "html_defaults" ) );
 }
 

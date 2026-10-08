@@ -38,11 +38,11 @@ class EE_API StyleSheetSpecification {
 
 	~StyleSheetSpecification();
 
-	PropertyDefinition& registerProperty( PropertyId id, const std::string& propertyName,
-										  const std::string& defaultValue, bool inherited = false );
+	PropertyDefinition& registerProperty( PropertyId id, std::string_view propertyName,
+										  std::string_view defaultValue, bool inherited = false );
 
-	PropertyDefinition* registerProperty( const std::string& propertyName,
-										  const std::string& defaultValue, bool inherited = false );
+	PropertyDefinition* registerProperty( std::string_view propertyName,
+										  std::string_view defaultValue, bool inherited = false );
 
 	const PropertyDefinition* getProperty( const PropertyId& id ) const;
 

@@ -253,6 +253,8 @@ class TerminalEmulator final {
 
 	void clearPendingKeyboardInput();
 
+	void reportFocus( bool focused );
+
 	int tisaltscr();
 
 	int scrollSize() const;
@@ -326,6 +328,8 @@ class TerminalEmulator final {
 
 	bool mDirty{ true };
 	bool mAllDirty{ true };
+	bool mProcessingPtyInput{ false };
+	int mPtyHistoryLinesPushed{ 0 };
 	Clock mPresentationClock;
 	Time mPresentationInterval{ Microseconds( 1000000.0 / 60.0 ) };
 	Clock mSynchronizedUpdateClock;
@@ -394,6 +398,7 @@ class TerminalEmulator final {
 	void csihandle();
 	bool handleKittyKeyboardProtocol();
 	KittyKeyboardState& activeKeyboardState();
+	void ttywriteInternal( const char* s, size_t n, int may_echo, bool scrollToBottom );
 	void resetKittyKeyboardProtocol();
 	void csiparse();
 	void csireset();

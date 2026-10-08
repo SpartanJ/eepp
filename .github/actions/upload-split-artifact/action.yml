@@ -1,0 +1,26 @@
+name: Upload split artifact
+description: Split a large file and upload each chunk as a separate GitHub Actions artifact
+
+inputs:
+  archive:
+    description: File to split and upload
+    required: true
+  artifact_prefix:
+    description: Prefix used for artifact names
+    required: true
+  chunk_size:
+    description: Maximum chunk size, for example 400M
+    required: false
+    default: 400M
+  retention_days:
+    description: Artifact retention in days
+    required: false
+    default: '5'
+  max_parts:
+    description: Maximum number of artifact parts to create
+    required: false
+    default: '8'
+
+runs:
+  using: node24
+  main: index.cjs

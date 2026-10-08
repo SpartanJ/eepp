@@ -184,6 +184,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 }
 .settings_panel .settings_option_name {
 	font-style: normal;
+	word-wrap: true;
 }
 .settings_panel .settings_option_description {
 	color: var(--disabled-color);
@@ -308,6 +309,15 @@ static const SettingsLayoutTemplate SETTINGS_TEXT_ROW_LAYOUT( settingsRowLayout(
 	R"xml(<TextInput id="setting_control_widget" class="settings_text" />)xml" ) );
 static const SettingsLayoutTemplate SETTINGS_ACTION_ROW_LAYOUT( settingsRowLayout(
 	R"xml(<PushButton id="setting_control_widget" class="settings_action" />)xml" ) );
+static const SettingsLayoutTemplate SETTINGS_CUSTOM_WIDGET_ROW_LAYOUT( R"xml(
+<vbox lw="mp" lh="wc" class="settings_option">
+	<vbox id="setting_info" lw="mp" lh="wc">
+		<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
+		<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
+	</vbox>
+	<vbox id="setting_custom_widget" lw="mp" lh="wc" margin-top="8dp" />
+</vbox>
+)xml" );
 
 static void disableTabFocusTree( Node* node ) {
 	if ( node->isWidget() )
@@ -501,6 +511,13 @@ bool UISettingsPanel::addAction( SettingDescriptor descriptor, String buttonText
 				 ActionSetting{ std::move( buttonText ), std::move( action ) } } );
 }
 
+bool UISettingsPanel::addCustomWidget( SettingDescriptor descriptor,
+									   std::function<UIWidget*( UIWidget* parent )> create ) {
+	return !mImpl->built && create &&
+		   mImpl->model.addSetting(
+			   { std::move( descriptor ), CustomWidgetSetting{ std::move( create ) } } );
+}
+
 void UISettingsPanel::build() {
 	if ( mImpl->built )
 		return;
@@ -630,7 +647,8 @@ void UISettingsPanel::setupCategories( Impl& panel ) {
 	panel.categoryModel = model;
 	panel.categories->setHeadersVisible( false );
 	panel.categories->setAutoExpandOnSingleColumn( true );
-	panel.categories->setFocusOnSelection( true );
+	// Category selection can finish after the search field gains focus.
+	panel.categories->setFocusOnSelection( false );
 	panel.categories->setModel( model );
 	panel.categories->expandAll();
 	panel.connections +=
@@ -723,7 +741,7 @@ void UISettingsPanel::materializeCategory( Impl& panel, const std::string& categ
 		if ( auto* value = std::get_if<BoolPointerSetting>( &setting.value ) ) {
 			auto* check = createBoolControl( panel, setting, view );
 			auto binding = UIDataBind<bool>::New( value->value, check,
-											  UIValueConverter<bool>::converterBool() );
+												  UIValueConverter<bool>::converterBool() );
 			binding->onValueChangeCb = value->apply;
 			panel.bindingGroup += std::move( binding );
 		} else if ( auto* value = std::get_if<BoolSetting>( &setting.value ) ) {
@@ -832,6 +850,9 @@ void UISettingsPanel::materializeCategory( Impl& panel, const std::string& categ
 				if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 					value->action();
 			} );
+		} else if ( auto* value = std::get_if<CustomWidgetSetting>( &setting.value ) ) {
+			auto* row = createRow( panel, setting, view, SETTINGS_CUSTOM_WIDGET_ROW_LAYOUT.root() );
+			value->create( row->find<UIWidget>( "setting_custom_widget" ) );
 		}
 		if ( view.row && !setting.enabled )
 			setNodeTreeEnabled( view.row, false );

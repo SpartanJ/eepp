@@ -1,9 +1,12 @@
 #include "utest.hpp"
 #include <cstdlib>
 #include <eepp/core/string.hpp>
+#include <eepp/core/utf.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <filesystem>
+#include <string_view>
+#include <vector>
 
 using namespace std::literals;
 
@@ -85,6 +88,212 @@ UTEST( String, fromStringView ) {
 	EXPECT_EQ( 1234, intValue );
 }
 
+UTEST( String, trim ) {
+	// Separators are removed from both ends and interior ones are kept.
+	EXPECT_TRUE( String::trim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::trim( std::string( "  a  " ) ) == std::string( "a" ) );
+	// The char overload trims only that character, so tab and newline survive it; the
+	// string_view overload takes a whole separator set.
+	EXPECT_TRUE( String::trim( std::string( "\t a b \n" ) ) == std::string( "\t a b \n" ) );
+	EXPECT_TRUE( String::trim( std::string( "  a  " ), ' ' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::trim( std::string( "xxbxx" ), 'x' ) == std::string( "b" ) );
+	EXPECT_TRUE( String::trim( std::string( "\t\r\n a \t\r\n" ), std::string_view( " \t\r\n" ) ) ==
+				 std::string( "a" ) );
+
+	// A string made only of separators has nothing left once trimmed. It used to come back as a
+	// shorter string of separators instead of as an empty one.
+	EXPECT_TRUE( String::trim( std::string() ).empty() );
+	EXPECT_TRUE( String::trim( std::string( " " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "  " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "        " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::trim( std::string( "\t\r\n " ), std::string_view( " \t\r\n" ) ).empty() );
+
+	std::string inPlace = "   ";
+	String::trimInPlace( inPlace, ' ' );
+	EXPECT_TRUE( inPlace.empty() );
+	inPlace = "  a  ";
+	String::trimInPlace( inPlace, ' ' );
+	EXPECT_TRUE( inPlace == std::string( "a" ) );
+
+	// The view overloads must report the trimmed range, not a truncated one.
+	EXPECT_TRUE( String::trim( std::string_view() ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "     " ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "  a  " ) ) == std::string_view( "a" ) );
+	EXPECT_TRUE( String::trim( std::string_view( "xx" ), std::string_view( "x" ) ).empty() );
+	EXPECT_TRUE( String::trim( std::string_view( "xxa xx" ), std::string_view( "x " ) ) ==
+				 std::string_view( "a" ) );
+
+	// The UTF-32 overloads are separate implementations and had the same defect.
+	EXPECT_TRUE( String::trim( String() ).empty() );
+	EXPECT_TRUE( String::trim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::trim( String( "  a  " ) ) == String( "a" ) );
+	EXPECT_TRUE( String::trim( String( "xxx" ), std::string_view( "x" ) ).empty() );
+	EXPECT_TRUE( String::trim( String( "  a  " ), std::string_view( " " ) ) == String( "a" ) );
+	EXPECT_TRUE( String::trim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::trim( String::View( U"  a  " ) ) == String::View( U"a" ) );
+	EXPECT_TRUE( String::trim( String::View( U"  " ), String::View( U" " ) ).empty() );
+	EXPECT_TRUE( String::trim( String::View( U"  a  " ), String::View( U" " ) ) ==
+				 String::View( U"a" ) );
+}
+
+UTEST( String, lTrimAndRTrim ) {
+	// Only the requested side is removed and interior separators are kept.
+	EXPECT_TRUE( String::lTrim( std::string( "  a  " ) ) == std::string( "a  " ) );
+	EXPECT_TRUE( String::rTrim( std::string( "  a  " ) ) == std::string( "  a" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::rTrim( std::string( "abc" ) ) == std::string( "abc" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "xxa" ), 'x' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::rTrim( std::string( "axx" ), 'x' ) == std::string( "a" ) );
+	EXPECT_TRUE( String::lTrim( std::string( "\t a " ), std::string_view( " \t" ) ) ==
+				 std::string( "a " ) );
+
+	// A string made only of separators has nothing left, as in trim().
+	EXPECT_TRUE( String::lTrim( std::string() ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string() ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( "   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( "xxxx" ), 'x' ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string( " \t\n " ), std::string_view( " \t\n" ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string( " \t\n " ), std::string_view( " \t\n" ) ).empty() );
+	EXPECT_TRUE( String::lTrim( std::string_view( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( std::string_view( "   " ) ).empty() );
+
+	// The UTF-32 overloads are separate implementations.
+	EXPECT_TRUE( String::lTrim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( String( "   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( String( "  a  " ) ) == String( "a  " ) );
+	EXPECT_TRUE( String::rTrim( String( "  a  " ) ) == String( "  a" ) );
+	EXPECT_TRUE( String::lTrim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::rTrim( String::View( U"   " ) ).empty() );
+	EXPECT_TRUE( String::lTrim( String::View( U"  a  " ) ) == String::View( U"a  " ) );
+	EXPECT_TRUE( String::rTrim( String::View( U"  a  " ) ) == String::View( U"  a" ) );
+
+	// Trimming one side and then the other is what trim() does in one step.
+	EXPECT_TRUE( String::rTrim( String::lTrim( std::string( "  a b  " ) ) ) ==
+				 String::trim( std::string( "  a b  " ) ) );
+}
+
+UTEST( String, readBySeparator ) {
+	auto collect = []( const std::string& input, char sep ) {
+		std::vector<std::string> chunks;
+		String::readBySeparator(
+			input, [&]( std::string_view chunk ) { chunks.emplace_back( chunk ); }, sep );
+		return chunks;
+	};
+
+	// An empty buffer holds no chunks, so the callback is not handed a spurious empty one.
+	EXPECT_TRUE( collect( std::string(), '\n' ).empty() );
+
+	// A buffer without a separator is a single chunk.
+	{
+		auto chunks = collect( "abc", '\n' );
+		EXPECT_EQ( chunks.size(), 1ul );
+		EXPECT_TRUE( chunks[0] == std::string( "abc" ) );
+	}
+
+	// A trailing separator does not add an empty chunk.
+	{
+		auto chunks = collect( "a\n", '\n' );
+		EXPECT_EQ( chunks.size(), 1ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+	}
+
+	// Empty lines between separators are preserved, and a lone separator is one empty chunk.
+	{
+		auto chunks = collect( "a\n\nb", '\n' );
+		EXPECT_EQ( chunks.size(), 3ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+		EXPECT_TRUE( chunks[1].empty() );
+		EXPECT_TRUE( chunks[2] == std::string( "b" ) );
+	}
+	EXPECT_EQ( collect( "\n", '\n' ).size(), 1ul );
+
+	// The separator is configurable.
+	{
+		auto chunks = collect( "a;b;", ';' );
+		EXPECT_EQ( chunks.size(), 2ul );
+		EXPECT_TRUE( chunks[0] == std::string( "a" ) );
+		EXPECT_TRUE( chunks[1] == std::string( "b" ) );
+	}
+
+	// The stoppable variant stops at the first chunk that asks it to, and skips empty buffers.
+	{
+		int seen = 0;
+		String::readBySeparatorStoppable( std::string( "a\nb\nc" ), [&]( std::string_view ) {
+			++seen;
+			return true;
+		} );
+		EXPECT_EQ( seen, 1 );
+
+		seen = 0;
+		String::readBySeparatorStoppable( std::string(), [&]( std::string_view ) {
+			++seen;
+			return false;
+		} );
+		EXPECT_EQ( seen, 0 );
+	}
+}
+
+UTEST( String, splitCb ) {
+	auto split = []( const std::string& input, const std::string& delims,
+					 const std::string& preserve = "", const std::string& quote = "\"",
+					 bool removeQuotes = false ) {
+		std::vector<std::string> tokens;
+		String::splitCb(
+			[&]( std::string_view token ) {
+				tokens.emplace_back( token );
+				return true;
+			},
+			input, delims, preserve, quote, removeQuotes );
+		return tokens;
+	};
+
+	// Tokens are split on any of the delimiter characters, and empty ones are dropped.
+	{
+		auto tokens = split( "a,b,c", "," );
+		EXPECT_EQ( tokens.size(), 3ul );
+		EXPECT_TRUE( tokens[0] == std::string( "a" ) );
+		EXPECT_TRUE( tokens[2] == std::string( "c" ) );
+	}
+	EXPECT_EQ( split( "a,,c", "," ).size(), 2ul );
+
+	// A buffer with no delimiter is one token, an empty buffer yields none.
+	EXPECT_EQ( split( "abc", "," ).size(), 1ul );
+	EXPECT_TRUE( split( "", "," ).empty() );
+
+	// A quoted token keeps its quotes unless removeQuotes is requested.
+	{
+		auto kept = split( "\"a\",\"b\"", "," );
+		EXPECT_EQ( kept.size(), 2ul );
+		EXPECT_TRUE( kept[0] == std::string( "\"a\"" ) );
+
+		auto stripped = split( "\"a\",\"b\"", ",", "", "\"", true );
+		EXPECT_EQ( stripped.size(), 2ul );
+		EXPECT_TRUE( stripped[0] == std::string( "a" ) );
+		EXPECT_TRUE( stripped[1] == std::string( "b" ) );
+	}
+
+	// delimsPreserve hands the preserved separator over as a token of its own.
+	{
+		auto tokens = split( "a;b", "", ";" );
+		EXPECT_EQ( tokens.size(), 3ul );
+		EXPECT_TRUE( tokens[0] == std::string( "a" ) );
+		EXPECT_TRUE( tokens[1] == std::string( ";" ) );
+		EXPECT_TRUE( tokens[2] == std::string( "b" ) );
+	}
+
+	// Brackets group only when they are part of the quote set, which is what code splitting needs.
+	EXPECT_EQ( split( "f(a,b),c", "," ).size(), 3ul );
+	{
+		auto tokens = split( "f(a,b),c", ",", "", "(" );
+		EXPECT_EQ( tokens.size(), 2ul );
+		EXPECT_TRUE( tokens[0] == std::string( "f(a,b)" ) );
+		EXPECT_TRUE( tokens[1] == std::string( "c" ) );
+	}
+}
+
 UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	std::string formatted;
 	formatted.reserve( 128 );
@@ -107,6 +316,58 @@ UTEST( String, reusableFormattingAndUtf8Assignment ) {
 	text.toUtf8( reusableUtf8 );
 	EXPECT_STREQ( "áβ中", reusableUtf8.c_str() );
 	EXPECT_EQ( utf8Storage, reusableUtf8.data() );
+}
+
+UTEST( String, acceleratedUtf8Conversion ) {
+	const std::string ascii( 256, 'a' );
+	const String asciiText( ascii );
+	EXPECT_STDSTREQ( ascii, asciiText.toUtf8() );
+	EXPECT_EQ( ascii.size(),
+			   String::utf8EncodedLength( asciiText.getString(), TextHints::AllAscii ) );
+	std::string asciiOutput;
+	String::appendUtf8( asciiText.getString(), asciiOutput, TextHints::AllAscii );
+	EXPECT_STDSTREQ( ascii, asciiOutput );
+
+	const std::string unicode = std::string( 64, 'a' ) + "áβ中🙂" + std::string( 64, 'z' );
+	const String unicodeText = String::fromUtf8( unicode );
+	EXPECT_STDSTREQ( unicode, unicodeText.toUtf8() );
+	EXPECT_EQ( unicode.size(), String::utf8EncodedLength( unicodeText.getString() ) );
+
+	std::string appended = "prefix:";
+	String::appendUtf8( unicodeText.getString(), appended );
+	EXPECT_STDSTREQ( "prefix:" + unicode, appended );
+
+	String::StringType malformed( 64, U'a' );
+	malformed.push_back( static_cast<char32_t>( 0x110000 ) );
+	malformed.append( 64, U'z' );
+	const String malformedText( malformed );
+	EXPECT_STDSTREQ( std::string( 64, 'a' ) + std::string( 64, 'z' ), malformedText.toUtf8() );
+}
+
+UTEST( String, acceleratedUtf8Decoding ) {
+	const std::string ascii( 256, 'a' );
+	const String asciiText( ascii );
+	EXPECT_EQ( ascii.size(), asciiText.size() );
+	EXPECT_STDSTREQ( ascii, asciiText.toUtf8() );
+
+	const std::string unicode = std::string( 64, 'a' ) + "áβ中🙂" + std::string( 64, 'z' );
+	String reused;
+	reused.assignUtf8( unicode );
+	EXPECT_STDSTREQ( unicode, reused.toUtf8() );
+	EXPECT_EQ( reused.size(), String::utf8Length( unicode ) );
+
+	const std::string withBom = "\xEF\xBB\xBF" + ascii;
+	EXPECT_STDSTREQ( ascii, String( withBom ).toUtf8() );
+	reused.assignUtf8( withBom );
+	ASSERT_TRUE( !reused.empty() );
+	EXPECT_EQ( static_cast<Uint32>( 0xFEFF ), static_cast<Uint32>( reused.front() ) );
+
+	std::string malformed( 64, 'a' );
+	malformed.append( "\xF0\x28\x8C\x28", 4 );
+	malformed.append( 64, 'z' );
+	String::StringType expected;
+	Utf8::toUtf32( malformed.begin(), malformed.end(), std::back_inserter( expected ) );
+	EXPECT_TRUE( String( malformed ).getString() == expected );
 }
 
 UTEST( String, byteStringEscapeAndUnescape ) {

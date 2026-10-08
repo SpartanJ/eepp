@@ -35,6 +35,12 @@ bool isRoot( const UIWidget* widget ) {
 	return widget->getUISceneNode() && widget == widget->getUISceneNode()->getRoot();
 }
 
+bool isComboBoxExpanded( const UIComboBox* widget ) {
+	const auto* popup = widget->getListBox();
+	// Fade-out keeps the popup visible, but disabling it closes the interactive control.
+	return popup->isVisible() && popup->isEnabled();
+}
+
 AccessibilityState baseState( const UIWidget* widget ) {
 	AccessibilityState state = AccessibilityState::None;
 	if ( widget->isEnabled() )
@@ -230,7 +236,7 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 		 static_cast<const UISelectButton*>( widget )->isSelected() )
 		state |= AccessibilityState::Selected;
 	if ( widget->isType( UI_TYPE_COMBOBOX ) &&
-		 static_cast<const UIComboBox*>( widget )->getListBox()->isVisible() )
+		 isComboBoxExpanded( static_cast<const UIComboBox*>( widget ) ) )
 		state |= AccessibilityState::Expanded;
 	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
 		state |= static_cast<const UITextEdit*>( widget )->isLocked()
@@ -282,16 +288,26 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		   !static_cast<const UITextEdit*>( widget )->isLocked() ) )
 		actions |= accessibilityActionMask( AccessibilityAction::SetTextSelection );
 	if ( widget->isType( UI_TYPE_COMBOBOX ) ) {
-		actions |= accessibilityActionMask(
-			static_cast<const UIComboBox*>( widget )->getListBox()->isVisible()
-				? AccessibilityAction::Collapse
-				: AccessibilityAction::Expand );
+		actions |=
+			accessibilityActionMask( isComboBoxExpanded( static_cast<const UIComboBox*>( widget ) )
+										 ? AccessibilityAction::Collapse
+										 : AccessibilityAction::Expand );
 	}
 	if ( widget->isType( UI_TYPE_SLIDER ) || widget->isType( UI_TYPE_SPINBOX ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Increment ) |
 				   accessibilityActionMask( AccessibilityAction::Decrement ) |
 				   accessibilityActionMask( AccessibilityAction::SetValue );
 	return actions;
+}
+
+UIWidget* AccessibilityWidgetResolver::getEventTarget( UIWidget* widget,
+													   AccessibilityEvent event ) {
+	if ( event == AccessibilityEvent::StateChanged && widget->isType( UI_TYPE_DROPDOWN ) ) {
+		auto* parent = widget->getParent();
+		if ( parent && parent->isType( UI_TYPE_COMBOBOX ) )
+			return parent->asType<UIWidget>();
+	}
+	return widget;
 }
 
 bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
@@ -365,7 +381,7 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 		   request.action == AccessibilityAction::Collapse ) &&
 		 widget->isType( UI_TYPE_COMBOBOX ) ) {
 		auto comboBox = static_cast<UIComboBox*>( widget );
-		bool expanded = comboBox->getListBox()->isVisible();
+		bool expanded = isComboBoxExpanded( comboBox );
 		if ( ( request.action == AccessibilityAction::Expand ) != expanded )
 			comboBox->getDropDownList()->showList();
 		return true;

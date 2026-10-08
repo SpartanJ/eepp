@@ -13,15 +13,20 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/input.hpp>
 
@@ -722,6 +727,405 @@ UTEST( CSSVariables, ParentStateChildOpacityReverts ) {
 	EXPECT_EQ( child->getAlpha(), 255.f );
 	parent->popState( UIState::StateSelected );
 	EXPECT_EQ( child->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, NativeFallbackSurvivesMultipleStates ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { opacity: 0.5; }
+		#child:pressed { opacity: 0.25; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	for ( int cycle = 0; cycle < 32; ++cycle ) {
+		child->pushState( UIState::StateSelected );
+		EXPECT_EQ( child->getAlpha(), 127.5f );
+		child->pushState( UIState::StatePressed );
+		EXPECT_EQ( child->getAlpha(), 63.75f );
+		child->popState( UIState::StatePressed );
+		EXPECT_EQ( child->getAlpha(), 127.5f );
+		child->popState( UIState::StateSelected );
+		EXPECT_EQ( child->getAlpha(), 255.f );
+		EXPECT_FALSE( child->getUIStyle()->hasLocalProperty( PropertyId::Opacity ) );
+	}
+}
+
+UTEST( CSSVariables, NativeFallbackFirstAppearsOutsideNormalState ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Late Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { opacity: 0.5; }
+		#child:pressed { background-color: blue; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const Color nativeBackground = child->getBackgroundColor();
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->pushState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundColor() == Color::Blue );
+	child->popState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundColor() == nativeBackground );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, InlineLowerWinnerSurvivesStateRollback ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inline State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#child:selected { opacity: 0.5 !important; }</style>
+	<div id="child" style="opacity: 0.75;"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	EXPECT_TRUE( child->getUIStyle()->hasLocalProperty( PropertyId::Opacity ) );
+}
+
+UTEST( CSSVariables, VariableLowerWinnerUpdatesWhileOverridden ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Variable State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		:root { --base-opacity: 0.75; }
+		#child { opacity: var(--base-opacity); }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	app.getUI()->combineStyleSheet( ":root { --base-opacity: 0.25; }" );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, LightDarkLowerWinnerUpdatesWhileOverridden ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Light Dark State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Light );
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { opacity: light-dark(0.75, 0.25); }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Dark );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, StylesheetReloadUsesNewLowerWinner ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Reload State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( R"css(
+		#child { opacity: 0.75; }
+		#child:selected { opacity: 0.5; }
+	)css" );
+	UIWidget* child = UIWidget::New();
+	child->setId( "child" );
+	child->setParent( sceneNode->getRoot() );
+	sceneNode->update( Time::Zero );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setStyleSheet( R"css(
+		#child { opacity: 0.25; }
+		#child:selected { opacity: 0.5; }
+	)css" );
+	sceneNode->update( Time::Zero );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, NativeFallbackSurvivesLowerRuleReloads ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Reload Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( "#child:selected { opacity: 0.5; }" );
+	UIWidget* child = UIWidget::New();
+	child->setId( "child" );
+	child->setParent( sceneNode->getRoot() );
+	sceneNode->update( Time::Zero );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setStyleSheet( "#child { opacity: 0.25; } #child:selected { opacity: 0.5; }" );
+	sceneNode->update( Time::Zero );
+	sceneNode->setStyleSheet( "#child:selected { opacity: 0.5; }" );
+	sceneNode->update( Time::Zero );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, InheritedFallbackUsesCurrentParentValue ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inherited Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html>
+	<head><style>
+		#parent { color: white; }
+		#child:selected { color: red; }
+	</style></head>
+	<body><div id="parent"><span id="child">Text</span></div></body>
+</html>
+	)html" );
+	UIWidget* parent = root->querySelector( "#parent" );
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( parent != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::Red );
+	parent->setStyleSheetInlineProperty( "color", "#00ff00" );
+	parent->reloadStyle( true, false, true, true );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color( "#00ff00" ) );
+}
+
+UTEST( CSSVariables, InheritedFallbackRestoresWhenSourceDisappears ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inherited Source Removal Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( "#parent { color: white; } #child:selected { color: red; }" );
+	UIWidget* root = sceneNode->loadLayoutFromString(
+		"<html><body><div id=\"parent\"><span id=\"child\">Text</span></div></body></html>" );
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::Red );
+	sceneNode->setStyleSheet( "#child:selected { color: red; }" );
+	sceneNode->update( Time::Zero );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+}
+
+UTEST( CSSVariables, VolatileNativeFallbackRestores ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Volatile Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#parent:selected > #child { opacity: 0.5; }</style>
+	<div id="parent"><div id="child"></div></div>
+</vbox>
+	)html" );
+	UIWidget* parent = root->querySelector( "#parent" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( parent != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	parent->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	parent->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, SiblingStateNativeFallbackRestores ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Sibling Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#source:selected + #child { opacity: 0.5; }</style>
+	<div id="source"></div><div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* source = root->querySelector( "#source" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( source != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	source->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	source->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, IndexedNativeFallbackRestoresEachLayer ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Indexed Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#child:selected { background-tint: red, blue; }</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	child->setBackgroundTint( Color( "#112233" ), 0 );
+	child->setBackgroundTint( Color( "#445566" ), 1 );
+	EXPECT_STDSTREQ( "#112233", child->getBackgroundTint( 0 ).toHexString() );
+	EXPECT_STDSTREQ( "#445566", child->getBackgroundTint( 1 ).toHexString() );
+	for ( int cycle = 0; cycle < 8; ++cycle ) {
+		child->pushState( UIState::StateSelected );
+		EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Red );
+		EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+		child->popState( UIState::StateSelected );
+		EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color( "#112233" ) );
+		const std::string secondTint = child->getBackgroundTint( 1 ).toHexString();
+		EXPECT_STDSTREQ( Color( "#445566" ).toHexString(), secondTint );
+		EXPECT_FALSE( child->getUIStyle()->hasLocalProperty( PropertyId::BackgroundTint ) );
+	}
+}
+
+UTEST( CSSVariables, IndexedFallbackRestoresLayerWhileAnotherStateRemains ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Indexed State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { background-tint: red, blue; }
+		#child:pressed { background-tint: green; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const Color originalTint( "#445566" );
+	child->setBackgroundTint( originalTint, 1 );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+	child->pushState( UIState::StatePressed );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Green );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == originalTint );
+	child->popState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == originalTint );
+}
+
+UTEST( CSSVariables, IndexedFallbackRestoresUncoveredLayer ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Partial Indexed Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { background-tint: #112233; }
+		#child:selected { background-tint: red, blue; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	child->setBackgroundTint( Color( "#445566" ), 1 );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Red );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color( "#112233" ) );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color( "#445566" ) );
+}
+
+UTEST( CSSVariables, HTMLTableIndexedPropertyGetterForwardsIndex ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Table Indexed Getter Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html><body><table id="table"><tr><td id="cell">Text</td></tr></table></body></html>
+	)html" );
+	const PropertyDefinition* tint =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::BackgroundTint );
+	for ( const char* selector : { "#table", "#cell" } ) {
+		UIWidget* widget = root->querySelector( selector );
+		EXPECT_TRUE( widget != nullptr );
+		widget->setBackgroundTint( Color( "#112233" ), 0 );
+		widget->setBackgroundTint( Color( "#445566" ), 1 );
+		EXPECT_STDSTREQ( "#445566", widget->getPropertyString( tint, 1 ) );
+	}
+}
+
+UTEST( CSSVariables, NativeFallbackTransitionsInBothDirections ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Native Fallback Transition Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { transition: opacity 0.1s; }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const PropertyDefinition* opacity =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Opacity );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getActionsByTag( opacity->getId() ).size(), 1UL );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getActionsByTag( opacity->getId() ).size(), 1UL );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 255.f );
 }
 
 UTEST( CSSVariables, ParentStateChildOpacityTransitionReverts ) {
@@ -1701,4 +2105,48 @@ UTEST( CSSFunctions, NotAFunctionReturnsDefault ) {
 	auto len = StyleSheetLength::fromString( "notaclamp(10px, 50px, 100px)" );
 	EXPECT_EQ( StyleSheetLength::Unit::Px, len.getUnit() );
 	EXPECT_EQ( 0, len.getValue() );
+}
+
+UTEST( CSSUnits, StrokeRoundTripAndTransitionAtHighDensity ) {
+	UIApplication app( WindowSettings( 800, 600, "eepp - CSS Units Test", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ),
+					   UIApplication::Settings( System::Sys::getProcessPath() + ".." +
+													System::FileSystem::getOSSlash(),
+												1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	PixelDensity::setPixelDensity( 2.f );
+	auto* definition =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::TextStrokeWidth );
+	UIWidget* widgets[] = { UITextView::New(),	UITextSpan::New(), UIRichText::New(),
+							UITooltip::New(),	UIConsole::New(),  UICodeEditor::New(),
+							UITextInput::New(), UITextEdit::New() };
+	for ( auto* widget : widgets ) {
+		widget->setParent( app.getUI() );
+		definition = StyleSheetSpecification::instance()->getProperty(
+			widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_TEXTEDIT )
+				? PropertyId::HintStrokeWidth
+				: PropertyId::TextStrokeWidth );
+		for ( bool html : { false, true } ) {
+			if ( html )
+				widget->setFlags( UI_HTML_ELEMENT );
+			else
+				widget->unsetFlags( UI_HTML_ELEMENT );
+			for ( const char* source : { "2px", "2dp" } ) {
+				widget->applyProperty( StyleSheetProperty( definition, source ) );
+				const Float expected = html || std::string_view( source ) == "2dp" ? 4.f : 2.f;
+				std::string serialized = widget->getPropertyString( definition );
+				EXPECT_EQ( widget->lengthFromValue( serialized, PropertyRelativeTarget::None, 0 ),
+						   expected );
+				widget->applyProperty( StyleSheetProperty( definition, serialized ) );
+				EXPECT_TRUE( widget->getPropertyString( definition ) == serialized );
+				StyleSheetPropertyAnimation::tweenProperty( widget, 0.5f, definition, serialized,
+															"6dp", Ease::Interpolation::Linear, {},
+															0, false );
+				EXPECT_EQ( widget->lengthFromValue( widget->getPropertyString( definition ),
+													PropertyRelativeTarget::None, 0 ),
+						   ( expected + 12.f ) / 2.f );
+			}
+		}
+	}
+	PixelDensity::setPixelDensity( previousDensity );
 }

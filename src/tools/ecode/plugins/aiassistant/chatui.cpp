@@ -599,7 +599,7 @@ static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
 	</hbox>
 	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp">
 		<MarkdownView class="permission_desc" lw="mp" lh="wc" />
-		<StackLayout class="permission_options" lw="mp" lh="wc" />
+		<FlowLayout class="permission_options" lw="mp" lh="wc" />
 	</vbox>
 </vbox>
 )xml";
@@ -2097,7 +2097,7 @@ void LLMChatUI::doAgentRequest() {
 		auto* thinking = editor->findByClass<UIImage>( "thinking" );
 		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 		thinking->setVisible( true );
-		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setPosition( { 8, 3 } );
 		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 							   thinkingID );
 
@@ -2127,7 +2127,7 @@ void LLMChatUI::doAgentRequest() {
 		auto* thinking = editor->findByClass<UIImage>( "thinking" );
 		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 		thinking->setVisible( true );
-		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setPosition( { 8, 3 } );
 		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 							   thinkingID );
 

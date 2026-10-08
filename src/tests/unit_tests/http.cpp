@@ -14,11 +14,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/sys.hpp>
 
-#if EE_PLATFORM != EE_PLATFORM_WIN
-#include <fcntl.h>
-#include <sys/select.h>
-#include <unistd.h>
-#endif
+#include "highfiledescriptors.hpp"
 
 using namespace EE;
 using namespace EE::Network;
@@ -53,21 +49,6 @@ struct ThreadGate {
 };
 
 } // namespace
-
-#if EE_PLATFORM != EE_PLATFORM_WIN
-namespace {
-
-struct FileDescriptorGuard {
-	~FileDescriptorGuard() {
-		for ( int fd : fds )
-			::close( fd );
-	}
-
-	std::vector<int> fds;
-};
-
-} // namespace
-#endif
 
 UTEST( Http, responseHeaderLineLargerThanReceiveBuffer ) {
 	TcpListener listener;
@@ -113,6 +94,51 @@ UTEST( Http, responseHeaderLineLargerThanReceiveBuffer ) {
 	EXPECT_TRUE( serverOk );
 	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
 	EXPECT_TRUE( response.getBody() == "hello" );
+}
+
+UTEST( Http, redirectSendsCookiePairWithoutSetCookieAttributes ) {
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	std::string redirectedRequest;
+	std::atomic<bool> serverOk{ false };
+	std::thread server( [&] {
+		for ( int step = 0; step < 2; ++step ) {
+			TcpSocket client;
+			if ( listener.accept( client ) != Socket::Done )
+				return;
+			std::string request;
+			char buffer[1024];
+			std::size_t received = 0;
+			while ( request.find( "\r\n\r\n" ) == std::string::npos ) {
+				if ( client.receive( buffer, sizeof( buffer ), received ) != Socket::Done )
+					return;
+				request.append( buffer, received );
+			}
+			if ( step == 1 )
+				redirectedRequest = std::move( request );
+			const std::string response = step == 0
+											 ? "HTTP/1.1 303 See Other\r\nLocation: /landing\r\n"
+											   "Set-Cookie: session=new; Path=/; HttpOnly\r\n"
+											   "Content-Length: 0\r\nConnection: close\r\n\r\n"
+											 : "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
+											   "Connection: close\r\n\r\nok";
+			if ( client.send( response.data(), response.size() ) != Socket::Done )
+				return;
+			client.disconnect();
+		}
+		serverOk = true;
+	} );
+	Http http( "127.0.0.1", listener.getLocalPort() );
+	Http::Request request( "/login" );
+	request.setField( "Cookie", "session=old; pref=1" );
+	Http::Response response = http.sendRequest( request, Seconds( 5 ) );
+	server.join();
+	listener.close();
+	EXPECT_TRUE( serverOk );
+	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+	EXPECT_TRUE( redirectedRequest.find( "GET /landing " ) == 0 );
+	EXPECT_TRUE( redirectedRequest.find( "cookie: session=new; pref=1\r\n" ) != std::string::npos );
+	EXPECT_TRUE( redirectedRequest.find( "HttpOnly" ) == std::string::npos );
 }
 
 UTEST( Http, failedTlsHandshakesReleaseConnectionState ) {
@@ -414,16 +440,8 @@ UTEST( Http, tcpConnectTimeoutHandlesFdAboveFdSetSize ) {
 	TcpListener listener;
 	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
 
-	FileDescriptorGuard openFiles;
-	openFiles.fds.reserve( FD_SETSIZE + 16 );
-	while ( openFiles.fds.empty() || openFiles.fds.back() < FD_SETSIZE ) {
-		int fd = ::open( "/dev/null", O_RDONLY );
-		if ( fd < 0 )
-			break;
-		openFiles.fds.push_back( fd );
-	}
-
-	if ( openFiles.fds.empty() || openFiles.fds.back() < FD_SETSIZE )
+	HighFileDescriptorReservation highFds;
+	if ( !highFds.isReady() )
 		UTEST_SKIP( "could not reserve enough file descriptors" );
 
 	TcpSocket client;

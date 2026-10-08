@@ -236,7 +236,7 @@ class EE_API RichText : public Drawable {
 		Float lineHeight{ 0 };
 		BaselineAlignValue baselineAlign;
 		bool suppressBackground{ false };
-		Float baseline{ 0 };
+		Float baseline{ 0 }; // Natural baseline from the content box's top, also for text runs.
 		InlineFloat floatType{ InlineFloat::None };
 		InlineClear clearType{ InlineClear::None };
 		bool isLineBreak{ false };
@@ -281,6 +281,13 @@ class EE_API RichText : public Drawable {
 	/** @brief Sets the text selection range. */
 	void setSelection( TextSelectionRange range );
 
+	/** Excludes character intervals from the painted and copied selection. */
+	void setSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions );
+
+	const SmallVector<TextSelectionRange, 4>& getSelectionExclusions() const {
+		return mSelectionExclusions;
+	}
+
 	/** @return The current text selection range. */
 	TextSelectionRange getSelection() const { return mSelection; }
 
@@ -311,9 +318,15 @@ class EE_API RichText : public Drawable {
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
 
+	/** @return A character interval as a string, honoring selection exclusions. */
+	String getSelectionString( TextSelectionRange range ) const;
+
 	/** Tries to update the layout if has been invalidated. This is automatically called before
 	 * draw. */
 	void updateLayout();
+
+	/** Changes whenever the retained inline fragments are replaced or cleared. */
+	Uint32 getInlineFragmentsGeneration() const { return mInlineFragmentsGeneration; }
 
 	/** Invalidates the current layout */
 	void invalidateLayout();
@@ -474,6 +487,11 @@ class EE_API RichText : public Drawable {
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	TextSelectionRange mSelection{ 0, 0 };
+	SmallVector<TextSelectionRange, 4> mSelectionExclusions;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments() const;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments( TextSelectionRange range ) const;
 	Color mSelectionColor{ Color::White };
 	Color mSelectionBackColor{ 0, 0, 255, 150 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
@@ -487,6 +505,7 @@ class EE_API RichText : public Drawable {
 	WhiteSpaceWrapMode mWhiteSpaceWrapMode{ WhiteSpaceWrapMode::Normal };
 	Uint32 mTabWidth{ 8 };
 	Uint32 mTextHints{ 0 };
+	Uint32 mInlineFragmentsGeneration{ 0 };
 };
 
 }} // namespace EE::Graphics

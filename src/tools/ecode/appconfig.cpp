@@ -2,6 +2,7 @@
 #include "ecode.hpp"
 #include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "uimarkdownpreview.hpp"
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -118,7 +119,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "icon/ecode-macos.png";
+#else
+	const char* windowIcon = "icon/ecode.png";
+#endif
+	windowState.winIcon = ini.getValue( "window", "winicon", resPath + windowIcon );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
 	windowState.statusBarPartition = iniState.getValue( "window", "status_bar_partition", "85%" );
 	windowState.rightPanelPartition = iniState.getValue( "window", "right_panel_partition", "75%" );
@@ -157,10 +163,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
 	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
-	ui.smoothScroll = ini.getValueB(
-		"ui", "smooth_scroll",
-		ini.getValueB( "editor", "smooth_scroll",
-					   ini.getValueB( "terminal", "smooth_scroll", false ) ) );
+	ui.smoothScroll =
+		ini.getValueB( "ui", "smooth_scroll",
+					   ini.getValueB( "editor", "smooth_scroll",
+									  ini.getValueB( "terminal", "smooth_scroll", false ) ) );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.sansSerifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -591,6 +597,16 @@ json AppConfig::saveNode( Node* node ) {
 				f["type"] = "audio_player";
 				f["path"] = ap->getFilePath();
 				files.emplace_back( f );
+			} else if ( ownedWidget->isWidget() &&
+						ownedWidget->asType<UIWidget>()->hasClass( "markdown-preview" ) ) {
+				auto* preview = ownedWidget->asType<UIMarkdownPreview>();
+				if ( preview->getMarkdownView()->getDocumentPath().empty() )
+					continue;
+				json f;
+				f["type"] = "markdown_preview";
+				f["path"] = preview->getMarkdownView()->getDocumentPath();
+				f["source_path"] = preview->getSourcePath();
+				files.emplace_back( std::move( f ) );
 			} else if ( node->isWidget() ) {
 				UIWidget* widget = ownedWidget->asType<UIWidget>();
 				if ( widget->getClasses().size() == 1 ) {
@@ -753,6 +769,7 @@ void AppConfig::editorLoadedCounter( ecode::App* app ) {
 	editorsToLoad--;
 	if ( editorsToLoad <= 0 ) {
 		app->getUISceneNode()->runOnMainThread( [app] {
+			app->bindMarkdownPreviewSources();
 			if ( !app->getFileToOpen().empty() ) {
 				app->loadFileDelayed();
 			} else {
@@ -864,6 +881,23 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 			} else if ( file["type"] == "audio_player" ) {
 				if ( file.contains( "path" ) && file["path"].is_string() )
 					app->loadAudioFromPath( file["path"].get<std::string>(), false );
+			} else if ( file["type"] == "markdown_preview" ) {
+				if ( !file.contains( "path" ) || !file["path"].is_string() ||
+					 file["path"].get_ref<const std::string&>().empty() )
+					continue;
+				const auto& path = file["path"].get_ref<const std::string&>();
+				const auto& sourcePath =
+					file.contains( "source_path" ) && file["source_path"].is_string()
+						? file["source_path"].get_ref<const std::string&>()
+						: path;
+				app->createMarkdownPreview( curTabWidget, path, sourcePath,
+											editorSplitter->findEditorFromPath( sourcePath ),
+											false );
+				editorSplitter->removeUnusedTab( curTabWidget, true, false );
+				if ( curTabWidget->getTabCount() == totalToLoad ) {
+					curTabWidget->setTabSelected(
+						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+				}
 			} else {
 				auto found = tabWidgetTypes.find( file["type"] );
 				if ( found != tabWidgetTypes.end() ) {
@@ -995,6 +1029,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			editorsToLoad = countTotalEditors( j );
 			if ( editorsToLoad <= 0 ) {
 				app->getUISceneNode()->runOnMainThread( [app] {
+					app->bindMarkdownPreviewSources();
 					if ( !app->getFileToOpen().empty() ) {
 						app->loadFileDelayed();
 					}

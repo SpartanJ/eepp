@@ -15,7 +15,8 @@ class xml_node;
 
 namespace EE::UI {
 class UICheckBox;
-}
+class UIWidget;
+} // namespace EE::UI
 
 namespace EE::UI::Tools {
 
@@ -79,9 +80,13 @@ struct EE_API ActionSetting {
 	std::function<void()> action;
 };
 
+struct EE_API CustomWidgetSetting {
+	std::function<UIWidget*( UIWidget* parent )> create;
+};
+
 using SettingValue =
 	std::variant<BoolPointerSetting, BoolSetting, ChoiceSetting, EditableChoiceSetting,
-				 IntegerSetting, TextSetting, FloatSetting, ActionSetting>;
+				 IntegerSetting, TextSetting, FloatSetting, ActionSetting, CustomWidgetSetting>;
 
 struct EE_API SettingDefinition {
 	SettingDescriptor descriptor;
@@ -164,6 +169,9 @@ class EE_API UISettingsPanel : public UILinearLayout {
 				   std::function<double()> get, std::function<void( double )> set );
 
 	bool addAction( SettingDescriptor descriptor, String buttonText, std::function<void()> action );
+
+	bool addCustomWidget( SettingDescriptor descriptor,
+						  std::function<UIWidget*( UIWidget* parent )> create );
 
 	void build();
 

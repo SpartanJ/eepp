@@ -331,6 +331,7 @@ ecode will try to open an external terminal.</string>
 	<string name="frame_rate_limit">Frame Rate Limit</string>
 	<string name="frame_rate_limit_applied">Frame Rate Limit Applied</string>
 	<string name="fullscreen_mode">Full Screen Mode</string>
+	<string name="zen_mode">Zen Mode</string>
 	<string name="fullscreen_toggle">Fullscreen Toggle</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Add Branch</string>
@@ -1106,6 +1107,14 @@ Restart ecode to see the changes.</string>
 	<string name="enable_exclusive_mode_by_default">Enable Exclusive Mode by Default</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">Disable global keybindings in newly created terminals.</string>
 	<string name="file_associations">File Associations</string>
+	<string name="apply">Apply</string>
+	<string name="extension">Extension</string>
+	<string name="registered">Registered</string>
+	<string name="install_desktop_entry">Install application launcher</string>
+	<string name="system_file_associations">System File Associations</string>
+	<string name="system_file_associations_desc">Make ecode available for the selected file extensions. The operating system may still ask you to confirm the default application.</string>
+	<string name="file_associations_updated">File associations updated.</string>
+	<string name="file_associations_update_failed">Could not update file associations.</string>
 	<string name="full">Full</string>
 	<string name="grayscale">Grayscale</string>
 	<string name="hide_tabbar">Hide Tab Bar</string>
@@ -1212,6 +1221,10 @@ Restart ecode to see the changes.</string>
 	<string name="discordrpc_language_icons_desc">Display an icon for the active document language.</string>
 	<string name="formatter_auto_format_on_save">Format on Save</string>
 	<string name="formatter_auto_format_on_save_desc">Automatically format supported documents when saving.</string>
+	<string name="git_diff_gutter">Show Git Diff Gutter</string>
+	<string name="git_diff_gutter_desc">Show added, modified and deleted line indicators in the editor gutter.</string>
+	<string name="git_diff_gutter_debounce_delay">Git Diff Gutter Update Delay</string>
+	<string name="git_diff_gutter_debounce_delay_desc">How long to wait after editing before updating Git diff indicators.</string>
 	<string name="git_filetree_highlight_changes">Highlight File Tree Changes</string>
 	<string name="git_filetree_highlight_changes_desc">Highlight files with Git changes in the file tree.</string>
 	<string name="git_filetree_highlight_style_color">File Tree Highlight Color</string>
@@ -1291,6 +1304,9 @@ Restart ecode to see the changes.</string>
 	<string name="git_history_error">Could not load Git history</string>
 	<string name="git_history_retry">Retry</string>
 	<string name="git_local_branch">Local</string>
+	<string name="git_local_only">local only</string>
 	<string name="git_remote_branch">Remote</string>
 	<string name="git_tag">Tag</string>
+	<string name="uimarkdownview_go_back">Go Back</string>
+	<string name="uimarkdownview_go_forward">Go Forward</string>
 </resources>

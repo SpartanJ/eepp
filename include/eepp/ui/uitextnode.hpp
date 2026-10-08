@@ -50,6 +50,8 @@ class EE_API UITextNode : public UIWidget {
 	Uint32 mTextHintsOverrideMask{ 0 };
 
 	UITextNode();
+
+	virtual void onSizeChange();
 };
 
 }} // namespace EE::UI

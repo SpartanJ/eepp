@@ -5,7 +5,9 @@
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 
 using namespace EE;
@@ -82,11 +84,22 @@ UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {
 	panel->build();
 
 	EXPECT_TRUE( panel->isBuilt() );
+	auto* search = panel->find<UITextInput>( "settings_filter" );
+	panel->focusSearch();
+	app.getUI()->update( Milliseconds( 16 ) );
+	app.getUI()->draw();
+	EXPECT_EQ( search, app.getUI()->getUIEventDispatcher()->getFocusNode() );
 	auto* firstRow = panel->find<UIWidget>( "setting_first" );
 	EXPECT_NE( nullptr, firstRow );
 	EXPECT_TRUE( firstRow->isVisible() );
 	EXPECT_EQ( nullptr, panel->find<UIWidget>( "setting_second" ) );
 	EXPECT_FALSE( panel->addCategory( "late.category", "Late", "Category" ) );
+	EXPECT_FALSE( panel->addCustomWidget(
+		{ "lateWidget", "general.behavior", "Late", "Late widget", {} }, []( UIWidget* parent ) {
+			auto* widget = UITextView::New();
+			widget->setParent( parent );
+			return widget;
+		} ) );
 
 	panel->selectCategory( "editor.display" );
 	auto* secondRow = panel->find<UIWidget>( "setting_second" );
@@ -100,6 +113,28 @@ UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {
 	EXPECT_FALSE( secondRow->isEnabled() );
 	panel->setCategoryEnabled( "editor.display", true );
 	EXPECT_TRUE( secondRow->isEnabled() );
+}
+
+UTEST( UISettingsPanel, materializesCustomWidgets ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - UISettingsPanel Custom Widget Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
+	EXPECT_TRUE( panel->addCategory( "general.integration", "General", "Integration" ) );
+	EXPECT_TRUE( panel->addCustomWidget(
+		{ "associations", "general.integration", "Associations", "Select extensions", {} },
+		[]( UIWidget* parent ) {
+			auto* widget = UITextView::New();
+			widget->setId( "custom_associations" );
+			widget->setParent( parent );
+			return widget;
+		} ) );
+
+	panel->build();
+
+	EXPECT_NE( nullptr, panel->find<UIWidget>( "setting_associations" ) );
+	EXPECT_NE( nullptr, panel->find<UIWidget>( "custom_associations" ) );
 }
 
 UTEST( UISettingsPanel, filtersAcrossUnmaterializedCategories ) {

@@ -4,10 +4,18 @@
 #include <deque>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/inputevent.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminalsearch.hpp>
@@ -87,6 +95,106 @@ waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 	}
 	return nullptr;
+}
+
+class SelectionTestDisplay : public TerminalDisplay {
+  public:
+	SelectionTestDisplay( EE::Window::Window* window, Font* font,
+						  std::shared_ptr<TerminalSession> session ) :
+		TerminalDisplay( window, font, 12, { 400, 200 }, false ) {
+		mPadding = { 10, 10, 10, 10 };
+		mSession = std::move( session );
+		consumeSnapshot();
+	}
+
+	using TerminalDisplay::positionToGrid;
+};
+
+UTEST( eterm_display, selection_clamps_each_axis_independently ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm selection bounds", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto session = TerminalSession::create( std::make_unique<MockPty>(),
+											std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 80 && snapshot.rows == 24;
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const Vector2i inside{ 110 + 3 * cell.getWidth(), 110 + 4 * cell.getHeight() };
+	const auto grid = display.positionToGrid( inside );
+	ASSERT_GT( grid.x, 0 );
+	ASSERT_GT( grid.y, 0 );
+
+	for ( int x : { -50, 0, 90, 10000 } ) {
+		const auto outside = display.positionToGrid( { x, inside.y } );
+		EXPECT_EQ( grid.y, outside.y );
+		EXPECT_EQ( x < 110 ? 0 : 80, outside.x );
+	}
+	for ( int y : { -50, 0, 90, 10000 } ) {
+		const auto outside = display.positionToGrid( { inside.x, y } );
+		EXPECT_EQ( grid.x, outside.x );
+		EXPECT_EQ( y < 110 ? 0 : 23, outside.y );
+	}
+}
+
+UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm selection auto-scroll", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	for ( int line = 0; line < 80; ++line )
+		pty->mBuffer += "selection history\r\n";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.historyLength > 40;
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	display.setClickStep( 1 );
+	auto* input = app.getWindow()->getInput();
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	display.onMouseDown( { 150, 150 }, EE_BUTTON_LMASK );
+
+	// Keep the auto-scroll timer eligible and leave the input position stale deliberately.
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	for ( const Vector2i& point :
+		  { Vector2i{ -50, 150 }, Vector2i{ 700, 150 }, Vector2i{ -50, 100 }, Vector2i{ 700, 105 },
+			Vector2i{ -50, 295 }, Vector2i{ 700, 300 } } ) {
+		display.onMouseMove( point, EE_BUTTON_LMASK );
+		session->requestSelection(); // Wait for the worker to process the motion.
+		EXPECT_EQ( 0, session->snapshot()->scrollPosition );
+	}
+
+	// Crossing the top and bottom must still scroll even when X is outside the widget.
+	display.onMouseMove( { -50, 99 }, EE_BUTTON_LMASK );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 1;
+				 } ) != nullptr );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	display.onMouseMove( { 700, 301 }, EE_BUTTON_LMASK );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 0;
+				 } ) != nullptr );
+
+	// Periodic updates must retain the unclamped Y coordinate outside the window.
+	display.setPosition( { 100, 0 } );
+	EE::Window::InputEvent motion( EE::Window::InputEvent::MouseMotion );
+	motion.motion = {};
+	motion.motion.x = -50;
+	motion.motion.y = -1;
+	input->processEvent( &motion );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	display.update( false );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition == 1;
+				 } ) != nullptr );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	display.onMouseUp( { 150, 150 }, EE_BUTTON_LMASK );
 }
 
 UTEST( eterm_session, command_wakeup_and_snapshot_immutability ) {
@@ -233,6 +341,46 @@ UTEST( eterm_session, resize_and_output_are_serialized ) {
 	EXPECT_EQ( static_cast<size_t>( 40 * 12 ), snapshot->cells.size() );
 }
 
+UTEST( eterm_session, closing_a_tab_resize_keeps_surviving_session_alive ) {
+	auto survivorPty = std::make_unique<MockPty>();
+	survivorPty->mCols = 151;
+	survivorPty->mRows = 52;
+	for ( int line = 0; line < 200; ++line )
+		survivorPty->mBuffer += "survivor history " + std::to_string( line ) + "\r\n";
+	auto survivorProcess = std::make_unique<MockProcess>();
+	auto survivor =
+		TerminalSession::create( std::move( survivorPty ), std::move( survivorProcess ), 1000 );
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 52 &&
+							snapshot.historyLength >= 100;
+				 } ) != nullptr );
+
+	auto temporaryPty = std::make_unique<MockPty>();
+	temporaryPty->mCols = 151;
+	temporaryPty->mRows = 52;
+	auto temporaryProcess = std::make_unique<MockProcess>();
+	auto temporary =
+		TerminalSession::create( std::move( temporaryPty ), std::move( temporaryProcess ), 1000 );
+
+	survivor->resize( 151, 50 );
+	temporary->resize( 151, 50 );
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 50;
+				 } ) != nullptr );
+	ASSERT_TRUE( waitForSnapshot( temporary, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 50;
+				 } ) != nullptr );
+
+	/* Queue the surviving resize before closing the temporary session so both workers can release
+	 * and reallocate equal-sized terminal rows concurrently. */
+	survivor->resize( 151, 52 );
+	temporary.reset();
+	ASSERT_TRUE( waitForSnapshot( survivor, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 151 && snapshot.rows == 52 &&
+							snapshot.historyLength >= 100;
+				 } ) != nullptr );
+}
+
 UTEST( eterm_session, scroll_snapshots_acknowledge_the_latest_ordered_command ) {
 	auto pty = std::make_unique<MockPty>();
 	for ( int line = 0; line < 80; ++line )
@@ -267,30 +415,63 @@ UTEST( eterm_session, presentation_rate_is_applied_on_the_worker ) {
 UTEST( eterm_session, focus_reporting_is_ordered_on_worker ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[?1004h";
+	for ( int line = 0; line < 40; ++line )
+		pty->mBuffer += "Line " + std::to_string( line ) + "\r\n";
 	pty->mLoopWrites = false;
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
 	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
 	auto enabled = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
-		return snapshot.windowMode & MODE_FOCUS;
+		return snapshot.windowMode & MODE_FOCUS && snapshot.historyLength >= 5;
 	} );
 	ASSERT_TRUE( enabled != nullptr );
+	const Uint64 scrollCommand = session->scrollTo( 5 );
+	auto scrolled = waitForSnapshot( session, [scrollCommand]( const TerminalSnapshot& snapshot ) {
+		return snapshot.lastAppliedScrollCommand == scrollCommand;
+	} );
+	ASSERT_TRUE( scrolled != nullptr );
+	ASSERT_EQ( 5, scrolled->scrollPosition );
 
 	session->setFocus( false );
-	auto unfocused = waitForSnapshot( session, [enabled]( const TerminalSnapshot& snapshot ) {
-		return snapshot.generation > enabled->generation && !( snapshot.windowMode & MODE_FOCUSED );
+	auto unfocused = waitForSnapshot( session, [scrolled]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > scrolled->generation &&
+			   !( snapshot.windowMode & MODE_FOCUSED );
 	} );
 	ASSERT_TRUE( unfocused != nullptr );
+	EXPECT_EQ( 5, unfocused->scrollPosition );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
 	EXPECT_STDSTREQ( "\033[O", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
 
 	session->setFocus( true );
-	ASSERT_TRUE( waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
-					 return snapshot.generation > unfocused->generation &&
-							snapshot.windowMode & MODE_FOCUSED;
-				 } ) != nullptr );
+	auto refocused = waitForSnapshot( session, [unfocused]( const TerminalSnapshot& snapshot ) {
+		return snapshot.generation > unfocused->generation && snapshot.windowMode & MODE_FOCUSED;
+	} );
+	ASSERT_TRUE( refocused != nullptr );
+	EXPECT_EQ( 5, refocused->scrollPosition );
 	ASSERT_TRUE( ptyPtr->mWrites.size() >= 3 );
 	EXPECT_STDSTREQ( "\033[I", ptyPtr->mWrites.substr( ptyPtr->mWrites.size() - 3 ) );
+}
+
+UTEST( eterm_session, focus_commands_do_not_clear_selection ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "persistent selection";
+	auto process = std::make_unique<MockProcess>();
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.cells.empty() && snapshot.cells[0].u == 'p';
+				 } ) != nullptr );
+
+	session->selectionStart( 0, 0, 0 );
+	session->selectionExtend( 9, 0, SEL_REGULAR, false );
+	auto selected = session->requestSelection();
+	ASSERT_TRUE( selected.has_value() );
+	ASSERT_STDSTREQ( "persistent", *selected );
+
+	session->setFocus( false );
+	session->setFocus( true );
+	auto afterFocusChange = session->requestSelection();
+	ASSERT_TRUE( afterFocusChange.has_value() );
+	EXPECT_STDSTREQ( "persistent", *afterFocusChange );
 }
 
 UTEST( eterm_session, replaceable_events_coalesce_without_losing_ordered_events ) {
@@ -421,6 +602,7 @@ class MockDisplay : public ITerminalDisplay {
   public:
 	int mDrawLines{ 0 };
 	int mDrawEnds{ 0 };
+	std::vector<int> mPublishedScrollPositions;
 	uint32_t mFirstMode{ 0 };
 	uint32_t mSecondMode{ 0 };
 	TerminalGlyph mFirstGlyph;
@@ -440,7 +622,11 @@ class MockDisplay : public ITerminalDisplay {
 		}
 	}
 	void drawCursor( int, int, TerminalGlyph, int, int, TerminalGlyph ) override {}
-	void drawEnd() override { ++mDrawEnds; }
+	void drawEnd() override {
+		++mDrawEnds;
+		if ( mEmulator )
+			mPublishedScrollPositions.emplace_back( mEmulator->scrollPos() );
+	}
 	void resetColors() override { ++mResetColorsCount; }
 	void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
 					   std::vector<TerminalGraphicsUpdate> ) override {
@@ -1048,6 +1234,50 @@ UTEST( eterm, kitty_keyboard_protocol_encodes_worker_key_without_duplicate_text 
 	EXPECT_STDSTREQ( "\033[97;1u\033[13;5u", ptyPtr->mWrites );
 }
 
+UTEST( eterm, kitty_modifier_key_does_not_scroll_to_bottom ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[>8u";
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+	ptyPtr->mLoopWrites = false;
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	ptyPtr->mWrites.clear();
+
+	term->keyEvent( { KEY_LCTRL, SCANCODE_LCTRL, 0, KEYMOD_LCTRL, KittyKeyEventType::Press } );
+	EXPECT_FALSE( ptyPtr->mWrites.empty() );
+	EXPECT_EQ( 5, term->scrollPos() );
+
+	term->keyEvent( { KEY_A, SCANCODE_A, 0, KEYMOD_LCTRL, KittyKeyEventType::Press } );
+	EXPECT_EQ( 0, term->scrollPos() );
+}
+
+UTEST( eterm, application_cursor_keys_are_written_to_pty ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033[?1h";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	term->update();
+
+	term->keyEvent( { KEY_UP, SCANCODE_UP, 0, KEYMOD_NONE, KittyKeyEventType::Press } );
+	term->keyEvent( { KEY_DOWN, SCANCODE_DOWN, 0, KEYMOD_NONE, KittyKeyEventType::Press } );
+
+	EXPECT_STDSTREQ( "\033OA\033OB", ptyPtr->mWrites );
+}
+
 UTEST( eterm, kitty_keyboard_protocol_preserves_altgr_text ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[>15u";
@@ -1462,6 +1692,33 @@ UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {
 	term->selstart( 0, 0, 0 );
 	term->selextend( 7, 0, SEL_REGULAR, false );
 	EXPECT_STDSTREQ( "complete", term->getSelection() );
+}
+
+UTEST( eterm, pty_parsing_does_not_publish_temporary_bottom_viewport ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int line = 0; line < 40; ++line ) {
+		const std::string output = "history " + std::to_string( line ) + "\r\n";
+		term->write( output.data(), output.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	ASSERT_EQ( 5, term->scrollPos() );
+	display->mPublishedScrollPositions.clear();
+
+	const char synchronizedOutput[] = "\033[?2026hnew output\r\n\033[?2026l";
+	term->write( synchronizedOutput, sizeof( synchronizedOutput ) - 1 );
+	term->update();
+
+	ASSERT_FALSE( display->mPublishedScrollPositions.empty() );
+	for ( int scrollPosition : display->mPublishedScrollPositions )
+		EXPECT_TRUE( scrollPosition > 0 );
+	EXPECT_EQ( 6, display->mPublishedScrollPositions.back() );
 }
 
 UTEST( eterm, sgr_colon_subparameters_preserve_groups_and_optional_color_space ) {
@@ -2272,6 +2529,88 @@ UTEST( eterm, scroll_position_after_ttyread ) {
 	EXPECT_STDSTREQ( "New output", term->getSelection() );
 }
 
+UTEST( eterm, ttyread_keeps_scrolled_selection_attached_to_text ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollup( &scroll );
+	term->selstart( 0, 23, 0 );
+	term->selextend( 6, 23, SEL_REGULAR, false );
+	ASSERT_STDSTREQ( "Line 35", term->getSelection() );
+
+	term->write( "New output\r\n", 12 );
+	term->update();
+
+	EXPECT_EQ( 6, term->scrollPos() );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
+}
+
+UTEST( eterm, ttyread_restores_viewport_after_history_ring_wrap ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 4 );
+
+	for ( int i = 0; i < 28; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 2 );
+	term->kscrollup( &scroll );
+	ASSERT_EQ( 2, term->scrollPos() );
+
+	// One PTY read pushes exactly histsize rows, wrapping histi back to its original index.
+	// The viewport must still account for all four pushed rows and clamp to the oldest history.
+	const char burst[] = "Burst 0\r\nBurst 1\r\nBurst 2\r\nBurst 3\r\n";
+	term->write( burst, sizeof( burst ) - 1 );
+	term->update();
+	EXPECT_EQ( 4, term->scrollPos() );
+
+	TerminalArg bottom( INT_MAX );
+	term->kscrolldown( &bottom );
+	term->selstart( 0, 22, 0 );
+	term->selextend( 6, 22, SEL_REGULAR, false );
+	EXPECT_STDSTREQ( "Burst 3", term->getSelection() );
+}
+
+UTEST( eterm, absolute_scrolling_keeps_selection_attached_to_text ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+
+	for ( int i = 0; i < 40; ++i ) {
+		std::string line = "Line " + std::to_string( i ) + "\r\n";
+		term->write( line.c_str(), line.size() );
+		term->update();
+	}
+
+	TerminalArg scroll( 5 );
+	term->kscrollto( &scroll );
+	term->selstart( 0, 23, 0 );
+	term->selextend( 6, 23, SEL_REGULAR, false );
+	ASSERT_STDSTREQ( "Line 35", term->getSelection() );
+
+	scroll.i = 10;
+	term->kscrollto( &scroll );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
+
+	scroll.i = 2;
+	term->kscrollto( &scroll );
+	EXPECT_STDSTREQ( "Line 35", term->getSelection() );
+}
+
 UTEST( eterm, history_corruption_on_resize ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
@@ -2331,6 +2670,50 @@ UTEST( eterm, history_corruption_on_resize ) {
 
 		EXPECT_STDSTREQ( expected_lines[expected_idx], sel );
 	}
+}
+
+UTEST( eterm, repeated_resize_keeps_screen_row_ownership ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 1000 );
+
+	term->resize( 151, 50 );
+	for ( int line = 0; line < 200; ++line ) {
+		const std::string text = "terminal output " + std::to_string( line ) + "\r\n";
+		term->write( text.c_str(), text.size() );
+		term->update();
+	}
+	for ( int iteration = 0; iteration < 100; ++iteration ) {
+		term->resize( 151, 52 );
+		term->resize( 151, 50 );
+	}
+	const Vector2i finalSize = term->getSize();
+	EXPECT_EQ( 151, finalSize.x );
+	EXPECT_EQ( 50, finalSize.y );
+	EXPECT_TRUE( term->scrollSize() > 0 );
+}
+
+UTEST( eterm, history_capacity_tracks_narrow_and_wide_resize ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mCols = 151;
+	pty->mRows = 50;
+	auto process = std::make_unique<MockProcess>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 10 );
+
+	for ( int line = 0; line < 100; ++line ) {
+		const std::string text = "short " + std::to_string( line ) + "\r\n";
+		term->write( text.c_str(), text.size() );
+		term->update();
+	}
+	EXPECT_TRUE( term->scrollSize() > 0 );
+
+	term->resize( 80, 50 );
+	term->resize( 151, 50 );
+	const Vector2i finalSize = term->getSize();
+	EXPECT_EQ( 151, finalSize.x );
+	EXPECT_EQ( 50, finalSize.y );
 }
 
 UTEST( eterm_search, logical_lines_options_and_cell_mapping ) {

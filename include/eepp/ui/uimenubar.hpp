@@ -66,6 +66,8 @@ class EE_API UIMenuBar : public UIWidget {
 	bool isGlobalMenuBarEnabled() const;
 
   protected:
+	void positionMenu( UISelectButton* button, UIPopUpMenu* menu );
+
 	UIMenuBar();
 
 	typedef std::vector<std::pair<UISelectButton*, UIPopUpMenu*>> MenuBarList;

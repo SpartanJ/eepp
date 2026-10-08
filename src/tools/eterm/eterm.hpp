@@ -121,6 +121,14 @@ class App : private efsw::FileWatchListener {
 
 	void addTabKeyBindings( UITerminal* terminal );
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	void createGlobalMenuBar();
+
+	void executeMenuCommand( const std::string& command );
+
+	void syncGlobalMenuKeybindings();
+#endif
+
 	KeyBindings::ShortcutMap getDefaultKeybindings() const;
 
 	void loadKeybindings();
@@ -149,6 +157,9 @@ class App : private efsw::FileWatchListener {
 	EE::Window::Window* appWindow{ nullptr };
 	UISceneNode* scene{ nullptr };
 	UILinearLayout* mainLayout{ nullptr };
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	UIMenuBar* menuBar{ nullptr };
+#endif
 	UITabWidgetSplitter* tabSplitter{ nullptr };
 	FontTrueType* terminalFont{ nullptr };
 	UIIcon* terminalIcon{ nullptr };

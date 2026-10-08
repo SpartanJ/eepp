@@ -678,7 +678,7 @@ TabWidget::container > ImageViewer > TextView {
 								   hint='@string(search_where_example, "e.g. *.ts, src/**/include, -src/**/exclude")' hint-display="focus" />
 						<PushButton id="global_search_filters_menu_button" lw="wc" lh="mp" text="..." />
 					</hbox>
-					<StackLayout lw="mp" lh="wc" margin-bottom="2dp">
+					<FlowLayout lw="mp" lh="wc" margin-bottom="2dp">
 						<CheckBox id="case_sensitive" text='@string(case_sensitive, "Case sensitive")' selected="true" margin-right="8dp" />
 						<CheckBox id="whole_word" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-right="8dp" />
 						<CheckBox id="regex" text='@string(regular_expression, "Regular Expression")' selected="false" margin-right="8dp" />
@@ -686,7 +686,7 @@ TabWidget::container > ImageViewer > TextView {
 						<CheckBox id="escape_sequence" text='@string(use_escape_sequences, "Use escape sequences")' margin-right="8dp" selected="false"
 								  tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
 						<CheckBox id="buffer_only_mode" text="@string(buffer_only_mode, Buffer Only Mode)" selected="false" tooltip="@string(buffer_only_mode_tooltip, Apply replacements to file buffers only.&#10;Changes won't be saved to disk until you explicitly save the files.)" visible="false" />
-					</StackLayout>
+					</FlowLayout>
 					<hbox lw="mp" lh="wc">
 						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" focusable="false" />
 						<DropDownList id="global_search_history" lw="0" lh="18dp" lw8="1" margin-right="4dp" />

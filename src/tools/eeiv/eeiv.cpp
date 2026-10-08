@@ -184,9 +184,20 @@ bool App::init() {
 	contextSettings.FrameRateLimit = mConfig.FrameLimit;
 	contextSettings.SharedGLContext = true;
 	windowSettings.Title = "eeiv";
-	windowSettings.Icon = Sys::getProcessPath() + "assets/eeiv.png";
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "eeiv-macos.png";
+	const char* fallbackIcon = "ee-macos.png";
+#else
+	const char* windowIcon = "eeiv.png";
+	const char* fallbackIcon = "ee.png";
+#endif
+	windowSettings.Icon = Sys::getProcessPath() + "assets/icon/" + windowIcon;
+	if ( !FileSystem::fileExists( windowSettings.Icon ) )
+		windowSettings.Icon = Sys::getProcessPath() + "assets/icon/" + fallbackIcon;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( !FileSystem::fileExists( windowSettings.Icon ) )
 		windowSettings.Icon = Sys::getProcessPath() + "assets/icon/ee.png";
+#endif
 
 	mUIApplication = std::make_unique<UIApplication>( windowSettings, UIApplication::Settings(),
 													  contextSettings );

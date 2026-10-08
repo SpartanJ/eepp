@@ -183,6 +183,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMessage( const NodeMessage* message );
+
 	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
@@ -200,6 +202,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
+
+	virtual void onFontColorChanged();
 
 	void onThemeLoaded();
 

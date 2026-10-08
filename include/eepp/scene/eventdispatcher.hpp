@@ -121,6 +121,8 @@ class EE_API EventDispatcher {
 
 	bool isFirstPress() const;
 
+	bool justFinishDragging() const { return mJustFinishDragging; }
+
   protected:
 	virtual void onMouseOverNodeChange( Node* node );
 
@@ -143,6 +145,7 @@ class EE_API EventDispatcher {
 	bool mJustPressed{ false };
 	bool mDisableMousePress{ false };
 	bool mJustDisabledMousePress{ false };
+	bool mJustFinishDragging{ false };
 	Node* mNodeWasDragging;
 	Node* mNodeDragging;
 	Time mElapsed;

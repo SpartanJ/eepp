@@ -62,7 +62,8 @@ static bool setImageViewerImageSize( UIImageViewer* viewer ) {
 	if ( !viewer || !viewer->getImage() || !viewer->getImage()->getDrawable() )
 		return false;
 
-	auto imageSize( viewer->getImage()->getDrawable()->getPixelsSize() );
+	// Sprite logical dimensions are source pixels; getPixelsSize() includes UI density.
+	auto imageSize( viewer->getImage()->getDrawable()->getSize() );
 	auto viewerSize( viewer->getPixelsSize() );
 	auto scale(
 		viewerSize.x > 0 && viewerSize.y > 0 &&
@@ -389,8 +390,9 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
 	void onRegister( UICodeEditor* editor ) override {
 		Float glyphWidth = editor->getGlyphWidth();
-		Float totalChars = mView->getViewMode() == UIDiffView::ViewMode::Unified ? 10 : 5;
-		mGutterWidth = PixelDensity::dpToPx( glyphWidth * totalChars );
+		Float totalChars =
+			editor == mView->getEditor() ? mLineNumberDigits * 2 + 1 : mLineNumberDigits;
+		mGutterWidth = glyphWidth * totalChars;
 		mPluginTopSpace = PixelDensity::dpToPxI( 20 );
 		editor->registerGutterSpace( this, mGutterWidth, 0 );
 
@@ -423,6 +425,13 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 	void registerUpdate( UICodeEditor* editor ) {
 		onUnregister( editor );
 		onRegister( editor );
+	}
+
+	void setLineNumberDigits( UICodeEditor* editor, int digits ) {
+		if ( mLineNumberDigits == digits )
+			return;
+		mLineNumberDigits = digits;
+		registerUpdate( editor );
 	}
 
 	void drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
@@ -602,34 +611,37 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		const auto& lines = mView->getDiffLines();
 		const auto& line = lines[viewLines[index]];
 
-		static constexpr auto bufSize = 16;
+		static constexpr auto bufSize = 64;
 		String::StringBaseType buf[bufSize] = {};
 		if ( mView->getViewMode() == UIDiffView::ViewMode::Unified ) {
 			switch ( line.type ) {
 				case UIDiffView::DiffLineType::Added:
-					String::formatBuffer( buf, bufSize, "%5s %5lld", "",
-										  (long long)line.newLineNum );
+					String::formatBuffer( buf, bufSize, "%*s %*lld", mLineNumberDigits, "",
+										  mLineNumberDigits, (long long)line.newLineNum );
 					break;
 				case UIDiffView::DiffLineType::Removed:
-					String::formatBuffer( buf, bufSize, "%5lld %5s", (long long)line.oldLineNum,
-										  "" );
+					String::formatBuffer( buf, bufSize, "%*lld %*s", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits, "" );
 					break;
 				case UIDiffView::DiffLineType::Header:
-					String::formatBuffer( buf, bufSize, "%5lld %5lld", (long long)line.oldLineNum,
+					String::formatBuffer( buf, bufSize, "%*lld %*lld", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits,
 										  (long long)line.newLineNum );
 					break;
 				case UIDiffView::DiffLineType::Common:
-					String::formatBuffer( buf, bufSize, "%5lld %5s", (long long)line.oldLineNum,
-										  "" );
+					String::formatBuffer( buf, bufSize, "%*lld %*s", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits, "" );
 					break;
 			}
 		} else {
 			if ( editor == mView->getLeftEditor() ) {
 				if ( line.oldLineNum > 0 )
-					String::formatBuffer( buf, bufSize, "%5lld", (long long)line.oldLineNum );
+					String::formatBuffer( buf, bufSize, "%*lld", mLineNumberDigits,
+										  (long long)line.oldLineNum );
 			} else {
 				if ( line.newLineNum > 0 )
-					String::formatBuffer( buf, bufSize, "%5lld", (long long)line.newLineNum );
+					String::formatBuffer( buf, bufSize, "%*lld", mLineNumberDigits,
+										  (long long)line.newLineNum );
 			}
 		}
 
@@ -653,6 +665,7 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
   protected:
 	UIDiffView* mView;
+	int mLineNumberDigits{ 5 };
 	Float mGutterWidth{ 0 };
 	Float mPluginTopSpace{ 0 };
 	Float mHeaderIconWidth{ 0 };
@@ -818,6 +831,9 @@ void UIDiffView::createEditor( UICodeEditor*& editor,
 UIImageViewer* UIDiffView::createImageViewer() {
 	auto* imageViewer = UIImageViewer::New();
 	imageViewer->setParent( this );
+	// Image viewers are created lazily; keep the overlay buttons last for hit testing.
+	mModeToggle->toFront();
+	mCompleteViewToggle->toFront();
 	imageViewer->setVisible( false );
 	imageViewer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	imageViewer->setDisplayOptions( UIImageViewer::DisplayDimensions );
@@ -967,7 +983,7 @@ void UIDiffView::onAutoSize() {
 		Float height = PixelDensity::dpToPx( 64 ); // force a min height
 		auto viewImageHeight = []( auto iv ) -> Float {
 			if ( iv && iv->getImage() && iv->getImage()->getDrawable() )
-				return iv->getImage()->getDrawable()->getPixelsSize().getHeight();
+				return iv->getImage()->getDrawable()->getSize().getHeight();
 			return 0;
 		};
 
@@ -1052,8 +1068,10 @@ void UIDiffView::updateEditorsText() {
 	String leftText;
 	String rightText;
 	mViewLines.clear();
+	Int64 largestLineNum = 99999;
 
 	for ( size_t i = 0; i < mLines.size(); ++i ) {
+		largestLineNum = std::max( { largestLineNum, mLines[i].oldLineNum, mLines[i].newLineNum } );
 		if ( mCollapsed )
 			continue;
 		bool showLine = mShowCompleteView;
@@ -1102,6 +1120,11 @@ void UIDiffView::updateEditorsText() {
 		mLeftEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 		mRightEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 	}
+
+	const int lineNumberDigits = Math::countDigits( largestLineNum );
+	mPlugin->setLineNumberDigits( mEditor, lineNumberDigits );
+	mLeftPlugin->setLineNumberDigits( mLeftEditor, lineNumberDigits );
+	mRightPlugin->setLineNumberDigits( mRightEditor, lineNumberDigits );
 }
 
 bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,

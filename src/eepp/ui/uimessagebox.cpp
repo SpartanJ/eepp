@@ -64,7 +64,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextEdit = UITextEdit::New();
 		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 400, 100 } ) )
+			->setSize( Vector2f{ 600, 200 } )
 			->setParent( vlay );
 		mTextEdit->getDocument().setCommand( "complete-edit",
 											 [this] { sendCommonEvent( Event::OnConfirm ); } );
@@ -74,14 +74,14 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mDropDownList = UIDropDownList::New();
 		mDropDownList->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setSize( Vector2f{ 200, 18 } )
 			->setParent( vlay );
 		mDropDownList->setPopUpToRoot( true );
 	} else if ( mMsgBoxType == COMBOBOX ) {
 		mComboBox = UIComboBox::New();
 		mComboBox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setSize( Vector2f{ 200, 18 } )
 			->setParent( vlay );
 		mComboBox->getDropDownList()->setPopUpToRoot( true );
 		mComboBox->getDropDownList()->getDocument().setCommand(

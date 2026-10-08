@@ -162,6 +162,53 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 	return aAllocatedPointer.mData;
 }
 
+void* MemoryManager::reallocateTracked( void* data, size_t size, const char* file, size_t line ) {
+	MemoryManagerScope scope;
+	auto& state = getMemoryManagerState();
+	Lock lock( state.allocationMutex );
+
+	auto it = state.pointers.find( data );
+	if ( size == 0 ) {
+		if ( it != state.pointers.end() ) {
+			state.totalMemoryUsage -= it->second.mMemory;
+			state.pointers.erase( it );
+		}
+		::free( data );
+		return nullptr;
+	}
+
+	void* reallocated = ::realloc( data, size );
+	if ( !reallocated )
+		return nullptr;
+
+	bool track = false;
+	bool globalAllocation = false;
+	if ( it != state.pointers.end() ) {
+		track = it->second.mTrack;
+		globalAllocation = it->second.mGlobalAllocation;
+		state.totalMemoryUsage -= it->second.mMemory;
+		state.pointers.erase( it );
+	}
+
+	AllocatedPointer allocation( reallocated, file, static_cast<int>( line ), size, track,
+								 globalAllocation );
+	auto result =
+		state.pointers.insert( AllocatedPointerMap::value_type( reallocated, allocation ) );
+	if ( !result.second ) {
+		state.totalMemoryUsage -= result.first->second.mMemory;
+		result.first->second = allocation;
+	}
+	state.totalMemoryUsage += size;
+	if ( state.peakMemoryUsage < state.totalMemoryUsage )
+		state.peakMemoryUsage = state.totalMemoryUsage;
+	if ( size > state.biggestAllocation.mMemory )
+		state.biggestAllocation = allocation;
+	if ( !globalAllocation && size > state.biggestNonAnonymousAllocation.mMemory )
+		state.biggestNonAnonymousAllocation = allocation;
+
+	return reallocated;
+}
+
 bool MemoryManager::removePointer( void* data, const char* file, const size_t& line ) {
 	MemoryManagerScope scope;
 	auto& state = getMemoryManagerState();
@@ -183,6 +230,12 @@ bool MemoryManager::removePointer( void* data, const char* file, const size_t& l
 	state.pointers.erase( it );
 
 	return true;
+}
+
+bool MemoryManager::freeTracked( void* data, const char* file, size_t line ) {
+	bool tracked = removePointer( data, file, line );
+	::free( data );
+	return tracked;
 }
 
 bool MemoryManager::removePointerIfTracked( void* data ) {

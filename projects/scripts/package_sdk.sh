@@ -144,8 +144,8 @@ done
 
 # ---------------------------------------------------------------------------
 # Binaries: every release executable in bin/ is packaged (any new "eepp-*"
-# binary is picked up automatically) plus the fixed tool set: ecode, eterm and
-# eeiv. Unit tests and benchmarks live outside bin/ and are never matched.
+# binary is picked up automatically) plus the fixed tool set: ecode, eterm, eeiv
+# and eproc. Unit tests and benchmarks live outside bin/ and are never matched.
 # ---------------------------------------------------------------------------
 
 # Only accept the executable format of the target platform: prevents stale
@@ -204,10 +204,12 @@ if [ "$PLATFORM" == "windows" ]; then
 	copy_binary bin/ecode.exe
 	copy_binary bin/eterm.exe
 	copy_binary bin/eeiv.exe
+	copy_binary bin/eproc.exe
 else
 	copy_binary bin/ecode
 	copy_binary bin/eterm
 	copy_binary bin/eeiv
+	copy_binary bin/eproc
 fi
 
 # ---------------------------------------------------------------------------

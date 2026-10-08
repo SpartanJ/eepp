@@ -38,9 +38,15 @@ class EE_API MemoryManager {
 
 	static void* reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer );
 
+	/** Reallocates a tracked pointer while keeping allocator and bookkeeping state atomic. */
+	static void* reallocateTracked( void* data, size_t size, const char* file, size_t line );
+
 	static void* addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer );
 
 	static bool removePointer( void* data, const char* file, const size_t& line );
+
+	/** Removes a tracked allocation before returning its address to the C allocator. */
+	static bool freeTracked( void* data, const char* file, size_t line );
 
 	/** Removes a pointer when it is tracked, without diagnosing foreign allocator bookkeeping. */
 	static bool removePointerIfTracked( void* data );
@@ -121,14 +127,8 @@ class EE_API MemoryManager {
 	EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), \
 														 __FILE__, __LINE__, amount ) )
 
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
-#endif
-#define eeRealloc( ptr, amount )                                                           \
-	EE::MemoryManager::reallocPointer(                                                     \
-		ptr, EE::AllocatedPointer( EE::MemoryManager::reallocate( ptr, amount ), __FILE__, \
-								   __LINE__, amount ) )
+#define eeRealloc( ptr, amount ) \
+	EE::MemoryManager::reallocateTracked( ptr, amount, __FILE__, __LINE__ )
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
@@ -145,18 +145,12 @@ class EE_API MemoryManager {
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
 #endif
-#define eeFree( data )                                                                    \
-	{                                                                                     \
-		if ( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ), __FILE__, \
-											   __LINE__ ) == false )                      \
-			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
+#define eeFree( data )                                                     \
+	{                                                                      \
+		if ( !EE::MemoryManager::freeTracked( data, __FILE__, __LINE__ ) ) \
+			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );         \
 	}
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic pop
-#endif
 
 #else
 

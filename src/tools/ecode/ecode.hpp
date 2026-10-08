@@ -63,6 +63,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		bool stdOutLogs{ false };
 		bool disableFileLogs{ false };
 		bool openClean{ false };
+		bool zenMode{ false };
 		bool portable{ false };
 		bool incognito{ false };
 		bool prematureExit{ false };
@@ -355,6 +356,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
 		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
+		t.setCommand( "zen-mode", [this] { setZenMode( !mZenMode ); } );
 		t.setCommand( "sans-serif-font",
 					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
 		t.setCommand( "editor-font", [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
@@ -577,6 +579,12 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
 
+	UITab* createMarkdownPreview( UITabWidget* tabWidget, const std::string& path,
+								  const std::string& sourcePath, UICodeEditor* editor = nullptr,
+								  bool focus = true );
+
+	void bindMarkdownPreviewSources();
+
 	void loadDiffFromPath( const std::string& path );
 
 	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
@@ -615,6 +623,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void showStatusBar( bool show );
 
 	void switchMenuBar();
+
+	void setZenMode( bool enabled );
+
+	bool isZenMode() const { return mZenMode; }
 
 	ProjectBuildManager* getProjectBuildManager() const;
 
@@ -738,6 +750,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mRedirectToFirstInstance{ false };
 	bool mFileToOpenReadOnly{ false };
 	bool mFirstInstance{ false };
+	bool mZenMode{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
 	bool mClosing{ false };

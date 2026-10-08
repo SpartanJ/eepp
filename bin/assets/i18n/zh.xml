@@ -252,6 +252,7 @@
 	<string name="frame_rate_limit">FPS限制</string>
 	<string name="frame_rate_limit_applied">FPS设置已生效</string>
 	<string name="fullscreen_mode">全屏模式</string>
+	<string name="zen_mode">禅模式</string>
 	<string name="fullscreen_toggle">切换全屏</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">添加分支</string>
@@ -890,6 +891,14 @@ file in the directory tree.</string>
 	<string name="enable_exclusive_mode_by_default">默认启用独占模式</string>
 	<string name="enable_exclusive_mode_by_default_tooltip">在新建终端中禁用全局快捷键。</string>
 	<string name="file_associations">文件关联</string>
+	<string name="apply">应用</string>
+	<string name="extension">扩展名</string>
+	<string name="registered">已注册</string>
+	<string name="install_desktop_entry">安装应用程序启动器</string>
+	<string name="system_file_associations">系统文件关联</string>
+	<string name="system_file_associations_desc">让 ecode 可用于所选文件扩展名。操作系统可能仍会要求确认默认应用程序。</string>
+	<string name="file_associations_updated">文件关联已更新。</string>
+	<string name="file_associations_update_failed">无法更新文件关联。</string>
 	<string name="folds_refresh_freq">折叠区域刷新频率</string>
 	<string name="full">完全</string>
 	<string name="grayscale">灰度</string>
@@ -1016,6 +1025,10 @@ file in the directory tree.</string>
 	<string name="discordrpc_language_icons_desc">Display an icon for the active document language.</string>
 	<string name="formatter_auto_format_on_save">Format on Save</string>
 	<string name="formatter_auto_format_on_save_desc">Automatically format supported documents when saving.</string>
+	<string name="git_diff_gutter">Show Git Diff Gutter</string>
+	<string name="git_diff_gutter_desc">Show added, modified and deleted line indicators in the editor gutter.</string>
+	<string name="git_diff_gutter_debounce_delay">Git Diff Gutter Update Delay</string>
+	<string name="git_diff_gutter_debounce_delay_desc">How long to wait after editing before updating Git diff indicators.</string>
 	<string name="git_filetree_highlight_changes">Highlight File Tree Changes</string>
 	<string name="git_filetree_highlight_changes_desc">Highlight files with Git changes in the file tree.</string>
 	<string name="git_filetree_highlight_style_color">File Tree Highlight Color</string>
@@ -1095,6 +1108,9 @@ file in the directory tree.</string>
 	<string name="git_history_error">无法加载 Git 历史记录</string>
 	<string name="git_history_retry">重试</string>
 	<string name="git_local_branch">本地</string>
+	<string name="git_local_only">仅本地</string>
 	<string name="git_remote_branch">远程</string>
 	<string name="git_tag">标签</string>
+	<string name="uimarkdownview_go_back">后退</string>
+	<string name="uimarkdownview_go_forward">前进</string>
 </resources>

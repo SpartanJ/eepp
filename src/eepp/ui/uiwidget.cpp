@@ -223,7 +223,7 @@ void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
 	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
 		return;
 	auto manager = mUISceneNode->getAccessibilityManager();
-	UIWidget* target = this;
+	UIWidget* target = AccessibilityWidgetResolver::getEventTarget( this, event );
 	while ( target && !target->isAccessibilityElement() ) {
 		Node* parent = target->getParent();
 		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
@@ -378,7 +378,7 @@ UIWidget* UIWidget::updateLayoutMarginAuto() {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
-	if ( mLayoutMargin != margin ) {
+	if ( mLayoutMarginPx != margin ) {
 		mLayoutMarginPx = margin;
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
 		onMarginChange();
@@ -390,7 +390,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
-	if ( mLayoutMargin.Left != marginLeft ) {
+	if ( mLayoutMarginPx.Left != marginLeft ) {
 		mLayoutMarginPx.Left = marginLeft;
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
 		onMarginChange();
@@ -402,7 +402,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
-	if ( mLayoutMargin.Right != marginRight ) {
+	if ( mLayoutMarginPx.Right != marginRight ) {
 		mLayoutMarginPx.Right = marginRight;
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
 		onMarginChange();
@@ -414,7 +414,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
-	if ( mLayoutMargin.Top != marginTop ) {
+	if ( mLayoutMarginPx.Top != marginTop ) {
 		mLayoutMarginPx.Top = marginTop;
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
 		onMarginChange();
@@ -426,7 +426,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
-	if ( mLayoutMargin.Bottom != marginBottom ) {
+	if ( mLayoutMarginPx.Bottom != marginBottom ) {
 		mLayoutMarginPx.Bottom = marginBottom;
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
 		onMarginChange();
@@ -565,6 +565,24 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 			mUISceneNode->invalidateStyleState( child );
 		}
 	}
+}
+
+UITextSelectionController* UIWidget::getTextSelectionController() {
+	return nullptr;
+}
+
+const UITextSelectionController* UIWidget::getTextSelectionController() const {
+	return nullptr;
+}
+
+UITextSelectionController* UIWidget::getTextSelectionControllerInTree() const {
+	for ( Node* node = const_cast<UIWidget*>( this ); node; node = node->getParent() ) {
+		if ( node->isWidget() ) {
+			if ( auto* controller = node->asType<UIWidget>()->getTextSelectionController() )
+				return controller;
+		}
+	}
+	return nullptr;
 }
 
 Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
@@ -868,6 +886,10 @@ void UIWidget::onEnabledChange() {
 }
 
 void UIWidget::onSizeChange() {
+	onSizeChange( true );
+}
+
+void UIWidget::onSizeChange( bool notifyLayout ) {
 	if ( mMarginAuto != 0 )
 		calculateAutoMargin();
 	UINode::onSizeChange();
@@ -881,8 +903,9 @@ void UIWidget::onSizeChange() {
 	if ( mForeground != NULL )
 		mForeground->invalidate();
 
-	notifyLayoutAttrChange( LayoutInvalidation::Self );
 	notifyAccessibilityEvent( AccessibilityEvent::BoundsChanged );
+	if ( notifyLayout )
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
 }
 
 void UIWidget::onSizePolicyChange() {}
@@ -1126,9 +1149,9 @@ UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 }
 
 UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
-	if ( padding != mPadding ) {
+	if ( padding != mPaddingPx ) {
 		mPaddingPx = padding;
-		mPadding = PixelDensity::pxToDp( mPadding ).ceil();
+		mPadding = PixelDensity::pxToDp( mPaddingPx ).ceil();
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1138,9 +1161,9 @@ UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
-	if ( paddingLeft != mPadding.Left ) {
+	if ( paddingLeft != mPaddingPx.Left ) {
 		mPaddingPx.Left = paddingLeft;
-		mPadding.Left = eeceil( PixelDensity::pxToDp( mPadding.Left ) );
+		mPadding.Left = eeceil( PixelDensity::pxToDp( mPaddingPx.Left ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1150,9 +1173,9 @@ UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
-	if ( paddingRight != mPadding.Right ) {
+	if ( paddingRight != mPaddingPx.Right ) {
 		mPaddingPx.Right = paddingRight;
-		mPadding.Right = eeceil( PixelDensity::pxToDp( mPadding.Right ) );
+		mPadding.Right = eeceil( PixelDensity::pxToDp( mPaddingPx.Right ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1162,9 +1185,9 @@ UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
-	if ( paddingTop != mPadding.Top ) {
+	if ( paddingTop != mPaddingPx.Top ) {
 		mPaddingPx.Top = paddingTop;
-		mPadding.Top = eeceil( PixelDensity::pxToDp( mPadding.Top ) );
+		mPadding.Top = eeceil( PixelDensity::pxToDp( mPaddingPx.Top ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1174,9 +1197,9 @@ UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsBottom( const Float& paddingBottom ) {
-	if ( paddingBottom != mPadding.Bottom ) {
+	if ( paddingBottom != mPaddingPx.Bottom ) {
 		mPaddingPx.Bottom = paddingBottom;
-		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPadding.Bottom ) );
+		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPaddingPx.Bottom ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1605,6 +1628,10 @@ Uint32 UIWidget::onFocusLoss() {
 
 UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
+}
+
+Color UIWidget::themeColor( const std::string& variable, Color fallback ) const {
+	return mStyle ? mStyle->getColorVariable( variable, fallback ) : fallback;
 }
 
 void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool reportStateChange,
@@ -2135,6 +2162,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 					   : "false";
 		case PropertyId::Focusable:
 			return isTabFocusable() ? "true" : "false";
+		case PropertyId::Id:
+			return getId();
 		case PropertyId::Class: {
 			std::string cls;
 			const auto& classes = getStyleSheetClasses();
@@ -2822,7 +2851,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::fromFloat( getSize().getHeight(), "dp" );
+	return String::fromFloat( getSize().getWidth(), "dp" );
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {

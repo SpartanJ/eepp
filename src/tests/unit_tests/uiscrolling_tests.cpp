@@ -1,8 +1,9 @@
 #include "utest.h"
-#include <eepp/system/filesystem.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -52,6 +53,25 @@ class WheelOverrideWidget : public UIWidget {
 	}
 
 	int calls{ 0 };
+};
+
+class ScrollingTestConsole : public UIConsole {
+  public:
+	ScrollingTestConsole() : UIConsole( nullptr, false, false, 128 ) {}
+
+	using UIConsole::onKeyDown;
+	using UIConsole::onMouseWheel;
+
+	void setScrollRange( Int32 maximum ) {
+		mCon.min = maximum;
+		mCon.modif = 0;
+	}
+
+	Int32 getScrollOffset() const { return mCon.modif; }
+
+	void pushText( String text ) { privPushText( std::move( text ) ); }
+
+	String::HashType getLastLogHash() const { return mCmdLog.back().hash; }
 };
 
 UTEST( UIScrolling, SceneSmoothScrollingDefaultsCanBeInheritedSnapshottedAndAppliedNow ) {
@@ -124,6 +144,33 @@ UTEST( UIScrolling, CodeEditorKeepsLegacyWheelStepButSoftensFractionalMomentumTa
 	EXPECT_NEAR( 155.f, editor->getScroll().y, 0.0001f );
 
 	eeDelete( editor );
+}
+
+UTEST( UIScrolling, ConsoleHandlesWheelAndKeyboardScrolling ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "eepp - console scrolling test" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* console = eeNew( ScrollingTestConsole, () );
+	console->setParent( app.getUI()->getRoot() );
+	console->setScrollRange( 20 );
+	const String logLine( "console cache hash regression" );
+	console->pushText( logLine );
+	EXPECT_EQ( String::hash( logLine ), console->getLastLogHash() );
+
+	EXPECT_EQ( 1u, console->onMouseWheel( { 0.f, 1.f }, false ) );
+	EXPECT_EQ( 6, console->getScrollOffset() );
+	EXPECT_EQ( 1u, console->onMouseWheel( { 0.f, -1.f }, false ) );
+	EXPECT_EQ( 0, console->getScrollOffset() );
+
+	KeyEvent pageUp( console, Event::KeyDown, KEY_PAGEUP, SCANCODE_PAGEUP, 0, KEYMOD_SHIFT );
+	EXPECT_EQ( 1u, console->onKeyDown( pageUp ) );
+	EXPECT_GT( console->getScrollOffset(), 0 );
+
+	KeyEvent pageDown( console, Event::KeyDown, KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, KEYMOD_SHIFT );
+	EXPECT_EQ( 1u, console->onKeyDown( pageDown ) );
+	EXPECT_EQ( 0, console->getScrollOffset() );
+
+	eeDelete( console );
 }
 
 UTEST( UIScrolling, WheelEventRebuildsHoverStateAndBubblesWhenEditorCannotScroll ) {
@@ -211,7 +258,8 @@ UTEST( UIScrolling, MouseWheelListenerConsumesBeforeScrollableAncestor ) {
 		++wheelEvents;
 		receivedOffset = event->asMouseWheelEvent()->getOffset();
 	} );
-	app.getWindow()->getInput()->setMousePos( child->convertToWorldSpace( { 20.f, 20.f } ).asInt() );
+	app.getWindow()->getInput()->setMousePos(
+		child->convertToWorldSpace( { 20.f, 20.f } ).asInt() );
 
 	InputEvent event{};
 	event.Type = InputEvent::MouseWheel;

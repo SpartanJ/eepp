@@ -104,7 +104,7 @@ void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( menu->getParent() );
 	Vector2f pos = getPixelsPosition();
 	nodeToWorldTranslation( pos );
-	pos.x += mSize.getWidth() + menu->getPadding().Right;
+	pos.x += mSize.getWidth() + menu->getPixelsPadding().Right;
 	UIMenu::findBestMenuPos( pos, mSubMenu, menu, this );
 	mSubMenu->getParent()->worldToNode( pos );
 	mSubMenu->setPosition( pos );

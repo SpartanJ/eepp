@@ -19,6 +19,7 @@
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitreeview.hpp>
 
 using namespace EE;
@@ -335,4 +336,104 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 		destroyedEventFound |=
 			event.ref == buttonRef && event.type == AccessibilityEvent::Destroyed;
 	EXPECT_TRUE( destroyedEventFound );
+}
+
+UTEST( Accessibility, ComboBoxStateNotificationsFollowPopupMutations ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - ComboBox Accessibility Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_NE( scene, nullptr );
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* manager = scene->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto* combo = UIComboBox::New();
+	combo->setParent( scene->getRoot() );
+	combo->getListBox()->addListBoxItem( "First" );
+	const auto ref = manager->getNodeRef( combo );
+	bool earlyStateNotification = false;
+	size_t visibilityChanges = 0;
+	const auto listener = combo->getListBox()->on( Event::OnVisibleChange, [&]( const auto* ) {
+		++visibilityChanges;
+		for ( const auto& event : manager->getPendingEvents() ) {
+			if ( event.type == AccessibilityEvent::StateChanged )
+				earlyStateNotification = true;
+		}
+	} );
+	const auto hasStateNotification = [&] {
+		for ( const auto& event : manager->getPendingEvents() ) {
+			if ( event.ref == ref && event.type == AccessibilityEvent::StateChanged )
+				return true;
+		}
+		return false;
+	};
+	manager->clearPendingEvents();
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Expand, {} } ) );
+	EXPECT_TRUE( hasStateNotification() );
+	manager->clearPendingEvents();
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Collapse, {} } ) );
+	EXPECT_TRUE( hasStateNotification() );
+	EXPECT_FALSE( earlyStateNotification );
+	EXPECT_EQ( visibilityChanges, 2u );
+	combo->getListBox()->removeEventListener( listener );
+
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( true );
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Expand, {} } ) );
+	manager->clearPendingEvents();
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Collapse, {} } ) );
+	EXPECT_TRUE( hasStateNotification() );
+	EXPECT_TRUE( combo->getListBox()->isVisible() );
+	EXPECT_FALSE( combo->getListBox()->isEnabled() );
+	auto info = manager->getNodeInfo( ref );
+	EXPECT_FALSE( static_cast<Uint64>( info.states ) &
+				  static_cast<Uint64>( AccessibilityState::Expanded ) );
+	EXPECT_TRUE( info.actions & accessibilityActionMask( AccessibilityAction::Expand ) );
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Expand, {} } ) );
+	EXPECT_TRUE( combo->getListBox()->isEnabled() );
+	info = manager->getNodeInfo( ref );
+	EXPECT_TRUE( static_cast<Uint64>( info.states ) &
+				 static_cast<Uint64>( AccessibilityState::Expanded ) );
+}
+
+UTEST( Accessibility, TableCellsFollowVisibleColumnOrder ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Table Accessibility Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_NE( scene, nullptr );
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* manager = scene->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto* table = UITableView::New();
+	table->setParent( scene->getRoot() );
+	auto model = ItemPairListOwnerModel<std::string, std::string>::create( { { "Alpha", "One" } } );
+	model->setColumnName( 0, "Name" );
+	model->setColumnName( 1, "Value" );
+	table->setModel( model );
+	const auto tableRef = manager->getNodeRef( table );
+	const auto rowRef = manager->getChild( tableRef, 0 );
+	const auto nameRef = manager->getChild( rowRef, 0 );
+	const auto valueRef = manager->getChild( rowRef, 1 );
+	EXPECT_TRUE( manager->getNodeInfo( nameRef ).name == String( "Name" ) );
+	EXPECT_TRUE( manager->getNodeInfo( valueRef ).name == String( "Value" ) );
+	manager->clearPendingEvents();
+	EXPECT_TRUE( table->setColumnOrder( { 1, 0 } ) );
+	bool childrenChanged = false;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		if ( event.ref == tableRef && event.type == AccessibilityEvent::ChildrenChanged )
+			childrenChanged = true;
+	}
+	EXPECT_TRUE( childrenChanged );
+	EXPECT_TRUE( manager->getChild( rowRef, 0 ) == valueRef );
+	EXPECT_TRUE( manager->getChild( rowRef, 1 ) == nameRef );
+	table->setColumnHidden( 1, true );
+	EXPECT_EQ( manager->getChildCount( rowRef ), 1u );
+	EXPECT_TRUE( manager->getChild( rowRef, 0 ) == nameRef );
+	table->setColumnHidden( 1, false );
+	EXPECT_TRUE( table->moveColumn( 0, 0 ) );
+	EXPECT_TRUE( manager->getChild( rowRef, 0 ) == nameRef );
+	EXPECT_TRUE( manager->getChild( rowRef, 1 ) == valueRef );
 }

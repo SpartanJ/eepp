@@ -12,6 +12,7 @@
 #include "settingspanel.hpp"
 #include "uibuildsettings.hpp"
 #include "uidownloadwindow.hpp"
+#include "uimarkdownpreview.hpp"
 #include "uirightpanel.hpp"
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
@@ -28,7 +29,6 @@
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
-#include <eepp/window/platformhelper.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -1239,6 +1239,7 @@ void App::updateRecentFolders() {
 }
 
 void App::showSidePanel( bool show ) {
+	show = show && !mZenMode;
 	if ( show == mSidePanel->isVisible() )
 		return;
 
@@ -1253,6 +1254,7 @@ void App::showSidePanel( bool show ) {
 }
 
 void App::showStatusBar( bool show ) {
+	show = show && !mZenMode;
 	if ( show == mStatusBar->isVisible() )
 		return;
 	mStatusBar->setVisible( show );
@@ -1298,6 +1300,20 @@ void App::switchStatusBar() {
 void App::switchMenuBar() {
 	mConfig.ui.showMenuBar = !mConfig.ui.showMenuBar;
 	mSettings->updateMenu();
+}
+
+void App::setZenMode( bool enabled ) {
+	if ( mZenMode == enabled )
+		return;
+	mZenMode = enabled;
+	showSidePanel( mConfig.ui.showSidePanel );
+	showStatusBar( mConfig.ui.showStatusBar );
+	mSplitter->setHideTabBar( enabled || mConfig.editor.hideTabBar );
+	mSettings->updateMenu();
+	updateDocInfoLocation();
+	if ( mDocInfo )
+		mDocInfo->setVisible( !enabled && mConfig.editor.showDocInfo );
+	mSettings->updateViewMenu();
 }
 
 void App::panelPosition( const PanelPosition& panelPosition ) {
@@ -1617,7 +1633,7 @@ void App::onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& doc ) {
 void App::updateDocInfoLocation() {
 	if ( !mDocInfo )
 		return;
-	if ( mConfig.ui.showStatusBar ) {
+	if ( mConfig.ui.showStatusBar && !mZenMode ) {
 		if ( mStatusBar != mDocInfo->getParent() ) {
 			mDocInfo->setParent( mStatusBar );
 			mDocInfo->setEnabled( true );
@@ -1630,7 +1646,7 @@ void App::updateDocInfoLocation() {
 
 void App::updateDocInfo( TextDocument& doc ) {
 	if ( !doc.isRunningTransaction() && !doc.isLoading() && mConfig.editor.showDocInfo &&
-		 mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+		 !mZenMode && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String::formatTo( mDocInfoUtf8Buffer, "%s: %lld / %zu  %s: %lld    %s    %s%s    %s",
@@ -2189,6 +2205,8 @@ KeyBindings::ShortcutMap App::getLocalKeybindings() {
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
+		  "zen-mode" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
@@ -2291,6 +2309,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"open-terminal-settings",
 		"switch-side-panel",
 		"toggle-status-bar",
+		"zen-mode",
 		"download-file-web",
 		"create-new-terminal",
 		"terminal-split-left",
@@ -2344,7 +2363,7 @@ void App::closeEditors() {
 
 	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
 	mSplitter->clearNavigationHistory();
-	mStatusBar->setVisible( mConfig.ui.showStatusBar );
+	showStatusBar( mConfig.ui.showStatusBar );
 
 	saveProject();
 
@@ -2567,24 +2586,24 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The current document uses an extension that can be interpreted as more than one languages.&#xA;Which language is this document?")'
 		/>
-		<StackLayout class="languages" layout_width="match_parent" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
+		<FlowLayout class="languages" layout_width="match_parent" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></FlowLayout>
 		<TextView font-size="9dp" text='@string(lang_selected_default, The language selected will be set as the default language for this file extension.)' margin-top="8dp" />
 	</vbox>
 	)xml";
 	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
 
-	UIStackLayout* stack = docAlert->findByClass<UIStackLayout>( "languages" );
+	UIFlowLayout* flow = docAlert->findByClass<UIFlowLayout>( "languages" );
 
-	if ( !stack ) {
+	if ( !flow ) {
 		docAlert->close();
 		return;
 	}
 
 	for ( const auto& lang : langs ) {
 		UIPushButton* btn = UIPushButton::New();
-		btn->setParent( stack );
+		btn->setParent( flow );
 		btn->setText( lang->getLanguageName() );
-		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
+		btn->setLayoutMarginRight( 8 );
 		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
 			editor->setSyntaxDefinition( *lang );
 			editor->disableReportSizeChangeToChildren();
@@ -3028,6 +3047,42 @@ void App::openInNewWindow( const std::string& params ) {
 	}
 }
 
+UITab* App::createMarkdownPreview( UITabWidget* tabWidget, const std::string& path,
+								   const std::string& sourcePath, UICodeEditor* editor,
+								   bool focus ) {
+	auto* preview = eeNew( UIMarkdownPreview, ( sourcePath ) );
+	auto* mdView = preview->getMarkdownView();
+	mdView->loadFromString( "", path );
+	if ( !path.empty() && ( !editor || editor->getDocument().isLoading() ||
+							path != editor->getDocument().getFilePath() ) )
+		mdView->loadFromFile( path );
+	if ( editor )
+		preview->bindSource( editor );
+	const std::string filename = editor && path == editor->getDocument().getFilePath()
+									 ? editor->getDocument().getFilename()
+									 : FileSystem::fileNameFromPath( path );
+	auto title = i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) + " " + filename;
+	auto [tab, _] = getSplitter()->createWidgetInTabWidget( tabWidget, preview, title, focus );
+	tab->setIcon( findIcon( "filetype-md" ) );
+	tab->setTooltipText( title );
+	registerUnlockedCommands( *preview );
+	return tab;
+}
+
+void App::bindMarkdownPreviewSources() {
+	getSplitter()->forEachTabWidget( [this]( UITabWidget* tabWidget ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
+			auto* widget = tabWidget->getTab( i )->getOwnedWidget();
+			if ( widget && widget->isWidget() &&
+				 widget->asType<UIWidget>()->hasClass( "markdown-preview" ) ) {
+				auto* preview = widget->asType<UIMarkdownPreview>();
+				if ( auto* editor = getSplitter()->findEditorFromPath( preview->getSourcePath() ) )
+					preview->bindSource( editor );
+			}
+		}
+	} );
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
@@ -3360,9 +3415,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					auto splitter = getSplitter();
 					auto editor = static_cast<UICodeEditor*>( client );
 					auto doc = editor->getDocumentRef();
-					auto scrollView = UIScrollViewCommandExecuter::New();
-					auto mdView = UIMarkdownView::New();
-					mdView->setParent( scrollView );
 
 					auto tabWidget = splitter->getCurTabWidget();
 					bool removeUnusedEditor = false;
@@ -3375,36 +3427,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						removeUnusedEditor = true;
 					}
 
-					auto textChangedCb =
-						editor->on( Event::OnTextChanged, [mdView, editor]( const Event* event ) {
-							mdView->debounce(
-								[mdView, editor] {
-									if ( App::instance() &&
-										 !SceneManager::instance()->isShuttingDown() &&
-										 App::instance()->getSplitter()->editorExists( editor ) ) {
-										mdView->loadFromString(
-											editor->getDocument().toUtf8String() );
-									}
-								},
-								Milliseconds( 400 ), (Action::UniqueID)mdView );
-						} );
-
-					mdView->on( Event::OnClose, [textChangedCb, editor]( const Event* event ) {
-						if ( App::instance() &&
-							 App::instance()->getSplitter()->editorExists( editor ) ) {
-							editor->removeEventListener( textChangedCb );
-						}
-					} );
-
-					mdView->loadFromString( doc->toUtf8String() );
-					auto title = i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) +
-								 " " + doc->getFilename();
-					auto [tab, _] =
-						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
-					tab->setIcon( findIcon( "filetype-md" ) );
-					tab->setTooltipText( title );
-
-					registerUnlockedCommands( *scrollView );
+					createMarkdownPreview( tabWidget, doc->getFilePath(), doc->getFilePath(),
+										   editor );
 
 					if ( removeUnusedEditor )
 						splitter->removeUnusedTab( tabWidget );
@@ -4310,7 +4334,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
-		mStatusBar->setVisible( mConfig.ui.showStatusBar );
+		showStatusBar( mConfig.ui.showStatusBar );
 	}
 	mClosedDocumentState.clear();
 
@@ -4544,20 +4568,7 @@ bool App::needsRedirectToRunningProcess( std::string file, bool readOnly ) {
 }
 
 void App::tintTitleBar() {
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-	auto colorScheme = ColorSchemePreferences::fromExt( mConfig.ui.colorScheme );
-	if ( ( Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Dark ) ||
-		 ( !Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Light ) ) {
-		auto backVar = mUISceneNode->getStyleSheet()
-						   .getStyleFromSelector( ":root", true )
-						   ->getVariableByName( "--back" );
-		if ( !backVar.isEmpty() ) {
-			auto backColor( Color::fromString( backVar.getValue() ) );
-			Engine::instance()->getPlatformHelper()->setWindowTitleBarColor(
-				mWindow->getWindowHandler(), backColor.r, backColor.g, backColor.b );
-		}
-	}
-#endif
+	mUISceneNode->updateWindowTitleBarColor();
 }
 
 void App::init( InitParameters& params ) {
@@ -4574,6 +4585,7 @@ void App::init( InitParameters& params ) {
 	mPortableMode = params.portable || !params.profile.empty();
 	mProfilePath = params.profile;
 	mDisplayDPI = currentDisplay->getDPI();
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	mUseFrameBuffer = params.frameBuffer;
 	mBenchmarkMode = params.benchmarkMode;
 	mDisablePlugins = params.disablePlugins;
@@ -4618,19 +4630,18 @@ void App::init( InitParameters& params ) {
 	mDisplayDPI = currentDisplay->getDPI();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	mConfig.windowState.pixelDensity =
-		params.pidelDensity > 0
-			? params.pidelDensity
-			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
-				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
-														: currentDisplay->getPixelDensity() );
+	const Float displayDensity = currentDisplay->getPixelDensity() > 2
+									 ? currentDisplay->getPixelDensity() / 2
+									 : currentDisplay->getPixelDensity();
 #else
-	mConfig.windowState.pixelDensity =
-		params.pidelDensity > 0
-			? params.pidelDensity
-			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
-													 : currentDisplay->getPixelDensity() );
+	const Float displayDensity = currentDisplay->getPixelDensity();
 #endif
+	if ( params.pidelDensity > 0 ) {
+		mConfig.windowState.pixelDensity = params.pidelDensity;
+	} else if ( mConfig.windowState.pixelDensity <= 0 ) {
+		mConfig.windowState.pixelDensity =
+			environmentDensity > 0 ? environmentDensity : displayDensity;
+	}
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -5282,6 +5293,8 @@ void App::init( InitParameters& params ) {
 		} else {
 			initProjectTreeView( std::move( params.files ), params.openClean, params.readOnly );
 		}
+		if ( params.zenMode )
+			setZenMode( true );
 
 		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
 		mFileToOpenReadOnly = params.readOnly;
@@ -5446,6 +5459,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag openClean( parser, "open-clean",
 						  "Open a new instance of ecode without recovering the last session",
 						  { "open-clean", 'x' } );
+	args::Flag zenMode( parser, "zen-mode", "Start with Zen Mode enabled", { 'z', "zen-mode" } );
 	args::ValueFlag<std::string> language(
 		parser, "language",
 		"Try to set the default language the editor will be loaded. The language must be supported "
@@ -5548,7 +5562,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	params.fileToOpen = file.Get();
 	params.stdOutLogs = verbose.Get();
 	params.disableFileLogs = disableFileLogs.Get();
-	params.openClean = openClean.Get();
+	params.zenMode = zenMode.Get();
+	params.openClean = openClean.Get() || params.zenMode;
 	params.portable = portable.Get();
 	params.language = language.Get();
 	params.incognito = incognito.Get();
@@ -5556,7 +5571,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						   ( exportLangPath && !exportLangPath.Get().empty() );
 	params.profile = profile.Get();
 	params.disablePlugins = disablePlugins.Get();
-	params.redirectToFirstInstance = redirectToFirstInstance.Get();
+	params.redirectToFirstInstance = redirectToFirstInstance.Get() || params.zenMode;
 	params.diff = diff.Get();
 	params.readOnly = readOnly.Get();
 

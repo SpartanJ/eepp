@@ -9,9 +9,11 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/input.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -68,6 +70,18 @@ bool UITextSpan::isInline() const {
 
 bool UITextSpan::isInlineBlock() const {
 	return mDisplay == CSSDisplay::InlineBlock && !isOutOfFlow();
+}
+
+void UITextSpan::onSizeChange() {
+	if ( isInline() && UIRichText::isAssigningInlineFragments( this ) ) {
+		// CSS inline fragment bounds are results of the owning formatting pass, not new
+		// intrinsic content inputs. Keep size events/drawing current without feeding those
+		// bounds back into the stream. Callback-created text/style changes still emit their
+		// own formatting invalidations while the owner is measuring.
+		UIWidget::onSizeChange( false );
+	} else {
+		UIRichText::onSizeChange();
+	}
 }
 
 void UITextSpan::onDisplayChange() {
@@ -224,7 +238,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextDecoration:
@@ -759,8 +773,18 @@ UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
-			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
-				getUISceneNode()->openURL( mHref );
+			if ( auto* controller = getTextSelectionControllerInTree() ) {
+				// A document drag can finish over a link and still produce a MouseClick.
+				if ( controller->consumeSuppressedClick() )
+					return 1;
+			}
+			if ( !mHref.empty() && ( Msg->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_MMASK ) ) ) {
+				NavigationRequest request{ URI( mHref ) };
+				request.source = this;
+				request.mouseButtons = Msg->getFlags();
+				request.modifiers = getInput() ? getInput()->getModState() : 0;
+				getUISceneNode()->navigate( request );
+			}
 			return 1;
 		}
 	}

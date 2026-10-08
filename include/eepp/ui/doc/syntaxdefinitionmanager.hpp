@@ -82,6 +82,11 @@ class EE_API SyntaxDefinitionManager {
 
 	std::vector<std::string> getExtensionsPatternsSupported() const;
 
+	/** Returns the literal filename extensions declared by syntax definitions.
+	 * Filename-only patterns and patterns that cannot be represented as extensions are omitted.
+	 */
+	std::vector<std::string> getFileExtensions() const;
+
 	const SyntaxDefinition* getPtrByLSPName( const std::string& name ) const;
 
 	bool loadFromStream( IOStream& stream, std::vector<std::string>* addedLangs );

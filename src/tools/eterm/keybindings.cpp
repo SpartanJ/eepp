@@ -132,6 +132,9 @@ void App::reloadKeybindings() {
 	forEachTerminal( [this]( UITerminal* terminal ) { applyKeybindings( terminal ); } );
 	if ( keybindingsEditor && tabSplitter->ownedWidgetExists( keybindingsEditor ) )
 		applyKeybindings( keybindingsEditor );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	syncGlobalMenuKeybindings();
+#endif
 }
 
 void App::openKeybindings() {

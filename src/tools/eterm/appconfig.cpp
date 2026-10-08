@@ -66,6 +66,8 @@ void AppConfig::load() {
 		mIni.getValueB( "window", "warn_before_closing", window.warnBeforeClose );
 	window.alwaysShowTabBar =
 		mIni.getValueB( "window", "always_show_tab_bar", window.alwaysShowTabBar );
+	window.showTabBarWhenSplit =
+		mIni.getValueB( "window", "show_tab_bar_when_split", window.showTabBarWhenSplit );
 	window.rendererVersion = Renderer::glVersionFromString(
 		mIni.getValue( "window", "renderer_version",
 					   Renderer::graphicsLibraryVersionToString( window.rendererVersion ) ) );
@@ -132,6 +134,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "window", "benchmark_mode", window.benchmarkMode );
 	mIni.setValueB( "window", "warn_before_closing", window.warnBeforeClose );
 	mIni.setValueB( "window", "always_show_tab_bar", window.alwaysShowTabBar );
+	mIni.setValueB( "window", "show_tab_bar_when_split", window.showTabBarWhenSplit );
 	mIni.setValue( "window", "renderer_version",
 				   Renderer::graphicsLibraryVersionToString( window.rendererVersion ) );
 	mIni.setValueU( "window", "multisamples", window.multisamples );

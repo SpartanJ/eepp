@@ -148,7 +148,7 @@ UIDropDownModelList* UIDropDownModelList::showList() {
 	if ( NULL == mListView || NULL == mModel )
 		return this;
 
-	if ( !mListView->isVisible() ) {
+	if ( !mListView->isVisible() || !mListView->isEnabled() ) {
 		if ( !mModel->hasChildren() )
 			return this;
 

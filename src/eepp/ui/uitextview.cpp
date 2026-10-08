@@ -306,6 +306,7 @@ UITextView* UITextView::setFontColor( const Color& color ) {
 		mFontStyleConfig.FontColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache.setFillColor( newColor );
+		onFontColorChanged();
 		invalidateDraw();
 	}
 
@@ -529,6 +530,8 @@ void UITextView::onFontStyleChanged() {
 	invalidateDraw();
 }
 
+void UITextView::onFontColorChanged() {}
+
 void UITextView::onAlphaChange() {
 	Color color( getFontColor() );
 	Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
@@ -651,7 +654,7 @@ void UITextView::drawSelection( Text& textCache ) {
 			mSelRectsCache.clear();
 			mLastSelCurInit = selCurInit();
 			mLastSelCurEnd = selCurEnd();
-			mSelRectsCache = mTextCache.getSelectionRects( { selCurInit(), selCurEnd() } );
+			mSelRectsCache = textCache.getSelectionRects( { selCurInit(), selCurEnd() } );
 		}
 
 		if ( !mSelRectsCache.empty() ) {
@@ -916,7 +919,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:

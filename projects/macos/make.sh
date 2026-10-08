@@ -16,4 +16,13 @@ fi
 
 cd ../../make/macosx/
 
-make -j$(sysctl -n hw.ncpu) $@
+JOBS=${EEPP_BUILD_JOBS:-$(sysctl -n hw.ncpu 2>/dev/null)}
+if ! [ "$JOBS" -gt 0 ] 2>/dev/null; then
+    JOBS=$(getconf NPROCESSORS_ONLN 2>/dev/null)
+fi
+if ! [ "$JOBS" -gt 0 ] 2>/dev/null; then
+    echo "Could not determine a safe build job count." >&2
+    exit 1
+fi
+
+make -j"$JOBS" "$@"

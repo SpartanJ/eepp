@@ -9,13 +9,14 @@ SINGLETON_DECLARE_IMPLEMENTATION( PropertySpecification )
 PropertySpecification::~PropertySpecification() {}
 
 PropertyDefinition& PropertySpecification::registerProperty( PropertyId id,
-															 const std::string& propertyName,
-															 const std::string& defaultValue,
+															 std::string_view propertyName,
+															 std::string_view defaultValue,
 															 bool inherited ) {
 	if ( !mPropertyIds.addBuiltin( id, propertyName ) ) {
 		// A built-in ID already bound to another name is a programming error.
-		Log::error( "PropertySpecification: failed to register built-in property \"%s\".",
-					propertyName.c_str() );
+		Log::error( "PropertySpecification: failed to register built-in property \"%.*s\".",
+					static_cast<int>( propertyName.size() ),
+					propertyName.empty() ? "" : propertyName.data() );
 		eeASSERT( false );
 	}
 
@@ -41,8 +42,8 @@ PropertyDefinition& PropertySpecification::registerProperty( PropertyId id,
 	return *propDef;
 }
 
-PropertyDefinition* PropertySpecification::registerProperty( const std::string& propertyName,
-															 const std::string& defaultValue,
+PropertyDefinition* PropertySpecification::registerProperty( std::string_view propertyName,
+															 std::string_view defaultValue,
 															 bool inherited ) {
 	PropertyId id = mPropertyIds.getId( propertyName );
 	PropertyDefinition* existing = ( id != PropertyId::Invalid )
@@ -50,15 +51,18 @@ PropertyDefinition* PropertySpecification::registerProperty( const std::string& 
 									   : nullptr;
 
 	if ( nullptr != existing && !String::startsWith( propertyName, "-" ) ) {
-		Log::warning( "Property \"%s\" already registered.", propertyName.c_str() );
+		Log::warning( "Property \"%.*s\" already registered.",
+					  static_cast<int>( propertyName.size() ),
+					  propertyName.empty() ? "" : propertyName.data() );
 		return existing;
 	}
 
 	if ( id == PropertyId::Invalid ) {
 		id = mPropertyIds.getOrCreateId( propertyName );
 		if ( id == PropertyId::Invalid ) {
-			Log::error( "PropertySpecification: could not allocate an ID for property \"%s\".",
-						propertyName.c_str() );
+			Log::error( "PropertySpecification: could not allocate an ID for property \"%.*s\".",
+						static_cast<int>( propertyName.size() ),
+						propertyName.empty() ? "" : propertyName.data() );
 			return nullptr;
 		}
 	}
